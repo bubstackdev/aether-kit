@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "scope": "Initial scaffold, release unit tests, source compile, fixture export and attempted native smoke",
+  "toolchain": {
+    "xcode": "27.1",
+    "xcode_build": "27A9275",
+    "swift": "6.4",
+    "os": "27.0.1",
+    "os_build": "26A434",
+    "architecture": "h17c",
+    "physical_memory_bytes": 68719476736
+  },
+  "release_tests": {
+    "command": "Scripts/check.sh",
+    "passed": true,
+    "swift_testing_test_count": 9,
+    "native_inference_exercised": false
+  },
+  "doctor": {
+    "passed": true,
+    "available_compute_units": [
+      "cpu",
+      "gpu",
+      "neuralEngine"
+    ]
+  },
+  "fixture_export": {
+    "schema": 1,
+    "recipe": "float32-affine-v1",
+    "torch": "2.11.0",
+    "coreai-torch": "0.4.2",
+    "source_sha256": "46bb891e2aafe6568f1da3f04e7e679b355d9c07a7ffb7cb06e69fbc302cd3aa",
+    "model_files": {
+      "main.hash": "d71fb91baa6d16b3bfb7a3b46e40e5a5f724d37295f59a50542dc7de68a004ff",
+      "main.mlirb": "a9fe6683ee0306635d9f1c9a7af9743c43c32aee24a31ed20aafe9277580aa9b",
+      "metadata.json": "64a67730a4a5079b986eacc0d3d2ade3dee1fc8152c4921b0fe7ce58ae263376"
+    },
+    "input": {
+      "name": "x",
+      "shape": [
+        1,
+        4
+      ],
+      "values": [
+        -2,
+        0,
+        1,
+        3
+      ]
+    },
+    "expected": {
+      "name": "y",
+      "shape": [
+        1,
+        4
+      ],
+      "values": [
+        -3,
+        1,
+        3,
+        7
+      ]
+    }
+  },
+  "native_smoke": {
+    "passed": false,
+    "exit_code": 1,
+    "stage": "load/specialization cache",
+    "compute_policy": "cpuOnly",
+    "inference_reached": false,
+    "error": "failedToOpen: Unable to open asset at ~/Library/Caches/coreai-cache/sync/26A434/6195E00F98FB34CA1BD339801DFB90847A733E9C9FC4E60A1FD7E5BF42415B58.lock: Operation not permitted 1"
+  },
+  "probe_binary_sha256": "66f7c26a1af68ccc6ecd302e6689c79608e84d2024ba4f13cfb53f38153c8de1",
+  "prototype_reference_sha256": {
+    "Cargo.toml": "b95807e4adc7ca577c6492af91731f297e52248e2d34bba8e777635ee0feeff9",
+    "Cargo.lock": "ca70918419fdffd400ea74015222d838ee92b90078f179a65851dd63d27b089b",
+    "src/lib.rs": "7210f69bbf28155f4511cd91d6ec98af06202e5328e4ccbe1538dc467560db58",
+    "src/krea/math.rs": "631cf985cfe1b6d76fee8770916354a9bf55b017631c949542d04c618a840702",
+    "src/krea/pipeline.rs": "90263ecb88bbf40b4a91055e58efc9735cf827de69547bfa0885a2e76c0c8bdc",
+    "src/krea/assets.rs": "88d50fa573a0f79563164c54b059ce29abde4f1a9305fbb23be98a7ffcf34f0b",
+    "src/krea/prompt.rs": "e3c2fc5f296b4c782237736e94214931ca52925f3599eff53b4b26cd81106c3e",
+    "tests/numerics.rs": "8ed06aec5281308d54fdc29feaf17959dd571b8e45452a7142eca3cfef42c5b9",
+    "VALIDATION.md": "75d3541058da719dfca9fb1a5c504232ffcc3fc1dc1fa83c5d707e7fbe04b398",
+    "docs/evidence/krea-encoded-native.json": "551e1332bab72a2358ed7715038d7089672b25f1c293332d22fb00194fd01120",
+    "docs/evidence/krea-provided-native.json": "5bc2503bdef939f54110dbc2fad4142240c22f93b018f213fb2142682ae0c85c",
+    "docs/evidence/h3-qkv-render-summary.json": "6edb5e0110de7970bfa5daa032c50948c507d4299dee0d104be03e346d70f828"
+  },
+  "limitations": [
+    "Controlled backend lifecycle tests do not qualify native cancellation or drain.",
+    "Default swiftbuild dsymutil execution denied by sandbox; release verification used deprecated native build engine.",
+    "No complete generative pipeline, iOS qualification or performance comparison.",
+    "Git initialization denied by filesystem restrictions."
+  ],
+  "local_consumer": {
+    "path": "Examples/LocalPackage",
+    "release_build_and_run_passed": true,
+    "image_tokens": 4032,
+    "steps": 8,
+    "seed": 71344,
+    "native_inference_exercised": false
+  }
+}

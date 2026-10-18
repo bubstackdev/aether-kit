@@ -1,0 +1,13 @@
+AetherKit
+
+Krea schedule and seeded-noise algorithms and their reference fixture values are
+derived from the Apache-2.0 Aether prototype and its Aether / Atelier Swift
+references. The retained prototype identifies upstream revision
+7aff977df6e88005649b13bc63995f75eb4b217b.
+
+Original Aether / Atelier sources are copyright their respective contributors.
+The accompanying LICENSE preserves the Apache License, Version 2.0.
+
+No model weights, tokenizer files, adapters or upstream Core AI Models runtime
+implementation are distributed by this scaffold. External assets retain their
+own licenses.

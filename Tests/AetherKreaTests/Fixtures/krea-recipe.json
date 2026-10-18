@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "driver": "diffusion",
+  "target": {
+    "arch": "any",
+    "backend": "coreai",
+    "compiled": false,
+    "compute": "gpu",
+    "minOS": "27.0",
+    "platform": "macos"
+  },
+  "text": {
+    "chatTemplate": "embedded",
+    "tokenizer": "tokenizer/"
+  },
+  "functions": {
+    "denoiser0/segment": {
+      "role": "denoiseSegment"
+    },
+    "denoiser1/segment": {
+      "role": "denoiseSegment"
+    },
+    "denoiser2/segment": {
+      "role": "denoiseSegment"
+    },
+    "denoiser3/segment": {
+      "role": "denoiseSegment"
+    },
+    "textEncoder/encode": {
+      "role": "encodeText"
+    },
+    "textEncoder/encodeWithImages": {
+      "role": "encodeTextWithImages"
+    },
+    "vaeDecoder/decode": {
+      "role": "decodeLatents"
+    },
+    "vision/encode": {
+      "role": "encodeImage"
+    }
+  },
+  "inputs": {
+    "attention_mask": {
+      "bind": "tokenMask",
+      "dtype": "int32"
+    },
+    "cond": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "deepstack": {
+      "bind": "deepstack",
+      "dtype": "float16"
+    },
+    "image_1": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "image_2": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "image_3": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "image_embeds": {
+      "bind": "imageEmbeds",
+      "dtype": "float16"
+    },
+    "input_ids": {
+      "bind": "tokens",
+      "dtype": "int32"
+    },
+    "latents": {
+      "bind": "latents",
+      "dtype": "float16"
+    },
+    "patch_rc": {
+      "bind": "patchCoordinates",
+      "dtype": "int32"
+    },
+    "pixels": {
+      "bind": "image",
+      "dtype": "float16"
+    },
+    "pos_index": {
+      "bind": "patchPositionIndex",
+      "dtype": "int32"
+    },
+    "pos_weight": {
+      "bind": "patchPositionWeight",
+      "dtype": "float32"
+    },
+    "position_ids": {
+      "bind": "positions",
+      "dtype": "int32",
+      "mode": "running"
+    },
+    "rope_image": {
+      "bind": "imageRotary",
+      "dtype": "float32"
+    },
+    "rope_positions": {
+      "bind": "positions",
+      "dtype": "int32",
+      "mode": "mrope"
+    },
+    "sigma": {
+      "bind": "timestep",
+      "dtype": "float32"
+    },
+    "text_1": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "text_2": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "text_3": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "text_embeds": {
+      "bind": "textEmbeddings",
+      "dtype": "float16"
+    }
+  },
+  "outputs": {
+    "cond": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "deepstack": {
+      "dtype": "float16",
+      "role": "deepstack"
+    },
+    "image": {
+      "dtype": "float32",
+      "role": "pixels"
+    },
+    "image_1": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "image_2": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "image_3": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "image_embeds": {
+      "dtype": "float16",
+      "role": "imageTokens"
+    },
+    "text_1": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "text_2": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "text_3": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "text_embeds": {
+      "dtype": "float16",
+      "role": "textEmbeddings"
+    },
+    "velocity": {
+      "dtype": "float16",
+      "role": "velocity"
+    }
+  },
+  "diffusion": {
+    "latentChannels": 64,
+    "pixelsPerToken": 16,
+    "steps": 8,
+    "maxSteps": 50,
+    "trainTimesteps": 1000,
+    "guidance": false,
+    "denoiserSegments": [
+      "denoiser0",
+      "denoiser1",
+      "denoiser2",
+      "denoiser3"
+    ],
+    "textEncoderAsset": "textEncoder",
+    "decoderAsset": "vaeDecoder",
+    "sigmaShift": {
+      "mu": 1.15,
+      "rule": "constant"
+    },
+    "rotary": {
+      "axes": [
+        32,
+        48,
+        48
+      ],
+      "layout": "tyx",
+      "textRotated": false,
+      "theta": 1000
+    },
+    "prompt": {
+      "dropLeadingRows": 34,
+      "keepTrailingTokens": 5,
+      "maxLength": 546,
+      "padToken": 151643,
+      "padding": "none",
+      "systemMessage": "Describe the image by detailing the color, shape, size, texture, quantity, text, spatial relationships of the objects and background:",
+      "template": "chat"
+    }
+  }
+}

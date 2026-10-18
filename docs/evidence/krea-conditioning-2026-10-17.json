@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "scope": "Krea dynamic asset loading and conditioning preparation",
+  "release_tests": {
+    "passed": true,
+    "count": 19,
+    "external_input_tests_executed": 2,
+    "command": "AETHER_KREA_BUNDLE=... AETHER_KREA_FIXTURES=... AETHER_KREA_LAB=... Scripts/check.sh"
+  },
+  "retained_prompt_cases": 6,
+  "all_retained_token_ids_match": true,
+  "full_rotary_reference_bytes_match": true,
+  "rotary_reference_sha256": "807e11d7ccea4eb73acf59e4a63169c8bb08e1e0d0e0ea1d15f420ef0ada167e",
+  "cli_preparation": {
+    "conditioningRows": 20,
+    "encoderInputShapes": {
+      "attention_mask": [
+        1,
+        54
+      ],
+      "input_ids": [
+        1,
+        54
+      ],
+      "position_ids": [
+        1,
+        54
+      ]
+    },
+    "fingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+    "imageTokens": 4032,
+    "rotaryShape": [
+      4032,
+      2,
+      128
+    ],
+    "tokenIDs": [
+      151644,
+      8948,
+      198,
+      74785,
+      279,
+      2168,
+      553,
+      44193,
+      279,
+      1894,
+      11,
+      6083,
+      11,
+      1379,
+      11,
+      10434,
+      11,
+      12194,
+      11,
+      1467,
+      11,
+      27979,
+      11871,
+      315,
+      279,
+      6171,
+      323,
+      4004,
+      25,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      64,
+      16217,
+      8866,
+      21271,
+      304,
+      264,
+      89773,
+      2310,
+      6290,
+      518,
+      3729,
+      11,
+      73165,
+      82,
+      48492,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+    ],
+    "wasTruncated": false
+  },
+  "local_consumer_release_build_and_run_passed": true,
+  "native_encoder_inference_executed": false,
+  "real_bundle_large_model_streams_verified": false,
+  "prototype_references_unchanged": true,
+  "git_initialization": {
+    "passed": false,
+    "error": ".git: Operation not permitted",
+    "commit_created": false
+  },
+  "source_sha256": {
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "307f72cda8390ae1409f7eac89ef71dbdf0c4728c457fa63c8b7be6c98093e45",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "6726c17bbd71f6ea93eeb1f3149564a93af084dce4eec6dd3899f0e91f7e19f4",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKrea/KreaAssets.swift": "e19c5b837c6dbf40d7d3c7687a069d2ac190fbcda628f1f1fe56cc68a0e09d52",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "ddaafa933442cbb9365e379fdf4479f6384a223a03a78214cf8bca9f03620141",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKreaTests/Fixtures/krea-recipe.json": "f5d8142a66099a4e0691fa2ba9ba7240d4aa6fbfc53228659015079eb29581e8",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "59901cae0f4846dcc4c1290f07119384daf1f780113f40ab072755f2d25d5bb4",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4"
+  },
+  "dependency_pins": [
+    {
+      "identity": "swift-collections",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-collections.git",
+      "state": {
+        "revision": "35a1edcb8ebd2bfe251d587f0b69e62af28f508c",
+        "version": "1.7.3"
+      }
+    },
+    {
+      "identity": "swift-jinja",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/huggingface/swift-jinja.git",
+      "state": {
+        "revision": "4588064a20f3fc093c95f2f7d3359999bf30cae5",
+        "version": "2.5.1"
+      }
+    },
+    {
+      "identity": "swift-transformers",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/huggingface/swift-transformers",
+      "state": {
+        "revision": "4870d18b9f7637785891ab3e4c28f3ea489723d7",
+        "version": "1.1.0"
+      }
+    }
+  ],
+  "limitations": [
+    "Native Core AI cache access remains restricted; native typed tensor and encoder parity gates pending.",
+    "Full model stream verification was exercised on synthetic test assets only.",
+    "No denoiser execution, VAE decoding or image generation in this slice."
+  ]
+}
