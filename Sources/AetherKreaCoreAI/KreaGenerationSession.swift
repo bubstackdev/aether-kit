@@ -1,6 +1,7 @@
 import AetherKit
 import AetherCoreAI
 import AetherKrea
+import Foundation
 
 public enum KreaResidency: Sendable { case balanced, resident }
 
@@ -68,6 +69,32 @@ public actor KreaGenerationSession {
         return try await generate(configuration: configuration, source: .provided(preparedPrompt.conditioning), noise: noise, progress: progress)
     }
 
+    /// Image-to-image refine: starts from `start` (encoded picture latents + start step) instead of pure noise and runs
+    /// only the remaining steps. `noise` defaults to the configuration seed's noise, as for generation.
+    public func refine(
+        configuration: KreaConfiguration, preparedPrompt: KreaPreparedPrompt, start: KreaRefineStart, noise: FloatTensor? = nil,
+        progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void = { _ in }
+    ) async throws -> GeneratedImage {
+        guard preparedPrompt.bundleFingerprint == bundleFingerprint else {
+            throw AetherError.invalidRequest("prepared prompt belongs to a different Krea bundle")
+        }
+        guard start.latents.shape == [configuration.imageTokenCount, 64], start.startStep < configuration.steps else {
+            throw AetherError.invalidRequest("refine latents must be [imageTokens,64] and start before the last step ends")
+        }
+        return try await generate(configuration: configuration, source: .provided(preparedPrompt.conditioning), noise: noise,
+                                  start: start, progress: progress)
+    }
+
+    /// Encodes `pixels` ([3, 16h, 16w], values in [−1, 1]) with the external VAE encoder into packed latents
+    /// [h·w, 64] for `refine`. The encoder is kept for the session's later encodes and released by `unload`.
+    public func encodeImage(_ pixels: FloatTensor, encoder: KreaModelAsset) async throws -> FloatTensor {
+        guard pixels.shape.count == 3, pixels.shape[0] == 3, pixels.shape[1] % 16 == 0, pixels.shape[2] % 16 == 0,
+              pixels.shape[1] > 0, pixels.shape[2] > 0, (pixels.shape[1] / 16) * (pixels.shape[2] / 16) <= 4096 else {
+            throw AetherError.invalidRequest("encoder input must be [3, 16h, 16w] within 4096 tokens")
+        }
+        return try await perform { [runner] in try await runner.encodeImage(pixels, encoder: encoder) }
+    }
+
     public func generate(
         configuration: KreaConfiguration, prompt: KreaPrompt, noise: FloatTensor? = nil,
         progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void = { _ in }
@@ -105,14 +132,14 @@ public actor KreaGenerationSession {
     }
 
     private func generate(
-        configuration: KreaConfiguration, source: ConditioningSource, noise: FloatTensor?,
+        configuration: KreaConfiguration, source: ConditioningSource, noise: FloatTensor?, start: KreaRefineStart? = nil,
         progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void
     ) async throws -> GeneratedImage {
         try await perform { [runner] in
             if let noise, noise.shape != [configuration.imageTokenCount, 64] {
                 throw AetherError.invalidTensor("initial Krea noise must be [imageTokens,64]")
             }
-            return try await runner.generate(configuration: configuration, source: source, noise: noise, progress: progress)
+            return try await runner.generate(configuration: configuration, source: source, noise: noise, start: start, progress: progress)
         }
     }
 
@@ -175,6 +202,7 @@ private actor KreaRunner {
     var encoder: (any KreaExecutable)?
     var vision: (any KreaExecutable)?
     var decoder: (any KreaExecutable)?
+    var imageEncoder: (url: URL, model: any KreaExecutable)?
     var denoisers: [any KreaExecutable] = []
     var selectionIdentity: String?
 
@@ -184,8 +212,24 @@ private actor KreaRunner {
         self.residency = residency
     }
 
+    func encodeImage(_ pixels: FloatTensor, encoder asset: KreaModelAsset) async throws -> FloatTensor {
+        try Task.checkCancellation()
+        if imageEncoder?.url != asset.url {
+            if let old = imageEncoder { await old.model.unload(); imageEncoder = nil }
+            imageEncoder = (asset.url, try await factory.open(asset, frequentReshapes: true))
+        }
+        guard let model = imageEncoder?.model else { throw AetherError.invalidModel("image encoder did not load") }
+        let result = try await model.runTensors(function: "encode", inputs: ["image": .float16(try halves(pixels))])
+        let h = pixels.shape[1] / 16, w = pixels.shape[2] / 16
+        guard result.count == 1, case .float32(let latents) = result["latents"], latents.shape == [h, w, 64],
+              latents.values.allSatisfy(\.isFinite) else {
+            throw AetherError.invalidTensor("image encoder must return finite float32 [h,w,64] latents")
+        }
+        return try FloatTensor(shape: [h * w, 64], values: latents.values)
+    }
+
     func generate(
-        configuration: KreaConfiguration, source: ConditioningSource, noise: FloatTensor?,
+        configuration: KreaConfiguration, source: ConditioningSource, noise: FloatTensor?, start: KreaRefineStart? = nil,
         progress: @Sendable (KreaGenerationEvent) throws -> Void
     ) async throws -> GeneratedImage {
         try Task.checkCancellation()
@@ -210,7 +254,11 @@ private actor KreaRunner {
             shape: [configuration.imageTokenCount, 64],
             values: KreaNoise.generate(seed: configuration.seed, count: configuration.imageTokenCount * 64)
         )
-        for step in 0..<configuration.steps {
+        if let start {
+            latents = try FloatTensor(shape: latents.shape, values: schedule.refineStart(
+                x0: start.latents.values, noise: latents.values, step: start.startStep))
+        }
+        for step in (start?.startStep ?? 0)..<configuration.steps {
             try Task.checkCancellation()
             let roots: [String: TensorValue] = [
                 "latents": .float16(try halves(latents)), "text_embeds": .float16(conditioning.tensor),
@@ -402,6 +450,8 @@ private actor KreaRunner {
         if let vision { await vision.unload() }
         vision = nil
         if let decoder { await decoder.unload() }
+        if let imageEncoder { await imageEncoder.model.unload() }
+        imageEncoder = nil
         for model in denoisers { await model.unload() }
         encoder = nil
         decoder = nil

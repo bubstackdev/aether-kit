@@ -397,7 +397,7 @@ private func confinedFile(_ relative: String, root: URL, directory: Bool = false
     return url
 }
 
-private func hashFile(_ url: URL) throws -> String {
+func hashFile(_ url: URL) throws -> String {
     let file = try FileHandle(forReadingFrom: url)
     defer { try? file.close() }
     var digest = SHA256()
@@ -412,6 +412,6 @@ private func hashFile(_ url: URL) throws -> String {
     return Data(digest.finalize()).hex
 }
 
-private extension Data {
+extension Data {
     var hex: String { map { String(format: "%02x", $0) }.joined() }
 }
