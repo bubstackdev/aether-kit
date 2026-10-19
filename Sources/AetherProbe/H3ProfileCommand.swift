@@ -22,10 +22,12 @@ private final class H3RawDirectory {
     func put(_ name: String, _ tensor: H3TensorData) throws {
         try tensor.bytes.write(to: url.appendingPathComponent(name + ".raw"))
         tensors[name] = H3RawEntry(file: name + ".raw", dtype: tensor.spec.scalarType.rawValue, shape: tensor.spec.shape, sha256: tensor.sha256)
+        try save(["partial": "true"])   // a native abort still leaves every finished tensor readable
     }
     func putBytes(_ name: String, _ data: Data, dtype: String, shape: [Int]) throws {
         try data.write(to: url.appendingPathComponent(name + ".raw"))
         tensors[name] = H3RawEntry(file: name + ".raw", dtype: dtype, shape: shape, sha256: h3SHA256(data))
+        try save(["partial": "true"])
     }
     func save<E: Encodable>(_ extra: E) throws {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -246,11 +248,16 @@ enum H3ProfileCommand {
                     let tile = try await timed("tile.\(pass)") { try await qualifier.tile(try floats(rows, [448, 96])) }
                     if pass == "warm" { try out.put("tile", tile); try out.put("tile_rows", try floats(rows, [448, 96])) }
                 }
-                let audioRows = try H3RawDirectory.read(dump, "latents_audio")
-                let na = geometry.audioLatentsPerChannel
-                try out.put("pcm", try await timed("audio") {
-                    try await qualifier.audio(try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [2, na, 32]), bytes: audioRows.bytes))
-                })
+                if audio {
+                    let audioRows = try H3RawDirectory.read(dump, "latents_audio")
+                    let na = geometry.audioLatentsPerChannel
+                    for pass in ["cold", "warm"] {
+                        let pcm = try await timed("audio.\(pass)") {
+                            try await qualifier.audio(try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [2, na, 32]), bytes: audioRows.bytes))
+                        }
+                        if pass == "warm" { try out.put("pcm", pcm) }
+                    }
+                }
                 await qualifier.release()
             }
             try save()

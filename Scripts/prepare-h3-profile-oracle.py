@@ -8,7 +8,7 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
            forward stopped after layer 49 (`hidden_states[50]`); then context_embedder + token_refiner + Turbo LoRA.
   graphs   Each native graph on the CPU, on the same inputs the native `--graphs` run used: pack, blocks 0 and 49 (live
            AdaLN from the live time embedding, i.e. independent of the precomputed tables), heads, one tile window
-           (`vae._decode`) and the audio decoder. Also checks the dump's layout and row timesteps against the
+           (`vae._decode`, untiled) and the audio decoder. Also checks the dump's layout and row timesteps against the
            pipeline's own `build_packed_sequence` / `build_row_timesteps` and scheduler.
   render   A complete T2VA trajectory: the original transformer forward with its 50 blocks streamed (each built with
            its Turbo LoRA exactly as PEFT loads it), both schedulers' `step`, then the pipeline's video decode
@@ -237,8 +237,7 @@ def graphs_part(dump, out, run, text):
         rows = run.get("tile_rows")
         z = rows.view(7, 8, 8, 24, 2, 2).permute(3, 0, 1, 4, 2, 5).reshape(1, 24, 7, 16, 16)
         z = z * torch.tensor(vae.config.latents_std).view(1, 24, 1, 1, 1) + torch.tensor(vae.config.latents_mean).view(1, 24, 1, 1, 1)
-        clip = vae._decode(z)
-        out.put("tile", torch.cat((clip[:, :, 3:20], clip[:, :, 23:28]), dim=2).contiguous())
+        out.put("tile", vae._decode(z).contiguous())   # the original single-window control flow keeps the 22 frames itself
         del vae
         audio_vae = AutoencoderKLMiniMaxH3Audio.from_pretrained(STAGING / "exports/h3-fl2va/converted/audio-vae", torch_dtype=torch.float32).eval()
         na = audio.shape[1] // 2

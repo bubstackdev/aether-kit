@@ -30,6 +30,9 @@ func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
         let conditioner = try #require(profile.conditioner), prepare = try #require(profile.prepare), audio = try #require(profile.audioDecoder)
         #expect(profile.parameters.count == 50 && conditioner.parameters.count == 50 && prepare.textParameters.count == 47)
         #expect(audio.sampleRate == 32000 && audio.hop == 800 && audio.channels == 2)
+        // The 5 s clip menu needs Na = 207 (124 frames); the dynamic decoder is CPU-only.
+        #expect(try audio.model(latents: 207).url.lastPathComponent == "audio-decoder-na207.aimodel")
+        #expect(throws: AetherError.self) { try audio.model(latents: 208) }
         #expect(profile.header?.recipe == .turbo8)   // the header only exists for the pinned Turbo adapter identity
         // In-place bindings read back with their recorded hashes: the first and last block, layer and refiner weight.
         for file in [profile.parameters[0][1], profile.parameters[49][21], conditioner.parameters[0][0], conditioner.parameters[49][10],

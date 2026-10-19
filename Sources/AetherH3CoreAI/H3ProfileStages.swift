@@ -264,15 +264,16 @@ actor NativeH3TileKernel: H3TileKernel {
     func release() async { graph = nil }
 }
 
+/// Runs the static-length decoder for the rows' Na (the dynamic asset aborts in MPSGraph on the GPU).
 actor NativeH3AudioKernel: H3AudioKernel {
-    private let asset: H3ModelAsset
-    private let hop: Int
-    private var graph: NativeH3Graph?
-    init(_ asset: H3ModelAsset, hop: Int) { self.asset = asset; self.hop = hop }
+    private let decoder: H3Profile.AudioDecoder
+    private var graph: (latents: Int, graph: NativeH3Graph)?
+    init(_ decoder: H3Profile.AudioDecoder) { self.decoder = decoder }
     func decode(_ rows: H3TensorData) async throws -> H3TensorData {
-        if graph == nil { graph = try await NativeH3Graph.open(asset) }
+        let na = rows.spec.shape[1], hop = decoder.hop
+        if graph?.latents != na { graph = nil; graph = (na, try await NativeH3Graph.open(try decoder.model(latents: na))) }
         let spec = try H3TensorSpec(scalarType: .float32, shape: [2, hop * rows.spec.shape[1]])
-        return try await graph!.run(["rows": .data(rows)], outputs: ["pcm": spec])["pcm"]!
+        return try await graph!.graph.run(["rows": .data(rows)], outputs: ["pcm": spec])["pcm"]!
     }
     func release() async { graph = nil }
 }
@@ -289,7 +290,7 @@ public enum H3ProfileEngine {
             conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize, kernel: NativeH3ConditionerKernel(conditioner)),
             denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile)),
             video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
-            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio.model, hop: audio.hop), hop: audio.hop))
+            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop))
     }
 }
 
@@ -307,7 +308,7 @@ public actor H3ProfileQualifier {
         }
         self.profile = profile; self.conditioner = NativeH3ConditionerKernel(conditioner)
         self.denoiser = try NativeH3DenoiserKernels(profile)
-        self.tile = NativeH3TileKernel(profile.videoDecoder.model); self.audio = NativeH3AudioKernel(audio.model, hop: audio.hop)
+        self.tile = NativeH3TileKernel(profile.videoDecoder.model); self.audio = NativeH3AudioKernel(audio)
     }
     /// The unnormalized tap for `ids`, layer by layer, exactly as the session's conditioner stage computes it.
     public func tap(ids: [Int32], onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in }) async throws -> H3TensorData {

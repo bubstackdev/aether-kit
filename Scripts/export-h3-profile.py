@@ -28,6 +28,9 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   audio-decoder  Convert the audio VAE (identity mapping, pinned converter) and export its decoder: channel-major
                  normalized rows [2, Na, 32] f32 -> stereo planar PCM [2, 800 Na] f32 at 32 kHz, Na dynamic, checked
                  on CPU against the pipeline's denormalize + `decode`.
+  audio-decoder-fixed  Export the same audio decoder with a STATIC latent count for each --audio-latents value (the
+                 dynamic asset aborts in MPSGraph on the GPU: "Failed to resolve dynamic dimensions for memref.alloc",
+                 E1 2026-10-19). Each is checked on CPU against the pipeline's denormalize + `decode` at that count.
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -75,7 +78,8 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "finalize"])
+    ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
@@ -505,6 +509,41 @@ def main():
         record(out, audio_decoder=dict(asset, sample_rate=vae.config.sampling_rate, hop=800, channels=2), audio_decoder_cpu_check=check,
                converted_audio_vae=dict(path=str(target), files=files))
         print(json.dumps(asset), flush=True)
+    elif args.stage == "audio-decoder-fixed":
+        from diffusers import AutoencoderKLMiniMaxH3Audio
+        target = out / "converted/audio-vae"
+        vae = AutoencoderKLMiniMaxH3Audio.from_pretrained(target, torch_dtype=torch.float32).eval()
+
+        class AudioDecoder(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.dec_in_proj, self.decoder = vae.dec_in_proj, vae.decoder
+                self.register_buffer("mean", torch.tensor(vae.config.latents_mean, dtype=torch.float32).view(1, -1, 1))
+                self.register_buffer("std", torch.tensor(vae.config.latents_std, dtype=torch.float32).view(1, -1, 1))
+            def forward(self, rows):
+                latents = rows.permute(0, 2, 1) * self.std + self.mean
+                return self.decoder(self.dec_in_proj(latents)).squeeze(1)
+        module = AudioDecoder().eval()
+        meta = json.loads((out / "build.json").read_text())
+        fixed = meta.get("audio_decoder_fixed", {})
+        for na in sorted({int(v) for v in args.audio_latents.split(",")}):
+            assert 2 <= na <= 2048
+            torch.manual_seed(1043)
+            rows = torch.randn(2, na, 32)
+            with torch.inference_mode():
+                actual = module(rows)
+                mean = torch.tensor(vae.config.latents_mean).view(1, -1, 1); std = torch.tensor(vae.config.latents_std).view(1, -1, 1)
+                reference = vae.decode(rows.permute(0, 2, 1).contiguous() * std + mean, return_dict=False)[0].float().squeeze(1)
+            check = dict(latents=na, shape=list(actual.shape), byte_identical=bool(torch.equal(actual, reference)),
+                         relative_l2=float((actual.double() - reference.double()).norm() / reference.double().norm()))
+            print(json.dumps(check), flush=True)
+            assert check["relative_l2"] < 1e-5 and check["shape"] == [2, 800 * na], check
+            started = time.monotonic()
+            asset = h.export_asset(out / f"models/audio-decoder-na{na}.aimodel", module, (rows,), ["rows"], ["pcm"])
+            asset["seconds"] = round(time.monotonic() - started, 1)
+            fixed[str(na)] = dict(asset, check=check)
+            record(out, audio_decoder_fixed=fixed)
+            print(json.dumps(asset), flush=True)
     elif args.stage == "finalize":
         meta = json.loads((out / "build.json").read_text())
         def asset(item):
@@ -526,7 +565,8 @@ def main():
         c = meta.get("conditioner", {})
         lifted = "layer" in c and len(c.get("parameters", [])) == 50 and "conditioner_rope" in meta
         missing = [name for name, ok in (("prepare", "prepare" in meta), ("parameters", len(meta.get("parameters", [])) == 50),
-                   ("conditioner", lifted and "conditioner_rope" in meta), ("adapter", "adapter" in meta), ("audio_decoder", "audio_decoder" in meta)) if not ok]
+                   ("conditioner", lifted and "conditioner_rope" in meta), ("adapter", "adapter" in meta), ("audio_decoder", "audio_decoder" in meta),
+                   ("audio_decoder_fixed", bool(meta.get("audio_decoder_fixed")))) if not ok]
         def table_range(item):
             data = h.read_segments([item])
             return dict(item, sha256=h.sha256_bytes(data))
@@ -535,7 +575,8 @@ def main():
         prepare = meta.get("prepare")
         prepare = dict(text=asset(prepare["text"]), text_parameters=[bound(t) for t in prepare["text_parameters"]], pack=asset(prepare["pack"])) if prepare else None
         audio = meta.get("audio_decoder")
-        audio = dict(asset(audio), sample_rate=audio["sample_rate"], hop=audio["hop"], channels=audio["channels"]) if audio else None
+        audio = dict(asset(audio), sample_rate=audio["sample_rate"], hop=audio["hop"], channels=audio["channels"],
+                     fixed={na: asset(item) for na, item in sorted(meta.get("audio_decoder_fixed", {}).items())}) if audio else None
         bundle = dict(schema=3, complete=not missing, missing=missing, snapshot=h.SNAPSHOT, diffusers_commit=h.COMMIT,
                       transformer_weight_layout=h.CANONICAL_QKV_LAYOUT, adapter=meta.get("adapter"), tasks=["t2va", "fl2va"],
                       limits=dict(rows=meta["body_dynamic"]["rows"], cardinality=meta["body_dynamic"]["cardinality"], text_tokens=[2, 4096]),

@@ -40,8 +40,18 @@ public struct H3Profile: Sendable {
         public let pack: H3ModelAsset
     }
     public struct AudioDecoder: Sendable {
-        /// Channel-major rows [2, Na, 32] f32 -> planar stereo PCM [2, hop * Na] f32 in [-1, 1].
+        /// Channel-major rows [2, Na, 32] f32 -> planar stereo PCM [2, hop * Na] f32 in [-1, 1], Na dynamic. The CPU
+        /// export check uses it; on the GPU it aborts in MPSGraph (unresolved dynamic memref.alloc), so native runs use `fixed`.
         public let model: H3ModelAsset
+        /// The same decoder with a static latent count Na, per Na the profile was exported for.
+        public let fixed: [Int: H3ModelAsset]
+        /// The static decoder for `latents` (Na per channel); a clip length without one is unsupported.
+        public func model(latents: Int) throws -> H3ModelAsset {
+            guard let model = fixed[latents] else {
+                throw AetherError.unsupported("H3 profile has no audio decoder for \(latents) latents (has \(fixed.keys.sorted()))")
+            }
+            return model
+        }
         public let sampleRate: Int
         public let hop: Int
         public let channels: Int
@@ -146,7 +156,12 @@ public struct H3Profile: Sendable {
         videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256)
         audioDecoder = try m.audio_decoder.map { a in
             guard a.sample_rate == 32000, a.hop == 800, a.channels == 2 else { throw AetherError.invalidModel("H3 audio decoder lacks the 32 kHz stereo contract") }
-            return AudioDecoder(model: try a.model.asset(path), sampleRate: a.sample_rate, hop: a.hop, channels: a.channels)
+            var fixed: [Int: H3ModelAsset] = [:]
+            for (key, asset) in a.fixed ?? [:] {
+                guard let na = Int(key), (2...2048).contains(na), String(na) == key else { throw AetherError.invalidModel("invalid H3 audio decoder length \(key)") }
+                fixed[na] = try asset.asset(path)
+            }
+            return AudioDecoder(model: try a.model.asset(path), fixed: fixed, sampleRate: a.sample_rate, hop: a.hop, channels: a.channels)
         }
         guard audioDecoder != nil || m.missing.contains("audio_decoder") else {
             throw AetherError.invalidModel("H3 profile omits its audio decoder without declaring it missing")
@@ -202,7 +217,7 @@ public struct H3Profile: Sendable {
     public func verifyModels() throws {
         var seen = Set<String>()
         let all = [body, heads, videoDecoder.model] + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
-            + (audioDecoder.map { [$0.model] } ?? [])
+            + (audioDecoder.map { audio in [audio.model] + audio.fixed.keys.sorted().map { audio.fixed[$0]! } } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
         if let conditioner { for file in [conditioner.ropeCos, conditioner.ropeSin] { _ = try file.read() } }
@@ -251,6 +266,7 @@ public struct H3Profile: Sendable {
     private struct PrepareEntry: Decodable { let text: Asset; let text_parameters: [Tensor]; let pack: Asset }
     private struct AudioEntry: Decodable {
         let path: String; let function: String; let sha256: String; let sample_rate: Int; let hop: Int; let channels: Int
+        let fixed: [String: Asset]?
         var model: Asset { Asset(path: path, function: function, sha256: sha256) }
     }
     private struct Arm: Decodable { let shift: Float; let timesteps: [Float]; let sigmas: [Float] }
