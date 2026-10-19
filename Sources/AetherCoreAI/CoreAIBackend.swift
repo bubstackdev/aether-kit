@@ -107,8 +107,8 @@ private func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(
     return try Tensor(shape: array.shape, values: values)
 }
 
-private extension TensorValue {
-    var scalarType: NDArray.ScalarType {
+extension TensorValue {
+    fileprivate var scalarType: NDArray.ScalarType {
         switch self {
         case .float32: .float32
         case .float16: .float16
@@ -118,9 +118,25 @@ private extension TensorValue {
 
     var nativeArray: NDArray {
         switch self {
-        case .float32(let tensor): NDArray(scalars: tensor.values, shape: tensor.shape)
-        case .float16(let tensor): NDArray(scalars: tensor.values, shape: tensor.shape)
-        case .int32(let tensor): NDArray(scalars: tensor.values, shape: tensor.shape)
+        case .float32(let tensor): copyNativeTensor(tensor, scalarType: .float32)
+        case .float16(let tensor): copyNativeTensor(tensor, scalarType: .float16)
+        case .int32(let tensor): copyNativeTensor(tensor, scalarType: .int32)
         }
     }
+}
+
+// NDArray(scalars:shape:) iterates through a generic Sequence inside the runtime.
+// Copy contiguous storage in bulk while keeping the native allocation independent
+// of the Swift tensor and its lifetime.
+private func copyNativeTensor<Scalar: TensorScalar & BitwiseCopyable>(
+    _ tensor: Tensor<Scalar>, scalarType: NDArray.ScalarType
+) -> NDArray {
+    var array = NDArray(shape: tensor.shape, scalarType: scalarType)
+    tensor.values.withUnsafeBytes { source in
+        array.mutableRawView().withUnsafeMutableBytes { destination, _, _ in
+            // Validated tensor shapes always contain at least one scalar.
+            destination.copyMemory(from: source.baseAddress!, byteCount: source.count)
+        }
+    }
+    return array
 }

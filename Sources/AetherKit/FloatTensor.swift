@@ -22,6 +22,9 @@ public struct Tensor<Scalar: TensorScalar>: Sendable, Equatable {
     public let shape: [Int]
     public let values: [Scalar]
 
+    // Let callers specialize the per-element finite check for their scalar type.
+    // Unspecialized iteration is costly for the large denoiser carry tensors.
+    @inlinable
     public init(shape: [Int], values: [Scalar]) throws {
         let count = try Self.elementCount(for: shape)
         guard count == values.count else {
