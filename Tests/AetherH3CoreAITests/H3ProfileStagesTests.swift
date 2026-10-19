@@ -1,0 +1,209 @@
+@testable import AetherH3
+import AetherKit
+import Foundation
+import Testing
+@testable import AetherH3CoreAI
+
+private let zeroHash = String(repeating: "0", count: 64)
+
+private func scratch() throws -> URL {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+    return root
+}
+private func bf16(_ values: [Float]) -> Data {
+    let bits = values.map { UInt16($0.bitPattern >> 16) }
+    return bits.withUnsafeBytes { Data($0) }
+}
+private func file(_ root: URL, _ name: String, _ data: Data, _ type: H3ScalarType, _ shape: [Int]) throws -> H3TensorFile {
+    let url = root.appendingPathComponent(name); try data.write(to: url)
+    return try H3TensorFile(name: name, url: url, spec: H3TensorSpec(scalarType: type, shape: shape), sha256: h3SHA256(data))
+}
+private func floats(_ tensor: H3TensorData) throws -> [Float] { try tensor.floatValues() }
+
+private actor Calls {
+    private(set) var log: [String] = []
+    private(set) var released = 0
+    func add(_ entry: String) { log.append(entry) }
+    func release() { released += 1 }
+}
+
+// MARK: Conditioner
+
+private struct LayerKernel: H3ConditionerKernel {
+    let calls: Calls
+    /// Each layer adds 1.0 to every value (exact in bf16 for small integers) and checks the rotary prefix it was given.
+    let expectedCos: Data
+    func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        await calls.add("layer \(index)")
+        #expect(cos.bytes == expectedCos && cos.spec.shape == [1, hidden.spec.shape[1], 128] && sin.spec == cos.spec)
+        return try H3TensorData(spec: hidden.spec, bytes: bf16(try hidden.floatValues().map { $0 + 1 }))
+    }
+    func release() async { await calls.release() }
+}
+
+@Test func h3ProfileConditionerGathersEmbeddingRowsInPlaceAndStreamsEveryLayer() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    // A 6-row table behind a 16-byte header, as embed_tokens sits inside a safetensors shard.
+    let rows = (0..<6).map { r in [Float](repeating: Float(r), count: 5120) }
+    let table = bf16(rows.flatMap { $0 })
+    let shard = root.appendingPathComponent("shard.safetensors"); try (Data(repeating: 7, count: 16) + table).write(to: shard)
+    let ropeValues = (0..<(4096 * 128)).map { Float($0 % 7) }
+    let cos = try file(root, "cos", bf16(ropeValues), .bfloat16, [4096, 128]), sin = try file(root, "sin", bf16(ropeValues.map { -$0 }), .bfloat16, [4096, 128])
+    let placeholder = try H3TensorFile(name: "w0", url: shard, spec: H3TensorSpec(scalarType: .bfloat16, shape: [1]), sha256: zeroHash)
+    let conditioner = H3Profile.Conditioner(
+        embedding: try H3EmbeddingTable(url: shard, offset: 16, rows: 6, width: 5120, byteCount: table.count, sha256: h3SHA256(table)),
+        layer: try H3ModelAsset(url: root, function: "main", sha256: zeroHash),
+        parameters: Array(repeating: [placeholder], count: 50), tap: 50, ropeCos: cos, ropeSin: sin)
+    let calls = Calls()
+    let ids: [Int32] = [5, 0, 3]
+    let stage = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: { _ in ids },
+                                     kernel: LayerKernel(calls: calls, expectedCos: bf16(Array(ropeValues.prefix(3 * 128)))))
+    let progress = Calls()
+    let tap = try await stage.encode("p", geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)) { layer, total in
+        Task { await progress.add("\(layer)/\(total)") }
+    }
+    #expect(tap.spec.shape == [1, 3, 5120])
+    #expect(try floats(tap) == ids.flatMap { [Float](repeating: Float($0) + 50, count: 5120) })
+    #expect(await calls.log == (0..<50).map { "layer \($0)" })
+    await stage.release()
+    #expect(await calls.released == 1)
+    // Out-of-range ids, too few tokens and a tampered table fail closed.
+    let bad = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: { _ in [6, 0] }, kernel: LayerKernel(calls: calls, expectedCos: Data()))
+    await #expect(throws: AetherError.self) { _ = try await bad.encode("p", geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)) { _, _ in } }
+    let short = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: { _ in [1] }, kernel: LayerKernel(calls: calls, expectedCos: Data()))
+    await #expect(throws: AetherError.self) { _ = try await short.encode("p", geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)) { _, _ in } }
+    try (Data(repeating: 7, count: 16) + bf16(rows.flatMap { $0 }.map { $0 + 1 })).write(to: shard)
+    let tampered = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: { _ in ids }, kernel: LayerKernel(calls: calls, expectedCos: Data()))
+    await #expect(throws: AetherError.self) { _ = try await tampered.encode("p", geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)) { _, _ in } }
+}
+
+// MARK: Packing and denoising
+
+@Test func h3PackingGatherIsTheInversePermutationOfTheLayoutRows() throws {
+    let layout = try H3Layout(geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true), textTags: Array(repeating: 1, count: 5))
+    let gather = try H3Packing.gather(layout)
+    #expect(Set(gather) == Set(0..<Int32(layout.rows)))
+    let t = layout.textIndices.count, v = layout.videoIndices.count
+    for (j, r) in layout.textIndices.enumerated() { #expect(gather[Int(r)] == Int32(j)) }
+    for (j, r) in layout.videoIndices.enumerated() { #expect(gather[Int(r)] == Int32(t + j)) }
+    for (j, r) in layout.audioIndices.enumerated() { #expect(gather[Int(r)] == Int32(t + v + j)) }
+}
+
+private struct TrajectoryKernels: H3DenoiserKernels {
+    let calls: Calls
+    let layout: H3Layout
+    func refine(_ text: H3TensorData) async throws -> H3TensorData {
+        await calls.add("refine")
+        return try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, text.spec.shape[1], 5376]), bytes: Data(count: text.spec.shape[1] * 5376 * 2))
+    }
+    func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
+        await calls.add("pack")
+        #expect(gather.bytes == (try H3Packing.gather(layout)).withUnsafeBytes { Data($0) })
+        return try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, layout.rows, 5376]), bytes: Data(count: layout.rows * 5376 * 2))
+    }
+    func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        // The table's first value names its step; tags are the layout's AdaLN rows for that step.
+        let step = Int(try table.floatValues()[0])
+        await calls.add("block \(step).\(index)")
+        #expect(cos.spec.shape == [layout.rows, 96] && sin.spec.shape == [layout.rows, 96] && tags.spec.shape == [layout.rows])
+        return hidden
+    }
+    func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
+               video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
+        let step = try temb.floatValues()[0]
+        await calls.add("heads \(Int(step))")
+        #expect(videoIndices.bytes == layout.videoIndices.withUnsafeBytes { Data($0) })
+        return (try h3Tensor(video.shape, [Float](repeating: step + 1, count: video.byteCount / 4)),
+                try h3Tensor(audio.shape, [Float](repeating: -step - 1, count: audio.byteCount / 4)))
+    }
+    func release() async { await calls.release() }
+}
+
+@Test func h3ProfileDenoiserRefinesOnceThenPacksAndStreamsEveryBlockForEveryStep() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: 4))
+    let schedule = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    var steps: [H3Profile.Step] = []
+    for step in schedule.steps {
+        let k = layout.timesteps(for: step).values.count
+        let table = try file(root, "table-\(step.index)", bf16([Float](repeating: Float(step.index), count: 6 * 3 * k * 5376)), .bfloat16, [6, 3 * k, 5376])
+        let temb = try file(root, "temb-\(step.index)", [Float](repeating: Float(step.index), count: k * 2688).withUnsafeBytes { Data($0) }, .float32, [k, 2688])
+        steps.append(H3Profile.Step(timesteps: layout.timesteps(for: step).values, embedding: temb, tables: Array(repeating: table, count: 3)))
+    }
+    let calls = Calls()
+    let frozen = steps
+    let denoiser = H3ProfileDenoiser(schedule: schedule, blocks: 3, tables: { _ in frozen }, kernels: TrajectoryKernels(calls: calls, layout: layout))
+    let initial = try geometry.initialLatents(seed: 9)
+    let conditioning = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 2))
+    let result = try await denoiser.denoise(initial, conditioning: conditioning, geometry: geometry) { _, _ in }
+    var expected = ["refine"]
+    for s in 0..<4 { expected += ["pack"] + (0..<3).map { "block \(s).\($0)" } + ["heads \(s)"] }
+    #expect(await calls.log == expected)
+    var latents = initial
+    for s in 0..<4 {
+        latents = try latents.advanced(schedule: schedule, step: s, videoVelocity: try h3Tensor(initial.video.spec.shape, [Float](repeating: Float(s + 1), count: initial.video.spec.byteCount / 4)),
+                                       audioVelocity: try h3Tensor(initial.audio.spec.shape, [Float](repeating: Float(-s - 1), count: initial.audio.spec.byteCount / 4)))
+    }
+    #expect(result.video.bytes == latents.video.bytes && result.audio.bytes == latents.audio.bytes)
+    // Wrong conditioning precision or latents from another geometry are refused before any kernel runs.
+    let before = await calls.log.count
+    let wide = try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 4))
+    await #expect(throws: AetherError.self) { _ = try await denoiser.denoise(initial, conditioning: wide, geometry: geometry) { _, _ in } }
+    await #expect(throws: AetherError.self) {
+        _ = try await denoiser.denoise(try H3Geometry(width: 96, height: 32, requestedFrames: 39, diagnostic: true).initialLatents(seed: 1),
+                                       conditioning: conditioning, geometry: geometry) { _, _ in }
+    }
+    #expect(await calls.log.count == before)
+}
+
+// MARK: Decoders
+
+private struct TileKernel: H3TileKernel {
+    let calls: Calls
+    func decode(_ rows: H3TensorData) async throws -> H3TensorData {
+        await calls.add("tile")
+        // A tile is a constant equal to its first latent value, so the stitched window traces the tile grid.
+        let value = try rows.floatValues()[0]
+        return try h3Tensor([1, 3, 22, 256, 256], [Float](repeating: value, count: 3 * 22 * 256 * 256))
+    }
+    func release() async { await calls.release() }
+}
+
+@Test func h3ProfileVideoDecoderDecodesEverySourceTileAndBlendsLikeTheStitcher() async throws {
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 22, diagnostic: true)
+    let tiling = try H3SpatialTiling.source(width: 288, height: 288)
+    let packed = (0..<(7 * geometry.rowsPerLatentFrame * 96)).map { Float($0 % 97) / 97 }
+    let calls = Calls()
+    let window = try await H3ProfileVideoDecoder(kernel: TileKernel(calls: calls)).decode(windowRows: packed, index: 0, geometry: geometry)
+    #expect(await calls.log.count == tiling.tileCount)
+    var reference = try H3SpatialStitcher(tiling: tiling, width: 288, height: 288)
+    for tile in 0..<tiling.tileCount {
+        let rows = try tiling.extract(width: 288, height: 288, packed: packed, index: tile)
+        try reference.push([Float](repeating: rows[0], count: 3 * 22 * 256 * 256))
+    }
+    #expect(window == (try reference.finish()))
+}
+
+private struct AudioKernel: H3AudioKernel {
+    let calls: Calls
+    func decode(_ rows: H3TensorData) async throws -> H3TensorData {
+        await calls.add("audio \(rows.spec.shape)")
+        let n = 800 * rows.spec.shape[1]
+        return try h3Tensor([2, n], [Float](repeating: 0.25, count: n) + [Float](repeating: -0.5, count: n))
+    }
+    func release() async { await calls.release() }
+}
+
+@Test func h3ProfileAudioDecoderReshapesChannelMajorRowsAndSplitsPlanarStereo() async throws {
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let na = geometry.audioLatentsPerChannel, calls = Calls()
+    let latents = try h3Tensor([1, 2 * na, 32], (0..<(2 * na * 32)).map(Float.init))
+    let pcm = try await H3ProfileAudioDecoder(kernel: AudioKernel(calls: calls)).decode(latents, geometry: geometry)
+    #expect(await calls.log == ["audio [2, \(na), 32]"])
+    #expect(pcm.sampleCount == 800 * na && pcm.channels[0].allSatisfy { $0 == 0.25 } && pcm.channels[1].allSatisfy { $0 == -0.5 })
+    await #expect(throws: AetherError.self) {
+        _ = try await H3ProfileAudioDecoder(kernel: AudioKernel(calls: calls)).decode(try h3Tensor([1, 2 * na - 2, 32], [Float](repeating: 0, count: (2 * na - 2) * 32)), geometry: geometry)
+    }
+}

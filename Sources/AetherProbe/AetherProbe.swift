@@ -20,6 +20,8 @@ struct AetherProbe {
         guard let command = arguments.first, command != "--help" else {
             print("""
             Usage:
+              aether-probe h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY
+              aether-probe h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio]
               aether-probe qualify-h3-denoising BUNDLE PHASES CPU_RECORD CHAIN MODULATION_DIRECTORY REFERENCES|- NEW_OUTPUT_DIRECTORY --prepare-only|--capture|--run
               aether-probe qualify-h3-phases BUNDLE.json PHASES.json CPU_CHECKS.json NEW_OUTPUT_DIRECTORY --prepare-only|--run
               aether-probe qualify-h3 BUNDLE.json PHASES.json NEW_OUTPUT_DIRECTORY --prepare-only|--run
@@ -42,6 +44,7 @@ struct AetherProbe {
             """)
             return
         }
+        if try await H3ProfileCommand.run(arguments) { return }
         if try await H3DenoisingCommand.run(arguments) { return }
         if try await H3PhaseCommand.run(arguments) { return }
         if try await H3QualificationCommand.run(arguments) { return }
