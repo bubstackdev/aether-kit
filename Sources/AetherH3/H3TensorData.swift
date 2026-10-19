@@ -65,20 +65,66 @@ public struct H3TensorData: Sendable {
 }
 
 public struct H3TensorFile: Sendable {
+    /// A byte range of an immutable file. A tensor is its segments concatenated in order, so weights can be read in
+    /// place from the pinned checkpoint shards (e.g. one head-strided slice of a fused QKV) instead of copied.
+    public struct Segment: Sendable, Equatable {
+        public let url: URL
+        public let offset: Int
+        public let length: Int
+        public init(url: URL, offset: Int, length: Int) throws {
+            guard url.isFileURL, offset >= 0, length > 0, !offset.addingReportingOverflow(length).overflow else {
+                throw AetherError.invalidModel("invalid H3 tensor segment")
+            }
+            self.url = url.standardizedFileURL; self.offset = offset; self.length = length
+        }
+    }
     public let name: String
-    public let url: URL
+    public let segments: [Segment]
     public let spec: H3TensorSpec
     public let sha256: String
+    /// True when the tensor is a whole file of exactly its byte extent.
+    public let wholeFile: Bool
+    /// The first segment's file (the whole file for a single-file tensor).
+    public var url: URL { segments[0].url }
     public init(name: String, url: URL, spec: H3TensorSpec, sha256: String) throws {
         guard !name.isEmpty, url.isFileURL, h3IsSHA256(sha256) else { throw AetherError.invalidModel("invalid H3 tensor identity") }
-        self.name = name; self.url = url.standardizedFileURL; self.spec = spec; self.sha256 = sha256
+        self.name = name; self.segments = [try Segment(url: url, offset: 0, length: spec.byteCount)]; self.spec = spec
+        self.sha256 = sha256; self.wholeFile = true
+    }
+    public init(name: String, segments: [Segment], spec: H3TensorSpec, sha256: String) throws {
+        guard !name.isEmpty, !segments.isEmpty, h3IsSHA256(sha256),
+              segments.reduce(0, { $0 + $1.length }) == spec.byteCount else { throw AetherError.invalidModel("invalid H3 tensor identity") }
+        self.name = name; self.segments = segments; self.spec = spec; self.sha256 = sha256; self.wholeFile = false
     }
     /// Explicit CPU read/integrity check. Files must remain immutable during use.
     public func read() throws -> H3TensorData {
         try Task.checkCancellation()
-        let count = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-        guard count.isRegularFile == true, count.fileSize == spec.byteCount else { throw AetherError.invalidTensor("H3 tensor file extent differs: \(name)") }
-        let data = try Data(contentsOf: url)
+        let data: Data
+        if wholeFile {
+            let count = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            guard count.isRegularFile == true, count.fileSize == spec.byteCount else { throw AetherError.invalidTensor("H3 tensor file extent differs: \(name)") }
+            data = try Data(contentsOf: url)
+        } else {
+            var bytes = Data(capacity: spec.byteCount)
+            var handles: [URL: FileHandle] = [:]
+            defer { for handle in handles.values { try? handle.close() } }
+            for segment in segments {
+                let handle: FileHandle
+                if let open = handles[segment.url] { handle = open } else {
+                    let values = try segment.url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+                    guard values.isRegularFile == true, let size = values.fileSize, segment.offset + segment.length <= size else {
+                        throw AetherError.invalidTensor("H3 tensor segment lies outside its file: \(name)")
+                    }
+                    handle = try FileHandle(forReadingFrom: segment.url); handles[segment.url] = handle
+                }
+                try handle.seek(toOffset: UInt64(segment.offset))
+                guard let chunk = try handle.read(upToCount: segment.length), chunk.count == segment.length else {
+                    throw AetherError.invalidTensor("H3 tensor segment is short: \(name)")
+                }
+                bytes.append(chunk)
+            }
+            data = bytes
+        }
         guard h3SHA256(data) == sha256 else { throw AetherError.invalidModel("H3 tensor hash mismatch: \(name)") }
         try Task.checkCancellation()
         return try H3TensorData(spec: spec, bytes: data)

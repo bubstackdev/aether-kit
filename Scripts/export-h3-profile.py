@@ -13,8 +13,20 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  decoder layers 0...49 (hidden, cos, sin -> hidden; causal attention inside), T dynamic (1...4096). The
                  tap is hidden_states[50], unnormalised. Each layer is checked on CPU against the same layer with an
                  explicit causal mask. Stops before any export that would leave less than --minimum-free-gb free.
-  finalize       Write OUTPUT/bundle.json (schema 2) from build.json, re-hashing every referenced asset stream and
-                 table file. `complete` is true only when every required part (prepare, LoRA weights) exists.
+  parameters     Record the 22 bindings (w0..w21) of each of the 50 blocks as byte ranges read in place from the
+                 pinned FL2VA shards and the Turbo adapter (no copy). Every binding's bytes are checked against the
+                 converter's tensor (base) or the PEFT-loaded adapter tensor (LoRA), in the body graph's input order.
+  prepare        Export the per-render text graph (context_embedder + the 2-layer token refiner with its Turbo LoRA; every
+                 weight lifted to an input and bound in place) and the per-step pack graph (video/audio patch projections,
+                 gathered with the refined text into the packed sequence). Both are byte-checked on CPU.
+  conditioner-layer  Export ONE Qwen3-VL decoder-layer graph with its 11 weights lifted, bound in place for layers
+                 0...49 (replacing 50 baked layer assets), and the token-embedding table as an in-place row source.
+                 Layers 0 and 49 run with their in-place weights against the original layer on CPU.
+  audio-decoder  Convert the audio VAE (identity mapping, pinned converter) and export its decoder: channel-major
+                 normalized rows [2, Na, 32] f32 -> stereo planar PCM [2, 800 Na] f32 at 32 kHz, Na dynamic, checked
+                 on CPU against the pipeline's denormalize + `decode`.
+  finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
+                 file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
                  (latent denormalisation, decoder, source pre-padding removal), then check it on CPU against the
                  original `_decode` of a single-tile, single-window clip.
@@ -60,7 +72,7 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "audio-decoder", "finalize"])
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
@@ -269,6 +281,212 @@ def main():
             record(out, conditioner=conditioner)
             print(json.dumps(dict(check, seconds=asset["seconds"])), flush=True)
             del layer, wrapped
+    elif args.stage == "parameters":
+        checkpoint = h.Checkpoint(args.snapshot, converter)
+        spans = h.Spans.sharded(checkpoint.directory)
+        adapter = h.adapter_path()
+        adapter_spans = h.Spans([adapter])
+        expected = json.loads((out / "build.json").read_text())["body_cpu_check"]["bindings"]
+        parameters = []
+        started = time.monotonic()
+        for b in range(50):
+            model = h.meta_model()
+            model.load_state_dict(checkpoint.converted(lambda n, b=b: n.startswith(f"blocks.{b}.") and ".adaln_proj." not in n),
+                                  strict=False, assign=True)
+            h.load_turbo(model, adapter, lambda k, b=b: k.startswith(f"transformer_blocks.{b}."))
+            model.transformer_blocks[b].adaln_proj = h.CachedModulation()   # the tables replace it, as in the body graph
+            params = dict(h.BlockCall(model.transformer_blocks[b]).named_parameters())
+            assert list(params) == expected, f"block {b} binding order differs from the body graph"
+            entries = []
+            for i, (name, tensor) in enumerate(params.items()):
+                if ".lora_" in name:
+                    segments = adapter_spans.segments(h.lora_source_key(f"transformer_blocks.{b}", name))
+                else:
+                    segments = h.transformer_source_segments(spans, f"transformer_blocks.{b}." + name.removeprefix("block.").replace(".base_layer", ""))
+                entries.append(h.bound_tensor(f"w{i}", segments, tensor, "bfloat16"))
+            parameters.append(entries)
+            del model, params
+            print(json.dumps(dict(block=b, bindings=len(entries), seconds=round(time.monotonic() - started, 1))), flush=True)
+        record(out, parameters=parameters, adapter=dict(repository=h.ADAPTER_REPOSITORY, revision=h.ADAPTER_REVISION,
+                                                        sha256=h.ADAPTER_SHA256, execution="dynamic_lora", rank=128, alpha=8.0))
+    elif args.stage == "prepare":
+        from torch.export import Dim
+        checkpoint = h.Checkpoint(args.snapshot, converter)
+        spans = h.Spans.sharded(checkpoint.directory)
+        adapter = h.adapter_path()
+        adapter_spans = h.Spans([adapter])
+        model = h.meta_model()
+        model.load_state_dict(checkpoint.converted(lambda n: n.startswith(("token_refiner.", "condition_proj.", "video_patch_proj.", "audio_patch_proj."))),
+                              strict=False, assign=True)
+        h.load_turbo(model, adapter, lambda k: k.startswith("token_refiner."))
+
+        class Text(torch.nn.Module):
+            def __init__(self):
+                super().__init__(); self.context_embedder, self.token_refiner = model.context_embedder, model.token_refiner
+            def forward(self, text):
+                return self.token_refiner(self.context_embedder(text))
+
+        class Pack(torch.nn.Module):
+            def __init__(self):
+                super().__init__(); self.proj_in, self.audio_proj_in = model.proj_in, model.audio_proj_in
+            def forward(self, video, audio, text, gather):
+                # The packed rows are a permutation of [text; video; audio]: `gather[r]` names the source of row r.
+                rows = torch.cat((text, self.proj_in(video).to(text.dtype), self.audio_proj_in(audio).to(text.dtype)), dim=1)
+                return rows.index_select(1, gather)
+        text_module, pack = Text().eval(), Pack().eval()
+        graph, params = h.lift(text_module)
+        torch.manual_seed(1043)
+        T, nv, na = 49, 510, 128
+        text = torch.randn(1, T, 5120, dtype=torch.bfloat16)
+        video, audio = torch.randn(1, nv, 96), torch.randn(1, na, 32)
+        order = torch.randperm(T + nv + na)
+        ti, vi, ai = order[:T].sort().values, order[T:T + nv].sort().values, order[T + nv:].sort().values
+        with torch.inference_mode():
+            refined = model.token_refiner(model.context_embedder(text.to(model.context_embedder.weight.dtype)))
+            hidden = refined.new_zeros((1, T + nv + na, refined.shape[-1]))
+            hidden = hidden.index_copy(1, ti, refined)
+            hidden = hidden.index_copy(1, vi, model.proj_in(video.to(model.proj_in.weight.dtype)).to(refined.dtype))
+            expected = hidden.index_copy(1, ai, model.audio_proj_in(audio.to(model.audio_proj_in.weight.dtype)).to(refined.dtype))
+            actual_text = graph(text, *params.values())
+            gather = torch.empty(T + nv + na, dtype=torch.int32)
+            gather[torch.cat((ti, vi, ai))] = torch.arange(T + nv + na, dtype=torch.int32)
+            actual = pack(video, audio, actual_text, gather)
+        check = dict(text_byte_identical=bool(torch.equal(actual_text, refined)), pack_byte_identical=bool(torch.equal(actual, expected)),
+                     text_bindings=list(params))
+        print(json.dumps(dict(check, text_bindings=len(params))), flush=True)
+        assert check["text_byte_identical"] and check["pack_byte_identical"]
+        bindings = []
+        for i, (name, tensor) in enumerate(params.items()):
+            if ".lora_" in name:
+                segments = adapter_spans.segments(name.replace(".turbo.weight", ".default.weight"))
+            else:
+                segments = h.transformer_source_segments(spans, name.replace(".base_layer", ""))
+            bindings.append(h.bound_tensor(f"w{i}", segments, tensor))
+        tokens, rows, video_rows, audio_rows = Dim("tokens", min=2, max=4096), Dim("rows", min=64, max=40960), Dim("video", min=32, max=40960), Dim("audio", min=2, max=2048)
+        started = time.monotonic()
+        text_asset = h.export_asset(out / "models/prepare-text.aimodel", graph, (text, *params.values()),
+                                    ["text"] + [f"w{i}" for i in range(len(params))], ["refined"],
+                                    dynamic_shapes=(({1: tokens},) + (None,) * len(params),))
+        text_asset["seconds"] = round(time.monotonic() - started, 1)
+        example = (video, audio, actual_text, gather)
+        started = time.monotonic()
+        pack_asset = h.export_asset(out / "models/prepare-pack.aimodel", pack, example,
+                                    ["video", "audio", "text", "gather"], ["hidden"],
+                                    dynamic_shapes=({1: video_rows}, {1: audio_rows}, {1: tokens}, {0: rows}))
+        pack_asset["seconds"] = round(time.monotonic() - started, 1)
+        record(out, prepare=dict(text=text_asset, text_parameters=bindings, pack=pack_asset), prepare_cpu_check=check)
+        print(json.dumps(dict(text=text_asset, pack=pack_asset)), flush=True)
+    elif args.stage == "conditioner-layer":
+        from torch.export import Dim
+        from safetensors import safe_open
+        from transformers import Qwen3VLConfig
+        from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLTextDecoderLayer, Qwen3VLTextRotaryEmbedding
+        directory = args.snapshot / "FL2VA/text_encoder"
+        config = Qwen3VLConfig.from_pretrained(directory).text_config
+        config._attn_implementation = "sdpa"
+        spans = h.Spans.sharded(directory)
+
+        def layer_weights(index):
+            prefix = f"model.language_model.layers.{index}."
+            names = sorted(k for k in spans.entries if k.startswith(prefix))
+            result = {}
+            for name in names:
+                file, *_ = spans.span(name)
+                with safe_open(file, framework="pt", device="cpu") as f:
+                    result[name.removeprefix(prefix)] = f.get_tensor(name)
+            return result
+
+        class Layer(torch.nn.Module):
+            def __init__(self, layer):
+                super().__init__(); self.layer = layer
+            def forward(self, hidden, cos, sin):
+                return self.layer(hidden, position_embeddings=(cos, sin), attention_mask=None)
+        rotary = Qwen3VLTextRotaryEmbedding(config)
+        torch.manual_seed(1043)
+        probe = torch.randn(1, 16, config.hidden_size, dtype=torch.bfloat16)
+        cos, sin = rotary(probe, torch.arange(16).view(1, 1, -1).expand(3, 1, -1))
+        causal = torch.ones(16, 16, dtype=torch.bool).tril().view(1, 1, 16, 16)
+        parameters, checks, graph, names = [], [], None, None
+        for index in range(50):
+            with torch.device("meta"):
+                layer = Qwen3VLTextDecoderLayer(config, index)
+            layer.load_state_dict(layer_weights(index), strict=True, assign=True)
+            layer.eval()
+            lifted, params = h.lift(Layer(layer).eval())
+            if names is None:
+                graph, names = lifted, list(params)
+            assert list(params) == names, f"layer {index} binding order differs"
+            entries = [h.bound_tensor(f"w{i}", spans.segments(f"model.language_model.layers.{index}." + n.removeprefix("layer.")), t, "bfloat16")
+                       for i, (n, t) in enumerate(params.items())]
+            parameters.append(entries)
+            if index in (0, 49):
+                in_place = [torch.frombuffer(bytearray(h.read_segments(e["segments"])), dtype=torch.bfloat16).view(e["shape"]) for e in entries]
+                with torch.inference_mode():
+                    actual = graph(probe, cos, sin, *in_place)
+                    expected = layer(probe, position_embeddings=(cos, sin), attention_mask=causal)
+                check = dict(layer=index, byte_identical=bool(torch.equal(actual, expected)),
+                             relative_l2=float((actual.double() - expected.double()).norm() / expected.double().norm()))
+                assert check["relative_l2"] < 1e-3, check
+                checks.append(check); print(json.dumps(check), flush=True)
+            if index:
+                del layer, lifted, params
+        T = Dim("tokens", min=2, max=4096)
+        example = (torch.zeros(1, 49, config.hidden_size, dtype=torch.bfloat16), torch.zeros(1, 49, config.head_dim, dtype=torch.bfloat16),
+                   torch.zeros(1, 49, config.head_dim, dtype=torch.bfloat16))
+        first = [torch.frombuffer(bytearray(h.read_segments(e["segments"])), dtype=torch.bfloat16).view(e["shape"]) for e in parameters[0]]
+        started = time.monotonic()
+        asset = h.export_asset(out / "models/conditioner-layer.aimodel", graph, (*example, *first),
+                               ["hidden", "cos", "sin"] + [f"w{i}" for i in range(len(names))], ["hidden_out"],
+                               dynamic_shapes=(({1: T}, {1: T}, {1: T}) + (None,) * len(names),))
+        asset["seconds"] = round(time.monotonic() - started, 1)
+        file, offset, length, dtype, shape = spans.span("model.language_model.embed_tokens.weight")
+        assert dtype == "BF16" and shape == [config.vocab_size, config.hidden_size]
+        embedding = dict(path=str(file), offset=offset, length=length, dtype="bfloat16", shape=shape)
+        meta = json.loads((out / "build.json").read_text())
+        rope = dict(theta=config.rope_parameters["rope_theta"], mrope_section=list(rotary.mrope_section), head_dim=config.head_dim, dtype="bfloat16")
+        conditioner = dict(layer=asset, parameters=parameters, bindings=names, embedding_table=embedding, checks=checks, rope=rope,
+                           superseded=dict(embedding=meta.get("conditioner", {}).get("embedding"), layers=len(meta.get("conditioner", {}).get("layers", []))))
+        record(out, conditioner=conditioner)
+        print(json.dumps(dict(asset=asset, bindings=len(names))), flush=True)
+    elif args.stage == "audio-decoder":
+        import diffusers
+        from diffusers import AutoencoderKLMiniMaxH3Audio
+        from torch.export import Dim
+        target = out / "converted/audio-vae"
+        if not target.exists():
+            converter.convert_audio_vae(str(args.snapshot / "FL2VA"), str(target), diffusers.__version__)
+        vae = AutoencoderKLMiniMaxH3Audio.from_pretrained(target, torch_dtype=torch.float32).eval()
+
+        class AudioDecoder(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.dec_in_proj, self.decoder = vae.dec_in_proj, vae.decoder
+                self.register_buffer("mean", torch.tensor(vae.config.latents_mean, dtype=torch.float32).view(1, -1, 1))
+                self.register_buffer("std", torch.tensor(vae.config.latents_std, dtype=torch.float32).view(1, -1, 1))
+            def forward(self, rows):
+                latents = rows.permute(0, 2, 1) * self.std + self.mean
+                return self.decoder(self.dec_in_proj(latents)).squeeze(1)
+        module = AudioDecoder().eval()
+        torch.manual_seed(1043)
+        rows = torch.randn(2, 207, 32)
+        started = time.monotonic()
+        with torch.inference_mode():
+            actual = module(rows)
+            mean = torch.tensor(vae.config.latents_mean).view(1, -1, 1); std = torch.tensor(vae.config.latents_std).view(1, -1, 1)
+            reference = vae.decode(rows.permute(0, 2, 1).contiguous() * std + mean, return_dict=False)[0].float().squeeze(1)
+        check = dict(shape=list(actual.shape), byte_identical=bool(torch.equal(actual, reference)),
+                     relative_l2=float((actual.double() - reference.double()).norm() / reference.double().norm()),
+                     seconds=round(time.monotonic() - started, 1))
+        print(json.dumps(check), flush=True)
+        assert check["relative_l2"] < 1e-5, check
+        files = {p.name: h.sha256_file(p) for p in sorted(target.iterdir()) if p.is_file()}
+        started = time.monotonic()
+        asset = h.export_asset(out / "models/audio-decoder.aimodel", module, (rows,), ["rows"], ["pcm"],
+                               dynamic_shapes=({1: Dim("latents", min=2, max=2048)},))
+        asset["seconds"] = round(time.monotonic() - started, 1)
+        record(out, audio_decoder=dict(asset, sample_rate=vae.config.sampling_rate, hop=800, channels=2), audio_decoder_cpu_check=check,
+               converted_audio_vae=dict(path=str(target), files=files))
+        print(json.dumps(asset), flush=True)
     elif args.stage == "finalize":
         meta = json.loads((out / "build.json").read_text())
         def asset(item):
@@ -277,6 +495,9 @@ def main():
         def table(item):
             assert h.sha256_file(Path(item["path"])) == item["sha256"], item["path"]
             return {k: item[k] for k in ("name", "path", "dtype", "shape", "sha256")}
+        def bound(item):   # in-place weights: re-read every range, so the manifest only ever names verified bytes
+            assert h.sha256_bytes(h.read_segments(item["segments"])) == item["sha256"], item["name"]
+            return {k: item[k] for k in ("name", "segments", "dtype", "shape", "sha256")}
         recipes = {}
         for key, entry in meta["tables"].items():
             recipe, task = key.split("/")
@@ -284,20 +505,27 @@ def main():
             recipes.setdefault(recipe, dict(schedule=dict(video=arms[0], audio=arms[1]), tasks={}))
             recipes[recipe]["tasks"][task] = [dict(timesteps=step["timesteps"], temb=table(step["temb"]),
                                                    blocks=[table(b) for b in step["blocks"]]) for step in entry["steps"]]
-        conditioner = meta.get("conditioner", {})
-        missing = [name for name, ok in (("prepare", "prepare" in meta), ("parameters", "parameters" in meta),
-                   ("conditioner", len(conditioner.get("layers", [])) == 50 and "embedding" in conditioner),
-                   ("adapter", "adapter" in meta)) if not ok]
-        bundle = dict(schema=2, complete=not missing, missing=missing, snapshot=h.SNAPSHOT, diffusers_commit=h.COMMIT,
+        c = meta.get("conditioner", {})
+        lifted = "layer" in c and len(c.get("parameters", [])) == 50
+        missing = [name for name, ok in (("prepare", "prepare" in meta), ("parameters", len(meta.get("parameters", [])) == 50),
+                   ("conditioner", lifted), ("adapter", "adapter" in meta), ("audio_decoder", "audio_decoder" in meta)) if not ok]
+        def table_range(item):
+            data = h.read_segments([item])
+            return dict(item, sha256=h.sha256_bytes(data))
+        conditioner = dict(embedding_table=table_range(c["embedding_table"]), layer=asset(c["layer"]), parameters=[[bound(t) for t in layer] for layer in c["parameters"]],
+                           tap=50, rope=c["rope"]) if lifted else None
+        prepare = meta.get("prepare")
+        prepare = dict(text=asset(prepare["text"]), text_parameters=[bound(t) for t in prepare["text_parameters"]], pack=asset(prepare["pack"])) if prepare else None
+        audio = meta.get("audio_decoder")
+        audio = dict(asset(audio), sample_rate=audio["sample_rate"], hop=audio["hop"], channels=audio["channels"]) if audio else None
+        bundle = dict(schema=3, complete=not missing, missing=missing, snapshot=h.SNAPSHOT, diffusers_commit=h.COMMIT,
                       transformer_weight_layout=h.CANONICAL_QKV_LAYOUT, adapter=meta.get("adapter"), tasks=["t2va", "fl2va"],
                       limits=dict(rows=meta["body_dynamic"]["rows"], cardinality=meta["body_dynamic"]["cardinality"], text_tokens=[2, 4096]),
-                      tokenizer=str(args.snapshot / "FL2VA/tokenizer"),
-                      conditioner=dict(embedding=asset(conditioner["embedding"]) if "embedding" in conditioner else None,
-                                       layers=[asset(a) for a in conditioner.get("layers", [])], tap=50, rope=conditioner.get("rope")),
-                      prepare=asset(meta["prepare"]) if "prepare" in meta else None, body=asset(meta["body"]), heads=asset(meta["heads"]),
-                      parameters=meta.get("parameters", []), recipes=recipes,
+                      tokenizer=str(args.snapshot / "FL2VA/tokenizer"), conditioner=conditioner, prepare=prepare,
+                      body=asset(meta["body"]), heads=asset(meta["heads"]),
+                      parameters=[[bound(t) for t in block] for block in meta.get("parameters", [])], recipes=recipes,
                       video_decoder=dict(asset(meta["video_decoder"]), tile=meta["video_tile"], window_latents=7, window_frames=22,
-                                         window_stride=5), audio_decoder=None)
+                                         window_stride=5), audio_decoder=audio)
         (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
         sizes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
         print(json.dumps(dict(complete=bundle["complete"], missing=missing, bytes_on_disk=sizes)), flush=True)

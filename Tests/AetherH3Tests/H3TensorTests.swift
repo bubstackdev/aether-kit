@@ -65,3 +65,26 @@ import Testing
     try Data(repeating: 0, count: 32).write(to: root.appendingPathComponent("main.hash"))
     #expect(throws: AetherError.self) { try model.verify() }
 }
+
+@Test func h3SegmentedFilesConcatenateRangesInOrderAndFailClosed() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let a = root.appendingPathComponent("a.safetensors"), b = root.appendingPathComponent("b.safetensors")
+    try Data([9, 9, 1, 0, 2, 0, 9]).write(to: a); try Data([3, 0, 4, 0]).write(to: b)
+    let spec = try H3TensorSpec(scalarType: .bfloat16, shape: [4])
+    // Out of order across files, as a head-strided QKV slice or a swapped SwiGLU half would be.
+    let expected = Data([3, 0, 1, 0, 2, 0, 4, 0])
+    let segments = [try H3TensorFile.Segment(url: b, offset: 0, length: 2), try .init(url: a, offset: 2, length: 4),
+                    try .init(url: b, offset: 2, length: 2)]
+    let file = try H3TensorFile(name: "w0", segments: segments, spec: spec, sha256: h3SHA256(expected))
+    #expect(!file.wholeFile)
+    #expect(try file.read().bytes == expected)
+    #expect(throws: AetherError.self) { try H3TensorFile(name: "w0", segments: Array(segments.dropLast()), spec: spec, sha256: h3SHA256(expected)) }
+    #expect(throws: AetherError.self) { try H3TensorFile.Segment(url: a, offset: -1, length: 2) }
+    #expect(throws: AetherError.self) { try H3TensorFile.Segment(url: a, offset: 0, length: 0) }
+    let outside = try H3TensorFile(name: "w1", segments: [try .init(url: a, offset: 4, length: 8)], spec: spec, sha256: h3SHA256(expected))
+    #expect(throws: AetherError.self) { try outside.read() }
+    try Data([9, 9, 1, 0, 2, 1, 9]).write(to: a)
+    #expect(throws: AetherError.self) { try file.read() }
+}

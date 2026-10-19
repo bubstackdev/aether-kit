@@ -1,10 +1,13 @@
 import AetherKit
+import CryptoKit
 import Foundation
 
-/// A schema-2 exported H3 profile (`Scripts/export-h3-profile.py finalize`): one dynamic body graph for all 50 blocks,
-/// dynamic heads and conditioner layers, a windowed tile video decoder, and per-schedule precomputed timestep
-/// embeddings and AdaLN tables instead of modulation graphs. Opening validates structure only (no model load);
-/// `verifyModels()` / `verifyTables()` hash the referenced files. Incomplete profiles open but report `missing`.
+/// A schema-3 exported H3 profile (`Scripts/export-h3-profile.py finalize`): one dynamic body graph for all 50 blocks
+/// and one dynamic conditioner-layer graph for its 50 layers, both with lifted weights bound in place from the pinned
+/// checkpoint and Turbo adapter; a per-render text graph and a per-step pack graph; dynamic heads; a windowed tile
+/// video decoder; an audio decoder; and per-schedule precomputed timestep embeddings and AdaLN tables instead of
+/// modulation graphs. Opening validates structure only (no model load); `verifyModels()` / `verifyTables()` /
+/// `verifyParameters()` hash the referenced bytes. Incomplete profiles open but report `missing`.
 public struct H3Profile: Sendable {
     public enum Task: String, Sendable, CaseIterable { case t2va, fl2va }
     public struct Step: Sendable {
@@ -19,9 +22,26 @@ public struct H3Profile: Sendable {
         public let steps: [Task: [Step]]
     }
     public struct Conditioner: Sendable {
-        public let embedding: H3ModelAsset
-        public let layers: [H3ModelAsset]
+        /// The Qwen3-VL token embedding, gathered on the CPU straight from the checkpoint (a pure row lookup).
+        public let embedding: H3EmbeddingTable
+        /// One decoder-layer graph; `parameters[i]` are layer i's 11 bf16 weights, in the graph's `w0...w10` order.
+        public let layer: H3ModelAsset
+        public let parameters: [[H3TensorFile]]
         public let tap: Int
+    }
+    public struct Prepare: Sendable {
+        /// Once per prompt: text [1, T, 5120] bf16 + `textParameters` -> refined [1, T, 5376] bf16.
+        public let text: H3ModelAsset
+        public let textParameters: [H3TensorFile]
+        /// Every step: video [1, Nv, 96] f32, audio [1, Na, 32] f32, refined text, gather [R] i32 -> hidden [1, R, 5376].
+        public let pack: H3ModelAsset
+    }
+    public struct AudioDecoder: Sendable {
+        /// Channel-major rows [2, Na, 32] f32 -> planar stereo PCM [2, hop * Na] f32 in [-1, 1].
+        public let model: H3ModelAsset
+        public let sampleRate: Int
+        public let hop: Int
+        public let channels: Int
     }
     public struct VideoDecoder: Sendable {
         public let model: H3ModelAsset
@@ -37,12 +57,13 @@ public struct H3Profile: Sendable {
     public let textTokenLimits: ClosedRange<Int>
     public let tokenizer: URL
     public let conditioner: Conditioner?
-    public let prepare: H3ModelAsset?
+    public let prepare: Prepare?
     public let body: H3ModelAsset
     public let heads: H3ModelAsset
     public let parameters: [[H3TensorFile]]
     public let recipes: [String: Recipe]
     public let videoDecoder: VideoDecoder
+    public let audioDecoder: AudioDecoder?
 
     public init(url: URL) throws {
         guard url.isFileURL else { throw AetherError.invalidModel("H3 profiles must be local") }
@@ -52,9 +73,9 @@ public struct H3Profile: Sendable {
         do { m = try JSONDecoder().decode(Manifest.self, from: data) } catch let error as DecodingError {
             throw AetherError.invalidModel("H3 profile manifest is malformed: \(error)")
         }
-        guard m.schema == 2, m.snapshot == H3ExportHeader.snapshot, m.diffusers_commit == H3ExportHeader.diffusersCommit,
+        guard m.schema == 3, m.snapshot == H3ExportHeader.snapshot, m.diffusers_commit == H3ExportHeader.diffusersCommit,
               m.transformer_weight_layout == H3ExportHeader.transformerWeightLayout else {
-            throw AetherError.invalidModel("H3 profile requires schema 2, pinned provenance and the corrected per-head QKV layout")
+            throw AetherError.invalidModel("H3 profile requires schema 3, pinned provenance and the corrected per-head QKV layout")
         }
         guard m.complete == m.missing.isEmpty else { throw AetherError.invalidModel("H3 profile completeness is inconsistent") }
         complete = m.complete; missing = m.missing
@@ -78,14 +99,27 @@ public struct H3Profile: Sendable {
             return URL(fileURLWithPath: value)
         }
         tokenizer = try path(m.tokenizer)
-        if let c = m.conditioner, let embedding = c.embedding, !c.layers.isEmpty {
-            guard c.layers.count == 50, c.tap == 50 else { throw AetherError.invalidModel("H3 conditioner must preserve the unnormalized 50-layer tap") }
-            conditioner = Conditioner(embedding: try embedding.asset(path), layers: try c.layers.map { try $0.asset(path) }, tap: c.tap)
+        if let c = m.conditioner {
+            guard c.parameters.count == 50, c.tap == 50 else { throw AetherError.invalidModel("H3 conditioner must preserve the unnormalized 50-layer tap") }
+            guard c.parameters.allSatisfy({ $0.count == 11 && $0.enumerated().allSatisfy { $1.name == "w\($0)" && $1.dtype == "bfloat16" } }) else {
+                throw AetherError.invalidModel("H3 conditioner must bind 11 bf16 weights for each of 50 layers")
+            }
+            let table = c.embedding_table
+            guard table.dtype == "bfloat16", table.shape.count == 2 else { throw AetherError.invalidModel("H3 embedding table must be a bf16 matrix") }
+            conditioner = Conditioner(
+                embedding: try H3EmbeddingTable(url: path(table.path), offset: table.offset, rows: table.shape[0], width: table.shape[1],
+                                                byteCount: table.length, sha256: table.sha256),
+                layer: try c.layer.asset(path), parameters: try c.parameters.map { try $0.map { try $0.file(path) } }, tap: c.tap)
         } else {
             guard m.missing.contains("conditioner") else { throw AetherError.invalidModel("H3 profile omits its conditioner without declaring it missing") }
             conditioner = nil
         }
-        prepare = try m.prepare.map { try $0.asset(path) }
+        prepare = try m.prepare.map { p in
+            guard p.text_parameters.enumerated().allSatisfy({ $1.name == "w\($0)" }), !p.text_parameters.isEmpty else {
+                throw AetherError.invalidModel("H3 text graph bindings are out of order")
+            }
+            return Prepare(text: try p.text.asset(path), textParameters: try p.text_parameters.map { try $0.file(path) }, pack: try p.pack.asset(path))
+        }
         guard prepare != nil || m.missing.contains("prepare") else { throw AetherError.invalidModel("H3 profile omits prepare without declaring it missing") }
         body = try m.body.asset(path); heads = try m.heads.asset(path)
         guard m.parameters.isEmpty || (m.parameters.count == 50 && m.parameters.allSatisfy {
@@ -98,6 +132,13 @@ public struct H3Profile: Sendable {
         guard m.video_decoder.tile == 256, m.video_decoder.window_latents == 7, m.video_decoder.window_frames == 22,
               m.video_decoder.window_stride == 5 else { throw AetherError.invalidModel("H3 profile lacks the source decoder window contract") }
         videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256)
+        audioDecoder = try m.audio_decoder.map { a in
+            guard a.sample_rate == 32000, a.hop == 800, a.channels == 2 else { throw AetherError.invalidModel("H3 audio decoder lacks the 32 kHz stereo contract") }
+            return AudioDecoder(model: try a.model.asset(path), sampleRate: a.sample_rate, hop: a.hop, channels: a.channels)
+        }
+        guard audioDecoder != nil || m.missing.contains("audio_decoder") else {
+            throw AetherError.invalidModel("H3 profile omits its audio decoder without declaring it missing")
+        }
         guard !m.recipes.isEmpty else { throw AetherError.invalidModel("H3 profile has no schedules") }
         var recipes: [String: Recipe] = [:]
         for (name, recipe) in m.recipes {
@@ -148,8 +189,16 @@ public struct H3Profile: Sendable {
     /// Hashes every distinct model stream.
     public func verifyModels() throws {
         var seen = Set<String>()
-        let all = [body, heads, videoDecoder.model] + (prepare.map { [$0] } ?? []) + (conditioner.map { [$0.embedding] + $0.layers } ?? [])
+        let all = [body, heads, videoDecoder.model] + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
+            + (audioDecoder.map { [$0.model] } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
+        try conditioner?.embedding.verify()
+    }
+
+    /// Hashes every in-place weight binding (≈ 90 GB of reads for a complete profile).
+    public func verifyParameters() throws {
+        let all = parameters + (conditioner?.parameters ?? []) + [prepare?.textParameters ?? []]
+        for group in all { for file in group { try autoreleasepool { _ = try file.read() } } }
     }
 
     /// Hashes every table and embedding file.
@@ -165,16 +214,31 @@ public struct H3Profile: Sendable {
         let path: String; let function: String; let sha256: String
         func asset(_ resolve: (String) throws -> URL) throws -> H3ModelAsset { try H3ModelAsset(url: resolve(path), function: function, sha256: sha256) }
     }
+    private struct Segment: Decodable { let path: String; let offset: Int; let length: Int }
+    /// A whole raw file (`path`) or byte ranges read in place from pinned files (`segments`), never both.
     private struct Tensor: Decodable {
-        let name: String; let path: String; let dtype: String; let shape: [Int]; let sha256: String
+        let name: String; let path: String?; let segments: [Segment]?; let dtype: String; let shape: [Int]; let sha256: String
         func file(_ resolve: (String) throws -> URL) throws -> H3TensorFile {
             guard let type = H3ScalarType(rawValue: dtype), type != .int32 else { throw AetherError.invalidModel("unsupported H3 tensor dtype \(dtype)") }
-            return try H3TensorFile(name: name, url: resolve(path), spec: H3TensorSpec(scalarType: type, shape: shape), sha256: sha256)
+            let spec = try H3TensorSpec(scalarType: type, shape: shape)
+            switch (path, segments) {
+            case let (path?, nil): return try H3TensorFile(name: name, url: resolve(path), spec: spec, sha256: sha256)
+            case let (nil, segments?):
+                return try H3TensorFile(name: name, segments: segments.map { try .init(url: resolve($0.path), offset: $0.offset, length: $0.length) },
+                                        spec: spec, sha256: sha256)
+            default: throw AetherError.invalidModel("H3 tensor \(name) needs exactly one of a path or segments")
+            }
         }
     }
     private struct Adapter: Decodable { let repository: String; let revision: String; let sha256: String; let execution: String; let rank: Int; let alpha: Float }
     private struct Limits: Decodable { let rows: [Int]; let cardinality: [Int]; let text_tokens: [Int] }
-    private struct ConditionerEntry: Decodable { let embedding: Asset?; let layers: [Asset]; let tap: Int }
+    private struct Table: Decodable { let path: String; let offset: Int; let length: Int; let dtype: String; let shape: [Int]; let sha256: String }
+    private struct ConditionerEntry: Decodable { let embedding_table: Table; let layer: Asset; let parameters: [[Tensor]]; let tap: Int }
+    private struct PrepareEntry: Decodable { let text: Asset; let text_parameters: [Tensor]; let pack: Asset }
+    private struct AudioEntry: Decodable {
+        let path: String; let function: String; let sha256: String; let sample_rate: Int; let hop: Int; let channels: Int
+        var model: Asset { Asset(path: path, function: function, sha256: sha256) }
+    }
     private struct Arm: Decodable { let shift: Float; let timesteps: [Float]; let sigmas: [Float] }
     private struct Schedule: Decodable { let video: Arm; let audio: Arm }
     private struct StepEntry: Decodable { let timesteps: [Float]; let temb: Tensor; let blocks: [Tensor] }
@@ -186,7 +250,49 @@ public struct H3Profile: Sendable {
     private struct Manifest: Decodable {
         let schema: Int; let complete: Bool; let missing: [String]; let snapshot: String; let diffusers_commit: String
         let transformer_weight_layout: String; let adapter: Adapter?; let limits: Limits; let tokenizer: String
-        let conditioner: ConditionerEntry?; let prepare: Asset?; let body: Asset; let heads: Asset; let parameters: [[Tensor]]
-        let recipes: [String: RecipeEntry]; let video_decoder: Decoder
+        let conditioner: ConditionerEntry?; let prepare: PrepareEntry?; let body: Asset; let heads: Asset; let parameters: [[Tensor]]
+        let recipes: [String: RecipeEntry]; let video_decoder: Decoder; let audio_decoder: AudioEntry?
+    }
+}
+
+/// A bf16 `[rows, width]` matrix inside an immutable file, read row by row in place (the conditioner's token
+/// embedding). `verify()` hashes the whole range once; `rows(_:)` then gathers rows without re-hashing.
+public struct H3EmbeddingTable: Sendable {
+    public let url: URL
+    public let offset: Int
+    public let rows: Int
+    public let width: Int
+    public let sha256: String
+    public init(url: URL, offset: Int, rows: Int, width: Int, byteCount: Int, sha256: String) throws {
+        let extent = rows.multipliedReportingOverflow(by: width * 2)
+        guard url.isFileURL, offset >= 0, rows > 0, width > 0, !extent.overflow, extent.partialValue == byteCount,
+              h3IsSHA256(sha256) else { throw AetherError.invalidModel("invalid H3 embedding table") }
+        self.url = url.standardizedFileURL; self.offset = offset; self.rows = rows; self.width = width; self.sha256 = sha256
+    }
+    public func verify() throws {
+        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
+        try handle.seek(toOffset: UInt64(offset))
+        var hasher = SHA256(), remaining = rows * width * 2
+        while remaining > 0 {
+            try Task.checkCancellation()
+            guard let chunk = try autoreleasepool(invoking: { try handle.read(upToCount: min(remaining, 8 << 20)) }), !chunk.isEmpty else {
+                throw AetherError.invalidModel("H3 embedding table is short")
+            }
+            hasher.update(data: chunk); remaining -= chunk.count
+        }
+        guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else { throw AetherError.invalidModel("H3 embedding table hash mismatch") }
+    }
+    /// `[1, ids.count, width]` bf16, exactly the table's rows (an embedding lookup is a byte gather).
+    public func rows(_ ids: [Int32]) throws -> H3TensorData {
+        guard !ids.isEmpty, ids.allSatisfy({ $0 >= 0 && Int($0) < rows }) else { throw AetherError.invalidTensor("H3 token id outside the embedding table") }
+        let stride = width * 2
+        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
+        var bytes = Data(capacity: ids.count * stride)
+        for id in ids {
+            try handle.seek(toOffset: UInt64(offset + Int(id) * stride))
+            guard let row = try handle.read(upToCount: stride), row.count == stride else { throw AetherError.invalidTensor("H3 embedding row is short") }
+            bytes.append(row)
+        }
+        return try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, ids.count, width]), bytes: bytes)
     }
 }

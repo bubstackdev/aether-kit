@@ -3,7 +3,7 @@ import AetherH3
 import Foundation
 import Testing
 
-/// Opt-in, CPU only: set `AETHER_H3_PROFILE` to an exported schema-2 `bundle.json`. Opens it, checks every recorded
+/// Opt-in, CPU only: set `AETHER_H3_PROFILE` to an exported schema-3 `bundle.json`. Opens it, checks every recorded
 /// step's timesteps against the layout for 5 s 960×544 clips in both orientations and both tasks, and hashes all tables.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"] != nil))
 func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
@@ -22,5 +22,17 @@ func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
         }
     }
     try profile.verifyTables()
+    try profile.verifyModels()
     if !profile.complete { #expect(!profile.missing.isEmpty) }
+    if profile.complete {
+        let conditioner = try #require(profile.conditioner), prepare = try #require(profile.prepare), audio = try #require(profile.audioDecoder)
+        #expect(profile.parameters.count == 50 && conditioner.parameters.count == 50 && prepare.textParameters.count == 47)
+        #expect(audio.sampleRate == 32000 && audio.hop == 800 && audio.channels == 2)
+        #expect(profile.header?.recipe == .turbo8)   // the header only exists for the pinned Turbo adapter identity
+        // In-place bindings read back with their recorded hashes: the first and last block, layer and refiner weight.
+        for file in [profile.parameters[0][1], profile.parameters[49][21], conditioner.parameters[0][0], conditioner.parameters[49][10],
+                     prepare.textParameters[0], prepare.textParameters[46]] { _ = try file.read() }
+        #expect(try conditioner.embedding.rows([0, 151935]).spec.shape == [1, 2, 5120])
+        if ProcessInfo.processInfo.environment["AETHER_H3_PROFILE_PARAMETERS"] != nil { try profile.verifyParameters() }
+    }
 }
