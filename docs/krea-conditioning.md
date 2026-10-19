@@ -1,5 +1,7 @@
 # Krea assets and conditioning — 2026-10-17
 
+This records the conditioning slice. The subsequent [generation slice](krea-generation.md) implements shape registration, denoiser orchestration and VAE decoding and records follow-up native validation. Cache access now works through approved execution outside the agent sandbox; the original validation limitations below describe this slice's earlier run.
+
 ## Implemented
 
 `AetherKrea` opens the prototype's dynamic macOS Krea 2 Turbo realism bundle and rejects unsupported schema/recipe/target/function/binding declarations. Asset references stay inside the bundle, including symlink resolution. Six distinct model assets are required.
@@ -10,7 +12,7 @@ Prompt preparation applies the prototype's fixed Qwen chat rendering with no ext
 
 The optional `AetherKreaTokenizers` product loads local tokenizer files through Hugging Face's Tokenizers product from swift-transformers 1.1.0. It never requests a remote model. Core contracts and the Core AI adapter have no dependency on that target, though SwiftPM still resolves package-wide dependencies. The checked-in lock records this checkout's transitive versions; consumer applications manage their own resolution.
 
-`AetherKreaCoreAI` adds an experimental resident `KreaTextEncoder`: load the encoder once, call its `encode` function with typed int32 inputs, select fp16 conditioning rows, and explicitly unload. It uses the shared session's overlap/cancellation/close behavior and requests frequent reshapes. This adapter builds but native execution remains unqualified because the earlier Core AI cache-access gate is blocked.
+`AetherKreaCoreAI` adds an experimental resident `KreaTextEncoder`: load the encoder once, call its `encode` function with typed int32 inputs, select fp16 conditioning rows, and explicitly unload. It uses the shared session's overlap/cancellation/close behavior and requests frequent reshapes. Native execution was blocked during this slice's initial validation; see the generation slice for the subsequent encoded parity gate.
 
 ## Use local assets
 
@@ -71,9 +73,9 @@ These are CPU preparation and controlled-backend tests. They do not establish te
 
 ## Remaining work
 
-- Run native typed-tensor and Qwen encoder parity gates with normal Core AI cache access.
-- Add independently verified shape-specialization registration and denoiser carry validation.
-- Port denoiser orchestration and VAE decoding, then qualify repeat generation/residency/cancellation.
+- Native typed inputs and Qwen conditioning passed the retained tower's encoded parity gate. Full eight-step independent conditioning/latent/pixel parity also passed at 512×512 and 384×512 with 45- and 75-token prompts. Broaden coverage to additional seeds, lengths and shapes.
+- Shape-specialization registration, carry validation, denoiser orchestration and VAE decoding passed the tower's provided/encoded gates. One-step real dynamic fallback passed at 512×512 and 384×512.
+- Native model reuse and active unload passed the one-step session checks. With lazy per-session native function reuse, encoder cancellation followed by full eight-step re-encoding recovery and decoder cancellation followed by full eight-step recovery both pass exact independent conditioning/latent/pixel comparisons ([current evidence](evidence/krea-function-reuse-qualification-2026-10-18.json)). Controlled pipeline regressions and isolated native decoder checks remain complementary evidence. Real resident-encoder reuse, broader failure cases and independent GPU queue-drain observation also remain unqualified.
 - Compare the direct Swift path with Corsairs before resolving the runtime decision.
 
 Git initialization attempts during this slice were denied by the environment; the evidence retains that historical result. The user subsequently initialized the repository. The existing lab source remains unchanged.

@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-10-18T20:11:16.597546+00:00",
+  "command": [
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+    "qualify-h3",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-block-native-01",
+    "--run"
+  ],
+  "budgetSeconds": 300,
+  "passed": true,
+  "joined": true,
+  "timedOut": false,
+  "pid": 80815,
+  "exitCode": 0,
+  "elapsedSeconds": 7.11540775001049
+}

@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T22:44:59.999943+00:00",
+  "passed": true,
+  "stage": "cpuReadyCaptureUnqualified",
+  "gpuWork": false,
+  "cpuTests": {
+    "passed": 112,
+    "registered": 116,
+    "nativeTestsDisabled": 4
+  },
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T22:41:26.048906+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-denoising",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01/chain.json",
+      "/Volumes/Scratch/aether/aether-prototype/.local/h3-diagnostic/models",
+      "-",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-prepared-01",
+      "--prepare-only"
+    ],
+    "budgetSeconds": 300,
+    "gpuWorkRequested": false,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 39778,
+    "exitCode": 0,
+    "elapsedSeconds": 60.33693695894908,
+    "sourcePinsUnchanged": true
+  },
+  "nativeSubmissionPlan": 824,
+  "outputIdentities": 864,
+  "requiredNumericalReferences": 464,
+  "scope": "CPU readiness for eight linked native steps with provided conditioning; no native trajectory qualification yet.",
+  "limitations": [
+    "The fixed-probe hashes do not qualify runtime contexts. An unqualified capture and new original-CPU references are required.",
+    "Boundary snapshots are CPU-owned copies; this is not a zero-copy pipeline or a benchmark.",
+    "Eight SDK stream diagnostics remain across four experimental native adapters.",
+    "Conditioning encoder/taps, keyframes, decoders, media acceptance and long-run lifecycle qualification remain pending."
+  ],
+  "artifactSHA256": {
+    "h3-denoising-prepared-2026-10-18.json": "ab487a5de9b0bacbd46d09c1140279abd7839cc064619ff5653dcb986ebc2748",
+    "h3-denoising-preparation-controller-2026-10-18.json": "7e0dc4f2af1bbd18745866bc10e2e76e37d4ebbfbeb7b9e3eb56318cea34a3fa",
+    "h3-denoising-preparation-provenance-2026-10-18.json": "9b2fddd96f77ba5021eaa6fb1c7ab75a86b17dd8d77d830efa26273ea3a007ed",
+    "h3-denoising-preparation-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-denoising-tests-2026-10-18.log": "58ca57b099cb39a325fe5c8593d0b327200d501cea8a07ba51e54efb619edee1",
+    "h3-denoising-compiler-interop-2026-10-18.log": "fb4fa6602b800f63654d76d8e9d5dd6eb61228aad3d17b1781170c28b4cc6d29",
+    "h3-denoising-controller-script-2026-10-18.py": "b7ec3f46a8d72043514587e4aabd1b1b77cb4bda2cf9d44fbe0396b1503b1a10"
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "cancellations" : [
+    {
+      "concurrentUnload" : false,
+      "cycle" : 2,
+      "events" : [
+        "nativeSubmitted",
+        "cancellationRequested",
+        "nativeCompleted",
+        "slotReleased",
+        "runCancelled"
+      ],
+      "name" : "body-0",
+      "passed" : true
+    }
+  ],
+  "error" : "Unsupported: H3 lifecycle memory exceeded a predefined bound or Metal counters are unavailable",
+  "expectedOutputSHA256" : {
+    "body-0" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+    "body-1" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27"
+  },
+  "limits" : {
+    "cycles" : 4,
+    "metalAllocatedBytes" : 19327352832,
+    "physicalFootprintBytes" : 21474836480,
+    "runsPerSession" : 2,
+    "settleSeconds" : [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes" : 536870912
+  },
+  "memorySamples" : 866,
+  "mode" : "--run",
+  "nativeExecuted" : true,
+  "passed" : false,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "resources" : {
+    "body-0.cycle1.afterLoad" : {
+      "metalAllocatedBytes" : 6079250432,
+      "physicalFootprintBytes" : 6488409912,
+      "processLifetimePeakFootprintBytes" : 6488409912,
+      "processLifetimePeakResidentBytes" : 1648640000,
+      "residentBytes" : 1648640000
+    },
+    "body-0.cycle1.afterRun1" : {
+      "metalAllocatedBytes" : 7189331968,
+      "physicalFootprintBytes" : 7963330816,
+      "processLifetimePeakFootprintBytes" : 7973832936,
+      "processLifetimePeakResidentBytes" : 1673134080,
+      "residentBytes" : 1672429568
+    },
+    "body-0.cycle1.afterRun2" : {
+      "metalAllocatedBytes" : 12039880704,
+      "physicalFootprintBytes" : 12820056320,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 1675640832
+    },
+    "body-0.cycle1.afterUnload0s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 12676925696,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 1673641984
+    },
+    "body-0.cycle1.afterUnload1s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 637781528,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 653361152
+    },
+    "body-0.cycle1.afterUnload5s" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 637732376,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 653312000
+    },
+    "body-0.cycle1.beforeLoad" : {
+      "metalAllocatedBytes" : 65536,
+      "physicalFootprintBytes" : 612647992,
+      "processLifetimePeakFootprintBytes" : 612647992,
+      "processLifetimePeakResidentBytes" : 621051904,
+      "residentBytes" : 621051904
+    },
+    "body-0.cycle1.beforeUnload" : {
+      "metalAllocatedBytes" : 12039880704,
+      "physicalFootprintBytes" : 12820056320,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 1675640832
+    },
+    "body-0.cycle2.afterLoad" : {
+      "metalAllocatedBytes" : 6079496192,
+      "physicalFootprintBytes" : 6509922536,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1674461184
+    },
+    "body-0.cycle2.afterRun1" : {
+      "metalAllocatedBytes" : 7189331968,
+      "physicalFootprintBytes" : 7966574872,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1675706368
+    },
+    "body-0.cycle2.afterRun2" : {
+      "metalAllocatedBytes" : 12039880704,
+      "physicalFootprintBytes" : 12820859136,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1676541952
+    },
+    "body-0.cycle2.beforeLoad" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 638486040,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 654065664
+    },
+    "body-0.cycle2.beforeUnload" : {
+      "metalAllocatedBytes" : 21740978176,
+      "physicalFootprintBytes" : 22532000048,
+      "processLifetimePeakFootprintBytes" : 22545778992,
+      "processLifetimePeakResidentBytes" : 1682866176,
+      "residentBytes" : 1679753216
+    },
+    "body-1.cycle1.afterLoad" : {
+      "metalAllocatedBytes" : 6079873024,
+      "physicalFootprintBytes" : 6510037224,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 1674395648
+    },
+    "body-1.cycle1.afterRun1" : {
+      "metalAllocatedBytes" : 7189708800,
+      "physicalFootprintBytes" : 7966181632,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1678786560,
+      "residentBytes" : 1675640832
+    },
+    "body-1.cycle1.afterRun2" : {
+      "metalAllocatedBytes" : 12040437760,
+      "physicalFootprintBytes" : 12821956888,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1676787712
+    },
+    "body-1.cycle1.afterUnload0s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 12678187264,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1674543104
+    },
+    "body-1.cycle1.afterUnload1s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 638486040,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 654065664
+    },
+    "body-1.cycle1.afterUnload5s" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 638486040,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 654065664
+    },
+    "body-1.cycle1.beforeLoad" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 637748760,
+      "processLifetimePeakFootprintBytes" : 12832426240,
+      "processLifetimePeakResidentBytes" : 1677312000,
+      "residentBytes" : 653328384
+    },
+    "body-1.cycle1.beforeUnload" : {
+      "metalAllocatedBytes" : 12040437760,
+      "physicalFootprintBytes" : 12821956888,
+      "processLifetimePeakFootprintBytes" : 12835113240,
+      "processLifetimePeakResidentBytes" : 1679720448,
+      "residentBytes" : 1676787712
+    }
+  },
+  "runs" : [
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "cycle" : 1,
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "role" : "run1"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "cycle" : 1,
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "role" : "run2"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 512,
+        "passed" : true,
+        "referenceSHA256" : "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+        "relativeL2" : 0.004303844536004717
+      },
+      "cycle" : 1,
+      "fullOutputSHA256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "name" : "body-1",
+      "role" : "run1"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 512,
+        "passed" : true,
+        "referenceSHA256" : "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+        "relativeL2" : 0.004303844536004717
+      },
+      "cycle" : 1,
+      "fullOutputSHA256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "name" : "body-1",
+      "role" : "run2"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "cycle" : 2,
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "role" : "run1"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "cycle" : 2,
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "role" : "run2"
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "cycle" : 2,
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "role" : "retainedRecovery"
+    }
+  ],
+  "sampledPeak" : {
+    "metalAllocatedBytes" : 21741109248,
+    "physicalFootprintBytes" : 22545778992,
+    "processLifetimePeakFootprintBytes" : 22545778992,
+    "processLifetimePeakResidentBytes" : 1682866176,
+    "residentBytes" : 1682866176
+  },
+  "schema" : 1,
+  "scope" : "Corrected block-0 lifecycle at two T2VA cardinalities; submitted-work cancellation, retained\/reopened recovery and bounded memory stability. Not full generation or a benchmark.",
+  "selectedFilesVerified" : true,
+  "stage" : "failed"
+}

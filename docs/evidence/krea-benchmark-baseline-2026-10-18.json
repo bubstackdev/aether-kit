@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "passed": true,
+  "benchmarkExecuted": true,
+  "run": "benchmark-quiet-01",
+  "operator": "User executed the planned quiet-window command; system idleness was not independently measured",
+  "protocol": "preferGPU, balanced residency, encoded prompts each iteration; 1 warmup + 3 measurements per case; serial cases in one process; uncontrolled OS caches",
+  "all_eight_images_match_independent_conditioning_latents_and_pixels": true,
+  "journal_matches_report": true,
+  "model_streams_verified": true,
+  "provenance_stable_after_run": true,
+  "source_hashes_match_current_at_archiving": true,
+  "cases": [
+    {
+      "id": "dynamic512",
+      "width": 512,
+      "height": 512,
+      "steps": 8,
+      "measured_iterations": 3,
+      "total_seconds": [
+        43.357483083,
+        30.863864417,
+        28.717663459
+      ],
+      "median_seconds": 30.863864417,
+      "mean_seconds": 34.313003652999996,
+      "conditioning_seconds": [
+        19.554740958,
+        6.766485959,
+        5.311621167
+      ],
+      "step0_seconds": [
+        8.990444917,
+        9.316970417,
+        8.550206334
+      ],
+      "mean_later_step_seconds": 2.097923887,
+      "maximum_observed_memory_bytes": {
+        "physicalFootprintBytes": 4331973624,
+        "residentBytes": 36923998208,
+        "metalAllocatedBytes": 16466935808
+      },
+      "pixel_sha256": "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051"
+    },
+    {
+      "id": "dynamic384",
+      "width": 384,
+      "height": 512,
+      "steps": 8,
+      "measured_iterations": 3,
+      "total_seconds": [
+        23.711887875,
+        23.861146792,
+        24.26145975
+      ],
+      "median_seconds": 23.861146792,
+      "mean_seconds": 23.944831472333334,
+      "conditioning_seconds": [
+        4.057990083,
+        4.261946792,
+        4.015305917
+      ],
+      "step0_seconds": [
+        7.839637834,
+        7.999921125,
+        8.565378833
+      ],
+      "mean_later_step_seconds": 1.6564508967619047,
+      "maximum_observed_memory_bytes": {
+        "physicalFootprintBytes": 3547065264,
+        "residentBytes": 36607541248,
+        "metalAllocatedBytes": 15659515904
+      },
+      "pixel_sha256": "853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d"
+    }
+  ],
+  "records": {
+    "krea-benchmark-quiet-01-2026-10-18.json": "3c99d15e50691d900675ab1ea6f3c81f570f0fedbbb81ecc49653eb6ea790e71",
+    "krea-benchmark-quiet-01-2026-10-18.jsonl": "19c72df2e5f3500ca2cb2b109ab3e849c89af7321bac591a259c7d3e473ca364"
+  },
+  "observations": [
+    "512x512 measured conditioning declined from 19.55 to 6.77 to 5.31 seconds; one warmup did not establish stable timing for this case. Keep all measurements; do not discard the slow row.",
+    "384x512 totals were 23.71\u201324.26 seconds, but only three samples were measured and it ran after the 512x512 case.",
+    "First sampling steps cost roughly 8\u20139 seconds versus 1.6\u20132.2 seconds for later steps. Step0 includes lazy function loading, setup and execution, so these coarse timings do not isolate the internal cause.",
+    "Balanced encoded generation releases preceding denoisers before re-encoding each prompt, then reloads model/function resources. A provided-conditioning/retained-model comparison would isolate much of this cost before pursuing device-resident tensors."
+  ],
+  "next_experiment": "Add a separately labelled provided-conditioning/retained-model benchmark profile, preserve exact reference hashes, and use additional warmups/measurements in a later quiet window.",
+  "limits": [
+    "Single device, two workloads, three measurements each; initial 512x512 run remains visibly nonstationary.",
+    "Application-stage wall clock includes runtime/host-copy/Euler costs, not isolated GPU kernel timings.",
+    "Memory counters overlap and must not be summed; maxima are sampled and may miss brief peaks."
+  ]
+}

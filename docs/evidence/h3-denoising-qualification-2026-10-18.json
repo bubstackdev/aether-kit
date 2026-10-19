@@ -1,0 +1,214 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T23:41:19.586860+00:00",
+  "passed": true,
+  "scope": "Eight linked Turbo8 steps with provided conditioning, native time/modulation/prepare/50-block/head stages and coupled CPU F32 latent updates; sampled body checkpoints only, not independent CPU trajectory, conditioning encoder, decoders, media acceptance or benchmark.",
+  "providedConditioning": true,
+  "geometry": {
+    "width": 960,
+    "height": 544,
+    "frames": 124,
+    "packedRows": 19333
+  },
+  "cpuTests": {
+    "passed": 112,
+    "registered": 116,
+    "nativeTestsDisabled": 4
+  },
+  "nativeQualification": {
+    "submissions": 824,
+    "steps": 8,
+    "backboneBlocksPerStep": 50,
+    "modulationCalls": 400,
+    "finiteOutputIdentities": 864,
+    "fullTensorCPUComparisons": 448,
+    "sampledBodyComparisons": 16,
+    "relativeL2Limit": 0.02,
+    "allCapturedHashesReproduced": true,
+    "maximumRelativeL2": 0.010961846161250227,
+    "byStage": {
+      "time": {
+        "count": 8,
+        "maximumRelativeL2": 1.4014327085384758e-05
+      },
+      "modulation": {
+        "count": 400,
+        "maximumRelativeL2": 0.00010094547165343892
+      },
+      "prepare": {
+        "count": 8,
+        "maximumRelativeL2": 0.0004122335127818701
+      },
+      "body": {
+        "count": 16,
+        "maximumRelativeL2": 0.010961846161250227
+      },
+      "heads": {
+        "count": 16,
+        "maximumRelativeL2": 0.0023299021610974154
+      },
+      "latents": {
+        "count": 16,
+        "maximumRelativeL2": 0
+      }
+    },
+    "bodyRelativeL2ByStep": {
+      "0": {
+        "0": 0.010654703729520739,
+        "49": 0.003986978716403135
+      },
+      "1": {
+        "0": 0.007816834426224514,
+        "49": 0.004882917296674339
+      },
+      "2": {
+        "0": 0.010961846161250227,
+        "49": 0.0047607668006390555
+      },
+      "3": {
+        "0": 0.008541255866279697,
+        "49": 0.005480037706991672
+      },
+      "4": {
+        "0": 0.008001669814846407,
+        "49": 0.004978986797778789
+      },
+      "5": {
+        "0": 0.0083383654490363,
+        "49": 0.004579201159466388
+      },
+      "6": {
+        "0": 0.008165217186094064,
+        "49": 0.004189065929576754
+      },
+      "7": {
+        "0": 0.008589533888100739,
+        "49": 0.0052572443472651805
+      }
+    },
+    "finalLatentSHA256": {
+      "video": "77a2cb0cbe15f6ddd3c83e4e568e45086d382dfbb0170fb2f4c568605946ce5c",
+      "audio": "0ec4487a383e2725470acbfa72873854fa3af87d5f6adc2971770e81c6f835dd"
+    }
+  },
+  "sampledPeak": {
+    "metalAllocatedBytes": 11931336704,
+    "physicalFootprintBytes": 11351953608,
+    "processLifetimePeakFootprintBytes": 11351953608,
+    "processLifetimePeakResidentBytes": 3632365568,
+    "residentBytes": 3626795008
+  },
+  "memorySamples": 40492,
+  "resources": {
+    "afterCPUVerification": {
+      "physicalFootprintBytes": 627672072,
+      "processLifetimePeakFootprintBytes": 627672072,
+      "processLifetimePeakResidentBytes": 634060800,
+      "residentBytes": 602980352
+    },
+    "afterUnload0s": {
+      "metalAllocatedBytes": 1527447552,
+      "physicalFootprintBytes": 5159143992,
+      "processLifetimePeakFootprintBytes": 11351953608,
+      "processLifetimePeakResidentBytes": 3632365568,
+      "residentBytes": 1724563456
+    },
+    "afterUnload1s": {
+      "metalAllocatedBytes": 1527447552,
+      "physicalFootprintBytes": 1053149032,
+      "processLifetimePeakFootprintBytes": 11351953608,
+      "processLifetimePeakResidentBytes": 3632365568,
+      "residentBytes": 926318592
+    },
+    "afterUnload5s": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 1053132648,
+      "processLifetimePeakFootprintBytes": 11351953608,
+      "processLifetimePeakResidentBytes": 3632365568,
+      "residentBytes": 926253056
+    }
+  },
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T23:23:24.747782+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-denoising",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01/chain.json",
+      "/Volumes/Scratch/aether/aether-prototype/.local/h3-diagnostic/models",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-cpu-references-01/references.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-native-01",
+      "--run"
+    ],
+    "budgetSeconds": 1800,
+    "gpuWorkRequested": true,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 58317,
+    "exitCode": 0,
+    "elapsedSeconds": 1048.0038937089848,
+    "sourcePinsUnchanged": true
+  },
+  "captureNativeSubmissions": 824,
+  "failedMemoryControlNativeSubmissions": 1,
+  "totalNativeSubmissionsIncludingControl": 1649,
+  "memoryReaderFixValidated": true,
+  "sharedCaptureAndQualificationPinsIdentical": true,
+  "limitations": [
+    "Provided conditioning/latents at one fixed T2VA geometry only. This does not implement conditioner presentation/unnormalized taps, keyframes, VAEs, stitching, encoded media or quality acceptance.",
+    "CPU comparisons use complete captured native input contexts. Only 64 output rows at blocks 0 and 49 are compared at each step; this is not all-block or independent full CPU trajectory parity.",
+    "Capture/replay reproduce hashes across separate owned processes. Native whole-trajectory cancellation/recovery, retained full-run repetition and long-run/device-wide retention remain separate gates; CPU session cancellation/backpressure tests and earlier per-module native gates do not establish those.",
+    "Boundary snapshots use CPU-owned copies between stages; this is not a zero-copy pipeline or a benchmark.",
+    "Memory counters overlap, 20 ms sampling can miss Metal peaks, and observed memory bounds do not establish general deployment guarantees.",
+    "Eight SDK stream Sendable diagnostics remain across four confined experimental adapters; no unchecked Sendable conformance was added.",
+    "Elapsed controller times include verification, CPU comparison, file IO and settling on a shared machine and are not performance measurements."
+  ],
+  "nextGate": "Qualify native whole-trajectory cancellation/recovery and retained repetition, then integrate real conditioner presentation/taps and both decoders before media acceptance.",
+  "artifactSHA256": {
+    "h3-denoising-capture-2026-10-18.json": "0d0c1562bf9eb879e42e6b2d674edc5da0a10fdec882d60934968bc4585db619",
+    "h3-denoising-capture-controller-2026-10-18.json": "49126e40aea72a55ac6e1c67b86a76c9d3036bde3c7eeacae351ee6f4a2eed52",
+    "h3-denoising-capture-progress-2026-10-18.json": "28bf7fb2eedc8931b9d7a4a8ae621640b936039aed1f0a8e8945cc6f303be197",
+    "h3-denoising-capture-provenance-2026-10-18.json": "910c1cb99057d8a3872dd58e221588ba623f13f131b3af0052397156d002dfa6",
+    "h3-denoising-capture-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-denoising-capture-summary-2026-10-18.json": "e7ce0b9f7e39b4ad128cd2503b532198fdf850c66e3bf074fde64ead9504bdf4",
+    "h3-denoising-compiler-interop-2026-10-18.log": "fb4fa6602b800f63654d76d8e9d5dd6eb61228aad3d17b1781170c28b4cc6d29",
+    "h3-denoising-controller-script-2026-10-18.py": "b7ec3f46a8d72043514587e4aabd1b1b77cb4bda2cf9d44fbe0396b1503b1a10",
+    "h3-denoising-cpu-controller-script-2026-10-18.py": "0312c8e2145c05612708ddbf155c56cd4647de62878e11dcb6ea8e09e58d4bb8",
+    "h3-denoising-cpu-oracle-script-2026-10-18.py": "a4e1e1d1ba4bd2526125423d565cc34d36f1d9ad73e68a4263c1c56b6ff93c21",
+    "h3-denoising-cpu-reference-controller-2026-10-18.json": "cd1b0f26a7307bc77e0ccea62cdb05642532fb7caf585b03d0cab9dc6c1def3f",
+    "h3-denoising-cpu-reference-stderr-2026-10-18.log": "7ee9a28247f5e7962099d9e90a896b089858d9e7dc5067a3fce1f89d08f4ccf7",
+    "h3-denoising-cpu-reference-stdout-2026-10-18.log": "9ec15d4d371b0a1d4d937e215f355a78419e805a8a937f3ddb03bafb9a2c4868",
+    "h3-denoising-cpu-reference-summary-2026-10-18.json": "2f4b38ea5721ba69505644e1058f4814e13955fd85dc328661a617ec42518135",
+    "h3-denoising-cpu-references-2026-10-18.json": "f5a200bb0c76f2726568721850f39024f5625bba34d08c11cfd9e028cbab130a",
+    "h3-denoising-final-compiler-interop-2026-10-18.log": "ec265ffd458f354b2c35165b2ec3eaafa9b5032ac9c3027547e0618c2b2b9d98",
+    "h3-denoising-memory-control-controller-2026-10-18.json": "8dce2fc8746c34cc5ab66c867e8192b19bc546c897ca3cdd7e1ea5630bd91ba4",
+    "h3-denoising-memory-control-progress-2026-10-18.json": "59d6dadcca169685290c5bc5f2db816902eb5a5f447c55ca38cf83f0eccd7f29",
+    "h3-denoising-memory-control-provenance-2026-10-18.json": "9b2fddd96f77ba5021eaa6fb1c7ab75a86b17dd8d77d830efa26273ea3a007ed",
+    "h3-denoising-memory-control-report-2026-10-18.json": "1d89cc3ab0bdb687829fb8fe95c6bfeb79db8b3d1448492aeb8dad01872b28bd",
+    "h3-denoising-memory-control-stderr-2026-10-18.log": "5739ef3bc5328f17cadef32e8743a82de835c2bb57b08fe9f5c020a6fed8febf",
+    "h3-denoising-memory-fixed-controller-2026-10-18.json": "6d3918be95d98c9ff664daa65553272fa6580d5957601147c5d39accebea9a2f",
+    "h3-denoising-memory-fixed-prepared-2026-10-18.json": "a8d63ea1318adc5aeb261bc2e921fb7391b6e8613ab07b5b3d59ad8aeeeb8326",
+    "h3-denoising-memory-fixed-provenance-2026-10-18.json": "910c1cb99057d8a3872dd58e221588ba623f13f131b3af0052397156d002dfa6",
+    "h3-denoising-memory-fixed-tests-2026-10-18.log": "6bd76ecb1c89d3b11540b821dd4a96ba3ca54b23de47c2639194c52272181189",
+    "h3-denoising-memory-reader-fix-2026-10-18.diff": "5665ae724d2520f066cdde1a5627afaad4888414ae3bdeaf5d22dfeeed756e4e",
+    "h3-denoising-native-2026-10-18.json": "8605629818466c609a1ff8ff03cc089e132c6c5b6b5911cc4690ebbe4d973427",
+    "h3-denoising-native-controller-2026-10-18.json": "b1bfafffb7f4752d5d392a81d02b09c55ef1011282d256e7960be4f07a74c207",
+    "h3-denoising-native-progress-2026-10-18.json": "edfe389090c7d65d379b0c980bdbdd7f2094f46bfbb49ae0b7f3c5a1f186cd30",
+    "h3-denoising-native-provenance-2026-10-18.json": "f999ca78cfc584166b7773e728177597aba0764d3c6d8dc9d072cf1651ae469f",
+    "h3-denoising-native-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-denoising-preparation-controller-2026-10-18.json": "7e0dc4f2af1bbd18745866bc10e2e76e37d4ebbfbeb7b9e3eb56318cea34a3fa",
+    "h3-denoising-preparation-provenance-2026-10-18.json": "9b2fddd96f77ba5021eaa6fb1c7ab75a86b17dd8d77d830efa26273ea3a007ed",
+    "h3-denoising-preparation-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-denoising-prepared-2026-10-18.json": "ab487a5de9b0bacbd46d09c1140279abd7839cc064619ff5653dcb986ebc2748",
+    "h3-denoising-readiness-2026-10-18.json": "3ad5865c72efe7430aa523d11a790bfb2e0f64ab1253ee10b8c60ae33e45a820",
+    "h3-denoising-reference-plan-2026-10-18.json": "94b87501fd5f11870238edc186fb055c89993d3f3374b8286a71ab42a16d9430",
+    "h3-denoising-reference-preparation-controller-2026-10-18.json": "dcba6d79e3635021ea27d17bc66ba8ec6e7cff11b6280346e992f38f5b4ddd06",
+    "h3-denoising-reference-preparation-provenance-2026-10-18.json": "f999ca78cfc584166b7773e728177597aba0764d3c6d8dc9d072cf1651ae469f",
+    "h3-denoising-reference-prepared-2026-10-18.json": "f53dbbfec673f64138ebdc957cea050d2849f5c1a17b47ddcd1b38bad5bd11d7",
+    "h3-denoising-tests-2026-10-18.log": "58ca57b099cb39a325fe5c8593d0b327200d501cea8a07ba51e54efb619edee1"
+  }
+}

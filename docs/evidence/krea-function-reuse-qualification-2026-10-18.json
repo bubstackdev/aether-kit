@@ -1,0 +1,363 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "passed": true,
+  "benchmark": false,
+  "status": "Lazy per-session function reuse passes independent full dynamic parity, cancellation/recovery and lifecycle regressions",
+  "implementation": "Resolve each requested stateless native function lazily once per model session; hold it until the backend/model is released at unload. Internal call-lifetime control and optional boundary observers remain available to tracked native tests.",
+  "claims": {
+    "independent_eight_step_parity_both_dynamic_shapes": true,
+    "native_encoder_cancellation_and_full_reencoding_recovery": true,
+    "native_decoder_cancellation_and_full_eight_step_recovery": true,
+    "function_loads_once_per_model_session": true,
+    "reopened_pipeline_recovery": true,
+    "shape_switch_and_active_unload": true,
+    "seven_lifecycle_images_match_prechange_hashes": true,
+    "independent_sources_and_executable_unchanged": true
+  },
+  "runs": {
+    "full": {
+      "passed": true,
+      "checks_passed": 39,
+      "report": "krea-function-reuse-full-2026-10-18.json",
+      "log": "krea-function-reuse-full-tests-2026-10-18.log",
+      "registered_tests": 39,
+      "passed_tests": 36,
+      "cpu_tests_passed": 35,
+      "other_native_tests_skipped": 3,
+      "native_calls_completed": 169,
+      "model_sessions_opened_and_closed": 18,
+      "function_loads": 18,
+      "function_reuses": 151,
+      "journal_matches_report": null
+    },
+    "retained": {
+      "passed": true,
+      "checks_passed": 10,
+      "report": "krea-function-reuse-retained-2026-10-18.json",
+      "log": "krea-function-reuse-retained-tests-2026-10-18.log",
+      "registered_tests": 39,
+      "passed_tests": 36,
+      "cpu_tests_passed": 35,
+      "other_native_tests_skipped": 3,
+      "native_calls_completed": 99,
+      "model_sessions_opened_and_closed": 5,
+      "function_loads": 5,
+      "function_reuses": 94,
+      "journal_matches_report": true
+    },
+    "reopened": {
+      "passed": true,
+      "checks_passed": 11,
+      "report": "krea-function-reuse-reopened-2026-10-18.json",
+      "log": "krea-function-reuse-reopened-tests-2026-10-18.log",
+      "registered_tests": 39,
+      "passed_tests": 36,
+      "cpu_tests_passed": 35,
+      "other_native_tests_skipped": 3,
+      "native_calls_completed": 99,
+      "model_sessions_opened_and_closed": 10,
+      "function_loads": 10,
+      "function_reuses": 89,
+      "journal_matches_report": true
+    },
+    "lifecycle": {
+      "passed": true,
+      "checks_passed": 23,
+      "report": "krea-function-reuse-lifecycle-2026-10-18.json",
+      "log": "krea-function-reuse-lifecycle-tests-2026-10-18.log",
+      "registered_tests": 39,
+      "passed_tests": 36,
+      "cpu_tests_passed": 35,
+      "other_native_tests_skipped": 3,
+      "native_calls_completed": 38,
+      "model_sessions_opened_and_closed": 15,
+      "function_loads": 15,
+      "function_reuses": 23,
+      "journal_matches_report": null
+    }
+  },
+  "affine_smoke": {
+    "cpuOnly": "krea-function-reuse-smoke-cpuOnly-2026-10-18.json",
+    "automatic": "krea-function-reuse-smoke-automatic-2026-10-18.json",
+    "preferGPU": "krea-function-reuse-smoke-preferGPU-2026-10-18.json"
+  },
+  "independent_cases": [
+    {
+      "specification": {
+        "files": {
+          "ids": "dynamic512-ids.i32",
+          "mask": "dynamic512-mask.i32",
+          "noise": "dynamic512-noise.f32",
+          "text": "dynamic512-placeholder-text.f32"
+        },
+        "height": 512,
+        "id": "dynamic512",
+        "prompt": "a red fox in fresh snow",
+        "seed": 17017,
+        "steps": 8,
+        "textShape": [
+          11,
+          30720
+        ],
+        "width": 512
+      },
+      "expected": {
+        "conditioningSHA256": "8f57491b89782e7838e600d48ffa6fafb8f22500d15aadeedcf0c917f24dcf1a",
+        "name": "dynamic512-reference",
+        "pixelShape": [
+          3,
+          512,
+          512
+        ],
+        "pixelsSHA256": "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+        "png": "",
+        "specialized": false,
+        "stepLatentsSHA256": [
+          "48340261ea8203b235f7fe5d60a6713473aa1746b2855723604469f2ae8602e6",
+          "d7d01fca0f23e18ba7be23f316393f05530944f07cf6ccbd225c1b7f6569d6c9",
+          "6ae43717623d24e73ca935859e69f9f6f17b4a4fbb10405680463d3ceb4c6587",
+          "265f7931f71067edc76094d111f07b4ba2a668d579ffdcdd03565a7fb64800bc",
+          "2df87282df49e3caebd742d7001428e6c5fcbd9e5a301017df4277c5aaf0af9b",
+          "b6515dc5bb714f433d5af0dbbb3c09e04e79c405fc7269e117af68926238c42e",
+          "ed8e046fd2e50e519721d5fe5ecc7ecb62a5c148da7436635aeca30e6c85b809",
+          "07c85c0ff01918486bc79cb05860daea4d632307dded442ff1d2144aaadb2888"
+        ]
+      },
+      "runs": [
+        {
+          "conditioningSHA256": "8f57491b89782e7838e600d48ffa6fafb8f22500d15aadeedcf0c917f24dcf1a",
+          "name": "dynamic512",
+          "pixelShape": [
+            3,
+            512,
+            512
+          ],
+          "pixelsSHA256": "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+          "png": "dynamic512.png",
+          "specialized": false,
+          "stepLatentsSHA256": [
+            "48340261ea8203b235f7fe5d60a6713473aa1746b2855723604469f2ae8602e6",
+            "d7d01fca0f23e18ba7be23f316393f05530944f07cf6ccbd225c1b7f6569d6c9",
+            "6ae43717623d24e73ca935859e69f9f6f17b4a4fbb10405680463d3ceb4c6587",
+            "265f7931f71067edc76094d111f07b4ba2a668d579ffdcdd03565a7fb64800bc",
+            "2df87282df49e3caebd742d7001428e6c5fcbd9e5a301017df4277c5aaf0af9b",
+            "b6515dc5bb714f433d5af0dbbb3c09e04e79c405fc7269e117af68926238c42e",
+            "ed8e046fd2e50e519721d5fe5ecc7ecb62a5c148da7436635aeca30e6c85b809",
+            "07c85c0ff01918486bc79cb05860daea4d632307dded442ff1d2144aaadb2888"
+          ]
+        },
+        {
+          "conditioningSHA256": "8f57491b89782e7838e600d48ffa6fafb8f22500d15aadeedcf0c917f24dcf1a",
+          "name": "dynamic512-recovery",
+          "pixelShape": [
+            3,
+            512,
+            512
+          ],
+          "pixelsSHA256": "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+          "png": "dynamic512-recovery.png",
+          "specialized": false,
+          "stepLatentsSHA256": [
+            "48340261ea8203b235f7fe5d60a6713473aa1746b2855723604469f2ae8602e6",
+            "d7d01fca0f23e18ba7be23f316393f05530944f07cf6ccbd225c1b7f6569d6c9",
+            "6ae43717623d24e73ca935859e69f9f6f17b4a4fbb10405680463d3ceb4c6587",
+            "265f7931f71067edc76094d111f07b4ba2a668d579ffdcdd03565a7fb64800bc",
+            "2df87282df49e3caebd742d7001428e6c5fcbd9e5a301017df4277c5aaf0af9b",
+            "b6515dc5bb714f433d5af0dbbb3c09e04e79c405fc7269e117af68926238c42e",
+            "ed8e046fd2e50e519721d5fe5ecc7ecb62a5c148da7436635aeca30e6c85b809",
+            "07c85c0ff01918486bc79cb05860daea4d632307dded442ff1d2144aaadb2888"
+          ]
+        }
+      ]
+    },
+    {
+      "specification": {
+        "files": {
+          "ids": "dynamic384-ids.i32",
+          "mask": "dynamic384-mask.i32",
+          "noise": "dynamic384-noise.f32",
+          "text": "dynamic384-placeholder-text.f32"
+        },
+        "height": 512,
+        "id": "dynamic384",
+        "prompt": "a watercolor painting of a red fox standing beside a frozen stream in a quiet snowy forest at sunrise, tall pine trees, soft golden light, delicate blue shadows, fine brushwork",
+        "seed": 17017,
+        "steps": 8,
+        "textShape": [
+          41,
+          30720
+        ],
+        "width": 384
+      },
+      "expected": {
+        "conditioningSHA256": "1e3705f8e41f38e9972cd92c46b413a3bbc2d023d4e1ffa7397508734c84027d",
+        "name": "dynamic384-reference",
+        "pixelShape": [
+          3,
+          512,
+          384
+        ],
+        "pixelsSHA256": "853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d",
+        "png": "",
+        "specialized": false,
+        "stepLatentsSHA256": [
+          "76adb0b0d3ee0e9bc456449e052cc5252ab8cc5c46663b11094aa97d8fd81268",
+          "a4e4ee4c93df8c063ba9f20cb3d00fd34510ca9447d56d6dbb11058ba6691bbd",
+          "2379ff9333ffa7302e2091ccff910952e43de74ac3e410ead5a331252b3d3fec",
+          "d533ea5be5dd1fb9ac096cf9004830f799d7d3854723e9bdb436ffa83ab56374",
+          "cbc25fb0edb8466bcc1a98ee3bba372ba0cfd6093d02e6456d396ec0b3cc1084",
+          "b2e6f2fec501608c75640889ad0a152988c0a3c127be46b4cc90972883c3472a",
+          "8041d81bae37efb0dbd658f6afd3b907523a944ec074b6c8346497c8c3026bd2",
+          "95ef7239234c0a74fd957de93d9936cbc0c87d83ab43e87d7b9a63de130e1fc6"
+        ]
+      },
+      "runs": [
+        {
+          "conditioningSHA256": "1e3705f8e41f38e9972cd92c46b413a3bbc2d023d4e1ffa7397508734c84027d",
+          "name": "dynamic384",
+          "pixelShape": [
+            3,
+            512,
+            384
+          ],
+          "pixelsSHA256": "853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d",
+          "png": "dynamic384.png",
+          "specialized": false,
+          "stepLatentsSHA256": [
+            "76adb0b0d3ee0e9bc456449e052cc5252ab8cc5c46663b11094aa97d8fd81268",
+            "a4e4ee4c93df8c063ba9f20cb3d00fd34510ca9447d56d6dbb11058ba6691bbd",
+            "2379ff9333ffa7302e2091ccff910952e43de74ac3e410ead5a331252b3d3fec",
+            "d533ea5be5dd1fb9ac096cf9004830f799d7d3854723e9bdb436ffa83ab56374",
+            "cbc25fb0edb8466bcc1a98ee3bba372ba0cfd6093d02e6456d396ec0b3cc1084",
+            "b2e6f2fec501608c75640889ad0a152988c0a3c127be46b4cc90972883c3472a",
+            "8041d81bae37efb0dbd658f6afd3b907523a944ec074b6c8346497c8c3026bd2",
+            "95ef7239234c0a74fd957de93d9936cbc0c87d83ab43e87d7b9a63de130e1fc6"
+          ]
+        },
+        {
+          "conditioningSHA256": "1e3705f8e41f38e9972cd92c46b413a3bbc2d023d4e1ffa7397508734c84027d",
+          "name": "dynamic384-recovery",
+          "pixelShape": [
+            3,
+            512,
+            384
+          ],
+          "pixelsSHA256": "853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d",
+          "png": "dynamic384-recovery.png",
+          "specialized": false,
+          "stepLatentsSHA256": [
+            "76adb0b0d3ee0e9bc456449e052cc5252ab8cc5c46663b11094aa97d8fd81268",
+            "a4e4ee4c93df8c063ba9f20cb3d00fd34510ca9447d56d6dbb11058ba6691bbd",
+            "2379ff9333ffa7302e2091ccff910952e43de74ac3e410ead5a331252b3d3fec",
+            "d533ea5be5dd1fb9ac096cf9004830f799d7d3854723e9bdb436ffa83ab56374",
+            "cbc25fb0edb8466bcc1a98ee3bba372ba0cfd6093d02e6456d396ec0b3cc1084",
+            "b2e6f2fec501608c75640889ad0a152988c0a3c127be46b4cc90972883c3472a",
+            "8041d81bae37efb0dbd658f6afd3b907523a944ec074b6c8346497c8c3026bd2",
+            "95ef7239234c0a74fd957de93d9936cbc0c87d83ab43e87d7b9a63de130e1fc6"
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnosis": {
+    "control": "Original per-call loading completed the baseline, then slowed during repeated denoising before cancellation was requested. The bounded control was operator-terminated after 43 completed native calls; its last native boundary was denoiser2 in the repeat.",
+    "control_sample": "krea-function-reuse-control-2026-10-18.sample.txt",
+    "control_journal": "krea-function-reuse-control-2026-10-18.jsonl",
+    "memory_snapshot_peak_control": "35.3G (vmmap units)",
+    "memory_snapshot_peak_retained_function_experiment": "3.1G (vmmap units)",
+    "experimental_arm": "Exploratory eager function retention, before the final lazy implementation; completed 99 calls with identical baseline/recovery pixels. Final lazy implementation is qualified by the runs above.",
+    "observation_miss": "The initial 128x128 probe missed a roughly 10 ms native decode at the existing observation interval. A 1 ms observation interval then observed real in-flight cancellation, without gating native work.",
+    "inference_limit": "The comparison supports correcting native function lifetime at the application boundary; the framework allocator/driver mechanism is not isolated. Memory snapshots are diagnostic, with uncontrolled host/cache conditions."
+  },
+  "source_sha256": {
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "2b1aed0ad085ee86b95a114e94fa0b284065be582cae7488bb5cb422d0153388",
+    "Scripts/check.sh": "16fe14075cd6ce010f20b849aa4a25df28fc7fce552293aae52a01e0166a47d9",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "5029221f9045e8d42a5c7d60fdd41e50f1506859aa23d4176fe66aec63bade40",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "843c2102cc8a4cb33f75318b4d1c127e6710229eb6057202401166cd381a106b",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "6d1cf58c7574c77337a5f4097a54f58a38b25ca5faea81051969bf733a5c6382",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKitTests/GeneratedImageTests.swift": "5d5a71dbde5c25d9b6ff34b607c77e2d2bdb142403f951da6c536ddecb85187e",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "6e72e5b09d9b9438a37b45f99b2474a7a61155c45a2bf6a9d1a249c3f0eb1c83",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaEulerFixtureTests.swift": "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "abf49d053b183e6d1dc46d58cbc3869e5c467f9d5c851a63912f924f11064851",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTests/KreaSpecializationTests.swift": "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4",
+    "Tests/AetherNativeTests/DecoderCancellationTests.swift": "cdb432356050d5cde7f016047225ece64e1a2478d1caa2be60e769fb6a544402",
+    "Tests/AetherNativeTests/DynamicParityTests.swift": "18dac30d0232b697602bfc5814e31a962b13b62961a16a1fb76609eb65913b06",
+    "Tests/AetherNativeTests/NativeSessionTests.swift": "282e0916b34cff830a5709ed769ddf3f0d29e95a854c6c79a6b2e710bbfda128",
+    "Tests/AetherProbeTests/ParityHarnessTests.swift": "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1"
+  },
+  "test_binary_sha256": "3ee5979d68800bbf2fd9f51730de98faf077e19783f5a446ea36ee57cc3c3e5c",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "bundle_fingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+  "model_streams_verified": true,
+  "cache_state": "Uncontrolled OS cache; assets read from existing Hugging Face cache paths",
+  "host_load": "Shared host; quiet conditions not established; no latency or throughput claim",
+  "limits": [
+    "Two prompts, two dynamic image shapes, eight steps and seed 17017; broader model coverage is not asserted",
+    "Native cancellation is observed across the awaited function.run boundary, without independent GPU queue instrumentation",
+    "OS specialization cache state and host contention are uncontrolled; timing fields in reference records are not benchmark results",
+    "Physical GPU queue draining and broader resident-encoder/device/failure coverage are not asserted"
+  ],
+  "records": {
+    "krea-function-reuse-full-2026-10-18.json": "609caec79216aad7c4901a13b0a561fa193f54cf374d1349a391d8a9fbfb2d50",
+    "krea-function-reuse-full-tests-2026-10-18.log": "f550ad5e7945d489f5f23798e4856d0c7e846fce47aa733d35de426695e9fefb",
+    "krea-function-reuse-retained-2026-10-18.json": "77c68145648ef7a60ef043c77543c7b6152be22eb9d2d9af7393b0cf12955cca",
+    "krea-function-reuse-retained-tests-2026-10-18.log": "c823296513c504749f571bcc892568997200e19acd7a5bd32be344d22d9716cd",
+    "krea-function-reuse-reopened-2026-10-18.json": "30dcc3f3adffc90b13bfdff065064d44af5cbac2e7f669d859daeb7cce8b7c51",
+    "krea-function-reuse-reopened-tests-2026-10-18.log": "79a686f15e765c3c3ab945bbc0bdf3d2a4cde2e68fe36e7384219161be654f01",
+    "krea-function-reuse-lifecycle-2026-10-18.json": "fefe23f8d3ae171cc2b780d8d298d3b889952394836025be63cb8a56fedd5605",
+    "krea-function-reuse-lifecycle-tests-2026-10-18.log": "1778ef65bba8325a5b800f01d0e070c7cae0284e0a4f24c0be5578c18d4bcb75",
+    "krea-function-reuse-reference-dynamic512-2026-10-18.json": "f5e0c956c6e156cba00d11f6366a217c55e52602afbcbd08b15fb3fea07a5a22",
+    "krea-function-reuse-reference-dynamic384-2026-10-18.json": "045da2d22d8bf61a1a1e0903250c788d33bd369ec00deabce2b3430b3e5334df",
+    "krea-function-reuse-control-retain-128-observed-2026-10-18.json": "446cd17274f651e14a88ba9376c3c9a6180e9aafc9e7df2d80f130d2abbe1cc0",
+    "krea-function-reuse-control-reopen-128-2026-10-18.json": "3e23d4d9d20054136443203a5d49a280dcc8db6d72d1c87af9a8095273c9e360",
+    "krea-function-reuse-observation-miss-2026-10-18.json": "1aaf964ed03ac9bbbdc165255efda3eedb9b64c552870ed0e47fd2ce68ff0ae1",
+    "krea-function-reuse-smoke-cpuOnly-2026-10-18.json": "8c68e1c851c5be8eaacef909e63b474706738d2ad4531c329a17bc1187d88b60",
+    "krea-function-reuse-smoke-automatic-2026-10-18.json": "c72314b98d8167bf0a65280fe7ee449eba0cb88da2fe29364ea0559bd2cc2d7f",
+    "krea-function-reuse-smoke-preferGPU-2026-10-18.json": "6bf231910613c725a17ebd9f026f5e8dacce957452d6a23416715bc96f0ef036",
+    "krea-function-reuse-control-2026-10-18.vmmap.txt": "60dfe64cd3038b6f4f60f99b492541ffdb2ebfd1dbb2a9d16ca32d8bfe6c269c",
+    "krea-function-reuse-experiment-2026-10-18.json": "129031daabfaa00c2c283c367f412630a0bf86d1ae109014f1f26a3ee139f742",
+    "krea-function-reuse-control-environment-2026-10-18.json": "b067adb47d465de573da32ed77d7d78b3f47640cf616b3a9aa9356fd4086a815",
+    "krea-function-reuse-experiment-2026-10-18.vmmap.txt": "ef0e545b68b8aded9d2fc3ac8103574249b7d2dadeaf53ed6add02c691321fb6",
+    "krea-function-reuse-control-2026-10-18.stop.json": "a6f7c1c078c26b954c84a27c9a5801db248a983b3ce5ab8ba620b69922229a91",
+    "krea-function-reuse-control-2026-10-18.sample.txt": "5bcc759cfde40e9cc4a27544b954de3b0e525f2b296b0fa74f39058148fe4cc7",
+    "krea-function-reuse-control-2026-10-18.jsonl": "21e4bec52a19d98f5b72546deaefcf4b3e7fbfbbaccac1bceef312e34b7f7354",
+    "krea-function-reuse-doctor-2026-10-18.json": "483bcd34908d666c3df47e9f4e8f676bc44cf8fa219443e9e7e35044a1e2bbc6"
+  },
+  "device": {
+    "architecture": "h17c",
+    "computeUnits": "cpu, gpu, neuralEngine",
+    "os": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes": "68719476736"
+  },
+  "commands": {
+    "common": "source .local/native-assets.env; run one native suite at a time; outputs must be new directories",
+    "full": "AETHER_NATIVE_DYNAMIC_QUALIFICATION=1 AETHER_KREA_REFERENCE_PROBE=/Users/zakkeown/Code/atelier/lab/krea-lab/bin/round2-final AETHER_NATIVE_DYNAMIC_OUTPUT=$PWD/.local/native-dynamic-function-reuse-20261018 Scripts/check.sh",
+    "retained": "AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION=1 AETHER_NATIVE_DECODER_PIPELINE_STEPS=8 AETHER_NATIVE_DECODER_PIPELINE_WIDTH=384 AETHER_NATIVE_DECODER_PIPELINE_HEIGHT=512 AETHER_NATIVE_DECODER_PIPELINE_RECOVERY=retain AETHER_NATIVE_DECODER_PIPELINE_OUTPUT=$PWD/.local/native-recovery-retain-final-384-20261018 Scripts/check.sh",
+    "reopened": "AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION=1 AETHER_NATIVE_DECODER_PIPELINE_STEPS=8 AETHER_NATIVE_DECODER_PIPELINE_WIDTH=128 AETHER_NATIVE_DECODER_PIPELINE_HEIGHT=128 AETHER_NATIVE_DECODER_PIPELINE_RECOVERY=reopen AETHER_NATIVE_DECODER_PIPELINE_OUTPUT=$PWD/.local/native-recovery-reopen-final-128-20261018 Scripts/check.sh",
+    "lifecycle": "AETHER_NATIVE_QUALIFICATION=1 AETHER_NATIVE_OUTPUT=$PWD/.local/native-session-function-reuse-20261018 Scripts/check.sh",
+    "affine_smoke": ".build/arm64-apple-macosx/release/aether-probe smoke \"$AETHER_SMOKE_MODEL\" POLICY; POLICY was cpuOnly, automatic, preferGPU in separate serial invocations"
+  }
+}

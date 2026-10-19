@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T17:50:41.789568+00:00",
+  "passed": true,
+  "scope": "Prepared-prompt API and CPU fixture/lifecycle validation; no native inference or benchmark executed.",
+  "api": [
+    "KreaGenerationSession.prepare(prompt:)",
+    "KreaPreparedPrompt",
+    "KreaGenerationSession.generate(configuration:preparedPrompt:noise:progress:)"
+  ],
+  "ownership": "Caller-owned fp16 conditioning (maximum 30 MiB tensor payload per value); no session prompt cache. Preparation unloads encoder and prior denoisers. Generation retains one selected denoiser set and decoder until replacement or terminal unload.",
+  "command": "source .local/native-assets.env; AETHER_NATIVE_QUALIFICATION=0 AETHER_NATIVE_DYNAMIC_QUALIFICATION=0 AETHER_NATIVE_DECODER_QUALIFICATION=0 AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION=0 Scripts/check.sh",
+  "configuration": "release",
+  "registeredTests": 58,
+  "passedCPUTests": 54,
+  "skippedNativeTests": 4,
+  "externalFixtureTestsEnabled": true,
+  "newCPUTests": [
+    "preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions",
+    "preparedPromptRejectsAnotherBundleBeforeOpeningModels",
+    "preparationReleasesRetainedModelsEvenWithResidentPolicy",
+    "preparationFailureClosesEncoderAndAllowsRetry",
+    "cancelledPreparationHoldsOperationSlotUntilEncodingReturns",
+    "unloadWaitsForPreparationAndClosesPermanently",
+    "preparingAnotherPromptPreservesPreviouslyOwnedConditioning"
+  ],
+  "nativePreparedPromptQualificationExecuted": false,
+  "nativeQualificationExtension": "Existing opt-in dynamic suite now prepares and validates conditioning, renders twice per independent workload, and checks encoder release plus model reuse. Compiled with CPU suite; not executed.",
+  "benchmarkExecuted": false,
+  "sourceSHA256": {
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "8bd8d5a5e3cd33af3654e0f7dbbbf5e5c60d6dd8a871389339352cfb045873d4",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "b01c395f8a281b45d3dd137ddba6b56294a1b1d4737dc6542e2aa52ad76a80a2",
+    "Tests/AetherNativeTests/DynamicParityTests.swift": "df8dfe8a1074be6ae9a1c027ae4ae20ad2935f0d4612fea5b6e168ab1d974089",
+    "Scripts/check.sh": "16fe14075cd6ce010f20b849aa4a25df28fc7fce552293aae52a01e0166a47d9",
+    "Package.swift": "3c1d4d5186d03af879d08709381120e3cfcc470470f1719570693c0517d282d7",
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4"
+  },
+  "artifactsSHA256": {
+    "docs/evidence/krea-prepared-prompt-tests-2026-10-18.log": "7a4e1ba6c37cc76ba31ec6543442ee55a4b2ecec25b466dd1a686aaa3c4aa6a6"
+  }
+}

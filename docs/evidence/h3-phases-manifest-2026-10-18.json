@@ -1,0 +1,1758 @@
+{
+  "schema": 1,
+  "predefined_relative_l2_limit": 0.02,
+  "scope": "original CPU phase comparisons at production row geometry; no full-trajectory/quality claim; zero-binding case uses the source residual identity, independently checked on 128 CPU rows",
+  "cases": [
+    {
+      "name": "prepare",
+      "model": {
+        "path": "/private/tmp/aether-h3-turbo8-qkv/models/prepare-turbo8.aimodel",
+        "function": "main",
+        "sha256": "fe5a7801936376af49601e1d80a67f5d1d564e32f9b21eefd8d196368f6aa93f"
+      },
+      "inputs": [
+        {
+          "name": "video",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/oracle/video.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            18870,
+            96
+          ],
+          "sha256": "78e2d367dc0826a7c22af4ccf0647825282c5c9149d986893dd8c9ec99757ed0"
+        },
+        {
+          "name": "audio",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/oracle/audio.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            414,
+            32
+          ],
+          "sha256": "3cd152a60f2eb80c5cbea7fa27d1e9771e6d85954f568bdc041a017170d8ae5c"
+        },
+        {
+          "name": "text",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/oracle/text.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            49,
+            5120
+          ],
+          "sha256": "74d0814d0b67dd962066de6ad5c5bc396faca63f0c82ae9d9a222a6e6232b0ec"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/prepare/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        }
+      ]
+    },
+    {
+      "name": "time-0",
+      "model": {
+        "path": "/private/tmp/aether-h3-qkv-base/models/time.aimodel",
+        "function": "main",
+        "sha256": "ec59fe215f93629a8f69b2cab2344b962dc67c885db366fe3d9efcbe587c6d53",
+        "recipe_sha256": "85e3a6ec24541af6cb8928024409915b1dd0f4330f8ca0526174df772fdd453f"
+      },
+      "inputs": [
+        {
+          "name": "timestep",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/time-0/timestep.raw",
+          "dtype": "float32",
+          "shape": [
+            1
+          ],
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/time-0/temb.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            2688
+          ],
+          "sha256": "99766f6ba52f2bcf554f3ab54194aa9d48bf8e2213b1925b03fa75961d151302"
+        }
+      ]
+    },
+    {
+      "name": "heads-0",
+      "model": {
+        "path": "/private/tmp/aether-h3-qkv-base/models/heads.aimodel",
+        "function": "main",
+        "sha256": "7a65d2f0fc1d45b1f00feecf7cbeb75b9558865139588e0d422490cefafe8c1c",
+        "recipe_sha256": "85e3a6ec24541af6cb8928024409915b1dd0f4330f8ca0526174df772fdd453f"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-0/temb.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            2688
+          ],
+          "sha256": "99766f6ba52f2bcf554f3ab54194aa9d48bf8e2213b1925b03fa75961d151302"
+        },
+        {
+          "name": "indices",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-0/indices.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "8d443ef5ef07d3c0d0dcdaac70db00b0ba439d3eb68ba2a4ca961d191b365bbf"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-0/video.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            18870,
+            96
+          ],
+          "sha256": "5da83395ef86c7efb0c8f81f6588630f59cd41152deeecd330882ac930d627ab"
+        },
+        {
+          "name": "audio",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-0/audio.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            414,
+            32
+          ],
+          "sha256": "80f60411c64a0481993897e793dfbb5fcd97a132caeef328a3851c775b38c431"
+        }
+      ]
+    },
+    {
+      "name": "time-1",
+      "model": {
+        "path": "/private/tmp/aether-h3-qkv-base/models/time.aimodel",
+        "function": "main",
+        "sha256": "ec59fe215f93629a8f69b2cab2344b962dc67c885db366fe3d9efcbe587c6d53",
+        "recipe_sha256": "85e3a6ec24541af6cb8928024409915b1dd0f4330f8ca0526174df772fdd453f"
+      },
+      "inputs": [
+        {
+          "name": "timestep",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/time-1/timestep.raw",
+          "dtype": "float32",
+          "shape": [
+            2
+          ],
+          "sha256": "8fc484b64496cd9c5eb99ff8f0fe4e8d35d9684491441ea41030b1b04cae5665"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/time-1/temb.raw",
+          "dtype": "float32",
+          "shape": [
+            2,
+            2688
+          ],
+          "sha256": "0e3a34e169b0d7fee31ffdda75ddfc5ace96f5830236d13b0ccd6dbedd67e542"
+        }
+      ]
+    },
+    {
+      "name": "heads-1",
+      "model": {
+        "path": "/private/tmp/aether-h3-qkv-base/models/heads.aimodel",
+        "function": "main",
+        "sha256": "7a65d2f0fc1d45b1f00feecf7cbeb75b9558865139588e0d422490cefafe8c1c",
+        "recipe_sha256": "85e3a6ec24541af6cb8928024409915b1dd0f4330f8ca0526174df772fdd453f"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-1/temb.raw",
+          "dtype": "float32",
+          "shape": [
+            2,
+            2688
+          ],
+          "sha256": "0e3a34e169b0d7fee31ffdda75ddfc5ace96f5830236d13b0ccd6dbedd67e542"
+        },
+        {
+          "name": "indices",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-1/indices.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "8bca3112f677977be11a11a07c97544717262bb1b724c1840169769c721e5279"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-1/video.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            18870,
+            96
+          ],
+          "sha256": "37da2956b289255a8928148672a5b744980b378831f9cfb88c737f0ab88c02f3"
+        },
+        {
+          "name": "audio",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/heads-1/audio.raw",
+          "dtype": "float32",
+          "shape": [
+            1,
+            414,
+            32
+          ],
+          "sha256": "9fd2249c8b1989b97138aa37e3df2b9f4d577b26ff5602c74e069687859f7904"
+        }
+      ]
+    },
+    {
+      "name": "body-0",
+      "model": {
+        "path": "/private/tmp/aether-h3-turbo8-qkv/models/body-turbo8-1.aimodel",
+        "function": "main",
+        "sha256": "421af2a8c5e12b01bd3b8411c855587ea6f69f0f3ee57a8040653aecd7b74988"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-0/temb.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            6,
+            3,
+            5376
+          ],
+          "sha256": "2e6c57bf12cd09c21f4f2548773252f1bb65932822b888f0fb070ed2c649c2df"
+        },
+        {
+          "name": "tags",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-0/tags.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "463ed0cabc457b9c2b3bb6965c464e18a9ffbfd7897ac2850aff87d4b8b45e09"
+        },
+        {
+          "name": "cos",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/cos.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "3043a8d7dfd60f9d78638c17d4684057ae11227483f4c39703785e76568756a1"
+        },
+        {
+          "name": "sin",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/sin.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "69ab61a3e60a5889ac8cd4c878a0aed004211063ff60607eedbb4a07b603de42"
+        },
+        {
+          "name": "w0",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w0.raw",
+          "sha256": "5e32e4d7379a9f9302755af395ed50b5b998352a221dc2c99204a85dd9f9b49f",
+          "parameter": "block.norm1.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w0.raw"
+        },
+        {
+          "name": "w1",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w1.raw",
+          "sha256": "196f9120ad018784bcefd4224f0e08fae88ba1adf079ecdca18410a414a6a2a4",
+          "parameter": "block.attn.to_q.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w1.raw"
+        },
+        {
+          "name": "w2",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w2.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "f7aedbd4d4e5cdff17522343ff6dc47741b658ab565a69fefb12b5b76a2e244f",
+          "parameter": "block.attn.to_q.lora_A.turbo.weight"
+        },
+        {
+          "name": "w3",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w3.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0b655d6031d5dd99be95a0e7009ada2dd1745aabcc92b4a6bbd16c07414da992",
+          "parameter": "block.attn.to_q.lora_B.turbo.weight"
+        },
+        {
+          "name": "w4",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w2.raw",
+          "sha256": "8e9171f3b8cf894904d1ddbd96510739d7291d2992310de6a52e1d733ec895cd",
+          "parameter": "block.attn.to_k.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w2.raw"
+        },
+        {
+          "name": "w5",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w5.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "c21aa96ebfe9f6baf09fc88865a7e9ca8324cb5b699acc684db2b8bd997cdd0a",
+          "parameter": "block.attn.to_k.lora_A.turbo.weight"
+        },
+        {
+          "name": "w6",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w6.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0bf4107871e097c6c1cf484334a3815bc083ef7186f1db55bb42dcbb94a07a80",
+          "parameter": "block.attn.to_k.lora_B.turbo.weight"
+        },
+        {
+          "name": "w7",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w3.raw",
+          "sha256": "275bbc993b1ba738831e04d86f290c9988108d96fe8c97c3b576a043c7ff3fe1",
+          "parameter": "block.attn.to_v.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w3.raw"
+        },
+        {
+          "name": "w8",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w8.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "151a179cec298c733e1b87c4a1a54337b736f1bb4e33243e259cf72625b0d07c",
+          "parameter": "block.attn.to_v.lora_A.turbo.weight"
+        },
+        {
+          "name": "w9",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w9.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "71c59aff1e4f7c0e93106d866b0c1ff954d58049b5db6e2f6e7e729000858a8b",
+          "parameter": "block.attn.to_v.lora_B.turbo.weight"
+        },
+        {
+          "name": "w10",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w4.raw",
+          "sha256": "34a3f13557a2c0a9af260e48d431041e381779a0f61616cfe9800ec839693519",
+          "parameter": "block.attn.norm_q.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w4.raw"
+        },
+        {
+          "name": "w11",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w5.raw",
+          "sha256": "8991949ddea3bc2136a0fcf0b980fa63bd0df760207e3116f7ce96df4e6ca058",
+          "parameter": "block.attn.norm_k.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w5.raw"
+        },
+        {
+          "name": "w12",
+          "shape": [
+            5376,
+            7168
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w6.raw",
+          "sha256": "822cb426aaebe57d3d219b3c4f6855ca5c13821cb84ebe0a7474fe3a87869fd6",
+          "parameter": "block.attn.to_out.0.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w6.raw"
+        },
+        {
+          "name": "w13",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w13.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            7168
+          ],
+          "sha256": "999b2a6321b7bfd5689aaab03b4f6f01d63bfdd14ab27fac3a25d8f8847f986a",
+          "parameter": "block.attn.to_out.0.lora_A.turbo.weight"
+        },
+        {
+          "name": "w14",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w14.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "e839f7e926032be8a598f94eaef91e5e17b15c5054c9b7394bb9eda4590c1f1e",
+          "parameter": "block.attn.to_out.0.lora_B.turbo.weight"
+        },
+        {
+          "name": "w15",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w7.raw",
+          "sha256": "a2c513ec459414e211a3d37f77c1f556f11117f56516b22eb5912f8ff5f98872",
+          "parameter": "block.norm2.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w7.raw"
+        },
+        {
+          "name": "w16",
+          "shape": [
+            28672,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w8.raw",
+          "sha256": "49587044f325aae73f046c4cda9637052670227ec3c2c289359d9d1ebf29f95d",
+          "parameter": "block.ff.net.0.proj.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w8.raw"
+        },
+        {
+          "name": "w17",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w17.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "e87564ac89e02ca3b3b76aa317c9cdcb14b7a4a1d0740ffaba705da470e58656",
+          "parameter": "block.ff.net.0.proj.lora_A.turbo.weight"
+        },
+        {
+          "name": "w18",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w18.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            28672,
+            128
+          ],
+          "sha256": "ccce177d1b739bad95dff2d44b6bf9975ba4f61bea61ad214f7b6b52626715a6",
+          "parameter": "block.ff.net.0.proj.lora_B.turbo.weight"
+        },
+        {
+          "name": "w19",
+          "shape": [
+            5376,
+            14336
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w9.raw",
+          "sha256": "e19d4e1649e4b55b1931842e5cc4bb46892c2e635b9315b2996630a86284e88f",
+          "parameter": "block.ff.net.2.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w9.raw"
+        },
+        {
+          "name": "w20",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w20.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            14336
+          ],
+          "sha256": "65eb0da710a6fb6d70a3aeeb7f040077e38ba6ba490c9c6e61ed9279d95fa54c",
+          "parameter": "block.ff.net.2.lora_A.turbo.weight"
+        },
+        {
+          "name": "w21",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w21.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "ebb0837f973f83693b990f8dee5bfaadf56407a6813490262880138b496dcbf1",
+          "parameter": "block.ff.net.2.lora_B.turbo.weight"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hidden_out",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/body-0/hidden_out.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            64,
+            5376
+          ],
+          "sha256": "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+          "native_shape": [
+            1,
+            19333,
+            5376
+          ],
+          "row_indices": [
+            0,
+            6,
+            13,
+            20,
+            27,
+            34,
+            41,
+            48,
+            49,
+            76,
+            104,
+            131,
+            159,
+            186,
+            214,
+            241,
+            269,
+            296,
+            324,
+            351,
+            379,
+            406,
+            434,
+            462,
+            463,
+            946,
+            1430,
+            1914,
+            2398,
+            2882,
+            3365,
+            3849,
+            4333,
+            4817,
+            5301,
+            5785,
+            6268,
+            6752,
+            7236,
+            7720,
+            8204,
+            8687,
+            9171,
+            9655,
+            10139,
+            10623,
+            11107,
+            11590,
+            12074,
+            12558,
+            13042,
+            13526,
+            14009,
+            14493,
+            14977,
+            15461,
+            15945,
+            16429,
+            16912,
+            17396,
+            17880,
+            18364,
+            18848,
+            19332
+          ]
+        }
+      ]
+    },
+    {
+      "name": "body-1",
+      "model": {
+        "path": "/private/tmp/aether-h3-turbo8-qkv/models/body-turbo8-2.aimodel",
+        "function": "main",
+        "sha256": "d8f09cbc6cef1de2f3cf742e73bab3aa91236a5b2272e2913ccc1fee09d2ba65"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/temb.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            6,
+            6,
+            5376
+          ],
+          "sha256": "04d4be042a12add1d0f4c9c3b9f5b28635c874fb3627110f553337dae9b0141e"
+        },
+        {
+          "name": "tags",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/tags.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "5225b133e20d75af28bd85d899d1353d407b8c68feb3dfd52dac1c0b16e697ac"
+        },
+        {
+          "name": "cos",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/cos.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "3043a8d7dfd60f9d78638c17d4684057ae11227483f4c39703785e76568756a1"
+        },
+        {
+          "name": "sin",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/sin.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "69ab61a3e60a5889ac8cd4c878a0aed004211063ff60607eedbb4a07b603de42"
+        },
+        {
+          "name": "w0",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w0.raw",
+          "sha256": "5e32e4d7379a9f9302755af395ed50b5b998352a221dc2c99204a85dd9f9b49f",
+          "parameter": "block.norm1.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w0.raw"
+        },
+        {
+          "name": "w1",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w1.raw",
+          "sha256": "196f9120ad018784bcefd4224f0e08fae88ba1adf079ecdca18410a414a6a2a4",
+          "parameter": "block.attn.to_q.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w1.raw"
+        },
+        {
+          "name": "w2",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w2.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "f7aedbd4d4e5cdff17522343ff6dc47741b658ab565a69fefb12b5b76a2e244f",
+          "parameter": "block.attn.to_q.lora_A.turbo.weight"
+        },
+        {
+          "name": "w3",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w3.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0b655d6031d5dd99be95a0e7009ada2dd1745aabcc92b4a6bbd16c07414da992",
+          "parameter": "block.attn.to_q.lora_B.turbo.weight"
+        },
+        {
+          "name": "w4",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w2.raw",
+          "sha256": "8e9171f3b8cf894904d1ddbd96510739d7291d2992310de6a52e1d733ec895cd",
+          "parameter": "block.attn.to_k.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w2.raw"
+        },
+        {
+          "name": "w5",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w5.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "c21aa96ebfe9f6baf09fc88865a7e9ca8324cb5b699acc684db2b8bd997cdd0a",
+          "parameter": "block.attn.to_k.lora_A.turbo.weight"
+        },
+        {
+          "name": "w6",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w6.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0bf4107871e097c6c1cf484334a3815bc083ef7186f1db55bb42dcbb94a07a80",
+          "parameter": "block.attn.to_k.lora_B.turbo.weight"
+        },
+        {
+          "name": "w7",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w3.raw",
+          "sha256": "275bbc993b1ba738831e04d86f290c9988108d96fe8c97c3b576a043c7ff3fe1",
+          "parameter": "block.attn.to_v.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w3.raw"
+        },
+        {
+          "name": "w8",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w8.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "151a179cec298c733e1b87c4a1a54337b736f1bb4e33243e259cf72625b0d07c",
+          "parameter": "block.attn.to_v.lora_A.turbo.weight"
+        },
+        {
+          "name": "w9",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w9.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "71c59aff1e4f7c0e93106d866b0c1ff954d58049b5db6e2f6e7e729000858a8b",
+          "parameter": "block.attn.to_v.lora_B.turbo.weight"
+        },
+        {
+          "name": "w10",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w4.raw",
+          "sha256": "34a3f13557a2c0a9af260e48d431041e381779a0f61616cfe9800ec839693519",
+          "parameter": "block.attn.norm_q.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w4.raw"
+        },
+        {
+          "name": "w11",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w5.raw",
+          "sha256": "8991949ddea3bc2136a0fcf0b980fa63bd0df760207e3116f7ce96df4e6ca058",
+          "parameter": "block.attn.norm_k.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w5.raw"
+        },
+        {
+          "name": "w12",
+          "shape": [
+            5376,
+            7168
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w6.raw",
+          "sha256": "822cb426aaebe57d3d219b3c4f6855ca5c13821cb84ebe0a7474fe3a87869fd6",
+          "parameter": "block.attn.to_out.0.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w6.raw"
+        },
+        {
+          "name": "w13",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w13.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            7168
+          ],
+          "sha256": "999b2a6321b7bfd5689aaab03b4f6f01d63bfdd14ab27fac3a25d8f8847f986a",
+          "parameter": "block.attn.to_out.0.lora_A.turbo.weight"
+        },
+        {
+          "name": "w14",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w14.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "e839f7e926032be8a598f94eaef91e5e17b15c5054c9b7394bb9eda4590c1f1e",
+          "parameter": "block.attn.to_out.0.lora_B.turbo.weight"
+        },
+        {
+          "name": "w15",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w7.raw",
+          "sha256": "a2c513ec459414e211a3d37f77c1f556f11117f56516b22eb5912f8ff5f98872",
+          "parameter": "block.norm2.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w7.raw"
+        },
+        {
+          "name": "w16",
+          "shape": [
+            28672,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w8.raw",
+          "sha256": "49587044f325aae73f046c4cda9637052670227ec3c2c289359d9d1ebf29f95d",
+          "parameter": "block.ff.net.0.proj.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w8.raw"
+        },
+        {
+          "name": "w17",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w17.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "e87564ac89e02ca3b3b76aa317c9cdcb14b7a4a1d0740ffaba705da470e58656",
+          "parameter": "block.ff.net.0.proj.lora_A.turbo.weight"
+        },
+        {
+          "name": "w18",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w18.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            28672,
+            128
+          ],
+          "sha256": "ccce177d1b739bad95dff2d44b6bf9975ba4f61bea61ad214f7b6b52626715a6",
+          "parameter": "block.ff.net.0.proj.lora_B.turbo.weight"
+        },
+        {
+          "name": "w19",
+          "shape": [
+            5376,
+            14336
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w9.raw",
+          "sha256": "e19d4e1649e4b55b1931842e5cc4bb46892c2e635b9315b2996630a86284e88f",
+          "parameter": "block.ff.net.2.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w9.raw"
+        },
+        {
+          "name": "w20",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w20.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            14336
+          ],
+          "sha256": "65eb0da710a6fb6d70a3aeeb7f040077e38ba6ba490c9c6e61ed9279d95fa54c",
+          "parameter": "block.ff.net.2.lora_A.turbo.weight"
+        },
+        {
+          "name": "w21",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w21.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "ebb0837f973f83693b990f8dee5bfaadf56407a6813490262880138b496dcbf1",
+          "parameter": "block.ff.net.2.lora_B.turbo.weight"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hidden_out",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/body-1/hidden_out.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            64,
+            5376
+          ],
+          "sha256": "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+          "native_shape": [
+            1,
+            19333,
+            5376
+          ],
+          "row_indices": [
+            0,
+            6,
+            13,
+            20,
+            27,
+            34,
+            41,
+            48,
+            49,
+            76,
+            104,
+            131,
+            159,
+            186,
+            214,
+            241,
+            269,
+            296,
+            324,
+            351,
+            379,
+            406,
+            434,
+            462,
+            463,
+            946,
+            1430,
+            1914,
+            2398,
+            2882,
+            3365,
+            3849,
+            4333,
+            4817,
+            5301,
+            5785,
+            6268,
+            6752,
+            7236,
+            7720,
+            8204,
+            8687,
+            9171,
+            9655,
+            10139,
+            10623,
+            11107,
+            11590,
+            12074,
+            12558,
+            13042,
+            13526,
+            14009,
+            14493,
+            14977,
+            15461,
+            15945,
+            16429,
+            16912,
+            17396,
+            17880,
+            18364,
+            18848,
+            19332
+          ]
+        }
+      ]
+    },
+    {
+      "name": "body-zero-bindings",
+      "model": {
+        "path": "/private/tmp/aether-h3-turbo8-qkv/models/body-turbo8-2.aimodel",
+        "function": "main",
+        "sha256": "d8f09cbc6cef1de2f3cf742e73bab3aa91236a5b2272e2913ccc1fee09d2ba65"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/temb.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            6,
+            6,
+            5376
+          ],
+          "sha256": "04d4be042a12add1d0f4c9c3b9f5b28635c874fb3627110f553337dae9b0141e"
+        },
+        {
+          "name": "tags",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/tags.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "5225b133e20d75af28bd85d899d1353d407b8c68feb3dfd52dac1c0b16e697ac"
+        },
+        {
+          "name": "cos",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/cos.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "3043a8d7dfd60f9d78638c17d4684057ae11227483f4c39703785e76568756a1"
+        },
+        {
+          "name": "sin",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/sin.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "69ab61a3e60a5889ac8cd4c878a0aed004211063ff60607eedbb4a07b603de42"
+        },
+        {
+          "name": "w0",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w0.raw",
+          "sha256": "ee0d534dd385f4c26c52ee121654897b783c0754c6512886e53578dce4b24735",
+          "parameter": "block.norm1.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w0.raw"
+        },
+        {
+          "name": "w1",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w1.raw",
+          "sha256": "8f5e63696b98bb3b3de8cbd3d409ab0cceab369c72a235617016c8b96df18d2a",
+          "parameter": "block.attn.to_q.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w1.raw"
+        },
+        {
+          "name": "w2",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w2.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.attn.to_q.lora_A.turbo.weight"
+        },
+        {
+          "name": "w3",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w3.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "c55ab05d6d767c58e086c8583da4337a08ac85278d36b82644ee1d03064318db",
+          "parameter": "block.attn.to_q.lora_B.turbo.weight"
+        },
+        {
+          "name": "w4",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w2.raw",
+          "sha256": "8f5e63696b98bb3b3de8cbd3d409ab0cceab369c72a235617016c8b96df18d2a",
+          "parameter": "block.attn.to_k.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w4.raw"
+        },
+        {
+          "name": "w5",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w5.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.attn.to_k.lora_A.turbo.weight"
+        },
+        {
+          "name": "w6",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w6.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "c55ab05d6d767c58e086c8583da4337a08ac85278d36b82644ee1d03064318db",
+          "parameter": "block.attn.to_k.lora_B.turbo.weight"
+        },
+        {
+          "name": "w7",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w3.raw",
+          "sha256": "8f5e63696b98bb3b3de8cbd3d409ab0cceab369c72a235617016c8b96df18d2a",
+          "parameter": "block.attn.to_v.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w7.raw"
+        },
+        {
+          "name": "w8",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w8.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.attn.to_v.lora_A.turbo.weight"
+        },
+        {
+          "name": "w9",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w9.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "c55ab05d6d767c58e086c8583da4337a08ac85278d36b82644ee1d03064318db",
+          "parameter": "block.attn.to_v.lora_B.turbo.weight"
+        },
+        {
+          "name": "w10",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w4.raw",
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+          "parameter": "block.attn.norm_q.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w10.raw"
+        },
+        {
+          "name": "w11",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w5.raw",
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+          "parameter": "block.attn.norm_k.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w11.raw"
+        },
+        {
+          "name": "w12",
+          "shape": [
+            5376,
+            7168
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w6.raw",
+          "sha256": "8f5e63696b98bb3b3de8cbd3d409ab0cceab369c72a235617016c8b96df18d2a",
+          "parameter": "block.attn.to_out.0.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w12.raw"
+        },
+        {
+          "name": "w13",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w13.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            7168
+          ],
+          "sha256": "c55ab05d6d767c58e086c8583da4337a08ac85278d36b82644ee1d03064318db",
+          "parameter": "block.attn.to_out.0.lora_A.turbo.weight"
+        },
+        {
+          "name": "w14",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w14.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.attn.to_out.0.lora_B.turbo.weight"
+        },
+        {
+          "name": "w15",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w7.raw",
+          "sha256": "ee0d534dd385f4c26c52ee121654897b783c0754c6512886e53578dce4b24735",
+          "parameter": "block.norm2.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w15.raw"
+        },
+        {
+          "name": "w16",
+          "shape": [
+            28672,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w8.raw",
+          "sha256": "0bba051299030bf648e9374ca1148ff3d8ea5bf5fab9c50abba59ee1cf3ab26f",
+          "parameter": "block.ff.net.0.proj.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w16.raw"
+        },
+        {
+          "name": "w17",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w17.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.ff.net.0.proj.lora_A.turbo.weight"
+        },
+        {
+          "name": "w18",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w18.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            28672,
+            128
+          ],
+          "sha256": "e4e5749032a5163c45125eccf3e8598ba5ed840df442c97e1d5ad4ad84359605",
+          "parameter": "block.ff.net.0.proj.lora_B.turbo.weight"
+        },
+        {
+          "name": "w19",
+          "shape": [
+            5376,
+            14336
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w9.raw",
+          "sha256": "4c0545bfb6596b4f4f7ed9f4af867351889a88bd4532a76d2180c2d5e9a0b390",
+          "parameter": "block.ff.net.2.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w19.raw"
+        },
+        {
+          "name": "w20",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w20.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            14336
+          ],
+          "sha256": "4d9cbaf3aa0935a8c113f139691b3daf9c94c8d6c278aedc8eec66a4b9f6c8ae",
+          "parameter": "block.ff.net.2.lora_A.turbo.weight"
+        },
+        {
+          "name": "w21",
+          "path": "/private/tmp/aether-h3-qkv-binding-oracles/w21.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "9794838a8913f06045b1b48909d103d4208f6a8050845b796cdcc20e5600452f",
+          "parameter": "block.ff.net.2.lora_B.turbo.weight"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hidden_out",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        }
+      ]
+    },
+    {
+      "name": "body-original-bindings-restored",
+      "model": {
+        "path": "/private/tmp/aether-h3-turbo8-qkv/models/body-turbo8-2.aimodel",
+        "function": "main",
+        "sha256": "d8f09cbc6cef1de2f3cf742e73bab3aa91236a5b2272e2913ccc1fee09d2ba65"
+      },
+      "inputs": [
+        {
+          "name": "hidden",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/oracle/hidden.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            19333,
+            5376
+          ],
+          "sha256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b"
+        },
+        {
+          "name": "temb",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/temb.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            6,
+            6,
+            5376
+          ],
+          "sha256": "04d4be042a12add1d0f4c9c3b9f5b28635c874fb3627110f553337dae9b0141e"
+        },
+        {
+          "name": "tags",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/production-1/tags.raw",
+          "dtype": "int32",
+          "shape": [
+            19333
+          ],
+          "sha256": "5225b133e20d75af28bd85d899d1353d407b8c68feb3dfd52dac1c0b16e697ac"
+        },
+        {
+          "name": "cos",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/cos.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "3043a8d7dfd60f9d78638c17d4684057ae11227483f4c39703785e76568756a1"
+        },
+        {
+          "name": "sin",
+          "path": "/private/tmp/aether-h3-qkv-base/fixtures/sin.raw",
+          "dtype": "float32",
+          "shape": [
+            19333,
+            96
+          ],
+          "sha256": "69ab61a3e60a5889ac8cd4c878a0aed004211063ff60607eedbb4a07b603de42"
+        },
+        {
+          "name": "w0",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w0.raw",
+          "sha256": "5e32e4d7379a9f9302755af395ed50b5b998352a221dc2c99204a85dd9f9b49f",
+          "parameter": "block.norm1.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w0.raw"
+        },
+        {
+          "name": "w1",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w1.raw",
+          "sha256": "196f9120ad018784bcefd4224f0e08fae88ba1adf079ecdca18410a414a6a2a4",
+          "parameter": "block.attn.to_q.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w1.raw"
+        },
+        {
+          "name": "w2",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w2.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "f7aedbd4d4e5cdff17522343ff6dc47741b658ab565a69fefb12b5b76a2e244f",
+          "parameter": "block.attn.to_q.lora_A.turbo.weight"
+        },
+        {
+          "name": "w3",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w3.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0b655d6031d5dd99be95a0e7009ada2dd1745aabcc92b4a6bbd16c07414da992",
+          "parameter": "block.attn.to_q.lora_B.turbo.weight"
+        },
+        {
+          "name": "w4",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w2.raw",
+          "sha256": "8e9171f3b8cf894904d1ddbd96510739d7291d2992310de6a52e1d733ec895cd",
+          "parameter": "block.attn.to_k.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w2.raw"
+        },
+        {
+          "name": "w5",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w5.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "c21aa96ebfe9f6baf09fc88865a7e9ca8324cb5b699acc684db2b8bd997cdd0a",
+          "parameter": "block.attn.to_k.lora_A.turbo.weight"
+        },
+        {
+          "name": "w6",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w6.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "0bf4107871e097c6c1cf484334a3815bc083ef7186f1db55bb42dcbb94a07a80",
+          "parameter": "block.attn.to_k.lora_B.turbo.weight"
+        },
+        {
+          "name": "w7",
+          "shape": [
+            7168,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w3.raw",
+          "sha256": "275bbc993b1ba738831e04d86f290c9988108d96fe8c97c3b576a043c7ff3fe1",
+          "parameter": "block.attn.to_v.base_layer.weight",
+          "path": "/private/tmp/aether-h3-qkv-base/canonical-qkv/block-0/w3.raw"
+        },
+        {
+          "name": "w8",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w8.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "151a179cec298c733e1b87c4a1a54337b736f1bb4e33243e259cf72625b0d07c",
+          "parameter": "block.attn.to_v.lora_A.turbo.weight"
+        },
+        {
+          "name": "w9",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w9.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            7168,
+            128
+          ],
+          "sha256": "71c59aff1e4f7c0e93106d866b0c1ff954d58049b5db6e2f6e7e729000858a8b",
+          "parameter": "block.attn.to_v.lora_B.turbo.weight"
+        },
+        {
+          "name": "w10",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w4.raw",
+          "sha256": "34a3f13557a2c0a9af260e48d431041e381779a0f61616cfe9800ec839693519",
+          "parameter": "block.attn.norm_q.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w4.raw"
+        },
+        {
+          "name": "w11",
+          "shape": [
+            128
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w5.raw",
+          "sha256": "8991949ddea3bc2136a0fcf0b980fa63bd0df760207e3116f7ce96df4e6ca058",
+          "parameter": "block.attn.norm_k.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w5.raw"
+        },
+        {
+          "name": "w12",
+          "shape": [
+            5376,
+            7168
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w6.raw",
+          "sha256": "822cb426aaebe57d3d219b3c4f6855ca5c13821cb84ebe0a7474fe3a87869fd6",
+          "parameter": "block.attn.to_out.0.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w6.raw"
+        },
+        {
+          "name": "w13",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w13.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            7168
+          ],
+          "sha256": "999b2a6321b7bfd5689aaab03b4f6f01d63bfdd14ab27fac3a25d8f8847f986a",
+          "parameter": "block.attn.to_out.0.lora_A.turbo.weight"
+        },
+        {
+          "name": "w14",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w14.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "e839f7e926032be8a598f94eaef91e5e17b15c5054c9b7394bb9eda4590c1f1e",
+          "parameter": "block.attn.to_out.0.lora_B.turbo.weight"
+        },
+        {
+          "name": "w15",
+          "shape": [
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w7.raw",
+          "sha256": "a2c513ec459414e211a3d37f77c1f556f11117f56516b22eb5912f8ff5f98872",
+          "parameter": "block.norm2.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w7.raw"
+        },
+        {
+          "name": "w16",
+          "shape": [
+            28672,
+            5376
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w8.raw",
+          "sha256": "49587044f325aae73f046c4cda9637052670227ec3c2c289359d9d1ebf29f95d",
+          "parameter": "block.ff.net.0.proj.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w8.raw"
+        },
+        {
+          "name": "w17",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w17.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            5376
+          ],
+          "sha256": "e87564ac89e02ca3b3b76aa317c9cdcb14b7a4a1d0740ffaba705da470e58656",
+          "parameter": "block.ff.net.0.proj.lora_A.turbo.weight"
+        },
+        {
+          "name": "w18",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w18.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            28672,
+            128
+          ],
+          "sha256": "ccce177d1b739bad95dff2d44b6bf9975ba4f61bea61ad214f7b6b52626715a6",
+          "parameter": "block.ff.net.0.proj.lora_B.turbo.weight"
+        },
+        {
+          "name": "w19",
+          "shape": [
+            5376,
+            14336
+          ],
+          "dtype": "bfloat16",
+          "file": "forge/fixtures/functional-backbone/0/w9.raw",
+          "sha256": "e19d4e1649e4b55b1931842e5cc4bb46892c2e635b9315b2996630a86284e88f",
+          "parameter": "block.ff.net.2.base_layer.weight",
+          "path": "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/fixtures/functional-backbone/0/w9.raw"
+        },
+        {
+          "name": "w20",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w20.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            128,
+            14336
+          ],
+          "sha256": "65eb0da710a6fb6d70a3aeeb7f040077e38ba6ba490c9c6e61ed9279d95fa54c",
+          "parameter": "block.ff.net.2.lora_A.turbo.weight"
+        },
+        {
+          "name": "w21",
+          "path": "/private/tmp/aether-h3-turbo8-qkv/fixtures/adapter-0/w21.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            5376,
+            128
+          ],
+          "sha256": "ebb0837f973f83693b990f8dee5bfaadf56407a6813490262880138b496dcbf1",
+          "parameter": "block.ff.net.2.lora_B.turbo.weight"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hidden_out",
+          "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/body-1/hidden_out.raw",
+          "dtype": "bfloat16",
+          "shape": [
+            1,
+            64,
+            5376
+          ],
+          "sha256": "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+          "native_shape": [
+            1,
+            19333,
+            5376
+          ],
+          "row_indices": [
+            0,
+            6,
+            13,
+            20,
+            27,
+            34,
+            41,
+            48,
+            49,
+            76,
+            104,
+            131,
+            159,
+            186,
+            214,
+            241,
+            269,
+            296,
+            324,
+            351,
+            379,
+            406,
+            434,
+            462,
+            463,
+            946,
+            1430,
+            1914,
+            2398,
+            2882,
+            3365,
+            3849,
+            4333,
+            4817,
+            5301,
+            5785,
+            6268,
+            6752,
+            7236,
+            7720,
+            8204,
+            8687,
+            9171,
+            9655,
+            10139,
+            10623,
+            11107,
+            11590,
+            12074,
+            12558,
+            13042,
+            13526,
+            14009,
+            14493,
+            14977,
+            15461,
+            15945,
+            16429,
+            16912,
+            17396,
+            17880,
+            18364,
+            18848,
+            19332
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -10,7 +10,7 @@ The long-term scope includes language, images, speech/audio, and video with audi
 
 ## Initial delivery
 
-Proposed first vertical slice: Krea text-to-image in a sandboxed macOS app, using external assets, reproducing existing correctness fixtures, with repeat generation and explicit resource release. Follow with one small language model to challenge the shared runtime design. H3 remains experimental pending broader qualification. iOS/iPadOS support requires physical-device qualification of each model/profile.
+Proposed first vertical slice: Krea text-to-image in a sandboxed macOS app, using external assets, reproducing existing correctness fixtures, with repeat generation and explicit resource release. Follow with one small language model to challenge the shared runtime design. H3 has experimental CPU preparation and [bounded native eight-step provided-conditioning qualification](h3-integration.md#denoising-qualification-2026-10-18); full H3 generation remains pending. iOS/iPadOS support requires physical-device qualification of each model/profile.
 
 ## Ownership boundaries
 
@@ -62,5 +62,11 @@ Keep portable source assets separate from runtime specialization caches. Special
 | D05 | Portable assets plus per-device specialization | Proposed; qualify cache invalidation and offline recovery |
 | D06 | Small release catalog with explicit experimental entries | Proposed; per-profile evidence governs promotion |
 | D07 | Exact identities with opt-in revision fallback | Proposed; test offline and concurrent preparation behavior |
+| D08 | Optional CPU-only H3 contract target before native integration | Implemented as experimental `AetherH3`; [oracle-backed CPU scope and remaining native work](h3-integration.md) |
+| D09 | Separate H3 BF16 shared-buffer adapter with explicit GPU gate | `AetherH3CoreAI` passes bounded numerical and [lifecycle GPU gates](h3-integration.md#lifecycle-qualification-2026-10-18), retaining one stream per session; full generation remains pending |
+| D10 | Gate multi-block H3 execution with corrected weights and independent CPU comparisons | `H3ChainSession` passes the [three-block production-geometry gate](h3-integration.md#chain-qualification-2026-10-18), retaining one stream and distinct ping-pong buffers; CPU comparisons use complete captured native contexts. The fifty-block follow-up is D11; full CPU trajectory parity remains pending. |
+| D11 | Stream H3 weights through one resident set for all 50 backbone blocks | The [fifty-block gate](h3-integration.md#backbone-qualification-2026-10-18) passes 250 submissions, exact full-pass hashes, sampled CPU checks at five checkpoints and midpoint cancellation/recovery. Peak footprint is 7.73 GiB; The linked trajectory follow-up is D13; full generation remains pending. |
+| D12 | Qualify H3 outer modules independently before linking the denoising trajectory | [Outer-phase CPU readiness](h3-integration.md#outer-phase-binding-readiness) pins complete original CPU references and actual timestep/row-index bytes for prepare/time/heads; the BF16-preserving multi-output session passes CPU tests and the [30-submission native gate](h3-integration.md#outer-phase-qualification-2026-10-18), including 28 complete-tensor comparisons and ten cancellations. The linked trajectory follow-up is D13. |
+| D13 | Link runtime H3 contexts and gate all eight Turbo8 steps before conditioning/decoding | The [eight-step provided-conditioning gate](h3-integration.md#denoising-qualification-2026-10-18) passes 824 submissions, 464 scoped original-CPU comparisons and 864 repeated hashes with one resident block-weight set. Chunk-scoped model hashing removes the observed verification memory spike. Whole-run lifecycle, conditioner/taps, decoders and media acceptance remain pending. |
 
 Do not freeze illustrative type names or promise compatibility until the first real app exercises these contracts.

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "bundleFingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+  "warmupIterations": 1,
+  "measuredIterations": 3,
+  "cases": [
+    {
+      "id": "dynamic512",
+      "prompt": "a red fox in fresh snow",
+      "width": 512,
+      "height": 512,
+      "steps": 8,
+      "seed": 17017,
+      "reference": "../docs/evidence/krea-function-reuse-reference-dynamic512-2026-10-18.json",
+      "referenceSHA256": "f5e0c956c6e156cba00d11f6366a217c55e52602afbcbd08b15fb3fea07a5a22"
+    },
+    {
+      "id": "dynamic384",
+      "prompt": "a watercolor painting of a red fox standing beside a frozen stream in a quiet snowy forest at sunrise, tall pine trees, soft golden light, delicate blue shadows, fine brushwork",
+      "width": 384,
+      "height": 512,
+      "steps": 8,
+      "seed": 17017,
+      "reference": "../docs/evidence/krea-function-reuse-reference-dynamic384-2026-10-18.json",
+      "referenceSHA256": "045da2d22d8bf61a1a1e0903250c788d33bd369ec00deabce2b3430b3e5334df"
+    }
+  ]
+}

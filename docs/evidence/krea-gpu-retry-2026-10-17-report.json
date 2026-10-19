@@ -1,0 +1,1131 @@
+{
+  "baselinePixelsSHA256" : "470c311a55e51a417ce0c0c3419463ccc8f084d777ff35cde2108d9bd96686c5",
+  "benchmark" : false,
+  "checks" : {
+    "decoderCancellationFollowsCompleteSamplingAndReportsNoImage" : true,
+    "nativeDynamicBaselineCompleted" : true,
+    "pipelineCancellationWaitsForNativeDecoderReturn" : true,
+    "pipelineReturnsReadyAfterDecoderCancellation" : true
+  },
+  "events" : [
+    {
+      "event" : "modelOpened",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 0
+    },
+    {
+      "event" : "modelOpened",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 1
+    },
+    {
+      "event" : "modelOpened",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 2
+    },
+    {
+      "event" : "modelOpened",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 3
+    },
+    {
+      "call" : 4,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 4
+    },
+    {
+      "call" : 4,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 5
+    },
+    {
+      "call" : 6,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 6
+    },
+    {
+      "call" : 6,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 7
+    },
+    {
+      "call" : 8,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 8
+    },
+    {
+      "call" : 8,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 9
+    },
+    {
+      "call" : 10,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 10
+    },
+    {
+      "call" : 10,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 11
+    },
+    {
+      "call" : 12,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 12
+    },
+    {
+      "call" : 12,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 13
+    },
+    {
+      "call" : 14,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 14
+    },
+    {
+      "call" : 14,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 15
+    },
+    {
+      "call" : 16,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 16
+    },
+    {
+      "call" : 16,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 17
+    },
+    {
+      "call" : 18,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 18
+    },
+    {
+      "call" : 18,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 19
+    },
+    {
+      "call" : 20,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 20
+    },
+    {
+      "call" : 20,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 21
+    },
+    {
+      "call" : 22,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 22
+    },
+    {
+      "call" : 22,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 23
+    },
+    {
+      "call" : 24,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 24
+    },
+    {
+      "call" : 24,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 25
+    },
+    {
+      "call" : 26,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 26
+    },
+    {
+      "call" : 26,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 27
+    },
+    {
+      "call" : 28,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 28
+    },
+    {
+      "call" : 28,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 29
+    },
+    {
+      "call" : 30,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 30
+    },
+    {
+      "call" : 30,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 31
+    },
+    {
+      "call" : 32,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 32
+    },
+    {
+      "call" : 32,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 33
+    },
+    {
+      "call" : 34,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 34
+    },
+    {
+      "call" : 34,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 35
+    },
+    {
+      "call" : 36,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 36
+    },
+    {
+      "call" : 36,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 37
+    },
+    {
+      "call" : 38,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 38
+    },
+    {
+      "call" : 38,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 39
+    },
+    {
+      "call" : 40,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 40
+    },
+    {
+      "call" : 40,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 41
+    },
+    {
+      "call" : 42,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 42
+    },
+    {
+      "call" : 42,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 43
+    },
+    {
+      "call" : 44,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 44
+    },
+    {
+      "call" : 44,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 45
+    },
+    {
+      "call" : 46,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 46
+    },
+    {
+      "call" : 46,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 47
+    },
+    {
+      "call" : 48,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 48
+    },
+    {
+      "call" : 48,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 49
+    },
+    {
+      "call" : 50,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 50
+    },
+    {
+      "call" : 50,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 51
+    },
+    {
+      "call" : 52,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 52
+    },
+    {
+      "call" : 52,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 53
+    },
+    {
+      "call" : 54,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 54
+    },
+    {
+      "call" : 54,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 55
+    },
+    {
+      "call" : 56,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 56
+    },
+    {
+      "call" : 56,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 57
+    },
+    {
+      "call" : 58,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 58
+    },
+    {
+      "call" : 58,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 59
+    },
+    {
+      "call" : 60,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 60
+    },
+    {
+      "call" : 60,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "baseline",
+      "sequence" : 61
+    },
+    {
+      "call" : 62,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 62
+    },
+    {
+      "call" : 62,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "baseline",
+      "sequence" : 63
+    },
+    {
+      "call" : 64,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 64
+    },
+    {
+      "call" : 64,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "baseline",
+      "sequence" : 65
+    },
+    {
+      "call" : 66,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 66
+    },
+    {
+      "call" : 66,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "baseline",
+      "sequence" : 67
+    },
+    {
+      "event" : "modelOpened",
+      "instance" : "440E1C25-4EE7-4F80-8218-9E62AF49C8EC",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-vae.aimodel",
+      "phase" : "baseline",
+      "sequence" : 68
+    },
+    {
+      "call" : 69,
+      "event" : "nativeBegin",
+      "instance" : "440E1C25-4EE7-4F80-8218-9E62AF49C8EC",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-vae.aimodel",
+      "phase" : "baseline",
+      "sequence" : 69
+    },
+    {
+      "call" : 69,
+      "event" : "nativeEnd",
+      "instance" : "440E1C25-4EE7-4F80-8218-9E62AF49C8EC",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-vae.aimodel",
+      "phase" : "baseline",
+      "sequence" : 70
+    },
+    {
+      "call" : 71,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 71
+    },
+    {
+      "call" : 71,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 72
+    },
+    {
+      "call" : 73,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 73
+    },
+    {
+      "call" : 73,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 74
+    },
+    {
+      "call" : 75,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 75
+    },
+    {
+      "call" : 75,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 76
+    },
+    {
+      "call" : 77,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 77
+    },
+    {
+      "call" : 77,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 78
+    },
+    {
+      "call" : 79,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 79
+    },
+    {
+      "call" : 79,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 80
+    },
+    {
+      "call" : 81,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 81
+    },
+    {
+      "call" : 81,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 82
+    },
+    {
+      "call" : 83,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 83
+    },
+    {
+      "call" : 83,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 84
+    },
+    {
+      "call" : 85,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 85
+    },
+    {
+      "call" : 85,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 86
+    },
+    {
+      "call" : 87,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 87
+    },
+    {
+      "call" : 87,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 88
+    },
+    {
+      "call" : 89,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 89
+    },
+    {
+      "call" : 89,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 90
+    },
+    {
+      "call" : 91,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 91
+    },
+    {
+      "call" : 91,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 92
+    },
+    {
+      "call" : 93,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 93
+    },
+    {
+      "call" : 93,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 94
+    },
+    {
+      "call" : 95,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 95
+    },
+    {
+      "call" : 95,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 96
+    },
+    {
+      "call" : 97,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 97
+    },
+    {
+      "call" : 97,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 98
+    },
+    {
+      "call" : 99,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 99
+    },
+    {
+      "call" : 99,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 100
+    },
+    {
+      "call" : 101,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 101
+    },
+    {
+      "call" : 101,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 102
+    },
+    {
+      "call" : 103,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 103
+    },
+    {
+      "call" : 103,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 104
+    },
+    {
+      "call" : 105,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 105
+    },
+    {
+      "call" : 105,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 106
+    },
+    {
+      "call" : 107,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 107
+    },
+    {
+      "call" : 107,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 108
+    },
+    {
+      "call" : 109,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 109
+    },
+    {
+      "call" : 109,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 110
+    },
+    {
+      "call" : 111,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 111
+    },
+    {
+      "call" : 111,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 112
+    },
+    {
+      "call" : 113,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 113
+    },
+    {
+      "call" : 113,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 114
+    },
+    {
+      "call" : 115,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 115
+    },
+    {
+      "call" : 115,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 116
+    },
+    {
+      "call" : 117,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 117
+    },
+    {
+      "call" : 117,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 118
+    },
+    {
+      "call" : 119,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 119
+    },
+    {
+      "call" : 119,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 120
+    },
+    {
+      "call" : 121,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 121
+    },
+    {
+      "call" : 121,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 122
+    },
+    {
+      "call" : 123,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 123
+    },
+    {
+      "call" : 123,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 124
+    },
+    {
+      "call" : 125,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 125
+    },
+    {
+      "call" : 125,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 126
+    },
+    {
+      "call" : 127,
+      "event" : "nativeBegin",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 127
+    },
+    {
+      "call" : 127,
+      "event" : "nativeEnd",
+      "instance" : "C4D6E64C-A1D8-47D6-9033-579A8CB29A6C",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser0.aimodel",
+      "phase" : "cancel",
+      "sequence" : 128
+    },
+    {
+      "call" : 129,
+      "event" : "nativeBegin",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 129
+    },
+    {
+      "call" : 129,
+      "event" : "nativeEnd",
+      "instance" : "3DA97D66-3403-45C2-BFCA-7F7EE0CEF2AD",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser1.aimodel",
+      "phase" : "cancel",
+      "sequence" : 130
+    },
+    {
+      "call" : 131,
+      "event" : "nativeBegin",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 131
+    },
+    {
+      "call" : 131,
+      "event" : "nativeEnd",
+      "instance" : "923933A6-F032-4D43-8EAF-A6C5A957DCB5",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser2.aimodel",
+      "phase" : "cancel",
+      "sequence" : 132
+    },
+    {
+      "call" : 133,
+      "event" : "nativeBegin",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 133
+    },
+    {
+      "call" : 133,
+      "event" : "nativeEnd",
+      "instance" : "2FF4A1F1-7BF1-44D4-8B38-A23B571D2405",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-denoiser3.aimodel",
+      "phase" : "cancel",
+      "sequence" : 134
+    },
+    {
+      "call" : 135,
+      "event" : "nativeBegin",
+      "instance" : "440E1C25-4EE7-4F80-8218-9E62AF49C8EC",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-vae.aimodel",
+      "phase" : "cancel",
+      "sequence" : 135
+    },
+    {
+      "event" : "overlapRejected",
+      "phase" : "cancel",
+      "sequence" : 136
+    },
+    {
+      "event" : "cancelRequested",
+      "phase" : "cancel",
+      "sequence" : 137
+    },
+    {
+      "call" : 135,
+      "event" : "nativeEnd",
+      "instance" : "440E1C25-4EE7-4F80-8218-9E62AF49C8EC",
+      "model" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu\/krea_2_turbo_realism-vae.aimodel",
+      "phase" : "cancel",
+      "sequence" : 138
+    },
+    {
+      "event" : "generationTaskFinished",
+      "phase" : "cancel",
+      "sequence" : 139
+    },
+    {
+      "event" : "cancellationReturned",
+      "phase" : "cancel",
+      "sequence" : 140
+    }
+  ],
+  "integratedPipelineQualified" : false,
+  "latentsSHA256" : "a3548df21b0723e16584f8ba50501a55ce39c1432255db08eef2a46dec91767b",
+  "passed" : false,
+  "recoveredPixelsSHA256" : "",
+  "referenceSHA256" : "440ed8b4c7020699e9a7f38964ba29f924bb423a685db5f1ca4779691d81dacc",
+  "scope" : "Native KreaGenerationSession decoder cancellation\/recovery, 8-step dynamic generation with retained fixture conditioning; output compared with its own pre-cancellation baseline",
+  "stage" : "recovery",
+  "stepsPerGeneration" : 8
+}

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-18T23:04:28.504269+00:00",
+  "command": [
+    "/Users/zakkeown/Code/aether-engine/forge/.venv/bin/python",
+    "-B",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Scripts/prepare-h3-denoising-oracle.py",
+    "--lab",
+    "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab",
+    "--prototype",
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype",
+    "--bundle",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "--phases",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "--cpu-record",
+    "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+    "--capture",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-capture-02",
+    "--output",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-cpu-references-01"
+  ],
+  "budgetSeconds": 1800,
+  "gpuWork": false,
+  "passed": true,
+  "joined": true,
+  "timedOut": false,
+  "pid": 48965,
+  "exitCode": 0,
+  "elapsedSeconds": 964.3999956250191
+}

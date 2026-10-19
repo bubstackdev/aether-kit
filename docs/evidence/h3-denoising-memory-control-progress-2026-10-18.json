@@ -1,0 +1,20 @@
+{
+  "comparisons" : [
+
+  ],
+  "outputs" : [
+    {
+      "dtype" : "float32",
+      "key" : "time.0.-1.temb",
+      "name" : "temb",
+      "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-denoising-capture-01\/time.0.-1.temb.raw",
+      "sha256" : "1fd3e69c93b12edf4facf9f216bba34fc5b43365c73eb50851491327f50c9dc4",
+      "shape" : [
+        1,
+        2688
+      ],
+      "stage" : "time",
+      "step" : 0
+    }
+  ]
+}

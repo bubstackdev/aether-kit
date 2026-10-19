@@ -11,3 +11,10 @@ The accompanying LICENSE preserves the Apache License, Version 2.0.
 No model weights, tokenizer files, adapters or upstream Core AI Models runtime
 implementation are distributed by this scaffold. External assets retain their
 own licenses.
+
+H3 geometry, packing, row positions and scheduler conventions are derived from
+Aether prototype sources and the pinned Diffusers behavior at commit
+7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941, copyright 2026 The MiniMax and
+HuggingFace Teams, licensed under Apache-2.0. The small CPU fixtures retain
+original pipeline/oracle values, not model weights. Their source hashes and
+scope are recorded in docs/evidence/h3-cpu-readiness-2026-10-18.json.

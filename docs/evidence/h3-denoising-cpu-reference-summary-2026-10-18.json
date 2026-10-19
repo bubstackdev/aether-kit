@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T23:21:21.058303+00:00",
+  "passed": true,
+  "gpuWork": false,
+  "referenceCount": 464,
+  "fullTensorReferences": 448,
+  "sampledBodyReferences": 16,
+  "selectedQueryMethodChecks": 16,
+  "nativeCapturePrechecks": 456,
+  "maximumPrecheckRelativeL2": 0.005480037706991666,
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T23:04:28.504269+00:00",
+    "command": [
+      "/Users/zakkeown/Code/aether-engine/forge/.venv/bin/python",
+      "-B",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Scripts/prepare-h3-denoising-oracle.py",
+      "--lab",
+      "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab",
+      "--prototype",
+      "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype",
+      "--bundle",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "--phases",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "--cpu-record",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "--capture",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-capture-02",
+      "--output",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-cpu-references-01"
+    ],
+    "budgetSeconds": 1800,
+    "gpuWork": false,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 48965,
+    "exitCode": 0,
+    "elapsedSeconds": 964.3999956250191
+  },
+  "sourcePinsVerified": true,
+  "allReferenceFileHashesVerified": true,
+  "limitations": [
+    "Eight block-0 references cannot be compared from saved capture outputs; the native replay will compare those outputs.",
+    "References use captured native input contexts rather than an independently computed CPU trajectory."
+  ],
+  "artifactSHA256": {
+    "h3-denoising-cpu-references-2026-10-18.json": "f5a200bb0c76f2726568721850f39024f5625bba34d08c11cfd9e028cbab130a",
+    "h3-denoising-reference-plan-2026-10-18.json": "94b87501fd5f11870238edc186fb055c89993d3f3374b8286a71ab42a16d9430",
+    "h3-denoising-cpu-reference-controller-2026-10-18.json": "cd1b0f26a7307bc77e0ccea62cdb05642532fb7caf585b03d0cab9dc6c1def3f",
+    "h3-denoising-cpu-reference-stdout-2026-10-18.log": "9ec15d4d371b0a1d4d937e215f355a78419e805a8a937f3ddb03bafb9a2c4868",
+    "h3-denoising-cpu-reference-stderr-2026-10-18.log": "7ee9a28247f5e7962099d9e90a896b089858d9e7dc5067a3fce1f89d08f4ccf7"
+  }
+}

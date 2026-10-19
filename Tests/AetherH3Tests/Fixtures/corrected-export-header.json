@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "complete": true,
+  "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "recipe": "turbo8",
+  "transformer_weight_layout": "raw_per_head_qkv_to_contiguous_qkv_v1",
+  "adapter": {
+    "repository": "lightx2v/Minimax-h3-Turbo",
+    "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "execution": "dynamic_lora",
+    "rank": 128,
+    "alpha": 8.0
+  }
+}

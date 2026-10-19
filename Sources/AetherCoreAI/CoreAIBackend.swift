@@ -1,6 +1,7 @@
 import AetherKit
 import CoreAI
 import Foundation
+import Synchronization
 
 /// Specialization preferences for the reference executor.
 public enum ModelComputePolicy: String, Sendable, CaseIterable {
@@ -24,8 +25,20 @@ protocol ModelBackend: Sendable {
 
 struct CoreAIBackend: ModelBackend {
     let model: AIModel
+    // Internal, synchronous diagnostics. Execution observations bracket the
+    // awaited native call; boundary observations identify loading and copies.
+    var executionObserver: (@Sendable (Bool) -> Void)? = nil
+    var boundaryObserver: (@Sendable (String) -> Void)? = nil
+    // Copies of a backend share the same cache. The session releases the cache
+    // and its loaded functions along with the model when it unloads.
+    private let functionCache: CoreAIFunctionCache?
 
-    static func load(at url: URL, compute: ModelComputePolicy, expectFrequentReshapes: Bool) async throws -> Self {
+    static func load(
+        at url: URL, compute: ModelComputePolicy, expectFrequentReshapes: Bool,
+        executionObserver: (@Sendable (Bool) -> Void)? = nil,
+        boundaryObserver: (@Sendable (String) -> Void)? = nil,
+        retainFunctions: Bool = true
+    ) async throws -> Self {
         guard url.isFileURL, FileManager.default.fileExists(atPath: url.path) else {
             throw AetherError.invalidModel("expected an existing local model URL")
         }
@@ -34,7 +47,8 @@ struct CoreAIBackend: ModelBackend {
         options.expectFrequentReshapes = expectFrequentReshapes
         let model = try await AIModel(contentsOf: url, options: options)
         try Task.checkCancellation()
-        return Self(model: model)
+        return Self(model: model, executionObserver: executionObserver,
+            boundaryObserver: boundaryObserver, functionCache: retainFunctions ? CoreAIFunctionCache() : nil)
     }
 
     var functions: [ModelFunctionDescription] {
@@ -70,12 +84,24 @@ struct CoreAIBackend: ModelBackend {
                 throw AetherError.unsupported("output '\(name)' has an unsupported or mismatched scalar type")
             }
         }
-        guard let function = try model.loadFunction(named: name) else {
-            throw AetherError.invalidModel("function '\(name)' could not be loaded")
+        let function: InferenceFunction
+        if let functionCache {
+            function = try functionCache.resolve(name, model: model, observer: boundaryObserver)
+        } else {
+            // Internal control arm for native resource-lifetime diagnostics.
+            function = try loadNativeFunction(name, model: model, observer: boundaryObserver)
         }
+        boundaryObserver?("inputCopyBegin")
         let nativeInputs = inputs.mapValues(\.nativeArray)
+        boundaryObserver?("inputCopyEnd")
         try Task.checkCancellation()
+        executionObserver?(true)
+        var awaitingNative = true
+        defer { if awaitingNative { executionObserver?(false) } }
         var outputs = try await function.run(inputs: nativeInputs)
+        awaitingNative = false
+        executionObserver?(false)
+        boundaryObserver?("outputCopyBegin")
         // Completion precedes copying. Returned tensors have independent Swift ownership.
         var result: [String: TensorValue] = [:]
         for name in descriptor.outputNames {
@@ -89,8 +115,40 @@ struct CoreAIBackend: ModelBackend {
             default: throw AetherError.unsupported("output '\(name)' has an unsupported scalar type")
             }
         }
+        boundaryObserver?("outputCopyEnd")
         return result
     }
+}
+
+
+// Loading a new function on every invocation caused resource pressure in repeated
+// real-weight generations. Resolve each requested function once per model session.
+// The lock also preserves that lifetime if an internal backend copy is used.
+private final class CoreAIFunctionCache: Sendable {
+    private let functions = Mutex<[String: InferenceFunction]>([:])
+
+    func resolve(_ name: String, model: AIModel,
+                 observer: (@Sendable (String) -> Void)?) throws -> InferenceFunction {
+        try functions.withLock { functions in
+            if let function = functions[name] {
+                observer?("functionReused")
+                return function
+            }
+            let function = try loadNativeFunction(name, model: model, observer: observer)
+            functions[name] = function
+            return function
+        }
+    }
+}
+
+private func loadNativeFunction(_ name: String, model: AIModel,
+                                observer: (@Sendable (String) -> Void)?) throws -> InferenceFunction {
+    observer?("functionLoadBegin")
+    guard let function = try model.loadFunction(named: name) else {
+        throw AetherError.invalidModel("function '\(name)' could not be loaded")
+    }
+    observer?("functionLoadEnd")
+    return function
 }
 
 private func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(

@@ -4,7 +4,7 @@ import Foundation
 import Testing
 @testable import AetherKrea
 
-private struct BundleFixture {
+struct BundleFixture {
     let root: URL
 
     init() throws {
