@@ -111,6 +111,14 @@ enum H3ProfileCommand {
                               references: arguments[3] == "-" ? nil : URL(fileURLWithPath: arguments[3]), output: URL(fileURLWithPath: arguments[4]),
                               render: arguments[5] == "--render", audio: !arguments.contains("--no-audio"))
             return true
+        case "h3-profile-decode":
+            guard arguments.count == 5 || arguments.count == 7 else {
+                throw AetherError.invalidRequest("use h3-profile-decode PROFILE.json DUMP RENDER NEW_DIRECTORY [DECODER.aimodel SHA256]")
+            }
+            let decoder = arguments.count == 7 ? try H3ModelAsset(url: URL(fileURLWithPath: arguments[5]), function: "main", sha256: arguments[6]) : nil
+            try await decode(profile: URL(fileURLWithPath: arguments[1]), dump: URL(fileURLWithPath: arguments[2]),
+                             render: URL(fileURLWithPath: arguments[3]), output: URL(fileURLWithPath: arguments[4]), decoder: decoder)
+            return true
         default:
             return false
         }
@@ -265,6 +273,65 @@ enum H3ProfileCommand {
         } catch {
             try? save(String(describing: error)); throw error
         }
+    }
+}
+
+extension H3ProfileCommand {
+    /// Video decode only, from a render's final latents, with the GPU tile calls and the CPU work timed apart.
+    static func decode(profile url: URL, dump: URL, render: URL, output: URL, decoder: H3ModelAsset?) async throws {
+        let profile = try H3Profile(url: url)
+        let geometry = try H3Geometry(width: Int(H3RawDirectory.field(dump, "width"))!, height: Int(H3RawDirectory.field(dump, "height"))!,
+                                      requestedFrames: Int(H3RawDirectory.field(dump, "frames"))!, diagnostic: true)
+        let out = try H3RawDirectory(new: output)
+        out.fields = ["profile_sha256": profile.manifestSHA256, "mode": "decode", "render": render.path,
+                      "decoder": decoder?.url.path ?? profile.videoDecoder.model.url.path]
+        let device = MTLCreateSystemDefaultDevice()
+        let sampler = BenchmarkMemorySampler { try BenchmarkMemory.read(device: device) }
+        let sampling = Task.detached { while !Task.isCancelled { sampler.sample(); try? await Task.sleep(for: .milliseconds(50)) } }
+        defer { sampling.cancel() }
+        let clock = ContinuousClock()
+        func seconds(_ d: Duration) -> Double { Double(d.components.seconds) + Double(d.components.attoseconds) / 1e18 }
+        var gpu: [Double] = [], extract = 0.0, stitch = 0.0, rgb = 0.0
+        let qualifier = try H3ProfileQualifier(profile: profile, videoDecoder: decoder)
+        let packed = try H3RawDirectory.read(render, "final_video").floatValues()
+        let tiling = try H3SpatialTiling.source(width: geometry.width, height: geometry.height)
+        var video = try H3VideoStitcher(geometry: geometry)
+        var frames = Data()
+        let started = clock.now
+        func deliver(_ normalized: [Float]) throws {
+            let t = clock.now
+            for frame in try H3Pixels.rgb8(frames: normalized, width: geometry.width, height: geometry.height) { frames.append(contentsOf: frame) }
+            rgb += seconds(clock.now - t)
+        }
+        for window in 0..<geometry.videoWindows {
+            let rows = try geometry.videoWindowRows(packed, index: window)
+            var spatial = try H3SpatialStitcher(tiling: tiling, width: geometry.width, height: geometry.height)
+            for tile in 0..<tiling.tileCount {
+                var t = clock.now
+                let input = try tiling.extract(width: geometry.width, height: geometry.height, packed: rows, index: tile)
+                extract += seconds(clock.now - t); t = clock.now
+                let pixels = try await qualifier.tile(try floats(input, [448, 96]))
+                gpu.append(seconds(clock.now - t)); t = clock.now
+                try spatial.push(try pixels.floatValues())
+                stitch += seconds(clock.now - t)
+            }
+            let t = clock.now
+            let window = try video.push(try spatial.finish())
+            stitch += seconds(clock.now - t)
+            try deliver(window)
+        }
+        try deliver(video.finish())
+        let total = seconds(clock.now - started)
+        await qualifier.release()
+        try out.putBytes("frames", frames, dtype: "uint8", shape: [geometry.frames, geometry.height, geometry.width, 3])
+        struct Report: Encodable {
+            let total: Double; let tiles: Int; let tileFirst: Double; let tileWarmMean: Double; let gpu: Double
+            let extract: Double; let stitch: Double; let rgb: Double; let sampledPeak: BenchmarkMemory?
+        }
+        let warm = gpu.dropFirst()
+        try out.save(Report(total: total, tiles: gpu.count, tileFirst: gpu.first ?? 0, tileWarmMean: warm.reduce(0, +) / Double(max(warm.count, 1)),
+                            gpu: gpu.reduce(0, +), extract: extract, stitch: stitch, rgb: rgb, sampledPeak: sampler.snapshot.peak))
+        print(output.path)
     }
 }
 

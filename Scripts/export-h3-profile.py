@@ -31,6 +31,10 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   audio-decoder-fixed  Export the same audio decoder with a STATIC latent count for each --audio-latents value (the
                  dynamic asset aborts in MPSGraph on the GPU: "Failed to resolve dynamic dimensions for memref.alloc",
                  E1 2026-10-19). Each is checked on CPU against the pipeline's denormalize + `decode` at that count.
+  video-decoder-bf16  Experiment (not yet in the bundle): the same window-tile decoder with the VAE loaded at
+                 torch_dtype=bfloat16, the reduced precision Diffusers itself supports (`_keep_in_fp32_modules` keeps the
+                 norms and scales in float32; `decode` casts z to the decoder's dtype). Checked on CPU against `_decode`
+                 at that dtype, and its distance from the float32 decoder is recorded.
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -78,7 +82,7 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "finalize"])
     ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
@@ -588,6 +592,40 @@ def main():
         (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
         sizes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
         print(json.dumps(dict(complete=bundle["complete"], missing=missing, bytes_on_disk=sizes)), flush=True)
+    elif args.stage == "video-decoder-bf16":
+        from diffusers import AutoencoderKLMiniMaxH3
+        reference_vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
+        vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.bfloat16).eval()
+        reference_vae.use_tiling = vae.use_tiling = False
+
+        class Bf16WindowTileDecoder(WindowTileDecoder):
+            def forward(self, rows):
+                s = self.side
+                z = rows.view(7, s // 2, s // 2, 24, 2, 2).permute(3, 0, 1, 4, 2, 5).reshape(1, 24, 7, s, s)
+                z = (z * self.std + self.mean).to(self.vae.post_quant_conv.weight.dtype)
+                clip = self.vae.decoder(self.vae.post_quant_conv(z))
+                return torch.cat((clip[:, :, 3:20], clip[:, :, 23:28]), dim=2).float()
+        module = Bf16WindowTileDecoder(vae).eval()
+        torch.manual_seed(1043)
+        rows = torch.randn(448, 96)
+        normalized = rows.view(7, 8, 8, 24, 2, 2).permute(3, 0, 1, 4, 2, 5).reshape(1, 24, 7, 16, 16)
+        z = normalized * module.std + module.mean
+        started = time.monotonic()
+        with torch.inference_mode():
+            actual = module(rows)
+            reference = vae._decode(z.to(torch.bfloat16)).float()
+            full = reference_vae._decode(z)
+        check = dict(shape=list(actual.shape), byte_identical=bool(torch.equal(actual, reference)),
+                     relative_l2=float((actual.double() - reference.double()).norm() / reference.double().norm()),
+                     relative_l2_vs_float32=float((actual.double() - full.double()).norm() / full.double().norm()),
+                     dtypes=sorted({str(p.dtype) for p in vae.parameters()}), seconds=round(time.monotonic() - started, 1))
+        print(json.dumps(check), flush=True)
+        assert check["byte_identical"], check
+        started = time.monotonic()
+        asset = h.export_asset(out / "models/video-decoder-tile256-bf16.aimodel", module, (rows,), ["rows"], ["pixels"])
+        asset["seconds"] = round(time.monotonic() - started, 1)
+        record(out, video_decoder_bf16=dict(asset, check=check))
+        print(json.dumps(asset), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()

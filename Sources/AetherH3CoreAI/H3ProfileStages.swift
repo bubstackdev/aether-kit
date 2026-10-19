@@ -302,13 +302,14 @@ public actor H3ProfileQualifier {
     private let denoiser: NativeH3DenoiserKernels
     private let tile: NativeH3TileKernel
     private let audio: NativeH3AudioKernel
-    public init(profile: H3Profile) throws {
+    /// `videoDecoder` replaces the profile's tile decoder (decoder experiments; same [448,96] -> [1,3,22,256,256] contract).
+    public init(profile: H3Profile, videoDecoder: H3ModelAsset? = nil) throws {
         guard profile.complete, let conditioner = profile.conditioner, let audio = profile.audioDecoder else {
             throw AetherError.invalidModel("H3 profile is incomplete: \(profile.missing.joined(separator: ", "))")
         }
         self.profile = profile; self.conditioner = NativeH3ConditionerKernel(conditioner)
         self.denoiser = try NativeH3DenoiserKernels(profile)
-        self.tile = NativeH3TileKernel(profile.videoDecoder.model); self.audio = NativeH3AudioKernel(audio)
+        self.tile = NativeH3TileKernel(videoDecoder ?? profile.videoDecoder.model); self.audio = NativeH3AudioKernel(audio)
     }
     /// The unnormalized tap for `ids`, layer by layer, exactly as the session's conditioner stage computes it.
     public func tap(ids: [Int32], onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in }) async throws -> H3TensorData {
