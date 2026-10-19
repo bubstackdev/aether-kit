@@ -58,7 +58,7 @@ public struct H3DecodedFrames: Sendable {
     public let rgb: [[UInt8]]
 }
 
-public enum H3VideoStage: String, Sendable, Codable { case encoding, denoising, decodingVideo, decodingAudio }
+public enum H3VideoStage: String, Sendable, Codable { case encoding, encodingKeyframe, denoising, decodingVideo, decodingAudio }
 
 public enum H3VideoEvent: Sendable {
     case stageStarted(H3VideoStage)
@@ -101,13 +101,22 @@ public protocol H3AudioDecoder: Sendable {
     func release() async
 }
 
+/// Encodes a first-frame keyframe (RGB8 at the clip size) into normalized condition latents `[1,24,1,H/16,W/16]` f32.
+public protocol H3KeyframeEncoder: Sendable {
+    func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData
+    func release() async
+}
+
 public struct H3VideoStages: Sendable {
     public let conditioner: any H3PromptConditioner
+    /// FL2VA only; a session without it refuses keyframes.
+    public let keyframes: (any H3KeyframeEncoder)?
     public let denoiser: any H3Denoiser
     public let video: any H3WindowDecoder
     public let audio: any H3AudioDecoder
-    public init(conditioner: any H3PromptConditioner, denoiser: any H3Denoiser, video: any H3WindowDecoder, audio: any H3AudioDecoder) {
-        self.conditioner = conditioner; self.denoiser = denoiser; self.video = video; self.audio = audio
+    public init(conditioner: any H3PromptConditioner, keyframes: (any H3KeyframeEncoder)? = nil, denoiser: any H3Denoiser,
+                video: any H3WindowDecoder, audio: any H3AudioDecoder) {
+        self.conditioner = conditioner; self.keyframes = keyframes; self.denoiser = denoiser; self.video = video; self.audio = audio
     }
 }
 
@@ -128,9 +137,8 @@ public actor H3VideoSession {
         try Task.checkCancellation()
         guard state != .closing, state != .closed, let stages else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        guard request.firstFrame == nil, request.lastFrame == nil else {
-            throw AetherError.unsupported("H3 first/last-frame conditioning is not implemented")
-        }
+        guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
+        guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
         let task = Task { try await Self.run(request, stages: stages, onEvent: onEvent) }
         active = task; state = .running
         defer { active = nil; if state == .running { state = .ready } }
@@ -159,7 +167,15 @@ public actor H3VideoSession {
             await stages.conditioner.release(); try await onEvent(.stageReleased(.encoding))
 
             try Task.checkCancellation()
-            let initial = try geometry.initialLatents(seed: request.seed)
+            var initial = try geometry.initialLatents(seed: request.seed)
+            var conditionRows = 0
+            if let keyframe = request.firstFrame, let encoder = stages.keyframes {
+                try await onEvent(.stageStarted(.encodingKeyframe))
+                let condition = try await encoder.encode(keyframe, geometry: geometry)
+                await encoder.release(); try await onEvent(.stageReleased(.encodingKeyframe))
+                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: condition)
+                conditionRows = initial.video.spec.shape[1] - geometry.targetVideoRows
+            }
             try await onEvent(.stageStarted(.denoising))
             let denoised = try await forwarding({ .step($0, of: $1) }, to: onEvent) { report in
                 try await stages.denoiser.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: report)
@@ -171,7 +187,8 @@ public actor H3VideoSession {
 
             try Task.checkCancellation()
             try await onEvent(.stageStarted(.decodingVideo))
-            let packed = try denoised.video.floatValues()
+            // Only the generated rows are decoded; the keyframe anchors lead the video rows (the pipeline's `latents[ncv:]`).
+            let packed = Array(try denoised.video.floatValues().dropFirst(conditionRows * 96))
             var stitcher = try H3VideoStitcher(geometry: geometry)
             var emitted = 0
             func deliver(_ normalized: [Float]) async throws {
@@ -225,7 +242,7 @@ public actor H3VideoSession {
     }
 
     private static func releaseAll(_ stages: H3VideoStages) async {
-        await stages.conditioner.release(); await stages.denoiser.release()
+        await stages.conditioner.release(); await stages.keyframes?.release(); await stages.denoiser.release()
         await stages.video.release(); await stages.audio.release()
     }
 }

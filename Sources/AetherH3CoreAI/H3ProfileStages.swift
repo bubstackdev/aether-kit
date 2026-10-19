@@ -119,8 +119,11 @@ actor H3ProfileDenoiser: H3Denoiser {
         guard conditioning.spec.scalarType == .bfloat16, conditioning.spec.shape.count == 3, conditioning.spec.shape[0] == 1,
               conditioning.spec.shape[2] == 5120 else { throw AetherError.invalidTensor("H3 conditioning must be the [1,T,5120] bf16 tap") }
         let t = conditioning.spec.shape[1]
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: t))
-        guard layout.conditionVideoRows == 0, initial.video.spec.shape == [1, layout.videoIndices.count, 96],
+        // Keyframe anchors lead the video rows: none (T2VA) or one first frame (FL2VA).
+        let frameRows = (geometry.latentHeight / 2) * (geometry.latentWidth / 2)
+        let anchors: [H3Anchor] = initial.video.spec.shape[1] == geometry.targetVideoRows + frameRows ? [.first] : []
+        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: t), anchors: anchors)
+        guard initial.video.spec.shape == [1, layout.videoIndices.count, 96],
               initial.audio.spec.shape == [1, layout.audioIndices.count, 32] else {
             throw AetherError.invalidTensor("H3 initial latents differ from the layout")
         }
@@ -151,7 +154,8 @@ actor H3ProfileDenoiser: H3Denoiser {
             try Task.checkCancellation()
             let velocity = try await kernels.heads(hidden: hidden, temb: try entry.embedding.read(), indices: indices, videoIndices: videoIndices,
                                                    audioIndices: audioIndices, video: latents.video.spec, audio: latents.audio.spec)
-            latents = try latents.advanced(schedule: schedule, step: step.index, videoVelocity: velocity.video, audioVelocity: velocity.audio)
+            latents = try latents.advanced(schedule: schedule, step: step.index, videoVelocity: velocity.video, audioVelocity: velocity.audio,
+                                           conditionVideoRows: layout.conditionVideoRows)
             onStep(step.index + 1, steps)
         }
         return latents
@@ -197,6 +201,25 @@ actor H3ProfileAudioDecoder: H3AudioDecoder {
         return try H3AudioPCM(channels: [Array(values[..<(hop * na)]), Array(values[(hop * na)...])])
     }
     func release() async { await kernel.release() }
+}
+
+/// RGB8 keyframe -> planar `[1,3,1,H,W]` f32 pixels in 0...255 -> the profile's static first-frame encoder for the canvas.
+actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
+    private let profile: H3Profile
+    private var graph: (canvas: String, graph: NativeH3Graph)?
+    init(profile: H3Profile) { self.profile = profile }
+    func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
+        guard keyframe.width == geometry.width, keyframe.height == geometry.height else { throw AetherError.invalidRequest("H3 keyframe must match the clip size") }
+        let canvas = "\(geometry.width)x\(geometry.height)"
+        if graph?.canvas != canvas { graph = nil; graph = (canvas, try await NativeH3Graph.open(try profile.keyframeEncoder(width: geometry.width, height: geometry.height))) }
+        let area = geometry.width * geometry.height
+        var planar = [Float](repeating: 0, count: 3 * area)
+        for p in 0..<area { for c in 0..<3 { planar[c * area + p] = Float(keyframe.rgb[p * 3 + c]) } }
+        let pixels = try h3Tensor([1, 3, 1, geometry.height, geometry.width], planar)
+        let spec = try H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, geometry.latentHeight, geometry.latentWidth])
+        return try await graph!.graph.run(["pixels": .data(pixels)], outputs: ["condition": spec])["condition"]!
+    }
+    func release() async { graph = nil }
 }
 
 // MARK: Native kernels
@@ -288,6 +311,7 @@ public enum H3ProfileEngine {
         }
         return H3VideoStages(
             conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize, kernel: NativeH3ConditionerKernel(conditioner)),
+            keyframes: profile.keyframeEncoders.isEmpty ? nil : H3ProfileKeyframeEncoder(profile: profile),
             denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile)),
             video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
             audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop))
@@ -331,6 +355,12 @@ public actor H3ProfileQualifier {
         try await denoiser.heads(hidden: hidden, temb: temb, indices: indices, videoIndices: videoIndices, audioIndices: audioIndices, video: video, audio: audio)
     }
     public func tile(_ rows: H3TensorData) async throws -> H3TensorData { try await tile.decode(rows) }
+    /// The first-frame encoder for `keyframe` at `geometry`'s canvas (opened per call, released after).
+    public func keyframe(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
+        let encoder = H3ProfileKeyframeEncoder(profile: profile)
+        do { let condition = try await encoder.encode(keyframe, geometry: geometry); await encoder.release(); return condition }
+        catch { await encoder.release(); throw error }
+    }
     public func audio(_ rows: H3TensorData) async throws -> H3TensorData { try await audio.decode(rows) }
     public func release() async { await conditioner.release(); await denoiser.release(); await tile.release(); await audio.release() }
 }

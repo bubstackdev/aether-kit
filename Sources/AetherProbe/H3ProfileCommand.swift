@@ -4,6 +4,7 @@ import AetherH3CoreAI
 import AetherH3Tokenizers
 import Darwin
 import Foundation
+import ImageIO
 import Metal
 
 /// Raw tensor directory: `manifest.json` names every little-endian tensor file with its dtype, shape and SHA-256, so
@@ -96,12 +97,13 @@ enum H3ProfileCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         switch arguments.first {
         case "h3-profile-dump":
-            guard arguments.count == 9, let width = Int(arguments[3]), let height = Int(arguments[4]), let frames = Int(arguments[5]),
-                  let seed = UInt64(arguments[6]) else {
-                throw AetherError.invalidRequest("use h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY")
+            guard arguments.count == 9 || arguments.count == 10, let width = Int(arguments[3]), let height = Int(arguments[4]),
+                  let frames = Int(arguments[5]), let seed = UInt64(arguments[6]) else {
+                throw AetherError.invalidRequest("use h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png]")
             }
             try await dump(profile: URL(fileURLWithPath: arguments[1]), prompt: URL(fileURLWithPath: arguments[2]), width: width, height: height,
-                           frames: frames, seed: seed, recipe: arguments[7], output: URL(fileURLWithPath: arguments[8]))
+                           frames: frames, seed: seed, recipe: arguments[7], output: URL(fileURLWithPath: arguments[8]),
+                           firstFrame: arguments.count == 10 ? URL(fileURLWithPath: arguments[9]) : nil)
             return true
         case "h3-profile-run":
             guard arguments.count >= 6, ["--graphs", "--render"].contains(arguments[5]) else {
@@ -125,13 +127,30 @@ enum H3ProfileCommand {
     }
 
     /// CPU only: the tokens, layout, step plan and seeded inputs a run and the CPU oracle share.
-    private static func dump(profile url: URL, prompt: URL, width: Int, height: Int, frames: Int, seed: UInt64, recipe: String, output: URL) async throws {
+    /// An image file at exactly `width`×`height` as interleaved RGB8 (drawn into an sRGB RGBA8 context, alpha dropped).
+    static func keyframe(_ url: URL, width: Int, height: Int) throws -> H3Keyframe {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              image.width == width, image.height == height,
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
+            throw AetherError.invalidRequest("first frame must be an image of exactly \(width)x\(height)")
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let rgba = UnsafeBufferPointer(start: context.data!.assumingMemoryBound(to: UInt8.self), count: width * height * 4)
+        var rgb = [UInt8](repeating: 0, count: width * height * 3)
+        for p in 0..<(width * height) { for c in 0..<3 { rgb[p * 3 + c] = rgba[p * 4 + c] } }
+        return try H3Keyframe(width: width, height: height, rgb: rgb)
+    }
+
+    private static func dump(profile url: URL, prompt: URL, width: Int, height: Int, frames: Int, seed: UInt64, recipe: String, output: URL,
+                             firstFrame: URL? = nil) async throws {
         let profile = try H3Profile(url: url)
         let text = try String(contentsOf: prompt, encoding: .utf8)
         let tokenizer = try await H3Tokenizer.open(directory: profile.tokenizer)
         let ids = try tokenizer.tokenIDs(text)
         let geometry = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count))
+        let keyframe = try firstFrame.map { try keyframe($0, width: width, height: height) }
+        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count), anchors: keyframe == nil ? [] : [.first])
         guard let schedule = profile.recipes[recipe]?.schedule else { throw AetherError.unsupported("profile has no \(recipe)") }
         let out = try H3RawDirectory(new: output)
         out.fields = ["profile_sha256": profile.manifestSHA256, "recipe": recipe, "seed": String(seed), "width": String(width),
@@ -152,8 +171,20 @@ enum H3ProfileCommand {
             try out.put("step\(step.index)_indices", ints(rows.indices, [layout.rows]))
             try out.put("step\(step.index)_adaln", ints(rows.adalnIndices, [layout.rows]))
         }
-        let initial = try geometry.initialLatents(seed: seed)
-        try out.put("latents_video", initial.video); try out.put("latents_audio", initial.audio)
+        if let keyframe {
+            // The FL2VA stream: the keyframe's condition noise first, then the generated video rows and audio (the session's order).
+            out.fields["anchors"] = "first"
+            let frame = 24 * geometry.latentHeight * geometry.latentWidth, video = geometry.targetVideoRows * 96
+            let noise = try H3Noise.generate(seed: seed, count: frame + video + geometry.audioRows * 32)
+            try out.putBytes("keyframe", Data(keyframe.rgb), dtype: "uint8", shape: [height, width, 3])
+            try out.put("condition_noise", floats(Array(noise[..<frame]), [1, 24, 1, geometry.latentHeight, geometry.latentWidth]))
+            let target = try geometry.packVideo(FloatTensor(shape: geometry.videoLatentShape, values: Array(noise[frame..<(frame + video)])))
+            try out.put("latents_video", floats(target.values, [1, geometry.targetVideoRows, 96]))
+            try out.put("latents_audio", floats(Array(noise[(frame + video)...]), [1, geometry.audioRows, 32]))
+        } else {
+            let initial = try geometry.initialLatents(seed: seed)
+            try out.put("latents_video", initial.video); try out.put("latents_audio", initial.audio)
+        }
         // A seeded unit-variance hidden state for isolated block/heads checks (values round to bf16 once).
         let probe = try H3Noise.generate(seed: seed ^ 0x5eed, count: layout.rows * 5376)
         try out.put("probe_hidden", bf16(probe, [1, layout.rows, 5376]))
@@ -196,10 +227,12 @@ enum H3ProfileCommand {
                 let tape = H3RenderTape()
                 let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens })
                 let session = H3VideoSession(stages: H3VideoStages(conditioner: TapeConditioner(inner: stages.conditioner, tape: tape),
+                                                                   keyframes: stages.keyframes,
                                                                    denoiser: TapeDenoiser(inner: stages.denoiser, tape: tape),
                                                                    video: stages.video, audio: stages.audio))
                 let stageClock = H3StageClock()
-                let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, audio: audio)
+                let first = try firstFrame(dump, geometry: geometry)
+                let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, firstFrame: first, audio: audio)
                 let result = try await timed("render") {
                     try await session.generate(request) { event in
                         await stageClock.record(event, memory: try? BenchmarkMemory.read(device: device))
@@ -218,6 +251,15 @@ enum H3ProfileCommand {
                 if let pcm = await tape.pcm { try out.put("pcm", floats(pcm.channels[0] + pcm.channels[1], [2, pcm.sampleCount])) }
             } else {
                 let qualifier = try H3ProfileQualifier(profile: profile)
+                if let first = try firstFrame(dump, geometry: geometry) {
+                    // An FL2VA dump qualifies the keyframe encoder only; the other graphs are the T2VA ones, qualified on T2VA dumps.
+                    for pass in ["cold", "warm"] {
+                        let condition = try await timed("keyframe.\(pass)") { try await qualifier.keyframe(first, geometry: geometry) }
+                        if pass == "warm" { try out.put("condition", condition) }
+                    }
+                    await qualifier.release()
+                    try save(); print(output.path); return
+                }
                 let ids = try H3RawDirectory.read(dump, "ids")
                 let tokens = ids.bytes.withUnsafeBytes { Array($0.bindMemory(to: Int32.self)) }
                 let nativeTap = try await timed("conditioner.tap") { try await qualifier.tap(ids: tokens) }
@@ -333,6 +375,16 @@ extension H3ProfileCommand {
                             gpu: gpu.reduce(0, +), extract: extract, stitch: stitch, rgb: rgb, sampledPeak: sampler.snapshot.peak))
         print(output.path)
     }
+}
+
+/// The dump's keyframe (FL2VA dumps), if any.
+private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? {
+    struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
+    let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
+    guard let entry = manifest.tensors["keyframe"] else { return nil }
+    let data = try Data(contentsOf: dump.appendingPathComponent(entry.file))
+    guard h3SHA256(data) == entry.sha256 else { throw AetherError.invalidModel("dump keyframe changed on disk") }
+    return try H3Keyframe(width: geometry.width, height: geometry.height, rgb: [UInt8](data))
 }
 
 /// Wall-clock per session stage, from the session's own events.
