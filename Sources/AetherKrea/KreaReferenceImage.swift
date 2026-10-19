@@ -30,6 +30,13 @@ public enum KreaReferenceContract {
     /// Decoded source sides accepted before fitting (bounds decode memory).
     public static let maximumSourceSide = 8192
 
+    /// Canonical text of every constant above; part of `KreaAssets.referenceFingerprint`.
+    public static var identity: String {
+        "visionTokens/1:\(maximumImages):\(maximumSide):\(maximumImageTokens):\(label):\(patchSize):\(mergeSize):"
+            + "\(temporalPatchSize):\(minimumPixels):\(maximumPixels):\(positionTableSide):\(hiddenSize):\(deepstackLevels):"
+            + "\(imageToken):\(visionStartToken):\(visionEndToken):bicubic-antialias:mrope"
+    }
+
     public static func label(_ number: Int) -> String {
         label.replacingOccurrences(of: "{n}", with: String(number))
     }

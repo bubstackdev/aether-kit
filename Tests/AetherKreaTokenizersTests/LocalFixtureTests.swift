@@ -82,3 +82,16 @@ func referencePromptsMatchTheOracleTokensAndPositions() async throws {
     }
     #expect(count == 6)
 }
+
+/// Opt-in: the local bundle declares the reference contract, keeps its text-only fingerprint, and gains a separate
+/// reference fingerprint. Opening reads headers, hash declarations and tokenizer files only.
+@Test(.enabled(if: environment["AETHER_KREA_BUNDLE"] != nil))
+func localBundleDeclaresReferencesWithASeparateIdentity() throws {
+    let assets = try KreaAssets.open(at: URL(fileURLWithPath: try #require(environment["AETHER_KREA_BUNDLE"])))
+    #expect(assets.supportsReferences)
+    #expect(assets.maximumTextRows == 1116)
+    let reference = try #require(assets.referenceFingerprint)
+    #expect(reference != assets.fingerprint && reference.count == 64)
+    if let expected = environment["AETHER_KREA_TEXT_FINGERPRINT_PREFIX"] { #expect(assets.fingerprint.hasPrefix(expected)) }
+    print("text-only fingerprint \(assets.fingerprint); reference fingerprint \(reference)")
+}

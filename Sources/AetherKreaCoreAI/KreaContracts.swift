@@ -66,6 +66,42 @@ enum KreaContracts {
         try declaration(output, type: "float32", shape: [3, configuration.height, configuration.width])
     }
 
+    /// The vision tower's `encode` for one image of `patches` patch rows and `tokens` merged tokens.
+    static func vision(_ function: ModelFunctionDescription, patches: Int, tokens: Int) throws {
+        guard function.name == "encode", function.states.isEmpty,
+              Set(function.inputs.keys) == ["pixels", "pos_index", "pos_weight", "patch_rc"],
+              Set(function.outputs.keys) == ["image_embeds", "deepstack"] else {
+            throw AetherError.invalidModel("invalid Krea vision encoder signature")
+        }
+        let hidden = KreaReferenceContract.hiddenSize
+        try declaration(function.inputs["pixels"]!, type: "float16", shape: [patches, KreaReferenceContract.rowLength])
+        try declaration(function.inputs["pos_index"]!, type: "int32", shape: [patches, 4])
+        try declaration(function.inputs["pos_weight"]!, type: "float32", shape: [patches, 4])
+        try declaration(function.inputs["patch_rc"]!, type: "int32", shape: [patches, 2])
+        try declaration(function.outputs["image_embeds"]!, type: "float16", shape: [tokens, hidden])
+        try declaration(function.outputs["deepstack"]!, type: "float16", shape: [KreaReferenceContract.deepstackLevels, tokens, hidden])
+    }
+
+    /// The text encoder's `encodeWithImages` for `rows` prompt tokens and `images` image tokens. Returns the declared
+    /// `rope_positions` rank-3 flag (`[3, 1, L]` rather than `[3, L]`).
+    static func encodeWithImages(_ function: ModelFunctionDescription, rows: Int, images: Int) throws -> Bool {
+        guard function.name == "encodeWithImages", function.states.isEmpty,
+              Set(function.inputs.keys) == ["input_ids", "attention_mask", "position_ids", "rope_positions", "image_embeds", "deepstack"],
+              Set(function.outputs.keys) == ["text_embeds"], let rope = function.inputs["rope_positions"]?.shape else {
+            throw AetherError.invalidModel("invalid Krea encodeWithImages signature")
+        }
+        let hidden = KreaReferenceContract.hiddenSize
+        for name in ["input_ids", "attention_mask", "position_ids"] {
+            try declaration(function.inputs[name]!, type: "int32", shape: [1, rows])
+        }
+        let rank3 = rope.count == 3
+        try declaration(function.inputs["rope_positions"]!, type: "int32", shape: rank3 ? [3, 1, rows] : [3, rows])
+        try declaration(function.inputs["image_embeds"]!, type: "float16", shape: [images, hidden])
+        try declaration(function.inputs["deepstack"]!, type: "float16", shape: [KreaReferenceContract.deepstackLevels, images, hidden])
+        try declaration(function.outputs["text_embeds"]!, type: "float16", shape: [rows, KreaConditioning.channels])
+        return rank3
+    }
+
     static func value(_ value: TensorValue, type: String, shape: [Int]) throws {
         let actual: String
         switch value {
