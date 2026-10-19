@@ -309,10 +309,14 @@ private func hashFile(_ url: URL) throws -> String {
     let file = try FileHandle(forReadingFrom: url)
     defer { try? file.close() }
     var digest = SHA256()
-    while let data = try file.read(upToCount: 4 << 20), !data.isEmpty {
+    // `read(upToCount:)` returns autoreleased buffers. Without a pool per chunk, a synchronous loop keeps
+    // every chunk alive until the caller's pool drains: `verify()` then peaks at the sum of all streams.
+    while try autoreleasepool(invoking: {
+        guard let data = try file.read(upToCount: 4 << 20), !data.isEmpty else { return false }
         try Task.checkCancellation()
         digest.update(data: data)
-    }
+        return true
+    }) {}
     return Data(digest.finalize()).hex
 }
 
