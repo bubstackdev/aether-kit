@@ -31,7 +31,7 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   audio-decoder-fixed  Export the same audio decoder with a STATIC latent count for each --audio-latents value (the
                  dynamic asset aborts in MPSGraph on the GPU: "Failed to resolve dynamic dimensions for memref.alloc",
                  E1 2026-10-19). Each is checked on CPU against the pipeline's denormalize + `decode` at that count.
-  video-decoder-bf16  Experiment (not yet in the bundle): the same window-tile decoder with the VAE loaded at
+  video-decoder-bf16  The bundle's default video decoder once exported (float32 stays as `video_decoder.float32`): the same window-tile decoder with the VAE loaded at
                  torch_dtype=bfloat16, the reduced precision Diffusers itself supports (`_keep_in_fp32_modules` keeps the
                  norms and scales in float32; `decode` casts z to the decoder's dtype). Checked on CPU against `_decode`
                  at that dtype, and its distance from the float32 decoder is recorded.
@@ -587,8 +587,12 @@ def main():
                       tokenizer=str(args.snapshot / "FL2VA/tokenizer"), conditioner=conditioner, prepare=prepare,
                       body=asset(meta["body"]), heads=asset(meta["heads"]),
                       parameters=[[bound(t) for t in block] for block in meta.get("parameters", [])], recipes=recipes,
-                      video_decoder=dict(asset(meta["video_decoder"]), tile=meta["video_tile"], window_latents=7, window_frames=22,
-                                         window_stride=5), audio_decoder=audio)
+                      # Default: the bf16 tile decoder (E1: 2.4x faster, half the memory, PSNR 55 dB vs float32); the float32
+                      # one stays listed as a parity/diagnostic decoder.
+                      video_decoder=dict(asset(meta.get("video_decoder_bf16", meta["video_decoder"])), tile=meta["video_tile"], window_latents=7,
+                                         window_frames=22, window_stride=5,
+                                         precision="bfloat16" if "video_decoder_bf16" in meta else "float32",
+                                         float32=asset(meta["video_decoder"]) if "video_decoder_bf16" in meta else None), audio_decoder=audio)
         (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
         sizes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
         print(json.dumps(dict(complete=bundle["complete"], missing=missing, bytes_on_disk=sizes)), flush=True)

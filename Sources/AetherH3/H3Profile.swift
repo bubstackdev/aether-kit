@@ -57,8 +57,12 @@ public struct H3Profile: Sendable {
         public let channels: Int
     }
     public struct VideoDecoder: Sendable {
+        /// The default window-tile decoder (bfloat16 weights in current profiles; see `precision`).
         public let model: H3ModelAsset
         public let tile: Int
+        public let precision: String
+        /// The float32 decoder, kept for parity and diagnostics only; hosts never pick it.
+        public let float32: H3ModelAsset?
     }
 
     public let header: H3ExportHeader?
@@ -153,7 +157,9 @@ public struct H3Profile: Sendable {
         parameters = try m.parameters.map { try $0.map { try $0.file(path) } }
         guard m.video_decoder.tile == 256, m.video_decoder.window_latents == 7, m.video_decoder.window_frames == 22,
               m.video_decoder.window_stride == 5 else { throw AetherError.invalidModel("H3 profile lacks the source decoder window contract") }
-        videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256)
+        guard ["float32", "bfloat16"].contains(m.video_decoder.precision ?? "float32") else { throw AetherError.invalidModel("unknown H3 video decoder precision") }
+        videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256, precision: m.video_decoder.precision ?? "float32",
+                                    float32: try m.video_decoder.float32?.asset(path))
         audioDecoder = try m.audio_decoder.map { a in
             guard a.sample_rate == 32000, a.hop == 800, a.channels == 2 else { throw AetherError.invalidModel("H3 audio decoder lacks the 32 kHz stereo contract") }
             var fixed: [Int: H3ModelAsset] = [:]
@@ -216,7 +222,7 @@ public struct H3Profile: Sendable {
     /// Hashes every distinct model stream.
     public func verifyModels() throws {
         var seen = Set<String>()
-        let all = [body, heads, videoDecoder.model] + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
+        let all = [body, heads, videoDecoder.model] + (videoDecoder.float32.map { [$0] } ?? []) + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
             + (audioDecoder.map { audio in [audio.model] + audio.fixed.keys.sorted().map { audio.fixed[$0]! } } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
@@ -275,6 +281,7 @@ public struct H3Profile: Sendable {
     private struct RecipeEntry: Decodable { let schedule: Schedule; let tasks: [String: [StepEntry]] }
     private struct Decoder: Decodable {
         let path: String; let function: String; let sha256: String; let tile: Int; let window_latents: Int; let window_frames: Int; let window_stride: Int
+        let precision: String?; let float32: Asset?
         var model: Asset { Asset(path: path, function: function, sha256: sha256) }
     }
     private struct Manifest: Decodable {
