@@ -87,7 +87,8 @@ public protocol H3PromptConditioner: Sendable {
 }
 public protocol H3Denoiser: Sendable {
     var steps: Int { get }
-    func denoise(_ initial: H3Latents, conditioning: H3TensorData, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents
+    func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry,
+                 onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents
     func release() async
 }
 public protocol H3WindowDecoder: Sendable {
@@ -161,7 +162,7 @@ public actor H3VideoSession {
             let initial = try geometry.initialLatents(seed: request.seed)
             try await onEvent(.stageStarted(.denoising))
             let denoised = try await forwarding({ .step($0, of: $1) }, to: onEvent) { report in
-                try await stages.denoiser.denoise(initial, conditioning: conditioning, onStep: report)
+                try await stages.denoiser.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: report)
             }
             await stages.denoiser.release(); try await onEvent(.stageReleased(.denoising))
             guard denoised.video.spec == initial.video.spec, denoised.audio.spec == initial.audio.spec else {

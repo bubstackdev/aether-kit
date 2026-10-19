@@ -28,6 +28,9 @@ public struct H3Profile: Sendable {
         public let layer: H3ModelAsset
         public let parameters: [[H3TensorFile]]
         public let tap: Int
+        /// Text rotary tables `[4096, 128]` bf16 from the original module; a T-token prompt uses rows 0..<T.
+        public let ropeCos: H3TensorFile
+        public let ropeSin: H3TensorFile
     }
     public struct Prepare: Sendable {
         /// Once per prompt: text [1, T, 5120] bf16 + `textParameters` -> refined [1, T, 5376] bf16.
@@ -109,7 +112,11 @@ public struct H3Profile: Sendable {
             conditioner = Conditioner(
                 embedding: try H3EmbeddingTable(url: path(table.path), offset: table.offset, rows: table.shape[0], width: table.shape[1],
                                                 byteCount: table.length, sha256: table.sha256),
-                layer: try c.layer.asset(path), parameters: try c.parameters.map { try $0.map { try $0.file(path) } }, tap: c.tap)
+                layer: try c.layer.asset(path), parameters: try c.parameters.map { try $0.map { try $0.file(path) } }, tap: c.tap,
+                ropeCos: try c.rope_tables.cos.file(path), ropeSin: try c.rope_tables.sin.file(path))
+            guard [conditioner!.ropeCos, conditioner!.ropeSin].allSatisfy({ $0.spec.scalarType == .bfloat16 && $0.spec.shape == [4096, 128] }) else {
+                throw AetherError.invalidModel("H3 conditioner rotary tables must be [4096, 128] bf16")
+            }
         } else {
             guard m.missing.contains("conditioner") else { throw AetherError.invalidModel("H3 profile omits its conditioner without declaring it missing") }
             conditioner = nil
@@ -193,6 +200,7 @@ public struct H3Profile: Sendable {
             + (audioDecoder.map { [$0.model] } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
+        if let conditioner { for file in [conditioner.ropeCos, conditioner.ropeSin] { _ = try file.read() } }
     }
 
     /// Hashes every in-place weight binding (≈ 90 GB of reads for a complete profile).
@@ -233,7 +241,8 @@ public struct H3Profile: Sendable {
     private struct Adapter: Decodable { let repository: String; let revision: String; let sha256: String; let execution: String; let rank: Int; let alpha: Float }
     private struct Limits: Decodable { let rows: [Int]; let cardinality: [Int]; let text_tokens: [Int] }
     private struct Table: Decodable { let path: String; let offset: Int; let length: Int; let dtype: String; let shape: [Int]; let sha256: String }
-    private struct ConditionerEntry: Decodable { let embedding_table: Table; let layer: Asset; let parameters: [[Tensor]]; let tap: Int }
+    private struct RopeTables: Decodable { let cos: Tensor; let sin: Tensor }
+    private struct ConditionerEntry: Decodable { let embedding_table: Table; let layer: Asset; let parameters: [[Tensor]]; let tap: Int; let rope_tables: RopeTables }
     private struct PrepareEntry: Decodable { let text: Asset; let text_parameters: [Tensor]; let pack: Asset }
     private struct AudioEntry: Decodable {
         let path: String; let function: String; let sha256: String; let sample_rate: Int; let hop: Int; let channels: Int

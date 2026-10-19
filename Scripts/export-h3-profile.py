@@ -22,6 +22,9 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   conditioner-layer  Export ONE Qwen3-VL decoder-layer graph with its 11 weights lifted, bound in place for layers
                  0...49 (replacing 50 baked layer assets), and the token-embedding table as an in-place row source.
                  Layers 0 and 49 run with their in-place weights against the original layer on CPU.
+  conditioner-rope  Write the Qwen3-VL text rotary tables cos/sin [4096, 128] bf16 for text positions 0...4095 with
+                 the original rotary module (text-only presentations: the three M-RoPE axes coincide). A prompt of T
+                 tokens uses the first T rows, so Swift never recomputes an angle.
   audio-decoder  Convert the audio VAE (identity mapping, pinned converter) and export its decoder: channel-major
                  normalized rows [2, Na, 32] f32 -> stereo planar PCM [2, 800 Na] f32 at 32 kHz, Na dynamic, checked
                  on CPU against the pipeline's denormalize + `decode`.
@@ -72,7 +75,7 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "audio-decoder", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "finalize"])
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
@@ -448,6 +451,21 @@ def main():
                            superseded=dict(embedding=meta.get("conditioner", {}).get("embedding"), layers=len(meta.get("conditioner", {}).get("layers", []))))
         record(out, conditioner=conditioner)
         print(json.dumps(dict(asset=asset, bindings=len(names))), flush=True)
+    elif args.stage == "conditioner-rope":
+        from transformers import Qwen3VLConfig
+        from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLTextRotaryEmbedding
+        config = Qwen3VLConfig.from_pretrained(args.snapshot / "FL2VA/text_encoder").text_config
+        rotary = Qwen3VLTextRotaryEmbedding(config)
+        probe = torch.zeros(1, 1, config.hidden_size, dtype=torch.bfloat16)
+        with torch.inference_mode():
+            cos, sin = rotary(probe, torch.arange(4096).view(1, 1, -1).expand(3, 1, -1))
+            short = rotary(probe, torch.arange(49).view(1, 1, -1).expand(3, 1, -1))
+        check = dict(prefix_identical=bool(torch.equal(short[0], cos[:, :49]) and torch.equal(short[1], sin[:, :49])), dtype=str(cos.dtype))
+        assert check["prefix_identical"] and cos.dtype == torch.bfloat16, check
+        tables = out / "tables/conditioner"
+        record(out, conditioner_rope=dict(cos=h.raw_fixture(tables / "rope-cos.raw", "cos", cos[0]), sin=h.raw_fixture(tables / "rope-sin.raw", "sin", sin[0]),
+                                          check=check))
+        print(json.dumps(check), flush=True)
     elif args.stage == "audio-decoder":
         import diffusers
         from diffusers import AutoencoderKLMiniMaxH3Audio
@@ -506,14 +524,14 @@ def main():
             recipes[recipe]["tasks"][task] = [dict(timesteps=step["timesteps"], temb=table(step["temb"]),
                                                    blocks=[table(b) for b in step["blocks"]]) for step in entry["steps"]]
         c = meta.get("conditioner", {})
-        lifted = "layer" in c and len(c.get("parameters", [])) == 50
+        lifted = "layer" in c and len(c.get("parameters", [])) == 50 and "conditioner_rope" in meta
         missing = [name for name, ok in (("prepare", "prepare" in meta), ("parameters", len(meta.get("parameters", [])) == 50),
-                   ("conditioner", lifted), ("adapter", "adapter" in meta), ("audio_decoder", "audio_decoder" in meta)) if not ok]
+                   ("conditioner", lifted and "conditioner_rope" in meta), ("adapter", "adapter" in meta), ("audio_decoder", "audio_decoder" in meta)) if not ok]
         def table_range(item):
             data = h.read_segments([item])
             return dict(item, sha256=h.sha256_bytes(data))
         conditioner = dict(embedding_table=table_range(c["embedding_table"]), layer=asset(c["layer"]), parameters=[[bound(t) for t in layer] for layer in c["parameters"]],
-                           tap=50, rope=c["rope"]) if lifted else None
+                           tap=50, rope=c["rope"], rope_tables=dict(cos=table(meta["conditioner_rope"]["cos"]), sin=table(meta["conditioner_rope"]["sin"]))) if lifted else None
         prepare = meta.get("prepare")
         prepare = dict(text=asset(prepare["text"]), text_parameters=[bound(t) for t in prepare["text_parameters"]], pack=asset(prepare["pack"])) if prepare else None
         audio = meta.get("audio_decoder")

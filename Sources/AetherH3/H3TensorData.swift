@@ -129,6 +129,42 @@ public struct H3TensorFile: Sendable {
         try Task.checkCancellation()
         return try H3TensorData(spec: spec, bytes: data)
     }
+    /// Reads the bytes straight into `destination` (exactly `spec.byteCount`), hashing them on the way when `verify`
+    /// is set. Native weight slots use this to avoid an intermediate copy; finite values are not re-checked here.
+    public func read(into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
+        try Task.checkCancellation()
+        guard destination.count == spec.byteCount, let base = destination.baseAddress else {
+            throw AetherError.invalidTensor("H3 tensor destination extent differs: \(name)")
+        }
+        var hasher = SHA256(), written = 0
+        var descriptors: [URL: Int32] = [:]
+        defer { for fd in descriptors.values { close(fd) } }
+        for segment in segments {
+            let fd: Int32
+            if let open = descriptors[segment.url] { fd = open } else {
+                let values = try segment.url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+                guard values.isRegularFile == true, let size = values.fileSize, segment.offset + segment.length <= size,
+                      !wholeFile || size == spec.byteCount else {
+                    throw AetherError.invalidTensor("H3 tensor segment lies outside its file: \(name)")
+                }
+                fd = open(segment.url.path, O_RDONLY)
+                guard fd >= 0 else { throw AetherError.invalidTensor("H3 tensor file cannot be opened: \(name)") }
+                descriptors[segment.url] = fd
+            }
+            var done = 0
+            while done < segment.length {
+                let count = pread(fd, base + written + done, min(segment.length - done, 64 << 20), off_t(segment.offset + done))
+                guard count > 0 else { throw AetherError.invalidTensor("H3 tensor segment is short: \(name)") }
+                done += count
+            }
+            if verify { hasher.update(bufferPointer: UnsafeRawBufferPointer(start: base + written, count: segment.length)) }
+            written += segment.length
+            try Task.checkCancellation()
+        }
+        if verify, hasher.finalize().map({ String(format: "%02x", $0) }).joined() != sha256 {
+            throw AetherError.invalidModel("H3 tensor hash mismatch: \(name)")
+        }
+    }
 }
 
 public func h3SHA256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }

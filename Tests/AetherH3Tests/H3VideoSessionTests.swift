@@ -30,7 +30,7 @@ private struct FakeDenoiser: H3Denoiser {
     var steps: Int { 4 }
     var failAtStep: Int? = nil
     var waitAtStep: Int? = nil
-    func denoise(_ initial: H3Latents, conditioning: H3TensorData, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+    func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
         await log.acquire("denoiser")
         #expect(await log.residentNow == ["denoiser"])
         for step in 1...steps {
