@@ -13,6 +13,8 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  decoder layers 0...49 (hidden, cos, sin -> hidden; causal attention inside), T dynamic (1...4096). The
                  tap is hidden_states[50], unnormalised. Each layer is checked on CPU against the same layer with an
                  explicit causal mask. Stops before any export that would leave less than --minimum-free-gb free.
+  finalize       Write OUTPUT/bundle.json (schema 2) from build.json, re-hashing every referenced asset stream and
+                 table file. `complete` is true only when every required part (prepare, LoRA weights) exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
                  (latent denormalisation, decoder, source pre-padding removal), then check it on CPU against the
                  original `_decode` of a single-tile, single-window clip.
@@ -58,7 +60,7 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "finalize"])
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
@@ -267,6 +269,38 @@ def main():
             record(out, conditioner=conditioner)
             print(json.dumps(dict(check, seconds=asset["seconds"])), flush=True)
             del layer, wrapped
+    elif args.stage == "finalize":
+        meta = json.loads((out / "build.json").read_text())
+        def asset(item):
+            assert h.sha256_file(Path(item["path"]) / "main.mlirb") == item["sha256"], item["path"]
+            return dict(path=item["path"], function=item["function"], sha256=item["sha256"])
+        def table(item):
+            assert h.sha256_file(Path(item["path"])) == item["sha256"], item["path"]
+            return {k: item[k] for k in ("name", "path", "dtype", "shape", "sha256")}
+        recipes = {}
+        for key, entry in meta["tables"].items():
+            recipe, task = key.split("/")
+            arms = entry["schedule"]
+            recipes.setdefault(recipe, dict(schedule=dict(video=arms[0], audio=arms[1]), tasks={}))
+            recipes[recipe]["tasks"][task] = [dict(timesteps=step["timesteps"], temb=table(step["temb"]),
+                                                   blocks=[table(b) for b in step["blocks"]]) for step in entry["steps"]]
+        conditioner = meta.get("conditioner", {})
+        missing = [name for name, ok in (("prepare", "prepare" in meta), ("parameters", "parameters" in meta),
+                   ("conditioner", len(conditioner.get("layers", [])) == 50 and "embedding" in conditioner),
+                   ("adapter", "adapter" in meta)) if not ok]
+        bundle = dict(schema=2, complete=not missing, missing=missing, snapshot=h.SNAPSHOT, diffusers_commit=h.COMMIT,
+                      transformer_weight_layout=h.CANONICAL_QKV_LAYOUT, adapter=meta.get("adapter"), tasks=["t2va", "fl2va"],
+                      limits=dict(rows=meta["body_dynamic"]["rows"], cardinality=meta["body_dynamic"]["cardinality"], text_tokens=[2, 4096]),
+                      tokenizer=str(args.snapshot / "FL2VA/tokenizer"),
+                      conditioner=dict(embedding=asset(conditioner["embedding"]) if "embedding" in conditioner else None,
+                                       layers=[asset(a) for a in conditioner.get("layers", [])], tap=50, rope=conditioner.get("rope")),
+                      prepare=asset(meta["prepare"]) if "prepare" in meta else None, body=asset(meta["body"]), heads=asset(meta["heads"]),
+                      parameters=meta.get("parameters", []), recipes=recipes,
+                      video_decoder=dict(asset(meta["video_decoder"]), tile=meta["video_tile"], window_latents=7, window_frames=22,
+                                         window_stride=5), audio_decoder=None)
+        (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
+        sizes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
+        print(json.dumps(dict(complete=bundle["complete"], missing=missing, bytes_on_disk=sizes)), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
