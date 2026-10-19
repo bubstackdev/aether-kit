@@ -214,3 +214,17 @@ func h3SpatialTilesMatchOriginalStitchingAndOddLatentPatchOffsets() throws {
     #expect(try H3SpatialTiling.source(width: 1344, height: 768).xStarts.count == 7)
     #expect(throws: AetherError.self) { try H3SpatialTiling.source(width: 256, height: 544) }
 }
+
+@Test func h3RotaryTablesMatchPinnedDiffusersForAFirstKeyframeLayout() throws {
+    struct Oracle: Decodable { let width: Int; let height: Int; let requested_frames: Int; let text_rows: Int; let rows: Int
+                               let positions: [Float]; let cos: [Float]; let sin: [Float] }
+    let url = try #require(Bundle.module.url(forResource: "rotary-oracle", withExtension: "json", subdirectory: "Fixtures"))
+    let oracle = try JSONDecoder().decode(Oracle.self, from: Data(contentsOf: url))
+    let geometry = try H3Geometry(width: oracle.width, height: oracle.height, requestedFrames: oracle.requested_frames, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: oracle.text_rows), anchors: [.first])
+    #expect(layout.rows == oracle.rows)
+    #expect(layout.positions.values == oracle.positions)
+    let (cos, sin) = try layout.rotary()
+    let worst = zip(cos.values + sin.values, oracle.cos + oracle.sin).map { abs($0 - $1) }.max() ?? .infinity
+    #expect(worst <= 2e-6, "worst absolute difference \(worst)")
+}

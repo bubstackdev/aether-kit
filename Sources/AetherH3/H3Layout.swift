@@ -91,3 +91,23 @@ public struct H3Layout: Sendable {
             adalnIndices: zip(indices, tokenTags).map { $0 * 3 + $1 })
     }
 }
+
+extension H3Layout {
+    /// The transformer's 3-axis rotary tables `[rows, 96]` (Diffusers `MiniMaxH3RotaryPosEmbed`, 16 frequencies per
+    /// axis at θ = 10000, the t/h/w angle blocks concatenated, then repeated for `rotate_half`). float32 throughout.
+    public func rotary() throws -> (cos: FloatTensor, sin: FloatTensor) {
+        let inverse = (0..<16).map { Float(1) / powf(10000, Float(2 * $0) / 32) }
+        var cos = [Float](repeating: 0, count: rows * 96), sin = cos
+        for row in 0..<rows {
+            for axis in 0..<3 {
+                let position = positions.values[row * 3 + axis]
+                for f in 0..<16 {
+                    let angle = position * inverse[f]
+                    let (c, s) = (cosf(angle), sinf(angle))
+                    for copy in 0..<2 { cos[row * 96 + copy * 48 + axis * 16 + f] = c; sin[row * 96 + copy * 48 + axis * 16 + f] = s }
+                }
+            }
+        }
+        return (try FloatTensor(shape: [rows, 96], values: cos), try FloatTensor(shape: [rows, 96], values: sin))
+    }
+}
