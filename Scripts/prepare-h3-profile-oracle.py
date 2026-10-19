@@ -200,7 +200,7 @@ def layout(dump, model_config):
                 text_indices=text_indices, plan=plan, schedulers=schedulers, frames=frames, width=width, height=height), checks
 
 
-def graphs_part(dump, out, run, text):
+def graphs_part(dump, out, run, text, blocks=(0, 49)):
     from diffusers import AutoencoderKLMiniMaxH3, AutoencoderKLMiniMaxH3Audio
     report = out.manifest["report"]
     checkpoint = h.Checkpoint(SNAPSHOT_ROOT, converter())
@@ -224,7 +224,7 @@ def graphs_part(dump, out, run, text):
         rotary = model.rope(shape["position_ids"])
         adaln = inverse * 3 + shape["token_tags"]
         probe = dump.get("probe_hidden")
-        for b in (0, 49):
+        for b in blocks:
             t = time.monotonic()
             out.put(f"block{b:02d}", real_block(checkpoint, adapter, b)(probe, temb, adaln, rotary))
             report[f"block{b:02d}_seconds"] = round(time.monotonic() - t, 1)
@@ -248,7 +248,7 @@ def graphs_part(dump, out, run, text):
     out.save()
 
 
-def render_part(dump, out, text):
+def render_part(dump, out, text, tap_source=None):
     from diffusers import AutoencoderKLMiniMaxH3, AutoencoderKLMiniMaxH3Audio
     report = out.manifest["report"]
     checkpoint = h.Checkpoint(SNAPSHOT_ROOT, converter())
@@ -260,7 +260,8 @@ def render_part(dump, out, text):
     progress = dict(started=time.monotonic())
     model.transformer_blocks = torch.nn.ModuleList(
         [StreamedBlock(checkpoint, adapter, b, lambda b: b == 49 and print(f"step done {time.monotonic() - progress['started']:.0f} s", flush=True)) for b in range(50)])
-    tap = text.get("tap")
+    tap = (tap_source or text).get("tap")
+    report["tap_from"] = str((tap_source or text).path)
     video, audio = dump.get("latents_video")[0].clone(), dump.get("latents_audio")[0].clone()
     video_scheduler, audio_scheduler = shape["schedulers"]
     kwargs = dict(token_tags=shape["token_tags"], position_ids=shape["position_ids"], video_indices=shape["video_indices"],
@@ -272,6 +273,7 @@ def render_part(dump, out, text):
                          timestep_indices=inverse, return_dict=False, **kwargs)
             video = video_scheduler.step(v[0].float(), t, video, return_dict=False)[0]
             audio = audio_scheduler.step(a[0].float(), audio_scheduler.timesteps[i], audio, return_dict=False)[0]
+            out.put(f"step{i}_video", video[None].contiguous()); out.put(f"step{i}_audio", audio[None].contiguous())
         report["denoise_seconds"] = round(time.monotonic() - progress["started"], 1)
         out.put("final_video", video[None].contiguous()); out.put("final_audio", audio[None].contiguous())
         del model
@@ -326,7 +328,9 @@ def main():
     ap.add_argument("--run", type=Path)
     ap.add_argument("--text", type=Path, help="a --part text output (graphs, render) or the reference (compare)")
     ap.add_argument("--prompt", type=Path)
+    ap.add_argument("--tap", type=Path, help="render: take the conditioner tap from this directory instead (e.g. a native run)")
     ap.add_argument("--threads", type=int, default=12)
+    ap.add_argument("--blocks", default="0,49", help="graphs: blocks to check ('' for none; CPU attention at 960x544 takes hours)")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
     torch.set_grad_enabled(False)
@@ -340,9 +344,9 @@ def main():
     if args.part == "text":
         text_part(dump, out, args.prompt)
     elif args.part == "graphs":
-        graphs_part(dump, out, Raw(args.run), Raw(args.text))
+        graphs_part(dump, out, Raw(args.run), Raw(args.text), [int(b) for b in args.blocks.split(",") if b])
     else:
-        render_part(dump, out, Raw(args.text))
+        render_part(dump, out, Raw(args.text), Raw(args.tap) if args.tap else None)
     print(out.path)
 
 
