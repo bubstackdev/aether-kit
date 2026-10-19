@@ -29,6 +29,15 @@ public struct KreaAssets: Sendable {
     public let denoisers: [KreaModelAsset]
     public let tokenizerDirectory: URL
     public let fingerprint: String
+    /// The `visionTokens` reference encoder, present only when the manifest declares Krea's reference contract and its
+    /// text asset declares `encodeWithImages`. Text-only use never opens, verifies or fingerprints it.
+    public let vision: KreaModelAsset?
+    /// Identity for reference-image execution: the text-only fingerprint plus the vision asset's declarations and the
+    /// reference contract. A text-only identity and a reference identity can therefore never be confused.
+    public let referenceFingerprint: String?
+    public var supportsReferences: Bool { vision != nil }
+    /// Denoiser text rows: 512 for text-only bundles; the reference export bounds its segments for 1,116.
+    public var maximumTextRows: Int { supportsReferences ? KreaReferencePrompt.maximumConditioningRows : 512 }
     private let tokenizerFiles: [URL: String]
     private var specializations: [KreaDenoiserSelection] = []
 
@@ -90,10 +99,25 @@ public struct KreaAssets: Sendable {
             identity.update(data: Data(model.declaredSHA256.utf8))
             identity.update(data: Data(model.metadataSHA256.utf8))
         }
+        let fingerprint = Data(identity.finalize()).hex
+        var vision: KreaModelAsset?
+        var referenceFingerprint: String?
+        if try manifest.validateReferences() {
+            let asset = try asset("vision")
+            guard ![encoder, vae].contains(where: { $0.url == asset.url }), !denoisers.contains(where: { $0.url == asset.url }) else {
+                throw AetherError.invalidModel("the Krea vision asset must be distinct")
+            }
+            var reference = SHA256()
+            for part in [fingerprint, asset.declaredSHA256, asset.metadataSHA256, KreaReferenceContract.identity] {
+                reference.update(data: Data(part.utf8)); reference.update(data: Data([0]))
+            }
+            vision = asset
+            referenceFingerprint = Data(reference.finalize()).hex
+        }
         return Self(
             root: root, textEncoder: encoder, decoder: vae, denoisers: denoisers,
             tokenizerDirectory: root.appendingPathComponent("tokenizer", isDirectory: true),
-            fingerprint: Data(identity.finalize()).hex, tokenizerFiles: support
+            fingerprint: fingerprint, vision: vision, referenceFingerprint: referenceFingerprint, tokenizerFiles: support
         )
     }
 
@@ -102,6 +126,13 @@ public struct KreaAssets: Sendable {
     public func verify() throws {
         for model in [textEncoder, decoder] + denoisers { try model.verify() }
         try verifyTokenizer()
+    }
+
+    /// Streams all seven assets (the six text-only assets and the vision asset) before reference execution.
+    public func verifyIncludingReferences() throws {
+        guard let vision else { throw AetherError.unsupported("this Krea bundle declares no reference images") }
+        try verify()
+        try vision.verify()
     }
 
     public func verifyTokenizer() throws {
@@ -118,7 +149,7 @@ public struct KreaAssets: Sendable {
         guard registrationURL.isFileURL else { throw AetherError.invalidModel("registration must be local") }
         let registration = try JSONDecoder().decode(ShapeRegistration.self, from: Data(contentsOf: registrationURL))
         guard specializations.count < 8, (1...4096).contains(registration.image_tokens),
-              (1...512).contains(registration.text_rows), registration.segments.count == 4,
+              (1...maximumTextRows).contains(registration.text_rows), registration.segments.count == 4,
               registration.source_sha256 == denoisers.map(\.declaredSHA256),
               registration.specialized_sha256.count == 4,
               !specializations.contains(where: { $0.imageTokens == registration.image_tokens && $0.textRows == registration.text_rows }) else {
@@ -148,7 +179,7 @@ public struct KreaAssets: Sendable {
     }
 
     public func denoiserSelection(imageTokens: Int, textRows: Int) throws -> KreaDenoiserSelection {
-        guard (1...4096).contains(imageTokens), (1...512).contains(textRows) else {
+        guard (1...4096).contains(imageTokens), (1...maximumTextRows).contains(textRows) else {
             throw AetherError.invalidRequest("invalid Krea denoiser shape")
         }
         return specializations.first { $0.imageTokens == imageTokens && $0.textRows == textRows }
@@ -212,8 +243,33 @@ private struct Manifest: Decodable {
     let inputs: [String: Binding]
     let outputs: [String: Binding]
     let provenance: Provenance?
+    let vision: Vision?
 
     struct Text: Decodable { let tokenizer: String }
+    struct Vision: Decodable {
+        let deepstackLevels: Int
+        let hiddenSize: Int
+        let imageMean: [Double]
+        let imageStd: [Double]
+        let maxPixels: Int
+        let minPixels: Int
+        let mergeSize: Int
+        let patchSize: Int
+        let positionTableSide: Int
+        let positions: String
+        let resample: String
+        let temporalPatchSize: Int
+        let tokens: Tokens
+        struct Tokens: Decodable { let image: Int; let visionStart: Int; let visionEnd: Int }
+    }
+    struct ReferenceImages: Decodable {
+        let kind: String
+        let encoderAsset: String
+        let maxImages: Int
+        let maxSide: Int
+        let maxTotalTokens: Int
+        let label: String
+    }
     struct Target: Decodable {
         let backend: String
         let platform: String
@@ -237,6 +293,7 @@ private struct Manifest: Decodable {
         let sigmaShift: Shift
         let rotary: Rotary
         let prompt: Prompt
+        let referenceImages: ReferenceImages?
         struct Shift: Decodable { let rule: String; let mu: Double }
         struct Rotary: Decodable { let axes: [Int]; let theta: Int; let layout: String; let textRotated: Bool }
         struct Prompt: Decodable {
@@ -286,6 +343,41 @@ private struct Manifest: Decodable {
               outputs["image"]?.dtype == "float32" else {
             throw AetherError.unsupported("Krea tensor declarations differ from the supported recipe")
         }
+    }
+
+    /// True when the bundle declares exactly Krea's `visionTokens` reference contract (any other declaration is
+    /// refused rather than ignored); false when it declares none.
+    func validateReferences() throws -> Bool {
+        // Without `referenceImages` the bundle is text-only; stray vision declarations stay unused.
+        guard let r = diffusion.referenceImages else { return false }
+        let c = KreaReferenceContract.self
+        guard r.kind == "visionTokens", r.encoderAsset == "vision", r.maxImages == c.maximumImages,
+              r.maxSide == c.maximumSide, r.maxTotalTokens == c.maximumImageTokens, r.label == c.label,
+              let v = vision, v.deepstackLevels == c.deepstackLevels, v.hiddenSize == c.hiddenSize,
+              v.imageMean == [0.5, 0.5, 0.5], v.imageStd == [0.5, 0.5, 0.5],
+              v.maxPixels == c.maximumPixels, v.minPixels == c.minimumPixels, v.mergeSize == c.mergeSize,
+              v.patchSize == c.patchSize, v.positionTableSide == c.positionTableSide, v.positions == "mrope",
+              v.resample == "bicubic-antialias", v.temporalPatchSize == c.temporalPatchSize,
+              v.tokens.image == Int(c.imageToken), v.tokens.visionStart == Int(c.visionStartToken),
+              v.tokens.visionEnd == Int(c.visionEndToken) else {
+            throw AetherError.unsupported("expected Krea's visionTokens reference contract")
+        }
+        guard functions["textEncoder/encodeWithImages"]?.role == "encodeTextWithImages",
+              functions["vision/encode"]?.role == "encodeImage" else {
+            throw AetherError.unsupported("Krea reference function roles differ from the supported recipe")
+        }
+        let bindings = [
+            "rope_positions": ("int32", "positions"), "image_embeds": ("float16", "imageEmbeds"),
+            "deepstack": ("float16", "deepstack"), "pixels": ("float16", "image"),
+            "pos_index": ("int32", "patchPositionIndex"), "pos_weight": ("float32", "patchPositionWeight"),
+            "patch_rc": ("int32", "patchCoordinates"),
+        ]
+        guard bindings.allSatisfy({ inputs[$0.key]?.dtype == $0.value.0 && inputs[$0.key]?.bind == $0.value.1 }),
+              inputs["rope_positions"]?.mode == "mrope",
+              outputs["image_embeds"]?.dtype == "float16", outputs["deepstack"]?.dtype == "float16" else {
+            throw AetherError.unsupported("Krea reference tensor declarations differ from the supported recipe")
+        }
+        return true
     }
 }
 
