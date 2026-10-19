@@ -2,6 +2,9 @@
 
 Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   convert-vae    Convert the video VAE to Diffusers layout under OUTPUT/converted/vae (pinned converter).
+  body           Export ONE transformer-block graph for all 50 blocks: weights (w0..w21, Turbo LoRA slots included) are
+                 inputs, and both the row count and the timestep cardinality (k = 1...3, table [6,3k,D]) are dynamic.
+                 CPU check on 128 rows of real block-0 weights (zero LoRA): byte-identical to the PEFT block.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
                  (latent denormalisation, decoder, source pre-padding removal), then check it on CPU against the
                  original `_decode` of a single-tile, single-window clip.
@@ -47,7 +50,7 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body"])
     args = ap.parse_args()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
     assert args.snapshot.resolve().name == h.SNAPSHOT, "unexpected checkpoint snapshot"
@@ -61,6 +64,44 @@ def main():
                                     diffusers.__version__, 5 << 30)
         files = {p.name: h.sha256_file(p) for p in sorted(target.iterdir()) if p.is_file()}
         record(out, converted_vae=dict(path=str(target), files=files))
+    elif args.stage == "body":
+        from torch.export import Dim
+        checkpoint = h.Checkpoint(args.snapshot, converter)
+        model = h.meta_model()
+        model.load_state_dict(checkpoint.converted(lambda n: n.startswith("blocks.0.")), strict=False, assign=True)
+        block = model.transformer_blocks[0]
+        adapter, alphas = {}, {}
+        for t in ["attn.to_q", "attn.to_k", "attn.to_v", "attn.to_out.0", "ff.net.0.proj", "ff.net.2"]:
+            linear = block.get_submodule(t)
+            adapter[f"transformer.transformer_blocks.0.{t}.lora_A.weight"] = torch.zeros(128, linear.in_features, dtype=torch.bfloat16)
+            adapter[f"transformer.transformer_blocks.0.{t}.lora_B.weight"] = torch.zeros(linear.out_features, 128, dtype=torch.bfloat16)
+            alphas[f"transformer.transformer_blocks.0.{t}.alpha"] = 8.0
+        model.load_lora_adapter(adapter, prefix="transformer", adapter_name="turbo", network_alphas=alphas)
+        torch.manual_seed(1043)
+        hidden, temb = torch.randn(1, 128, 5376, dtype=torch.bfloat16), torch.randn(2, 2688)
+        tags, cos, sin = torch.randint(0, 6, (128,)), torch.randn(128, 96), torch.randn(128, 96)
+        with torch.inference_mode():
+            table = torch.stack(block.adaln_proj(temb))
+            expected = block(hidden, temb, tags, (cos, sin))
+        block.adaln_proj = h.CachedModulation()
+        graph, params = h.lift(h.BlockCall(block).eval())
+        with torch.inference_mode():
+            actual = graph(hidden, table, tags.to(torch.int32), cos, sin, *params.values())
+        names = list(params)
+        check = dict(rows=128, cardinality=2, byte_identical=bool(torch.equal(actual, expected)), bindings=names)
+        print(json.dumps(dict(check, bindings=len(names))), flush=True)
+        assert check["byte_identical"] and len(names) == 22
+        rows, k = Dim("rows", min=64, max=40960), Dim("k", min=1, max=3)
+        example = (torch.zeros(1, 19333, 5376, dtype=torch.bfloat16), torch.zeros(6, 6, 5376, dtype=torch.bfloat16),
+                   torch.zeros(19333, dtype=torch.int32), torch.zeros(19333, 96), torch.zeros(19333, 96))
+        dynamic = [{1: rows}, {1: 3 * k}, {0: rows}, {0: rows}, {0: rows}] + [None] * len(names)
+        started = time.monotonic()
+        asset = h.export_asset(out / "models/body.aimodel", graph, (*example, *params.values()),
+                               ["hidden", "temb", "tags", "cos", "sin"] + [f"w{i}" for i in range(22)], ["hidden_out"],
+                               dynamic_shapes=(tuple(dynamic),))
+        asset["seconds"] = round(time.monotonic() - started, 1)
+        record(out, body=asset, body_cpu_check=check, body_dynamic=dict(rows=[64, 40960], cardinality=[1, 3]))
+        print(json.dumps(asset), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
