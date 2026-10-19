@@ -16,6 +16,8 @@ func h3TokenizerMatchesTransformersIncludingDialogueTokens() async throws {
     #expect(tokenizer.fileHashes == oracle.files)
     for (token, id) in oracle.special { #expect(tokenizer.addedTokens[token] == id, "\(token)") }
     for item in oracle.cases { #expect(try tokenizer.tokenIDs(item.prompt) == item.ids, "\(item.prompt)") }
+    // The prototype's production profile was exported for this prompt at 49 text rows.
+    #expect(try oracle.cases.last.map { try tokenizer.tokenIDs($0.prompt).count } == 49)
     #expect(throws: AetherError.self) { try tokenizer.tokenIDs("") }
 }
 
