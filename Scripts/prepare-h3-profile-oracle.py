@@ -178,10 +178,11 @@ def layout(dump, model_config):
     from diffusers.schedulers.scheduling_minimax_h3 import MiniMaxH3Scheduler
     width, height, frames = int(dump.field("width")), int(dump.field("height")), int(dump.field("frames"))
     tokens = int(dump.field("tokens"))
+    anchors = ("first",) if dump.manifest["fields"].get("anchors") == "first" else ()
     position_ids, token_tags, video_indices, audio_indices, text_indices, ncv, nca = MiniMaxH3PrepareLayoutStep.build_packed_sequence(
         torch.full((tokens,), 1, dtype=torch.long), video_latent_num_frames(frames, 17, 5), height // 16, width // 16,
-        audio_latent_num_frames(frames), (1, 2, 2), mp.MINIMAX_H3_AUDIO_CHANNELS, mp.MINIMAX_H3_AUDIO_TAG, mp.MINIMAX_H3_VIDEO_TAG)
-    assert ncv == 0 and nca == 0
+        audio_latent_num_frames(frames), (1, 2, 2), mp.MINIMAX_H3_AUDIO_CHANNELS, mp.MINIMAX_H3_AUDIO_TAG, mp.MINIMAX_H3_VIDEO_TAG, anchors)
+    assert nca == 0 and (ncv > 0) == bool(anchors)
     checks = dict(positions=bool(torch.equal(position_ids.float(), dump.get("positions"))), token_tags=bool(torch.equal(token_tags.int(), dump.get("token_tags"))),
                   video_indices=bool(torch.equal(video_indices.int(), dump.get("video_indices"))),
                   audio_indices=bool(torch.equal(audio_indices.int(), dump.get("audio_indices"))),
@@ -193,18 +194,34 @@ def layout(dump, model_config):
         s = MiniMaxH3Scheduler(shift=shift); s.set_timesteps(points); schedulers.append(s)
     plan = []
     for i, (tv, ta) in enumerate(zip(schedulers[0].timesteps, schedulers[1].timesteps)):
-        unique, inverse = MiniMaxH3SetTimestepsStep.build_row_timesteps(video_indices, audio_indices, 0, 0, tokens, float(tv), float(ta), max(float(tv), 0.999), 1.0)
+        unique, inverse = MiniMaxH3SetTimestepsStep.build_row_timesteps(video_indices, audio_indices, ncv, 0, tokens, float(tv), float(ta), max(float(tv), 0.999), 1.0)
         checks[f"step{i}"] = bool(torch.equal(unique.float(), dump.get(f"step{i}_timesteps")) and torch.equal(inverse.int(), dump.get(f"step{i}_indices"))
                                   and torch.equal((inverse * 3 + token_tags).int(), dump.get(f"step{i}_adaln")))
         plan.append((unique, inverse))
     assert len(plan) == int(dump.field("steps"))
-    return dict(position_ids=position_ids, token_tags=token_tags, video_indices=video_indices, audio_indices=audio_indices,
+    return dict(ncv=ncv, position_ids=position_ids, token_tags=token_tags, video_indices=video_indices, audio_indices=audio_indices,
                 text_indices=text_indices, plan=plan, schedulers=schedulers, frames=frames, width=width, height=height), checks
+
+
+def condition_latents(dump):
+    """The pipeline's keyframe conditioning for the dump's first frame (`encode_vae_condition`, float32 VAE, default tiling)."""
+    from diffusers import AutoencoderKLMiniMaxH3
+    from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
+    vae = AutoencoderKLMiniMaxH3.from_pretrained(STAGING / "exports/h3-fl2va/converted/vae", torch_dtype=torch.float32).eval()
+    pixels = dump.get("keyframe").permute(2, 0, 1)[None, :, None]
+    with torch.inference_mode():
+        return encode_vae_condition(vae, pixels, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 42)
 
 
 def graphs_part(dump, out, run, text, blocks=(0, 49)):
     from diffusers import AutoencoderKLMiniMaxH3, AutoencoderKLMiniMaxH3Audio
     report = out.manifest["report"]
+    if dump.has("keyframe"):   # FL2VA dumps qualify the keyframe encoder only (the probe's --graphs does the same)
+        t = time.monotonic()
+        out.put("condition", condition_latents(dump))
+        report["condition_seconds"] = round(time.monotonic() - t, 1)
+        out.save()
+        return
     checkpoint = h.Checkpoint(SNAPSHOT_ROOT, converter())
     adapter = h.adapter_path()
     model = denoiser_model(checkpoint, adapter)
@@ -266,6 +283,16 @@ def render_part(dump, out, text, tap_source=None):
     report["tap_from"] = str((tap_source or text).path)
     video, audio = dump.get("latents_video")[0].clone(), dump.get("latents_audio")[0].clone()
     video_scheduler, audio_scheduler = shape["schedulers"]
+    ncv = shape["ncv"]
+    if ncv:
+        # The pipeline's FL2VA conditioning: noise the keyframe latents to t = 0.999 with the request's first draw, pack, lead.
+        from diffusers.modular_pipelines.minimax_h3.before_denoise import patchify_video_latents
+        condition = condition_latents(dump)
+        out.put("condition", condition)
+        noised = video_scheduler.scale_noise(condition, 0.999, dump.get("condition_noise"))
+        rows = patchify_video_latents(noised, (1, 2, 2))
+        assert rows.shape[0] == ncv
+        video = torch.cat([rows, video])
     kwargs = dict(token_tags=shape["token_tags"], position_ids=shape["position_ids"], video_indices=shape["video_indices"],
                   audio_indices=shape["audio_indices"], text_indices=shape["text_indices"])
     with torch.inference_mode():
@@ -273,14 +300,14 @@ def render_part(dump, out, text, tap_source=None):
             unique, inverse = shape["plan"][i]
             v, a = model(hidden_states=video[None], audio_hidden_states=audio[None], encoder_hidden_states=tap, timestep=unique,
                          timestep_indices=inverse, return_dict=False, **kwargs)
-            video = video_scheduler.step(v[0].float(), t, video, return_dict=False)[0]
+            video[ncv:] = video_scheduler.step(v[0, ncv:].float(), t, video[ncv:], return_dict=False)[0]
             audio = audio_scheduler.step(a[0].float(), audio_scheduler.timesteps[i], audio, return_dict=False)[0]
             out.put(f"step{i}_video", video[None].contiguous()); out.put(f"step{i}_audio", audio[None].contiguous())
         report["denoise_seconds"] = round(time.monotonic() - progress["started"], 1)
         out.put("final_video", video[None].contiguous()); out.put("final_audio", audio[None].contiguous())
         del model
         lf, lh, lw = video_latent_frames(shape), shape["height"] // 16, shape["width"] // 16
-        rows = video.reshape(1, lf, lh // 2, lw // 2, 24, 1, 2, 2).permute(0, 4, 1, 5, 2, 6, 3, 7).reshape(1, 24, lf, lh, lw)
+        rows = video[ncv:].reshape(1, lf, lh // 2, lw // 2, 24, 1, 2, 2).permute(0, 4, 1, 5, 2, 6, 3, 7).reshape(1, 24, lf, lh, lw)
         vae = AutoencoderKLMiniMaxH3.from_pretrained(STAGING / "exports/h3-fl2va/converted/vae", torch_dtype=torch.float32).eval()
         latents = rows * torch.tensor(vae.config.latents_std).view(1, -1, 1, 1, 1) + torch.tensor(vae.config.latents_mean).view(1, -1, 1, 1, 1)
         t = time.monotonic()

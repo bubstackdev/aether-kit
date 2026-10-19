@@ -73,14 +73,21 @@ public struct H3Latents: Sendable {
         }
         self.video = video; self.audio = audio
     }
-    public func advanced(schedule: H3Schedule, step: Int, videoVelocity: H3TensorData, audioVelocity: H3TensorData) throws -> H3Latents {
-        guard videoVelocity.spec == video.spec, audioVelocity.spec == audio.spec else {
+    /// One scheduler step. The first `conditionVideoRows` video rows (the keyframe anchors) are never written, as in the
+    /// pipeline, which steps only `latents[num_condition_video_rows:]`.
+    public func advanced(schedule: H3Schedule, step: Int, videoVelocity: H3TensorData, audioVelocity: H3TensorData,
+                         conditionVideoRows: Int = 0) throws -> H3Latents {
+        guard videoVelocity.spec == video.spec, audioVelocity.spec == audio.spec,
+              (0..<video.spec.shape[1]).contains(conditionVideoRows) else {
             throw AetherError.invalidTensor("H3 velocity shape or precision differs from latents")
         }
-        func advance(_ modality: H3Schedule.Modality, _ sample: H3TensorData, _ velocity: H3TensorData) throws -> H3TensorData {
-            let values = try schedule.advance(modality, step: step, sample: sample.floatValues(), velocity: velocity.floatValues())
-            return try H3TensorData(spec: sample.spec, bytes: values.withUnsafeBytes { Data($0) })
+        func advance(_ modality: H3Schedule.Modality, _ tensor: H3TensorData, _ velocity: H3TensorData, frozen: Int) throws -> H3TensorData {
+            let sample = try tensor.floatValues(), velocity = try velocity.floatValues()
+            let moved = try schedule.advance(modality, step: step, sample: Array(sample[frozen...]), velocity: Array(velocity[frozen...]))
+            let values = Array(sample[..<frozen]) + moved
+            return try H3TensorData(spec: tensor.spec, bytes: values.withUnsafeBytes { Data($0) })
         }
-        return try H3Latents(video: advance(.video, video, videoVelocity), audio: advance(.audio, audio, audioVelocity))
+        return try H3Latents(video: advance(.video, video, videoVelocity, frozen: conditionVideoRows * 96),
+                             audio: advance(.audio, audio, audioVelocity, frozen: 0))
     }
 }

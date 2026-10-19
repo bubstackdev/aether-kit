@@ -85,6 +85,14 @@ public struct H3Profile: Sendable {
     public let parameters: [[H3TensorFile]]
     public let recipes: [String: Recipe]
     public let videoDecoder: VideoDecoder
+    /// First-frame (FL2VA keyframe) encoders, one static graph per canvas, keyed "WIDTHxHEIGHT".
+    public let keyframeEncoders: [String: H3ModelAsset]
+    public func keyframeEncoder(width: Int, height: Int) throws -> H3ModelAsset {
+        guard let model = keyframeEncoders["\(width)x\(height)"] else {
+            throw AetherError.unsupported("H3 profile has no first-frame encoder for \(width)x\(height)")
+        }
+        return model
+    }
     public let audioDecoder: AudioDecoder?
 
     public init(url: URL) throws {
@@ -158,6 +166,10 @@ public struct H3Profile: Sendable {
         guard m.video_decoder.tile == 256, m.video_decoder.window_latents == 7, m.video_decoder.window_frames == 22,
               m.video_decoder.window_stride == 5 else { throw AetherError.invalidModel("H3 profile lacks the source decoder window contract") }
         guard ["float32", "bfloat16"].contains(m.video_decoder.precision ?? "float32") else { throw AetherError.invalidModel("unknown H3 video decoder precision") }
+        keyframeEncoders = try (m.video_encoder_first ?? [:]).mapValues { try $0.asset(path) }
+        guard keyframeEncoders.keys.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }) else {
+            throw AetherError.invalidModel("invalid H3 first-frame encoder canvas")
+        }
         videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256, precision: m.video_decoder.precision ?? "float32",
                                     float32: try m.video_decoder.float32?.asset(path))
         audioDecoder = try m.audio_decoder.map { a in
@@ -223,6 +235,7 @@ public struct H3Profile: Sendable {
     public func verifyModels() throws {
         var seen = Set<String>()
         let all = [body, heads, videoDecoder.model] + (videoDecoder.float32.map { [$0] } ?? []) + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
+            + keyframeEncoders.keys.sorted().map { keyframeEncoders[$0]! }
             + (audioDecoder.map { audio in [audio.model] + audio.fixed.keys.sorted().map { audio.fixed[$0]! } } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
@@ -289,6 +302,7 @@ public struct H3Profile: Sendable {
         let transformer_weight_layout: String; let adapter: Adapter?; let limits: Limits; let tokenizer: String
         let conditioner: ConditionerEntry?; let prepare: PrepareEntry?; let body: Asset; let heads: Asset; let parameters: [[Tensor]]
         let recipes: [String: RecipeEntry]; let video_decoder: Decoder; let audio_decoder: AudioEntry?
+        let video_encoder_first: [String: Asset]?
     }
 }
 

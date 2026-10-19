@@ -35,6 +35,12 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  torch_dtype=bfloat16, the reduced precision Diffusers itself supports (`_keep_in_fp32_modules` keeps the
                  norms and scales in float32; `decode` casts z to the decoder's dtype). Checked on CPU against `_decode`
                  at that dtype, and its distance from the float32 decoder is recorded.
+  video-encoder-first  Export the first-frame (fl2va keyframe) encoder, one STATIC graph per canvas orientation
+                 (960x544, 544x960): pixels [1,3,1,H,W] f32 in 0...255 -> normalized condition latents [1,24,1,H/16,W/16]
+                 f32. It is the pipeline's `encode_vae_condition` exactly: ImageNet normalize, the (tiled) encoder, the
+                 posterior SAMPLED under the fixed keyframe seed 42 (its draw baked in as a constant), float16 rounding,
+                 latent normalization. Checked on CPU against `encode_vae_condition` (byte-identical). Needs no
+                 download: the FL2VA video_vae weights are in the local snapshot (converted under converted/vae).
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -82,7 +88,8 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "finalize"])
+    ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first: WIDTHxHEIGHT canvases")
     ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
@@ -592,7 +599,8 @@ def main():
                       video_decoder=dict(asset(meta.get("video_decoder_bf16", meta["video_decoder"])), tile=meta["video_tile"], window_latents=7,
                                          window_frames=22, window_stride=5,
                                          precision="bfloat16" if "video_decoder_bf16" in meta else "float32",
-                                         float32=asset(meta["video_decoder"]) if "video_decoder_bf16" in meta else None), audio_decoder=audio)
+                                         float32=asset(meta["video_decoder"]) if "video_decoder_bf16" in meta else None), audio_decoder=audio,
+                      video_encoder_first={key: asset(item) for key, item in sorted(meta.get("video_encoder_first", {}).items())})
         (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
         sizes = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
         print(json.dumps(dict(complete=bundle["complete"], missing=missing, bytes_on_disk=sizes)), flush=True)
@@ -630,6 +638,52 @@ def main():
         asset["seconds"] = round(time.monotonic() - started, 1)
         record(out, video_decoder_bf16=dict(asset, check=check))
         print(json.dumps(asset), flush=True)
+    elif args.stage == "video-encoder-first":
+        from diffusers import AutoencoderKLMiniMaxH3
+        from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
+        from diffusers.utils.torch_utils import randn_tensor
+        vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
+        pixel_mean, pixel_std, seed = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 42
+
+        class FirstFrameEncoder(torch.nn.Module):
+            def __init__(self, eps):
+                super().__init__()
+                self.vae = vae
+                self.register_buffer("eps", eps)
+                self.register_buffer("pixel_mean", torch.tensor(pixel_mean).view(1, -1, 1, 1, 1))
+                self.register_buffer("pixel_std", torch.tensor(pixel_std).view(1, -1, 1, 1, 1))
+                self.register_buffer("mean", torch.tensor(vae.config.latents_mean).view(1, -1, 1, 1, 1))
+                self.register_buffer("std", torch.tensor(vae.config.latents_std).view(1, -1, 1, 1, 1))
+
+            def forward(self, pixels):
+                posterior = self.vae.encode((pixels.div(255.0) - self.pixel_mean) / self.pixel_std, return_dict=False)[0]
+                latents = (posterior.mean + posterior.std * self.eps).to(torch.float16).float()
+                return (latents - self.mean) / self.std
+        meta = json.loads((out / "build.json").read_text())
+        encoders = meta.get("video_encoder_first", {})
+        for width, height in (tuple(int(v) for v in c.split("x")) for c in args.canvases.split(",")):
+            key = f"{width}x{height}"
+            torch.manual_seed(1043)
+            image = torch.randint(0, 256, (1, 3, 1, height, width), dtype=torch.uint8)
+            started = time.monotonic()
+            with torch.inference_mode():
+                moments = vae.encode((image.float().div(255.0) - torch.tensor(pixel_mean).view(1, -1, 1, 1, 1)) / torch.tensor(pixel_std).view(1, -1, 1, 1, 1),
+                                     return_dict=False)[0]
+                eps = randn_tensor(moments.mean.shape, generator=torch.Generator().manual_seed(seed), device=torch.device("cpu"), dtype=moments.mean.dtype)
+                module = FirstFrameEncoder(eps).eval()
+                actual = module(image.float())
+                reference = encode_vae_condition(vae, image, pixel_mean, pixel_std, seed)
+            check = dict(canvas=key, shape=list(actual.shape), byte_identical=bool(torch.equal(actual, reference)),
+                         relative_l2=float((actual.double() - reference.double()).norm() / reference.double().norm()),
+                         seconds=round(time.monotonic() - started, 1))
+            print(json.dumps(check), flush=True)
+            assert check["byte_identical"], check
+            started = time.monotonic()
+            asset = h.export_asset(out / f"models/video-encoder-first-{key}.aimodel", module, (image.float(),), ["pixels"], ["condition"])
+            asset["seconds"] = round(time.monotonic() - started, 1)
+            encoders[key] = dict(asset, check=check, encode_seed=seed)
+            record(out, video_encoder_first=encoders)
+            print(json.dumps(asset), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()

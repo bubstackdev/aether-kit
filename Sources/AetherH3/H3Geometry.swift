@@ -38,20 +38,29 @@ public struct H3Geometry: Sendable, Equatable {
     /// Packs source [24,T,H,W] into [T*H/2*W/2,96], preserving channel/patch order.
     public func packVideo(_ latents: FloatTensor) throws -> FloatTensor {
         guard latents.shape == videoLatentShape else { throw AetherError.invalidTensor("H3 video noise must be [24,T,H,W]") }
-        var result: [Float] = []; result.reserveCapacity(latents.values.count)
+        return try FloatTensor(shape: [targetVideoRows, 96], values: packFrames(latents.values, latentFrames: latentFrames))
+    }
+
+    /// `[24, latentFrames, H, W]` values -> rows, frame-major then row-major, each `(channel, dy, dx)` (the pipeline's
+    /// `patchify_video_latents` with patch (1, 2, 2)).
+    public func packFrames(_ values: [Float], latentFrames: Int) throws -> [Float] {
+        guard latentFrames > 0, values.count == 24 * latentFrames * latentHeight * latentWidth else {
+            throw AetherError.invalidTensor("H3 video latents must be [24,T,H,W]")
+        }
+        var result: [Float] = []; result.reserveCapacity(values.count)
         for f in 0..<latentFrames {
             for y in stride(from: 0, to: latentHeight, by: 2) {
                 for x in stride(from: 0, to: latentWidth, by: 2) {
                     for channel in 0..<24 {
                         for dy in 0..<2 {
                             for dx in 0..<2 {
-                                result.append(latents.values[((channel * latentFrames + f) * latentHeight + y + dy) * latentWidth + x + dx])
+                                result.append(values[((channel * latentFrames + f) * latentHeight + y + dy) * latentWidth + x + dx])
                             }
                         }
                     }
                 }
             }
         }
-        return try FloatTensor(shape: [targetVideoRows, 96], values: result)
+        return result
     }
 }

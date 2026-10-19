@@ -31,6 +31,9 @@ func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
         #expect(profile.parameters.count == 50 && conditioner.parameters.count == 50 && prepare.textParameters.count == 47)
         #expect(audio.sampleRate == 32000 && audio.hop == 800 && audio.channels == 2)
         #expect(profile.videoDecoder.precision == "bfloat16" && profile.videoDecoder.float32 != nil)
+        // FL2VA: one static first-frame encoder per menu canvas.
+        #expect(try profile.keyframeEncoder(width: 960, height: 544).url.lastPathComponent == "video-encoder-first-960x544.aimodel")
+        #expect(try profile.keyframeEncoder(width: 544, height: 960).url.lastPathComponent == "video-encoder-first-544x960.aimodel")
         // The 5 s clip menu needs Na = 207 (124 frames); the dynamic decoder is CPU-only.
         #expect(try audio.model(latents: 207).url.lastPathComponent == "audio-decoder-na207.aimodel")
         #expect(throws: AetherError.self) { try audio.model(latents: 208) }
