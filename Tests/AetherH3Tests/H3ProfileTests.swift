@@ -10,6 +10,8 @@ func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
     let url = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"]))
     let profile = try H3Profile(url: url)
     #expect(Set(profile.recipes.keys) == ["turbo8", "turbo4"])
+    #expect(profile.modelIdentity == "minimax-h3.fl2va-turbo/1:" + profile.manifestSHA256)
+    #expect(profile.modelIdentity.hasPrefix(H3Profile.modelIdentityPrefix) && profile.manifestSHA256.count == 64)
     for (width, height) in [(960, 544), (544, 960)] {
         let geometry = try H3Geometry(width: width, height: height, requestedFrames: 120)
         for anchors in [[], [H3Anchor.first]] {

@@ -36,7 +36,7 @@ let package = Package(
             "AetherH3", "AetherKit", .product(name: "Tokenizers", package: "swift-transformers"),
         ]),
         .target(name: "AetherKreaCoreAI", dependencies: ["AetherKrea", "AetherCoreAI", "AetherKit"]),
-        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI"]),
+        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI"]),
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),

@@ -83,7 +83,7 @@ actor H3ProfileConditioner: H3PromptConditioner {
 }
 
 /// Packed-sequence helpers shared by the denoiser and its tests.
-enum H3Packing {
+public enum H3Packing {
     /// `gather[r]` = the source row of packed row `r` in `[text; video; audio]`.
     static func gather(_ layout: H3Layout) throws -> [Int32] {
         var gather = [Int32](repeating: -1, count: layout.rows)
@@ -291,4 +291,49 @@ public enum H3ProfileEngine {
             video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
             audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio.model, hop: audio.hop), hop: audio.hop))
     }
+}
+
+/// Per-graph native runs over a profile, for qualification against CPU references (each call opens what it needs and
+/// keeps it until `release()`). Inputs are the graphs' own boundary tensors; weights are bound in place.
+public actor H3ProfileQualifier {
+    private let profile: H3Profile
+    private let conditioner: NativeH3ConditionerKernel
+    private let denoiser: NativeH3DenoiserKernels
+    private let tile: NativeH3TileKernel
+    private let audio: NativeH3AudioKernel
+    public init(profile: H3Profile) throws {
+        guard profile.complete, let conditioner = profile.conditioner, let audio = profile.audioDecoder else {
+            throw AetherError.invalidModel("H3 profile is incomplete: \(profile.missing.joined(separator: ", "))")
+        }
+        self.profile = profile; self.conditioner = NativeH3ConditionerKernel(conditioner)
+        self.denoiser = try NativeH3DenoiserKernels(profile)
+        self.tile = NativeH3TileKernel(profile.videoDecoder.model); self.audio = NativeH3AudioKernel(audio.model, hop: audio.hop)
+    }
+    /// The unnormalized tap for `ids`, layer by layer, exactly as the session's conditioner stage computes it.
+    public func tap(ids: [Int32], onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in }) async throws -> H3TensorData {
+        let stage = try H3ProfileConditioner(profile: profile, tokenize: { _ in ids }, kernel: conditioner)
+        return try await stage.encode("ids", geometry: try H3Geometry(), onLayer: onLayer)
+    }
+    public func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        try await conditioner.layer(index, hidden: hidden, cos: cos, sin: sin)
+    }
+    public func refine(_ tap: H3TensorData) async throws -> H3TensorData { try await denoiser.refine(tap) }
+    public func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
+        try await denoiser.pack(video: video, audio: audio, text: text, gather: gather)
+    }
+    public func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        try await denoiser.block(index, hidden: hidden, table: table, tags: tags, cos: cos, sin: sin)
+    }
+    public func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
+                      video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
+        try await denoiser.heads(hidden: hidden, temb: temb, indices: indices, videoIndices: videoIndices, audioIndices: audioIndices, video: video, audio: audio)
+    }
+    public func tile(_ rows: H3TensorData) async throws -> H3TensorData { try await tile.decode(rows) }
+    public func audio(_ rows: H3TensorData) async throws -> H3TensorData { try await audio.decode(rows) }
+    public func release() async { await conditioner.release(); await denoiser.release(); await tile.release(); await audio.release() }
+}
+
+extension H3Packing {
+    /// Public for probes: the gather permutation of `layout` (see `H3Packing.gather`).
+    public static func gatherIndices(_ layout: H3Layout) throws -> [Int32] { try gather(layout) }
 }

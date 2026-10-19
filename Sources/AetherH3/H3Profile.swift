@@ -53,6 +53,11 @@ public struct H3Profile: Sendable {
 
     public let header: H3ExportHeader?
     public let manifestSHA256: String
+    /// Every H3 clip model identity starts with this prefix (and nothing else does), so hosts can key the licence
+    /// credit on it.
+    public static let modelIdentityPrefix = "minimax-h3."
+    /// The clip model identity hosts record: the profile family plus its manifest fingerprint.
+    public var modelIdentity: String { "\(Self.modelIdentityPrefix)fl2va-turbo/1:\(manifestSHA256)" }
     public let complete: Bool
     public let missing: [String]
     public let rowLimits: ClosedRange<Int>
