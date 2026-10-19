@@ -15,4 +15,12 @@ public struct KreaTokenizer: Sendable {
     public func prepare(_ text: String) throws -> KreaPrompt {
         try KreaPrompt(renderedTokenIDs: tokenizer.encode(text: KreaPrompt.render(text), addSpecialTokens: false))
     }
+
+    /// A `visionTokens` reference prompt: labelled image parts before the text, each pad expanded to its image's
+    /// tokens. Truncation is decided by the text-only rendering, so images and labels are never cut.
+    public func prepare(_ text: String, references: [KreaReferencePixels]) throws -> KreaReferencePrompt {
+        let textOnly = tokenizer.encode(text: KreaPrompt.render(text), addSpecialTokens: false).count
+        let ids = tokenizer.encode(text: KreaReferencePrompt.render(text, imageCount: references.count), addSpecialTokens: false)
+        return try KreaReferencePrompt(renderedTokenIDs: ids, textOnlyTokenCount: textOnly, images: references)
+    }
 }
