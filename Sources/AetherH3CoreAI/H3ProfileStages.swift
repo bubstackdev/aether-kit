@@ -225,6 +225,12 @@ actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
 
 // MARK: Native kernels
 
+/// Per-call weights, double-buffered: call `i` runs from bank `i % 2` and loads call `i+1`'s weights into the other bank
+/// while its GPU work runs (see `NativeH3Graph.run(_:outputs:bank:prefetch:)`).
+func h3Banked(_ parameters: [[H3TensorFile]], _ index: Int) -> (files: [String: H3TensorFile], bank: Int) {
+    (Dictionary(uniqueKeysWithValues: parameters[index].map { ($0.name, $0) }), index % 2)
+}
+
 actor NativeH3ConditionerKernel: H3ConditionerKernel {
     private let conditioner: H3Profile.Conditioner
     private var graph: NativeH3Graph?
@@ -233,7 +239,9 @@ actor NativeH3ConditionerKernel: H3ConditionerKernel {
         if graph == nil { graph = try await NativeH3Graph.open(conditioner.layer) }
         var inputs: [String: NativeH3Graph.Input] = ["hidden": .data(hidden), "cos": .data(cos), "sin": .data(sin)]
         for file in conditioner.parameters[index] { inputs[file.name] = .file(file) }
-        return try await graph!.run(inputs, outputs: ["hidden_out": hidden.spec])["hidden_out"]!
+        // The last layer prefetches nothing: the conditioner is released after it.
+        let next = index + 1 < conditioner.parameters.count ? h3Banked(conditioner.parameters, index + 1) : nil
+        return try await graph!.run(inputs, outputs: ["hidden_out": hidden.spec], bank: index % 2, prefetch: next)["hidden_out"]!
     }
     func release() async { graph = nil }
 }
@@ -264,7 +272,9 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
         if body == nil { body = try await NativeH3Graph.open(profile.body) }
         var inputs: [String: NativeH3Graph.Input] = ["hidden": .data(hidden), "temb": .data(table), "tags": .data(tags), "cos": .data(cos), "sin": .data(sin)]
         for file in profile.parameters[index] { inputs[file.name] = .file(file) }
-        return try await body!.run(inputs, outputs: ["hidden_out": hidden.spec])["hidden_out"]!
+        // Block 49 prefetches block 0 for the next step.
+        return try await body!.run(inputs, outputs: ["hidden_out": hidden.spec], bank: index % 2,
+                                   prefetch: h3Banked(profile.parameters, (index + 1) % profile.parameters.count))["hidden_out"]!
     }
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {

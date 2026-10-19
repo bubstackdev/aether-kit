@@ -113,6 +113,24 @@ enum H3ProfileCommand {
                               references: arguments[3] == "-" ? nil : URL(fileURLWithPath: arguments[3]), output: URL(fileURLWithPath: arguments[4]),
                               render: arguments[5] == "--render", audio: !arguments.contains("--no-audio"))
             return true
+        case "h3-weights-bench":
+            // CPU only: how long one denoising step's per-block weight reads take (what NativeH3Graph does per block call).
+            guard arguments.count == 3, let passes = Int(arguments[2]) else { throw AetherError.invalidRequest("use h3-weights-bench PROFILE.json PASSES") }
+            let profile = try H3Profile(url: URL(fileURLWithPath: arguments[1]))
+            let largest = profile.parameters.flatMap { $0 }.map(\.spec.byteCount).max() ?? 0
+            let scratch = UnsafeMutableRawBufferPointer.allocate(byteCount: largest, alignment: 16384)
+            defer { scratch.deallocate() }
+            let clock = ContinuousClock()
+            for pass in 0..<passes {
+                var bytes = 0
+                let start = clock.now
+                for block in profile.parameters { for file in block {
+                    try file.read(into: UnsafeMutableRawBufferPointer(rebasing: scratch[..<file.spec.byteCount]), verify: false); bytes += file.spec.byteCount
+                } }
+                let d = clock.now - start, seconds = Double(d.components.seconds) + Double(d.components.attoseconds) / 1e18
+                print("pass \(pass): \(bytes / 1_000_000) MB in \(String(format: "%.2f", seconds)) s (\(String(format: "%.2f", Double(bytes) / seconds / 1e9)) GB/s)")
+            }
+            return true
         case "h3-profile-decode":
             guard arguments.count == 5 || arguments.count == 7 else {
                 throw AetherError.invalidRequest("use h3-profile-decode PROFILE.json DUMP RENDER NEW_DIRECTORY [DECODER.aimodel SHA256]")
