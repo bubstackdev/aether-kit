@@ -16,7 +16,7 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
   compare  Cosine / relative L2 / max |diff| for every tensor both directories hold; PSNR for frames.
 Usage: python -I -B prepare-h3-profile-oracle.py --part PART --dump DUMP --output NEW_DIR [--run RUN] [--text TEXT_DIR]
 """
-import argparse, json, math, sys, time
+import argparse, json, math, os, sys, time
 from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -24,7 +24,9 @@ import torch
 import h3_export_lib as h
 
 SNAPSHOT_ROOT = Path.home() / ".cache/huggingface/hub/models--MiniMaxAI--MiniMax-H3/snapshots" / h.SNAPSHOT
-STAGING = Path(__file__).resolve().parents[2]   # .local/team/staging/h3 (oracle-scripts/vendor, exports/)
+# The working folder that holds the pinned converter (`oracle-scripts/vendor/convert_minimax_h3_to_diffusers.py`) and the
+# export (`exports/h3-fl2va`): H3_STAGING, or the folder that contains this checkout.
+STAGING = Path(os.environ.get("H3_STAGING", Path(__file__).resolve().parents[2]))
 DTYPES = {"bfloat16": torch.bfloat16, "float32": torch.float32, "int32": torch.int32, "uint8": torch.uint8}
 
 
