@@ -158,3 +158,31 @@ func h3SpatialTilesMatchOriginalStitchingAndOddLatentPatchOffsets() throws {
         try oracle.tiling.extract(width: oracle.width, height: oracle.height, packed: packed, index: oracle.tiling.tileCount)
     }
 }
+
+@Test func h3GeneratedTurboGridReproducesTheCapturedTurbo8GridBitForBit() throws {
+    let captured = try H3Schedule(), generated = try H3Schedule.turbo(steps: 8, videoShift: 12, audioShift: 3)
+    #expect(generated.count == 8 && captured.count == 8)
+    for modality in [H3Schedule.Modality.video, .audio] {
+        #expect(generated.sigmas(modality).map(\.bitPattern) == captured.sigmas(modality).map(\.bitPattern))
+    }
+    #expect(zip(generated.steps, captured.steps).allSatisfy {
+        $0.videoTimestep.bitPattern == $1.videoTimestep.bitPattern && $0.audioTimestep.bitPattern == $1.audioTimestep.bitPattern
+    })
+}
+
+@Test func h3FourStepTurboGridsMatchThePublishedAdapterSpecs() throws {
+    func close(_ a: [Float], _ b: [Float]) -> Bool { a.count == b.count && zip(a, b).allSatisfy { abs($0 - $1) < 5e-5 } }
+    // ModelTC Minimax-H3-Turbo: NFE 4 at shifts 12/3 (544p adapters).
+    let s544 = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    #expect(close(s544.sigmas(.video), [1, 0.9730, 0.9231, 0.8000, 0]))
+    #expect(close(s544.sigmas(.audio), [1, 0.9, 0.75, 0.5, 0]))
+    // 768p adapters train at video shift 6.
+    let s768 = try H3Schedule.turbo(steps: 4, videoShift: 6, audioShift: 3)
+    #expect(close(s768.sigmas(.video), [1, 0.947368, 0.857143, 0.666667, 0]))
+    // A four-step schedule advances exactly four times.
+    #expect(throws: AetherError.self) { try s768.advance(.video, step: 4, sample: [1], velocity: [1]) }
+    #expect(try s768.advance(.video, step: 3, sample: [1], velocity: [1]).count == 1)
+    for (steps, video, audio) in [(0, 6, 3), (51, 6, 3), (4, 0.5, 3), (4, 6, Float.nan)] as [(Int, Float, Float)] {
+        #expect(throws: AetherError.self) { try H3Schedule.turbo(steps: steps, videoShift: video, audioShift: audio) }
+    }
+}
