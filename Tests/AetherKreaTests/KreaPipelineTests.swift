@@ -505,3 +505,41 @@ private func oneRow() throws -> KreaConditioning {
     #expect(log.snapshot.filter { $0 == "closeEncoder" }.count == 2)
     #expect(log.snapshot.filter { $0.hasPrefix("open:") }.count == 2)
 }
+
+@Test func refineStartsFromEncodedLatentsAndRunsOnlyTheRemainingSteps() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let log = EventLog()
+    let session = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: log, checkDecoderLatents: false))
+    let configuration = try KreaConfiguration(width: 16, height: 16)
+    let prepared = try await session.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    let schedule = try KreaSchedule(steps: 8)
+    let start = try KreaRefineStart(latents: FloatTensor(shape: [1, 64], values: Array(repeating: 1, count: 64)), startStep: 7)
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    let first = Mutex<[Float]?>(nil)
+    _ = try await session.refine(configuration: configuration, preparedPrompt: prepared, start: start, noise: noise) { event in
+        if case .step(let index, let total, let latents) = event {
+            log.append("step:\(index)/\(total)")
+            first.withLock { if $0 == nil { $0 = latents.values } }
+        }
+    }
+    // Only step 7 ran; the start was (1 − σ7)·1 + σ7·0, then the Euler step added (0 − σ7)·1.
+    #expect(log.snapshot.filter { $0.hasPrefix("step:") } == ["step:7/8"])
+    let sigma = schedule.sigmas[7]
+    #expect(first.withLock { $0 }?.allSatisfy { abs($0 - ((1 - sigma) - sigma)) < 1e-6 } == true)
+    #expect(abs(sigma - 0.311) < 0.01 && abs(schedule.sigmas[6] - 0.513) < 0.01)
+    // Wrong shapes and step 0 are refused before any model work.
+    #expect(throws: AetherError.self) { try KreaRefineStart(latents: noise, startStep: 0) }
+    let wide = try KreaRefineStart(latents: FloatTensor(shape: [2, 64], values: Array(repeating: 0, count: 128)), startStep: 7)
+    await #expect(throws: AetherError.self) { try await session.refine(configuration: configuration, preparedPrompt: prepared, start: wide) }
+    await session.unload()
+}
+
+@Test func refineStartMixesPictureAndNoiseBySigma() throws {
+    let schedule = try KreaSchedule(steps: 8)
+    let mixed = try schedule.refineStart(x0: [2, 0], noise: [0, 4], step: 6)
+    let sigma = schedule.sigmas[6]
+    #expect(abs(mixed[0] - 2 * (1 - sigma)) < 1e-6 && abs(mixed[1] - 4 * sigma) < 1e-6)
+    #expect(throws: AetherError.self) { try schedule.refineStart(x0: [1], noise: [1], step: 0) }
+    #expect(throws: AetherError.self) { try schedule.refineStart(x0: [1], noise: [1, 2], step: 3) }
+}
