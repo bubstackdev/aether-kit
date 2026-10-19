@@ -75,6 +75,28 @@ public actor KreaGenerationSession {
         try await generate(configuration: configuration, source: .prompt(prompt), noise: noise, progress: progress)
     }
 
+    /// Reference-image generation (`visionTokens`): each reference is encoded once by the vision asset, which is then
+    /// released (unless resident), and the text encoder's `encodeWithImages` produces the longer conditioning.
+    /// `references` must be the prompt's images in order (matched by content digest and grid). Validation happens
+    /// before any model loads.
+    public func generate(
+        configuration: KreaConfiguration, referencePrompt: KreaReferencePrompt, references: [KreaReferencePixels],
+        noise: FloatTensor? = nil, progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void = { _ in }
+    ) async throws -> GeneratedImage {
+        try runner.checkReferences(referencePrompt, references)
+        return try await generate(configuration: configuration, source: .references(referencePrompt, references),
+                                  noise: noise, progress: progress)
+    }
+
+    /// Encodes a reference prompt once and releases the vision and text encoders before returning.
+    public func prepare(referencePrompt: KreaReferencePrompt, references: [KreaReferencePixels]) async throws -> KreaPreparedPrompt {
+        try runner.checkReferences(referencePrompt, references)
+        return try await perform { [runner, bundleFingerprint] in
+            let conditioning = try await runner.encode(referencePrompt, references, retainingModels: false)
+            return KreaPreparedPrompt(conditioning: conditioning, bundleFingerprint: bundleFingerprint)
+        }
+    }
+
     public func generate(
         configuration: KreaConfiguration, conditioning: KreaConditioning, noise: FloatTensor? = nil,
         progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void = { _ in }
@@ -142,13 +164,16 @@ private struct NativeKreaFactory: KreaModelFactory {
     }
 }
 
-private enum ConditioningSource: Sendable { case prompt(KreaPrompt), provided(KreaConditioning) }
+private enum ConditioningSource: Sendable {
+    case prompt(KreaPrompt), provided(KreaConditioning), references(KreaReferencePrompt, [KreaReferencePixels])
+}
 
 private actor KreaRunner {
     let assets: KreaAssets
     let factory: any KreaModelFactory
     let residency: KreaResidency
     var encoder: (any KreaExecutable)?
+    var vision: (any KreaExecutable)?
     var decoder: (any KreaExecutable)?
     var denoisers: [any KreaExecutable] = []
     var selectionIdentity: String?
@@ -168,6 +193,8 @@ private actor KreaRunner {
         switch source {
         case .provided(let provided): conditioning = provided
         case .prompt(let prompt): conditioning = try await encode(prompt, retainingModels: residency == .resident)
+        case .references(let prompt, let references):
+            conditioning = try await encode(prompt, references, retainingModels: residency == .resident)
         }
         try progress(.conditioningReady(conditioning))
         try Task.checkCancellation()
@@ -265,6 +292,92 @@ private actor KreaRunner {
         }
     }
 
+    nonisolated func checkReferences(_ prompt: KreaReferencePrompt, _ references: [KreaReferencePixels]) throws {
+        guard assets.supportsReferences else { throw AetherError.unsupported("this Krea bundle declares no reference images") }
+        guard references.count == prompt.images.count,
+              zip(prompt.images, references).allSatisfy({ span, image in
+                  span.digest == image.digest && span.range.count == image.tokens
+                      && (span.t, span.h, span.w) == image.mergedGrid
+              }) else {
+            throw AetherError.invalidRequest("reference images do not match the prepared reference prompt")
+        }
+    }
+
+    /// Vision encoder per image, then `encodeWithImages`. Balanced residency releases denoisers before either encoder
+    /// loads and releases both encoders afterwards; failures and cancellation always discard the encoders.
+    /// `conditioningReady` follows only after the vision encoder is released (unless resident), so existing
+    /// observers see the reference phase without a new event case.
+    func encode(_ prompt: KreaReferencePrompt, _ references: [KreaReferencePixels],
+                retainingModels: Bool) async throws -> KreaConditioning {
+        try Task.checkCancellation()
+        try checkReferences(prompt, references)
+        guard let visionAsset = assets.vision else { throw AetherError.unsupported("this Krea bundle declares no reference images") }
+        if !retainingModels {
+            for model in denoisers { await model.unload() }
+            denoisers = []
+            selectionIdentity = nil
+        }
+        var embeds: [[Float16]] = [], deep: [[Float16]] = []
+        do {
+            try Task.checkCancellation()
+            if vision == nil { vision = try await factory.open(visionAsset, frequentReshapes: false) }
+            guard let model = vision else { throw AetherError.invalidModel("vision encoder did not load") }
+            for image in references {
+                try Task.checkCancellation()
+                try KreaContracts.vision(signature(model, named: "encode"), patches: image.patches, tokens: image.tokens)
+                var inputs = try KreaPatchTables(grid: image.grid).encoderInputs
+                inputs["pixels"] = .float16(try image.encoderPixels)
+                let outputs = try await model.runTensors(function: "encode", inputs: inputs)
+                try Task.checkCancellation()
+                let hidden = KreaReferenceContract.hiddenSize, levels = KreaReferenceContract.deepstackLevels
+                guard outputs.count == 2, case .float16(let rows) = outputs["image_embeds"], case .float16(let stack) = outputs["deepstack"],
+                      rows.shape == [image.tokens, hidden], stack.shape == [levels, image.tokens, hidden] else {
+                    throw AetherError.invalidTensor("vision encoder must return float16 image_embeds [tokens,2560] and deepstack [3,tokens,2560]")
+                }
+                embeds.append(rows.values); deep.append(stack.values)
+            }
+            if !retainingModels { await model.unload(); vision = nil }
+        } catch {
+            await vision?.unload()
+            vision = nil
+            throw error
+        }
+        try Task.checkCancellation()
+        let hidden = KreaReferenceContract.hiddenSize, levels = KreaReferenceContract.deepstackLevels
+        let n = prompt.imageTokens
+        let imageEmbeds = try Float16Tensor(shape: [n, hidden], values: Array(embeds.joined()))
+        var levelMajor: [Float16] = []
+        levelMajor.reserveCapacity(levels * n * hidden)
+        for level in 0..<levels {
+            for (index, values) in deep.enumerated() {
+                let size = references[index].tokens * hidden
+                levelMajor += values[(level * size)..<((level + 1) * size)]
+            }
+        }
+        let deepstack = try Float16Tensor(shape: [levels, n, hidden], values: levelMajor)
+        if encoder == nil { encoder = try await factory.open(assets.textEncoder, frequentReshapes: true) }
+        guard let model = encoder else { throw AetherError.invalidModel("encoder did not load") }
+        do {
+            let rank3 = try KreaContracts.encodeWithImages(signature(model, named: "encodeWithImages"),
+                                                           rows: prompt.tokenIDs.count, images: n)
+            var inputs = try prompt.encoderInputs(ropeShape: rank3 ? [3, 1, prompt.tokenIDs.count] : nil)
+            inputs["image_embeds"] = .float16(imageEmbeds)
+            inputs["deepstack"] = .float16(deepstack)
+            let result = try await model.runTensors(function: "encodeWithImages", inputs: inputs)
+            try Task.checkCancellation()
+            guard result.count == 1, case .float16(let tensor) = result["text_embeds"] else {
+                throw AetherError.invalidTensor("encoder must return float16 text_embeds")
+            }
+            let conditioning = try KreaConditioning(encoderOutput: tensor, referencePrompt: prompt)
+            if !retainingModels { await model.unload(); encoder = nil }
+            return conditioning
+        } catch {
+            await model.unload()
+            encoder = nil
+            throw error
+        }
+    }
+
     func prepareDenoisers(_ selection: KreaDenoiserSelection) async throws {
         if selectionIdentity == selection.identity { return }
         for model in denoisers { await model.unload() }
@@ -286,6 +399,8 @@ private actor KreaRunner {
 
     func unload() async {
         if let encoder { await encoder.unload() }
+        if let vision { await vision.unload() }
+        vision = nil
         if let decoder { await decoder.unload() }
         for model in denoisers { await model.unload() }
         encoder = nil
