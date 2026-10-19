@@ -1,8 +1,8 @@
 # Krea reference images (`visionTokens`)
 
 Status: experimental, 2026-10-19. The host-side pieces, the scripted session path and the bundle contract are
-implemented and covered by CPU tests. **No native reference run has been made with this package.** The opt-in
-native qualification (below) has not been run.
+implemented and covered by CPU tests. One native qualification of the encoders passed (below); denoising with
+references has not been run with this package.
 
 The Krea 2 Turbo realism `@3` export already contains the reference path: a `vision` asset (Qwen3-VL-4B's tower,
 0.83 GB) and a second text-encoder function, `encodeWithImages`. Images reach the denoiser only as extra text rows,
@@ -59,7 +59,10 @@ Opt-in with local files and no model load (`AETHER_KREA_BUNDLE`, `AETHER_KREA_RE
 - the tokenizer's reference prompts equal the oracle ids and positions for all 6 cases;
 - the local bundle declares references, keeps its text-only fingerprint and has a separate reference fingerprint.
 
-Native, not run:
-- `AETHER_NATIVE_REFERENCE_QUALIFICATION=1` compares the conditioning rows with the oracle's `text.f32` (mean row
-  cosine ≥ 0.999, worst ≥ 0.99). It needs the owner's approval and the shared GPU lock.
-- Peak memory, timing, specialization behaviour and image parity with the lab's frozen `labrender` remain unmeasured.
+Native (M5 Max, 2026-10-19, one approved run under the shared GPU lock):
+- `AETHER_NATIVE_REFERENCE_QUALIFICATION=1` compares the conditioning rows with the oracle's `text.f32`. **Passed 6/6**:
+  mean row cosine 0.99998945–0.9999945, worst row 0.9987659–0.9997663 (bars ≥ 0.999 and ≥ 0.99).
+- The whole run, with compile-cold encoders, took 192 s wall. The test process's sampled peak footprint was 4.5 GB.
+  The compiled cache entries were 21 GB (text encoder) and 0.8 GB (vision).
+- Generation with references (denoise and decode), its peak and timing, in-call cancellation and image parity with the
+  lab's frozen `labrender` remain unmeasured.
