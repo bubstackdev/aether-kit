@@ -10,3 +10,17 @@ import Testing
     #expect(throws: AetherError.self) { try FloatTensor(shape: [1], values: [.infinity]) }
     #expect(try FloatTensor(shape: [], values: [3]).values == [3])
 }
+
+@Test func specializedTensorValidationChecksEveryFloatingPointValue() throws {
+    var floats = [Float](repeating: 0.25, count: 4096)
+    var halves = [Float16](repeating: 0.25, count: 4096)
+    #expect(try FloatTensor(shape: [64, 64], values: floats).values == floats)
+    #expect(try Float16Tensor(shape: [64, 64], values: halves).values == halves)
+    for invalid: Float in [.nan, .infinity, -.infinity] {
+        floats[floats.count - 1] = invalid
+        halves[halves.count - 1] = Float16(invalid)
+        #expect(throws: AetherError.self) { try FloatTensor(shape: [64, 64], values: floats) }
+        #expect(throws: AetherError.self) { try Float16Tensor(shape: [64, 64], values: halves) }
+    }
+    #expect(try Int32Tensor(shape: [2], values: [.min, .max]).values == [.min, .max])
+}
