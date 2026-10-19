@@ -186,3 +186,31 @@ func h3SpatialTilesMatchOriginalStitchingAndOddLatentPatchOffsets() throws {
         #expect(throws: AetherError.self) { try H3Schedule.turbo(steps: steps, videoShift: video, audioShift: audio) }
     }
 }
+
+@Test func h3TemporalStitcherMatchesThePinnedDiffusersDecodeControlFlow() throws {
+    struct Item: Decodable { let path: String; let sha256: String }
+    struct Oracle: Decodable { let width: Int; let height: Int; let frames: Int; let windows: [Item]; let reference: Item }
+    let root = try #require(Bundle.module.url(forResource: "temporal-oracle", withExtension: nil, subdirectory: "Fixtures"))
+    let oracle = try JSONDecoder().decode(Oracle.self, from: Data(contentsOf: root.appending(path: "temporal-oracle.json")))
+    func read(_ item: Item) throws -> [Float] {
+        let data = try Data(contentsOf: root.appending(path: item.path))
+        #expect(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() == item.sha256)
+        return data.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
+    }
+    var stitcher = try H3VideoStitcher(width: oracle.width, height: oracle.height, frames: oracle.frames)
+    var output: [Float] = []
+    for window in oracle.windows { output += try stitcher.push(read(window)) }
+    output += try stitcher.finish()
+    #expect(digest(output) == oracle.reference.sha256)
+}
+
+@Test func h3SourceTilingReproducesTheOriginalSplitForProductionCanvases() throws {
+    #expect(try H3SpatialTiling.source(width: 960, height: 544) == sourceTiling)
+    for (width, height) in [(544, 960), (1344, 768), (768, 1344), (864, 480), (1024, 992)] {
+        let tiling = try H3SpatialTiling.source(width: width, height: height)
+        try tiling.validate(width: width, height: height)
+        #expect(tiling.yOverlaps.allSatisfy { $0 >= 64 } && tiling.xOverlaps.allSatisfy { $0 >= 64 })
+    }
+    #expect(try H3SpatialTiling.source(width: 1344, height: 768).xStarts.count == 7)
+    #expect(throws: AetherError.self) { try H3SpatialTiling.source(width: 256, height: 544) }
+}

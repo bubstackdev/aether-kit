@@ -82,6 +82,27 @@ public struct H3SpatialTiling: Sendable, Equatable, Codable {
         self.yOverlaps = yOverlaps; self.xOverlaps = xOverlaps
     }
 
+    /// The source VAE's own split (`_split_tiles`, Diffusers 7ecb1e1b): 256 px tiles, at least 64 px of
+    /// overlap, the slack added round-robin in 16 px steps so every boundary stays latent-aligned.
+    /// Dimensions of 256 px or less (one whole-canvas tile) are not supported by the exported decoder.
+    public static func source(width: Int, height: Int) throws -> H3SpatialTiling {
+        func split(_ length: Int) throws -> (starts: [Int], overlaps: [Int]) {
+            guard length > 256 else { throw AetherError.unsupported("H3 spatial tiling needs canvas sides over 256 px") }
+            var count = (length + 255) / 256
+            while 256 * count - 64 * (count - 1) - length < 0 { count += 1 }
+            var overlaps = [Int](repeating: 64, count: count - 1)
+            for i in 0..<((256 * count - overlaps.reduce(0, +) - length) / 16) { overlaps[i % (count - 1)] += 16 }
+            var starts = [0]
+            for overlap in overlaps { starts.append(starts[starts.count - 1] + 256 - overlap) }
+            return (starts, overlaps)
+        }
+        let y = try split(height), x = try split(width)
+        let tiling = H3SpatialTiling(tileHeight: 256, tileWidth: 256, yStarts: y.starts, xStarts: x.starts,
+                                     yOverlaps: y.overlaps, xOverlaps: x.overlaps)
+        try tiling.validate(width: width, height: height)
+        return tiling
+    }
+
     public func validate(width: Int, height: Int) throws {
         let area = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, width.isMultiple(of: 32), height.isMultiple(of: 32), !area.overflow,

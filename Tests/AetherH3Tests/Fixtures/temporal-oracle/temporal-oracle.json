@@ -1,0 +1,40 @@
+{
+ "schema": 1,
+ "width": 16,
+ "height": 16,
+ "frames": 39,
+ "windows": [
+  {
+   "path": "window-0.f32",
+   "shape": [
+    3,
+    22,
+    16,
+    16
+   ],
+   "sha256": "872ec946936f23994b0d1634472ec16341b49664ca7b53f1330e487d464d070c"
+  },
+  {
+   "path": "window-1.f32",
+   "shape": [
+    3,
+    22,
+    16,
+    16
+   ],
+   "sha256": "0f27a718b8c3db39a60647acdde153f3ed99ad2e1fa759d8087bda15d19d6ba8"
+  }
+ ],
+ "reference": {
+  "path": "reference.f32",
+  "shape": [
+   39,
+   3,
+   16,
+   16
+  ],
+  "sha256": "b3a664904a1f08488695735edccee8e44545148ae098c7a19cba1ea31b23c234"
+ },
+ "scope": "pinned Diffusers 7ecb1e1b AutoencoderKLMiniMaxH3._decode with a deterministic stub _decode_clip; no weights",
+ "torch": "2.14.1"
+}
