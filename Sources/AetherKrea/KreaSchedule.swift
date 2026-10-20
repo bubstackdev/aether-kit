@@ -23,6 +23,8 @@ public struct KreaSchedule: Sendable {
         self.sigmas = sigmas
     }
 
+    init(sigmas: [Float], timesteps: [Float]) { self.sigmas = sigmas; self.timesteps = timesteps }
+
     /// Returns a new latent buffer, leaving input buffers unchanged on any failure.
     public func advance(step: Int, latents: [Float], velocity: [Float]) throws -> [Float] {
         guard timesteps.indices.contains(step), latents.count == velocity.count else {
