@@ -208,6 +208,7 @@ actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
     private let profile: H3Profile
     private var graph: (canvas: String, graph: NativeH3Graph)?
     init(profile: H3Profile) { self.profile = profile }
+    nonisolated func supports(_ geometry: H3Geometry) -> Bool { profile.keyframeEncoders["\(geometry.width)x\(geometry.height)"] != nil }
     func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
         guard keyframe.width == geometry.width, keyframe.height == geometry.height else { throw AetherError.invalidRequest("H3 keyframe must match the clip size") }
         let canvas = "\(geometry.width)x\(geometry.height)"

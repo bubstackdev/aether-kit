@@ -103,6 +103,8 @@ public protocol H3AudioDecoder: Sendable {
 
 /// Encodes a first-frame keyframe (RGB8 at the clip size) into normalized condition latents `[1,24,1,H/16,W/16]` f32.
 public protocol H3KeyframeEncoder: Sendable {
+    /// Whether an encoder exists for this canvas; the session refuses other canvases before any stage runs.
+    func supports(_ geometry: H3Geometry) -> Bool
     func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData
     func release() async
 }
@@ -139,6 +141,9 @@ public actor H3VideoSession {
         guard active == nil else { throw AetherError.sessionBusy }
         guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
         guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
+        if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
+            throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
+        }
         let task = Task { try await Self.run(request, stages: stages, onEvent: onEvent) }
         active = task; state = .running
         defer { active = nil; if state == .running { state = .ready } }

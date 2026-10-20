@@ -184,6 +184,8 @@ private func geometry() throws -> H3Geometry { try H3Geometry(width: 64, height:
 
 private struct FakeKeyframeEncoder: H3KeyframeEncoder {
     let log: StageLog
+    var canvases: Set<String>? = nil
+    func supports(_ geometry: H3Geometry) -> Bool { canvases.map { $0.contains("\(geometry.width)x\(geometry.height)") } ?? true }
     func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
         await log.acquire("keyframes")
         let count = 24 * geometry.latentHeight * geometry.latentWidth
@@ -264,4 +266,15 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
     #expect(video[..<(2 * 96)].allSatisfy { $0 == 1 })
     #expect(video[(2 * 96)...].allSatisfy { $0 != 1 })
     #expect(try next.audio.floatValues().allSatisfy { $0 != 1 })
+}
+
+@Test func h3FirstFrameAtACanvasWithoutAnEncoderIsRefusedBeforeAnyStage() async throws {
+    let g = try geometry(), log = StageLog()
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log),
+                                                       keyframes: FakeKeyframeEncoder(log: log, canvases: ["960x544"]),
+                                                       denoiser: FakeDenoiser(log: log), video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
+    let keyframe = try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: 9, count: g.width * g.height * 3))
+    await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe)) }
+    #expect(await log.entries.isEmpty)
+    #expect(await session.state == .ready)
 }
