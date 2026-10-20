@@ -1,0 +1,30 @@
+name: SDK contracts
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: sdk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cpu:
+    runs-on: ${{ vars.AETHER_MAC_RUNNER || 'macos-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require the supported SDK and host
+        shell: bash
+        run: |
+          swift --version
+          xcodebuild -version
+          sdk=$(xcrun --sdk macosx --show-sdk-version)
+          os=$(sw_vers -productVersion)
+          if [ "${sdk%%.*}" -lt 27 ] || [ "${os%%.*}" -lt 27 ]; then
+            echo "::error::AetherKit requires a macOS 27 / Xcode 27.1 / Swift 6.4 runner; configure AETHER_MAC_RUNNER."
+            exit 1
+          fi
+      - name: Weight-free Release contracts
+        run: sh Scripts/check-cpu.sh
+      - name: Independent foundation consumer
+        working-directory: Examples/Foundations
+        run: swift run -c release

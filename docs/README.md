@@ -39,3 +39,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 24. [H3 outer-phase GPU qualification](h3-integration.md#outer-phase-qualification-2026-10-18) — 30 submissions pass 28 complete-tensor CPU comparisons, repeat/recovery hashes and ten cancellations across prepare/time/heads. Peak footprint is 3.76 GiB; final post-unload footprint is 0.58 GiB. These isolated module probes do not qualify a linked Turbo8 denoising step or complete generation.
 
 25. [H3 linked eight-step denoising qualification](h3-integration.md#denoising-qualification-2026-10-18) — provided-conditioning trajectory passes 824 native submissions, 464 original-CPU comparisons (448 complete tensors and 16 sampled body checkpoints), and all 864 capture hashes. Includes the verifier memory fix and failed control, 112 passing CPU tests, and 10.57 GiB peak / 0.98 GiB post-unload footprint. Full-run lifecycle, conditioning encoder, decoders and media acceptance remain pending.
+
+## SDK foundations (2026-10-20)
+
+[Current baseline, ownership and validation](sdk-foundations.md). [Implementation sequence and remaining gates](sdk-roadmap.md).

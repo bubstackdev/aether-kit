@@ -1,4 +1,6 @@
 import AetherKit
+import AetherAssets
+import CryptoKit
 import Foundation
 import Testing
 @testable import AetherCoreAI
@@ -103,4 +105,81 @@ private struct EchoBackend: ModelBackend {
     await #expect(throws: AetherError.self) {
         try await ModelSession.open(at: URL(fileURLWithPath: "/nonexistent/aether-test.aimodel"))
     }
+}
+
+
+@Test func budgetIsReservedBeforeNativeLoadingAndRolledBackOnFailure() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 10)
+    let tooLarge = try ModelResourceAdmission(coordinator: budget, residentBytes: 11, runScratchBytes: 1)
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 11, available: 10)) {
+        try await ModelSession.open(at: URL(fileURLWithPath: "/nonexistent"), admission: tooLarge)
+    }
+    let fits = try ModelResourceAdmission(coordinator: budget, residentBytes: 9, runScratchBytes: 1)
+    await #expect(throws: AetherError.self) {
+        try await ModelSession.open(at: URL(fileURLWithPath: "/nonexistent"), admission: fits)
+    }
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test(.timeLimit(.minutes(1))) func budgetSurvivesCancellationAndConcurrentUnloadUntilNativeJoin() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 10)
+    let admission = try ModelResourceAdmission(coordinator: budget, residentBytes: 6, runScratchBytes: 4)
+    let backend = SuspendedBackend()
+    let session = ModelSession(backend: backend, admission: admission, residency: try budget.reserve(bytes: 6))
+    let run = Task { try await session.run(inputs: [:]) }
+    await backend.waitUntilStarted()
+    #expect(budget.snapshot.reservedBytes == 10)
+    run.cancel()
+    let unload = Task { await session.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await session.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await session.state == .closing)
+    #expect(budget.snapshot.reservedBytes == 10)
+    #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 1, available: 0)) { try budget.reserve(bytes: 1) }
+    await backend.complete()
+    await #expect(throws: CancellationError.self) { try await run.value }
+    await unload.value
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test func scratchRefusalDoesNotDispatchOrCloseSession() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 10)
+    let admission = try ModelResourceAdmission(coordinator: budget, residentBytes: 6, runScratchBytes: 5)
+    let session = ModelSession(backend: EchoBackend(), admission: admission, residency: try budget.reserve(bytes: 6))
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 5, available: 4)) {
+        try await session.run(inputs: [:])
+    }
+    #expect(await session.state == .ready)
+    #expect(budget.snapshot.reservedBytes == 6)
+    await session.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+
+@Test(.timeLimit(.minutes(1))) func installedAssetsRemainProtectedThroughNativeCancellationAndUnload() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let bytes = Data("fixture".utf8)
+    try bytes.write(to: root.appendingPathComponent("model"))
+    let manifest = try AssetManifest(assetIdentity: "test/1", executionContract: "affine/1", files: [
+        AssetFile(path: "model", byteCount: UInt64(bytes.count), sha256: SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined())
+    ])
+    let store = try LocalAssetStore(root: root.appendingPathComponent("store"))
+    let id = try await store.install(manifest, from: root)
+    let backend = SuspendedBackend()
+    let session = ModelSession(backend: backend, installedAssets: try await store.acquire(id))
+    let run = Task { try await session.run(inputs: [:]) }
+    await backend.waitUntilStarted()
+    run.cancel()
+    let unload = Task { await session.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await session.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await session.state == .closing)
+    #expect(throws: AssetStoreError.busy) { try store.remove(id) }
+    await backend.complete()
+    await #expect(throws: CancellationError.self) { try await run.value }
+    await unload.value
+    try store.remove(id)
+    await #expect(throws: AssetStoreError.notInstalled) { try await store.acquire(id) }
 }

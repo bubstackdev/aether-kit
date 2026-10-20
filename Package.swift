@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS("27.0"), .iOS("27.0")],
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
+        .library(name: "AetherAssets", targets: ["AetherAssets"]),
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
         .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
         .library(name: "AetherH3", targets: ["AetherH3"]),
@@ -20,8 +21,9 @@ let package = Package(
     ],
     targets: [
         .target(name: "AetherKit"),
+        .target(name: "AetherAssets"),
         .target(
-            name: "AetherCoreAI", dependencies: ["AetherKit"],
+            name: "AetherCoreAI", dependencies: ["AetherKit", "AetherAssets"],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
@@ -40,7 +42,8 @@ let package = Package(
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
-        .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit"]),
+        .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),
+        .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit", "AetherAssets"]),
         .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3TokenizersTests", dependencies: ["AetherH3Tokenizers", "AetherH3", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKreaTokenizersTests", dependencies: ["AetherKreaTokenizers", "AetherKrea"]),
