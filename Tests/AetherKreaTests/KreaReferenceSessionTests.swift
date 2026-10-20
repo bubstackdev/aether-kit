@@ -266,3 +266,104 @@ private final class Factory: KreaModelFactory, Sendable {
     #expect(log.snapshot == ["open:vision.aimodel", "vision0", "closeVision"])
     await session.unload()
 }
+
+/// Vision and `encodeWithImages` as above (the text encoder's rows carry their row index, so conditioning is
+/// recognisable), plus shape-generic denoiser segments that record the `text_embeds` they are handed, and a decoder.
+private final class RefineFactory: KreaModelFactory, Sendable {
+    let log: Log
+    let reference: Factory
+    final class TextLog: Sendable { let values = Mutex<[Float16Tensor]>([]) }
+    let seenText = TextLog()
+    init(log: Log) { self.log = log; reference = Factory(log: log) }
+
+    func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
+        let name = asset.url.lastPathComponent
+        switch name {
+        case "vision.aimodel": return try await reference.open(asset, frequentReshapes: frequentReshapes)
+        case "textEncoder.aimodel":
+            log.append("open:\(name)")
+            let signature = try describe("encodeWithImages", [
+                "input_ids": value("int32", [1, -1]), "attention_mask": value("int32", [1, -1]), "position_ids": value("int32", [1, -1]),
+                "rope_positions": value("int32", [3, 1, -1]), "image_embeds": value("float16", [-1, 2560]),
+                "deepstack": value("float16", [3, -1, 2560]),
+            ], ["text_embeds": value("float16", [-1, 30720])])
+            return Model(functions: [signature], run: { [log] function, inputs in
+                log.append("text:\(function)")
+                guard case .int32(let ids) = inputs["input_ids"] else { throw AetherError.invalidTensor("missing ids") }
+                let n = ids.shape[1]
+                return ["text_embeds": .float16(try Float16Tensor(shape: [n, 30720], values: (0..<n).flatMap { row in
+                    Array(repeating: Float16(row), count: 30720) }))]
+            }, close: { [log] in log.append("closeText") })
+        case "vaeDecoder.aimodel":
+            log.append("open:\(name)")
+            let decode = try describe("decode", ["latents": value("float16", [-1, -1, 64])], ["image": value("float32", [3, -1, -1])])
+            return Model(functions: [decode], run: { _, inputs in
+                guard case .float16(let latents) = inputs["latents"] else { throw AetherError.invalidTensor("missing latents") }
+                let (h, w) = (latents.shape[0] * 16, latents.shape[1] * 16)
+                return ["image": .float32(try FloatTensor(shape: [3, h, w], values: Array(repeating: 0, count: 3 * h * w)))]
+            }, close: { [log] in log.append("closeDecoder") })
+        default:
+            guard name.hasPrefix("denoiser"), let index = Int(name.dropFirst("denoiser".count).prefix(1)) else {
+                throw AetherError.invalidModel("unexpected asset \(name)")
+            }
+            log.append("open:\(name)")
+            let image = value("float32", [-1, 6144]), text = value("float32", [-1, 6144]), cond = value("float32", [8, 6144])
+            let signature = try [
+                describe("segment", ["latents": value("float16", [-1, 64]), "text_embeds": value("float16", [-1, 30720]),
+                                     "sigma": value("float32", [1]), "rope_image": value("float32", [-1, 2, 128])],
+                         ["cond": cond, "image_1": image, "text_1": text]),
+                describe("segment", ["image_1": image, "text_1": text], ["image_2": image, "text_2": text]),
+                describe("segment", ["image_2": image, "text_2": text, "cond": cond], ["image_3": image, "text_3": text]),
+                describe("segment", ["image_3": image, "text_3": text, "cond": cond], ["velocity": value("float16", [-1, 64])]),
+            ][index]
+            return Model(functions: [signature], run: { [seenText] _, inputs in
+                func rows(_ key: String) -> Int? { inputs[key]?.shape.first }
+                var result: [String: TensorValue] = [:]
+                if index == 0, case .float16(let embeds) = inputs["text_embeds"] { seenText.values.withLock { $0.append(embeds) } }
+                let tokens = rows("latents") ?? rows("image_\(index)") ?? 1, textRows = rows("text_embeds") ?? rows("text_\(index)") ?? 1
+                for name in signature.outputs.keys {
+                    switch name {
+                    case "cond": result[name] = .float32(try FloatTensor(shape: [8, 6144], values: Array(repeating: 0, count: 8 * 6144)))
+                    case "velocity": result[name] = .float16(try Float16Tensor(shape: [tokens, 64], values: Array(repeating: 0, count: tokens * 64)))
+                    default:
+                        let n = name.hasPrefix("image") ? tokens : textRows
+                        result[name] = .float32(try FloatTensor(shape: [n, 6144], values: Array(repeating: 0, count: n * 6144)))
+                    }
+                }
+                return result
+            }, close: { [log] in log.append("closeDenoiser\(index)") })
+        }
+    }
+}
+
+/// A refine conditioned on reference pictures (the app's reference refine): a prompt prepared with
+/// `prepare(referencePrompt:references:)` passes `refine`'s bundle guard, and its conditioning rows (vision tokens
+/// included) reach the denoisers unchanged, exactly as `generate(referencePrompt:references:)` hands them over.
+@Test func aReferencePreparedPromptDrivesARefineWithItsConditioningUnchanged() async throws {
+    let fixture = try referenceBundle()
+    defer { fixture.cleanup() }
+    let log = Log(), factory = RefineFactory(log: log)
+    let session = KreaGenerationSession(assets: try KreaAssets.open(at: fixture.root), factory: factory)
+    let images = [try image(384, shade: 10)]
+    let reference = try prompt(images)
+    let prepared = try await session.prepare(referencePrompt: reference, references: images)
+    #expect(prepared.conditioning.rows == reference.conditioningRows && reference.conditioningRows > 144)
+    let configuration = try KreaConfiguration(width: 16, height: 16)
+    let start = try KreaRefineStart(latents: FloatTensor(shape: [1, 64], values: Array(repeating: 1, count: 64)), startStep: 7)
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    _ = try await session.refine(configuration: configuration, preparedPrompt: prepared, start: start, noise: noise)
+    let refined = factory.seenText.values.withLock { $0 }
+    #expect(refined.count == 1 && refined[0] == prepared.conditioning.tensor) // one step (7 of 8), the prepared rows exactly
+    _ = try await session.generate(configuration: configuration, referencePrompt: reference, references: images, noise: noise)
+    let generated = factory.seenText.values.withLock { $0 }
+    #expect(generated.count == 9 && generated.dropFirst().allSatisfy { $0 == prepared.conditioning.tensor })
+    // A prompt prepared by a session of another bundle never drives a refine.
+    let other = try referenceBundle()
+    defer { other.cleanup() }
+    try other.edit("aether.json") { json in json["description"] = "another export" }
+    let foreign = KreaGenerationSession(assets: try KreaAssets.open(at: other.root), factory: RefineFactory(log: Log()))
+    await #expect(throws: AetherError.self) {
+        _ = try await foreign.refine(configuration: configuration, preparedPrompt: prepared, start: start, noise: noise)
+    }
+    await session.unload(); await foreign.unload()
+}
