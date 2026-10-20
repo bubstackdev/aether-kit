@@ -8,6 +8,7 @@ Requires Apple silicon, macOS 27 and Xcode 27.1 / Swift 6.4 for the currently te
 
 | Product | Current implementation |
 | --- | --- |
+| `AetherAssets` | Immutable local file installation, SHA-256 verification and reader leases; no native execution |
 | `AetherKit` | Owned tensors, typed errors and decoded RGB/PNG artifacts; no Core AI dependency |
 | `AetherCoreAI` | Local model loading/introspection and a stateless typed reference executor |
 | `AetherH3CoreAI` | Experimental BF16 runtime; eight-step provided-conditioning GPU gate passes |
@@ -83,3 +84,5 @@ For repeated images of one prompt, use `session.prepare(prompt:)` once, then `ge
 See [Krea reference generation](docs/krea-generation.md) for shape registration, PNG rendering, and strict native parity commands. Segment tensors currently copy through host memory; this implementation makes no optimized performance claim.
 
 MiniMax H3 has CPU preparation contracts in `AetherH3` and an experimental BF16 runtime in `AetherH3CoreAI`. The [eight-step provided-conditioning GPU gate](docs/h3-integration.md#denoising-qualification-2026-10-18) passes 464 scoped CPU comparisons and reproduces all 864 captured hashes with one resident block-weight set. [Earlier native lifecycle probes](docs/h3-integration.md#outer-phase-qualification-2026-10-18) pass per-module cancellation/recovery. Whole-trajectory lifecycle qualification, the conditioner, decoders and media acceptance remain pending; ordinary tests perform no H3 GPU work.
+
+Optional SDK foundations include shared resource reservations and installed-asset model loading. See [contracts and validation](docs/sdk-foundations.md) and the [remaining implementation sequence](docs/sdk-roadmap.md).
