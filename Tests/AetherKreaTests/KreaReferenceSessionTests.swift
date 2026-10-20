@@ -1,4 +1,5 @@
 import AetherKit
+import AetherAssets
 import AetherCoreAI
 import AetherKrea
 import CryptoKit
@@ -366,4 +367,20 @@ private final class RefineFactory: KreaModelFactory, Sendable {
         _ = try await foreign.refine(configuration: configuration, preparedPrompt: prepared, start: start, noise: noise)
     }
     await session.unload(); await foreign.unload()
+}
+
+
+@Test func portableReferenceKreaIncludesVisionAndPreservesBothFingerprints() async throws {
+    let fixture = try referenceBundle(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let manifest = try assets.installationManifest()
+    #expect(manifest.files.count == 25)
+    let store = try LocalAssetStore(root: fixture.root.appendingPathComponent("store"))
+    let id = try await store.install(manifest, from: assets.root)
+    let lease = try await store.acquire(id)
+    let installed = try KreaAssets.open(in: lease)
+    #expect(installed.supportsReferences)
+    #expect(installed.fingerprint == assets.fingerprint)
+    #expect(installed.referenceFingerprint == assets.referenceFingerprint)
+    try installed.verifyIncludingReferences()
 }

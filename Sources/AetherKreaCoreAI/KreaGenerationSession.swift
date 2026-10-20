@@ -1,4 +1,6 @@
 import AetherKit
+import AetherAssets
+import Synchronization
 import AetherCoreAI
 import AetherKrea
 import Foundation
@@ -34,15 +36,37 @@ public actor KreaGenerationSession {
     private let runner: KreaRunner
     private let bundleFingerprint: String
     private var active: Task<Void, Never>?
+    private let resources: KreaResourceAdmission?
 
-    public init(assets: KreaAssets, compute: ModelComputePolicy = .preferGPU, residency: KreaResidency = .balanced) {
+    public init(assets: KreaAssets, compute: ModelComputePolicy = .preferGPU, residency: KreaResidency = .balanced,
+                resources: KreaResourceAdmission? = nil) {
         bundleFingerprint = assets.fingerprint
-        runner = KreaRunner(assets: assets, factory: NativeKreaFactory(compute: compute), residency: residency)
+        self.resources = resources
+        let factory = NativeKreaFactory(compute: compute, installation: nil)
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
 
-    init(assets: KreaAssets, factory: any KreaModelFactory, residency: KreaResidency = .balanced) {
+    /// Holds installation protection through every stage and releases it after terminal joined unload.
+    /// External specialization/refine models are not imported; undeclared paths refuse.
+    public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
+                residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil) throws {
+        let assets = try KreaAssets.open(in: installation)
         bundleFingerprint = assets.fingerprint
-        runner = KreaRunner(assets: assets, factory: factory, residency: residency)
+        self.resources = resources
+        let factory = NativeKreaFactory(compute: compute, installation: KreaInstallationAccess(installation))
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
+    }
+
+    init(assets: KreaAssets, factory: any KreaModelFactory, residency: KreaResidency = .balanced,
+         resources: KreaResourceAdmission? = nil) {
+        bundleFingerprint = assets.fingerprint
+        self.resources = resources
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
+    }
+
+    private static func factory(_ base: any KreaModelFactory, resources: KreaResourceAdmission?) -> any KreaModelFactory {
+        if let resources { return BudgetedKreaFactory(base: base, resources: resources) }
+        return base
     }
 
     /// Encodes once and releases the encoder before returning. Preparation always
@@ -50,7 +74,8 @@ public actor KreaGenerationSession {
     /// The decoder remains available. This shares the generation operation slot:
     /// overlap fails with `sessionBusy`; cancellation and unload await active work.
     public func prepare(prompt: KreaPrompt) async throws -> KreaPreparedPrompt {
-        try await perform { [runner, bundleFingerprint] in
+        try resources?.check(conditioningRows: prompt.conditioningRows)
+        return try await perform { [runner, bundleFingerprint] in
             let conditioning = try await runner.encode(prompt, retainingModels: false)
             return KreaPreparedPrompt(conditioning: conditioning, bundleFingerprint: bundleFingerprint)
         }
@@ -93,6 +118,7 @@ public actor KreaGenerationSession {
               pixels.shape[1] > 0, pixels.shape[2] > 0, (pixels.shape[1] / 16) * (pixels.shape[2] / 16) <= 4096 else {
             throw AetherError.invalidRequest("encoder input must be [3, 16h, 16w] within 4096 tokens")
         }
+        try resources?.check(imageTokens: (pixels.shape[1] / 16) * (pixels.shape[2] / 16))
         return try await perform { [runner] in try await runner.encodeImage(pixels, encoder: encoder) }
     }
 
@@ -119,6 +145,7 @@ public actor KreaGenerationSession {
     /// Encodes a reference prompt once and releases the vision and text encoders before returning.
     public func prepare(referencePrompt: KreaReferencePrompt, references: [KreaReferencePixels]) async throws -> KreaPreparedPrompt {
         try runner.checkReferences(referencePrompt, references)
+        try resources?.check(conditioningRows: referencePrompt.conditioningRows)
         return try await perform { [runner, bundleFingerprint] in
             let conditioning = try await runner.encode(referencePrompt, references, retainingModels: false)
             return KreaPreparedPrompt(conditioning: conditioning, bundleFingerprint: bundleFingerprint)
@@ -136,7 +163,14 @@ public actor KreaGenerationSession {
         configuration: KreaConfiguration, source: ConditioningSource, noise: FloatTensor?, start: KreaRefineStart? = nil,
         progress: @escaping @Sendable (KreaGenerationEvent) throws -> Void
     ) async throws -> GeneratedImage {
-        try await perform { [runner] in
+        let rows: Int
+        switch source {
+        case .provided(let value): rows = value.rows
+        case .prompt(let value): rows = value.conditioningRows
+        case .references(let value, _): rows = value.conditioningRows
+        }
+        try resources?.check(imageTokens: configuration.imageTokenCount, conditioningRows: rows)
+        return try await perform { [runner] in
             if let noise, noise.shape != [configuration.imageTokenCount, 64] {
                 throw AetherError.invalidTensor("initial Krea noise must be [imageTokens,64]")
             }
@@ -150,7 +184,11 @@ public actor KreaGenerationSession {
         try Task.checkCancellation()
         guard state != .closing, state != .closed else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        let task = Task { try await operation() }
+        let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        let task = Task {
+            defer { reservation?.release() }
+            return try await operation()
+        }
         active = Task { _ = await task.result }
         state = .running
         defer {
@@ -183,13 +221,31 @@ extension ModelSession: KreaExecutable {}
 
 protocol KreaModelFactory: Sendable {
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable
+    func finish() async
+}
+extension KreaModelFactory { func finish() async {} }
+
+private final class KreaInstallationAccess: Sendable {
+    private let held: Mutex<AssetReadLease?>
+    init(_ installation: AssetReadLease) { held = Mutex(installation) }
+    var lease: AssetReadLease? { held.withLock { $0 } }
+    func release() { held.withLock { $0 = nil } }
 }
 
 private struct NativeKreaFactory: KreaModelFactory {
     let compute: ModelComputePolicy
+    let installation: KreaInstallationAccess?
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
-        try await ModelSession.open(at: asset.url, compute: compute, expectFrequentReshapes: frequentReshapes)
+        if let installation {
+            guard let lease = installation.lease, asset.url.path.hasPrefix(lease.directory.path + "/") else {
+                throw AetherError.invalidModel("model is outside the installed Krea bundle")
+            }
+            let path = String(asset.url.path.dropFirst(lease.directory.path.count + 1))
+            return try await ModelSession.open(modelPath: path, in: lease, compute: compute, expectFrequentReshapes: frequentReshapes)
+        }
+        return try await ModelSession.open(at: asset.url, compute: compute, expectFrequentReshapes: frequentReshapes)
     }
+    func finish() async { installation?.release() }
 }
 
 private enum ConditioningSource: Sendable {
@@ -460,6 +516,7 @@ private actor KreaRunner {
         decoder = nil
         denoisers = []
         selectionIdentity = nil
+        await factory.finish()
     }
 }
 
