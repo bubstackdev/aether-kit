@@ -535,6 +535,42 @@ private func oneRow() throws -> KreaConditioning {
     await session.unload()
 }
 
+@Test func anOffGridRefineStartRunsOneStepFromItsOwnSigmaToZero() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let log = EventLog()
+    let session = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: log, checkDecoderLatents: false))
+    let configuration = try KreaConfiguration(width: 16, height: 16)
+    let prepared = try await session.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    let ones = try FloatTensor(shape: [1, 64], values: Array(repeating: 1, count: 64))
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    let sigma: Float = 0.15
+    let start = try KreaRefineStart(latents: ones, startSigma: sigma)
+    #expect(start.startStep == 7 && start.startSigma == sigma)
+    let first = Mutex<[Float]?>(nil)
+    _ = try await session.refine(configuration: configuration, preparedPrompt: prepared, start: start, noise: noise) { event in
+        if case .step(let index, let total, let latents) = event {
+            log.append("step:\(index)/\(total)")
+            first.withLock { if $0 == nil { $0 = latents.values } }
+        }
+    }
+    // One step, from σ 0.15 (not the grid's 0.311): start (1 − σ)·1 + σ·0, then the Euler step to 0 adds (0 − σ)·1.
+    #expect(log.snapshot.filter { $0.hasPrefix("step:") } == ["step:7/8"])
+    #expect(first.withLock { $0 }?.allSatisfy { abs($0 - ((1 - sigma) - sigma)) < 1e-6 } == true)
+    // Only the last sigma moves; the grid is untouched for every other step and for on-grid starts.
+    let grid = try KreaSchedule(steps: 8), moved = try grid.replacingLastSigma(sigma)
+    #expect(Array(moved.sigmas.prefix(7)) == Array(grid.sigmas.prefix(7)) && moved.sigmas[7] == sigma && moved.sigmas[8] == 0)
+    #expect(moved.timesteps[7] == sigma && Array(moved.timesteps.prefix(7)) == Array(grid.timesteps.prefix(7)))
+    // Off-grid starts must be gentler than the last grid step, and positive.
+    for bad: Float in [0, -0.1, 0.32, 1, .nan] {
+        #expect(throws: AetherError.self) { try KreaRefineStart(latents: ones, startSigma: bad) }
+    }
+    // An off-grid start belongs to the last step of the configuration it is used with.
+    let twelve = try KreaConfiguration(width: 16, height: 16, steps: 12)
+    await #expect(throws: AetherError.self) { try await session.refine(configuration: twelve, preparedPrompt: prepared, start: start, noise: noise) }
+    await session.unload()
+}
+
 @Test func refineStartMixesPictureAndNoiseBySigma() throws {
     let schedule = try KreaSchedule(steps: 8)
     let mixed = try schedule.refineStart(x0: [2, 0], noise: [0, 4], step: 6)

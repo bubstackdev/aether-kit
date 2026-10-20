@@ -8,16 +8,42 @@ import Foundation
 public struct KreaRefineStart: Sendable {
     public let latents: FloatTensor
     public let startStep: Int
+    /// An off-grid start: the last step runs from this sigma to 0 instead of the schedule's (nil: on the grid).
+    public let startSigma: Float?
     public init(latents: FloatTensor, startStep: Int) throws {
         guard latents.shape.count == 2, latents.shape[1] == 64, latents.shape[0] > 0, startStep >= 1,
               latents.values.allSatisfy(\.isFinite) else {
             throw AetherError.invalidRequest("refine start needs finite [imageTokens,64] latents and a step >= 1")
         }
-        self.latents = latents; self.startStep = startStep
+        self.latents = latents; self.startStep = startStep; startSigma = nil
+    }
+
+    /// A gentler refine than the grid allows: one Euler step from `startSigma` to 0 (the last of `steps`), starting at
+    /// `(1 − σ) · x0 + σ · noise`. The distilled Turbo model is trained only at its grid sigmas, so an off-grid start must be
+    /// qualified before use. `startSigma` must be in (0, 1) and below the last grid sigma (≈ 0.31 for 8 steps).
+    public init(latents: FloatTensor, startSigma: Float, steps: Int = 8) throws {
+        let schedule = try KreaSchedule(steps: steps)
+        guard steps >= 2, startSigma.isFinite, startSigma > 0, startSigma < schedule.sigmas[steps - 1] else {
+            throw AetherError.invalidRequest("an off-grid refine start must lie between 0 and the last grid sigma")
+        }
+        let onGrid = try Self(latents: latents, startStep: steps - 1) // the same latent checks
+        self.init(latents: onGrid.latents, startStep: onGrid.startStep, startSigma: startSigma)
+    }
+    private init(latents: FloatTensor, startStep: Int, startSigma: Float?) {
+        self.latents = latents; self.startStep = startStep; self.startSigma = startSigma
     }
 }
 
 public extension KreaSchedule {
+    /// This schedule with its last step starting at `sigma` (an off-grid refine start); every earlier step unchanged.
+    func replacingLastSigma(_ sigma: Float) throws -> KreaSchedule {
+        guard sigma.isFinite, sigma > 0, sigma < 1, timesteps.count >= 1 else { throw AetherError.invalidRequest("invalid last sigma") }
+        var sigmas = self.sigmas, timesteps = self.timesteps
+        sigmas[timesteps.count - 1] = sigma
+        timesteps[timesteps.count - 1] = sigma * 1000.0 / 1000.0
+        return KreaSchedule(sigmas: sigmas, timesteps: timesteps)
+    }
+
     /// The flow-matching start for `step`: `(1 − σ_step) · x0 + σ_step · noise`, elementwise.
     func refineStart(x0: [Float], noise: [Float], step: Int) throws -> [Float] {
         guard timesteps.indices.contains(step), step >= 1, x0.count == noise.count else {

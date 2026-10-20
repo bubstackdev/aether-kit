@@ -78,7 +78,8 @@ public actor KreaGenerationSession {
         guard preparedPrompt.bundleFingerprint == bundleFingerprint else {
             throw AetherError.invalidRequest("prepared prompt belongs to a different Krea bundle")
         }
-        guard start.latents.shape == [configuration.imageTokenCount, 64], start.startStep < configuration.steps else {
+        guard start.latents.shape == [configuration.imageTokenCount, 64], start.startStep < configuration.steps,
+              start.startSigma == nil || start.startStep == configuration.steps - 1 else {
             throw AetherError.invalidRequest("refine latents must be [imageTokens,64] and start before the last step ends")
         }
         return try await generate(configuration: configuration, source: .provided(preparedPrompt.conditioning), noise: noise,
@@ -249,7 +250,9 @@ private actor KreaRunner {
         try KreaContracts.segments(signatures, tokens: selection.imageTokens, text: selection.textRows)
         try progress(.denoisersReady(selection))
         let rotary = try KreaRotary.image(configuration: configuration)
-        let schedule = try KreaSchedule(steps: configuration.steps)
+        let grid = try KreaSchedule(steps: configuration.steps)
+        // An off-grid refine start replaces only the last step's sigma; on-grid runs use the grid unchanged.
+        let schedule = try start?.startSigma.map { try grid.replacingLastSigma($0) } ?? grid
         var latents = try noise ?? FloatTensor(
             shape: [configuration.imageTokenCount, 64],
             values: KreaNoise.generate(seed: configuration.seed, count: configuration.imageTokenCount * 64)
