@@ -1,4 +1,5 @@
 import AetherKit
+import AetherAssets
 import CryptoKit
 import Foundation
 
@@ -119,6 +120,67 @@ public struct KreaAssets: Sendable {
             tokenizerDirectory: root.appendingPathComponent("tokenizer", isDirectory: true),
             fingerprint: fingerprint, vision: vision, referenceFingerprint: referenceFingerprint, tokenizerFiles: support
         )
+    }
+
+    /// Describes the portable source bundle without reading its model streams. Installation subsequently
+    /// verifies every copied byte. Registered external specializations and refine encoders are not imported.
+    public func installationManifest() throws -> AssetManifest {
+        let current = try Self.open(at: root)
+        guard current.fingerprint == fingerprint, current.referenceFingerprint == referenceFingerprint else {
+            throw AetherError.invalidModel("Krea declarations changed after bundle opening")
+        }
+        var entries: [AssetFile] = []
+        func entry(_ url: URL, sha256: String? = nil) throws -> AssetFile {
+            guard url.path.hasPrefix(root.path + "/") else { throw AetherError.invalidModel("asset is outside the Krea bundle") }
+            let path = String(url.path.dropFirst(root.path.count + 1))
+            let confined = try confinedFile(path, root: root)
+            guard confined.path == url.path else { throw AetherError.unsupported("portable Krea installation requires direct file paths") }
+            let attributes = try FileManager.default.attributesOfItem(atPath: confined.path)
+            guard let count = attributes[.size] as? NSNumber else { throw AetherError.invalidModel("missing Krea file size") }
+            return AssetFile(path: path, byteCount: count.uint64Value, sha256: try sha256 ?? hashFile(confined))
+        }
+        for name in ["metadata.json", "aether.json"] {
+            let url = root.appendingPathComponent(name)
+            entries.append(try entry(url))
+        }
+        for name in ["tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json"] {
+            let url = root.appendingPathComponent(name)
+            let confined = try confinedFile(name, root: root)
+            guard let hash = tokenizerFiles[confined] else { throw AetherError.invalidModel("missing tokenizer identity") }
+            entries.append(try entry(url, sha256: hash))
+        }
+        // The local upstream loader can also read these optional files. Preserve them rather than
+        // silently changing fallback tokenizer configuration or template behavior after installation.
+        for name in ["config.json", "chat_template.jinja", "chat_template.json"] {
+            let url = tokenizerDirectory.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: url.path) {
+                entries.append(try entry(url))
+            }
+        }
+        let metadata = try JSONDecoder().decode(Metadata.self, from: Data(contentsOf: root.appendingPathComponent("metadata.json")))
+        let models = [textEncoder, decoder] + denoisers + (vision.map { [$0] } ?? [])
+        let roles = ["textEncoder", "vaeDecoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3"] + (vision == nil ? [] : ["vision"])
+        for (role, asset) in zip(roles, models) {
+            guard let declared = metadata.assets[role], root.appendingPathComponent(declared).standardizedFileURL.path == asset.url.path else {
+                throw AetherError.unsupported("portable Krea installation requires direct model paths")
+            }
+            entries.append(try entry(asset.url.appendingPathComponent("main.mlirb"), sha256: asset.declaredSHA256))
+            entries.append(try entry(asset.url.appendingPathComponent("metadata.json"), sha256: asset.metadataSHA256))
+            let declaration = asset.url.appendingPathComponent("main.hash")
+            entries.append(try entry(declaration))
+        }
+        return try AssetManifest(assetIdentity: "krea-bundle/1:" + (referenceFingerprint ?? fingerprint),
+                                 executionContract: "krea.portable-bundle/1", files: entries)
+    }
+
+    /// Reopens a verified installation, checking that its portable contract exactly covers this bundle.
+    /// Keep the lease alive through use, or pass it directly to KreaGenerationSession's installed initializer.
+    public static func open(in installation: AssetReadLease) throws -> Self {
+        let assets = try Self.open(at: installation.directory)
+        guard try assets.installationManifest().installationID == installation.installationID else {
+            throw AetherError.invalidModel("installation is not the exact portable Krea bundle")
+        }
+        return assets
     }
 
     /// Streams all six model assets through SHA-256. This can read tens of GB.

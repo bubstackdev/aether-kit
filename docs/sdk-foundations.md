@@ -1,5 +1,7 @@
 # SDK foundations
 
+This document records the foundation milestone at `9f33d86` (PR #10). Subsequent [Krea integration](krea-foundations.md) adds model-family adoption; the historical evidence below remains scoped to the foundation checkpoint.
+
 Implementation starts from `8cad5911c072281c9fcd7caaa254cf61d7d4a43f`, the remote main revision pinned by Atelier on 2026-10-20. Work is isolated on `codex/sdk-foundations`; neither the older dirty checkout nor Atelier's pinned checkout is changed.
 
 ## Reconciled baseline
