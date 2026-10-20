@@ -579,3 +579,170 @@ private func oneRow() throws -> KreaConditioning {
     #expect(throws: AetherError.self) { try schedule.refineStart(x0: [1], noise: [1], step: 0) }
     #expect(throws: AetherError.self) { try schedule.refineStart(x0: [1], noise: [1, 2], step: 3) }
 }
+
+
+private func resourceProfile(_ assets: KreaAssets, budget: ResourceCoordinator,
+                             models: [KreaModelAsset]? = nil) throws -> KreaResourceAdmission {
+    try KreaResourceAdmission(coordinator: budget, operationBytes: 10, maximumImageTokens: 1,
+                              maximumConditioningRows: 1,
+                              models: (models ?? ([assets.textEncoder, assets.decoder] + assets.denoisers)).map {
+        try KreaModelResourceEstimate(asset: $0, residentBytes: 10, runScratchBytes: 5)
+    })
+}
+
+@Test func budgetedKreaRetainsOnlyModelReservationsBetweenRequestsAndClosesThem() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog()
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log),
+                                        resources: try resourceProfile(assets, budget: budget))
+    let config = try KreaConfiguration(width: 16, height: 16)
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    for _ in 0..<2 {
+        _ = try await session.generate(configuration: config, conditioning: oneRow(), noise: noise)
+        #expect(budget.snapshot.reservedBytes == 50) // Four denoisers and decoder, no operation/native scratch.
+    }
+    #expect(log.snapshot.filter { $0.hasPrefix("open:") }.count == 5)
+    await session.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test func budgetedKreaPartialLoadAndScratchRefusalsNeverOvercommit() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let config = try KreaConfiguration(width: 16, height: 16)
+    for (capacity, expectedOpens) in [(UInt64(35), 2), (UInt64(54), 4)] {
+        let budget = try ResourceCoordinator(capacityBytes: capacity), log = EventLog()
+        let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log),
+                                            resources: try resourceProfile(assets, budget: budget))
+        await #expect(throws: ResourceAdmissionError.self) {
+            try await session.generate(configuration: config, conditioning: oneRow())
+        }
+        #expect(log.snapshot.filter { $0.hasPrefix("open:") }.count == expectedOpens)
+        #expect(!log.snapshot.contains("run0"))
+        #expect(budget.snapshot.reservedBytes <= capacity)
+        if capacity == 35 { #expect(budget.snapshot.reservedBytes == 0) }
+        await session.unload()
+        #expect(budget.snapshot.reservedBytes == 0)
+    }
+}
+
+@Test(.timeLimit(.minutes(1))) func budgetedKreaCancellationAndUnloadKeepAllReservationsUntilWorkJoins() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog(), gate = PipelineGate()
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log, gate: gate),
+                                        resources: try resourceProfile(assets, budget: budget))
+    let config = try KreaConfiguration(width: 16, height: 16)
+    let task = Task { try await session.generate(configuration: config, conditioning: oneRow()) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 55)
+    task.cancel()
+    let close = Task { await session.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await session.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await session.state == .closing)
+    #expect(budget.snapshot.reservedBytes == 55)
+    #expect(!log.snapshot.contains("close0"))
+    await gate.release()
+    await #expect(throws: CancellationError.self) { try await task.value }
+    await close.value
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(!log.snapshot.contains("run1"))
+}
+
+@Test func budgetedKreaRefusesUnknownModelsAndOutOfProfileShapesBeforeLoading() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog()
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let profile = try resourceProfile(assets, budget: budget, models: [assets.decoder])
+    let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log), resources: profile)
+    await #expect(throws: AetherError.self) {
+        try await session.generate(configuration: KreaConfiguration(width: 32, height: 16), conditioning: oneRow())
+    }
+    await #expect(throws: AetherError.self) {
+        try await session.generate(configuration: KreaConfiguration(width: 16, height: 16), conditioning: oneRow())
+    }
+    #expect(log.snapshot.isEmpty)
+    #expect(budget.snapshot.reservedBytes == 0)
+    await session.unload()
+}
+
+
+@Test func twoKreaSessionsShareCapacityAndRecoverAfterTheCompetingSessionCloses() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let profile = try resourceProfile(assets, budget: budget)
+    let firstLog = EventLog(), secondLog = EventLog()
+    let first = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: firstLog), resources: profile)
+    let second = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: secondLog), resources: profile)
+    let config = try KreaConfiguration(width: 16, height: 16)
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    _ = try await first.generate(configuration: config, conditioning: oneRow(), noise: noise)
+    #expect(budget.snapshot.reservedBytes == 50)
+    await #expect(throws: ResourceAdmissionError.self) {
+        try await second.generate(configuration: config, conditioning: oneRow(), noise: noise)
+    }
+    #expect(!secondLog.snapshot.contains("run0"))
+    #expect(budget.snapshot.reservedBytes == 90)
+    await second.unload()
+    #expect(budget.snapshot.reservedBytes == 50)
+    _ = try await first.generate(configuration: config, conditioning: oneRow(), noise: noise)
+    #expect(firstLog.snapshot.filter { $0.hasPrefix("open:") }.count == 5)
+    await first.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test func KreaLoadFailureRollsBackItsReservationAndPartialLoadsBeforeRetry() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog()
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log, failOnce: "denoiser1.aimodel"),
+                                        resources: try resourceProfile(assets, budget: budget))
+    let config = try KreaConfiguration(width: 16, height: 16)
+    await #expect(throws: AetherError.self) {
+        try await session.generate(configuration: config, conditioning: oneRow())
+    }
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(log.snapshot.contains("close0"))
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    _ = try await session.generate(configuration: config, conditioning: oneRow(), noise: noise)
+    #expect(budget.snapshot.reservedBytes == 50)
+    await session.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+
+private struct DelayedKreaOpen: KreaModelFactory {
+    let base: FakeFactory
+    let gate: PipelineGate
+    func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
+        await gate.enter()
+        return try await base.open(asset, frequentReshapes: frequentReshapes)
+    }
+}
+
+@Test(.timeLimit(.minutes(1))) func KreaCancellationDuringLoadingJoinsThenClosesBeforeReturningCapacity() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog(), gate = PipelineGate()
+    let budget = try ResourceCoordinator(capacityBytes: 100)
+    let base = try FakeFactory(log: log)
+    let session = KreaGenerationSession(assets: assets, factory: DelayedKreaOpen(base: base, gate: gate),
+                                        resources: try resourceProfile(assets, budget: budget))
+    let config = try KreaConfiguration(width: 16, height: 16)
+    let task = Task { try await session.generate(configuration: config, conditioning: oneRow()) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 20)
+    task.cancel()
+    let close = Task { await session.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await session.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await session.state == .closing)
+    #expect(budget.snapshot.reservedBytes == 20)
+    await gate.release()
+    await #expect(throws: CancellationError.self) { try await task.value }
+    await close.value
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(log.snapshot == ["open:denoiser0.aimodel", "close0"])
+}

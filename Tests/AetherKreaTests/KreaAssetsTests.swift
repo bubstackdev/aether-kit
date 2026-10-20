@@ -1,4 +1,6 @@
 import AetherKit
+import AetherAssets
+import AetherKreaCoreAI
 import CryptoKit
 import Foundation
 import Testing
@@ -124,4 +126,75 @@ struct BundleFixture {
     try fixture.edit("aether.json") { $0.removeValue(forKey: "provenance") }
     try Data([0]).write(to: fixture.root.appendingPathComponent("textEncoder.aimodel/main.hash"))
     #expect(throws: AetherError.self) { try KreaAssets.open(at: fixture.root) }
+}
+
+
+@Test func portableKreaInstallationPreservesFingerprintAndSessionReaderProtection() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let manifest = try assets.installationManifest()
+    #expect(manifest.files.count == 22)
+    let storage = fixture.root.appendingPathComponent("store")
+    let store = try LocalAssetStore(root: storage)
+    let id = try await store.install(manifest, from: assets.root)
+    do {
+        let lease = try await store.acquire(id)
+        let installed = try KreaAssets.open(in: lease)
+        #expect(installed.fingerprint == assets.fingerprint)
+        #expect(installed.referenceFingerprint == assets.referenceFingerprint)
+        try installed.verify()
+    }
+    let session = try KreaGenerationSession(installed: try await store.acquire(id))
+    #expect(throws: AssetStoreError.busy) { try store.remove(id) }
+    await session.unload()
+    #expect(await session.state == .closed)
+    try store.remove(id)
+}
+
+@Test func portableKreaManifestDetectsDeclarationDriftAndCopiedModelCorruption() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    try fixture.edit("metadata.json") { $0["extra"] = "changed" }
+    #expect(throws: AetherError.self) { try assets.installationManifest() }
+    let updated = try KreaAssets.open(at: fixture.root)
+    let manifest = try updated.installationManifest()
+    try Data("wrong".utf8).write(to: assets.decoder.url.appendingPathComponent("main.mlirb"))
+    let store = try LocalAssetStore(root: fixture.root.appendingPathComponent("store"))
+    await #expect(throws: AssetStoreError.integrityMismatch("vaeDecoder.aimodel/main.mlirb")) {
+        try await store.install(manifest, from: updated.root)
+    }
+}
+
+@Test func installedKreaRejectsARepackagedOrIncompleteContract() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let manifest = try assets.installationManifest()
+    let repackaged = try AssetManifest(assetIdentity: "another-model", executionContract: "other/1", files: manifest.files)
+    let store = try LocalAssetStore(root: fixture.root.appendingPathComponent("store"))
+    let id = try await store.install(repackaged, from: assets.root)
+    let lease = try await store.acquire(id)
+    #expect(throws: AetherError.self) { try KreaAssets.open(in: lease) }
+    #expect(throws: AetherError.self) { try KreaGenerationSession(installed: lease) }
+}
+
+
+@Test func portableKreaPreservesOptionalTokenizerFilesAndRefusesInternalAliases() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let optional = ["config.json": "{\"model_type\":\"qwen3\"}", "chat_template.jinja": "{{ messages }}", "chat_template.json": "{}"]
+    for (name, text) in optional { try Data(text.utf8).write(to: fixture.root.appendingPathComponent("tokenizer/" + name)) }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let manifest = try assets.installationManifest()
+    #expect(manifest.files.count == 25)
+    let store = try LocalAssetStore(root: fixture.root.appendingPathComponent("store"))
+    let id = try await store.install(manifest, from: assets.root)
+    let lease = try await store.acquire(id)
+    for (name, text) in optional {
+        #expect(try String(contentsOf: lease.directory.appendingPathComponent("tokenizer/" + name), encoding: .utf8) == text)
+    }
+    let model = fixture.root.appendingPathComponent("textEncoder.aimodel")
+    let real = fixture.root.appendingPathComponent("real.aimodel")
+    try FileManager.default.moveItem(at: model, to: real)
+    try FileManager.default.createSymbolicLink(at: model, withDestinationURL: real)
+    let aliased = try KreaAssets.open(at: fixture.root)
+    #expect(throws: AetherError.self) { try aliased.installationManifest() }
 }

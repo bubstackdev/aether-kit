@@ -43,3 +43,5 @@ Update the decision register when an experiment changes a recommendation. Each p
 ## SDK foundations (2026-10-20)
 
 [Current baseline, ownership and validation](sdk-foundations.md). [Implementation sequence and remaining gates](sdk-roadmap.md).
+
+[Krea foundation integration](krea-foundations.md) covers portable bundle mapping, installed-session reader ownership and optional shared resource admission.

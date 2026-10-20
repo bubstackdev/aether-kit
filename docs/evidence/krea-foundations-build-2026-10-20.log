@@ -1,0 +1,16 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 2] AetherAssets
+[2 / 8] AetherKreaCoreAI
+[4 / 10] AetherKreaCoreAI
+[11 / 18] AetherKreaTests-product
+[12 / 19] AetherNativeTests-product
+[13 / 19] aether-probe-product
+[15 / 18] AetherProbeTests-product
+[17 / 22] AetherProbeTests-product
+[19 / 24] AetherNativeTests-product
+[19 / 23] AetherKreaTests-product
+[23 / 24] AetherKreaTests-product
+[26 / 28] AetherKreaTests-product
+Build complete! (14.57 sec)
