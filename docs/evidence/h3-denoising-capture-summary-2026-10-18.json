@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T23:05:13.412168+00:00",
+  "captureComplete": true,
+  "qualified": false,
+  "nativeSubmissions": 824,
+  "outputIdentities": 864,
+  "savedTensorFiles": 480,
+  "savedTensorBytes": 5309332992,
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T22:49:05.897264+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-denoising",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01/chain.json",
+      "/Volumes/Scratch/aether/aether-prototype/.local/h3-diagnostic/models",
+      "-",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-capture-02",
+      "--capture"
+    ],
+    "budgetSeconds": 1800,
+    "gpuWorkRequested": true,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 43412,
+    "exitCode": 0,
+    "elapsedSeconds": 882.7006895000231,
+    "sourcePinsUnchanged": true
+  },
+  "sampledPeak": {
+    "metalAllocatedBytes": 11931336704,
+    "physicalFootprintBytes": 11318186160,
+    "processLifetimePeakFootprintBytes": 11318186160,
+    "processLifetimePeakResidentBytes": 4084514816,
+    "residentBytes": 4079960064
+  },
+  "settled": {
+    "metalAllocatedBytes": 720896,
+    "physicalFootprintBytes": 1004881744,
+    "processLifetimePeakFootprintBytes": 11318186160,
+    "processLifetimePeakResidentBytes": 4084514816,
+    "residentBytes": 850886656
+  },
+  "allSavedTensorHashesVerified": true,
+  "latentCarryHashesLinkEveryStep": true,
+  "artifactSHA256": {
+    "h3-denoising-capture-2026-10-18.json": "0d0c1562bf9eb879e42e6b2d674edc5da0a10fdec882d60934968bc4585db619",
+    "h3-denoising-capture-progress-2026-10-18.json": "28bf7fb2eedc8931b9d7a4a8ae621640b936039aed1f0a8e8945cc6f303be197",
+    "h3-denoising-capture-controller-2026-10-18.json": "49126e40aea72a55ac6e1c67b86a76c9d3036bde3c7eeacae351ee6f4a2eed52",
+    "h3-denoising-capture-provenance-2026-10-18.json": "910c1cb99057d8a3872dd58e221588ba623f13f131b3af0052397156d002dfa6",
+    "h3-denoising-capture-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-denoising-cpu-oracle-script-2026-10-18.py": "a4e1e1d1ba4bd2526125423d565cc34d36f1d9ad73e68a4263c1c56b6ff93c21",
+    "h3-denoising-cpu-controller-script-2026-10-18.py": "0312c8e2145c05612708ddbf155c56cd4647de62878e11dcb6ea8e09e58d4bb8"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "arm" : "device-encoded",
+  "at" : "2026-10-18T18:26:03Z",
+  "case" : "dynamic384",
+  "device" : "Apple M5 Max",
+  "executableSHA256" : "6f431a0fcc365e5438ad948393261fbdd0da515701a8de34c04ad23f230e1c99",
+  "executionPolicies" : [
+    "baseline"
+  ],
+  "height" : 512,
+  "kind" : "krea-lab-runtime",
+  "manifestSHA256" : "48988bd46c2d59b65abc14e302078988686609591885acd0e4dcfd61646b23fe",
+  "noiseSHA256" : "a3548df21b0723e16584f8ba50501a55ce39c1432255db08eef2a46dec91767b",
+  "os" : "26A434",
+  "physicalMemory" : 68719476736,
+  "prompt" : "a watercolor painting of a red fox standing beside a frozen stream in a quiet snowy forest at sunrise, tall pine trees, soft golden light, delicate blue shadows, fine brushwork",
+  "publishable" : false,
+  "remainingAdmittedBytes" : 0,
+  "residency" : "balanced",
+  "runs" : [
+    {
+      "decoderLoadSeconds" : 0.087642290999999997,
+      "decodeSeconds" : 0.548806083,
+      "denoiserLoadSeconds" : 18.917441083,
+      "encodedTextSHA256" : "1e3705f8e41f38e9972cd92c46b413a3bbc2d023d4e1ffa7397508734c84027d",
+      "executionPolicy" : "baseline",
+      "footprintAfter" : 3076401736,
+      "footprintPeak" : 3080251976,
+      "latentSHA256" : "95ef7239234c0a74fd957de93d9936cbc0c87d83ab43e87d7b9a63de130e1fc6",
+      "memoryAfterSteps" : [
+        {
+          "footprint" : 2259495232,
+          "footprintPeak" : 2259495232,
+          "metalAllocated" : 14649344000,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2274093448,
+          "footprintPeak" : 2365778264,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2275764616,
+          "footprintPeak" : 2386569608,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2278467976,
+          "footprintPeak" : 2388175240,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2278287752,
+          "footprintPeak" : 2391075208,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2326833544,
+          "footprintPeak" : 2391075208,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2278287752,
+          "footprintPeak" : 2391075208,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        },
+        {
+          "footprint" : 2326636936,
+          "footprintPeak" : 2391075208,
+          "metalAllocated" : 14689124352,
+          "residentPeak" : 36145479680
+        }
+      ],
+      "metalAllocatedAfter" : 15597633536,
+      "pixelShape" : [
+        3,
+        512,
+        384
+      ],
+      "pixelsSHA256" : "853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d",
+      "repetition" : 0,
+      "residentPeak" : 36145479680,
+      "seconds" : 69.932557500000001,
+      "stepLatentsSHA256" : [
+        "76adb0b0d3ee0e9bc456449e052cc5252ab8cc5c46663b11094aa97d8fd81268",
+        "a4e4ee4c93df8c063ba9f20cb3d00fd34510ca9447d56d6dbb11058ba6691bbd",
+        "2379ff9333ffa7302e2091ccff910952e43de74ac3e410ead5a331252b3d3fec",
+        "d533ea5be5dd1fb9ac096cf9004830f799d7d3854723e9bdb436ffa83ab56374",
+        "cbc25fb0edb8466bcc1a98ee3bba372ba0cfd6093d02e6456d396ec0b3cc1084",
+        "b2e6f2fec501608c75640889ad0a152988c0a3c127be46b4cc90972883c3472a",
+        "8041d81bae37efb0dbd658f6afd3b907523a944ec074b6c8346497c8c3026bd2",
+        "95ef7239234c0a74fd957de93d9936cbc0c87d83ab43e87d7b9a63de130e1fc6"
+      ],
+      "stepSeconds" : [
+        0.80299595800000001,
+        1.3627489159999999,
+        2.0560608330000001,
+        1.278664333,
+        1.1651912499999999,
+        1.1542607499999999,
+        1.0999799160000001,
+        1.078176083
+      ],
+      "textSeconds" : 38.827729750000003,
+      "thermal" : 0
+    }
+  ],
+  "schema" : 1,
+  "scope" : "Full text encoding from fixture token IDs on every repetition (forced text-cache misses), then all eight original denoising steps and decode. Fresh process per residency arm. OS specialization caches retained. Step hash readbacks only on repetition zero. No preview decodes.",
+  "sourceCommit" : "7aff977df6e88005649b13bc63995f75eb4b217b",
+  "steps" : 8,
+  "textSHA256" : "58b807ddccf2d5389d57d299d4daed41f93638fc1ec45a9ffb5e7cdcec6dc2fe",
+  "thermalStart" : 0,
+  "width" : 384
+}

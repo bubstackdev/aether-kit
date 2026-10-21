@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "base_commit": "1e7048d7575146c0be9bda949526091e6c589a30",
+  "scope": "Krea complete reference orchestration, specialization, VAE decoding, PNG output, and strict native parity harness",
+  "release_tests": {
+    "passed": true,
+    "count": 33,
+    "external_cpu_fixture_tests_executed": 3,
+    "log_sha256": "d7379566142621ef68b47108160776d89e74df8fb6dc900231874288b80b954e",
+    "command": "AETHER_KREA_BUNDLE=... AETHER_KREA_FIXTURES=... AETHER_KREA_LAB=... Scripts/check.sh"
+  },
+  "euler_replay": {
+    "passed": true,
+    "steps": 8,
+    "snapshot_convention": "Forge snapshots are pre-update; compare update i with input i+1, or final for last update.",
+    "initial_noise_sha256": "946d62cbf0cbe41a2260a5becf44fde4e44793609503b8b5c743aaa456bfb73a",
+    "velocity_sha256": [
+      "c29131fde01e6697f82620a75e20ed6de15622666591da20b911f6084deef299",
+      "50d4849360f15a55812acf0ad5138a0e7355d3c64cc1ef9f4d1566fb3374567e",
+      "0e4c79e8912b2684a5c7ac7bf84630da552bad16ed55e7a2b48ce41840e8cecf",
+      "8f241b75675d786194e6d696c5cdf31ebfc100a544ca1373f3d1085a2e2e58e8",
+      "cfff3d342f96364e877cd1004f7c79857f8bbe6ff4b191820381abead2917faa",
+      "a95e5d07b9cae459d1cff2b28d74e45166ff481c835e86fafbe77a04dc6c0ae9",
+      "b6d60d408147224d775c700ccfbac705077478d86e4e5aa5463d4680a1080b1b",
+      "779606321e4644b9f3ea01498cf3344e75d78d4d8c7cb74f08c3c0d02bd1e1de"
+    ],
+    "post_update_sha256": [
+      "2fad26a6c41458da9a6874d48e5d4e0fa5b312abf98511113fd2ca36d3691d94",
+      "453d0d0924fe1696341777a134ba2d732ae8ad35357f2ae6fbee40f38c4f47b6",
+      "3320480b7684c386a1de5d07c394d315b2e0a59f5864669b0728154062ef34e0",
+      "ab59eaf093e9fa87c07a6d544d051e77a00142dc84bd5e2bdcb4b84599621299",
+      "310aa5bd1b8aee01c439201e7cb3c3cbfb2e4862f56c15fbd7295749edb56c04",
+      "4798887ee1c2f6f7167b6833316223069a8dcb06784c44b838f0960e827a7323",
+      "63257420264c50e73eab2233612b98fd1972bea924396b10bfa5758200bda84e",
+      "ba7f4e83ae01b5ddb40769ef7b3be7cd823c4b3c4b68b17bef3fea296ce1331c"
+    ]
+  },
+  "controlled_pipeline_checks": [
+    "Four segments at every one of eight steps",
+    "Nonadjacent cond carry preserved",
+    "Repeated generation reuses selected denoisers and decoder",
+    "Balanced encoder released before denoiser loading",
+    "Resident encoder reused until terminal unload",
+    "Partial load failure cleanup and retry",
+    "Shape switching releases previous set before fallback loading",
+    "Cancellation and unload wait for submitted controlled backend work",
+    "PNG quantization and readback",
+    "Parity harness separates encoded/provided baselines and rejects incomplete or preparation-failed runs"
+  ],
+  "native_smoke": {
+    "attempted": true,
+    "passed": false,
+    "exit_code": 1,
+    "inference_reached": false,
+    "compute": "cpuOnly",
+    "error": "Core AI cache lock under ~/Library/Caches/coreai-cache/sync/26A434: Operation not permitted"
+  },
+  "native_krea_generation_attempted": false,
+  "native_end_to_end_parity_passed": false,
+  "real_specialization_stream_verification_executed": false,
+  "prototype_reference_files_unchanged": true,
+  "source_sha256": {
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "6aadb504c62f21561c2f586b61255c9bddc01419304ce101448f2968024afce2",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "6726c17bbd71f6ea93eeb1f3149564a93af084dce4eec6dd3899f0e91f7e19f4",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "0e17fcb3976833145fdc36b8a83a4a262361b2299214a09bf70a52c916184e18",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "6d1cf58c7574c77337a5f4097a54f58a38b25ca5faea81051969bf733a5c6382",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKitTests/GeneratedImageTests.swift": "5d5a71dbde5c25d9b6ff34b607c77e2d2bdb142403f951da6c536ddecb85187e",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "6e72e5b09d9b9438a37b45f99b2474a7a61155c45a2bf6a9d1a249c3f0eb1c83",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaEulerFixtureTests.swift": "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "f29964ab7ed1d42eafc601ca3d8528d418803a0448b08d0256f674c23ecd7454",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTests/KreaSpecializationTests.swift": "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4",
+    "Tests/AetherProbeTests/ParityHarnessTests.swift": "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1"
+  },
+  "limitations": [
+    "Full pipeline exercised with controlled models, not real Core AI inference.",
+    "Specialization byte verification exercised on synthetic assets; real tower specialization native gate pending.",
+    "Segment tensors copy through host memory; no speedup or device-resident execution claim.",
+    "Native cancellation/drain semantics and iOS remain unqualified."
+  ]
+}

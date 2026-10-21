@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "passed": false,
+  "scope": "Integrated decoder cancellation and recovery",
+  "reason": "The integrated suite timed out waiting to observe the native decoder call after ten minutes. The process cleaned up and exited before the operator stop command arrived. Stack sample during the wait shows GPU residency work. Both numerical parity cases and encoder cancellation/recovery passed; decoder cancellation was not recorded.",
+  "report": "krea-integrated-decoder-incomplete-2026-10-17.json",
+  "report_sha256": "308091275f0eaf79a31e7f43b34d429ec66c3d3764dbf57d079ed41e8fd56ae1",
+  "sample": "krea-dynamic-decoder-wait-2026-10-17.sample.txt",
+  "follow_up": "Isolated native decoder probe with the exact independent final latents; integrated pipeline check requires a quiet window.",
+  "error": "timed out waiting for native call in dynamic384.cancelDecoder"
+}

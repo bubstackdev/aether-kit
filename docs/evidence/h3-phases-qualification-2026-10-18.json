@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T22:28:25.591530+00:00",
+  "passed": true,
+  "scope": "Fixed prepare, time-0/1 and heads-0/1 boundaries with complete original CPU references, repeat/recovery hashes and submitted-work cancellation. Not a linked backbone, complete Turbo8 trajectory, conditioner, decoder or benchmark.",
+  "nativeSubmissions": 30,
+  "successfulCalls": 20,
+  "cancelledCalls": 10,
+  "sessionOpens": 10,
+  "fullTensorCPUComparisons": 28,
+  "relativeL2Limit": 0.02,
+  "perCaseComparisons": {
+    "prepare": {
+      "hidden": {
+        "actualSHA256": "ca7c1932e48a38a98f7b0a22d0d943d6a03c4cd41e14198ee0b673e380b5c44b",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 1,
+        "passed": true,
+        "referenceSHA256": "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b",
+        "relativeL2": 0.00034100613932056147
+      }
+    },
+    "time-0": {
+      "temb": {
+        "actualSHA256": "1fd3e69c93b12edf4facf9f216bba34fc5b43365c73eb50851491327f50c9dc4",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 1.5683472156524658e-06,
+        "passed": true,
+        "referenceSHA256": "99766f6ba52f2bcf554f3ab54194aa9d48bf8e2213b1925b03fa75961d151302",
+        "relativeL2": 3.945056921367517e-06
+      }
+    },
+    "heads-0": {
+      "audio": {
+        "actualSHA256": "abc1adb8834852ab7aba21073d1e67728d370625dc141e4566994d16fc280d9f",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 0.059247493743896484,
+        "passed": true,
+        "referenceSHA256": "80f60411c64a0481993897e793dfbb5fcd97a132caeef328a3851c775b38c431",
+        "relativeL2": 0.0022931929882766995
+      },
+      "video": {
+        "actualSHA256": "6ad955ea23f2b8f91bf33a176f5633c23a63c5e3eaa55bb00d63ae87fdba1e8d",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 0.16003131866455078,
+        "passed": true,
+        "referenceSHA256": "5da83395ef86c7efb0c8f81f6588630f59cd41152deeecd330882ac930d627ab",
+        "relativeL2": 0.0026701738831646582
+      }
+    },
+    "time-1": {
+      "temb": {
+        "actualSHA256": "de4c5e5676c2487e04ab28de30d52c0c36e51b18a65f407f4594a2da2f23c236",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 5.690380930900574e-06,
+        "passed": true,
+        "referenceSHA256": "0e3a34e169b0d7fee31ffdda75ddfc5ace96f5830236d13b0ccd6dbedd67e542",
+        "relativeL2": 1.4014327085384758e-05
+      }
+    },
+    "heads-1": {
+      "audio": {
+        "actualSHA256": "be54a6564cb3a71a7cb00f013c26698999b5049cb48e2d1da1a659eceedb249c",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 0.060303688049316406,
+        "passed": true,
+        "referenceSHA256": "9fd2249c8b1989b97138aa37e3df2b9f4d577b26ff5602c74e069687859f7904",
+        "relativeL2": 0.0024056026768886686
+      },
+      "video": {
+        "actualSHA256": "994817328723db0c632493491ad5921016057f050d20569b0fbd84d8b81e837c",
+        "byteIdentical": false,
+        "maximumAbsoluteError": 0.1591033935546875,
+        "passed": true,
+        "referenceSHA256": "37da2956b289255a8928148672a5b744980b378831f9cfb88c737f0ab88c02f3",
+        "relativeL2": 0.0026845039156277698
+      }
+    }
+  },
+  "repeatAndRecoveryHashesIdentical": true,
+  "retainedCancellationRecovery": true,
+  "concurrentUnloadAndReopenedRecovery": true,
+  "sampledPeak": {
+    "metalAllocatedBytes": 2293170176,
+    "physicalFootprintBytes": 3802797768,
+    "processLifetimePeakFootprintBytes": 4032615008,
+    "processLifetimePeakResidentBytes": 8822964224,
+    "residentBytes": 8704999424
+  },
+  "memorySamples": 2340,
+  "finalSettledByCase": {
+    "prepare": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 971409208,
+      "processLifetimePeakFootprintBytes": 4032615008,
+      "processLifetimePeakResidentBytes": 8822964224,
+      "residentBytes": 994082816
+    },
+    "time-0": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 972539752,
+      "processLifetimePeakFootprintBytes": 4032615008,
+      "processLifetimePeakResidentBytes": 8822964224,
+      "residentBytes": 996622336
+    },
+    "heads-0": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 972982144,
+      "processLifetimePeakFootprintBytes": 4032615008,
+      "processLifetimePeakResidentBytes": 8822964224,
+      "residentBytes": 999505920
+    },
+    "time-1": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 413615640,
+      "processLifetimePeakFootprintBytes": 4032615008,
+      "processLifetimePeakResidentBytes": 8822964224,
+      "residentBytes": 450265088
+    },
+    "heads-1": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 621840040,
+      "processLifetimePeakFootprintBytes": 4032615008,
+      "processLifetimePeakResidentBytes": 8822964224,
+      "residentBytes": 658685952
+    }
+  },
+  "settledGrowthBetweenOpensBytes": {
+    "prepare": {
+      "physicalFootprintBytes": 65536,
+      "residentBytes": 65536,
+      "metalAllocatedBytes": 0
+    },
+    "time-0": {
+      "physicalFootprintBytes": 98304,
+      "residentBytes": 98304,
+      "metalAllocatedBytes": 0
+    },
+    "heads-0": {
+      "physicalFootprintBytes": 0,
+      "residentBytes": 0,
+      "metalAllocatedBytes": 0
+    },
+    "time-1": {
+      "physicalFootprintBytes": -559579520,
+      "residentBytes": -550305792,
+      "metalAllocatedBytes": 0
+    },
+    "heads-1": {
+      "physicalFootprintBytes": 245760,
+      "residentBytes": 212992,
+      "metalAllocatedBytes": 0
+    }
+  },
+  "limits": {
+    "concurrentUnloadCancellations": 5,
+    "metalAllocatedBytes": 19327352832,
+    "physicalFootprintBytes": 21474836480,
+    "retainedCancellations": 5,
+    "sessionOpens": 10,
+    "settleSeconds": [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes": 536870912
+  },
+  "cpuTests": {
+    "passed": 105,
+    "registered": 109,
+    "nativeTestsDisabled": 4
+  },
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T22:26:40.647908+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-phases",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-phases-native-01",
+      "--run"
+    ],
+    "budgetSeconds": 600,
+    "gpuWorkRequested": true,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 33831,
+    "exitCode": 0,
+    "elapsedSeconds": 58.022352375031915,
+    "sourcePinsUnchanged": true
+  },
+  "preparationAndNativeSourcePinsIdentical": true,
+  "limitations": [
+    "Fixed isolated boundaries cover prepare plus time/heads at the first two Turbo8 cardinalities. Head inputs use the original CPU prepared hidden state and CPU embeddings, not the native preparation output or final backbone output.",
+    "Full CPU references are retained original-module results; the Python modules were not rerun. Native output bytes differ from CPU while passing the predefined numerical bound.",
+    "This does not qualify linked preparation/backbone/heads, eight-step trajectory, all per-step modulations, conditioner presentation or its unnormalized 50-layer tap, VAEs or media quality.",
+    "Cancellation observes submitted work and joined stream completion; it does not establish GPU preemption or the instant hardware execution ends.",
+    "Memory counters overlap, 20 ms sampling can miss Metal peaks, and ten opens do not establish long-run or full-pipeline retention guarantees.",
+    "Two SDK ComputeStream Sendable diagnostics remain in each of three experimental native adapters under confined compatibility imports; no unchecked Sendable conformance was added.",
+    "Elapsed controller time includes file verification, CPU comparison and settling and is not a benchmark."
+  ],
+  "nextGate": "Link native preparation, all 50 blocks, output heads and coupled video/audio scheduler updates, then qualify the full eight-step Turbo8 trajectory before decoders and media acceptance.",
+  "artifactSHA256": {
+    "h3-phases-native-2026-10-18.json": "a90aa55c7ab7aba159bcf1e8689cca225db0b48ddb8eab836a12fc44855e13fe",
+    "h3-phases-native-controller-2026-10-18.json": "42fdd0d64c1907a29e6c3c9c854f7034f6782dd9c7245ed00600c4a0247de79c",
+    "h3-phases-native-provenance-2026-10-18.json": "19c712a2cb0b326cf43a88bba83974cba3337dd6fe4b9974272f69f415d3e64e",
+    "h3-phases-native-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-phases-readiness-2026-10-18.json": "a8921675b85d1c7129897df622f3269738ed17c5e9b5c71e3446a9af4684d6f9"
+  }
+}

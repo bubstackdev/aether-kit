@@ -1,0 +1,101 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[3/6] Write swift-version--58304C5D6DBC2206.txt
+[5/7] Compiling AetherKreaCoreAI KreaContracts.swift
+[5/8] Write Objects.LinkFileList
+[6/10] Linking aether-probe
+[8/11] Compiling AetherProbeTests ParityHarnessTests.swift
+[9/11] Compiling AetherKreaTests KreaAssetsTests.swift
+[10/11] Compiling AetherNativeTests DynamicParityTests.swift
+[11/13] Compiling AetherKitPackageTests runner.swift
+[11/13] Write Objects.LinkFileList
+[12/13] Linking AetherKitPackageTests
+Build complete! (6.47s)
+Test Suite 'All tests' started at 2026-10-17 19:28:57.928.
+Test Suite 'All tests' passed at 2026-10-17 19:28:57.928.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test nativeKreaSessionQualification() started.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+➜ Test nativeKreaDynamicParityAndStageCancellation() skipped.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.022 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.022 seconds.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.022 seconds.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.022 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.022 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.022 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.022 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.022 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.022 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.022 seconds.
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.022 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.022 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.022 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.029 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.029 seconds.
+✔ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.035 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 0.035 seconds.
+✔ Test rejectsOvewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+rlapAndUnloadWaitsForCompletion() passed after 0.035 seconds.
+✔ Test specializationRejectsTamperingAndUnknownFields() passed after 0.038 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.040 seconds.
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.040 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.041 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.056 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 0.089 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.199 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 0.294 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 0.310 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.337 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.363 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 0.421 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 0.449 seconds.
+✔ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() passed after 0.508 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 0.559 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 0.879 seconds.
+native qualification: first
+native qualification: repeat
+native qualification: cancel
+native qualification: recovery
+native qualification: dynamic512
+native qualification: dynamic512Repeat
+native qualification: dynamic384
+native qualification: unloadActive
+✔ Test nativeKreaSessionQualification() passed after 246.834 seconds.
+✔ Test run with 36 tests in 0 suites passed after 246.834 seconds.

@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T20:13:15.900679+00:00",
+  "passed": true,
+  "scope": "First Swift H3 corrected Turbo8 block-0 GPU boundary qualification at both captured T2VA timestep cardinalities. Not full H3 generation or a benchmark.",
+  "nativeCalls": 4,
+  "nativeModels": 2,
+  "predefinedRelativeL2Limit": 0.02,
+  "cases": {
+    "body-0": {
+      "relativeL2": 0.011005565585396282,
+      "sampledRows": 64,
+      "cpuOracleByteIdentical": false,
+      "sampledActualSHA256": "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+      "referenceSHA256": "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+      "fullOutputSHA256": "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "exactFullOutputRepeat": true,
+      "memory": {
+        "beforeLoad": {
+          "metalAllocatedBytes": 65536,
+          "physicalFootprintBytes": 612631608,
+          "processLifetimePeakFootprintBytes": 612631608,
+          "processLifetimePeakResidentBytes": 621002752,
+          "residentBytes": 621002752
+        },
+        "afterRun": {
+          "metalAllocatedBytes": 12039880704,
+          "physicalFootprintBytes": 12824807752,
+          "processLifetimePeakFootprintBytes": 12837177672,
+          "processLifetimePeakResidentBytes": 1683652608,
+          "residentBytes": 1681981440
+        },
+        "afterUnload": {
+          "metalAllocatedBytes": 1110114304,
+          "physicalFootprintBytes": 12681644336,
+          "processLifetimePeakFootprintBytes": 12837177672,
+          "processLifetimePeakResidentBytes": 1683652608,
+          "residentBytes": 1679867904
+        }
+      }
+    },
+    "body-1": {
+      "relativeL2": 0.004303844536004717,
+      "sampledRows": 64,
+      "cpuOracleByteIdentical": false,
+      "sampledActualSHA256": "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+      "referenceSHA256": "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+      "fullOutputSHA256": "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "exactFullOutputRepeat": true,
+      "memory": {
+        "beforeLoad": {
+          "metalAllocatedBytes": 1110114304,
+          "physicalFootprintBytes": 12681644336,
+          "processLifetimePeakFootprintBytes": 12837177672,
+          "processLifetimePeakResidentBytes": 1683652608,
+          "residentBytes": 1679867904
+        },
+        "afterRun": {
+          "metalAllocatedBytes": 12040437760,
+          "physicalFootprintBytes": 12826380616,
+          "processLifetimePeakFootprintBytes": 12840159560,
+          "processLifetimePeakResidentBytes": 1686274048,
+          "residentBytes": 1683193856
+        },
+        "afterUnload": {
+          "metalAllocatedBytes": 1110114304,
+          "physicalFootprintBytes": 12683217200,
+          "processLifetimePeakFootprintBytes": 12840159560,
+          "processLifetimePeakResidentBytes": 1686274048,
+          "residentBytes": 1681080320
+        }
+      }
+    }
+  },
+  "controllerElapsedSeconds": 7.11540775001049,
+  "controllerJoined": true,
+  "controllerTimedOut": false,
+  "selectedFilesVerified": true,
+  "manifestSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "phaseManifestSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "executableSHA256": "e976dba31a22d49bf9b6972fa0e503341240c6b9a0434b07c0b639f17eafc38c",
+  "sourceSHA256": {
+    "NOTICE": "3babadeb65ae333d9d2e62faa6e58f8fb902a9fb0535b49cabd52dbfa2d9d83d",
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "19e70bf3db0951d83e773a2583561ab4cce2e198c1bf307d0e3e59c37988e8a7",
+    "Scripts/check.sh": "16fe14075cd6ce010f20b849aa4a25df28fc7fce552293aae52a01e0166a47d9",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "5029221f9045e8d42a5c7d60fdd41e50f1506859aa23d4176fe66aec63bade40",
+    "Sources/AetherCoreAI/ModelDescription.swift": "aea241eabf14edc60585ffdef20beb5f160cb74de49d32985fcbd0202fbd3e82",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherH3/H3BlockProbePlan.swift": "4e1f6bac9c47e8ecade8994450f513e8e9fe6a214150d842fc18390ea691a3f2",
+    "Sources/AetherH3/H3ExportHeader.swift": "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "Sources/AetherH3/H3Geometry.swift": "91fec0ac4f0414e4af3de14a9d9cfc207a2cceb625e0eb30b5a2c37276418f9a",
+    "Sources/AetherH3/H3Layout.swift": "4d932eeb2afa25c6a31a4934305978d48916adc457566e60494bdbe62d96a76d",
+    "Sources/AetherH3/H3ReferenceComparison.swift": "c0bb8d1b8d54d260f2d015b1d7abb49a8499ccdc924b4f8f99e4a887ff2ddb51",
+    "Sources/AetherH3/H3Schedule.swift": "482d309dfd60877c04ec633b7ea8946f20a7817033b048af4958188f248a3a95",
+    "Sources/AetherH3/H3TensorData.swift": "280c685c6b9f224dda2cedbc8ab11062e54efb5247e05a6b4dd0d550f1d1d3a1",
+    "Sources/AetherH3/Resources/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "Sources/AetherH3CoreAI/H3BlockSession.swift": "84ad444db04fc7cce01b15adb8bdfebdac220b60cd043cb7140f241ecd9baaf5",
+    "Sources/AetherH3CoreAI/NativeH3BlockBackend.swift": "f09a6a0a979431faff55412fa57fe769747756c48d92fae699bb1fcd83a843c6",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "8bd8d5a5e3cd33af3654e0f7dbbbf5e5c60d6dd8a871389339352cfb045873d4",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "ca85af02a45aeb3243311d733636bb9a369c811445773b073a63b31162af4441",
+    "Sources/AetherProbe/H3QualificationCommand.swift": "0c7b37e8abbff58873cd474407cbb70377b9cc5bf2050bf2ef378cea4d81ab98",
+    "Sources/AetherProbe/KreaBatchCommand.swift": "220e011dbb606b74a1338f03803be3203dadab1efcc236e5472308405bd33883",
+    "Sources/AetherProbe/KreaBenchmark.swift": "3e714ac1dddb93e1e06f720ceff2066684bc225b7327322545d3f286a3edc89a",
+    "Sources/AetherProbe/KreaBenchmarkCommand.swift": "790ed232b37e285bd62aedfabe400f172a0092d9b23d5d7914d7c46209d9abbb",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherH3CoreAITests/H3BlockSessionTests.swift": "11a4476fbcff4bcea10a44d5131b88b5dacfd9408d02cd2f637f5cff64ce03a5",
+    "Tests/AetherH3Tests/Fixtures/block-bundle.json": "2218e4770ff82c4e3596b9ee90e70fee11b546f3d3a6b5061d24cc4e244e5aa6",
+    "Tests/AetherH3Tests/Fixtures/block-phases.json": "03edf17e757df1d5b6eedd9b0203fb8d5610ab03f59d599ca085c9f8abdd8a49",
+    "Tests/AetherH3Tests/Fixtures/corrected-export-header.json": "33e31d0104ced20ba1a2a1c1558cf710dfcbd9028de6dc90a30c37f2fdc7f983",
+    "Tests/AetherH3Tests/Fixtures/layout-oracle.json": "5bdddf8d468be34a758086c65bfb761af505cf030e270cc80bf0b683f979d3c7",
+    "Tests/AetherH3Tests/Fixtures/turbo8-numerics.json": "c54f477946f51e82d2dd1539fdd2ca8bf7d36fed7870a88dd22b49381b8021fb",
+    "Tests/AetherH3Tests/Fixtures/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "Tests/AetherH3Tests/Fixtures/video-packing-oracle.json": "7e92f3258c767c32befad8f853655ab204a787aa71883fd4e0c62c9730e171df",
+    "Tests/AetherH3Tests/H3BlockPlanTests.swift": "4e200d12435baa6ca59be61b8011b30562259e88e5b84656816854cccc96c7ff",
+    "Tests/AetherH3Tests/H3ContractsTests.swift": "1f53f1d160abf9f4355a96a57d984149e54ce1c53aeec75d99593947b1a319e0",
+    "Tests/AetherH3Tests/H3TensorTests.swift": "a542c68dfa3c5ecdbc79a24a2457b4ee7dd07ca9ddf8b5767cdfdb97fc52ab22",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKitTests/GeneratedImageTests.swift": "5d5a71dbde5c25d9b6ff34b607c77e2d2bdb142403f951da6c536ddecb85187e",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "6e72e5b09d9b9438a37b45f99b2474a7a61155c45a2bf6a9d1a249c3f0eb1c83",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaEulerFixtureTests.swift": "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "b01c395f8a281b45d3dd137ddba6b56294a1b1d4737dc6542e2aa52ad76a80a2",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTests/KreaSpecializationTests.swift": "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4",
+    "Tests/AetherNativeTests/DecoderCancellationTests.swift": "cdb432356050d5cde7f016047225ece64e1a2478d1caa2be60e769fb6a544402",
+    "Tests/AetherNativeTests/DynamicParityTests.swift": "df8dfe8a1074be6ae9a1c027ae4ae20ad2935f0d4612fea5b6e168ab1d974089",
+    "Tests/AetherNativeTests/NativeSessionTests.swift": "282e0916b34cff830a5709ed769ddf3f0d29e95a854c6c79a6b2e710bbfda128",
+    "Tests/AetherProbeTests/BatchCommandTests.swift": "2e949c2d1247b3882c9119d271533fb79eb46f1253b112b5989ee24c3cacdf54",
+    "Tests/AetherProbeTests/BenchmarkTests.swift": "ba180d5b27995d1217125b377a8f471255db4827b14626d2e0b90a942a717487",
+    "Tests/AetherProbeTests/H3QualificationCommandTests.swift": "e3c588bf3f8d1e0c71cd66b18bba5dddee2f60151ba8d10c01dd76887b6306ae",
+    "Tests/AetherProbeTests/ParityHarnessTests.swift": "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1"
+  },
+  "externalManifestSHA256": {
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e"
+  },
+  "device": {
+    "architecture": "h17c",
+    "computeUnits": "cpu, gpu, neuralEngine",
+    "os": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes": "68719476736"
+  },
+  "checks": {
+    "bothCardinalitiesPassSampledIndependentCPUOracle": true,
+    "allFullOutputsFinite": true,
+    "bothFullOutputRepeatsByteIdentical": true,
+    "selectedModelWeightInputReferenceBytesVerified": true,
+    "sourceExecutableAndManifestsUnchanged": true,
+    "terminalSessionCloseCompletedForBothCases": true,
+    "processExitedZeroAndJoinedWithinBudget": true,
+    "stdoutMatchesSavedReport": true
+  },
+  "memoryInterpretation": "Metal allocations fell from about 11.21 GiB after execution to 1.03 GiB after terminal unload in both cases. Immediate physical-footprint counters remained about 11.81 GiB. Counters overlap and cannot be summed. These observations do not prove page reclamation or long-run memory stability.",
+  "artifactsSHA256": {
+    "docs/evidence/h3-block-native-2026-10-18.json": "a41738d3b74f719f2b0c8b6398e72af3db97c0750cb2258d27696c59c2322f71",
+    "docs/evidence/h3-block-controller-2026-10-18.json": "cc9011afda68ba08d15eec9599ad5af81ce7ff9f57de6bbec9cccd2133594437",
+    "docs/evidence/h3-block-native-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/evidence/h3-block-native-device-2026-10-18.json": "483bcd34908d666c3df47e9f4e8f676bc44cf8fa219443e9e7e35044a1e2bbc6"
+  },
+  "limitations": [
+    "Only block 0 and 64 sampled numerical rows per case are compared with independent CPU references. All output bytes are checked for finite values and exact repeatability, not full-output numerical parity.",
+    "CPU/native outputs are not byte-identical; the predefined module-level 0.02 relative-L2 gate passes. This tolerance does not authorize a full-trajectory or media-quality claim.",
+    "Native cancellation/recovery and long-run load/unload memory behavior remain unqualified.",
+    "Post-unload physical footprint remains high; attribution and reclamation are unresolved. A bounded lifecycle/memory probe is the next gate before scaling up.",
+    "SDK ComputeStream compatibility import/compiler diagnostics remain documented. Passing this probe does not establish thread-safety under arbitrary concurrency.",
+    "No conditioner, heads, complete 50-block trajectory, decoders or audio/video quality qualification was performed.",
+    "Controller time includes CPU verification and setup; this run is not a performance benchmark."
+  ]
+}

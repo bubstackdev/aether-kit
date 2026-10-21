@@ -1,0 +1,6 @@
+{
+  "architecture" : "h17c",
+  "computeUnits" : "cpu, gpu, neuralEngine",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : "68719476736"
+}

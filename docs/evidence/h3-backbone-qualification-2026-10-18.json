@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T22:05:51.348482+00:00",
+  "passed": true,
+  "scope": "Fifty corrected production blocks at 19333 rows and two T2VA cardinalities; one resident weight set, every-block hashes/finite values and CPU numerical checkpoints 0,1,2,24,49. Not all-block CPU numerical parity or full generation.",
+  "implementation": "Schema-2 full backbone: exactly blocks 0..49, one resident set of 22 verified shared Metal weight slots, distinct ping-pong states, one retained model/function/stream, awaited per-block CPU snapshot consumer.",
+  "cpuValidation": {
+    "registeredTests": 99,
+    "passedCPUTests": 95,
+    "nativeTestsDisabled": 4,
+    "independentlyVerifiedWeightBindings": 1100,
+    "verifiedOriginalCPUModulationTables": 100,
+    "reusedNumericalReferences": 6,
+    "newNumericalReferences": 4,
+    "newFull128VsSelectedCPUChecks": 4
+  },
+  "capture": {
+    "nativeSubmissions": 100,
+    "completeBackbonePasses": 2,
+    "qualified": false,
+    "savedTensorCount": 14,
+    "savedTensorBytes": 2910157824
+  },
+  "nativeQualification": {
+    "nativeSubmissions": 250,
+    "completeBackbonePasses": 4,
+    "successfulBlockOutputs": 200,
+    "observedMidpointCancellations": 2,
+    "cancelledCallNativeSubmissions": 50,
+    "sessionOpens": 3,
+    "numericalCheckpointBlocks": [
+      0,
+      1,
+      2,
+      24,
+      49
+    ],
+    "independentCPUComparisons": 20,
+    "predefinedRelativeL2Limit": 0.02,
+    "relativeL2ByCheckpoint": {
+      "body-0": {
+        "0": 0.011005565585396282,
+        "1": 0.001287710914064739,
+        "2": 0.0004921539975702964,
+        "24": 0.00047620235417730094,
+        "49": 0.0042268006746013975
+      },
+      "body-1": {
+        "0": 0.004303844536004717,
+        "1": 0.001584524225016234,
+        "2": 0.0008929985415219625,
+        "24": 0.000629998080200184,
+        "49": 0.005628605741822063
+      }
+    },
+    "allBlockHashesMatchCapture": true,
+    "retainedSessionRecovery": true,
+    "reopenedSessionRecovery": true,
+    "concurrentUnload": true,
+    "noBlock25SubmittedAfterCancellation": true,
+    "finalOutputSHA256": {
+      "body-0": "a89910b2aafc9e6c941b80c2068aa2eaca4f1b0187b0a34da39e0e3a6c21273d",
+      "body-1": "78240c41b0f14c6b05d5009760ffcb925e85d8182d7deb70bb03dd5ecbfa76ac"
+    }
+  },
+  "all50BlockCaptureSHA256": {
+    "body-0": [
+      "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "5f45e294b6b7b253230a05a1254fa9f0ccf78e9f11b73e21735d2c6f8baf0895",
+      "9fb4aeef54096f346481621fc3b852c48e7bb8ddfdc703242e97bde8666ca9f6",
+      "d840b5d380743d24dd108c79f189e0f74d2eabc7c85efd644f96b3c57cdf9bce",
+      "b08c3d8fe1b10e2f3c33b2707d70ad7714366c414efe2a829bb47ca1a723451c",
+      "a770e74da7e046aa0c41e2c9ba04204235acbe41f960a70eb1b800e4ad17657d",
+      "473114f5686b807ed6817399201a8a53c05fa52ef03ec0d27d474a75b7b24c69",
+      "9497d415965832fce90d30bcb902fc6dd4272e6c605e19b260fd8c363229b631",
+      "bd74028f4da3cbcbe94d341328600a8d95d3bb5200f74ae4354f8912044d6317",
+      "ceeba0d6f0ed8dd6db9d11be7d118ce4ac0dd94e5b41b887428299882c950311",
+      "8079a5a08359235747e512f614ceec6248ea018ffb5fd34dd5a65c6224480212",
+      "a9cf8032f6ae3a7886a6134c0c23061117be5faa99d45358af11e9e1c1288c1a",
+      "5a80d956ee9368f02c1bdda519e46e7eca9aa27bb83b967e39e7755529decf55",
+      "5ecc53219440db0c82fdbe4f44631d9bc06405378788ccab1a6370cee315ffa8",
+      "6798e20f65190cc430c3b38fa8a127305e7f3b380a2030ceb854e5980108688a",
+      "75e190ac1c5305707df7653e5f0a31221398f359fac5656129f745289263bc91",
+      "f18f1a3d6f4d7c4ad90c664dbdfc7a92236fddeaaaf7a932d81f54926e0866e4",
+      "90557f4f333e13fc86b05403ed45c1db2f08b11d68763a879f3dfcc5534bbb73",
+      "b0d314d8b833f70b3fdad3bcbb11d04f2f2db8c088569103e23f54dadc28a746",
+      "d174584d26ee2c6969860d41331984e0a19af6126901f012b22fde8152525621",
+      "677f49fa50459b882b1f381e0b45fc1cb94899b19f488b153a3bf0fa0332d86a",
+      "ba356af6901d5ec06d82f27b422fc132964c11f4c1baf36f499ac767fa2b3eaf",
+      "f29543e5b8e0e586ae5e0d16953109cb27b7ed063e8343cea0fabae5861c3b38",
+      "776b832bca59a7e896f34b3901fc7117514a862c13ff389dacabf4dff9c8510a",
+      "3fcf8abe5a90196d449856d2aada812033954f26cd49d2f812be63004d865f4f",
+      "b0ee34dbdb327a203af45b482fc5a8a3609a8b1a398328fc4d7d07bb83e4fadf",
+      "3224c9df5e5ee932d60ce8d8e15c52b3b3c56242c9aa897271d9ff3ba2b7f238",
+      "5de43bfb97e184923494fd9d88b62a618d49e96bc21c898d0f7ff7effef97144",
+      "595115239c3a60b61ea70cefcd0626121c5a1fd464cd37335216100dada2bd65",
+      "724077cdfbf047c9f167be4d7c4d8e3c001c0619e353eec5248ac018450bc397",
+      "ebe3a100576b09d0257888852a33aa1a77ccad03b687acc6c697a071ef3e9981",
+      "0ae0b820cb705cd7763db52fae291e5314787c8ef73aa3769e448e7bf17cce11",
+      "d414f2bfd36562312265e94c24387824f3830bb38611855f9f32d0155858b7c2",
+      "a1c6fd14c48f901afa62639ca3e041da41f871b0918b8b0588d7a0a824dc0bf0",
+      "f4ce9e825f3c49e13c70449f8e4f6a1fbee1cdfcc1529c95e42443c5d336c517",
+      "126ef41d44d52d0f4ff4ff7c8521e1b557d74c575720bdadb2b5d491975dd304",
+      "ff6d9bf044356be020f4b124040336ec8325eaf82d3bd1863fb1413a9aaf4ded",
+      "fab9a3559141dccd35c42098e96a228b86e43c02484320896bf164199b777770",
+      "272948d0bc5ed900e384a4073dbe7cbce7f316c7d2ea550a0e75b953e2c6663d",
+      "b4a9bd5c4adf8cb121ce8addc7643e20af7ae9fca76a776edf378feb2f047718",
+      "654c75c45d2b9accc04cb854496f4ba4421faaef33cee56636d35ecd085e3a9a",
+      "3f050354d44effc5bae7397989fba41c5ecaf139fa298e3242152abd991c97d2",
+      "a12f7ce8b466d8fb2d246790656be0194c963609f28ec9dc061f247de5d987be",
+      "43d282528d807f94fb1c81c6686e790cde3e39a7ed2175e08d78bfbfef4072d9",
+      "81436d2be2f5c9b71146595c45a92815c49cbf847788aea516d348812c99f0e8",
+      "2aa606cd57ec9b11474dbd399e29e7c51a70a1a12a754a5f4561691d800852d2",
+      "7e1d848f199b17e59430ae435b0f0f9335dac7614b91ae933bfe9b6af0619838",
+      "9b8491e19a5486708bf6982ad368f8718a806e24ffb41d0188a4fb927fdf5040",
+      "aff9d9ab5a98be075b55694bc6e8f1da5db82a6be12d336c0d682acf1949e820",
+      "a89910b2aafc9e6c941b80c2068aa2eaca4f1b0187b0a34da39e0e3a6c21273d"
+    ],
+    "body-1": [
+      "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "006103cb3e1534079f81d64be48fb4c093095c129ef1691d4ada93fd8f12d342",
+      "e9d9b7a6661375e39189b658bb62055b10701dc49c7f1a1fa7f784c5ba939025",
+      "aa5acb172d357aba106c2ac89b47481c82175e1f210a72f6b42bc2a1e6142a34",
+      "38caef00954e173d8ac836ffcd06f6001743de178461c66fa607b3bfc216b43a",
+      "3cc3382681ee22e15bc10a0217f1c7d08e025ce9e5eac33ea57927c5e817de16",
+      "c5330dbe53caa0fc43204b7b39dece354ebe7f2a4ce7b1f672f1f4caeaa7e437",
+      "caa0423d63a411c9c3a4bc3b2b63fe584036f86cac3ff30d2d78e42af93465d4",
+      "23379e7ef6d1ec7d8df3441cc44e348f8df22f4dd4955095a90bbc4ef0bcce07",
+      "636d633508a0f17a20b991b9bf1ce9726e6fc931a166f87a4bdbd03aa604271e",
+      "2d6f8b2abeaff9a09128a135466dc19864fa0a436013d9f26beff94afd9aa161",
+      "16ca4036f02de5df170596375d0ad8f8e685a05462bcab5a52758280d785eb86",
+      "431f48551a9e853a590851d81120d54ebdf2c7428cc7d2eeee94a44cb511a491",
+      "8a29926454a416dca4979d295b68044476b09d335abdf33757a2911df025d935",
+      "32099442bef45111b1030547b6aa4422a1a916fe9e180c52d6b38a83d26e609e",
+      "6097872cdbeeacad12ddee00ef69833c1fa0718bdb403a087f706b94c77696e0",
+      "448719de6089d7523cdc16ba685f456a11064315efce2b142d91534b3964f655",
+      "24f41b5feaed35be7bcb6aef28cd93555fb064810ab30d03fa37b5c0ae0656b6",
+      "ffb7f1621f3131f2a5099f2b97453f9c563cc2acafe8eebf219d74293887b572",
+      "e1ba0a0c673ac751e2310456898e3f7251772725d472f257eadbe8903a62c0a6",
+      "679380e417dd91d125d248f9a4a9d24089821c1aebab6c56fbbfe704ef81bb1f",
+      "cb1b2df8bdad28ce1e8b43039925cae31912c1fec366323bdaa0d7b10336dcd4",
+      "1e42e5a86f47deb00f9904d0028de2a6c7ef6850ad99fed081f4f7ea9a80f4ab",
+      "bac71c7826a35dd0b9449ba8b0fb54b601a8112bb1ce198fec2cd3e4b98fd4ce",
+      "0233224f5f158103b06c0be8f0f26ff51ff51035f51e91225288072ef937a116",
+      "f20abd1d6c4e97991f28ba361b7a8cc23dc0c22d2bb3cd3f57fa848fe75bebb6",
+      "1361578f47227e90f6e8b544c26077f018b3913f30403e760a68f0018a637c81",
+      "3ea4da45702b922a7e30aa0f146f820f7ab69f00c537c81aac22ac5297587448",
+      "307cf25bd957a5b78574d7ecd6378a7573823836cbe7b5565859f505dc11ece6",
+      "40636bba94c7664fbc111ddcaf293e93015351100369e1280644d1e6def08464",
+      "49a2c4e4918e95abad1834c335cd0a0d094f418c998adff220fd425d06f0369b",
+      "c2687c56ab5058d086985e9f1374bfb37c4a30157587aac810e3688a77423c5e",
+      "93ec3adfbe6bfbb1e8d5b3f98c3d8a5229506ba52313e72bb3e3059debca4191",
+      "a16bc59eef751d41e050add9468ed1316b401628c25e7058f45693798240d6fd",
+      "921331580c8f62f373ab14c2dc3514768d331e08666ab35daae354cd038c18c6",
+      "eea09cbf9da497a5522ed7d81a697678a993d5c0272daefc9f3808b53a3a4110",
+      "b4286c2862f987ef41e183466e16bbb4f7eb5d3fa566b97006f81d23e6045526",
+      "5819166b782f80a85ec0f5000d83ede66a31cd0e048b79c657fae38be255c4cf",
+      "9619d424d564c2222edccb72c2f389237560b95bf9fa9431531b21a2fa3aff81",
+      "6f93969fcfe0671b2030bc41b7736aeb4ed80a29d0120556416fdb7106928b82",
+      "f9db84d7eb8d1da17c229aa9e9aabdaba9b3826836951fc5deaecf6e90c0c14d",
+      "687a667da1f5e3b9c807158b67775552d339049b3fe3f98d3b687cdae35e0f11",
+      "548294d67b5b841b34c35c25e9b9ed090bd71f282c08a870bf675effcfccab05",
+      "9a551b81baf73cebced6293ef9887a12095a15d703c16bea211437446fc5d5d1",
+      "b29a36bf2b99f98ea1ab21958531b6baab35c3221b220eb06d430c2699db982b",
+      "6dcce481f7616f0682303c0ea2fb2063d16ba68f72e34365364253816877ff51",
+      "60e7fa8e7ff86b563978018128a6cbf25aba353ef2701b39b7fc389edf7f78a7",
+      "aa3ad0491a18162c95ba82388afe09e938f97cf30b16d433bdd6b95065c4290f",
+      "1f0110818979c88b0c250083cf5b697ebf001a2b894195b592b612b3a4627017",
+      "78240c41b0f14c6b05d5009760ffcb925e85d8182d7deb70bb03dd5ecbfa76ac"
+    ]
+  },
+  "totalNativeSubmissionsIncludingCapture": 350,
+  "backboneSourceWeightBytes": 39866649600,
+  "boundBufferBytes": {
+    "body-0": 1445540116,
+    "body-1": 1455216916
+  },
+  "limits": {
+    "captureNativeSubmissions": 100,
+    "metalAllocatedBytes": 19327352832,
+    "physicalFootprintBytes": 21474836480,
+    "qualificationCyclesPerCase": 2,
+    "qualificationNativeSubmissions": 250,
+    "settleSeconds": [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes": 536870912
+  },
+  "sampledPeak": {
+    "metalAllocatedBytes": 7416987648,
+    "physicalFootprintBytes": 8219543856,
+    "processLifetimePeakFootprintBytes": 8294664496,
+    "processLifetimePeakResidentBytes": 1693908992,
+    "residentBytes": 1693908992
+  },
+  "memorySamples": 20659,
+  "settledSnapshots": {
+    "body-0.cycle1.afterUnload5s": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 645105128,
+      "processLifetimePeakFootprintBytes": 8294664496,
+      "processLifetimePeakResidentBytes": 1692696576,
+      "residentBytes": 639729664
+    },
+    "body-1.cycle1.afterUnload5s": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 650249728,
+      "processLifetimePeakFootprintBytes": 8294664496,
+      "processLifetimePeakResidentBytes": 1693908992,
+      "residentBytes": 634847232
+    },
+    "body-1.cycle2.afterUnload5s": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 650200576,
+      "processLifetimePeakFootprintBytes": 8294664496,
+      "processLifetimePeakResidentBytes": 1693908992,
+      "residentBytes": 636796928
+    }
+  },
+  "settledGrowthFromFirstSnapshotBytes": {
+    "body-0.cycle1.afterUnload5s": {
+      "physicalFootprintBytes": 0,
+      "residentBytes": 0,
+      "metalAllocatedBytes": 0
+    },
+    "body-1.cycle1.afterUnload5s": {
+      "physicalFootprintBytes": 5144600,
+      "residentBytes": -4882432,
+      "metalAllocatedBytes": 0
+    },
+    "body-1.cycle2.afterUnload5s": {
+      "physicalFootprintBytes": 5095448,
+      "residentBytes": -2932736,
+      "metalAllocatedBytes": 0
+    }
+  },
+  "captureAndQualifiedSharedSourcePinsIdentical": true,
+  "manifests": {
+    "bundleSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "phaseManifestSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "qualifiedChainManifestSHA256": "21b612c1d37836bdd1c06eb1e1f34dd724810a036ee2eab0e35bda6562fb0a6d",
+    "captureChainManifestSHA256": "72dc3f7982a67a9e258100191dff8c0064cdfa87ff3669a41b11b8582d36d1e1"
+  },
+  "controller": {
+    "startedAt": "2026-10-18T21:54:31.270534+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-chain",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01/chain.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-native-01",
+      "--run"
+    ],
+    "budgetSeconds": 1200,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 21008,
+    "exitCode": 0,
+    "elapsedSeconds": 542.7542954170494,
+    "sourcePinsUnchanged": true
+  },
+  "limitations": [
+    "Numerical CPU checks cover 64 output rows at blocks 0,1,2,24,49 using complete captured native predecessor contexts. This is not all-block CPU numerical parity or an independently computed CPU backbone/denoising trajectory.",
+    "Only two fixed captured T2VA cardinalities at 19333 rows are exercised, not the complete eight-step Turbo8 schedule, outer preparation/conditioning/heads, VAEs, media quality or performance.",
+    "All 50 output hashes are consistency/context checks; they are not independent full-output CPU references.",
+    "Cancellation observes submitted work and joined completion, not GPU preemption or the instant hardware execution ends.",
+    "Bounded native weight/storage admission excludes Core AI workspace and consumer-retained snapshots. CPU callbacks can retain data beyond this buffer bound.",
+    "Memory counters overlap, 20 ms sampling can miss Metal peaks, and three session opens do not establish long-run or general device memory guarantees.",
+    "Two ComputeStream Sendable diagnostics remain in each of the two experimental native adapters under confined compatibility imports; no unchecked Sendable conformance was added.",
+    "Controller elapsed times include CPU integrity checks, file IO and settling on a shared machine; they are not benchmarks."
+  ],
+  "nextGate": "Port and qualify Turbo8 outer preparation/time/heads and the eight-step video/audio trajectory before decoders and media acceptance.",
+  "artifactSHA256": {
+    "h3-backbone-capture-2026-10-18.json": "599b7ed72443bbf1e0e8fea3c96aab2c76ea160f709e30b663bd9598f8769845",
+    "h3-backbone-capture-controller-2026-10-18.json": "a8d6e37c26d47fcf24004e9b33a4130d0d3832e0b6c785ffd282574704f66685",
+    "h3-backbone-capture-plan-2026-10-18.json": "72dc3f7982a67a9e258100191dff8c0064cdfa87ff3669a41b11b8582d36d1e1",
+    "h3-backbone-capture-prepared-2026-10-18.json": "f9995b912a69d8c899666987cbdf7f3657a998790da7003d69712c9d52989b17",
+    "h3-backbone-capture-provenance-2026-10-18.json": "955343cd3f04fed89a30d5711d33a823f1154c7dcf474acd190c7f6bf9e2cffc",
+    "h3-backbone-capture-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-backbone-compiler-interop-2026-10-18.log": "b1bff9e3b73144dd2e9128970667ff0fcb9d0dc3e07faf01719a4bd03e432692",
+    "h3-backbone-controller-2026-10-18.json": "0e8adc011eefaaef9c4cd752d87f19250026e7604c5b37a65955f98f5ec87a84",
+    "h3-backbone-controller-2026-10-18.py": "4cf214e297d60ec37c0e1b998e93953b046c1412e2a69222f74b4ca053f5a949",
+    "h3-backbone-cpu-controller-2026-10-18.py": "91fb508dcb9e989f97b83e683e7c4a9ef330ee62ce4294e430a7b5a7dbceeef2",
+    "h3-backbone-cpu-preparation-2026-10-18.json": "fcae03efc3777fb044c873a4e11154c9917a6f84da1b87d203cb3cfaed0abe14",
+    "h3-backbone-cpu-preparation-2026-10-18.log": "e434f89b5abc8f1232804db4a443dd93fbb1e6089913ddf8c53e115b84fa499c",
+    "h3-backbone-cpu-reference-controller-2026-10-18.json": "e564f93d332a920fed13d76e0ba2b84588c1fc21db90e7835dd86f9d0f26d82d",
+    "h3-backbone-cpu-references-2026-10-18.json": "5f02479362eaef018ae52c9ee2c9a043cb173f5644a01636c22652ac46203ce4",
+    "h3-backbone-cpu-references-stderr-2026-10-18.log": "c4d86e1f586f79e983073f18f068594a04ba1a8cfb6e4f870adcfcfc8bbab05a",
+    "h3-backbone-cpu-references-stdout-2026-10-18.log": "69507c5157c2e787c154254be6714365fe4dad7e9601fa9680819baec4b8c40e",
+    "h3-backbone-device-2026-10-18.json": "483bcd34908d666c3df47e9f4e8f676bc44cf8fa219443e9e7e35044a1e2bbc6",
+    "h3-backbone-native-2026-10-18.json": "9e2906f782a43b5bf288bf425e8e8761ab87c39fa74750c1ecf5c61e2d3a7e79",
+    "h3-backbone-provenance-2026-10-18.json": "a2b3f12118407667e9e9353486d36b492d7d6b6225eea186cf3af6b321128563",
+    "h3-backbone-reference-plan-2026-10-18.json": "21b612c1d37836bdd1c06eb1e1f34dd724810a036ee2eab0e35bda6562fb0a6d",
+    "h3-backbone-reference-prepared-2026-10-18.json": "da537c472a58466d879a7c142c721e45f649af5723ef3d0cf826a046cbff51a9",
+    "h3-backbone-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-backbone-tests-2026-10-18.log": "86e39ea5cd482c915462d41e61e43f6aed8818f3768eeacc77ef98c46e9e5baa"
+  }
+}

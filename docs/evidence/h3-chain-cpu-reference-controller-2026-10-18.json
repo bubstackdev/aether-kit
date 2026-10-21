@@ -1,0 +1,28 @@
+{
+  "startedAt": "2026-10-18T21:23:15.144586+00:00",
+  "command": [
+    "/Users/zakkeown/Code/aether-engine/forge/.venv/bin/python",
+    "-B",
+    "Scripts/prepare-h3-chain-oracle.py",
+    "--lab",
+    "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab",
+    "--prototype",
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype",
+    "--bundle",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "--phases",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "--output",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01",
+    "--references",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-capture-01"
+  ],
+  "budgetSeconds": 600,
+  "gpuWork": false,
+  "passed": true,
+  "joined": true,
+  "timedOut": false,
+  "pid": 615,
+  "exitCode": 0,
+  "elapsedSeconds": 342.0592735829996
+}

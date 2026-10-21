@@ -30,7 +30,7 @@ public struct ModelFunctionDescription: Sendable, Codable, Equatable {
     public let outputs: [String: ModelValueDescription]
     public let states: [String: ModelValueDescription]
 
-    init(_ descriptor: InferenceFunctionDescriptor) {
+    public init(_ descriptor: InferenceFunctionDescriptor) {
         name = descriptor.name
         inputs = Dictionary(uniqueKeysWithValues: descriptor.inputNames.compactMap { name in
             descriptor.inputDescriptor(of: name).map { (name, ModelValueDescription($0)) }

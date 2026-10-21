@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T22:17:00.919907+00:00",
+  "passed": true,
+  "stage": "cpuReadyNativePending",
+  "gpuWork": false,
+  "scope": "Five fixed corrected prepare/time/heads boundaries with full original CPU references. CPU readiness only; native execution and linked eight-step trajectory remain pending.",
+  "cpuValidation": {
+    "registeredTests": 109,
+    "passedCPUTests": 105,
+    "nativeTestsDisabled": 4,
+    "runnerRejectionChecks": 3
+  },
+  "selectedFilesVerified": true,
+  "nativeExecuted": false,
+  "selectedCases": [
+    "prepare",
+    "time-0",
+    "heads-0",
+    "time-1",
+    "heads-1"
+  ],
+  "boundBufferBytes": {
+    "heads-0": 215255572,
+    "heads-1": 215266324,
+    "prepare": 215669248,
+    "time-0": 10756,
+    "time-1": 21512
+  },
+  "plannedNativeQualification": {
+    "nativeSubmissions": 30,
+    "successfulCalls": 20,
+    "cancelledCalls": 10,
+    "sessionOpens": 10,
+    "fullTensorCPUComparisons": 28,
+    "relativeL2Limit": 0.02,
+    "controllerBudgetSeconds": 600,
+    "limits": {
+      "concurrentUnloadCancellations": 5,
+      "metalAllocatedBytes": 19327352832,
+      "physicalFootprintBytes": 21474836480,
+      "retainedCancellations": 5,
+      "sessionOpens": 10,
+      "settleSeconds": [
+        0,
+        1,
+        5
+      ],
+      "settledGrowthBytes": 536870912
+    }
+  },
+  "controller": {
+    "schema": 1,
+    "startedAt": "2026-10-18T22:15:30.456992+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-phases",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-phases-prepared-02",
+      "--prepare-only"
+    ],
+    "budgetSeconds": 300,
+    "gpuWorkRequested": false,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 29634,
+    "exitCode": 0,
+    "elapsedSeconds": 1.428372375026811,
+    "sourcePinsUnchanged": true
+  },
+  "originalCPURecipe": {
+    "path": "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/h3_diagnose.py",
+    "sha256": "da990aae1c82014cdc480c7194fbb2303f330244391c1b6dde3f86b95369c13c",
+    "reexecuted": false
+  },
+  "manifests": {
+    "bundleSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "phaseManifestSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "cpuRecordSHA256": "e2e173462816f26f82c8f5a6bbe703c53e4b1c2332387e8c053d532d5ba1eb95"
+  },
+  "limitations": [
+    "No native phase execution was performed. Passing preparation does not establish native numerical accuracy, descriptor acceptance on-device, cancellation timing or native memory behavior.",
+    "Original CPU prepare/time/head references are reused from the pinned retained report; the Python outer modules were not reexecuted.",
+    "Only the first two Turbo8 timestep cardinalities and one fixed prepared hidden context are admitted. Heads are not applied to the newly qualified final backbone output.",
+    "The 2 GiB buffer admission bound excludes embedded model weights and native workspace. Future 20 ms memory sampling can miss Metal peaks and counters overlap.",
+    "Two ComputeStream Sendable diagnostics remain in each of three experimental native adapters under confined compatibility imports; no unchecked Sendable conformance was added.",
+    "Conditioner presentation and its unnormalized 50-layer tap, eight-step linked trajectory, per-step modulation preparation, VAEs, media acceptance and benchmarking remain separate gates."
+  ],
+  "nextGate": "Run the prepared 30-submission outer-phase qualification during an explicitly available GPU window, then link preparation/backbone/heads and all eight video/audio updates.",
+  "artifactSHA256": {
+    "h3-phases-prepared-2026-10-18.json": "1b68865cda18eeef5d9345eb4a89d5fcf7df15b157103873eb8af17fbea378c4",
+    "h3-phases-controller-2026-10-18.json": "a07ee924e42f8248367a6063353000d62b989bd9a59629b82499a880b6f112f1",
+    "h3-phases-provenance-2026-10-18.json": "19c712a2cb0b326cf43a88bba83974cba3337dd6fe4b9974272f69f415d3e64e",
+    "h3-phases-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-phases-tests-2026-10-18.log": "49a5c9a6c7cf1197de87c461db675b5509f51cdb894ca0070f45de579874d0d5",
+    "h3-phases-compiler-interop-2026-10-18.log": "bb5559af99d852b13f41e4491f13022e6573b0ecc3635ef4e4183d4a29ae20e5",
+    "h3-phases-cpu-record-2026-10-18.json": "e2e173462816f26f82c8f5a6bbe703c53e4b1c2332387e8c053d532d5ba1eb95",
+    "h3-phases-manifest-2026-10-18.json": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "h3-phases-runner-checks-2026-10-18.json": "4cfc5716d2a546bbf022a3095eca4a5d57276946069b6a30ec7092f9e5892ae7",
+    "h3-phases-controller-script-2026-10-18.py": "ab6d5c7ebdfbf5e9add84dd4ffddef3046eb44dc098647d2c9f284eefb4f3085"
+  }
+}

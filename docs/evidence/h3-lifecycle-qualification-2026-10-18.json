@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T21:09:16.305597+00:00",
+  "passed": true,
+  "scope": "Corrected block-0 lifecycle at two T2VA cardinalities; submitted-work cancellation, retained/reopened recovery and bounded memory stability. Not full generation or a benchmark.",
+  "change": "Retain one ComputeStream per H3 block session; join every call before reuse, including cancelled/error paths.",
+  "cpuValidation": {
+    "registeredTests": 89,
+    "passedCPUTests": 85,
+    "nativeSuitesDisabled": 4
+  },
+  "nativeValidation": {
+    "submissions": 22,
+    "successfulOutputs": 18,
+    "observedCancellations": 4,
+    "sessionOpens": 8,
+    "cyclesPerCardinality": 4,
+    "relativeL2Limit": 0.02,
+    "relativeL2ByCase": {
+      "body-0": 0.011005565585396282,
+      "body-1": 0.004303844536004717
+    },
+    "fullOutputSHA256": {
+      "body-0": "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "body-1": "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27"
+    },
+    "allOutputsMatchPreviouslyQualifiedHashes": true,
+    "retainedRecovery": true,
+    "reopenedRecovery": true,
+    "concurrentUnloadObservedBeforeNativeCompletion": true
+  },
+  "manifests": {
+    "bundleSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "phaseManifestSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e"
+  },
+  "limitsUnchangedAcrossControlAndFix": true,
+  "limits": {
+    "cycles": 4,
+    "metalAllocatedBytes": 19327352832,
+    "physicalFootprintBytes": 21474836480,
+    "runsPerSession": 2,
+    "settleSeconds": [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes": 536870912
+  },
+  "freshStreamControl": {
+    "passed": false,
+    "submissions": 8,
+    "successfulOutputs": 7,
+    "observedCancellations": 1,
+    "failure": "Unsupported: H3 lifecycle memory exceeded a predefined bound or Metal counters are unavailable",
+    "sampledPeak": {
+      "metalAllocatedBytes": 21741109248,
+      "physicalFootprintBytes": 22545778992,
+      "processLifetimePeakFootprintBytes": 22545778992,
+      "processLifetimePeakResidentBytes": 1682866176,
+      "residentBytes": 1682866176
+    }
+  },
+  "retainedStreamResult": {
+    "passed": true,
+    "sampledPeak": {
+      "metalAllocatedBytes": 7189839872,
+      "physicalFootprintBytes": 7979387112,
+      "processLifetimePeakFootprintBytes": 8006060264,
+      "processLifetimePeakResidentBytes": 1676607488,
+      "residentBytes": 1676607488
+    },
+    "memorySamples": 3470,
+    "settledByCase": {
+      "body-0": {
+        "cycle2": {
+          "metalAllocatedBytes": 720896,
+          "physicalFootprintBytes": 637208088,
+          "processLifetimePeakFootprintBytes": 7978977512,
+          "processLifetimePeakResidentBytes": 1676607488,
+          "residentBytes": 646332416
+        },
+        "cycle4": {
+          "metalAllocatedBytes": 720896,
+          "physicalFootprintBytes": 637290008,
+          "processLifetimePeakFootprintBytes": 8006060264,
+          "processLifetimePeakResidentBytes": 1676607488,
+          "residentBytes": 255426560
+        },
+        "growthBytes": {
+          "physicalFootprintBytes": 81920,
+          "residentBytes": -390905856,
+          "metalAllocatedBytes": 0
+        }
+      },
+      "body-1": {
+        "cycle2": {
+          "metalAllocatedBytes": 720896,
+          "physicalFootprintBytes": 637240856,
+          "processLifetimePeakFootprintBytes": 8006060264,
+          "processLifetimePeakResidentBytes": 1676607488,
+          "residentBytes": 646381568
+        },
+        "cycle4": {
+          "metalAllocatedBytes": 720896,
+          "physicalFootprintBytes": 637240856,
+          "processLifetimePeakFootprintBytes": 8006060264,
+          "processLifetimePeakResidentBytes": 1676607488,
+          "residentBytes": 639107072
+        },
+        "growthBytes": {
+          "physicalFootprintBytes": 0,
+          "residentBytes": -7274496,
+          "metalAllocatedBytes": 0
+        }
+      }
+    }
+  },
+  "controller": {
+    "startedAt": "2026-10-18T21:06:42.356020+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-lifecycle",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-lifecycle-native-02",
+      "--run"
+    ],
+    "budgetSeconds": 300,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 92438,
+    "exitCode": 0,
+    "elapsedSeconds": 84.53431766695576,
+    "sourcePinsUnchanged": true
+  },
+  "changedSharedSourcePaths": [
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe"
+  ],
+  "limitations": [
+    "Only corrected block 0 with fixed captured inputs at two T2VA cardinalities; no full H3 pipeline, trajectory, multi-block chain or media acceptance.",
+    "Numerical comparison covers 64 captured rows per case; full output hashes establish repeat/recovery consistency, not full CPU numerical parity.",
+    "Cancellation is observed between successful encode submission and joined completion; it does not prove GPU preemption or the instant of hardware completion.",
+    "Four reopen cycles per cardinality are bounded evidence, not long-run retention qualification or a production memory guarantee.",
+    "Memory counters overlap. 20 ms samples can miss Metal allocation peaks; process lifetime footprint/resident peaks are also preserved.",
+    "Two existing ComputeStream Sendable diagnostics remain under the confined compatibility import; no unchecked Sendable conformance was added.",
+    "Only NativeH3BlockBackend.swift and the rebuilt executable differ among common control/fixed source pins; this does not identify undocumented native allocation internals."
+  ],
+  "nextGate": "Bounded multi-block backbone execution with verified weights and an independent reference before complete Turbo8 generation.",
+  "artifactSHA256": {
+    "h3-lifecycle-compiler-interop-2026-10-18.log": "37e22820c3869cec919b75c9dab854528c5d6284f1a099a62288d1f6aed1461c",
+    "h3-lifecycle-controller-2026-10-18.json": "de13d51a5ab7910c0a811127d304f528dec663f4a569ec105215e4e2d67bafbd",
+    "h3-lifecycle-controller-2026-10-18.py": "59eead1cd840702d7b1c57c8086195552dc086547634deb11616704f0d9f25e2",
+    "h3-lifecycle-fresh-stream-controller-2026-10-18.json": "deee8ed68227fa6145555d647b9f11e330d2a6c65a1b5f05b185b45cbfcd177c",
+    "h3-lifecycle-fresh-stream-native-2026-10-18.json": "6c52d8007c8ecd63875c45d30a18af430dca74fe7b3377a1a96a6a97b619ac42",
+    "h3-lifecycle-fresh-stream-provenance-2026-10-18.json": "00ba2589f4b6ea30403f184a90070f1caa92c949f3173ce8835332f56ba51f3f",
+    "h3-lifecycle-fresh-stream-stderr-2026-10-18.log": "5739ef3bc5328f17cadef32e8743a82de835c2bb57b08fe9f5c020a6fed8febf",
+    "h3-lifecycle-fresh-stream-tests-2026-10-18.log": "1cb331cbd48dff6afead3e98285e229ce96db50be2f3de37de247a1f426729f0",
+    "h3-lifecycle-native-2026-10-18.json": "68ceb7f7d1b88bee488abaf2c3aff46cd02d9e64bd4661f0a30673c296da82c6",
+    "h3-lifecycle-prepared-2026-10-18.json": "6d724dec5206f038953633cf5d56922bdedc244253b95123ee26c4d9122642fe",
+    "h3-lifecycle-provenance-2026-10-18.json": "4a4a9f0ba2128f02cfcd0024b8b5cbac0dba9a3c44c003ae0c5108e47742138b",
+    "h3-lifecycle-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-lifecycle-stream-reuse-2026-10-18.diff": "ee270a56ec58dc4aee59494ff0bc51f6255324e7fc776e24bd46fddb2b1706fa",
+    "h3-lifecycle-tests-2026-10-18.log": "f960a9c3e4a6c088a21c5129956e3e2b9fc1ea281a1e54d3fa4c2c029b1c56a8"
+  }
+}

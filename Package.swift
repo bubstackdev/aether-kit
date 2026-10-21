@@ -7,6 +7,8 @@ let package = Package(
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
+        .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
+        .library(name: "AetherH3", targets: ["AetherH3"]),
         .library(name: "AetherKrea", targets: ["AetherKrea"]),
         .library(name: "AetherKreaTokenizers", targets: ["AetherKreaTokenizers"]),
         .library(name: "AetherKreaCoreAI", targets: ["AetherKreaCoreAI"]),
@@ -22,15 +24,24 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
+        .target(name: "AetherH3CoreAI", dependencies: ["AetherH3", "AetherKit", "AetherCoreAI"],
+                swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
+        .target(name: "AetherH3", dependencies: ["AetherKit"], resources: [.copy("Resources")]),
         .target(name: "AetherKrea", dependencies: ["AetherKit"]),
         .target(name: "AetherKreaTokenizers", dependencies: [
             "AetherKrea", .product(name: "Tokenizers", package: "swift-transformers"),
         ]),
         .target(name: "AetherKreaCoreAI", dependencies: ["AetherKrea", "AetherCoreAI", "AetherKit"]),
-        .executableTarget(name: "AetherProbe", dependencies: ["AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers"]),
+        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI"]),
+        .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit"]),
-        .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKreaTokenizersTests", dependencies: ["AetherKreaTokenizers", "AetherKrea"]),
+        .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI"]),
+        .testTarget(name: "AetherNativeTests", dependencies: [
+            "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
+        ]),
     ]
 )

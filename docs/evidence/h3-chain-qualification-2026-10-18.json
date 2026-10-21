@@ -1,0 +1,194 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T21:33:34.107897+00:00",
+  "passed": true,
+  "scope": "Three corrected production blocks at 19333 rows and both captured T2VA cardinalities; independent per-block CPU checks at captured native contexts, not independent CPU chain/trajectory parity or full generation",
+  "implementation": "H3ChainProbePlan, H3ChainSession and qualify-h3-chain: corrected blocks 0..2, distinct GPU ping-pong buffers, three immutable weight sets, one function and stream per session.",
+  "cpuValidation": {
+    "registeredTests": 95,
+    "passedCPUTests": 91,
+    "nativeTestsDisabled": 4,
+    "exportedBindingsIndependentlyVerified": 66,
+    "full128RowVsSelectedCPUChecks": 6,
+    "sampledProductionContextReferences": 6,
+    "gpuWorkInCPUHelper": false
+  },
+  "capture": {
+    "nativeSubmissions": 6,
+    "captureComplete": true,
+    "qualified": false,
+    "reportPassed": false,
+    "outputBytes": 1247210496
+  },
+  "nativeQualification": {
+    "nativeSubmissions": 38,
+    "completeChains": 10,
+    "successfulBlockOutputs": 30,
+    "observedMidChainCancellations": 4,
+    "cancelledCallSubmissions": 8,
+    "sessionOpens": 6,
+    "priorFullOutputHashesPreserved": true,
+    "allRepeatedAndRecoveredOutputsExact": true,
+    "allIndependentCPUBlockGatesPass": true,
+    "relativeL2Limit": 0.02,
+    "relativeL2ByBlock": {
+      "body-0": [
+        0.011005565585396282,
+        0.001287710914064739,
+        0.0004921539975702964
+      ],
+      "body-1": [
+        0.004303844536004717,
+        0.001584524225016234,
+        0.0008929985415219625
+      ]
+    },
+    "fullOutputSHA256ByBlock": {
+      "body-0": [
+        "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+        "5f45e294b6b7b253230a05a1254fa9f0ccf78e9f11b73e21735d2c6f8baf0895",
+        "9fb4aeef54096f346481621fc3b852c48e7bb8ddfdc703242e97bde8666ca9f6"
+      ],
+      "body-1": [
+        "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+        "006103cb3e1534079f81d64be48fb4c093095c129ef1691d4ada93fd8f12d342",
+        "e9d9b7a6661375e39189b658bb62055b10701dc49c7f1a1fa7f784c5ba939025"
+      ]
+    },
+    "noThirdBlockSubmittedAfterCancellation": true,
+    "concurrentUnloadObservedBeforeJoinedCompletion": true
+  },
+  "totalNativeSubmissionsIncludingCapture": 44,
+  "manifests": {
+    "bundleSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "phaseManifestSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "qualifiedChainManifestSHA256": "8cffc67a302528f2030bf927d91d2668a9e4b120cc5ad5c65c93985ae4bf10c3",
+    "captureChainManifestSHA256": "3668d74d9a676525d69080770d901a62f6d1f09e7316ea6d08c0ef77a3300d12"
+  },
+  "referenceScope": "Original CPU blocks with full captured native input contexts and 64 selected output rows each; no independent CPU chain or denoising trajectory parity.",
+  "boundBufferBytes": {
+    "body-0": 3031109908,
+    "body-1": 3031690516
+  },
+  "limits": {
+    "captureNativeSubmissions": 6,
+    "metalAllocatedBytes": 19327352832,
+    "physicalFootprintBytes": 21474836480,
+    "qualificationCyclesPerCase": 3,
+    "qualificationNativeSubmissions": 38,
+    "settleSeconds": [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes": 536870912
+  },
+  "sampledPeak": {
+    "metalAllocatedBytes": 8993144832,
+    "physicalFootprintBytes": 9993506320,
+    "processLifetimePeakFootprintBytes": 9993506320,
+    "processLifetimePeakResidentBytes": 3483369472,
+    "residentBytes": 3483369472
+  },
+  "memorySamples": 5051,
+  "settledByCase": {
+    "body-0": {
+      "first": {
+        "metalAllocatedBytes": 720896,
+        "physicalFootprintBytes": 844809920,
+        "processLifetimePeakFootprintBytes": 9990245880,
+        "processLifetimePeakResidentBytes": 3476684800,
+        "residentBytes": 860471296
+      },
+      "last": {
+        "metalAllocatedBytes": 720896,
+        "physicalFootprintBytes": 847152832,
+        "processLifetimePeakFootprintBytes": 9992588792,
+        "processLifetimePeakResidentBytes": 3482615808,
+        "residentBytes": 862830592
+      },
+      "growthBytes": {
+        "physicalFootprintBytes": 2342912,
+        "residentBytes": 2359296,
+        "metalAllocatedBytes": 0
+      }
+    },
+    "body-1": {
+      "first": {
+        "metalAllocatedBytes": 720896,
+        "physicalFootprintBytes": 847201984,
+        "processLifetimePeakFootprintBytes": 9993408016,
+        "processLifetimePeakResidentBytes": 3483254784,
+        "residentBytes": 862912512
+      },
+      "last": {
+        "metalAllocatedBytes": 720896,
+        "physicalFootprintBytes": 847333056,
+        "processLifetimePeakFootprintBytes": 9993506320,
+        "processLifetimePeakResidentBytes": 3483369472,
+        "residentBytes": 863043584
+      },
+      "growthBytes": {
+        "physicalFootprintBytes": 131072,
+        "residentBytes": 131072,
+        "metalAllocatedBytes": 0
+      }
+    }
+  },
+  "captureAndQualifiedSharedSourcePinsIdentical": true,
+  "controller": {
+    "startedAt": "2026-10-18T21:29:44.152617+00:00",
+    "command": [
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+      "qualify-h3-chain",
+      "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+      "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/chain.json",
+      "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-native-01",
+      "--run"
+    ],
+    "budgetSeconds": 300,
+    "passed": true,
+    "joined": true,
+    "timedOut": false,
+    "pid": 4144,
+    "exitCode": 0,
+    "elapsedSeconds": 125.27229866699781,
+    "sourcePinsUnchanged": true
+  },
+  "limitations": [
+    "Only blocks 0..2 at two captured T2VA timestep cardinalities; not all 50 blocks, a complete schedule, conditioner/outer preparation, decoders or media acceptance.",
+    "Independent numerical comparisons use native predecessor contexts and only 64 output rows per block, with complete keys/values. This is not independently computed CPU chain parity or full-output CPU numerical parity.",
+    "Capture is explicitly unqualified; final references pin complete capture hashes so they are applied to identical contexts during repeats/recovery.",
+    "Cancellation observes submitted work before joined completion and retains resources until completion; it does not prove GPU preemption or the hardware-completion instant.",
+    "Three reopen cycles per cardinality and 20 ms memory sampling are bounded evidence, not long-run retention or product memory guarantees. Counters overlap; Metal sampling can miss peaks.",
+    "The two experimental native adapters each retain two SDK ComputeStream Sendable diagnostics under compatibility imports; no unchecked Sendable conformance was added.",
+    "Elapsed CPU/native controller times include verification/setup/settling on a shared machine and are not benchmarks."
+  ],
+  "nextGate": "All 50 backbone blocks with bounded weight residency, followed by complete Turbo8 preparation/trajectory/decoding qualification.",
+  "artifactSHA256": {
+    "h3-chain-capture-2026-10-18.json": "166db5226eeccf1d9a8be51b516d75b2b64e0e27fd61c352f64f57321c25650d",
+    "h3-chain-capture-controller-2026-10-18.json": "78e4243d14e094835212ae59863d27b5de16f1282658e2e30d1de272d7409897",
+    "h3-chain-capture-plan-2026-10-18.json": "3668d74d9a676525d69080770d901a62f6d1f09e7316ea6d08c0ef77a3300d12",
+    "h3-chain-capture-prepared-2026-10-18.json": "c0a403b4bb0e5ce9e5029efd2c6bc749ff964073a9be44eb5f291cc953665154",
+    "h3-chain-capture-provenance-2026-10-18.json": "d7c094c8b6226ff6ea1363da1578aeceb974be7f021b70721462808310fddbb7",
+    "h3-chain-capture-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-chain-compiler-interop-2026-10-18.log": "c22d418924a4c546ca900440c76c16f7f10a31b32e936093eb1cb4aed80b37da",
+    "h3-chain-controller-2026-10-18.json": "ad6a42749f2e2d49e067b1089d0d3cf08d3ea852e014716843fa3f412cf0b630",
+    "h3-chain-controller-2026-10-18.py": "e0c26d5b137137d28121604bc9a878d48ccb9afd3b1cf27917d299e80b3b02e2",
+    "h3-chain-cpu-controller-2026-10-18.py": "4c89f174d612747bb25f3d285e7a0646181ed85f312ec7f2f1c0fd3947c3f9b8",
+    "h3-chain-cpu-preparation-2026-10-18.json": "702d9dbfd45baeb0a7d718a0e89dc168e21f854ebd4ba03db7aaa961ab9d12f4",
+    "h3-chain-cpu-preparation-2026-10-18.log": "017090bab7d4392243677a54a8981569fa27cf470619c4a8fd13c61f85edeb42",
+    "h3-chain-cpu-reference-controller-2026-10-18.json": "0c2f42637ad54337a59e4314bc900b9a4b56e777ccf919b9ba405137d4b72385",
+    "h3-chain-cpu-references-2026-10-18.json": "7271b212095a99dfd23c54500296064b67e9c1fa0d88e7c30488cc1771659778",
+    "h3-chain-cpu-references-stderr-2026-10-18.log": "0f94cc6ccccf947ec2a5643d8890d2e6ca203d06c388ea4268bbbe7396c5787d",
+    "h3-chain-cpu-references-stdout-2026-10-18.log": "8cf6d38f956a8e560b88f7ffb64e249bfc90beeb654206642a0638fcb8a568f1",
+    "h3-chain-device-2026-10-18.json": "483bcd34908d666c3df47e9f4e8f676bc44cf8fa219443e9e7e35044a1e2bbc6",
+    "h3-chain-native-2026-10-18.json": "9841b733c7c6062afce8425dd652a6d6eaf12ffb1e066660b84f15559994094a",
+    "h3-chain-provenance-2026-10-18.json": "22042d5668b6c16a8184f5dbaa59e750ddfea895f5961404c36b5846a273e173",
+    "h3-chain-reference-plan-2026-10-18.json": "8cffc67a302528f2030bf927d91d2668a9e4b120cc5ad5c65c93985ae4bf10c3",
+    "h3-chain-reference-prepared-2026-10-18.json": "00bd9bef54f2a2d2290df240e1c7aac2ddd15cd2f53eb7abc6f502d0bccafa6a",
+    "h3-chain-stderr-2026-10-18.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "h3-chain-tests-2026-10-18.log": "6904a880b5456447c60d9affb1f0f89ec8928a89cd6a4ceb1dae74017f713119"
+  }
+}

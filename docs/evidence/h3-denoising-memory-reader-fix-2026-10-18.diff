@@ -1,0 +1,19 @@
+--- before/H3BlockProbePlan.swift
++++ after/H3BlockProbePlan.swift
+@@ -19,9 +19,13 @@
+         let file = try FileHandle(forReadingFrom: url.appendingPathComponent("main.mlirb"))
+         defer { try? file.close() }
+         var hasher = SHA256()
+-        while let bytes = try file.read(upToCount: 8 << 20), !bytes.isEmpty {
+-            try Task.checkCancellation(); hasher.update(data: bytes)
+-        }
++        // FileHandle bridges through Foundation autoreleased storage. A long
++        // synchronous verification pass must drain each chunk, rather than keep
++        // tens of GB alive until the next asynchronous suspension/autorelease pool.
++        while try autoreleasepool(invoking: { () throws -> Bool in
++            guard let bytes = try file.read(upToCount: 8 << 20), !bytes.isEmpty else { return false }
++            try Task.checkCancellation(); hasher.update(data: bytes); return true
++        }) {}
+         guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else {
+             throw AetherError.invalidModel("H3 model stream hash mismatch")
+         }

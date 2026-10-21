@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "ready": true,
+  "nativeComparisonExecuted": false,
+  "scope": "CPU tests plus actual cached-bundle prepare-only validation. Native encoding/generation for the new comparison profile remains pending a quiet window.",
+  "tests": {
+    "registered": 51,
+    "cpu_passed": 47,
+    "native_suites_skipped": 4,
+    "new_comparison_tests_passed": 4
+  },
+  "protocols": {
+    "encoded": "Each timed image encodes its prompt under balanced residency and reacquires denoisers.",
+    "provided": "Once per case, encode/validate conditioning and unload encoder outside iteration timing, then retain denoisers/functions/decoder across iterations."
+  },
+  "warmups_per_case": 3,
+  "measurements_per_case": 5,
+  "cases_per_plan": 2,
+  "generations_per_plan": 16,
+  "total_generations_for_pair": 32,
+  "matching_workloads_counts_model_and_references": true,
+  "matching_prepared_inputs": true,
+  "matching_source_and_executable": true,
+  "production_library_sources_unchanged": true,
+  "qualified_library_source_sha256": {
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "5029221f9045e8d42a5c7d60fdd41e50f1506859aa23d4176fe66aec63bade40",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "843c2102cc8a4cb33f75318b4d1c127e6710229eb6057202401166cd381a106b",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73"
+  },
+  "plan_sha256": {
+    "Benchmarks/krea-encoded-comparison.json": "f1ff2d846db32d66fc0c49665ab3135b5114d97048fbebc9b63825f7f71ddb4e",
+    "Benchmarks/krea-provided-comparison.json": "5d2c103355f325cdd2798ce73cacd99b7dee6138d6a84da594d2e68ba7ff1cb2"
+  },
+  "prepared_reports": {
+    "encoded": "krea-benchmark-comparison-encoded-prepared-2026-10-18.json",
+    "provided": "krea-benchmark-comparison-provided-prepared-2026-10-18.json"
+  },
+  "records": {
+    "krea-benchmark-comparison-encoded-prepared-2026-10-18.json": "1566d953794ba3100e240e140208b599625616e3c1b91197343c19514f4f22f9",
+    "krea-benchmark-comparison-encoded-prepare-2026-10-18.log": "a447fc712a9ecb64e185fc2fba229f8bebcc887284324953081768242a8f5808",
+    "krea-benchmark-comparison-provided-prepared-2026-10-18.json": "941a441805130efacd72f92df9b46273d057b02288912c68dc37e1590f4d1271",
+    "krea-benchmark-comparison-provided-prepare-2026-10-18.log": "0cfafa3ee81fc9bbf65b1a89f4813641df1eddd10c696b1d4cd2f5b6fe7042a7",
+    "krea-benchmark-comparison-tests-2026-10-18.log": "04242624d84232d789013fe11f71e44e394ab852d9d30224d52bb25a553e661e"
+  },
+  "limits": [
+    "No measured comparison result or speedup is claimed.",
+    "Provided conditioning removes encoder work and changes residency; total-time differences cannot be attributed solely to function loading.",
+    "More warmups do not guarantee stationarity; retain and inspect every measurement.",
+    "Fresh-prompt latency and setup cost remain separately labelled; kernel-lifetime memory peaks include setup."
+  ]
+}

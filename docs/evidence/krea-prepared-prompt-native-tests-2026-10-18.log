@@ -1,0 +1,139 @@
+[0/1] Planning build
+Building for production...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (1.24s)
+Test Suite 'All tests' started at 2026-10-18 12:20:25.986.
+Test Suite 'All tests' passed at 2026-10-18 12:20:25.987.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test decoderCancellationRestoresPipelineAndCanRecover() started.
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() started.
+◇ Test unloadWaitsForPreparationAndClosesPermanently() started.
+◇ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() started.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() started.
+◇ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() started.
+◇ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() started.
+◇ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+◇ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+◇ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() started.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+◇ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+◇ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() started.
+◇ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() started.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() started.
+◇ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() started.
+➜ Test nativePipelineDecoderCancellationAndRecovery() skipped.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test benchmarkStatisticsNeverCombineDifferentProfiles() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test nativeKreaDynamicParityAndStageCancellation() started.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() started.
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+➜ Test nativeKreaSessionQualification() skipped.
+➜ Test nativeDecoderCancellationAndRecovery() skipped.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test preparationFailureClosesEncoderAndAllowsRetry() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+✔ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() passed after 0.034 seconds.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.035 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.035 seconds.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.035 seconds.
+✔ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() passed after 0.035 seconds.
+✔ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() passed after 0.035 seconds.
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.035 seconds.
+✔ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() passed after 0.036 seconds.
+✔ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() passed after 0.036 seconds.
+✔ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() passed after 0.036 seconds.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.042 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.042 seconds.
+✔ Test benchmarkStatisticsNeverCombineDifferentProfiles() passed after 0.044 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.044 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.044 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.044 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.045 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.045 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.045 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.045 seconds.
+✔ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() passed after 0.045 seconds.
+✔ Test specializationRejectsTamperingAndUnknownFields() passed after 0.047 seconds.
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.047 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.047 seconds.
+✔ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() passed after 0.054 seconds.
+✔ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() passed after 0.054 seconds.
+✔ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.055 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.055 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.065 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.066 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.066 seconds.
+✔ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() passed after 0.076 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.500 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 0.529 seconds.
+✔ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() passed after 0.560 seconds.
+✔ Test rejectsOverlapAndUnloadWaitsForCompletion() passed after 0.562 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 0.562 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 0.564 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 0.566 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.580 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.636 seconds.
+✔ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() passed after 0.704 seconds.
+✔ Test preparationFailureClosesEncoderAndAllowsRetry() passed after 0.725 seconds.
+✔ Test unloadWaitsForPreparationAndClosesPermanently() passed after 0.warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+748 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 0.814 seconds.
+✔ Test decoderCancellationRestoresPipelineAndCanRecover() passed after 0.836 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 0.949 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 0.953 seconds.
+✔ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() passed after 0.995 seconds.
+✔ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() passed after 1.040 seconds.
+✔ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() passed after 1.081 seconds.
+✔ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() passed after 1.136 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 1.139 seconds.
+✔ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() passed after 1.182 seconds.
+native qualification: dynamic512.independentReference
+native qualification: dynamic512.nativeParity
+native qualification: dynamic512.cancelEncoder
+native qualification: dynamic512.recovery
+native qualification: dynamic512.preparePrompt
+native qualification: dynamic512.preparedRepeat1
+native qualification: dynamic512.preparedRepeat2
+native qualification: dynamic384.independentReference
+native qualification: dynamic384.nativeParity
+native qualification: dynamic384.cancelDecoder
+native qualification: dynamic384.recovery
+native qualification: dynamic384.preparePrompt
+native qualification: dynamic384.preparedRepeat1
+native qualification: dynamic384.preparedRepeat2
+✔ Test nativeKreaDynamicParityAndStageCancellation() passed after 510.303 seconds.
+✔ Test run with 58 tests in 0 suites passed after 510.303 seconds.

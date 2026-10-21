@@ -30,6 +30,7 @@ public struct KreaAssets: Sendable {
     public let tokenizerDirectory: URL
     public let fingerprint: String
     private let tokenizerFiles: [URL: String]
+    private var specializations: [KreaDenoiserSelection] = []
 
     public static func open(at root: URL) throws -> Self {
         guard root.isFileURL else { throw AetherError.invalidModel("bundle must be local") }
@@ -109,6 +110,90 @@ public struct KreaAssets: Sendable {
                 throw AetherError.invalidModel("tokenizer changed after bundle opening: \(url.lastPathComponent)")
             }
         }
+    }
+
+    /// Registers a trusted offline export against these exact four source streams.
+    /// Hashes both source and specialized streams before returning a new asset set.
+    public func registeringSpecialization(at registrationURL: URL) throws -> Self {
+        guard registrationURL.isFileURL else { throw AetherError.invalidModel("registration must be local") }
+        let registration = try JSONDecoder().decode(ShapeRegistration.self, from: Data(contentsOf: registrationURL))
+        guard specializations.count < 8, (1...4096).contains(registration.image_tokens),
+              (1...512).contains(registration.text_rows), registration.segments.count == 4,
+              registration.source_sha256 == denoisers.map(\.declaredSHA256),
+              registration.specialized_sha256.count == 4,
+              !specializations.contains(where: { $0.imageTokens == registration.image_tokens && $0.textRows == registration.text_rows }) else {
+            throw AetherError.invalidModel("invalid, duplicate or incompatible Krea shape registration")
+        }
+        var models: [KreaModelAsset] = []
+        for index in 0..<4 {
+            try denoisers[index].verify()
+            let path = registration.segments[index]
+            guard !path.isEmpty else { throw AetherError.invalidModel("empty specialized asset path") }
+            let url = (path.hasPrefix("/") ? URL(fileURLWithPath: path)
+                : registrationURL.deletingLastPathComponent().appendingPathComponent(path))
+                .standardizedFileURL.resolvingSymlinksInPath()
+            let metadataHash = try hashFile(confinedFile("metadata.json", root: url))
+            let model = KreaModelAsset(url: url, declaredSHA256: registration.specialized_sha256[index], metadataSHA256: metadataHash)
+            try model.verify()
+            models.append(model)
+        }
+        guard Set(models.map(\.url)).count == 4 else {
+            throw AetherError.invalidModel("specialization requires four distinct assets")
+        }
+        var result = self
+        result.specializations.append(KreaDenoiserSelection(
+            assets: models, imageTokens: registration.image_tokens, textRows: registration.text_rows, specialized: true
+        ))
+        return result
+    }
+
+    public func denoiserSelection(imageTokens: Int, textRows: Int) throws -> KreaDenoiserSelection {
+        guard (1...4096).contains(imageTokens), (1...512).contains(textRows) else {
+            throw AetherError.invalidRequest("invalid Krea denoiser shape")
+        }
+        return specializations.first { $0.imageTokens == imageTokens && $0.textRows == textRows }
+            ?? KreaDenoiserSelection(assets: denoisers, imageTokens: imageTokens, textRows: textRows, specialized: false)
+    }
+}
+
+/// A selected set of four denoisers, keyed by stream/metadata identity and both shapes.
+public struct KreaDenoiserSelection: Sendable {
+    public let assets: [KreaModelAsset]
+    public let imageTokens: Int
+    public let textRows: Int
+    public let specialized: Bool
+    public var identity: String {
+        let parts = assets.flatMap { [$0.declaredSHA256, $0.metadataSHA256] }
+            + [String(imageTokens), String(textRows), String(specialized)]
+        return Data(SHA256.hash(data: Data(parts.joined(separator: ":").utf8))).hex
+    }
+}
+
+private struct ShapeRegistration: Decodable {
+    let image_tokens: Int
+    let text_rows: Int
+    let source_sha256: [String]
+    let specialized_sha256: [String]
+    let segments: [String]
+
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.container(keyedBy: AnyKey.self)
+        let expected = Set(["image_tokens", "text_rows", "source_sha256", "specialized_sha256", "segments"])
+        guard Set(raw.allKeys.map(\.stringValue)) == expected else {
+            throw AetherError.invalidModel("unknown or missing shape registration fields")
+        }
+        image_tokens = try raw.decode(Int.self, forKey: AnyKey("image_tokens"))
+        text_rows = try raw.decode(Int.self, forKey: AnyKey("text_rows"))
+        source_sha256 = try raw.decode([String].self, forKey: AnyKey("source_sha256"))
+        specialized_sha256 = try raw.decode([String].self, forKey: AnyKey("specialized_sha256"))
+        segments = try raw.decode([String].self, forKey: AnyKey("segments"))
+    }
+    struct AnyKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(_ value: String) { stringValue = value }
+        init?(stringValue: String) { self.init(stringValue) }
+        init?(intValue: Int) { return nil }
     }
 }
 

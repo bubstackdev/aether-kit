@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "status": "Eight-step numerical parity and scoped cancellation checks passed; focused eight-step retry reached decoder cancellation, but recovery remains unqualified",
+  "claims": {
+    "dynamic512_eight_step_independent_parity": true,
+    "dynamic384_eight_step_independent_parity": true,
+    "native_encoder_cancellation_and_eight_step_recovery": true,
+    "native_decoder_cancellation_and_reference_pixel_recovery_isolated": true,
+    "native_pipeline_decoder_cancellation_and_recovery": {
+      "passed": true,
+      "steps": 1
+    },
+    "repeated_eight_step_pipeline_decoder_cancellation": {
+      "qualified": true,
+      "reason": "Focused retry passed cancellation, then recovery remained incomplete for more than ten minutes and operator termination was requested",
+      "next_step": "Investigate native function/resource lifetime with a small repeated-generation reproducer and live per-call checkpoints; retain the existing independent parity baselines.",
+      "scope": "384x512, seed 17017, retained 20-row fixture conditioning; repeated eight-step generation reached native decoder cancellation",
+      "recovery_qualified": false
+    }
+  },
+  "final_test_run": {
+    "registered": 39,
+    "passed": 36,
+    "skipped": 3,
+    "cpu_tests_passed": 35,
+    "enabled_native_suite": "nativePipelineDecoderCancellationAndRecovery",
+    "other_native_suites_disabled_to_serialize_gpu_work": true,
+    "log": "krea-native-pipeline-decoder-tests-2026-10-17.log",
+    "log_sha256": "9f0a3d7fa52a52e8d54b96546596a1e4b4de2ac8cf9a66f9916eae656bbda4fb",
+    "scope": "Last completed passing run, before the incomplete eight-step GPU retry"
+  },
+  "earlier_serial_runs": {
+    "existing_native_lifecycle_checks_passed": 23,
+    "isolated_native_decoder_checks_passed": 6,
+    "encoder_and_numerical_checks_passed_in_full_dynamic_attempt": 25,
+    "full_dynamic_suite_overall_passed": false
+  },
+  "records": {
+    "krea-dynamic-numerical-parity-2026-10-17.json": "e1c2de438585f604051bead9b7e5c38d712369217b45746cd3ecafd48bf5d51a",
+    "krea-balanced-session-2026-10-17.json": "7627d73c0a0babb22798497441aa5d79143156482154e2be05d9dcafbbc4fb1e",
+    "krea-isolated-decoder-cancellation-2026-10-17.json": "386b8e8921adfa4c13cd57533724dd20afa93710cb749b74575c1d7349e1a333",
+    "krea-native-pipeline-decoder-cancellation-2026-10-17.json": "ca1ebaef48285b8192147683aa25ebda43d497ca0747bd821eead143d9c77228",
+    "krea-integrated-decoder-status-2026-10-17.json": "715e6ffec979b6a51dae1a814bc2461fd79d511275a46b236bdd67ebf9f3b1bf",
+    "krea-dynamic-residency-stall-2026-10-17.json": "6a93b78f96c4ee34a225a2829cbf9d51b3cd9c6e662871d0ed01139b16c8d7f4",
+    "krea-gpu-retry-2026-10-17-status.json": "6c005c32b8020767a780863f9a84605b0e690d66a6ca7bc5588357f1608bd135"
+  },
+  "source_sha256": {
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "2b1aed0ad085ee86b95a114e94fa0b284065be582cae7488bb5cb422d0153388",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "3c237f41b3381fc841e05cf9318c1e2287324561e3675bcef929d3ffef180ad1",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "843c2102cc8a4cb33f75318b4d1c127e6710229eb6057202401166cd381a106b",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "6d1cf58c7574c77337a5f4097a54f58a38b25ca5faea81051969bf733a5c6382",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKitTests/GeneratedImageTests.swift": "5d5a71dbde5c25d9b6ff34b607c77e2d2bdb142403f951da6c536ddecb85187e",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "6e72e5b09d9b9438a37b45f99b2474a7a61155c45a2bf6a9d1a249c3f0eb1c83",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaEulerFixtureTests.swift": "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "abf49d053b183e6d1dc46d58cbc3869e5c467f9d5c851a63912f924f11064851",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTests/KreaSpecializationTests.swift": "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4",
+    "Tests/AetherNativeTests/DecoderCancellationTests.swift": "522fcac500da894b62fb7c41d8fa9c34fee212bbb6aa11f1d6aba71e7137b205",
+    "Tests/AetherNativeTests/DynamicParityTests.swift": "18dac30d0232b697602bfc5814e31a962b13b62961a16a1fb76609eb65913b06",
+    "Tests/AetherNativeTests/NativeSessionTests.swift": "8f512724ba479d1b14e08c8fe23b5a2fd28b55673acff18bb4f9d1868b85ce3f",
+    "Tests/AetherProbeTests/ParityHarnessTests.swift": "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1"
+  },
+  "numerical_run_library_sources_match_current": true,
+  "independent_reference_sources_and_binary_unchanged": true,
+  "benchmark": false,
+  "cache_state": "Uncontrolled OS cache",
+  "host_load": "Significant shared load, confirmed by user",
+  "device": {
+    "architecture": "h17c",
+    "computeUnits": "cpu, gpu, neuralEngine",
+    "os": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes": "68719476736"
+  },
+  "images": {
+    "dynamic512": ".local/native-dynamic-balanced-20261017/dynamic512.png",
+    "dynamic384": ".local/native-dynamic-balanced-20261017/dynamic384.png"
+  },
+  "latest_gpu_retry": {
+    "overall_passed": false,
+    "report": "krea-gpu-retry-2026-10-17-status.json",
+    "report_sha256": "6c005c32b8020767a780863f9a84605b0e690d66a6ca7bc5588357f1608bd135",
+    "original_full_dynamic_suite_retried": false
+  }
+}

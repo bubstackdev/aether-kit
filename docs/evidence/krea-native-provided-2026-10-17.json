@@ -1,0 +1,87 @@
+{
+  "bundleFingerprint" : "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+  "events" : [
+    {
+      "event" : "conditioning",
+      "passed" : true,
+      "sha256" : "35b1e24dd69cd025b47ea44c6510417daa7cd5b4b9b7d95d95c4d4e8170fe64b"
+    },
+    {
+      "event" : "denoisers",
+      "passed" : true,
+      "selectionIdentity" : "e93c8c22d197e4ce6206ddad0b9556590d573537104c728d1dd8111ccf0973c1"
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "df2ff892f06502edf9a55cc21997afd156a212ee26fb3fe587f1b80b11bbb296",
+      "step" : 0
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "dea4fd66194d9c1f7dc1aaba19816e718c5d6ea2df325c7583cfc3ffd2181140",
+      "step" : 1
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "25c26b11c84b1ee7546e2ef2a840c74153671abd2b7f0cc43a3e2212960cb842",
+      "step" : 2
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "9738a39a0ebebf714cce68061e20216aea70fbb9d7d417f54abdd7ff2efe4c66",
+      "step" : 3
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "9cb2e5ea7430eeb85e81b7f00e140fb25880b13cf8cf9e5328406fe2b46d9150",
+      "step" : 4
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "73f1733fe3360a78ba04d9eb40b1106cdcf90c55dc2a61eb0180f71d259c506a",
+      "step" : 5
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "fa0acaeab113132cf5499c9ee88ebc837cf0434387162d94c20008a209aeb540",
+      "step" : 6
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "3869b757030e018ed74b48644dcb013179c6059633540e160ace531ea83f0d74",
+      "step" : 7
+    },
+    {
+      "event" : "decoded"
+    },
+    {
+      "event" : "pixels",
+      "passed" : true,
+      "sha256" : "4fa6be3acbb37f7e0b52f6b7b0cbe0376757af308d333d436641fa8a0152f8c4"
+    }
+  ],
+  "fixtureSHA256" : {
+    "ids" : "9e244b771451cfce864d4677fedc188738f5df2428d0614e1bd7e35c03154ce4",
+    "mask" : "01f50e9d6f16e5678169b244083866b4f53af40c4f32303a9ff799ae6ca10e29",
+    "noise" : "946d62cbf0cbe41a2260a5becf44fde4e44793609503b8b5c743aaa456bfb73a",
+    "text" : "440ed8b4c7020699e9a7f38964ba29f924bb423a685db5f1ca4779691d81dacc"
+  },
+  "mode" : "provided",
+  "modelStreamsVerified" : true,
+  "passed" : true,
+  "reference" : "\/Users\/zakkeown\/Code\/atelier\/lab\/krea-lab\/records\/round4\/fixed-paired-tower\/record.json",
+  "referenceSHA256" : "accbccdbac8c50e2833245addf001efc4cbf4083c213ea6ef766005965bf8bdf",
+  "registrationSHA256" : "a01c2725f3a9b9b9e9af0dc3e496f0863650d29da5f505f03d41e985d995b92d",
+  "seconds" : 379.817673791,
+  "shapeRegistrationVerified" : true,
+  "stage" : "complete",
+  "tokenIDsMatch" : true
+}

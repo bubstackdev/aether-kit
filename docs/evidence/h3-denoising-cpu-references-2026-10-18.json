@@ -1,0 +1,2500 @@
+{
+  "schema": 1,
+  "passed": true,
+  "gpu_work": false,
+  "scope": "Original-CPU references at captured native eight-step contexts (CPU only).\n\nFull time/modulation/prepare/head/scheduler checks and sampled blocks 0/49.\nThis is not an independently computed CPU trajectory. No GPU API, export,\ncheckpoint mutation, or model-weight copy; one CPU backbone block at a time.\n",
+  "source_pins": {
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Scripts/prepare-h3-denoising-oracle.py": "a4e1e1d1ba4bd2526125423d565cc34d36f1d9ad73e68a4263c1c56b6ff93c21",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json": "e2e173462816f26f82c8f5a6bbe703c53e4b1c2332387e8c053d532d5ba1eb95",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-capture-02/report.json": "0d0c1562bf9eb879e42e6b2d674edc5da0a10fdec882d60934968bc4585db619",
+    "/Volumes/Scratch/atelier/minimax-h3-lab/forge/vendor/weights/minimax_h3_fl2v_turbo_8step_v1.0_bf16.safetensors": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/h3_weights.py": "f1c05e5214fbd1c9700b898bc31e675e802b03b746a924548819c59030b02d6f",
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/h3_diagnose.py": "da990aae1c82014cdc480c7194fbb2303f330244391c1b6dde3f86b95369c13c",
+    "/Volumes/Scratch/atelier/minimax-h3-lab/forge/qualify_block.py": "63488cde08c9a5fd2a596ddb867395c1e9c4da07b0f7578ed1c5632896e7bcdb",
+    "/Volumes/Scratch/atelier/minimax-h3-lab/forge/vendor/diffusers/scripts/convert_minimax_h3_to_diffusers.py": "86f61f62934d1eccf2a76ec57b6d072e2c23767c6e49d96aa1cf24d40422b42c",
+    "/Volumes/Scratch/atelier/minimax-h3-lab/forge/vendor/diffusers/src/diffusers/models/transformers/transformer_minimax_h3.py": "92d665e9fa10b1417088341dce5977663a180f9e6fa404fb9330062f353fe7ef",
+    "/Users/zakkeown/.cache/huggingface/hub/models--MiniMaxAI--MiniMax-H3/snapshots/42ed227ee7df40d41602854ae760620d6eb651fe/FL2VA/transformer/model.safetensors.index.json": "fb457a26ffa6294660e249b0ddd03a337f2e5393f770b5c34c8b8f90a29a7efb"
+  },
+  "references": 464,
+  "selected_query_validation": [
+    {
+      "step": 0,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 1,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 2,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 3,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 4,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 5,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 6,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 7,
+      "block": 0,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 0,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 1,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 2,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 3,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 4,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 5,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 6,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    },
+    {
+      "step": 7,
+      "block": 49,
+      "full_rows": 128,
+      "selected_rows": 32,
+      "byte_identical": true
+    }
+  ],
+  "stages": [
+    {
+      "step": 0,
+      "block": 0,
+      "seconds": 41.237802707997616
+    },
+    {
+      "step": 1,
+      "block": 0,
+      "seconds": 41.574442165961955
+    },
+    {
+      "step": 2,
+      "block": 0,
+      "seconds": 62.99352383305086
+    },
+    {
+      "step": 3,
+      "block": 0,
+      "seconds": 68.46056366700213
+    },
+    {
+      "step": 4,
+      "block": 0,
+      "seconds": 59.11057541699847
+    },
+    {
+      "step": 5,
+      "block": 0,
+      "seconds": 55.8708122909884
+    },
+    {
+      "step": 6,
+      "block": 0,
+      "seconds": 56.992688832979184
+    },
+    {
+      "step": 7,
+      "block": 0,
+      "seconds": 55.48781495797448
+    },
+    {
+      "step": 0,
+      "block": 49,
+      "seconds": 50.08604529197328
+    },
+    {
+      "step": 1,
+      "block": 49,
+      "seconds": 35.690944333036896
+    },
+    {
+      "step": 2,
+      "block": 49,
+      "seconds": 35.969056457979605
+    },
+    {
+      "step": 3,
+      "block": 49,
+      "seconds": 45.20209270797204
+    },
+    {
+      "step": 4,
+      "block": 49,
+      "seconds": 47.37863179197302
+    },
+    {
+      "step": 5,
+      "block": 49,
+      "seconds": 94.85138008301146
+    },
+    {
+      "step": 6,
+      "block": 49,
+      "seconds": 77.11157850001473
+    },
+    {
+      "step": 7,
+      "block": 49,
+      "seconds": 57.06075554195559
+    }
+  ],
+  "native_prechecks": [
+    {
+      "key": "time.0.-1.temb",
+      "relative_l2": 3.945056921367511e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.0.-1.hidden",
+      "relative_l2": 0.00034100613932007835,
+      "passed": true
+    },
+    {
+      "key": "heads.0.-1.video",
+      "relative_l2": 0.001971059141565886,
+      "passed": true
+    },
+    {
+      "key": "heads.0.-1.audio",
+      "relative_l2": 0.0020996276676164363,
+      "passed": true
+    },
+    {
+      "key": "latents.0.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.0.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.1.-1.temb",
+      "relative_l2": 1.4014327085384758e-05,
+      "passed": true
+    },
+    {
+      "key": "prepare.1.-1.hidden",
+      "relative_l2": 0.00034490741720874524,
+      "passed": true
+    },
+    {
+      "key": "heads.1.-1.video",
+      "relative_l2": 0.0018623449389339863,
+      "passed": true
+    },
+    {
+      "key": "heads.1.-1.audio",
+      "relative_l2": 0.002210590005849916,
+      "passed": true
+    },
+    {
+      "key": "latents.1.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.1.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.2.-1.temb",
+      "relative_l2": 6.7514052832486745e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.2.-1.hidden",
+      "relative_l2": 0.0003498883744729477,
+      "passed": true
+    },
+    {
+      "key": "heads.2.-1.video",
+      "relative_l2": 0.0017983452049266106,
+      "passed": true
+    },
+    {
+      "key": "heads.2.-1.audio",
+      "relative_l2": 0.002321414770857652,
+      "passed": true
+    },
+    {
+      "key": "latents.2.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.2.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.3.-1.temb",
+      "relative_l2": 7.008304853913895e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.3.-1.hidden",
+      "relative_l2": 0.00035658687860493494,
+      "passed": true
+    },
+    {
+      "key": "heads.3.-1.video",
+      "relative_l2": 0.0018230738959341894,
+      "passed": true
+    },
+    {
+      "key": "heads.3.-1.audio",
+      "relative_l2": 0.0022189529188135146,
+      "passed": true
+    },
+    {
+      "key": "latents.3.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.3.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.4.-1.temb",
+      "relative_l2": 4.292754402570267e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.4.-1.hidden",
+      "relative_l2": 0.00036604462813637564,
+      "passed": true
+    },
+    {
+      "key": "heads.4.-1.video",
+      "relative_l2": 0.0018191761977626602,
+      "passed": true
+    },
+    {
+      "key": "heads.4.-1.audio",
+      "relative_l2": 0.0021464308509840384,
+      "passed": true
+    },
+    {
+      "key": "latents.4.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.4.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.5.-1.temb",
+      "relative_l2": 4.106871659511706e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.5.-1.hidden",
+      "relative_l2": 0.0003797142628177464,
+      "passed": true
+    },
+    {
+      "key": "heads.5.-1.video",
+      "relative_l2": 0.0018412214961404938,
+      "passed": true
+    },
+    {
+      "key": "heads.5.-1.audio",
+      "relative_l2": 0.0023299021610974258,
+      "passed": true
+    },
+    {
+      "key": "latents.5.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.5.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.6.-1.temb",
+      "relative_l2": 3.280898960683102e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.6.-1.hidden",
+      "relative_l2": 0.0003993208809041023,
+      "passed": true
+    },
+    {
+      "key": "heads.6.-1.video",
+      "relative_l2": 0.0017877684398693089,
+      "passed": true
+    },
+    {
+      "key": "heads.6.-1.audio",
+      "relative_l2": 0.002149053713416133,
+      "passed": true
+    },
+    {
+      "key": "latents.6.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.6.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "time.7.-1.temb",
+      "relative_l2": 2.967984277884309e-06,
+      "passed": true
+    },
+    {
+      "key": "prepare.7.-1.hidden",
+      "relative_l2": 0.00041223351278027036,
+      "passed": true
+    },
+    {
+      "key": "heads.7.-1.video",
+      "relative_l2": 0.0018436006891844796,
+      "passed": true
+    },
+    {
+      "key": "heads.7.-1.audio",
+      "relative_l2": 0.0021414192396384435,
+      "passed": true
+    },
+    {
+      "key": "latents.7.-1.video",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "latents.7.-1.audio",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.0.modulations",
+      "relative_l2": 6.541184393710755e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.0.modulations",
+      "relative_l2": 5.2135248178338276e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.0.modulations",
+      "relative_l2": 1.2441956269555356e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.0.modulations",
+      "relative_l2": 5.559661218132746e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.0.modulations",
+      "relative_l2": 2.7983629696793548e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.0.modulations",
+      "relative_l2": 1.9246400235335154e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.0.modulations",
+      "relative_l2": 2.152318685022855e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.0.modulations",
+      "relative_l2": 4.24893128877678e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.1.modulations",
+      "relative_l2": 5.3104649865134e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.1.modulations",
+      "relative_l2": 9.423343002013572e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.1.modulations",
+      "relative_l2": 2.1655061508327225e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.1.modulations",
+      "relative_l2": 3.892949367980034e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.1.modulations",
+      "relative_l2": 4.6936931985016565e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.1.modulations",
+      "relative_l2": 4.053590852778939e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.1.modulations",
+      "relative_l2": 1.0417316406573482e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.1.modulations",
+      "relative_l2": 1.0313985617618804e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.2.modulations",
+      "relative_l2": 3.0046032952649696e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.2.modulations",
+      "relative_l2": 2.071078057861714e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.2.modulations",
+      "relative_l2": 3.086926545152032e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.2.modulations",
+      "relative_l2": 7.1725987185804915e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.2.modulations",
+      "relative_l2": 4.182075219656747e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.2.modulations",
+      "relative_l2": 6.167521842273541e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.2.modulations",
+      "relative_l2": 3.9873038016025125e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.2.modulations",
+      "relative_l2": 1.9355489243857764e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.3.modulations",
+      "relative_l2": 7.73737070597253e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.3.modulations",
+      "relative_l2": 2.0874964943702365e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.3.modulations",
+      "relative_l2": 2.0247279673321544e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.3.modulations",
+      "relative_l2": 2.9482164479989517e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.3.modulations",
+      "relative_l2": 2.4488712528338127e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.3.modulations",
+      "relative_l2": 2.215043076584368e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.3.modulations",
+      "relative_l2": 1.9675356446787146e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.3.modulations",
+      "relative_l2": 1.177272572987486e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.4.modulations",
+      "relative_l2": 3.339623246944091e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.4.modulations",
+      "relative_l2": 5.957726100755429e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.4.modulations",
+      "relative_l2": 3.1898548085721826e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.4.modulations",
+      "relative_l2": 3.899405624550314e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.4.modulations",
+      "relative_l2": 9.558383791208568e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.4.modulations",
+      "relative_l2": 4.4194191231568514e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.4.modulations",
+      "relative_l2": 2.3826885850936562e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.4.modulations",
+      "relative_l2": 6.746793363763518e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.5.modulations",
+      "relative_l2": 9.205490987396494e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.5.modulations",
+      "relative_l2": 3.1351461577044916e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.5.modulations",
+      "relative_l2": 1.8377073675985188e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.5.modulations",
+      "relative_l2": 4.691815128228774e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.5.modulations",
+      "relative_l2": 4.732050419548897e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.5.modulations",
+      "relative_l2": 1.5450637171318314e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.5.modulations",
+      "relative_l2": 7.222308137068485e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.5.modulations",
+      "relative_l2": 8.09354059094325e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.6.modulations",
+      "relative_l2": 3.3816232634392147e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.6.modulations",
+      "relative_l2": 1.8358709192654327e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.6.modulations",
+      "relative_l2": 8.06360462547086e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.6.modulations",
+      "relative_l2": 1.2768191653478871e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.6.modulations",
+      "relative_l2": 2.5676981766712658e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.6.modulations",
+      "relative_l2": 2.634963863650353e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.6.modulations",
+      "relative_l2": 2.8244712568481572e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.6.modulations",
+      "relative_l2": 5.321616181590933e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.7.modulations",
+      "relative_l2": 3.324169193876893e-10,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.7.modulations",
+      "relative_l2": 8.087629632063972e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.7.modulations",
+      "relative_l2": 7.930708193666823e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.7.modulations",
+      "relative_l2": 2.812851742296122e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.7.modulations",
+      "relative_l2": 4.204255834757913e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.7.modulations",
+      "relative_l2": 7.6245290239526355e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.7.modulations",
+      "relative_l2": 1.6349206066350112e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.7.modulations",
+      "relative_l2": 4.24686261728989e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.8.modulations",
+      "relative_l2": 2.5951509180536458e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.8.modulations",
+      "relative_l2": 6.086872110952785e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.8.modulations",
+      "relative_l2": 3.135185322100643e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.8.modulations",
+      "relative_l2": 1.3810450177827014e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.8.modulations",
+      "relative_l2": 1.733360373162391e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.8.modulations",
+      "relative_l2": 2.807258322570636e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.8.modulations",
+      "relative_l2": 1.0634746426271788e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.8.modulations",
+      "relative_l2": 1.4711779968220753e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.9.modulations",
+      "relative_l2": 1.8154509707921781e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.9.modulations",
+      "relative_l2": 2.0683478265410638e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.9.modulations",
+      "relative_l2": 2.2331797439533796e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.9.modulations",
+      "relative_l2": 1.584320665756689e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.9.modulations",
+      "relative_l2": 2.731341294777226e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.9.modulations",
+      "relative_l2": 7.54942685859297e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.9.modulations",
+      "relative_l2": 3.075012973558925e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.9.modulations",
+      "relative_l2": 1.6254122989523883e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.10.modulations",
+      "relative_l2": 4.325993705286013e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.10.modulations",
+      "relative_l2": 2.360363246089945e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.10.modulations",
+      "relative_l2": 4.201996340650306e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.10.modulations",
+      "relative_l2": 7.4213720429202655e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.10.modulations",
+      "relative_l2": 7.113912054891675e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.10.modulations",
+      "relative_l2": 1.4024026246962106e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.10.modulations",
+      "relative_l2": 7.754159146486617e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.10.modulations",
+      "relative_l2": 2.227321516262629e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.11.modulations",
+      "relative_l2": 2.1481473738658934e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.11.modulations",
+      "relative_l2": 7.584728296921134e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.11.modulations",
+      "relative_l2": 3.415646735297879e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.11.modulations",
+      "relative_l2": 2.164164162420838e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.11.modulations",
+      "relative_l2": 7.236357337979681e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.11.modulations",
+      "relative_l2": 3.3244844570320285e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.11.modulations",
+      "relative_l2": 2.835223981513655e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.11.modulations",
+      "relative_l2": 6.809213691271357e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.12.modulations",
+      "relative_l2": 1.1332197844064925e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.12.modulations",
+      "relative_l2": 9.96054980919133e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.12.modulations",
+      "relative_l2": 1.5407393074246133e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.12.modulations",
+      "relative_l2": 9.629309321290499e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.12.modulations",
+      "relative_l2": 4.7386883377696815e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.12.modulations",
+      "relative_l2": 1.7519156770438617e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.12.modulations",
+      "relative_l2": 1.4713898551139412e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.12.modulations",
+      "relative_l2": 1.8228000433912655e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.13.modulations",
+      "relative_l2": 1.612044730880234e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.13.modulations",
+      "relative_l2": 3.5298790248564913e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.13.modulations",
+      "relative_l2": 3.973418700958816e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.13.modulations",
+      "relative_l2": 1.5658452402557224e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.13.modulations",
+      "relative_l2": 1.3946043337514545e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.13.modulations",
+      "relative_l2": 2.1216855254551534e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.13.modulations",
+      "relative_l2": 4.1237765342270596e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.13.modulations",
+      "relative_l2": 8.167587270485239e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.14.modulations",
+      "relative_l2": 4.059398130576346e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.14.modulations",
+      "relative_l2": 2.8990184209891232e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.14.modulations",
+      "relative_l2": 3.0522272449513386e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.14.modulations",
+      "relative_l2": 1.560884241246888e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.14.modulations",
+      "relative_l2": 2.0216603040367602e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.14.modulations",
+      "relative_l2": 7.5059234901549535e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.14.modulations",
+      "relative_l2": 1.1622559002611723e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.14.modulations",
+      "relative_l2": 1.9503172192366407e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.15.modulations",
+      "relative_l2": 8.852555761195751e-08,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.15.modulations",
+      "relative_l2": 2.925134072947382e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.15.modulations",
+      "relative_l2": 6.9346576194175936e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.15.modulations",
+      "relative_l2": 3.222301272374524e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.15.modulations",
+      "relative_l2": 4.053651585476791e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.15.modulations",
+      "relative_l2": 3.0344869945364013e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.15.modulations",
+      "relative_l2": 2.7239066960391392e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.15.modulations",
+      "relative_l2": 2.6884681790211014e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.16.modulations",
+      "relative_l2": 2.0757872318936334e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.16.modulations",
+      "relative_l2": 1.4885328959163644e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.16.modulations",
+      "relative_l2": 6.350371839385316e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.16.modulations",
+      "relative_l2": 2.4945059853820267e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.16.modulations",
+      "relative_l2": 1.9442416106218588e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.16.modulations",
+      "relative_l2": 1.5667885526236198e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.16.modulations",
+      "relative_l2": 4.9752097916673034e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.16.modulations",
+      "relative_l2": 1.4243659208013013e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.17.modulations",
+      "relative_l2": 4.445605267158313e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.17.modulations",
+      "relative_l2": 3.862065204280219e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.17.modulations",
+      "relative_l2": 9.566339974361568e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.17.modulations",
+      "relative_l2": 3.4410400203916364e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.17.modulations",
+      "relative_l2": 7.4655682051822e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.17.modulations",
+      "relative_l2": 1.4818425397096078e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.17.modulations",
+      "relative_l2": 1.6991805806383946e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.17.modulations",
+      "relative_l2": 3.539183862225918e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.18.modulations",
+      "relative_l2": 2.054418491222194e-08,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.18.modulations",
+      "relative_l2": 1.6181874600705873e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.18.modulations",
+      "relative_l2": 1.2503326832579798e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.18.modulations",
+      "relative_l2": 2.750510416359799e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.18.modulations",
+      "relative_l2": 7.561142774593189e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.18.modulations",
+      "relative_l2": 3.409655986039752e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.18.modulations",
+      "relative_l2": 5.6325878056858695e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.18.modulations",
+      "relative_l2": 6.579897820516042e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.19.modulations",
+      "relative_l2": 4.014869472382021e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.19.modulations",
+      "relative_l2": 3.9405001213173394e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.19.modulations",
+      "relative_l2": 3.2560736535173997e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.19.modulations",
+      "relative_l2": 5.283579636175764e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.19.modulations",
+      "relative_l2": 3.858122044130524e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.19.modulations",
+      "relative_l2": 9.491243302383414e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.19.modulations",
+      "relative_l2": 2.2934053721248483e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.19.modulations",
+      "relative_l2": 3.103130572998852e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.20.modulations",
+      "relative_l2": 9.093087772031502e-09,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.20.modulations",
+      "relative_l2": 2.284787930562914e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.20.modulations",
+      "relative_l2": 7.261930652156177e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.20.modulations",
+      "relative_l2": 1.865514048509605e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.20.modulations",
+      "relative_l2": 3.634010488998445e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.20.modulations",
+      "relative_l2": 5.442556832314382e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.20.modulations",
+      "relative_l2": 1.1165845539463164e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.20.modulations",
+      "relative_l2": 2.646350834046694e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.21.modulations",
+      "relative_l2": 1.1139958784852969e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.21.modulations",
+      "relative_l2": 2.0278014445629163e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.21.modulations",
+      "relative_l2": 1.3266050594070225e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.21.modulations",
+      "relative_l2": 1.447226515680859e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.21.modulations",
+      "relative_l2": 1.281598846202478e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.21.modulations",
+      "relative_l2": 1.6672346743294107e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.21.modulations",
+      "relative_l2": 1.2849495678758098e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.21.modulations",
+      "relative_l2": 1.7500071475031055e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.22.modulations",
+      "relative_l2": 5.3716093539521784e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.22.modulations",
+      "relative_l2": 8.134397074366992e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.22.modulations",
+      "relative_l2": 3.0427652910446223e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.22.modulations",
+      "relative_l2": 3.6993346030557746e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.22.modulations",
+      "relative_l2": 4.0225179010265096e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.22.modulations",
+      "relative_l2": 2.668747409756667e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.22.modulations",
+      "relative_l2": 1.3867147021203979e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.22.modulations",
+      "relative_l2": 1.2462782722348469e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.23.modulations",
+      "relative_l2": 1.0749052250944846e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.23.modulations",
+      "relative_l2": 3.754503645035194e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.23.modulations",
+      "relative_l2": 9.768560797141437e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.23.modulations",
+      "relative_l2": 9.575208322170338e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.23.modulations",
+      "relative_l2": 6.294007777827322e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.23.modulations",
+      "relative_l2": 3.0002059009248465e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.23.modulations",
+      "relative_l2": 2.43842101401015e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.23.modulations",
+      "relative_l2": 0.00010094547165343887,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.24.modulations",
+      "relative_l2": 4.619987405325164e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.24.modulations",
+      "relative_l2": 3.02681215340381e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.24.modulations",
+      "relative_l2": 2.839447530804051e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.24.modulations",
+      "relative_l2": 4.7588798770915424e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.24.modulations",
+      "relative_l2": 6.719264623407807e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.24.modulations",
+      "relative_l2": 1.2016604608180534e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.24.modulations",
+      "relative_l2": 2.8747583832596598e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.24.modulations",
+      "relative_l2": 4.90249321338563e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.25.modulations",
+      "relative_l2": 5.124363048112197e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.25.modulations",
+      "relative_l2": 2.1630086365190977e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.25.modulations",
+      "relative_l2": 1.3692728181007104e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.25.modulations",
+      "relative_l2": 3.718682429476089e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.25.modulations",
+      "relative_l2": 1.1876221907449997e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.25.modulations",
+      "relative_l2": 4.156574475271056e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.25.modulations",
+      "relative_l2": 2.3881230987803663e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.25.modulations",
+      "relative_l2": 2.5553049473978202e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.26.modulations",
+      "relative_l2": 1.2994576542464855e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.26.modulations",
+      "relative_l2": 2.573114295889583e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.26.modulations",
+      "relative_l2": 2.857541379373958e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.26.modulations",
+      "relative_l2": 4.957657665020286e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.26.modulations",
+      "relative_l2": 1.7878163580016954e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.26.modulations",
+      "relative_l2": 2.5055511804111048e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.26.modulations",
+      "relative_l2": 1.4966492798270978e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.26.modulations",
+      "relative_l2": 2.1873831158074168e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.27.modulations",
+      "relative_l2": 1.161690033898013e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.27.modulations",
+      "relative_l2": 3.1989639888641263e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.27.modulations",
+      "relative_l2": 1.27823872351158e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.27.modulations",
+      "relative_l2": 4.328189198676402e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.27.modulations",
+      "relative_l2": 2.0005931082959033e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.27.modulations",
+      "relative_l2": 2.883577918237913e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.27.modulations",
+      "relative_l2": 1.7271068811439847e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.27.modulations",
+      "relative_l2": 1.9893291750211315e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.28.modulations",
+      "relative_l2": 2.8743559179450626e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.28.modulations",
+      "relative_l2": 2.620238235627372e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.28.modulations",
+      "relative_l2": 2.6450975353410135e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.28.modulations",
+      "relative_l2": 2.2992071973110835e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.28.modulations",
+      "relative_l2": 2.036967446393103e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.28.modulations",
+      "relative_l2": 1.3062197392533731e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.28.modulations",
+      "relative_l2": 9.933764796415852e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.28.modulations",
+      "relative_l2": 3.1511894055881267e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.29.modulations",
+      "relative_l2": 2.3113474283100146e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.29.modulations",
+      "relative_l2": 1.599930998518846e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.29.modulations",
+      "relative_l2": 2.6996967783191446e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.29.modulations",
+      "relative_l2": 9.333787114980851e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.29.modulations",
+      "relative_l2": 8.380977721286256e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.29.modulations",
+      "relative_l2": 1.6671651921685262e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.29.modulations",
+      "relative_l2": 1.4876323735291627e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.29.modulations",
+      "relative_l2": 2.4040992416640108e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.30.modulations",
+      "relative_l2": 3.1155707669329186e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.30.modulations",
+      "relative_l2": 8.053725136974257e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.30.modulations",
+      "relative_l2": 1.6681310608257087e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.30.modulations",
+      "relative_l2": 3.268884139951765e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.30.modulations",
+      "relative_l2": 5.788597085308351e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.30.modulations",
+      "relative_l2": 9.531829695731552e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.30.modulations",
+      "relative_l2": 2.8799794995457177e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.30.modulations",
+      "relative_l2": 1.6812576709201073e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.31.modulations",
+      "relative_l2": 2.637219298063848e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.31.modulations",
+      "relative_l2": 2.8771387481487193e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.31.modulations",
+      "relative_l2": 5.2427704296129295e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.31.modulations",
+      "relative_l2": 2.7720185450760358e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.31.modulations",
+      "relative_l2": 2.1896749009671897e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.31.modulations",
+      "relative_l2": 6.341150003816339e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.31.modulations",
+      "relative_l2": 2.9520622242688966e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.31.modulations",
+      "relative_l2": 5.4496290666771706e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.32.modulations",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.32.modulations",
+      "relative_l2": 4.4246302355549604e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.32.modulations",
+      "relative_l2": 8.385372751647172e-08,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.32.modulations",
+      "relative_l2": 2.623538117986713e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.32.modulations",
+      "relative_l2": 2.577121942172405e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.32.modulations",
+      "relative_l2": 4.198325535248364e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.32.modulations",
+      "relative_l2": 1.0067042353301219e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.32.modulations",
+      "relative_l2": 2.4713290693987018e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.33.modulations",
+      "relative_l2": 3.017589992979654e-08,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.33.modulations",
+      "relative_l2": 2.971945827987212e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.33.modulations",
+      "relative_l2": 4.539252204364586e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.33.modulations",
+      "relative_l2": 3.4442335681967994e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.33.modulations",
+      "relative_l2": 2.07548814622886e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.33.modulations",
+      "relative_l2": 2.7414370031691976e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.33.modulations",
+      "relative_l2": 2.4445326099111212e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.33.modulations",
+      "relative_l2": 2.0786658390933705e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.34.modulations",
+      "relative_l2": 3.275447973110376e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.34.modulations",
+      "relative_l2": 1.0622883255772015e-08,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.34.modulations",
+      "relative_l2": 1.4010849062790389e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.34.modulations",
+      "relative_l2": 1.827928812327531e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.34.modulations",
+      "relative_l2": 4.027644906814277e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.34.modulations",
+      "relative_l2": 5.3650454351228164e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.34.modulations",
+      "relative_l2": 1.9087050122674723e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.34.modulations",
+      "relative_l2": 2.08888210756075e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.35.modulations",
+      "relative_l2": 8.869704722797692e-10,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.35.modulations",
+      "relative_l2": 1.6782040239385415e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.35.modulations",
+      "relative_l2": 4.0414968959501055e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.35.modulations",
+      "relative_l2": 4.209218230170153e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.35.modulations",
+      "relative_l2": 1.9177680959998424e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.35.modulations",
+      "relative_l2": 3.1358200944795205e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.35.modulations",
+      "relative_l2": 3.0618029358236186e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.35.modulations",
+      "relative_l2": 3.384709796961631e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.36.modulations",
+      "relative_l2": 7.119731731960765e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.36.modulations",
+      "relative_l2": 3.366817865244276e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.36.modulations",
+      "relative_l2": 2.1315229739079586e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.36.modulations",
+      "relative_l2": 1.8647113185755005e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.36.modulations",
+      "relative_l2": 3.6569966478865934e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.36.modulations",
+      "relative_l2": 1.092356472019861e-09,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.36.modulations",
+      "relative_l2": 3.910199061219605e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.36.modulations",
+      "relative_l2": 4.240660305235789e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.37.modulations",
+      "relative_l2": 7.233369613902833e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.37.modulations",
+      "relative_l2": 4.36426188208115e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.37.modulations",
+      "relative_l2": 1.2844437089070595e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.37.modulations",
+      "relative_l2": 7.869550596424289e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.37.modulations",
+      "relative_l2": 2.130916043812914e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.37.modulations",
+      "relative_l2": 3.7433873634979306e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.37.modulations",
+      "relative_l2": 4.27410730972276e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.37.modulations",
+      "relative_l2": 6.030714148001715e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.38.modulations",
+      "relative_l2": 1.0419850095333477e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.38.modulations",
+      "relative_l2": 2.224202423647927e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.38.modulations",
+      "relative_l2": 2.7729230848398684e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.38.modulations",
+      "relative_l2": 1.6869439282494475e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.38.modulations",
+      "relative_l2": 3.494613960949155e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.38.modulations",
+      "relative_l2": 5.030101411180353e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.38.modulations",
+      "relative_l2": 3.623956908213205e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.38.modulations",
+      "relative_l2": 1.8965591822673153e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.39.modulations",
+      "relative_l2": 1.0073116713906088e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.39.modulations",
+      "relative_l2": 4.902195011967003e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.39.modulations",
+      "relative_l2": 2.089382004306396e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.39.modulations",
+      "relative_l2": 1.1468875482597267e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.39.modulations",
+      "relative_l2": 3.3756361863452147e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.39.modulations",
+      "relative_l2": 5.546026694912538e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.39.modulations",
+      "relative_l2": 7.147076652874021e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.39.modulations",
+      "relative_l2": 5.995538617941852e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.40.modulations",
+      "relative_l2": 1.9393718245584017e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.40.modulations",
+      "relative_l2": 8.381791187410748e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.40.modulations",
+      "relative_l2": 8.981761110190119e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.40.modulations",
+      "relative_l2": 2.626555819949691e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.40.modulations",
+      "relative_l2": 3.1557482582276037e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.40.modulations",
+      "relative_l2": 1.5226533760426975e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.40.modulations",
+      "relative_l2": 2.57916617336271e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.40.modulations",
+      "relative_l2": 3.3714542753039956e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.41.modulations",
+      "relative_l2": 4.676093544162005e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.41.modulations",
+      "relative_l2": 8.73055533740525e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.41.modulations",
+      "relative_l2": 3.2400236867661954e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.41.modulations",
+      "relative_l2": 4.4124038047638234e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.41.modulations",
+      "relative_l2": 3.984796660798094e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.41.modulations",
+      "relative_l2": 1.8195876901742992e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.41.modulations",
+      "relative_l2": 3.058185321635883e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.41.modulations",
+      "relative_l2": 1.9023652156441575e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.42.modulations",
+      "relative_l2": 7.93273621658903e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.42.modulations",
+      "relative_l2": 3.119196738552766e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.42.modulations",
+      "relative_l2": 1.1398303677264016e-07,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.42.modulations",
+      "relative_l2": 5.487127397367473e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.42.modulations",
+      "relative_l2": 2.2191864798014122e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.42.modulations",
+      "relative_l2": 1.3972655265179256e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.42.modulations",
+      "relative_l2": 2.7885373146317703e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.42.modulations",
+      "relative_l2": 3.7178673563803625e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.43.modulations",
+      "relative_l2": 1.2243626783564525e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.43.modulations",
+      "relative_l2": 1.5773434588427148e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.43.modulations",
+      "relative_l2": 3.177459701005485e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.43.modulations",
+      "relative_l2": 2.8489018880640166e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.43.modulations",
+      "relative_l2": 3.017612228606802e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.43.modulations",
+      "relative_l2": 3.0421922418670172e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.43.modulations",
+      "relative_l2": 3.326463020769795e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.43.modulations",
+      "relative_l2": 1.3521821964363627e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.44.modulations",
+      "relative_l2": 1.175704356398036e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.44.modulations",
+      "relative_l2": 2.0090413880273785e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.44.modulations",
+      "relative_l2": 9.690547651334804e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.44.modulations",
+      "relative_l2": 3.7689193868876124e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.44.modulations",
+      "relative_l2": 3.0174884917689865e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.44.modulations",
+      "relative_l2": 1.0182760858059782e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.44.modulations",
+      "relative_l2": 1.3585817204579466e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.44.modulations",
+      "relative_l2": 1.7088444042991712e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.45.modulations",
+      "relative_l2": 1.8876872542897516e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.45.modulations",
+      "relative_l2": 2.117632230372655e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.45.modulations",
+      "relative_l2": 3.224585130677607e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.45.modulations",
+      "relative_l2": 1.570457447537129e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.45.modulations",
+      "relative_l2": 2.7249829602907793e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.45.modulations",
+      "relative_l2": 2.88383559238323e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.45.modulations",
+      "relative_l2": 7.813046856654564e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.45.modulations",
+      "relative_l2": 1.0243672465168182e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.46.modulations",
+      "relative_l2": 3.86848003290605e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.46.modulations",
+      "relative_l2": 2.3856774352695524e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.46.modulations",
+      "relative_l2": 1.4113825402069585e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.46.modulations",
+      "relative_l2": 4.954810636545811e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.46.modulations",
+      "relative_l2": 1.3711332736867366e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.46.modulations",
+      "relative_l2": 1.1390484032829737e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.46.modulations",
+      "relative_l2": 2.5529304290706302e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.46.modulations",
+      "relative_l2": 2.729645374200188e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.47.modulations",
+      "relative_l2": 1.6683762773968465e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.47.modulations",
+      "relative_l2": 2.2682259200143168e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.47.modulations",
+      "relative_l2": 6.066953161907628e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.47.modulations",
+      "relative_l2": 2.3633004230179357e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.47.modulations",
+      "relative_l2": 1.1791726825496329e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.47.modulations",
+      "relative_l2": 2.2776299027685805e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.47.modulations",
+      "relative_l2": 4.061998457173347e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.47.modulations",
+      "relative_l2": 2.482561697500004e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.48.modulations",
+      "relative_l2": 1.7230369375780796e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.48.modulations",
+      "relative_l2": 2.8969923038371787e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.48.modulations",
+      "relative_l2": 4.5883476592628577e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.48.modulations",
+      "relative_l2": 2.1987808903694944e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.48.modulations",
+      "relative_l2": 5.305903066291621e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.48.modulations",
+      "relative_l2": 4.351158824519424e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.48.modulations",
+      "relative_l2": 2.898874070254617e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.48.modulations",
+      "relative_l2": 2.2592690939071514e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.0.49.modulations",
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "key": "modulation.1.49.modulations",
+      "relative_l2": 1.0651662039662358e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.2.49.modulations",
+      "relative_l2": 1.1683503013825327e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.3.49.modulations",
+      "relative_l2": 1.1819725129477356e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.4.49.modulations",
+      "relative_l2": 4.009158131426486e-06,
+      "passed": true
+    },
+    {
+      "key": "modulation.5.49.modulations",
+      "relative_l2": 1.1595468594195768e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.6.49.modulations",
+      "relative_l2": 1.0608623986243103e-05,
+      "passed": true
+    },
+    {
+      "key": "modulation.7.49.modulations",
+      "relative_l2": 7.555156972583546e-06,
+      "passed": true
+    },
+    {
+      "key": "body.0.49.hidden",
+      "relative_l2": 0.003986978716403134,
+      "passed": true
+    },
+    {
+      "key": "body.1.49.hidden",
+      "relative_l2": 0.004882917296674339,
+      "passed": true
+    },
+    {
+      "key": "body.2.49.hidden",
+      "relative_l2": 0.004760766800639053,
+      "passed": true
+    },
+    {
+      "key": "body.3.49.hidden",
+      "relative_l2": 0.005480037706991666,
+      "passed": true
+    },
+    {
+      "key": "body.4.49.hidden",
+      "relative_l2": 0.004978986797778784,
+      "passed": true
+    },
+    {
+      "key": "body.5.49.hidden",
+      "relative_l2": 0.004579201159466385,
+      "passed": true
+    },
+    {
+      "key": "body.6.49.hidden",
+      "relative_l2": 0.004189065929576749,
+      "passed": true
+    },
+    {
+      "key": "body.7.49.hidden",
+      "relative_l2": 0.005257244347265176,
+      "passed": true
+    }
+  ],
+  "reference_manifest_sha256": "94b87501fd5f11870238edc186fb055c89993d3f3374b8286a71ab42a16d9430"
+}
