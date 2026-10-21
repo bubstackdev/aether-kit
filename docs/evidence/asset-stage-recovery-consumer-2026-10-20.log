@@ -1,0 +1,10 @@
+Building for production...
+[1 / 1]
+[2 / 4] AetherAssets
+[3 / 5] AetherAssets
+[10 / 13] AetherFoundationConsumer-product
+[11 / 14] AetherFoundationConsumer-product
+[13 / 14] AetherFoundationConsumer-product
+[14 / 14] AetherFoundationConsumer-product
+Build complete! (3.64 sec)
+Foundation consumer passed: verified install, reader protection, removal and reservation release.
