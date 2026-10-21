@@ -5,7 +5,7 @@ Baseline: remote main `8cad591`, matching Atelier's pin. The older local worktre
 | Stage | Status | Next concrete acceptance |
 | --- | --- | --- |
 | Baseline reconciliation | Source/API reconciliation recorded in sdk-foundations.md | Consolidate newer profile-specific qualification records before promotion |
-| Local asset foundation | Implemented: manifests, verified staged import, immutable IDs, protected readers, model-session lease binding | Weight-free tests and independent consumer; later crash cleanup; external range descriptor leases now implemented |
+| Local asset foundation | Implemented: manifests, verified staged import, immutable IDs, protected readers, model-session lease binding | Weight-free tests and independent consumer passed; explicit abandoned-stage recovery and external range descriptor leases implemented; legacy stages require offline handling |
 | Resource foundation | Implemented: transactional reservations and optional ModelSession admission | Krea/H3 adoption implemented with controlled lifetime tests; native-qualified estimates remain required |
 | CI foundation | Workflow and CPU-only entry point added | Equipped CI runner plus clean consumer validation |
 | Model asset adapters | Krea portable adapter implemented; H3 external weight descriptor leases implemented | Portable H3 graph/table installation and cache lifecycle remain; no automatic Atelier migration |

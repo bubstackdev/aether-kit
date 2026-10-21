@@ -62,6 +62,42 @@ public struct LocalAssetStore: Sendable {
         try FileManager.default.removeItem(at: target)
     }
 
+    /// Removes recognizable unfinished stages only after acquiring their installation's exclusive lock.
+    /// Active imports/readers are skipped. Unknown entries (including older UUID-only stages) are left
+    /// untouched because their ownership cannot be proven. Does not remove published installations.
+    /// The host must keep the store root private, as for install/acquire/remove.
+    @discardableResult
+    public func removeAbandonedStages() throws -> Int {
+        try Task.checkCancellation()
+        let staging = try confined("staging", under: root)
+        let entries = try FileManager.default.contentsOfDirectory(atPath: staging.path).sorted()
+        var removed = 0
+        for name in entries {
+            try Task.checkCancellation()
+            let parts = name.split(separator: ".", omittingEmptySubsequences: false)
+            guard parts.count == 2, parts[0].utf8.count == 64,
+                  parts[0].utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
+                  let uuid = UUID(uuidString: String(parts[1])), uuid.uuidString == parts[1] else { continue }
+            let held: StoreLock
+            do { held = try lock(String(parts[0]), exclusive: true) }
+            catch AssetStoreError.busy { continue }
+            defer { withExtendedLifetime(held) {} }
+            // Recheck under the same lock used through install's publish/rollback boundary. Another
+            // cleanup may already have removed the entry after our directory snapshot was taken.
+            let stage = try confined(name, under: staging)
+            let attributes: [FileAttributeKey: Any]
+            do { attributes = try FileManager.default.attributesOfItem(atPath: stage.path) }
+            catch let error as CocoaError where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile { continue }
+            guard attributes[.type] as? FileAttributeType == .typeDirectory else {
+                throw AssetStoreError.unsafePath(stage.path)
+            }
+            try Task.checkCancellation()
+            try FileManager.default.removeItem(at: stage)
+            removed += 1
+        }
+        return removed
+    }
+
     private func installSynchronously(_ manifest: AssetManifest, from source: URL) throws -> String {
         try Task.checkCancellation()
         let metadata = try manifest.canonicalData()
@@ -76,7 +112,7 @@ public struct LocalAssetStore: Sendable {
             try Task.checkCancellation()
             return id
         }
-        let stage = root.appendingPathComponent("staging/\(UUID().uuidString)", isDirectory: true)
+        let stage = root.appendingPathComponent("staging/\(id).\(UUID().uuidString)", isDirectory: true)
         try directory(stage)
         defer { try? FileManager.default.removeItem(at: stage) }
         let payload = stage.appendingPathComponent("files", isDirectory: true)

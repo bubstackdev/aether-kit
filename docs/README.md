@@ -47,3 +47,5 @@ Update the decision register when an experiment changes a recommendation. Each p
 [Krea foundation integration](krea-foundations.md) covers portable bundle mapping, installed-session reader ownership and optional shared resource admission.
 
 [H3 foundations](h3-foundations.md) covers descriptor-pinned checkpoint ranges, profile weight ownership and shared stage admission.
+
+[Asset stage recovery](asset-stage-recovery.md) covers explicit lock-coordinated cleanup of abandoned imports and conservative handling of legacy stages.
