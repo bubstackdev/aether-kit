@@ -1,5 +1,7 @@
 import AetherKit
 import AetherH3
+import AetherAssets
+import Darwin
 import Foundation
 import Testing
 
@@ -277,4 +279,178 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
     await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe)) }
     #expect(await log.entries.isEmpty)
     #expect(await session.state == .ready)
+}
+
+
+private func stageEstimates(audio: Bool = true) -> [H3VideoStage: UInt64] {
+    var stages: [H3VideoStage: UInt64] = [.encoding: 20, .denoising: 40, .decodingVideo: 30]
+    if audio { stages[.decodingAudio] = 15 }
+    return stages
+}
+private func admission(_ budget: ResourceCoordinator, audio: Bool = true) throws -> H3ResourceAdmission {
+    try H3ResourceAdmission(coordinator: budget, executionIdentity: "fixture/1", operationBytes: 10,
+                             stageBytes: stageEstimates(audio: audio), maximumPixels: 2048, maximumFrames: 39, maximumPromptUTF8Bytes: 4)
+}
+private func budgetStages(_ log: StageLog, conditioner: (any H3PromptConditioner)? = nil) -> H3VideoStages {
+    H3VideoStages(conditioner: conditioner ?? FakeConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
+                  denoiser: FakeDenoiser(log: log), video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log),
+                  resourceIdentity: "fixture/1")
+}
+
+@Test func h3AdmissionReservesEachStageBeforeEventsAndReleasesBeforeTheNext() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 100), log = StageLog()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget))
+    let estimates = stageEstimates()
+    for _ in 0..<2 {
+        _ = try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) { event in
+            switch event {
+            case .stageStarted(let stage): #expect(budget.snapshot.reservedBytes == 10 + estimates[stage]!)
+            case .stageReleased: #expect(budget.snapshot.reservedBytes == 10)
+            default: break
+            }
+        }
+        #expect(budget.snapshot.reservedBytes == 0)
+    }
+    await session.unload()
+    #expect(await session.state == .closed)
+}
+
+@Test func h3AdmissionRefusesTheNextStageBeforeAcquiringItsResources() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 35), log = StageLog()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget))
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 40, available: 25)) {
+        try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1))
+    }
+    #expect(await log.entries == ["acquire conditioner", "release conditioner"])
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(await session.state == .ready)
+    await session.unload()
+}
+
+@Test func h3AdmissionRejectsWrongIdentityMissingStagesAndOutOfProfileRequests() async throws {
+    let budget = try ResourceCoordinator(capacityBytes: 100), log = StageLog()
+    let anonymous = H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                    video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log))
+    #expect(throws: AetherError.self) { try H3VideoSession(stages: anonymous, resources: admission(budget)) }
+    let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget, audio: false))
+    for request in [
+        try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1), // Missing audio estimate.
+        try H3VideoRequest(prompt: "long prompt", geometry: geometry(), seed: 1, audio: false),
+        try H3VideoRequest(prompt: "p", geometry: H3Geometry(width: 96, height: 32, requestedFrames: 39, diagnostic: true), seed: 1, audio: false),
+        try H3VideoRequest(prompt: "p", geometry: H3Geometry(width: 64, height: 32, requestedFrames: 40, diagnostic: true), seed: 1, audio: false),
+    ] {
+        await #expect(throws: AetherError.self) { try await session.generate(request) }
+    }
+    #expect(await log.entries.isEmpty)
+    #expect(budget.snapshot.reservedBytes == 0)
+    await session.unload()
+}
+
+private actor ResourceGate {
+    private var entered = false
+    private var completed = false
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var completion: CheckedContinuation<Void, Never>?
+    func enter() async {
+        if completed { return }
+        entered = true; waiting.forEach { $0.resume() }; waiting = []
+        await withCheckedContinuation { completion = $0 }
+    }
+    func waitUntilEntered() async { if entered { return }; await withCheckedContinuation { waiting.append($0) } }
+    func complete() { completed = true; completion?.resume(); completion = nil }
+}
+private struct HeldConditioner: H3PromptConditioner {
+    let log: StageLog
+    let gate: ResourceGate
+    let lease: ExternalFileLease
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        let value = try await FakeConditioner(log: log).encode(prompt, geometry: geometry, onLayer: onLayer)
+        await gate.enter()
+        withExtendedLifetime(lease) {}
+        return value
+    }
+    func release() async { await log.release("conditioner"); withExtendedLifetime(lease) {} }
+}
+
+@Test(.timeLimit(.minutes(1))) func h3SharedAdmissionAndExternalLeaseSurviveCancellationUntilJoinedUnload() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = root.appendingPathComponent("weight")
+    try Data([0,0]).write(to: source)
+    let fd = open(source.path, O_RDONLY); defer { close(fd) }
+    #expect(fd >= 0)
+    let budget = try ResourceCoordinator(capacityBytes: 50), log = StageLog(), gate = ResourceGate()
+    let first = try H3VideoSession(stages: budgetStages(log, conditioner: HeldConditioner(log: log, gate: gate, lease: ExternalFileLease(files: [source]))),
+                                     resources: admission(budget))
+    let secondLog = StageLog()
+    let second = try H3VideoSession(stages: budgetStages(secondLog), resources: admission(budget))
+    let task = Task { try await first.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 30)
+    await #expect(throws: ResourceAdmissionError.self) {
+        try await second.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1))
+    }
+    #expect(budget.snapshot.reservedBytes == 30)
+    #expect(await secondLog.entries.isEmpty)
+    task.cancel()
+    let close = Task { await first.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await first.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await first.state == .closing)
+    #expect(budget.snapshot.reservedBytes == 30)
+    #expect(flock(fd, LOCK_EX | LOCK_NB) == -1)
+    await gate.complete()
+    await #expect(throws: CancellationError.self) { try await task.value }
+    await close.value
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(flock(fd, LOCK_EX | LOCK_NB) == 0)
+    flock(fd, LOCK_UN)
+    #expect(await log.entries == ["acquire conditioner", "release conditioner"])
+    // A competing session is usable once the first session returns all capacity.
+    _ = try await second.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1))
+    #expect(budget.snapshot.reservedBytes == 0)
+    await second.unload()
+}
+
+
+private struct HeldStageRelease: H3PromptConditioner {
+    let log: StageLog
+    let gate: ResourceGate
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await FakeConditioner(log: log).encode(prompt, geometry: geometry, onLayer: onLayer)
+    }
+    func release() async { await gate.enter(); await log.release("conditioner") }
+}
+
+@Test(.timeLimit(.minutes(1))) func h3StageAdmissionRemainsChargedUntilReleaseAndEveryUnloadCallerJoins() async throws {
+    let log = StageLog(), gate = ResourceGate(), budget = try ResourceCoordinator(capacityBytes: 100)
+    let session = try H3VideoSession(stages: budgetStages(log, conditioner: HeldStageRelease(log: log, gate: gate)), resources: admission(budget))
+    let task = Task { try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 30)
+    task.cancel()
+    let firstClose = Task { await session.unload() }, secondClose = Task { await session.unload() }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while await session.state != .closing, ContinuousClock.now < deadline { await Task.yield() }
+    #expect(await session.state == .closing)
+    #expect(budget.snapshot.reservedBytes == 30)
+    await gate.complete()
+    await #expect(throws: CancellationError.self) { try await task.value }
+    await firstClose.value; await secondClose.value
+    #expect(await session.state == .closed)
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test func h3StageEventFailureReturnsReservationsWithoutAcquiringTheStage() async throws {
+    let log = StageLog(), budget = try ResourceCoordinator(capacityBytes: 100)
+    let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget))
+    await #expect(throws: FakeFailure.self) {
+        try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) { event in
+            if case .stageStarted = event { throw FakeFailure.planned }
+        }
+    }
+    #expect(await log.entries.isEmpty)
+    #expect(budget.snapshot.reservedBytes == 0)
+    await session.unload()
 }

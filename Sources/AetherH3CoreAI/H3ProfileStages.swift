@@ -315,6 +315,11 @@ actor NativeH3AudioKernel: H3AudioKernel {
 /// Native stages for `H3VideoSession` over a complete schema-3 profile. `tokenize` turns the structured prompt into
 /// the conditioner's token ids (`AetherH3Tokenizers.H3Tokenizer.tokenIDs`).
 public enum H3ProfileEngine {
+    /// Includes exact profile declarations and selected schedule; no model is loaded.
+    public static func resourceIdentity(profile: H3Profile, recipe: String = "turbo8") -> String {
+        "h3.profile/1:" + profile.manifestSHA256 + ":" + recipe
+    }
+
     public static func stages(profile: H3Profile, recipe: String = "turbo8",
                               tokenize: @escaping @Sendable (String) throws -> [Int32]) throws -> H3VideoStages {
         guard profile.complete, let conditioner = profile.conditioner, let audio = profile.audioDecoder else {
@@ -325,7 +330,8 @@ public enum H3ProfileEngine {
             keyframes: profile.keyframeEncoders.isEmpty ? nil : H3ProfileKeyframeEncoder(profile: profile),
             denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile)),
             video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
-            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop))
+            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop),
+            resourceIdentity: resourceIdentity(profile: profile, recipe: recipe))
     }
 }
 

@@ -45,3 +45,5 @@ Update the decision register when an experiment changes a recommendation. Each p
 [Current baseline, ownership and validation](sdk-foundations.md). [Implementation sequence and remaining gates](sdk-roadmap.md).
 
 [Krea foundation integration](krea-foundations.md) covers portable bundle mapping, installed-session reader ownership and optional shared resource admission.
+
+[H3 foundations](h3-foundations.md) covers descriptor-pinned checkpoint ranges, profile weight ownership and shared stage admission.

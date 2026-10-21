@@ -1,0 +1,147 @@
+Building for production...
+[Computing dependencies]
+[Provisioning 1 / 45]
+[Pre-planning 1 / 1204]
+[Planning deferred tasks]
+[Starting]
+[1 / 4]
+[2 / 5] AetherAssets
+[3 / 6] AetherAssets
+[10 / 53] InternalCollectionsUtilities
+[12 / 54] AetherKit
+[15 / 56] AetherKit
+[21 / 63] AetherKitTests-product
+[24 / 66] AetherKrea
+[26 / 67] InternalCollectionsUtilities
+[31 / 70] AetherAssetsTests-product
+[32 / 70] AetherKitTests-product
+[33 / 69] AetherCoreAI
+[37 / 71] AetherCoreAITests-product
+[38 / 72] AetherCoreAITests-product
+[39 / 71] OrderedCollections
+[42 / 73] Jinja
+[44 / 74] AetherKrea
+[47 / 75] AetherKreaCoreAI
+[49 / 77] AetherKreaCoreAI
+[55 / 81] AetherKreaTests-product
+[56 / 82] AetherH3
+[64 / 87] AetherH3CoreAI
+[67 / 89] AetherH3CoreAI
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:86:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+84 |         }
+85 |         observer?(.nativeSubmitted)
+86 |         await stream.currentWorkCompleted()
+   |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+87 |         observer?(.nativeCompleted)
+88 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:81:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+79 |             _ = try function.encode(inputs: values, outputViews: views, to: stream)
+80 |         } catch {
+81 |             await stream.currentWorkCompleted()
+   |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+82 |             observer?(.nativeCompleted)
+83 |             throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:173:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+171 |             }
+172 |             observer?(H3ChainEvent(block: block, event: .nativeSubmitted))
+173 |             await stream.currentWorkCompleted()
+    |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+174 |             observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+175 |             try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:168:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+166 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+167 |             } catch {
+168 |                 await stream.currentWorkCompleted()
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+169 |                 observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+170 |                 throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3Function.swift:71:51: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 69 |             }
+ 70 |         } catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+ 71 |         observer?(.nativeSubmitted); await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+    |                                                   |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                                   `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 72 |         try Task.checkCancellation()
+ 73 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3Function.swift:70:32: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 68 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+ 69 |             }
+ 70 |         } catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+    |                                |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 71 |         observer?(.nativeSubmitted); await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+ 72 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:92:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 90 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+ 91 |         observer?(.nativeSubmitted)
+ 92 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+    |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 93 |         try Task.checkCancellation()
+ 94 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:90:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 88 |             }
+ 89 |         }
+ 90 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 91 |         observer?(.nativeSubmitted)
+ 92 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3Graph.swift:125:22: warning: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+123 |         }
+124 |         if let prefetch, prefetch.bank != bank { try? load(prefetch.files, into: prefetch.bank) }
+125 |         await stream.currentWorkCompleted()
+    |                      |- warning: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                      `- note: sending 'self'-isolated 'self.stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+126 |         try Task.checkCancellation()
+127 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit-foundations/Sources/AetherH3CoreAI/NativeH3Graph.swift:122:26: warning: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+120 |             }
+121 |         } catch {
+122 |             await stream.currentWorkCompleted(); throw error
+    |                          |- warning: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                          `- note: sending 'self'-isolated 'self.stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+123 |         }
+124 |         if let prefetch, prefetch.bank != bank { try? load(prefetch.files, into: prefetch.bank) }
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+[#SendingRisksDataRace]: <https://docs.swift.org/compiler/documentation/diagnostics/sending-risks-data-race>
+[75 / 94] Hub
+[78 / 96] AetherKreaTests-product
+[79 / 95] AetherH3CoreAITests-product
+[84 / 97] Tokenizers
+[86 / 98] AetherH3Tests-product
+[88 / 99] AetherH3Tests-product
+[88 / 99] Tokenizers
+[92 / 104] AetherH3Tokenizers
+[96 / 106] AetherKreaTokenizers
+[100 / 110] AetherKreaTokenizersTests-product
+[102 / 112] AetherH3Tokenizers
+[109 / 119] AetherProbe
+[112 / 122] AetherKreaTokenizersTests-product
+[115 / 121] AetherH3TokenizersTests-product
+[115 / 121] AetherNativeTests-product
+[116 / 120] aether-probe-product
+[121 / 126] aether-probe-product
+[122 / 126] aether-probe-product
+[126 / 130] AetherProbeTests-product
+[128 / 131] AetherProbeTests-product
+[140 / 144] AetherProbeTests-product
+[142 / 144] AetherProbeTests-product
+[158 / 160] AetherH3TokenizersTests-product
+[162 / 164] AetherH3Tests-product
+[166 / 168] AetherH3CoreAITests-product
+Build complete! (76.72 sec)

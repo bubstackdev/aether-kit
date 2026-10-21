@@ -1,4 +1,5 @@
 import AetherKit
+import AetherAssets
 import CryptoKit
 import Foundation
 
@@ -84,6 +85,7 @@ public struct H3TensorFile: Sendable {
     public let sha256: String
     /// True when the tensor is a whole file of exactly its byte extent.
     public let wholeFile: Bool
+    private var lease: ExternalFileLease? = nil
     /// The first segment's file (the whole file for a single-file tensor).
     public var url: URL { segments[0].url }
     public init(name: String, url: URL, spec: H3TensorSpec, sha256: String) throws {
@@ -92,15 +94,37 @@ public struct H3TensorFile: Sendable {
         self.sha256 = sha256; self.wholeFile = true
     }
     public init(name: String, segments: [Segment], spec: H3TensorSpec, sha256: String) throws {
+        var total = 0
+        for segment in segments {
+            let sum = total.addingReportingOverflow(segment.length)
+            guard !sum.overflow, sum.partialValue <= spec.byteCount else { throw AetherError.invalidModel("invalid H3 tensor extent") }
+            total = sum.partialValue
+        }
         guard !name.isEmpty, !segments.isEmpty, h3IsSHA256(sha256),
-              segments.reduce(0, { $0 + $1.length }) == spec.byteCount else { throw AetherError.invalidModel("invalid H3 tensor identity") }
+              total == spec.byteCount else { throw AetherError.invalidModel("invalid H3 tensor identity") }
         self.name = name; self.segments = segments; self.spec = spec; self.sha256 = sha256; self.wholeFile = false
     }
+    /// Uses pinned descriptors for all future reads. Hash/precision contracts remain unchanged.
+    public func holding(_ lease: ExternalFileLease) throws -> Self {
+        for segment in segments {
+            let size = try lease.byteCount(of: segment.url)
+            guard UInt64(segment.offset) <= size, UInt64(segment.length) <= size - UInt64(segment.offset),
+                  !wholeFile || size == UInt64(spec.byteCount) else {
+                throw AetherError.invalidTensor("H3 leased tensor extent differs: " + name)
+            }
+        }
+        var result = self; result.lease = lease; return result
+    }
+
     /// Explicit CPU read/integrity check. Files must remain immutable during use.
     public func read() throws -> H3TensorData {
         try Task.checkCancellation()
         let data: Data
-        if wholeFile {
+        if lease != nil {
+            var bytes = Data(count: spec.byteCount)
+            try bytes.withUnsafeMutableBytes { try read(into: $0, verify: true) }
+            return try H3TensorData(spec: spec, bytes: bytes)
+        } else if wholeFile {
             let count = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
             guard count.isRegularFile == true, count.fileSize == spec.byteCount else { throw AetherError.invalidTensor("H3 tensor file extent differs: \(name)") }
             data = try Data(contentsOf: url)
@@ -137,6 +161,18 @@ public struct H3TensorFile: Sendable {
             throw AetherError.invalidTensor("H3 tensor destination extent differs: \(name)")
         }
         var hasher = SHA256(), written = 0
+        if let lease {
+            for segment in segments {
+                let buffer = UnsafeMutableRawBufferPointer(start: base + written, count: segment.length)
+                try lease.read(into: buffer, from: segment.url, offset: UInt64(segment.offset))
+                if verify { hasher.update(bufferPointer: UnsafeRawBufferPointer(buffer)) }
+                written += segment.length
+            }
+            if verify, hasher.finalize().map({ String(format: "%02x", $0) }).joined() != sha256 {
+                throw AetherError.invalidModel("H3 tensor hash mismatch: \(name)")
+            }
+            return
+        }
         var descriptors: [URL: Int32] = [:]
         defer { for fd in descriptors.values { close(fd) } }
         for segment in segments {
