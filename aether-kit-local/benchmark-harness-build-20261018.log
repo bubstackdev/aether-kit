@@ -1,0 +1,192 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling AetherProbe AetherProbe.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:21:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 19 | 
+ 20 | struct KreaBenchmarkReport: Codable {
+ 21 |     let schema = 1
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'schema' case to silence this warning
+    |         `- note: make the property mutable instead
+ 22 |     let purpose = "Opt-in encoded Krea end-to-end benchmark"
+ 23 |     let requestedMode: String
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:22:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 20 | struct KreaBenchmarkReport: Codable {
+ 21 |     let schema = 1
+ 22 |     let purpose = "Opt-in encoded Krea end-to-end benchmark"
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'purpose' case to silence this warning
+    |         `- note: make the property mutable instead
+ 23 |     let requestedMode: String
+ 24 |     let startedAt = ISO8601DateFormatter().string(from: Date())
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:24:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 22 |     let purpose = "Opt-in encoded Krea end-to-end benchmark"
+ 23 |     let requestedMode: String
+ 24 |     let startedAt = ISO8601DateFormatter().string(from: Date())
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'startedAt' case to silence this warning
+    |         `- note: make the property mutable instead
+ 25 |     var stage = "preparation"
+ 26 |     var passed = false
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:46:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 44 |     var iterations: [BenchmarkIteration] = []
+ 45 |     var statistics: [String: [String: BenchmarkStatistics]] = [:]
+ 46 |     let computePolicy = "preferGPU"
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'computePolicy' case to silence this warning
+    |         `- note: make the property mutable instead
+ 47 |     let residency = "balanced"
+ 48 |     let memorySampleIntervalMilliseconds = 50
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:47:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 45 |     var statistics: [String: [String: BenchmarkStatistics]] = [:]
+ 46 |     let computePolicy = "preferGPU"
+ 47 |     let residency = "balanced"
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'residency' case to silence this warning
+    |         `- note: make the property mutable instead
+ 48 |     let memorySampleIntervalMilliseconds = 50
+ 49 |     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:48:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 46 |     let computePolicy = "preferGPU"
+ 47 |     let residency = "balanced"
+ 48 |     let memorySampleIntervalMilliseconds = 50
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'memorySampleIntervalMilliseconds' case to silence this warning
+    |         `- note: make the property mutable instead
+ 49 |     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
+ 50 |     let timingScope = "Conditioning and denoiser setup include lazy model/function loading; step0 includes rotary/schedule setup. Decode includes lazy decoder loading, output copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:49:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 47 |     let residency = "balanced"
+ 48 |     let memorySampleIntervalMilliseconds = 50
+ 49 |     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'cachePolicy' case to silence this warning
+    |         `- note: make the property mutable instead
+ 50 |     let timingScope = "Conditioning and denoiser setup include lazy model/function loading; step0 includes rotary/schedule setup. Decode includes lazy decoder loading, output copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
+ 51 |     let memoryScope = "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Validation observers are included. These separate counters must not be summed. Kernel process-lifetime peaks are not reset per iteration; brief peaks may be missed by sampling."
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:50:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 48 |     let memorySampleIntervalMilliseconds = 50
+ 49 |     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
+ 50 |     let timingScope = "Conditioning and denoiser setup include lazy model/function loading; step0 includes rotary/schedule setup. Decode includes lazy decoder loading, output copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'timingScope' case to silence this warning
+    |         `- note: make the property mutable instead
+ 51 |     let memoryScope = "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Validation observers are included. These separate counters must not be summed. Kernel process-lifetime peaks are not reset per iteration; brief peaks may be missed by sampling."
+ 52 |     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:51:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 49 |     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
+ 50 |     let timingScope = "Conditioning and denoiser setup include lazy model/function loading; step0 includes rotary/schedule setup. Decode includes lazy decoder loading, output copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
+ 51 |     let memoryScope = "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Validation observers are included. These separate counters must not be summed. Kernel process-lifetime peaks are not reset per iteration; brief peaks may be missed by sampling."
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'memoryScope' case to silence this warning
+    |         `- note: make the property mutable instead
+ 52 |     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
+ 53 | }
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherProbe/KreaBenchmarkCommand.swift:52:9: warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+ 50 |     let timingScope = "Conditioning and denoiser setup include lazy model/function loading; step0 includes rotary/schedule setup. Decode includes lazy decoder loading, output copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
+ 51 |     let memoryScope = "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Validation observers are included. These separate counters must not be summed. Kernel process-lifetime peaks are not reset per iteration; brief peaks may be missed by sampling."
+ 52 |     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
+    |         |- warning: immutable property will not be decoded because it is declared with an initial value which cannot be overwritten
+    |         |- note: set the initial value via the initializer or explicitly define a CodingKeys enum including a 'hostConditions' case to silence this warning
+    |         `- note: make the property mutable instead
+ 53 | }
+ 54 | 
+[3/7] Write Objects.LinkFileList
+[4/7] Linking aether-probe
+[6/8] Compiling AetherProbeTests ParityHarnessTests.swift
+[6/8] Write Objects.LinkFileList
+[7/8] Linking AetherKitPackageTests
+Build complete! (6.87s)
+Test Suite 'All tests' started at 2026-10-18 08:58:59.324.
+Test Suite 'All tests' passed at 2026-10-18 08:58:59.325.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+➜ Test nativeKreaDynamicParityAndStageCancellation() skipped.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+➜ Test nativeDecoderCancellationAndRecovery() skipped.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+➜ Test nativePipelineDecoderCancellationAndRecovery() skipped.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+➜ Test nativeKreaSessionQualification() skipped.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test decoderCancellationRestoresPipelineAndCanRecover() started.
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.024 seconds.
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.024 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.024 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.025 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.025 seconds.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.025 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.025 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.025 seconds.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.025 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.025 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.025 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.025 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.030 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.030 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.032 seconds.
+✔warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.034 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 0.034 seconds.
+✔ Test rejectsOverlapAndUnloadWaitsForCompletion() passed after 0.034 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.038 seconds.
+✔ Test specializationRejectsTamperingAndUnknownFields() passed after 0.038 seconds.
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.039 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.045 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.047 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 0.072 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.200 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 0.305 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 0.339 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.346 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.379 seconds.
+✔ Test decoderCancellationRestoresPipelineAndCanRecover() passed after 0.481 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 0.484 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 0.532 seconds.
+✔ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() passed after 0.598 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 0.673 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 1.033 seconds.
+✔ Test run with 39 tests in 0 suites passed after 1.034 seconds.

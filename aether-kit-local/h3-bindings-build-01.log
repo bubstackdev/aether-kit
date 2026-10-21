@@ -1,0 +1,68 @@
+warning: 'aether-kit': Source files for target AetherH3CoreAITests should be located under 'Tests/AetherH3CoreAITests', or a custom sources path can be set with the 'path' property in Package.swift
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[3/7] Write swift-version--58304C5D6DBC2206.txt
+[5/9] Compiling AetherCoreAI CoreAIBackend.swift
+[6/12] Compiling AetherCoreAITests ModelSessionTests.swift
+[7/12] Compiling AetherKreaCoreAI KreaContracts.swift
+[8/15] Compiling AetherH3 H3BlockProbePlan.swift
+[9/17] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:11:13: error: stored property 'buffer' of 'Sendable'-conforming struct 'Binding' has non-Sendable type 'any MTLBuffer'
+ 9 |     private struct Binding: Sendable {
+10 |         let name: String
+11 |         let buffer: any MTLBuffer
+   |             `- error: stored property 'buffer' of 'Sendable'-conforming struct 'Binding' has non-Sendable type 'any MTLBuffer'
+12 |         let spec: H3TensorSpec
+13 |     }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/Metal.framework/Headers/MTLBuffer.h:34:11: note: protocol 'MTLBuffer' does not conform to the 'Sendable' protocol
+ 32 |  */
+ 33 | API_AVAILABLE(macos(10.11), ios(8.0))
+ 34 | @protocol MTLBuffer <MTLResource>
+    |           `- note: protocol 'MTLBuffer' does not conform to the 'Sendable' protocol
+ 35 | 
+ 36 | /*!
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:6:1: warning: add '@preconcurrency' to treat 'Sendable'-related errors from module 'Metal' as warnings [#AddPreconcurrencyImport]
+ 4 | import CoreAI
+ 5 | import Foundation
+ 6 | import Metal
+   | `- warning: add '@preconcurrency' to treat 'Sendable'-related errors from module 'Metal' as warnings [#AddPreconcurrencyImport]
+ 7 | 
+ 8 | struct NativeH3BlockBackend: H3BlockBackend {
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:17:17: error: stored property 'output' of 'Sendable'-conforming struct 'NativeH3BlockBackend' has non-Sendable type 'any MTLBuffer'
+15 |     private let function: InferenceFunction
+16 |     private let inputs: [Binding]
+17 |     private let output: any MTLBuffer
+   |                 `- error: stored property 'output' of 'Sendable'-conforming struct 'NativeH3BlockBackend' has non-Sendable type 'any MTLBuffer'
+18 |     private let outputSpec: H3TensorSpec
+19 |     private let stream: ComputeStream
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/Metal.framework/Headers/MTLBuffer.h:34:11: note: protocol 'MTLBuffer' does not conform to the 'Sendable' protocol
+ 32 |  */
+ 33 | API_AVAILABLE(macos(10.11), ios(8.0))
+ 34 | @protocol MTLBuffer <MTLResource>
+    |           `- note: protocol 'MTLBuffer' does not conform to the 'Sendable' protocol
+ 35 | 
+ 36 | /*!
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:19:17: error: stored property 'stream' of 'Sendable'-conforming struct 'NativeH3BlockBackend' has non-Sendable type 'ComputeStream'
+17 |     private let output: any MTLBuffer
+18 |     private let outputSpec: H3TensorSpec
+19 |     private let stream: ComputeStream
+   |                 `- error: stored property 'stream' of 'Sendable'-conforming struct 'NativeH3BlockBackend' has non-Sendable type 'ComputeStream'
+20 | 
+21 |     static func open(_ probe: H3BlockProbePlan.Case) async throws -> Self {
+
+CoreAI.ComputeStream:2:20: note: class 'ComputeStream' does not conform to the 'Sendable' protocol
+1 | @available(macOS 27.0, iOS 27.0, watchOS 27.0, tvOS 27.0, *)
+2 | final public class ComputeStream {
+  |                    `- note: class 'ComputeStream' does not conform to the 'Sendable' protocol
+3 |     public init(commandQueue: any MTLCommandQueue)
+4 |     public convenience init()
+
+[#AddPreconcurrencyImport]: <https://docs.swift.org/compiler/documentation/diagnostics/add-preconcurrency-import>
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

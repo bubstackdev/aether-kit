@@ -1,0 +1,461 @@
+{
+  "dependencies" : [
+    {
+      "identity" : "swift-transformers",
+      "requirement" : {
+        "exact" : [
+          "1.1.0"
+        ]
+      },
+      "type" : "sourceControl",
+      "url" : "https://github.com/huggingface/swift-transformers"
+    }
+  ],
+  "manifest_display_name" : "AetherKit",
+  "name" : "AetherKit",
+  "path" : "/Users/zakkeown/Code/bubstackdev/aether/aether-kit",
+  "platforms" : [
+    {
+      "name" : "macos",
+      "version" : "27.0"
+    },
+    {
+      "name" : "ios",
+      "version" : "27.0"
+    }
+  ],
+  "products" : [
+    {
+      "name" : "AetherKit",
+      "targets" : [
+        "AetherKit"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherCoreAI",
+      "targets" : [
+        "AetherCoreAI"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherH3CoreAI",
+      "targets" : [
+        "AetherH3CoreAI"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherH3",
+      "targets" : [
+        "AetherH3"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherKrea",
+      "targets" : [
+        "AetherKrea"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherKreaTokenizers",
+      "targets" : [
+        "AetherKreaTokenizers"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "AetherKreaCoreAI",
+      "targets" : [
+        "AetherKreaCoreAI"
+      ],
+      "type" : {
+        "library" : [
+          "automatic"
+        ]
+      }
+    },
+    {
+      "name" : "aether-probe",
+      "targets" : [
+        "AetherProbe"
+      ],
+      "type" : {
+        "executable" : null
+      }
+    }
+  ],
+  "targets" : [
+    {
+      "c99name" : "AetherProbeTests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherProbeTests",
+      "path" : "Tests/AetherProbeTests",
+      "sources" : [
+        "BatchCommandTests.swift",
+        "BenchmarkTests.swift",
+        "H3QualificationCommandTests.swift",
+        "ParityHarnessTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherProbe",
+        "AetherKit",
+        "AetherKrea",
+        "AetherKreaCoreAI"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherProbe",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherProbe",
+      "path" : "Sources/AetherProbe",
+      "product_memberships" : [
+        "aether-probe"
+      ],
+      "sources" : [
+        "AetherProbe.swift",
+        "H3QualificationCommand.swift",
+        "KreaBatchCommand.swift",
+        "KreaBenchmark.swift",
+        "KreaBenchmarkCommand.swift",
+        "KreaCommands.swift"
+      ],
+      "target_dependencies" : [
+        "AetherH3",
+        "AetherH3CoreAI",
+        "AetherKit",
+        "AetherCoreAI",
+        "AetherKrea",
+        "AetherKreaTokenizers",
+        "AetherKreaCoreAI"
+      ],
+      "type" : "executable"
+    },
+    {
+      "c99name" : "AetherNativeTests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherNativeTests",
+      "path" : "Tests/AetherNativeTests",
+      "sources" : [
+        "DecoderCancellationTests.swift",
+        "DynamicParityTests.swift",
+        "NativeSessionTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKit",
+        "AetherCoreAI",
+        "AetherKrea",
+        "AetherKreaCoreAI",
+        "AetherKreaTokenizers"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherKreaTokenizersTests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKreaTokenizersTests",
+      "path" : "Tests/AetherKreaTokenizersTests",
+      "sources" : [
+        "LocalFixtureTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKreaTokenizers",
+        "AetherKrea"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherKreaTokenizers",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKreaTokenizers",
+      "path" : "Sources/AetherKreaTokenizers",
+      "product_dependencies" : [
+        "Tokenizers"
+      ],
+      "product_memberships" : [
+        "AetherKreaTokenizers",
+        "aether-probe"
+      ],
+      "sources" : [
+        "KreaTokenizer.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKrea"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherKreaTests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKreaTests",
+      "path" : "Tests/AetherKreaTests",
+      "resources" : [
+        {
+          "path" : "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Tests/AetherKreaTests/Fixtures",
+          "rule" : {
+            "copy" : {
+
+            }
+          }
+        }
+      ],
+      "sources" : [
+        "KreaAssetsTests.swift",
+        "KreaConditioningTests.swift",
+        "KreaEulerFixtureTests.swift",
+        "KreaPipelineTests.swift",
+        "KreaReferenceTests.swift",
+        "KreaSpecializationTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKrea",
+        "AetherKit",
+        "AetherCoreAI",
+        "AetherKreaCoreAI"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherKreaCoreAI",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKreaCoreAI",
+      "path" : "Sources/AetherKreaCoreAI",
+      "product_memberships" : [
+        "AetherKreaCoreAI",
+        "aether-probe"
+      ],
+      "sources" : [
+        "KreaContracts.swift",
+        "KreaGenerationSession.swift",
+        "KreaTextEncoder.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKrea",
+        "AetherCoreAI",
+        "AetherKit"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherKrea",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKrea",
+      "path" : "Sources/AetherKrea",
+      "product_memberships" : [
+        "AetherKrea",
+        "AetherKreaTokenizers",
+        "AetherKreaCoreAI",
+        "aether-probe"
+      ],
+      "sources" : [
+        "KreaAssets.swift",
+        "KreaConditioning.swift",
+        "KreaConfiguration.swift",
+        "KreaNoise.swift",
+        "KreaPrompt.swift",
+        "KreaRotary.swift",
+        "KreaSchedule.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKit"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherKitTests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKitTests",
+      "path" : "Tests/AetherKitTests",
+      "sources" : [
+        "FloatTensorTests.swift",
+        "GeneratedImageTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKit"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherKit",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherKit",
+      "path" : "Sources/AetherKit",
+      "product_memberships" : [
+        "AetherKit",
+        "AetherCoreAI",
+        "AetherH3CoreAI",
+        "AetherH3",
+        "AetherKrea",
+        "AetherKreaTokenizers",
+        "AetherKreaCoreAI",
+        "aether-probe"
+      ],
+      "sources" : [
+        "AetherError.swift",
+        "FloatTensor.swift",
+        "GeneratedImage.swift"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherH3Tests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherH3Tests",
+      "path" : "Tests/AetherH3Tests",
+      "resources" : [
+        {
+          "path" : "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Tests/AetherH3Tests/Fixtures",
+          "rule" : {
+            "copy" : {
+
+            }
+          }
+        }
+      ],
+      "sources" : [
+        "H3BlockPlanTests.swift",
+        "H3ContractsTests.swift",
+        "H3TensorTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherH3",
+        "AetherKit"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherH3CoreAITests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherH3CoreAITests",
+      "path" : "Tests/AetherH3CoreAITests",
+      "sources" : [
+        "H3BlockSessionTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherH3CoreAI",
+        "AetherH3",
+        "AetherCoreAI",
+        "AetherKit"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherH3CoreAI",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherH3CoreAI",
+      "path" : "Sources/AetherH3CoreAI",
+      "product_memberships" : [
+        "AetherH3CoreAI",
+        "aether-probe"
+      ],
+      "sources" : [
+        "H3BlockSession.swift",
+        "NativeH3BlockBackend.swift"
+      ],
+      "target_dependencies" : [
+        "AetherH3",
+        "AetherKit",
+        "AetherCoreAI"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherH3",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherH3",
+      "path" : "Sources/AetherH3",
+      "product_memberships" : [
+        "AetherH3CoreAI",
+        "AetherH3",
+        "aether-probe"
+      ],
+      "resources" : [
+        {
+          "path" : "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3/Resources",
+          "rule" : {
+            "copy" : {
+
+            }
+          }
+        }
+      ],
+      "sources" : [
+        "H3BlockProbePlan.swift",
+        "H3ExportHeader.swift",
+        "H3Geometry.swift",
+        "H3Layout.swift",
+        "H3ReferenceComparison.swift",
+        "H3Schedule.swift",
+        "H3TensorData.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKit"
+      ],
+      "type" : "library"
+    },
+    {
+      "c99name" : "AetherCoreAITests",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherCoreAITests",
+      "path" : "Tests/AetherCoreAITests",
+      "sources" : [
+        "ModelSessionTests.swift"
+      ],
+      "target_dependencies" : [
+        "AetherCoreAI",
+        "AetherKit"
+      ],
+      "type" : "test"
+    },
+    {
+      "c99name" : "AetherCoreAI",
+      "module_type" : "SwiftTarget",
+      "name" : "AetherCoreAI",
+      "path" : "Sources/AetherCoreAI",
+      "product_memberships" : [
+        "AetherCoreAI",
+        "AetherH3CoreAI",
+        "AetherKreaCoreAI",
+        "aether-probe"
+      ],
+      "sources" : [
+        "CoreAIBackend.swift",
+        "ModelDescription.swift",
+        "ModelSession.swift"
+      ],
+      "target_dependencies" : [
+        "AetherKit"
+      ],
+      "type" : "library"
+    }
+  ],
+  "tools_version" : "6.4"
+}

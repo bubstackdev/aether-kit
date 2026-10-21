@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "passed": true,
+  "gpu_work": false,
+  "scope": "CPU acceptance checks for shared gate/render wall accounting only; no H3 inference or media-quality claim",
+  "command": [
+    "python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_h3_clip_audit.py",
+    "-v"
+  ],
+  "tests_passed": 8,
+  "test_source_sha256": "f15cb9ea8cca1fea117818d44359a12fb48de98674b9d21b3ce12361350f5a01",
+  "auditor_source_sha256": "d262944cf25364c939938a6f17dddb8c4c1bb479d38b17ecc288ae722aef9606"
+}

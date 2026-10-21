@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "gpu_work": false,
+  "success_application_and_exit_checked": true,
+  "deadline_child_and_descendant_stopped": true,
+  "timeout_elapsed_seconds": 1.0475407089979853,
+  "child_joined": true,
+  "descendant_absent": true,
+  "records": "/private/tmp/aether-h3-controller-cpu-aaam4_3f"
+}

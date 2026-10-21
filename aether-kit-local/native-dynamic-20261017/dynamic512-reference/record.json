@@ -1,0 +1,121 @@
+{
+  "arm" : "device-encoded",
+  "at" : "2026-10-18T01:16:53Z",
+  "case" : "dynamic512",
+  "device" : "Apple M5 Max",
+  "executableSHA256" : "6f431a0fcc365e5438ad948393261fbdd0da515701a8de34c04ad23f230e1c99",
+  "executionPolicies" : [
+    "baseline"
+  ],
+  "height" : 512,
+  "kind" : "krea-lab-runtime",
+  "manifestSHA256" : "48988bd46c2d59b65abc14e302078988686609591885acd0e4dcfd61646b23fe",
+  "noiseSHA256" : "3c79b54a924a8e353af58e1be9ddcf0e957c9e2383a0aefac59e92807426d6d9",
+  "os" : "26A434",
+  "physicalMemory" : 68719476736,
+  "prompt" : "a red fox in fresh snow",
+  "publishable" : false,
+  "remainingAdmittedBytes" : 0,
+  "residency" : "balanced",
+  "runs" : [
+    {
+      "decoderLoadSeconds" : 0.2427965,
+      "decodeSeconds" : 0.33130349999999997,
+      "denoiserLoadSeconds" : 27.124144083000001,
+      "encodedTextSHA256" : "8f57491b89782e7838e600d48ffa6fafb8f22500d15aadeedcf0c917f24dcf1a",
+      "executionPolicy" : "baseline",
+      "footprintAfter" : 3916655320,
+      "footprintPeak" : 3918342872,
+      "latentSHA256" : "07c85c0ff01918486bc79cb05860daea4d632307dded442ff1d2144aaadb2888",
+      "memoryAfterSteps" : [
+        {
+          "footprint" : 2867751424,
+          "footprintPeak" : 2867751424,
+          "metalAllocated" : 15168602112,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2950900248,
+          "footprintPeak" : 2975623680,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2948885016,
+          "footprintPeak" : 3028429360,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2949278232,
+          "footprintPeak" : 3235064368,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2949278232,
+          "footprintPeak" : 3235064368,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2948917784,
+          "footprintPeak" : 3235064368,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2949278232,
+          "footprintPeak" : 3235064368,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        },
+        {
+          "footprint" : 2948983320,
+          "footprintPeak" : 3235064368,
+          "metalAllocated" : 15219490816,
+          "residentPeak" : 31991824384
+        }
+      ],
+      "metalAllocatedAfter" : 16406757376,
+      "pixelShape" : [
+        3,
+        512,
+        512
+      ],
+      "pixelsSHA256" : "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+      "repetition" : 0,
+      "residentPeak" : 31991824384,
+      "seconds" : 153.27675600000001,
+      "stepLatentsSHA256" : [
+        "48340261ea8203b235f7fe5d60a6713473aa1746b2855723604469f2ae8602e6",
+        "d7d01fca0f23e18ba7be23f316393f05530944f07cf6ccbd225c1b7f6569d6c9",
+        "6ae43717623d24e73ca935859e69f9f6f17b4a4fbb10405680463d3ceb4c6587",
+        "265f7931f71067edc76094d111f07b4ba2a668d579ffdcdd03565a7fb64800bc",
+        "2df87282df49e3caebd742d7001428e6c5fcbd9e5a301017df4277c5aaf0af9b",
+        "b6515dc5bb714f433d5af0dbbb3c09e04e79c405fc7269e117af68926238c42e",
+        "ed8e046fd2e50e519721d5fe5ecc7ecb62a5c148da7436635aeca30e6c85b809",
+        "07c85c0ff01918486bc79cb05860daea4d632307dded442ff1d2144aaadb2888"
+      ],
+      "stepSeconds" : [
+        0.656622708,
+        0.51747137499999996,
+        0.66033333299999997,
+        0.62425804200000001,
+        0.60531895800000002,
+        0.54150387499999997,
+        0.55218199999999995,
+        0.60951354199999996
+      ],
+      "textSeconds" : 119.29828904199999,
+      "thermal" : 0
+    }
+  ],
+  "schema" : 1,
+  "scope" : "Full text encoding from fixture token IDs on every repetition (forced text-cache misses), then all eight original denoising steps and decode. Fresh process per residency arm. OS specialization caches retained. Step hash readbacks only on repetition zero. No preview decodes.",
+  "sourceCommit" : "7aff977df6e88005649b13bc63995f75eb4b217b",
+  "steps" : 8,
+  "textSHA256" : "23269ee7b1a964065e493ccad6f4b654ae9d71e1a3023121a57c8c2f8f040688",
+  "thermalStart" : 1,
+  "width" : 512
+}

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "passed": true,
+  "quality_accepted": false,
+  "wall_budget_seconds": 1200,
+  "scope": "Numerical gate plus finished-render execution inside one shared GPU window; output quality requires separate review",
+  "coordinator_sha256": "afb650f7d1f4e04b3c1e4133b708148eeb2e8079b30b83d4df1bee3fad608f1d",
+  "controller_sha256": "f06d83ca6a0331147786171378b375c68de6d649612b277b3ddfeee69b5c16a8",
+  "stages": [
+    {
+      "kind": "phase",
+      "controller": "/private/tmp/aether-h3-qkv-ready/run-01/phase/controller.json",
+      "controller_sha256": "240333f91f80db57c87ffbb54185b1cdfb1bf9f8af2cb47e11997211bd44bbee",
+      "passed": true,
+      "elapsed_seconds": 22.248133582994342,
+      "binary_sha256": "ccb080cee4482f70656f0e904c69aa7c048345b6032ad17bac67dc727a1d6bad",
+      "input_sha256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e"
+    },
+    {
+      "kind": "render",
+      "controller": "/private/tmp/aether-h3-qkv-ready/run-01/render/controller.json",
+      "controller_sha256": "2166265eb965933b8924da563b21b241e3ec8cf9da4f08cd8dd231c922f5c02d",
+      "passed": true,
+      "elapsed_seconds": 686.0167762920028,
+      "binary_sha256": "21beca81fc99169d14bd6367f09c4d735c286d5574b174546ca6f36b6d3cb33b",
+      "input_sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e"
+    }
+  ],
+  "elapsed_seconds": 708.3252609589981
+}

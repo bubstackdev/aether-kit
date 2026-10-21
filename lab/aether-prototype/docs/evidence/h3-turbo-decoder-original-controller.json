@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "passed": false,
+  "kind": "decoder",
+  "command": [
+    "/private/tmp/aether-h3-turbo-ready/decoder/h3_decode_probe",
+    "/private/tmp/aether-h3-turbo-ready/decoder/bundle.json",
+    "/private/tmp/aether-h3-turbo-ready/decoder-run-01/report.json"
+  ],
+  "wall_budget_seconds": 300,
+  "cleanup_reserve_seconds": 10,
+  "binary_sha256": "0e8ba6f3aaed059a94e22cfbf616449850e4495c13be466b787ec9935cd78494",
+  "input_sha256": "484284f1f3db741eda7dadcf1e7b2b6d09af789ee6ef0cc1f83301e7f5895e46",
+  "controller_sha256": "a35a814b959d066c44e73fdfb9991c8700380b2ed93190b52c50cd05154356bd",
+  "scope": "One explicitly invoked native process group; application report/exit and wall budget checked, no full environment capture",
+  "conflicts_before": [],
+  "error": "Wall budget reached; cleanup reserve begins",
+  "exit_status": -15,
+  "child_joined": true,
+  "elapsed_seconds": 290.4139050829981
+}

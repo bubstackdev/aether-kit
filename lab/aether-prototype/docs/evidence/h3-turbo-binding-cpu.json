@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "passed": true,
+  "gpu_work": false,
+  "source_recipe_sha256": "b5f1a356cc356b7e9995ebc3c800ea1cefa4cdf676b7700866e74e09bf4b9cdb",
+  "input_phase_probe_sha256": "71fb7176d8040bbcf87ed8ee7c829540416abb20ecb494125c130764775571f5",
+  "source_zero_projection_identity_byte_identical": true,
+  "cpu_identity_rows": 128,
+  "scope": "Original CPU zero-projection residual identity; native changing-binding behavior remains untested",
+  "case_order": [
+    "prepare",
+    "time-0",
+    "heads-0",
+    "time-1",
+    "heads-1",
+    "body-0",
+    "body-1",
+    "body-zero-bindings",
+    "body-original-bindings-restored"
+  ],
+  "probe_sha256": "032325583d7b75f61674c2656f323eafebdaaa48b29c06cdeda359258720216a"
+}

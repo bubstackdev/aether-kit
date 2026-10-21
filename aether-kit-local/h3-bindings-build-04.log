@@ -1,0 +1,17 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/12] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:67:49: error: 'inout sending' parameter '$0' is accessible to code in the current isolation context at end of function [#RegionIsolation]
+65 |             return owned
+66 |         }
+67 |         defer { resources.withLock { $0 = owned } }
+   |                                                 |- error: 'inout sending' parameter '$0' is accessible to code in the current isolation context at end of function [#RegionIsolation]
+   |                                                 `- note: '$0' risks causing races in between code in the current isolation context and caller uses since caller assumes value is not actor isolated
+68 |         let inputs = owned.inputs, output = owned.output, outputSpec = owned.outputSpec
+69 |         let function = owned.function
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

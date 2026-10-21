@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "passed": false,
+  "benchmark_complete": false,
+  "child_joined": true,
+  "exit_status": -15,
+  "corsairs_version": "0.3.0",
+  "scope": "Preparation and 3 complete source-schedule denoising steps; interrupted before decoding; no completed render or quality claim",
+  "geometry": {
+    "width": 960,
+    "height": 544,
+    "frames": 124
+  },
+  "planned_prefix_steps": 5,
+  "measured_prefix_steps": 3,
+  "observed_benchmark_seconds": 453.8969066250138,
+  "phases_seconds": {
+    "initialization": 0.0209045,
+    "integrity": 30.499510417,
+    "conditioning": 145.734031542,
+    "time_embeddings": 0.310896083,
+    "modulations": 73.678556958,
+    "body_setup": 25.323169875
+  },
+  "step_total_seconds": [
+    35.669328166,
+    45.733129959,
+    54.196906417
+  ],
+  "step_body_seconds": [
+    34.828172625,
+    45.31825875,
+    54.082204959
+  ],
+  "post_graph_warmup_step_seconds": {
+    "samples": 1,
+    "median": 54.196906417,
+    "mean": 54.196906417,
+    "min": 54.196906417,
+    "max": 54.196906417
+  },
+  "completed_step_body_block_seconds": {
+    "samples": 150,
+    "median": 0.904998438,
+    "mean": 0.8947251114333333,
+    "min": 0.549747208,
+    "max": 1.205705667
+  },
+  "video_window_seconds": [],
+  "projection_50_steps": {
+    "seconds": null,
+    "observed_preparation_seconds": 275.587159667,
+    "preparation_plus_50_steps_min_seconds": 2059.053567967,
+    "preparation_plus_50_steps_max_seconds": 2985.432480517,
+    "decoders_measured": false,
+    "completed_render": false,
+    "assumption": "Partial observation only. Range applies the fastest/slowest completed step to all 50 and adds observed preparation. Step times were still rising; no stable throughput, confidence interval or measured decoder cost. No full-render timing is claimed."
+  },
+  "input_reports_sha256": {
+    "report.json": "c020c1010e5c5ec31ca28be6b1172a9bcddbb9dd7a298bc371838a1de882a249",
+    "controller.json": "a87326253edc9d85711e62ce44e09643361fe8191a776650bbb15ef383d728b0"
+  },
+  "planned_scope": "bounded prefix of source 50-step T2VA workload, followed by full decoder readback/stitch/hash; no PNG/WAV/mux, no completed render or quality claim",
+  "requested_wall_budget_seconds": 1200.0,
+  "within_requested_wall_budget_demonstrated": false,
+  "previous_development_run_prefix": [
+    {
+      "index": 0,
+      "video_exact": true,
+      "audio_exact": true
+    },
+    {
+      "index": 1,
+      "video_exact": true,
+      "audio_exact": true
+    },
+    {
+      "index": 2,
+      "video_exact": true,
+      "audio_exact": true
+    }
+  ],
+  "previous_journal_sha256": "1bfd8ee4c374b6cb7ace879992e42e170c4fcccf8f54e3a306ceb7491c452347"
+}

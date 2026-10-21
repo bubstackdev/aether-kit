@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "status": "interrupted_by_server_restart",
+  "passed": false,
+  "observed_utc": "2026-10-15T22:44:58.215593+00:00",
+  "native_pid": 34858,
+  "process_absent": true,
+  "controller_report_present": false,
+  "last_stage": "conditioner layer 16 completed",
+  "scope": "Only startup was observed. No denoising or decoding result; not a benchmark pass."
+}

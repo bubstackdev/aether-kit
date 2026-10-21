@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "gpu_work": false,
+  "scope": "CPU audit-tool checks using a synthetic three-frame MP4 and synthetic controller/journal inputs; no H3 generation evidence",
+  "decoded_frame_count_checked": true,
+  "over_budget_incomplete_and_provided_runs_rejected": true,
+  "fixture": "/private/tmp/aether-h3-media-audit-cpu-p3co38eq/fixture.mp4"
+}

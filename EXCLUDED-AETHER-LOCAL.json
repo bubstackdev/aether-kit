@@ -1,0 +1,4418 @@
+[
+  {
+    "path": "aether-kit/.local/native-assets.env",
+    "bytes": 556
+  },
+  {
+    "path": "aether-kit/.local/native-parity-provided-20261017/image.png",
+    "bytes": 1393147
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block2-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block0-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block0-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block2-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block1-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block1-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block0-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block2-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block1-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-1-block0-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block1-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-references-01/body-0-block2-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic512-recovery.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic384.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic384-recovery.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic512.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic512-reference/latents.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic512-reference/pixels.f32",
+    "bytes": 3145728
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic384-reference/latents.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/dynamic384-reference/pixels.f32",
+    "bytes": 2359296
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic512-ids.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic512-noise.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic384-ids.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic384-mask.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic512-mask.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic384-noise.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic512-placeholder-text.f32",
+    "bytes": 1351680
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-function-reuse-20261018/inputs/dynamic384-placeholder-text.f32",
+    "bytes": 5038080
+  },
+  {
+    "path": "aether-kit/.local/native-recovery-functions-384-20261018/recovered.png",
+    "bytes": 308205
+  },
+  {
+    "path": "aether-kit/.local/batch-render-native-01/002-seed-17018.png",
+    "bytes": 344984
+  },
+  {
+    "path": "aether-kit/.local/batch-render-native-01/001-seed-17017.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/batch-render-native-01/003-seed-17017.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block2.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block0.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block1.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block24.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block49.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block48.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block23.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block2.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block0.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block1.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block23.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block48.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-1-block49.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-capture-01/body-0-block24.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.20.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.2.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.5.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.0.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.6.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.43.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.1.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.39.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.7.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.36.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.2.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.5.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.6.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.1.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.12.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.0.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.7.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.8.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.15.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.28.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.2.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.31.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.4.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.3.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.0.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.7.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.44.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.7.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.4.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.27.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.3.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.14.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.5.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.29.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.2.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.4.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.9.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.0.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.30.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.45.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.5.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.1.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.1.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.26.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.6.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.6.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.1.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.21.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.3.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.38.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.4.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.2.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.4.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.42.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.37.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.7.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.3.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.13.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.48.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.3.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.32.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.16.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.6.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.1.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.7.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.19.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.24.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.4.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.2.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.47.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.3.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.6.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.0.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.1.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.7.0.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.40.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.3.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.6.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.23.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/prepare.5.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.0.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.11.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.35.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/body.4.49.hidden.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.41.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.5.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.2.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.22.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.1.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.6.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.2.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.10.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.5.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.5.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.2.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.1.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.6.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.34.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.7.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/time.0.-1.temb.raw",
+    "bytes": 10752
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.0.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.33.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.49.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.17.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.3.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.4.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.7.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.5.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/latents.0.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.18.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.25.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.2.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.5.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.7.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.3.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.3.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.4.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.6.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.0.46.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/modulation.1.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-cpu-references-01/heads.4.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-01/time.0.-1.temb.raw",
+    "bytes": 10752
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/recovery.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/dynamic384.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/dynamic512-repeat.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/repeat.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/unload-active.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/first.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-hf-cache-20261017/dynamic512.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/recovery.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/dynamic384.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/dynamic512-repeat.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/repeat.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/unload-active.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/first.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017/dynamic512.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-decoder-pipeline-final-20261017/recovered.png",
+    "bytes": 268111
+  },
+  {
+    "path": "aether-kit/.local/native-decoder-isolated-20261017/recovered.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-1-block2.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-1-block0.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-1-block1.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-0-block2.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-0-block0.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-capture-01/body-0-block1.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-0-block2-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-1-block2-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-0-block1-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-0-block0-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-1-block1-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-02/body-1-block0-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/recovery.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/dynamic384.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/dynamic512-repeat.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/repeat.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/unload-active.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/first.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-20261017-native-boundary/dynamic512.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/dynamic512.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/dynamic512-reference/latents.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/dynamic512-reference/pixels.f32",
+    "bytes": 3145728
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic512-ids.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic512-noise.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic384-ids.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic384-mask.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic512-mask.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic384-noise.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic512-placeholder-text.f32",
+    "bytes": 1351680
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-20261017/inputs/dynamic384-placeholder-text.f32",
+    "bytes": 5038080
+  },
+  {
+    "path": "aether-kit/.local/native-recovery-retain-128-observed-20261018/recovered.png",
+    "bytes": 26659
+  },
+  {
+    "path": "aether-kit/.local/native-recovery-reopen-final-128-20261018/recovered.png",
+    "bytes": 26659
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384-prepared-2.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384-prepared-1.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512-recovery.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384-recovery.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512-prepared-2.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512-prepared-1.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512-reference/latents.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic512-reference/pixels.f32",
+    "bytes": 3145728
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384-reference/latents.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/dynamic384-reference/pixels.f32",
+    "bytes": 2359296
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic512-ids.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic512-noise.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic384-ids.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic384-mask.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic512-mask.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic384-noise.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic512-placeholder-text.f32",
+    "bytes": 1351680
+  },
+  {
+    "path": "aether-kit/.local/native-prepared-prompt-01/inputs/dynamic384-placeholder-text.f32",
+    "bytes": 5038080
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/recovery.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/dynamic384.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/dynamic512-repeat.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/repeat.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/unload-active.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/first.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-function-reuse-20261018/dynamic512.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-recovery-retain-final-384-20261018/recovered.png",
+    "bytes": 308205
+  },
+  {
+    "path": "aether-kit/.local/native-decoder-pipeline-20261017/recovered.png",
+    "bytes": 268111
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.20.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.2.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.5.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.0.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.6.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.43.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.1.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.39.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.7.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.0.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.36.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.2.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.5.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.6.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.4.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.1.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.12.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.3.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.0.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.7.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.8.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.15.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.28.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.2.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.7.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.31.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.4.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.3.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.0.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.7.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.44.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.7.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.4.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.27.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.3.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.14.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.29.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.4.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.9.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.0.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.4.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.3.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.30.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.45.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.5.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.1.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.1.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.26.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.6.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.4.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.3.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.6.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.1.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.2.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.21.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.5.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.38.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.2.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.4.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.42.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.37.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.8.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.7.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.1.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.0.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.9.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.2.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.5.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.7.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.3.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.6.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.13.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.7.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.0.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.48.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.3.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.32.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.16.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.7.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.7.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.19.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.0.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.24.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.4.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.2.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.47.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.3.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.6.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.1.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.40.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.1.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.6.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.3.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.6.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.23.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/prepare.5.-1.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.0.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.11.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.35.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.1.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/input.6.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.4.49.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.41.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.6.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.5.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.46.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.2.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.22.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.1.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.6.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.18.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.25.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.2.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.2.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.10.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.5.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.5.-1.temb.raw",
+    "bytes": 21504
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.17.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.2.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.1.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.33.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.6.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.49.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.34.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.7.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/time.0.-1.temb.raw",
+    "bytes": 10752
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.0.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.33.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.5.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.43.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.13.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.23.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.39.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.44.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.24.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.14.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.34.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.49.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.19.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.29.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.10.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.20.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.40.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.30.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.37.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.27.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.17.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.47.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.3.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.4.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.7.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.5.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.42.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.12.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.22.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.32.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/latents.0.-1.video.raw",
+    "bytes": 7246080
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.4.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.35.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.48.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.18.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.28.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.38.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.45.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.25.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.5.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.15.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.2.31.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.5.11.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.21.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.7.3.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.3.41.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.3.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.2.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/body.1.48.hidden.raw",
+    "bytes": 207868416
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.4.26.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.6.16.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.0.46.modulations.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/modulation.1.36.modulations.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-denoising-capture-02/heads.4.-1.audio.raw",
+    "bytes": 52992
+  },
+  {
+    "path": "aether-kit/.local/native-parity-encoded-20261017/image.png",
+    "bytes": 1393459
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic512-recovery.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic384.png",
+    "bytes": 361285
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic512.png",
+    "bytes": 365974
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic512-reference/latents.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic512-reference/pixels.f32",
+    "bytes": 3145728
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic384-reference/latents.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/dynamic384-reference/pixels.f32",
+    "bytes": 2359296
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic512-ids.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic512-noise.f32",
+    "bytes": 262144
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic384-ids.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic384-mask.i32",
+    "bytes": 300
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic512-mask.i32",
+    "bytes": 180
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic384-noise.f32",
+    "bytes": 196608
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic512-placeholder-text.f32",
+    "bytes": 1351680
+  },
+  {
+    "path": "aether-kit/.local/native-dynamic-balanced-20261017/inputs/dynamic384-placeholder-text.f32",
+    "bytes": 5038080
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/recovery.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/dynamic384.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/dynamic512-repeat.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/repeat.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/unload-active.png",
+    "bytes": 337873
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/first.png",
+    "bytes": 1085791
+  },
+  {
+    "path": "aether-kit/.local/native-session-balanced-20261017/dynamic512.png",
+    "bytes": 306561
+  },
+  {
+    "path": "aether-kit/.local/native-recovery-reopen-128-20261018/recovered.png",
+    "bytes": 26659
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-cpu-references-01/body-1-block49-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-cpu-references-01/body-1-block24-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-cpu-references-01/body-0-block49-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-backbone-cpu-references-01/body-0-block24-reference.raw",
+    "bytes": 688128
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block2-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block2-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block1-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block0-temb.raw",
+    "bytes": 193536
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block1-temb.raw",
+    "bytes": 387072
+  },
+  {
+    "path": "aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block0-temb.raw",
+    "bytes": 387072
+  }
+]

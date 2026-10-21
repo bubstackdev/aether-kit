@@ -1,0 +1,421 @@
+{
+  "width": 960,
+  "height": 544,
+  "frames": 22,
+  "tiling": {
+    "tile_height": 256,
+    "tile_width": 256,
+    "y_starts": [
+      0,
+      144,
+      288
+    ],
+    "x_starts": [
+      0,
+      176,
+      352,
+      528,
+      704
+    ],
+    "y_overlaps": [
+      112,
+      112
+    ],
+    "x_overlaps": [
+      80,
+      80,
+      80,
+      80
+    ]
+  },
+  "packed_rows": {
+    "name": "packed",
+    "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/packed.raw",
+    "shape": [
+      1,
+      3570,
+      96
+    ],
+    "dtype": "float32",
+    "sha256": "ccfe3acffcafcaa53c536f5a6b775514da0ff45159b4db31539598605fb7ff6f"
+  },
+  "tiles": [
+    {
+      "pixels": {
+        "name": "pixels-0",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-0.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "8a5db46a6ebe3440236ed12f3b7b10121b3aa4d49ef0b403764d3d94bf59d5cb"
+      },
+      "rows": {
+        "name": "rows-0",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-0.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "b3081eea7f8aaf7f8698ca5f3c7b539d7c13a7a72e5d4799b0d7ade7bb754e32"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-1",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-1.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "29fac737214260ab2ccde7c26a3ab2336b54ff00f0fe8a53702f13c4498cd263"
+      },
+      "rows": {
+        "name": "rows-1",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-1.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "ae7dca3b46f08919c932ea5f4f9c56a0f5ff0ad3b0bcee7fb944ca5ac46b6797"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-2",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-2.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "61b51ab5cd1d2ad3c9d1b0cd5149f4f3072508de9aeca1c935b8ac91bbcb5b9d"
+      },
+      "rows": {
+        "name": "rows-2",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-2.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "2595b1db56b0edc1e44201306eaeb6d1991a10c12a9ef9b3c157eb52b743862d"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-3",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-3.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "17d05309ec445f8126776e7b4f55e988e069d7a0a2f589100fcd76dc8dcf412b"
+      },
+      "rows": {
+        "name": "rows-3",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-3.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "a627e4d5d77a90033fe4f71e1e65359ffae8546c2030dae47178d281343fd8fe"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-4",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-4.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "e0f3b497c04ac6a712fe8efefe776cbafcb07c0f48cab4b567128efaac593c95"
+      },
+      "rows": {
+        "name": "rows-4",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-4.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "2d878b8e6bb324ce8d67e3c40803e87034725f03efa26c9674109c024ca65605"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-5",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-5.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "7b86c901ef158bb835bb744a331e71dc3778b465cf47e3e55a3a5cb6a91db334"
+      },
+      "rows": {
+        "name": "rows-5",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-5.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "c0578e971353d3bca97d009e332d85fdd7138fe75f9302dc29ccf77a9b1487c8"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-6",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-6.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "d407787424ecfce39df087c63ddb33c0f3be8aae94fbdffbfb6ba3fdbeb38f5c"
+      },
+      "rows": {
+        "name": "rows-6",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-6.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "6cef09c9f09851aef88d5cb72873de63715668a88c7acd68b9af6410e3bfae21"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-7",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-7.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "46927a0ddfb3270b12f55addcecd9b157c3279e8dd3f013d67047ff7cfcd2900"
+      },
+      "rows": {
+        "name": "rows-7",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-7.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "b164d75c2f64f23fc18affd3eaa4a3ac96b92c3d6172fa2aae2bbeb526efbe5d"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-8",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-8.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "af123bc166dde3381b0be1e0588fb59d0e1e7b2967975d7f683444a30a7fa25f"
+      },
+      "rows": {
+        "name": "rows-8",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-8.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "7c03715ab5fdd7d908a724b6adfa105fbddf4d43b505969af34fda27f7bfb62b"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-9",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-9.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "b80d527bc6d190f4c05600a5926c2e1b6e94695b09690830322605477fb878e3"
+      },
+      "rows": {
+        "name": "rows-9",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-9.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "c548828b149a9207d72ea24edb0e611055871a4364f61426b331372c564a34b3"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-10",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-10.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "f7c2b402c078521e140f6f865e4a5833e7d7eda21ac500fe0883763615a731ee"
+      },
+      "rows": {
+        "name": "rows-10",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-10.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "866c606c9494f88a6b86cb05dddcab2501fa92057bd3767fea40afc96084f2cd"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-11",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-11.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "e5862610ce4a464367a5e58aa1fcd19866995f74b3c9facc3bd0ba39518d7f3c"
+      },
+      "rows": {
+        "name": "rows-11",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-11.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "9692196b3d2a39b373ad96403a30adf1f76226d021d0002c80c6d95bff10addc"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-12",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-12.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "f9d4a4321e0a3fc3058179d52b6fbbde7e02337242bf8d2e32ebe4661d664d7b"
+      },
+      "rows": {
+        "name": "rows-12",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-12.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "8993d444054b7e3a01ef76cce704271f6fbd236ec78f20df8f58e76ac741fa16"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-13",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-13.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "af5af848e5a8f32a270b01cd7ec0c7c9f4ed09de0655dbfece79b236aded2952"
+      },
+      "rows": {
+        "name": "rows-13",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-13.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "944bdb76f614ecee43ae53d6cefdce2e20d9a76179ee60e89837e32c3e4c5a5f"
+      }
+    },
+    {
+      "pixels": {
+        "name": "pixels-14",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/pixels-14.raw",
+        "shape": [
+          1,
+          3,
+          22,
+          256,
+          256
+        ],
+        "dtype": "float32",
+        "sha256": "1e6f2cd627dc7645ef84506c38ec83e9e11b9a3e47b49f3cf78c23b525f60caf"
+      },
+      "rows": {
+        "name": "rows-14",
+        "path": "/private/tmp/aether-h3-video-spatial/fixtures/spatial/rows-14.raw",
+        "shape": [
+          448,
+          96
+        ],
+        "dtype": "float32",
+        "sha256": "43dde145afbcca701a6bf6cafd21b7b38cf6f8991613c7c0f9b3f908f482458c"
+      }
+    }
+  ],
+  "reference_sha256": "dce98eeec4bd6fac2c20dbc009378faad29e944f2a44a61702e9506dfd23258e",
+  "scope": "original source spatial stitching with deterministic decoder outputs, plus source patchify on odd latent offsets; no decoder stub used for numerical VAE oracle"
+}

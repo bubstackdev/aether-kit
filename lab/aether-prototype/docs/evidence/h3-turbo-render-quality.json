@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "quality_accepted": false,
+  "goal_complete": false,
+  "visual_review": {
+    "frames": [
+      0,
+      16,
+      123
+    ],
+    "finding": "Sampled source PNGs show gray/brown texture without the requested paper bird or wooden desk. Visual quality rejected."
+  },
+  "audio_listening_review": false,
+  "scope": "Media/timing pass is separate from output quality. No complete-trajectory source numerical comparison has passed.",
+  "controller_wall_seconds": 701.0052974160062,
+  "mp4_sha256": "c625814c3bfdf797f0bde21cb89e0f8b7123380d250aa91b37b2f51088448c3b",
+  "gpu_work_stopped": true
+}

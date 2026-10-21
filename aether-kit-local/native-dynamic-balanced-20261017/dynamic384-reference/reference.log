@@ -1,0 +1,10 @@
+run 0: dynamic384, device-encoded, balanced, baseline
+  step 0: 0.573 s; footprint 2153 MiB, Metal 13970 MiB
+  step 1: 0.410 s; footprint 2215 MiB, Metal 14008 MiB
+  step 2: 0.537 s; footprint 2217 MiB, Metal 14008 MiB
+  step 3: 0.490 s; footprint 2217 MiB, Metal 14008 MiB
+  step 4: 0.475 s; footprint 2217 MiB, Metal 14008 MiB
+  step 5: 0.479 s; footprint 2217 MiB, Metal 14008 MiB
+  step 6: 0.481 s; footprint 2218 MiB, Metal 14008 MiB
+  step 7: 0.487 s; footprint 2217 MiB, Metal 14008 MiB
+run 0: 52.582 s, pixels 853bf821ffca822d9e8decd9211ddb11d013179f4d936add935d49d328adb87d

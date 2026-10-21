@@ -1,0 +1,112 @@
+[0/1] Planning build
+Building for production...
+[0/8] Write sources
+[3/8] Write swift-version--58304C5D6DBC2206.txt
+[5/9] Compiling AetherH3 H3BlockProbePlan.swift
+[6/11] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:53:99: error: 'self' captured by a closure before all members were initialized
+ 12 |         let buffer: any MTLBuffer
+ 13 |     }
+ 14 |     private let model: AIModel
+    |                 `- note: 'self.model' not initialized
+ 15 |     private let function: InferenceFunction
+    |                 `- note: 'self.function' not initialized
+ 16 |     private let stream: ComputeStream
+    |                 `- note: 'self.stream' not initialized
+ 17 |     private let fixed: [Binding]
+    |                 `- note: 'self.fixed' not initialized
+ 18 |     private let steps: [[Binding]]
+    |                 `- note: 'self.steps' not initialized
+ 19 |     private let initial: Binding
+    |                 `- note: 'self.initial' not initialized
+ 20 |     private let outputs: [any MTLBuffer]
+    |                 `- note: 'self.outputs' not initialized
+ 21 |     private let observer: (@Sendable (H3ChainEvent) -> Void)?
+    |                 `- note: 'self.observer' not initialized
+ 22 | 
+ 23 |     static func open(_ probe: H3ChainProbePlan.Case,
+    :
+ 51 |             return Binding(name: file.name, spec: file.spec, buffer: buffer)
+ 52 |         }
+ 53 |         let fixed = try probe.base.inputs.filter { ["tags", "cos", "sin"].contains($0.name) }.map(load)
+    |                                                                                                   `- error: 'self' captured by a closure before all members were initialized
+ 54 |         guard let hidden = probe.base.inputs.first(where: { $0.name == "hidden" }) else { throw AetherError.invalidModel("H3 chain lacks initial hidden") }
+ 55 |         let initial = try load(hidden)
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:56:41: error: 'self' captured by a closure before all members were initialized
+ 12 |         let buffer: any MTLBuffer
+ 13 |     }
+ 14 |     private let model: AIModel
+    |                 `- note: 'self.model' not initialized
+ 15 |     private let function: InferenceFunction
+    |                 `- note: 'self.function' not initialized
+ 16 |     private let stream: ComputeStream
+    |                 `- note: 'self.stream' not initialized
+ 17 |     private let fixed: [Binding]
+    |                 `- note: 'self.fixed' not initialized
+ 18 |     private let steps: [[Binding]]
+    |                 `- note: 'self.steps' not initialized
+ 19 |     private let initial: Binding
+    |                 `- note: 'self.initial' not initialized
+ 20 |     private let outputs: [any MTLBuffer]
+    |                 `- note: 'self.outputs' not initialized
+ 21 |     private let observer: (@Sendable (H3ChainEvent) -> Void)?
+    |                 `- note: 'self.observer' not initialized
+ 22 | 
+ 23 |     static func open(_ probe: H3ChainProbePlan.Case,
+    :
+ 54 |         guard let hidden = probe.base.inputs.first(where: { $0.name == "hidden" }) else { throw AetherError.invalidModel("H3 chain lacks initial hidden") }
+ 55 |         let initial = try load(hidden)
+ 56 |         let steps = try probe.steps.map { try ([$0.table] + $0.weights).map(load) }
+    |                                         `- error: 'self' captured by a closure before all members were initialized
+ 57 |         var outputs: [any MTLBuffer] = []
+ 58 |         for _ in 0..<2 {
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:55:27: error: constant 'self.model' used before being initialized
+ 53 |         let fixed = try probe.base.inputs.filter { ["tags", "cos", "sin"].contains($0.name) }.map(load)
+ 54 |         guard let hidden = probe.base.inputs.first(where: { $0.name == "hidden" }) else { throw AetherError.invalidModel("H3 chain lacks initial hidden") }
+ 55 |         let initial = try load(hidden)
+    |                           `- error: constant 'self.model' used before being initialized
+ 56 |         let steps = try probe.steps.map { try ([$0.table] + $0.weights).map(load) }
+ 57 |         var outputs: [any MTLBuffer] = []
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:86:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+84 |         }
+85 |         observer?(.nativeSubmitted)
+86 |         await stream.currentWorkCompleted()
+   |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+87 |         observer?(.nativeCompleted)
+88 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:81:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+79 |             _ = try function.encode(inputs: values, outputViews: views, to: stream)
+80 |         } catch {
+81 |             await stream.currentWorkCompleted()
+   |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+82 |             observer?(.nativeCompleted)
+83 |             throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:94:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 92 |             }
+ 93 |             observer?(H3ChainEvent(block: block, event: .nativeSubmitted))
+ 94 |             await stream.currentWorkCompleted()
+    |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 95 |             observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+ 96 |             try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:89:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 87 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+ 88 |             } catch {
+ 89 |                 await stream.currentWorkCompleted()
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 90 |                 observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+ 91 |                 throw error
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+[#SendingRisksDataRace]: <https://docs.swift.org/compiler/documentation/diagnostics/sending-risks-data-race>
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

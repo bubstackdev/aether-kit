@@ -1,0 +1,23 @@
+{"pid": 33831, "budgetSeconds": 600, "gpuWorkRequested": true}
+{
+  "schema": 1,
+  "startedAt": "2026-10-18T22:26:40.647908+00:00",
+  "command": [
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+    "qualify-h3-phases",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-phases-native-01",
+    "--run"
+  ],
+  "budgetSeconds": 600,
+  "gpuWorkRequested": true,
+  "passed": true,
+  "joined": true,
+  "timedOut": false,
+  "pid": 33831,
+  "exitCode": 0,
+  "elapsedSeconds": 58.022352375031915,
+  "sourcePinsUnchanged": true
+}

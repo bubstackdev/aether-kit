@@ -1,0 +1,506 @@
+{
+  "schema": 1,
+  "scope": "CPU frame identity and downsampled adjacent-frame measurements; no optical-flow or full-motion quality claim",
+  "frames": 124,
+  "distinct_png_hashes": 124,
+  "downsample_width": 120,
+  "downsample_height": 68,
+  "adjacent_differences": [
+    {
+      "frame": 1,
+      "mean_absolute_rgb_difference": 0.756985294117647
+    },
+    {
+      "frame": 2,
+      "mean_absolute_rgb_difference": 0.29505718954248367
+    },
+    {
+      "frame": 3,
+      "mean_absolute_rgb_difference": 0.1701388888888889
+    },
+    {
+      "frame": 4,
+      "mean_absolute_rgb_difference": 0.1747140522875817
+    },
+    {
+      "frame": 5,
+      "mean_absolute_rgb_difference": 0.5206699346405229
+    },
+    {
+      "frame": 6,
+      "mean_absolute_rgb_difference": 0.37455065359477124
+    },
+    {
+      "frame": 7,
+      "mean_absolute_rgb_difference": 0.5730392156862745
+    },
+    {
+      "frame": 8,
+      "mean_absolute_rgb_difference": 1.0468954248366014
+    },
+    {
+      "frame": 9,
+      "mean_absolute_rgb_difference": 1.725653594771242
+    },
+    {
+      "frame": 10,
+      "mean_absolute_rgb_difference": 2.564624183006536
+    },
+    {
+      "frame": 11,
+      "mean_absolute_rgb_difference": 3.3249183006535947
+    },
+    {
+      "frame": 12,
+      "mean_absolute_rgb_difference": 2.423692810457516
+    },
+    {
+      "frame": 13,
+      "mean_absolute_rgb_difference": 1.7246732026143792
+    },
+    {
+      "frame": 14,
+      "mean_absolute_rgb_difference": 0.9673611111111111
+    },
+    {
+      "frame": 15,
+      "mean_absolute_rgb_difference": 1.5563725490196079
+    },
+    {
+      "frame": 16,
+      "mean_absolute_rgb_difference": 2.5977124183006537
+    },
+    {
+      "frame": 17,
+      "mean_absolute_rgb_difference": 2.948529411764706
+    },
+    {
+      "frame": 18,
+      "mean_absolute_rgb_difference": 2.002328431372549
+    },
+    {
+      "frame": 19,
+      "mean_absolute_rgb_difference": 0.9983251633986928
+    },
+    {
+      "frame": 20,
+      "mean_absolute_rgb_difference": 1.4322303921568627
+    },
+    {
+      "frame": 21,
+      "mean_absolute_rgb_difference": 3.651143790849673
+    },
+    {
+      "frame": 22,
+      "mean_absolute_rgb_difference": 1.9760212418300653
+    },
+    {
+      "frame": 23,
+      "mean_absolute_rgb_difference": 1.2557598039215687
+    },
+    {
+      "frame": 24,
+      "mean_absolute_rgb_difference": 1.7151143790849672
+    },
+    {
+      "frame": 25,
+      "mean_absolute_rgb_difference": 2.6016748366013074
+    },
+    {
+      "frame": 26,
+      "mean_absolute_rgb_difference": 4.16343954248366
+    },
+    {
+      "frame": 27,
+      "mean_absolute_rgb_difference": 2.199550653594771
+    },
+    {
+      "frame": 28,
+      "mean_absolute_rgb_difference": 2.370833333333333
+    },
+    {
+      "frame": 29,
+      "mean_absolute_rgb_difference": 3.623488562091503
+    },
+    {
+      "frame": 30,
+      "mean_absolute_rgb_difference": 3.7756944444444445
+    },
+    {
+      "frame": 31,
+      "mean_absolute_rgb_difference": 3.039705882352941
+    },
+    {
+      "frame": 32,
+      "mean_absolute_rgb_difference": 1.8349264705882353
+    },
+    {
+      "frame": 33,
+      "mean_absolute_rgb_difference": 3.435089869281046
+    },
+    {
+      "frame": 34,
+      "mean_absolute_rgb_difference": 4.508169934640523
+    },
+    {
+      "frame": 35,
+      "mean_absolute_rgb_difference": 5.902696078431372
+    },
+    {
+      "frame": 36,
+      "mean_absolute_rgb_difference": 4.155923202614379
+    },
+    {
+      "frame": 37,
+      "mean_absolute_rgb_difference": 4.251266339869281
+    },
+    {
+      "frame": 38,
+      "mean_absolute_rgb_difference": 4.300980392156863
+    },
+    {
+      "frame": 39,
+      "mean_absolute_rgb_difference": 3.8850081699346406
+    },
+    {
+      "frame": 40,
+      "mean_absolute_rgb_difference": 4.595057189542484
+    },
+    {
+      "frame": 41,
+      "mean_absolute_rgb_difference": 4.384803921568627
+    },
+    {
+      "frame": 42,
+      "mean_absolute_rgb_difference": 1.3626633986928105
+    },
+    {
+      "frame": 43,
+      "mean_absolute_rgb_difference": 2.2011846405228757
+    },
+    {
+      "frame": 44,
+      "mean_absolute_rgb_difference": 3.868137254901961
+    },
+    {
+      "frame": 45,
+      "mean_absolute_rgb_difference": 6.253145424836601
+    },
+    {
+      "frame": 46,
+      "mean_absolute_rgb_difference": 5.076838235294118
+    },
+    {
+      "frame": 47,
+      "mean_absolute_rgb_difference": 2.0911356209150327
+    },
+    {
+      "frame": 48,
+      "mean_absolute_rgb_difference": 2.8161764705882355
+    },
+    {
+      "frame": 49,
+      "mean_absolute_rgb_difference": 3.7015522875816993
+    },
+    {
+      "frame": 50,
+      "mean_absolute_rgb_difference": 5.355555555555555
+    },
+    {
+      "frame": 51,
+      "mean_absolute_rgb_difference": 5.2994281045751634
+    },
+    {
+      "frame": 52,
+      "mean_absolute_rgb_difference": 8.081168300653594
+    },
+    {
+      "frame": 53,
+      "mean_absolute_rgb_difference": 3.1786764705882353
+    },
+    {
+      "frame": 54,
+      "mean_absolute_rgb_difference": 3.153513071895425
+    },
+    {
+      "frame": 55,
+      "mean_absolute_rgb_difference": 4.043259803921568
+    },
+    {
+      "frame": 56,
+      "mean_absolute_rgb_difference": 5.452696078431373
+    },
+    {
+      "frame": 57,
+      "mean_absolute_rgb_difference": 3.6649918300653597
+    },
+    {
+      "frame": 58,
+      "mean_absolute_rgb_difference": 5.290522875816993
+    },
+    {
+      "frame": 59,
+      "mean_absolute_rgb_difference": 4.725694444444445
+    },
+    {
+      "frame": 60,
+      "mean_absolute_rgb_difference": 5.150204248366013
+    },
+    {
+      "frame": 61,
+      "mean_absolute_rgb_difference": 4.425735294117647
+    },
+    {
+      "frame": 62,
+      "mean_absolute_rgb_difference": 5.4118055555555555
+    },
+    {
+      "frame": 63,
+      "mean_absolute_rgb_difference": 6.965400326797385
+    },
+    {
+      "frame": 64,
+      "mean_absolute_rgb_difference": 7.9121323529411764
+    },
+    {
+      "frame": 65,
+      "mean_absolute_rgb_difference": 6.212622549019608
+    },
+    {
+      "frame": 66,
+      "mean_absolute_rgb_difference": 5.184027777777778
+    },
+    {
+      "frame": 67,
+      "mean_absolute_rgb_difference": 3.806576797385621
+    },
+    {
+      "frame": 68,
+      "mean_absolute_rgb_difference": 6.096200980392157
+    },
+    {
+      "frame": 69,
+      "mean_absolute_rgb_difference": 6.04906045751634
+    },
+    {
+      "frame": 70,
+      "mean_absolute_rgb_difference": 6.493709150326797
+    },
+    {
+      "frame": 71,
+      "mean_absolute_rgb_difference": 6.200326797385621
+    },
+    {
+      "frame": 72,
+      "mean_absolute_rgb_difference": 4.1751225490196076
+    },
+    {
+      "frame": 73,
+      "mean_absolute_rgb_difference": 5.394812091503268
+    },
+    {
+      "frame": 74,
+      "mean_absolute_rgb_difference": 6.691299019607843
+    },
+    {
+      "frame": 75,
+      "mean_absolute_rgb_difference": 7.986642156862745
+    },
+    {
+      "frame": 76,
+      "mean_absolute_rgb_difference": 14.6859477124183
+    },
+    {
+      "frame": 77,
+      "mean_absolute_rgb_difference": 7.948570261437909
+    },
+    {
+      "frame": 78,
+      "mean_absolute_rgb_difference": 5.403635620915033
+    },
+    {
+      "frame": 79,
+      "mean_absolute_rgb_difference": 3.5330065359477123
+    },
+    {
+      "frame": 80,
+      "mean_absolute_rgb_difference": 5.917851307189543
+    },
+    {
+      "frame": 81,
+      "mean_absolute_rgb_difference": 7.871854575163399
+    },
+    {
+      "frame": 82,
+      "mean_absolute_rgb_difference": 8.115645424836602
+    },
+    {
+      "frame": 83,
+      "mean_absolute_rgb_difference": 8.844648692810457
+    },
+    {
+      "frame": 84,
+      "mean_absolute_rgb_difference": 7.447875816993464
+    },
+    {
+      "frame": 85,
+      "mean_absolute_rgb_difference": 6.296772875816994
+    },
+    {
+      "frame": 86,
+      "mean_absolute_rgb_difference": 4.081658496732026
+    },
+    {
+      "frame": 87,
+      "mean_absolute_rgb_difference": 6.881045751633987
+    },
+    {
+      "frame": 88,
+      "mean_absolute_rgb_difference": 9.12826797385621
+    },
+    {
+      "frame": 89,
+      "mean_absolute_rgb_difference": 9.18999183006536
+    },
+    {
+      "frame": 90,
+      "mean_absolute_rgb_difference": 7.946078431372549
+    },
+    {
+      "frame": 91,
+      "mean_absolute_rgb_difference": 4.763929738562092
+    },
+    {
+      "frame": 92,
+      "mean_absolute_rgb_difference": 4.961397058823529
+    },
+    {
+      "frame": 93,
+      "mean_absolute_rgb_difference": 7.912254901960784
+    },
+    {
+      "frame": 94,
+      "mean_absolute_rgb_difference": 10.476225490196079
+    },
+    {
+      "frame": 95,
+      "mean_absolute_rgb_difference": 10.219975490196079
+    },
+    {
+      "frame": 96,
+      "mean_absolute_rgb_difference": 9.584640522875818
+    },
+    {
+      "frame": 97,
+      "mean_absolute_rgb_difference": 3.849387254901961
+    },
+    {
+      "frame": 98,
+      "mean_absolute_rgb_difference": 6.064174836601307
+    },
+    {
+      "frame": 99,
+      "mean_absolute_rgb_difference": 7.553676470588235
+    },
+    {
+      "frame": 100,
+      "mean_absolute_rgb_difference": 12.54391339869281
+    },
+    {
+      "frame": 101,
+      "mean_absolute_rgb_difference": 4.107638888888889
+    },
+    {
+      "frame": 102,
+      "mean_absolute_rgb_difference": 6.614950980392157
+    },
+    {
+      "frame": 103,
+      "mean_absolute_rgb_difference": 7.065563725490196
+    },
+    {
+      "frame": 104,
+      "mean_absolute_rgb_difference": 6.553553921568628
+    },
+    {
+      "frame": 105,
+      "mean_absolute_rgb_difference": 5.337377450980392
+    },
+    {
+      "frame": 106,
+      "mean_absolute_rgb_difference": 2.6720588235294116
+    },
+    {
+      "frame": 107,
+      "mean_absolute_rgb_difference": 4.483578431372549
+    },
+    {
+      "frame": 108,
+      "mean_absolute_rgb_difference": 4.886519607843137
+    },
+    {
+      "frame": 109,
+      "mean_absolute_rgb_difference": 4.432148692810458
+    },
+    {
+      "frame": 110,
+      "mean_absolute_rgb_difference": 2.48047385620915
+    },
+    {
+      "frame": 111,
+      "mean_absolute_rgb_difference": 4.062540849673202
+    },
+    {
+      "frame": 112,
+      "mean_absolute_rgb_difference": 5.102736928104576
+    },
+    {
+      "frame": 113,
+      "mean_absolute_rgb_difference": 5.342156862745098
+    },
+    {
+      "frame": 114,
+      "mean_absolute_rgb_difference": 3.2525735294117646
+    },
+    {
+      "frame": 115,
+      "mean_absolute_rgb_difference": 2.148447712418301
+    },
+    {
+      "frame": 116,
+      "mean_absolute_rgb_difference": 3.024019607843137
+    },
+    {
+      "frame": 117,
+      "mean_absolute_rgb_difference": 3.4334558823529413
+    },
+    {
+      "frame": 118,
+      "mean_absolute_rgb_difference": 2.201307189542484
+    },
+    {
+      "frame": 119,
+      "mean_absolute_rgb_difference": 2.957720588235294
+    },
+    {
+      "frame": 120,
+      "mean_absolute_rgb_difference": 3.1780637254901962
+    },
+    {
+      "frame": 121,
+      "mean_absolute_rgb_difference": 3.3703431372549018
+    },
+    {
+      "frame": 122,
+      "mean_absolute_rgb_difference": 2.4643382352941177
+    },
+    {
+      "frame": 123,
+      "mean_absolute_rgb_difference": 1.0558823529411765
+    }
+  ],
+  "largest_adjacent_difference": {
+    "frame": 76,
+    "mean_absolute_rgb_difference": 14.6859477124183
+  }
+}

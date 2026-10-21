@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "passed": true,
+  "scope": "CPU final evidence consistency and retained artifact checks; no additional GPU inference",
+  "combined_seconds": 708.3252609589981,
+  "retained_mp4_sha256": "c26718137132e36b82a846d2d28192aa8687cb233d15613cb90329aeed240990",
+  "canonical_gate_passed": true,
+  "shared_window_media_audit_passed": true,
+  "native_child_joined": true,
+  "visual_pilot_accepted": true,
+  "audio_signal_passed": true,
+  "audio_listening_review": false,
+  "all_124_frames_distinct": true,
+  "preparation_cache_files_verified": 408,
+  "new_markdown_links_checked": 42,
+  "gpu_work_stopped": true
+}

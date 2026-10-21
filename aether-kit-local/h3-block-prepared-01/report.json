@@ -1,0 +1,21 @@
+{
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "mode" : "--prepare-only",
+  "nativeExecuted" : false,
+  "passed" : true,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "resources" : {
+
+  },
+  "runs" : [
+
+  ],
+  "schema" : 1,
+  "scope" : "Corrected Turbo8 block 0 at the two captured T2VA cardinalities; sampled CPU oracle comparison, not full pipeline qualification or a benchmark",
+  "selectedFilesVerified" : true,
+  "selectedInputBytes" : {
+    "body-0" : 1228188436,
+    "body-1" : 1228381972
+  },
+  "stage" : "ready"
+}

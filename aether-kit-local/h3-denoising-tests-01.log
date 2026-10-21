@@ -1,0 +1,14 @@
+[0/1] Planning build
+Building for production...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[4/8] Compiling AetherH3 H3BlockProbePlan.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3/H3DenoisingPlan.swift:45:34: error: constant 'self.timeModel' captured by a closure before being initialized
+43 |         layout = try H3Layout(geometry: backbone.blockPlan.geometry, textTags: Array(repeating: 1, count: text.spec.shape[1]))
+44 |         schedule = try H3Schedule()
+45 |         guard schedule.steps.map({ layout.timesteps(for: $0).values.count }) == [1,2,2,2,2,2,2,2] else {
+   |                                  `- error: constant 'self.timeModel' captured by a closure before being initialized
+46 |             throw AetherError.invalidModel("unsupported H3 trajectory timestep cardinalities")
+47 |         }
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

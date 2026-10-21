@@ -1,0 +1,60 @@
+{
+  "bundlePath" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/krea-2-turbo-realism\/macos-any-gpu",
+  "completed" : true,
+  "computePolicy" : "preferGPU",
+  "height" : 512,
+  "images" : [
+    {
+      "generationSeconds" : 30.475659708,
+      "index" : 1,
+      "pixelsSHA256" : "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+      "png" : "001-seed-17017.png",
+      "pngSHA256" : "d2c0a6a2e69c7d0a889592c69a4a51eba25126f133e14923c0992737179c9823",
+      "seed" : 17017,
+      "status" : "complete"
+    },
+    {
+      "generationSeconds" : 16.692463083,
+      "index" : 2,
+      "pixelsSHA256" : "84f6d377f8a6faf64993fa4541ad4be3be656d5baf679a105ecbc8c4d8b6b22c",
+      "png" : "002-seed-17018.png",
+      "pngSHA256" : "e26f0170970acf51b12e9083370d321216cc5d4ac909e562ef60a3d7b9f52697",
+      "seed" : 17018,
+      "status" : "complete"
+    },
+    {
+      "generationSeconds" : 18.86924175,
+      "index" : 3,
+      "pixelsSHA256" : "6b41d27ccb0e8339da4c61a75b87446d9d70911978913983be55475f8f857051",
+      "png" : "003-seed-17017.png",
+      "pngSHA256" : "d2c0a6a2e69c7d0a889592c69a4a51eba25126f133e14923c0992737179c9823",
+      "seed" : 17017,
+      "status" : "complete"
+    }
+  ],
+  "modelStreamsVerified" : false,
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 68719476736,
+  "preparation" : {
+    "bundleFingerprint" : "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+    "conditioningByteCount" : 675840,
+    "conditioningRows" : 11,
+    "conditioningSHA256" : "8f57491b89782e7838e600d48ffa6fafb8f22500d15aadeedcf0c917f24dcf1a",
+    "wasTruncated" : false
+  },
+  "prompt" : "a red fox in fresh snow",
+  "residency" : "balanced",
+  "schema" : 1,
+  "seeds" : [
+    17017,
+    17018,
+    17017
+  ],
+  "setupSeconds" : 29.05865825,
+  "stage" : "complete",
+  "startedAt" : "2026-10-18T18:37:19Z",
+  "steps" : 8,
+  "timingScope" : "Wall clock, not a benchmark. Setup includes assets\/tokenizer\/optional specialization, prompt encoding, hashing and encoder unload. Generation includes model acquisition and progress logging; excludes final hashes, PNG\/report IO and unload. No warm-ups.",
+  "totalSeconds" : 95.370830916,
+  "width" : 512
+}

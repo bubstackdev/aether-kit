@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "gpu_work": false,
+  "original_diagnostic_decode_byte_identical": true,
+  "scope": "128px original VAE versus lifted CPU graph; no full-profile or native decode result",
+  "parameters": 703,
+  "parameter_bytes": 10415475936,
+  "source_snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "recipe_sha256": "aef54552803f64bb4371fbdf833b155289ce3a3d0a6aa6e0434279a4b4b75af9",
+  "bundle_sha256": "385a146438dd8657318b91b96d87487087ff42e5d07b10d3ff1182f8167bac1f"
+}

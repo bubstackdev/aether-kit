@@ -1,0 +1,1561 @@
+{
+  "cases": [
+    {
+      "model_sha256": "015eac772e54f9ddb4fe26efcd89dbe6fc212f7086e451ac2f10a75027ad707f",
+      "name": "prepare",
+      "routes": [
+        {
+          "outputs": {
+            "hidden": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.25,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0003200068500186562,
+              "sampled_row_indices": null,
+              "sha256": "e0fa7fc05cd22723715cc008885dcc5ef6541eb83abf3614adf78365b161276f",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.054308167
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-0",
+      "routes": [
+        {
+          "outputs": {
+            "temb": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1.5683472156524658e-6,
+              "native_shape": [
+                1,
+                2688
+              ],
+              "passed": true,
+              "reference_sha256": "99766f6ba52f2bcf554f3ab54194aa9d48bf8e2213b1925b03fa75961d151302",
+              "relative_l2": 3.945056921367517e-6,
+              "sampled_row_indices": null,
+              "sha256": "1fd3e69c93b12edf4facf9f216bba34fc5b43365c73eb50851491327f50c9dc4",
+              "shape": [
+                1,
+                2688
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.011822416
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-0",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.059247493743896484,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "80f60411c64a0481993897e793dfbb5fcd97a132caeef328a3851c775b38c431",
+              "relative_l2": 0.0022931929882766995,
+              "sampled_row_indices": null,
+              "sha256": "abc1adb8834852ab7aba21073d1e67728d370625dc141e4566994d16fc280d9f",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.16003131866455078,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "5da83395ef86c7efb0c8f81f6588630f59cd41152deeecd330882ac930d627ab",
+              "relative_l2": 0.0026701738831646582,
+              "sampled_row_indices": null,
+              "sha256": "6ad955ea23f2b8f91bf33a176f5633c23a63c5e3eaa55bb00d63ae87fdba1e8d",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.053434709
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-1",
+      "routes": [
+        {
+          "outputs": {
+            "temb": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 5.690380930900574e-6,
+              "native_shape": [
+                2,
+                2688
+              ],
+              "passed": true,
+              "reference_sha256": "0e3a34e169b0d7fee31ffdda75ddfc5ace96f5830236d13b0ccd6dbedd67e542",
+              "relative_l2": 0.000014014327085384758,
+              "sampled_row_indices": null,
+              "sha256": "de4c5e5676c2487e04ab28de30d52c0c36e51b18a65f407f4594a2da2f23c236",
+              "shape": [
+                2,
+                2688
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.003524167
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-1",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.060303688049316406,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "9fd2249c8b1989b97138aa37e3df2b9f4d577b26ff5602c74e069687859f7904",
+              "relative_l2": 0.0024056026768886686,
+              "sampled_row_indices": null,
+              "sha256": "be54a6564cb3a71a7cb00f013c26698999b5049cb48e2d1da1a659eceedb249c",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.1591033935546875,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "37da2956b289255a8928148672a5b744980b378831f9cfb88c737f0ab88c02f3",
+              "relative_l2": 0.0026845039156277698,
+              "sampled_row_indices": null,
+              "sha256": "994817328723db0c632493491ad5921016057f050d20569b0fbd84d8b81e837c",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.051968333
+        }
+      ]
+    },
+    {
+      "model_sha256": "d80425b13e199097fbd25eed42b519de6006aad37000068a4d93b4b86ca38678",
+      "name": "body-0",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "080ce86e3b07875c16ad620626b79eb679db996b6475f49f560ff028da7f85e7",
+              "relative_l2": 0.0035550095635761766,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "f7660c906cdecdc63850f7614bfd995a5e37168ba12d431ddf39efbefe9629a6",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.651697084
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-1",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.6403505
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-zero-bindings",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": true,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0,
+              "sampled_row_indices": null,
+              "sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.647694417
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-original-bindings-restored",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "owned",
+          "seconds": 0.642998167
+        }
+      ]
+    },
+    {
+      "model_sha256": "015eac772e54f9ddb4fe26efcd89dbe6fc212f7086e451ac2f10a75027ad707f",
+      "name": "prepare",
+      "routes": [
+        {
+          "outputs": {
+            "hidden": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.25,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0003200068500186562,
+              "sampled_row_indices": null,
+              "sha256": "e0fa7fc05cd22723715cc008885dcc5ef6541eb83abf3614adf78365b161276f",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.038827083
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-0",
+      "routes": [
+        {
+          "outputs": {
+            "temb": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1.5683472156524658e-6,
+              "native_shape": [
+                1,
+                2688
+              ],
+              "passed": true,
+              "reference_sha256": "99766f6ba52f2bcf554f3ab54194aa9d48bf8e2213b1925b03fa75961d151302",
+              "relative_l2": 3.945056921367517e-6,
+              "sampled_row_indices": null,
+              "sha256": "1fd3e69c93b12edf4facf9f216bba34fc5b43365c73eb50851491327f50c9dc4",
+              "shape": [
+                1,
+                2688
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.0077785
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-0",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.059247493743896484,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "80f60411c64a0481993897e793dfbb5fcd97a132caeef328a3851c775b38c431",
+              "relative_l2": 0.0022931929882766995,
+              "sampled_row_indices": null,
+              "sha256": "abc1adb8834852ab7aba21073d1e67728d370625dc141e4566994d16fc280d9f",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.16003131866455078,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "5da83395ef86c7efb0c8f81f6588630f59cd41152deeecd330882ac930d627ab",
+              "relative_l2": 0.0026701738831646582,
+              "sampled_row_indices": null,
+              "sha256": "6ad955ea23f2b8f91bf33a176f5633c23a63c5e3eaa55bb00d63ae87fdba1e8d",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.041237292
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-1",
+      "routes": [
+        {
+          "outputs": {
+            "temb": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 5.690380930900574e-6,
+              "native_shape": [
+                2,
+                2688
+              ],
+              "passed": true,
+              "reference_sha256": "0e3a34e169b0d7fee31ffdda75ddfc5ace96f5830236d13b0ccd6dbedd67e542",
+              "relative_l2": 0.000014014327085384758,
+              "sampled_row_indices": null,
+              "sha256": "de4c5e5676c2487e04ab28de30d52c0c36e51b18a65f407f4594a2da2f23c236",
+              "shape": [
+                2,
+                2688
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.003029083
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-1",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.060303688049316406,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "9fd2249c8b1989b97138aa37e3df2b9f4d577b26ff5602c74e069687859f7904",
+              "relative_l2": 0.0024056026768886686,
+              "sampled_row_indices": null,
+              "sha256": "be54a6564cb3a71a7cb00f013c26698999b5049cb48e2d1da1a659eceedb249c",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.1591033935546875,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "37da2956b289255a8928148672a5b744980b378831f9cfb88c737f0ab88c02f3",
+              "relative_l2": 0.0026845039156277698,
+              "sampled_row_indices": null,
+              "sha256": "994817328723db0c632493491ad5921016057f050d20569b0fbd84d8b81e837c",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.036483083
+        }
+      ]
+    },
+    {
+      "model_sha256": "d80425b13e199097fbd25eed42b519de6006aad37000068a4d93b4b86ca38678",
+      "name": "body-0",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "080ce86e3b07875c16ad620626b79eb679db996b6475f49f560ff028da7f85e7",
+              "relative_l2": 0.0035550095635761766,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "f7660c906cdecdc63850f7614bfd995a5e37168ba12d431ddf39efbefe9629a6",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.56941875
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-1",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.572620375
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-zero-bindings",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": true,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0,
+              "sampled_row_indices": null,
+              "sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.649292334
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-original-bindings-restored",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_automatic",
+          "seconds": 0.653732375
+        }
+      ]
+    },
+    {
+      "model_sha256": "015eac772e54f9ddb4fe26efcd89dbe6fc212f7086e451ac2f10a75027ad707f",
+      "name": "prepare",
+      "routes": [
+        {
+          "outputs": {
+            "hidden": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.25,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0003200068500186562,
+              "sampled_row_indices": null,
+              "sha256": "e0fa7fc05cd22723715cc008885dcc5ef6541eb83abf3614adf78365b161276f",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.052864666
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-0",
+      "routes": [
+        {
+          "reason": "public API explicitly requires fixed output descriptors; production uses automatic outputs for dynamic functions",
+          "route": "metal_bound",
+          "skipped": true
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-0",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.059247493743896484,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "80f60411c64a0481993897e793dfbb5fcd97a132caeef328a3851c775b38c431",
+              "relative_l2": 0.0022931929882766995,
+              "sampled_row_indices": null,
+              "sha256": "abc1adb8834852ab7aba21073d1e67728d370625dc141e4566994d16fc280d9f",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.16003131866455078,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "5da83395ef86c7efb0c8f81f6588630f59cd41152deeecd330882ac930d627ab",
+              "relative_l2": 0.0026701738831646582,
+              "sampled_row_indices": null,
+              "sha256": "6ad955ea23f2b8f91bf33a176f5633c23a63c5e3eaa55bb00d63ae87fdba1e8d",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.03868775
+        }
+      ]
+    },
+    {
+      "model_sha256": "71ad04a1546188478a951f27f4ea75d4666477dec624fa1cb17d85e3f5502f7a",
+      "name": "time-1",
+      "routes": [
+        {
+          "reason": "public API explicitly requires fixed output descriptors; production uses automatic outputs for dynamic functions",
+          "route": "metal_bound",
+          "skipped": true
+        }
+      ]
+    },
+    {
+      "model_sha256": "42b556de749458e90833bde38ab4e41c43210232740bf8257542c4c662cd2d52",
+      "name": "heads-1",
+      "routes": [
+        {
+          "outputs": {
+            "audio": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.060303688049316406,
+              "native_shape": [
+                1,
+                414,
+                32
+              ],
+              "passed": true,
+              "reference_sha256": "9fd2249c8b1989b97138aa37e3df2b9f4d577b26ff5602c74e069687859f7904",
+              "relative_l2": 0.0024056026768886686,
+              "sampled_row_indices": null,
+              "sha256": "be54a6564cb3a71a7cb00f013c26698999b5049cb48e2d1da1a659eceedb249c",
+              "shape": [
+                1,
+                414,
+                32
+              ]
+            },
+            "video": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.1591033935546875,
+              "native_shape": [
+                1,
+                18870,
+                96
+              ],
+              "passed": true,
+              "reference_sha256": "37da2956b289255a8928148672a5b744980b378831f9cfb88c737f0ab88c02f3",
+              "relative_l2": 0.0026845039156277698,
+              "sampled_row_indices": null,
+              "sha256": "994817328723db0c632493491ad5921016057f050d20569b0fbd84d8b81e837c",
+              "shape": [
+                1,
+                18870,
+                96
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.039712375
+        }
+      ]
+    },
+    {
+      "model_sha256": "d80425b13e199097fbd25eed42b519de6006aad37000068a4d93b4b86ca38678",
+      "name": "body-0",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "080ce86e3b07875c16ad620626b79eb679db996b6475f49f560ff028da7f85e7",
+              "relative_l2": 0.0035550095635761766,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "f7660c906cdecdc63850f7614bfd995a5e37168ba12d431ddf39efbefe9629a6",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.593042334
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-1",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.600423792
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-zero-bindings",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": true,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 0.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "relative_l2": 0.0,
+              "sampled_row_indices": null,
+              "sha256": "a23c5f1b1f296e11f81f3e686bc2c9ab354074e40350d1a71d201e7c91f8c0eb",
+              "shape": [
+                1,
+                19333,
+                5376
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.674979375
+        }
+      ]
+    },
+    {
+      "model_sha256": "e6895b5ebc566fd495a7f0f7426116d6e2b6ba125ee4b80d6cdba00d494a92df",
+      "name": "body-original-bindings-restored",
+      "routes": [
+        {
+          "outputs": {
+            "hidden_out": {
+              "byte_identical": false,
+              "finite": true,
+              "full_output_finite": true,
+              "max_absolute_error": 1024.0,
+              "native_shape": [
+                1,
+                19333,
+                5376
+              ],
+              "passed": true,
+              "reference_sha256": "372a7ce3eabb43d12e4ca5027796fb4c20615ad5bfb30671a40947f8323cd486",
+              "relative_l2": 0.0038414682417643497,
+              "sampled_row_indices": [
+                0,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                49,
+                76,
+                104,
+                131,
+                159,
+                186,
+                214,
+                241,
+                269,
+                296,
+                324,
+                351,
+                379,
+                406,
+                434,
+                462,
+                463,
+                946,
+                1430,
+                1914,
+                2398,
+                2882,
+                3365,
+                3849,
+                4333,
+                4817,
+                5301,
+                5785,
+                6268,
+                6752,
+                7236,
+                7720,
+                8204,
+                8687,
+                9171,
+                9655,
+                10139,
+                10623,
+                11107,
+                11590,
+                12074,
+                12558,
+                13042,
+                13526,
+                14009,
+                14493,
+                14977,
+                15461,
+                15945,
+                16429,
+                16912,
+                17396,
+                17880,
+                18364,
+                18848,
+                19332
+              ],
+              "sha256": "5607e9722c99638b7e58899028213d415622ccbb3d2592f5f4958e3b7e95f753",
+              "shape": [
+                1,
+                64,
+                5376
+              ]
+            }
+          },
+          "route": "metal_bound",
+          "seconds": 0.675127583
+        }
+      ]
+    }
+  ],
+  "corsairs_version": "0.3.0",
+  "elapsed_seconds": 20.321779125,
+  "function_reuse": "same model hash/entry point within each route; fresh functions between routes",
+  "passed": true,
+  "predefined_relative_l2_limit": 0.02,
+  "schema": 1,
+  "scope": "original CPU phase comparisons at production row geometry; no full-trajectory/quality claim; zero-binding case uses the source residual identity, independently checked on 128 CPU rows"
+}

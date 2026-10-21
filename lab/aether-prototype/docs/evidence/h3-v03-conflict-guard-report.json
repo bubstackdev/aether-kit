@@ -1,0 +1,15 @@
+{
+  "bundle": "/private/tmp/aether-h3-benchmark-v03/frozen/bundle.json",
+  "corsairs_version": "0.3.0",
+  "frames": 124,
+  "height": 544,
+  "measured_prefix_steps": 5,
+  "passed": false,
+  "prompt": "integrated_multimodal_description: A painted paper bird unfolds its wings and gently lifts from a wooden desk. One continuous camera shot.\n\noverall_soundscape: Soft paper rustling and quiet room tone.\n\nnon_diegetic_music: No music.",
+  "schema": 1,
+  "scope": "bounded prefix of source 50-step T2VA workload, followed by full decoder readback/stitch/hash; no PNG/WAV/mux, no completed render or quality claim",
+  "seed": 1043,
+  "source_schedule_steps": 50,
+  "steady_state_definition": "steps 2 onward (zero-based), after both graph cardinalities have run once; one process, backend/OS caches retained, no cache purge or fixed clocks",
+  "width": 960
+}

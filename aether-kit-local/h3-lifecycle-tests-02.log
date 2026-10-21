@@ -1,0 +1,199 @@
+[0/1] Planning build
+Building for production...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling AetherProbeTests BatchCommandTests.swift
+[4/6] Compiling AetherKitPackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking AetherKitPackageTests
+Build complete! (3.94s)
+Test Suite 'All tests' started at 2026-10-18 15:03:26.384.
+Test Suite 'All tests' passed at 2026-10-18 15:03:26.385.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test h3NativeFailureReleasesSlotForRetry() started.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+◇ Test h3BlockSessionRejectsOverlapAndRetainsSlotThroughCancellation() started.
+◇ Test batchCancellationWaitsForGenerationThenClosesWithoutSaving() started.
+◇ Test h3BindingGateRejectsFP16StatesAndWrongDimensionsBeforeDispatch() started.
+◇ Test h3QualificationPreparationFailureCannotLaunchNativeOrClaimReady() started.
+◇ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() started.
+◇ Test h3LifecycleRequiresExplicitModeAndKeepsPreparationFailuresNonNative() started.
+◇ Test batchFailuresCloseRendererAndPreserveCompletedImages() started.
+◇ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() started.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test batchArgumentsValidateBeforeAnyModelOrOutputWork() started.
+◇ Test h3CancellationTraceRejectsMissedSubmissionEarlyReleaseAndLateUnload() started.
+◇ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() started.
+◇ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() started.
+◇ Test h3UnloadWaitsForSubmittedWorkAndPreservesOwnedOutput() started.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+◇ Test batchPreparesOnceRendersOrderedSeedsAndSavesVerifiedFiles() started.
+◇ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() started.
+◇ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test batchRejectsExistingOutputWithoutStartingRenderer() started.
+◇ Test benchmarkStatisticsNeverCombineDifferentProfiles() started.
+◇ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+◇ Test h3ProbePlanRejectsAlteredBindingAndReferenceDeclarations() started.
+◇ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() started.
+◇ Test h3ReferenceComparisonSelectsOnlyCapturedRowsAndRejectsUndefinedError() started.
+◇ Test h3QualificationRequiresExplicitModeBeforeCreatingOutput() started.
+◇ Test h3HeaderRequiresCorrectedQKVAndExactTurboAdapterIdentity() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+◇ Test h3LayoutsMatchEveryCapturedPositionTagAndIndex() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+◇ Test h3TurboSchedulerMatchesAllEightIndependentVideoAndAudioUpdates() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+◇ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() started.
+◇ Test h3BF16PreservesBitsAndExponentRangeWithoutFP16Narrowing() started.
+◇ Test h3VideoPatchOrderMatchesIndependentUpstreamOracle() started.
+◇ Test h3TimestepPlansPreserveActualCardinalityAndModalityRows() started.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test h3ModelStreamVerificationChecksBothDeclarationAndBytes() started.
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() started.
+◇ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() started.
+◇ Test h3SchedulerRejectsBadStepsShapesAndNonfiniteArithmetic() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+◇ Test h3GeometrySnapsFramesAndRejectsInvalidOrOverflowingRequests() started.
+◇ Test batchFactoryFailureStillWritesIncompleteReport() started.
+◇ Test h3TensorRejectsInvalidExtentsOverflowAndNonfiniteBits() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+➜ Test nativeDecoderCancellationAndRecovery() skipped.
+◇ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() started.
+◇ Test unloadWaitsForPreparationAndClosesPermanently() started.
+◇ Test decoderCancellationRestoresPipelineAndCanRecover() started.
+◇ Test preparationFailureClosesEncoderAndAllowsRetry() started.
+➜ Test nativeKreaSessionQualification() skipped.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test h3LayoutRejectsInvalidTagsAndAnchorOrder() started.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() started.
+➜ Test nativePipelineDecoderCancellationAndRecovery() skipped.
+◇ Test h3HeaderAcceptsRetainedCorrectedPrototypeExport() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test h3FileVerificationRejectsCorruptionAndKeepsOwnedBytes() started.
+◇ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() started.
+◇ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() started.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test h3LifecycleBoundsRejectFootprintPeaksMetalGrowthAndResidentGrowth() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test h3ProbePlanBindsCorrectedWeightsAndBothActualCardinalities() started.
+◇ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() started.
+➜ Test nativeKreaDynamicParityAndStageCancellation() skipped.
+image 1/3, seed 17
+image 1/3, seed 17
+image 2/3, seed 18
+image 2/3, seed 18
+image 3/3, seed 17
+image 1/3, seed 17
+image 1/3, seed 17
+✔ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() passed after 0.040 seconds.
+✔ Test h3CancellationTraceRejectsMissedSubmissionEarlyReleaseAndLateUnload() passed after 0.040 seconds.
+✔ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() passed after 0.040 seconds.
+✔ Test benchmarkStatisticsNeverCombineDifferentProfiles() passed after 0.040 seconds.
+✔ Test batchArgumentsValidateBeforeAnyModelOrOutputWork() passed after 0.040 seconds.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.040 seconds.
+✔ Test h3BindingGateRejectsFP16StatesAndWrongDimensionsBeforeDispatch() passed after 0.040 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.040 seconds.
+✔ Test batchRejectsExistingOutputWithoutStartingRenderer() passed after 0.040 seconds.
+✔ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() passed after 0.040 seconds.
+✔ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() passed after 0.040 seconds.
+✔ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() passed after 0.040 seconds.
+✔ Test h3ReferenceComparisonSelectsOnlyCapturedRowsAndRejectsUndefinedError() passed after 0.040 seconds.
+✔ Test h3QualificationRequiresExplicitModeBeforeCreatingOutput() passed after 0.040 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.040 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.041 seconds.
+✔ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() passed after 0.041 seconds.
+✔ Test h3QualificationPreparationFailureCannotLaunchNativeOrClaimReady() passed after 0.041 seconds.
+✔ Test h3LifecycleRequiresExplicitModeAndKeepsPreparationFailuresNonNative() passed after 0.041 seconds.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.040 seconds.
+✔ Test h3HeaderRequiresCorrectedQKVAndExactTurboAdapterIdentity() passed after 0.041 seconds.
+✔ Test h3BF16PreservesBitsAndExponentRangeWithoutFP16Narrowing() passed after 0.041 seconds.
+✔ Test h3TurboSchedulerMatchesAllEightIndependentVideoAndAudioUpdates() passed after 0.041 seconds.
+✔ Test h3VideoPatchOrderMatchesIndependentUpstreamOracle() passed after 0.041 seconds.
+✔ Test h3ModelStreamVerificationChecksBothDeclarationAndBytes() passed after 0.041 seconds.
+✔ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() passed after 0.041 seconds.
+✔ Test batchPreparesOnceRendersOrderedSeedsAndSavesVerifiedFiles() passed after 0.041 seconds.
+✔ Test h3SchedulerRejectsBadStepsShapesAndNonfiniteArithmetic() passed after 0.041 seconds.
+✔ Test h3GeometrySnapsFramesAndRejectsInvalidOrOverflowingRequests() passed after 0.041 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.041 seconds.
+✔ Test h3TensorRejectsInvalidExtentsOverflowAndNonfiniteBits() passed after 0.041 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.041 seconds.
+✔ Test batchFactoryFailureStillWritesIncompleteReport() passed after 0.042 seconds.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.042 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.042 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.042 seconds.
+✔ Test h3LayoutRejectsInvalidTagsAndAnchorOrder() passed after 0.042 seconds.
+✔ Test h3HeaderAcceptsRetainedCorrectedPrototypeExport() passed after 0.042 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.043 seconds.
+✔ Test h3FileVerificationRejectsCorruptionAndKeepsOwnedBytes() passed after 0.044 seconds.
+✔ Test batchFailuresCloseRendererAndPreserveCompletedImages() passed after 0.045 seconds.
+✔ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.045 seconds.
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.050 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.051 seconds.
+✔ Test h3LifecycleBoundsRejectFootprintPeaksMetalGrowthAndResidentGrowth() passed after 0.051 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.051 seconds.
+✔ Test specializationRejectsTamperingAndUnknownFields() passed after 0.051 seconds.
+image 1/3, seed 17
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.053 seconds.
+✔ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() passed after 0.054 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.057 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.079 seconds.
+✔ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() passed after 0.079 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.079 seconds.
+✔ Test h3ProbePlanBindsCorrectedWeightsAndBothActualCardinalities() passed after 0.155 seconds.
+✔ Test h3NativeFailureReleasesSlotForRetry() passed after 0.156 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.155 seconds.
+✔ Test h3LayoutsMatchEveryCapturedPositionTagAndIndex() passed after 0.164 seconds.
+✔ Test h3TimestepPlansPreserveActualCardinalityAndModalityRows() passed after 0.183 seconds.
+✔ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() passed after 0.184 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+382 seconds.
+✔ Test batchCancellationWaitsForGenerationThenClosesWithoutSaving() passed after 0.537 seconds.
+✔ Test h3ProbePlanRejectsAlteredBindingAndReferenceDeclarations() passed after 0.537 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 0.539 seconds.
+✔ Test h3BlockSessionRejectsOverlapAndRetainsSlotThroughCancellation() passed after 0.539 seconds.
+✔ Test h3UnloadWaitsForSubmittedWorkAndPreservesOwnedOutput() passed after 0.539 seconds.
+✔ Test rejectsOverlapAndUnloadWaitsForCompletion() passed after 0.539 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 0.539 seconds.
+✔ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() passed after 0.539 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 0.644 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.659 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 0.660 seconds.
+✔ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() passed after 0.757 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.789 seconds.
+✔ Test preparationFailureClosesEncoderAndAllowsRetry() passed after 0.804 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 0.880 seconds.
+✔ Test decoderCancellationRestoresPipelineAndCanRecover() passed after 0.919 seconds.
+✔ Test unloadWaitsForPreparationAndClosesPermanently() passed after 0.941 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 0.967 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 0.991 seconds.
+✔ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() passed after 1.080 seconds.
+✔ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() passed after 1.096 seconds.
+✔ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() passed after 1.106 seconds.
+✔ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() passed after 1.192 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 1.193 seconds.
+✔ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() passed after 1.237 seconds.
+✔ Test run with 89 tests in 0 suites passed after 1.238 seconds.

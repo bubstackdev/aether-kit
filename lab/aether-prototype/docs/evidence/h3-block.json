@@ -1,0 +1,30 @@
+{
+  "generation_available": false,
+  "inputs": {
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "full_generation_bundle_available": false,
+    "input_bytes_verified": 3464704,
+    "joint_base_evaluations": 50,
+    "missing_block_assets": [],
+    "required_corsairs_addition": "bfloat16 descriptors, tensors, native handles and Metal bindings",
+    "rows": 128,
+    "scope": "verified synthetic block inputs; not native inference or clip generation",
+    "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "source_tensor_sha256": "865b6c7ca63083235961df46d4b6feaf2094dcd66261316945e0609f989ea654"
+  },
+  "native": {
+    "byte_identical_to_swift": true,
+    "cached_sha256": "001045fc523793248c74b3894507a72fb1e17c1aac3e2499c47fdf2b3c836c70",
+    "cpu_relative_l2": 0.00354140126210817,
+    "expected_output_sha256": "001045fc523793248c74b3894507a72fb1e17c1aac3e2499c47fdf2b3c836c70",
+    "finite": true,
+    "live_sha256": "001045fc523793248c74b3894507a72fb1e17c1aac3e2499c47fdf2b3c836c70",
+    "modulation_sha256": "28942f089a76cb06977401e74dfc01aaf9b03398779850b03c0d38673ed48817",
+    "passed": true,
+    "rows": 128,
+    "scope": "original-weight synthetic block 0; excludes packing, conditioning, other blocks, scheduler updates and decode",
+    "source_tensor_sha256": "865b6c7ca63083235961df46d4b6feaf2094dcd66261316945e0609f989ea654"
+  },
+  "native_requested": true,
+  "schema": 1
+}

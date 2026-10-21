@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "status": "stopped_due_to_concurrent_render",
+  "benchmark_child_pid": 41184,
+  "controller_pid": 41098,
+  "child_joined": true,
+  "exit_status": -15,
+  "other_renderer": {
+    "pid": 39210,
+    "path": "/Users/zakkeown/Code/atelier/lab/prompt-matrix/vendor/bin/labrender",
+    "sample_scope": "CoreAIRuntime inference sampled while H3 was denoising; 10.7 GiB reported footprint"
+  },
+  "valid_isolated_benchmark": false,
+  "scope": "Startup phase observations and one contended first denoising step only; neither decoder ran. No speed regression ratio can be inferred."
+}

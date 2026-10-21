@@ -1,0 +1,11 @@
+CPU load original corrected blocks 0, 1, 2
+CPU verified all 22 exported bindings for block 0
+CPU verified all 22 exported bindings for block 1
+CPU verified all 22 exported bindings for block 2
+CPU body-0 block 0 production-context reference
+CPU body-0 block 1 production-context reference
+CPU body-0 block 2 production-context reference
+CPU body-1 block 0 production-context reference
+CPU body-1 block 1 production-context reference
+CPU body-1 block 2 production-context reference
+CPU preparation complete; no GPU work

@@ -1,0 +1,90 @@
+[0/1] Planning build
+Building for production...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling AetherNativeTests DynamicParityTests.swift
+[4/6] Compiling AetherKitPackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking AetherKitPackageTests
+Build complete! (6.20s)
+Test Suite 'All tests' started at 2026-10-17 19:14:09.897.
+Test Suite 'All tests' passed at 2026-10-17 19:14:09.899.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.002) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+➜ Test nativeKreaSessionQualification() skipped.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+◇ Test nativeKreaDynamicParityAndStageCancellation() started.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.024 seconds.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.024 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.024 seconds.
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.024 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.024 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.024 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.024 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.024 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.024 seconds.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.024 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.024 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.024 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.024 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.029 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.030 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 0.030 seconds.
+✔ Test rejectsOverlapAndUnloadWaitsForCompletion() passed after 0.030 seconds.
+✔ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.033 seconds.
+✔ Test specializatiowarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+nRejectsTamperingAndUnknownFields() passed after 0.037 seconds.
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.038 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.038 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.038 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.048 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 0.066 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.192 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 0.255 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 0.286 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.292 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.306 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 0.342 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 0.362 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 0.457 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 0.891 seconds.
+native qualification: dynamic512.independentReference
+native qualification: dynamic512.nativeParity
+native qualification: dynamic512.cancelEncoder
+native qualification: dynamic512.recovery
+Note: Some test targets reported failures:
+  - AetherKitPackageTests (Swift Testing)

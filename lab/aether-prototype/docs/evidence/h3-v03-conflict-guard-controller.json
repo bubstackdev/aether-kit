@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "passed": false,
+  "command": [
+    "/private/tmp/aether-h3-benchmark-v03/frozen/h3_benchmark",
+    "/private/tmp/aether-h3-benchmark-v03/frozen/bundle.json",
+    "/private/tmp/aether-h3-benchmark-v03/run-03/report.json",
+    "5"
+  ],
+  "binary_sha256": "f116d0f7e82757fb6ebf91bebb0d3bd6c833e63c000d4bcd8c936f281ea1dcb1",
+  "bundle_sha256": "31b7011343599a4f5c4fded70fd8fe6d65faf7a961c27364d7399aa4c87871fc",
+  "controller_sha256": "d6513a7d32b69fbc1d71564a407bd1d0dba668f598d9dac2795faafa9f719875",
+  "deadline_seconds": 900,
+  "host_before": {
+    "utc": "2026-10-15T22:47:04.278160+00:00",
+    "memory": {
+      "status": 0,
+      "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                   131256.\nPages active:                                1549118.\nPages inactive:                              2112158.\nPages speculative:                             68114.\nPages throttled:                                   0.\nPages wired down:                             236973.\nPages purgeable:                               50104.\n\"Translation faults\":                     1485193792.\nPages copy-on-write:                        22658086.\nPages zero filled:                        1014365158.\nPages reactivated:                          91085730.\nPages purged:                                9580947.\nFile-backed pages:                           3084138.\nAnonymous pages:                              645252.\nPages stored in compressor:                    77813.\nPages occupied by compressor:                  36190.\nDecompressions:                             74213857.\nCompressions:                              117070208.\nPageins:                                   679735449.\nPageouts:                                    9809146.\nSwapins:                                    12356041.\nSwapouts:                                   15164484.\nPages tagged:                                 130464.\nPages tagged resident:                        109284.\nPages tagged compressed:                       21180.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7815.\nPages tag-storage free:                          374.\nPages tag-storage non-tag pageable:           122768.\nPages tag-storage non-tag wired:                  11.\nBytes of compressed tags:                    3087488.\nTagged compressions:                         1496003.\nTagged decompressions:                       1394648.\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "status": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    }
+  },
+  "host_samples": [
+    {
+      "utc": "2026-10-15T22:47:04.323559+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                   128244.\nPages active:                                1550376.\nPages inactive:                              2113699.\nPages speculative:                             68724.\nPages throttled:                                   0.\nPages wired down:                             236160.\nPages purgeable:                               50104.\n\"Translation faults\":                     1485200482.\nPages copy-on-write:                        22658940.\nPages zero filled:                        1014368493.\nPages reactivated:                          91085730.\nPages purged:                                9580947.\nFile-backed pages:                           3086287.\nAnonymous pages:                              646512.\nPages stored in compressor:                    77813.\nPages occupied by compressor:                  36190.\nDecompressions:                             74213857.\nCompressions:                              117070208.\nPageins:                                   679737985.\nPageouts:                                    9809146.\nSwapins:                                    12356041.\nSwapouts:                                   15164484.\nPages tagged:                                 130434.\nPages tagged resident:                        109254.\nPages tagged compressed:                       21180.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7815.\nPages tag-storage free:                          407.\nPages tag-storage non-tag pageable:           122735.\nPages tag-storage non-tag wired:                  11.\nBytes of compressed tags:                    3087488.\nTagged compressions:                         1496003.\nTagged decompressions:                       1394648.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 00:00 R+    21056   0.0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:47:34.402781+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     8186.\nPages active:                                 641397.\nPages inactive:                              3248835.\nPages speculative:                              3409.\nPages throttled:                                   0.\nPages wired down:                             196318.\nPages purgeable:                               46551.\n\"Translation faults\":                     1485734508.\nPages copy-on-write:                        22673452.\nPages zero filled:                        1014909816.\nPages reactivated:                          91085917.\nPages purged:                                9615477.\nFile-backed pages:                           3219888.\nAnonymous pages:                              673753.\nPages stored in compressor:                    76908.\nPages occupied by compressor:                  35664.\nDecompressions:                             74216501.\nCompressions:                              117070208.\nPageins:                                   685040800.\nPageouts:                                    9809146.\nSwapins:                                    12356702.\nSwapouts:                                   15164484.\nPages tagged:                                 130522.\nPages tagged resident:                        110524.\nPages tagged compressed:                       19998.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7844.\nPages tag-storage free:                          134.\nPages tag-storage non-tag pageable:           123004.\nPages tag-storage non-tag wired:                  11.\nBytes of compressed tags:                    2884736.\nTagged compressions:                         1496003.\nTagged decompressions:                       1395830.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 00:30 R+    21104  98.9\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:48:04.500274+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     8407.\nPages active:                                1871212.\nPages inactive:                              1954607.\nPages speculative:                              8769.\nPages throttled:                                   0.\nPages wired down:                             255776.\nPages purgeable:                               49987.\n\"Translation faults\":                     1490497311.\nPages copy-on-write:                        22690576.\nPages zero filled:                        1015622072.\nPages reactivated:                          91091505.\nPages purged:                                9618735.\nFile-backed pages:                           3117185.\nAnonymous pages:                              717403.\nPages stored in compressor:                    75331.\nPages occupied by compressor:                  35037.\nDecompressions:                             74245190.\nCompressions:                              117070208.\nPageins:                                   689108975.\nPageouts:                                    9809159.\nSwapins:                                    12399310.\nSwapouts:                                   15184429.\nPages tagged:                                 134868.\nPages tagged resident:                        115697.\nPages tagged compressed:                       19171.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7920.\nPages tag-storage free:                          194.\nPages tag-storage non-tag pageable:           122823.\nPages tag-storage non-tag wired:                  14.\nBytes of compressed tags:                    2755840.\nTagged compressions:                         1496003.\nTagged decompressions:                       1396657.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 01:00 S+   1375200  22.7\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:48:34.596010+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     7687.\nPages active:                                1914919.\nPages inactive:                              1908918.\nPages speculative:                              6680.\nPages throttled:                                   0.\nPages wired down:                             261163.\nPages purgeable:                               47046.\n\"Translation faults\":                     1494683912.\nPages copy-on-write:                        22705972.\nPages zero filled:                        1016301613.\nPages reactivated:                          91092767.\nPages purged:                                9634261.\nFile-backed pages:                           3113738.\nAnonymous pages:                              716780.\nPages stored in compressor:                    73756.\nPages occupied by compressor:                  34441.\nDecompressions:                             74247926.\nCompressions:                              117070208.\nPageins:                                   692137805.\nPageouts:                                    9809159.\nSwapins:                                    12400016.\nSwapouts:                                   15184429.\nPages tagged:                                 132215.\nPages tagged resident:                        114126.\nPages tagged compressed:                       18089.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7957.\nPages tag-storage free:                          275.\nPages tag-storage non-tag pageable:           122755.\nPages tag-storage non-tag wired:                  14.\nBytes of compressed tags:                    2612608.\nTagged compressions:                         1496003.\nTagged decompressions:                       1397451.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 01:30 R+   2218912  15.3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:49:04.691479+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     7495.\nPages active:                                1590989.\nPages inactive:                              2297688.\nPages speculative:                              2833.\nPages throttled:                                   0.\nPages wired down:                             200452.\nPages purgeable:                               69103.\n\"Translation faults\":                     1498825956.\nPages copy-on-write:                        22720339.\nPages zero filled:                        1016859596.\nPages reactivated:                          91092897.\nPages purged:                                9645946.\nFile-backed pages:                           3138358.\nAnonymous pages:                              753152.\nPages stored in compressor:                    73415.\nPages occupied by compressor:                  34352.\nDecompressions:                             74248515.\nCompressions:                              117070208.\nPageins:                                   695154752.\nPageouts:                                    9809163.\nSwapins:                                    12400099.\nSwapouts:                                   15184429.\nPages tagged:                                 130867.\nPages tagged resident:                        112837.\nPages tagged compressed:                       18030.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7949.\nPages tag-storage free:                          144.\nPages tag-storage non-tag pageable:           122889.\nPages tag-storage non-tag wired:                  11.\nBytes of compressed tags:                    2599680.\nTagged compressions:                         1496003.\nTagged decompressions:                       1397510.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 02:00 R+   2883264  19.9\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:49:34.794098+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                    27438.\nPages active:                                1396588.\nPages inactive:                              2422667.\nPages speculative:                              6519.\nPages throttled:                                   0.\nPages wired down:                             246260.\nPages purgeable:                               24521.\n\"Translation faults\":                     1503429472.\nPages copy-on-write:                        22743204.\nPages zero filled:                        1017408991.\nPages reactivated:                          91092991.\nPages purged:                                9647528.\nFile-backed pages:                           3118998.\nAnonymous pages:                              706776.\nPages stored in compressor:                    73397.\nPages occupied by compressor:                  34332.\nDecompressions:                             74248628.\nCompressions:                              117070208.\nPageins:                                   698389387.\nPageouts:                                    9809163.\nSwapins:                                    12400127.\nSwapouts:                                   15184429.\nPages tagged:                                 130188.\nPages tagged resident:                        112160.\nPages tagged compressed:                       18028.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7943.\nPages tag-storage free:                           65.\nPages tag-storage non-tag pageable:           122968.\nPages tag-storage non-tag wired:                  11.\nBytes of compressed tags:                    2599232.\nTagged compressions:                         1496003.\nTagged decompressions:                       1397512.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 02:30 S+   884464  28.8\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:50:04.882793+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                    23223.\nPages active:                                1121563.\nPages inactive:                              2697717.\nPages speculative:                              9866.\nPages throttled:                                   0.\nPages wired down:                             247184.\nPages purgeable:                               41009.\n\"Translation faults\":                     1508944357.\nPages copy-on-write:                        22759185.\nPages zero filled:                        1018061715.\nPages reactivated:                          91095880.\nPages purged:                                9669112.\nFile-backed pages:                           3077224.\nAnonymous pages:                              751922.\nPages stored in compressor:                    73205.\nPages occupied by compressor:                  34256.\nDecompressions:                             74248847.\nCompressions:                              117070208.\nPageins:                                   702080118.\nPageouts:                                    9809163.\nSwapins:                                    12400139.\nSwapouts:                                   15184429.\nPages tagged:                                 130852.\nPages tagged resident:                        112841.\nPages tagged compressed:                       18011.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7941.\nPages tag-storage free:                          151.\nPages tag-storage non-tag pageable:           122879.\nPages tag-storage non-tag wired:                  14.\nBytes of compressed tags:                    2597376.\nTagged compressions:                         1496003.\nTagged decompressions:                       1397529.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 03:00 R+   1849552  44.1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "utc": "2026-10-15T22:50:34.964220+00:00",
+      "memory": {
+        "status": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                    24296.\nPages active:                                1064154.\nPages inactive:                              2770170.\nPages speculative:                              2934.\nPages throttled:                                   0.\nPages wired down:                             238018.\nPages purgeable:                               34170.\n\"Translation faults\":                     1514680149.\nPages copy-on-write:                        22777480.\nPages zero filled:                        1018613404.\nPages reactivated:                          91097997.\nPages purged:                                9674761.\nFile-backed pages:                           3057609.\nAnonymous pages:                              779649.\nPages stored in compressor:                    73157.\nPages occupied by compressor:                  34237.\nDecompressions:                             74248953.\nCompressions:                              117070208.\nPageins:                                   705922402.\nPageouts:                                    9809163.\nSwapins:                                    12400163.\nSwapouts:                                   15184429.\nPages tagged:                                 130759.\nPages tagged resident:                        112749.\nPages tagged compressed:                       18010.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7941.\nPages tag-storage free:                           51.\nPages tag-storage non-tag pageable:           122979.\nPages tag-storage non-tag wired:                  14.\nBytes of compressed tags:                    2597248.\nTagged compressions:                         1496003.\nTagged decompressions:                       1397530.\n",
+        "stderr": ""
+      },
+      "thermal": {
+        "status": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": ""
+      },
+      "process": {
+        "status": 0,
+        "stdout": "66660 03:30 R+   1593120  35.5\n",
+        "stderr": ""
+      }
+    }
+  ],
+  "scope": "One untraced benchmark child; explicit wall deadline, exit status and cleanup. No cache purge, clock control or GPU concurrency introduced.",
+  "conflicts_before": [],
+  "conflicts_during_run": [
+    {
+      "pid": 63179,
+      "executable": "/Users/zakkeown/Code/atelier/lab/prompt-matrix/vendor/bin/labrender"
+    }
+  ],
+  "error": "Known render driver started during benchmark: [{'pid': 63179, 'executable': '/Users/zakkeown/Code/atelier/lab/prompt-matrix/vendor/bin/labrender'}]",
+  "exit_status": -15,
+  "child_joined": true,
+  "elapsed_seconds": 241.728222500009,
+  "host_after": {
+    "utc": "2026-10-15T22:51:06.017688+00:00",
+    "memory": {
+      "status": 0,
+      "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                  2485755.\nPages active:                                 369177.\nPages inactive:                               850197.\nPages speculative:                              3137.\nPages throttled:                                   0.\nPages wired down:                             236953.\nPages purgeable:                                7964.\n\"Translation faults\":                     1519798147.\nPages copy-on-write:                        22796461.\nPages zero filled:                        1021588793.\nPages reactivated:                          92230228.\nPages purged:                                9722503.\nFile-backed pages:                            965220.\nAnonymous pages:                              257291.\nPages stored in compressor:                   331401.\nPages occupied by compressor:                 188587.\nDecompressions:                             74256163.\nCompressions:                              118765623.\nPageins:                                   710000212.\nPageouts:                                    9809333.\nSwapins:                                    12400175.\nSwapouts:                                   15184429.\nPages tagged:                                 123447.\nPages tagged resident:                         97203.\nPages tagged compressed:                       26244.\nPages tag-storage:                            131072.\nPages tag-storage holding tags:                 7910.\nPages tag-storage free:                        22204.\nPages tag-storage non-tag pageable:           100844.\nPages tag-storage non-tag wired:                  14.\nBytes of compressed tags:                    3976128.\nTagged compressions:                         1505315.\nTagged decompressions:                       1398605.\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "status": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    }
+  }
+}

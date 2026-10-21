@@ -1,0 +1,7 @@
+{
+  "events": [],
+  "original_video_oracle_predefined_limit": 0.02,
+  "passed": false,
+  "schema": 1,
+  "scope": "both original decoders at full profile geometry with seeded synthetic latents; no denoising, media or quality claim"
+}

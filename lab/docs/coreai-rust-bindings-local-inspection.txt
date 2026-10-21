@@ -1,0 +1,611 @@
+Core AI local static inspection
+Date: 2026-10-15
+No inspected Python extension was executed.
+
+
+FILE /Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai_core-1.0.0b2.dist-info/METADATA
+Metadata-Version: 2.4
+Name: coreai-core
+Version: 1.0.0b2
+Summary: CoreAI high-level Python API.
+License-Expression: BSD-3-Clause
+License-File: LICENSE
+Requires-Python: <3.14,>=3.10
+Requires-Dist: ml-dtypes<=0.6.0,>=0.1.0; python_version < '3.13'
+Requires-Dist: ml-dtypes<=0.6.0,>=0.5.0; python_version >= '3.13'
+Requires-Dist: numpy
+Requires-Dist: pillow
+Requires-Dist: typing-extensions
+Requires-Dist: yuvio
+
+
+FILE /Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai/runtime/__init__.py
+# Copyright 2026 Apple Inc.
+#
+# Use of this source code is governed by a BSD-3-Clause license that can
+# be found in the LICENSE file or at https://opensource.org/licenses/BSD-3-Clause
+
+"""CoreAI Runtime."""
+
+import importlib as _importlib
+import importlib.metadata as _meta
+import json as _json
+import logging as _logging
+import sys as _sys
+from os import getenv as _getenv
+from platform import mac_ver as _mac_ver, system as _system
+
+_log = _logging.getLogger(__name__)
+_is_darwin = _system() == "Darwin"
+
+__all__ = []
+
+
+def _is_wheel_install() -> bool:
+    # Is "coreai-core" installed?
+    try:
+        dist = _meta.distribution("coreai-core")
+    except _meta.PackageNotFoundError:
+        return False  # Not installed; running from the build tree via PYTHONPATH
+
+    direct_url = dist.read_text("direct_url.json")
+    if not direct_url:
+        return True  # pip/uv omits direct_url.json
+
+    try:
+        info = _json.loads(direct_url)
+    except _json.JSONDecodeError:
+        # Something went wrong. Warn and assume wheel install.
+        _log.warning("Assuming wheel install")
+        return True
+
+    # Based on PEP 610 `info` will have "archive_info" key if installed from wheel.
+    return "archive_info" in info
+
+
+def _use_os_framework_backing() -> bool:
+    # Check for environment variables that can override behavior.
+    local_env_var_set = _getenv("USE_LOCAL_COREAI") is not None
+    os_env_var_set = _getenv("USE_OS_COREAI") is not None
+    if local_env_var_set and os_env_var_set:
+        _log.warning(
+            "Both environment variables are set: USE_LOCAL_COREAI and "
+            "USE_OS_COREAI. This is a mistake. Using default behavior.",
+        )
+        local_env_var_set = False
+        os_env_var_set = False
+
+    if not _is_darwin:
+        # No Core AI Framework
+        if os_env_var_set:
+            _log.warning(
+                "The USE_OS_COREAI environment variable is set, but "
+                "Core AI Framework is not available in the OS.",
+            )
+        return False
+
+    coreai_os_min_macos_version = 27
+    macos_major_version = int(_mac_ver()[0].split(".")[0])
+    if macos_major_version < coreai_os_min_macos_version:
+        # No Core AI Framework
+        if os_env_var_set:
+            _log.warning(
+                "The USE_OS_COREAI environment variable is set, but "
+                "Core AI Framework is not available for this version of macOS.",
+            )
+        return False
+
+    if _is_wheel_install():
+        # We're installed via a wheel. Use OS unless overridden by environment variable.
+        result = True
+        if local_env_var_set:
+            _log.warning(
+                "Wheel installation detected but USE_LOCAL_COREAI "
+                "environment variable is set. Using local Core AI Framework.",
+            )
+            result = False
+    else:
+        # This is a dev install. Use local unless overridden by environment variable.
+        result = False
+        if os_env_var_set:
+            _log.warning(
+                "Dev installation detected but USE_OS_COREAI "
+                "environment variable is set. Using OS Core AI Framework.",
+            )
+            result = True
+        else:
+            _log.warning("Dev installation detected. Using local Core AI Framework.")
+
+    return result
+
+
+_use_os_coreai = _use_os_framework_backing()
+_so_suffix = "_os" if _use_os_coreai else ""
+_module_name = f"coreai.runtime._coreai_runtime{_so_suffix}"
+_alias_name = f"odie_runner.coreai_runtime._coreai_runtime{_so_suffix}"
+
+# If the odie_runner copy was loaded first, reuse it to prevent dual-loading the
+# same .so (which corrupts Swift global state). Otherwise load under our name and
+# pre-register under the odie_runner name so it won't be loaded a second time.
+if _alias_name in _sys.modules:
+    _mod = _sys.modules[_alias_name]
+    _sys.modules[_module_name] = _mod
+else:
+    _mod = _importlib.import_module(_module_name)
+    _sys.modules.setdefault(_alias_name, _mod)
+
+_import_list = [
+    "_AIModel",
+    "_InferenceFunction",
+    "_NDArray",
+    "_AIModelAsset",
+    "AIModelAssetMetadata",
+    "AIModelAssetSummary",
+    "CompileIdentifiers",
+    "ImageDescriptor",
+    "InferenceFunctionDescriptor",
+    "IntermediateLogger",
+    "LogEvent",
+    "NDArrayDescriptor",
+    "Profiler",
+]
+
+if _is_darwin:
+    _import_list += ["ComputeUnitKind", "_SpecializationOptions"]
+
+for _name in _import_list:
+    globals()[_name] = getattr(_mod, _name)
+
+# _PixelBuffer requires CoreVideo which is only available on Apple platforms.
+HAS_IMAGE_SUPPORT: bool = hasattr(_mod, "_PixelBuffer")
+if HAS_IMAGE_SUPPORT:
+    globals()["_PixelBuffer"] = _mod._PixelBuffer  # noqa: SLF001
+
+from coreai.runtime._aimodel import AIModel  # noqa: E402
+from coreai.runtime._inference_function import (  # noqa: E402
+    InferenceFunction,
+)
+from coreai.runtime._ndarray import NDArray, StorageKind  # noqa: E402
+from coreai.runtime._specialization_options import SpecializationOptions  # noqa: E402
+
+__all__ += [
+    "HAS_IMAGE_SUPPORT",
+    "AIModel",
+    "AIModelAssetMetadata",
+    "AIModelAssetSummary",
+    "CompileIdentifiers",
+    "ImageDescriptor",
+    "InferenceFunction",
+    "InferenceFunctionDescriptor",
+    "IntermediateLogger",
+    "LogEvent",
+    "NDArray",
+    "NDArrayDescriptor",
+    "Profiler",
+    "SpecializationOptions",
+    "StorageKind",
+    "_AIModelAsset",
+    "_use_os_coreai",
+]
+
+if _is_darwin:
+    __all__ += ["ComputeUnitKind"]
+
+
+BINARY SHA256 da909ef79101acdbf53702abfdd52aad1b9b3bef38131666584653568fc5ed95
+
+COMMAND ['otool', '-L', '/Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai/runtime/_coreai_runtime_os.cpython-312-darwin.so']
+/Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai/runtime/_coreai_runtime_os.cpython-312-darwin.so:
+	/System/Library/Frameworks/CoreAI.framework/Versions/A/CoreAI (compatibility version 0.0.0, current version 0.0.0)
+	/System/Library/Frameworks/MetalPerformanceShadersGraph.framework/Versions/A/MetalPerformanceShadersGraph (compatibility version 1.0.0, current version 1.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)
+	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5027.0.51)
+	/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo (compatibility version 1.2.0, current version 758.21.0)
+	/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5027.0.51)
+	/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)
+	/usr/lib/swift/libswiftCore.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/swift/libswiftCoreFoundation.dylib (compatibility version 1.0.0, current version 120.100.0, weak)
+	/usr/lib/swift/libswiftDispatch.dylib (compatibility version 1.0.0, current version 1604.0.0, weak)
+	/usr/lib/swift/libswiftIOKit.dylib (compatibility version 1.0.0, current version 1.0.0, weak)
+	/usr/lib/swift/libswiftMetal.dylib (compatibility version 1.0.0, current version 381.0.0, weak)
+	/usr/lib/swift/libswiftOSLog.dylib (compatibility version 1.0.0, current version 10.0.0, weak)
+	/usr/lib/swift/libswiftObjectiveC.dylib (compatibility version 1.0.0, current version 966.0.0, weak)
+	/usr/lib/swift/libswiftXPC.dylib (compatibility version 1.0.0, current version 166.0.0, weak)
+	/usr/lib/swift/libswift_Builtin_float.dylib (compatibility version 0.0.0, current version 0.0.0, weak)
+	/usr/lib/swift/libswift_Concurrency.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/swift/libswiftos.dylib (compatibility version 1.0.0, current version 1085.0.0)
+
+STDERR
+
+
+COMMAND ['nm', '-u', '/Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai/runtime/_coreai_runtime_os.cpython-312-darwin.so']
+_$s11CoreAIAsset12AIModelAssetV10contentsOfAC10Foundation3URLV_tKcfC
+_$s11CoreAIAsset12AIModelAssetV14programHashURL10Foundation0G0Vvg
+_$s11CoreAIAsset12AIModelAssetV14updateMetadatayyyAC0F0VzKXEKF
+_$s11CoreAIAsset12AIModelAssetV15ValueDescriptorV4nameSSvg
+_$s11CoreAIAsset12AIModelAssetV15ValueDescriptorV8typeNameSSvg
+_$s11CoreAIAsset12AIModelAssetV15ValueDescriptorVMa
+_$s11CoreAIAsset12AIModelAssetV15ValueDescriptorVMn
+_$s11CoreAIAsset12AIModelAssetV18FunctionDescriptorV4nameSSvg
+_$s11CoreAIAsset12AIModelAssetV18FunctionDescriptorV6inputsSayAC05ValueF0VGvg
+_$s11CoreAIAsset12AIModelAssetV18FunctionDescriptorV6statesSayAC05ValueF0VGvg
+_$s11CoreAIAsset12AIModelAssetV18FunctionDescriptorV7outputsSayAC05ValueF0VGvg
+_$s11CoreAIAsset12AIModelAssetV18FunctionDescriptorVMa
+_$s11CoreAIAsset12AIModelAssetV18programBytecodeURL10Foundation0G0Vvg
+_$s11CoreAIAsset12AIModelAssetV20CompatibilityVersionV11descriptionSSvg
+_$s11CoreAIAsset12AIModelAssetV20CompatibilityVersionVMa
+_$s11CoreAIAsset12AIModelAssetV20CompatibilityVersionVMn
+_$s11CoreAIAsset12AIModelAssetV20CompatibilityVersionVs23CustomStringConvertibleAAMc
+_$s11CoreAIAsset12AIModelAssetV22removeDerivedArtifactsyyKF
+_$s11CoreAIAsset12AIModelAssetV3url10Foundation3URLVvg
+_$s11CoreAIAsset12AIModelAssetV6create2at8metadataAC10Foundation3URLV_AC8MetadataVtKFZ
+_$s11CoreAIAsset12AIModelAssetV7SummaryV11StorageTypeV5countSivg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV11StorageTypeV8typeNameSSvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV11StorageTypeVMa
+_$s11CoreAIAsset12AIModelAssetV7SummaryV11StorageTypeVMn
+_$s11CoreAIAsset12AIModelAssetV7SummaryV12computeTypesSaySSGvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV12storageTypesSayAE11StorageTypeVGvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV14OperationCountV13operationNameSSvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV14OperationCountV5countSivg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV14OperationCountVMa
+_$s11CoreAIAsset12AIModelAssetV7SummaryV14OperationCountVMn
+_$s11CoreAIAsset12AIModelAssetV7SummaryV20compatibilityVersionAC013CompatibilityG0VSgvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV21operationDistributionSayAE14OperationCountVGvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryV9functionsSayAC18FunctionDescriptorVGvg
+_$s11CoreAIAsset12AIModelAssetV7SummaryVMa
+_$s11CoreAIAsset12AIModelAssetV7SummaryVMn
+_$s11CoreAIAsset12AIModelAssetV7isValid2atSb10Foundation3URLV_tFZ
+_$s11CoreAIAsset12AIModelAssetV7summary19includingStatisticsAC7SummaryVSgSb_tKF
+_$s11CoreAIAsset12AIModelAssetV8MetadataV014creatorDefinedE0SDySSAE07CreatorG5ValueOGvM
+_$s11CoreAIAsset12AIModelAssetV8MetadataV014creatorDefinedE0SDySSAE07CreatorG5ValueOGvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV11descriptionSSvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV11descriptionSSvs
+_$s11CoreAIAsset12AIModelAssetV8MetadataV12creationDate10Foundation0G0VSgvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV12creationDate10Foundation0G0VSgvs
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO10dictionaryyAGSDySSAGGcAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO4boolyAGSbcAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO5arrayyAGSayAGGcAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO6numberyAGSdcAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO6stringyAGSScAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueO7integeryAGSicAGmFWC
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueOMa
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueOMn
+_$s11CoreAIAsset12AIModelAssetV8MetadataV19CreatorDefinedValueOs23CustomStringConvertibleAAMc
+_$s11CoreAIAsset12AIModelAssetV8MetadataV6authorSSvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV6authorSSvs
+_$s11CoreAIAsset12AIModelAssetV8MetadataV7licenseSSvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV7licenseSSvs
+_$s11CoreAIAsset12AIModelAssetV8MetadataV8producerSSvg
+_$s11CoreAIAsset12AIModelAssetV8MetadataV8producerSSvs
+_$s11CoreAIAsset12AIModelAssetV8MetadataVAEycfC
+_$s11CoreAIAsset12AIModelAssetV8MetadataVMa
+_$s11CoreAIAsset12AIModelAssetV8MetadataVMn
+_$s11CoreAIAsset12AIModelAssetV8metadataAC8MetadataVvg
+_$s11CoreAIAsset12AIModelAssetVMa
+_$s11CoreAIAsset12AIModelAssetVMn
+_$s12CoreAICommon12LogEventDataOMa
+_$s12CoreAICommon12LogEventDataOs23CustomStringConvertibleAAMc
+_$s12CoreAICommon12LogEventKindO7runtimeyA2CmFWC
+_$s12CoreAICommon12LogEventKindOMa
+_$s12CoreAICommon12LogEventKindOMn
+_$s12CoreAICommon12LogEventKindOSHAAMc
+_$s12CoreAICommon12LogEventKindOSQAAMc
+_$s12CoreAICommon13LogEventPhaseOMa
+_$s12CoreAICommon13LogEventPhaseOs23CustomStringConvertibleAAMc
+_$s12CoreAICommon18CompileIdentifiersV10delegateIds6UInt64Vvg
+_$s12CoreAICommon18CompileIdentifiersV2ids6UInt64Vvg
+_$s12CoreAICommon18CompileIdentifiersVMa
+_$s12CoreAICommon18CompileIdentifiersVMn
+_$s12CoreAICommon18CompileIdentifiersVSHAAMc
+_$s12CoreAICommon18CompileIdentifiersVSQAAMc
+_$s12CoreAICommon18CompileIdentifiersVyACs6UInt64V_AEtcfC
+_$s12CoreAICommon8LogEventV10compileIdsAA18CompileIdentifiersVvg
+_$s12CoreAICommon8LogEventV4dataAA0cD4DataOvg
+_$s12CoreAICommon8LogEventV5phaseAA0cD5PhaseOvg
+_$s12CoreAICommon8LogEventV7eventIdSSvg
+_$s12CoreAICommon8LogEventV8metadataSDyS2SGvg
+_$s12CoreAICommon8LogEventV9timestamps6UInt64Vvg
+_$s12CoreAICommon8LogEventVMa
+_$s12CoreAICommon8LogEventVMn
+_$s12CoreAICommon8ProfilerV13ConfigurationV10eventKinds17allowEventBuffersAEShyAA03LogH4KindOG_SbtcfC
+_$s12CoreAICommon8ProfilerV13ConfigurationVMa
+_$s12CoreAICommon8ProfilerV9isEnabled13configuration8logEvent0gH5Begin0gH3End0gH6BufferACSb_AC13ConfigurationVyAA03LogH0VYbcs6UInt64VAMYbcyAM_AOtYbcy10Foundation4DataV_AA18CompileIdentifiersVs11AnySequenceVyAMGARYbctYbctcfC
+_$s12CoreAICommon8ProfilerVMa
+_$s12CoreAICommon8ProfilerVMn
+_$s13CoreAIRuntime12IntermediateO10IdentifierVMa
+_$s13CoreAIRuntime12IntermediateO4KindO5inputyA2EmFWC
+_$s13CoreAIRuntime12IntermediateO4KindO6outputyA2EmFWC
+_$s13CoreAIRuntime12IntermediateO4KindO7unknownyA2EmFWC
+_$s13CoreAIRuntime12IntermediateO4KindOMa
+_$s13CoreAIRuntime12IntermediateO4MaskVMa
+_$s13CoreAIRuntime12IntermediateO4MaskVMn
+_$s13CoreAIRuntime12IntermediateO5ViewsV4keysSayAC10IdentifierVGvg
+_$s13CoreAIRuntime12IntermediateO5ViewsV4kindAC4KindOvg
+_$s13CoreAIRuntime12IntermediateO5ViewsVyAA14InferenceValueV4ViewVAC10IdentifierVcig
+_$s13CoreAIRuntime13SharedNDArrayV9unsafeCoWAA0D0VyF
+_$s13CoreAIRuntime13SharedNDArrayVMa
+_$s13CoreAIRuntime14InferenceValueV10DescriptorO5imageyAeA05ImageE0VcAEmFWC
+_$s13CoreAIRuntime14InferenceValueV10DescriptorO7ndArrayyAeA07NDArrayE0VcAEmFWC
+_$s13CoreAIRuntime14InferenceValueV10DescriptorOMa
+_$s13CoreAIRuntime14InferenceValueV10DescriptorOMn
+_$s13CoreAIRuntime14InferenceValueV10takeTensorAA7NDArrayVSgyF
+_$s13CoreAIRuntime14InferenceValueV11pixelBuffer0A5Video014CVMutablePixelF0VSgvg
+_$s13CoreAIRuntime14InferenceValueV4ViewV7ndArrayAA7NDArrayV03RawE0VSgyF
+_$s13CoreAIRuntime14InferenceValueV4ViewVMa
+_$s13CoreAIRuntime14InferenceValueVMa
+_$s13CoreAIRuntime14InferenceValueVMn
+_$s13CoreAIRuntime15ImageDescriptorV15pixelFormatTypes6UInt32Vvg
+_$s13CoreAIRuntime15ImageDescriptorV5widthSivg
+_$s13CoreAIRuntime15ImageDescriptorV6heightSivg
+_$s13CoreAIRuntime15ImageDescriptorVMa
+_$s13CoreAIRuntime15ImageDescriptorVMn
+_$s13CoreAIRuntime17InferenceFunctionV10descriptorAA0cD10DescriptorVvg
+_$s13CoreAIRuntime17InferenceFunctionV12MutableViewsV6insert_3foryAA7NDArrayV0E7RawViewVn_SStF
+_$s13CoreAIRuntime17InferenceFunctionV12MutableViewsVAEycfC
+_$s13CoreAIRuntime17InferenceFunctionV12MutableViewsVMa
+_$s13CoreAIRuntime17InferenceFunctionV3run6inputs6states11outputViewsAC7OutputsVAC6InputsV_AC07MutableI0VnAMntYaKF
+_$s13CoreAIRuntime17InferenceFunctionV3run6inputs6states11outputViewsAC7OutputsVAC6InputsV_AC07MutableI0VnAMntYaKFTu
+_$s13CoreAIRuntime17InferenceFunctionV6InputsV6insert_3foryAA7NDArrayV7RawViewVn_SStF
+_$s13CoreAIRuntime17InferenceFunctionV6InputsV6insert_3foryx_SStAA0C5ValueV17ViewRepresentableRzRi_zlF
+_$s13CoreAIRuntime17InferenceFunctionV6InputsVAEycfC
+_$s13CoreAIRuntime17InferenceFunctionV6InputsVMa
+_$s13CoreAIRuntime17InferenceFunctionV6InputsVMn
+_$s13CoreAIRuntime17InferenceFunctionV7OutputsV5namesQrvg
+_$s13CoreAIRuntime17InferenceFunctionV7OutputsV5namesQrvpQOMQ
+_$s13CoreAIRuntime17InferenceFunctionV7OutputsV6removeyAA0C5ValueVSgSSF
+_$s13CoreAIRuntime17InferenceFunctionV7OutputsVMa
+_$s13CoreAIRuntime17InferenceFunctionVMa
+_$s13CoreAIRuntime17InferenceFunctionVMn
+_$s13CoreAIRuntime17NDArrayDescriptorV10scalarType5shape11storageKindAcA0C0V06ScalarF0O_SaySiGAC07StorageI0OtcfC
+_$s13CoreAIRuntime17NDArrayDescriptorV10scalarTypeAA0C0V06ScalarF0Ovg
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindO11metalBufferyA2EmFWC
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindO2eeoiySbAE_AEtFZ
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindO5bytesyA2EmFWC
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindO9ioSurfaceyA2EmFWC
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindOMa
+_$s13CoreAIRuntime17NDArrayDescriptorV11StorageKindOMn
+_$s13CoreAIRuntime17NDArrayDescriptorV11storageKindAC07StorageF0Ovg
+_$s13CoreAIRuntime17NDArrayDescriptorV4rankSivg
+_$s13CoreAIRuntime17NDArrayDescriptorV5shapeSaySiGvg
+_$s13CoreAIRuntime17NDArrayDescriptorVMa
+_$s13CoreAIRuntime17NDArrayDescriptorVMn
+_$s13CoreAIRuntime18IntermediateLoggerV13ConfigurationV03logC3Ops17intermediateMasksAEShy0A8AICommon18CompileIdentifiersVG_SDyAjA0C0O4MaskVGtcfC
+_$s13CoreAIRuntime18IntermediateLoggerV13ConfigurationV03logC3OpsShy0A8AICommon18CompileIdentifiersVGvg
+_$s13CoreAIRuntime18IntermediateLoggerV13ConfigurationVMa
+_$s13CoreAIRuntime18IntermediateLoggerV13configurationAC13ConfigurationVvg
+_$s13CoreAIRuntime18IntermediateLoggerV9isEnabled13configuration16logIntermediatesACSb_AC13ConfigurationVyAA0C0O5ViewsV_0A8AICommon18CompileIdentifiersVSayAJ10LogMessageOGtYbctcfC
+_$s13CoreAIRuntime18IntermediateLoggerV9isEnabledSbvg
+_$s13CoreAIRuntime18IntermediateLoggerVMa
+_$s13CoreAIRuntime18IntermediateLoggerVMn
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV05inputE02ofAA0C5ValueV0E0OSgSS_tF
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV05stateE02ofAA0C5ValueV0E0OSgSS_tF
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV06outputE02ofAA0C5ValueV0E0OSgSS_tF
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV10inputNamesSaySSGvg
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV10stateNamesSaySSGvg
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV11outputNamesSaySSGvg
+_$s13CoreAIRuntime27InferenceFunctionDescriptorV4nameSSvg
+_$s13CoreAIRuntime27InferenceFunctionDescriptorVMa
+_$s13CoreAIRuntime27InferenceFunctionDescriptorVMn
+_$s13CoreAIRuntime7AIModelV0A11AIDelegatesE10contentsOf7cpuOnlyAC10Foundation3URLV_SbtYaKcfC
+_$s13CoreAIRuntime7AIModelV0A11AIDelegatesE10contentsOf7cpuOnlyAC10Foundation3URLV_SbtYaKcfCTu
+_$s13CoreAIRuntime7AIModelV0A11AIDelegatesE10contentsOf7optionsAC10Foundation3URLV_AD21SpecializationOptionsVtYaKcfC
+_$s13CoreAIRuntime7AIModelV0A11AIDelegatesE10contentsOf7optionsAC10Foundation3URLV_AD21SpecializationOptionsVtYaKcfCTu
+_$s13CoreAIRuntime7AIModelV10debugInfosSayAC15DebugInfoRecordVGvg
+_$s13CoreAIRuntime7AIModelV12loadFunction5named8profiler12dependencies18intermediateLoggerAA09InferenceE0VSgSS_0A8AICommon8ProfilerVSgSayACGAA012IntermediateJ0VSgtKF
+_$s13CoreAIRuntime7AIModelV13functionNamesSaySSGvg
+_$s13CoreAIRuntime7AIModelV15DebugInfoRecordVMa
+_$s13CoreAIRuntime7AIModelV15DebugInfoRecordVMn
+_$s13CoreAIRuntime7AIModelV15DebugInfoRecordVSEAAMc
+_$s13CoreAIRuntime7AIModelV18compiledContentsOfAC10Foundation3URLV_tKcfC
+_$s13CoreAIRuntime7AIModelVMa
+_$s13CoreAIRuntime7AIModelVMn
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO10float8e5m2yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO12float4e2m1fnyA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO12float8e4m3fnyA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO12float8e8m0fnyA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO4boolyA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO4int2yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO4int4yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO4int8yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5int16yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5int32yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5int64yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5uint1yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5uint2yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5uint4yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO5uint8yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO6uint16yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO6uint32yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO6uint64yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO7float16yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO7float32yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO7float64yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO8bfloat16yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO8bitCountSivg
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO8cfloat16yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO8cfloat32yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO8cfloat64yA2EmFWC
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeO9byteCountSivg
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeOMa
+_$s13CoreAIRuntime7NDArrayV10ScalarTypeOMn
+_$s13CoreAIRuntime7NDArrayV10descriptorAcA0C10DescriptorV_tcfC
+_$s13CoreAIRuntime7NDArrayV10scalarTypeAC06ScalarE0Ovg
+_$s13CoreAIRuntime7NDArrayV11scalarCountSivg
+_$s13CoreAIRuntime7NDArrayV14MutableRawViewV16storageByteCountSiyF
+_$s13CoreAIRuntime7NDArrayV14MutableRawViewV6_startSvyF
+_$s13CoreAIRuntime7NDArrayV14MutableRawViewVMa
+_$s13CoreAIRuntime7NDArrayV14mutableRawViewAC07MutableeF0VyF
+_$s13CoreAIRuntime7NDArrayV5shape10scalarType7stridesACSaySiG_AC06ScalarF0OAGtcfC
+_$s13CoreAIRuntime7NDArrayV5shapeSaySiGvg
+_$s13CoreAIRuntime7NDArrayV7RawViewV10interleaves4SpanVySiGvg
+_$s13CoreAIRuntime7NDArrayV7RawViewV16unsafeTakeSharedAA0hC0VyF
+_$s13CoreAIRuntime7NDArrayV7RawViewV5bytess0D4SpanVvg
+_$s13CoreAIRuntime7NDArrayV7RawViewVMa
+_$s13CoreAIRuntime7NDArrayV7RawViewVMn
+_$s13CoreAIRuntime7NDArrayV7rawViewAC03RawE0VyF
+_$s13CoreAIRuntime7NDArrayV7stridesSaySiGvg
+_$s13CoreAIRuntime7NDArrayVMa
+_$s13CoreAIRuntime7NDArrayVMn
+_$s14CoreAICompiler15ProgramMetadataV20CompatibilityVersionO3v27yA2EmFWC
+_$s14CoreAICompiler15ProgramMetadataV20CompatibilityVersionO5rangeSNySiGvg
+_$s14CoreAICompiler15ProgramMetadataV20CompatibilityVersionOMa
+_$s14CoreAICompiler8CompilerC18DebugConfigurationV05writeD4InfoSbvs
+_$s14CoreAICompiler8CompilerC18DebugConfigurationV06enableD4InfoSbvs
+_$s14CoreAICompiler8CompilerC18DebugConfigurationVAEycfC
+_$s14CoreAICompiler8CompilerC18DebugConfigurationVMa
+_$s14CoreAICompiler8CompilerC18DebugConfigurationVMn
+_$s14CoreAICompiler8CompilerC18DebugConfigurationVSQAAMc
+_$s15CoreAIDelegates15ComputeUnitKindO12neuralEngineyA2CmFWC
+_$s15CoreAIDelegates15ComputeUnitKindO14availableKindsShyACGvgZ
+_$s15CoreAIDelegates15ComputeUnitKindO3cpuyA2CmFWC
+_$s15CoreAIDelegates15ComputeUnitKindO3gpuyA2CmFWC
+_$s15CoreAIDelegates15ComputeUnitKindOMa
+_$s15CoreAIDelegates15ComputeUnitKindOMn
+_$s15CoreAIDelegates21SpecializationOptionsV18debugConfiguration0A10AICompiler8CompilerC05DebugF0VSgvg
+_$s15CoreAIDelegates21SpecializationOptionsV18debugConfiguration0A10AICompiler8CompilerC05DebugF0VSgvs
+_$s15CoreAIDelegates21SpecializationOptionsV23allowedComputeUnitKindsShyAA0fG4KindOGvg
+_$s15CoreAIDelegates21SpecializationOptionsV24preferredComputeUnitKindAA0fgH0OSgvg
+_$s15CoreAIDelegates21SpecializationOptionsV24preferredComputeUnitKindAcA0fgH0O_tcfC
+_$s15CoreAIDelegates21SpecializationOptionsV7cpuOnlyACvgZ
+_$s15CoreAIDelegates21SpecializationOptionsV7defaultACvgZ
+_$s15CoreAIDelegates21SpecializationOptionsVMa
+_$s15CoreAIDelegates21SpecializationOptionsVMn
+__swiftEmptyArrayStorage
+__swiftEmptyDictionarySingleton
+__swiftEmptySetSingleton
+__swiftImmortalRefCount
+__swift_FORCE_LOAD_$_swiftCoreFoundation
+__swift_FORCE_LOAD_$_swiftDispatch
+__swift_FORCE_LOAD_$_swiftFoundation
+__swift_FORCE_LOAD_$_swiftIOKit
+__swift_FORCE_LOAD_$_swiftMetal
+__swift_FORCE_LOAD_$_swiftOSLog
+__swift_FORCE_LOAD_$_swiftObjectiveC
+__swift_FORCE_LOAD_$_swiftXPC
+__swift_FORCE_LOAD_$_swift_Builtin_float
+__swift_FORCE_LOAD_$_swiftos
+_swift_allocBox
+_swift_allocError
+_swift_allocObject
+_swift_arrayDestroy
+_swift_arrayInitWithCopy
+_swift_arrayInitWithTakeBackToFront
+_swift_arrayInitWithTakeFrontToBack
+_swift_beginAccess
+_swift_bridgeObjectRelease
+_swift_bridgeObjectRelease_n
+_swift_bridgeObjectRetain
+_swift_bridgeObjectRetain_n
+_swift_deallocClassInstance
+_swift_deallocObject
+_swift_deletedMethodError
+_swift_dynamicCast
+_swift_endAccess
+_swift_errorRelease
+_swift_errorRetain
+_swift_getEnumTagSinglePayloadGeneric
+_swift_getErrorValue
+_swift_getForeignTypeMetadata
+_swift_getObjectType
+_swift_getOpaqueTypeConformance2
+_swift_getSingletonMetadata
+_swift_getTupleTypeMetadata2
+_swift_getTypeByMangledNameInContext2
+_swift_getTypeByMangledNameInContextInMetadataState2
+_swift_getWitnessTable
+_swift_initStackObject
+_swift_initStructMetadata
+_swift_isUniquelyReferenced_nonNull_native
+_swift_lookUpClassMethod
+_swift_once
+_swift_release
+_swift_release_n
+_swift_retain
+_swift_retain_n
+_swift_setDeallocating
+_swift_slowAlloc
+_swift_slowDealloc
+_swift_storeEnumTagSinglePayloadGeneric
+_swift_task_alloc
+_swift_task_create
+_swift_task_dealloc
+_swift_task_switch
+_swift_unknownObjectRelease
+_swift_unknownObjectRetain
+_swift_updateClassMetadata2
+_swift_willThrow
+_swift_willThrowTypedImpl
+
+STDERR
+
+
+COMMAND ['nm', '-gU', '/Users/zakkeown/.cache/uv/archive-v0/LBs_td0hqU20OP4_/coreai/runtime/_coreai_runtime_os.cpython-312-darwin.so']
+0000000000040e38 T _PyInit__coreai_runtime_os
+
+STDERR
+
+
+PACKAGED NATIVE LIBRARY INVENTORY
+_compiler/_mlir_libs/_mlir.cpython-312-darwin.so
+runtime/_coreai_runtime.cpython-312-darwin.so
+runtime/_coreai_runtime_os.cpython-312-darwin.so
+
+SDK STUB /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/CoreAI.tbd
+SHA256 b85577fac3d73908e6b240a72e1734f6638f08cd78b6569f5192a695c7a4dcec
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ x86_64-macos, x86_64-maccatalyst, arm64e-macos, arm64e-maccatalyst, 
+                   arm64e.x1-macos, arm64e.x1-maccatalyst ]
+install-name:    '/System/Library/Frameworks/CoreAI.framework/Versions/A/CoreAI'
+current-version: 0
+compatibility-version: 0
+swift-abi-version: 7
+reexported-libraries:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64e-macos, arm64e-maccatalyst, 
+                       arm64e.x1-macos, arm64e.x1-maccatalyst ]
+    libraries:       [ '/System/Library/SubFrameworks/CoreAIDelegates.framework/Versions/A/CoreAIDelegates' ]
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ x86_64-macos, x86_64-maccatalyst, arm64e-macos, arm64e-maccatalyst, 
+                   arm64e.x1-macos, arm64e.x1-maccatalyst ]
+install-name:    '/System/Library/SubFrameworks/CoreAIAsset.framework/Versions/A/CoreAIAsset'
+current-version: 3600.83.2
+compatibility-version: 0
+swift-abi-version: 7
+allowable-clients:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64e-macos, arm64e-maccatalyst, 
+                       arm64e.x1-macos, arm64e.x1-maccatalyst ]
+    clients:         [ BNNSCoreAIDelegate, BNNSOdieDelegate, CoreAI, CoreAIAssetTests, 
+                       CoreAICommonTests, CoreAICompiler, CoreAIDelegateTests, CoreAIDelegates, 
+                       CoreAIRuntime, CoreAIRuntimeTests, MetalPerformanceShadersGraph ]
+exports:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64e-macos, arm64e-maccatalyst, 
+                       arm64e.x1-macos ]
+    symbols:         [ '_$s11CoreAIAsset10AssetErrorV10Foundation09LocalizedD0AAMc', 
+                       '_$s11CoreAIAsset10AssetErrorV12debugMessageSSSgvM', '_$s11CoreAIAsset10AssetErrorV12debugMessageSSSgvg', 
+                       '_$s11CoreAIAsset10AssetErrorV12debugMessageSSSgvpMV', '_$s11CoreAIAsset10AssetErrorV12debugMessageSSSgvs', 
+                       '_$s11CoreAIAsset10AssetErrorV16errorDescriptionSSSgvg', '_$s11CoreAIAsset10AssetErrorV16errorDescriptionSSSgvpMV', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindO11invalidNameyA2EmFWC', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindO13duplicateNameyA2EmFWC', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindO17corruptedMetadatayA2EmFWC', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindO18invalidFeatureTypeyAESScAEmFWC', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindO18unsupportedVersionyAESScAEmFWC', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindOMa', '_$s11CoreAIAsset10AssetErrorV4KindOMn', 
+                       '_$s11CoreAIAsset10AssetErrorV4KindON', '_$s11CoreAIAsset10AssetErrorV4kind12debugMessageA2C4KindO_SSSgtcfC', 
+                       '_$s11CoreAIAsset10AssetErrorV4kindAC4KindOvM', '_$s11CoreAIAsset10AssetErrorV4kindAC4KindOvg', 
+                       '_$s11CoreAIAsset10AssetErrorV4kindAC4KindOvpMV', '_$s11CoreAIAsset10AssetErrorV4kindAC4KindOvs', 
+                       '_$s11CoreAIAsset10AssetErrorVMa', '_$s11CoreAIAsset10AssetErrorVMn', 
+                       '_$s11CoreAIAsset10AssetErrorVN', '_$s11CoreAIAsset10AssetErrorVs0D0AAMc', 
+                       '_$s11CoreAIAsset12AIModelAssetV10contentsOfAC10Foundation3URLV_tKcfC', 
+
+SDK FILE INVENTORY
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/CoreAI.tbd
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/CoreAI.tbd
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-ios-macabi.swiftdoc
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-ios-macabi.swiftinterface
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-macos.swiftdoc
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-macos.swiftinterface
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/x86_64-apple-ios-macabi.swiftdoc
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/x86_64-apple-ios-macabi.swiftinterface
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/x86_64-apple-macos.swiftdoc
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/x86_64-apple-macos.swiftinterface

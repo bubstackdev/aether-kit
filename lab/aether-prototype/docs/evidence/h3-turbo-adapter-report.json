@@ -1,0 +1,53 @@
+{
+  "cases": [
+    {
+      "call_seconds": [
+        0.359035375,
+        0.007858417
+      ],
+      "finite": true,
+      "index": 0,
+      "relative_l2": 0.004631569688298811,
+      "repeat_exact": true,
+      "setup_seconds": 0.462728541,
+      "sha256": [
+        "950d43123ef84638acd677c078cf1a6f50b36106c6f1a36113288d1beed2df33",
+        "950d43123ef84638acd677c078cf1a6f50b36106c6f1a36113288d1beed2df33"
+      ]
+    },
+    {
+      "call_seconds": [
+        0.793086917,
+        1.017218458
+      ],
+      "finite": true,
+      "index": 1,
+      "repeat_exact": true,
+      "setup_seconds": 0.583285833,
+      "sha256": [
+        "42e53b9dc617e092f49806e069217c484e961dcd957cf5fc31fc9106d6a33415",
+        "42e53b9dc617e092f49806e069217c484e961dcd957cf5fc31fc9106d6a33415"
+      ]
+    },
+    {
+      "call_seconds": [
+        0.81202375,
+        0.958236625
+      ],
+      "finite": true,
+      "index": 2,
+      "repeat_exact": true,
+      "setup_seconds": 0.573896833,
+      "sha256": [
+        "683a28f6e1e0b98f082e417bb2cde793e53cd0291312f9074beb7ba1f1ac4087",
+        "683a28f6e1e0b98f082e417bb2cde793e53cd0291312f9074beb7ba1f1ac4087"
+      ]
+    }
+  ],
+  "corsairs_version": "0.3.0",
+  "elapsed_seconds": 5.8660242910000004,
+  "passed": true,
+  "predefined_relative_l2_limit": 0.02,
+  "schema": 1,
+  "scope": "dynamic Turbo adapter through production Metal API: small original CPU comparison, then both full-row cardinalities; no full generation/quality claim"
+}

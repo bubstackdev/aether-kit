@@ -1,0 +1,81 @@
+[0/1] Planning build
+Building for production...
+[0/8] Write sources
+[3/8] Write swift-version--58304C5D6DBC2206.txt
+[5/9] Compiling AetherH3 H3BlockProbePlan.swift
+[6/11] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:86:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+84 |         }
+85 |         observer?(.nativeSubmitted)
+86 |         await stream.currentWorkCompleted()
+   |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+87 |         observer?(.nativeCompleted)
+88 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:81:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+79 |             _ = try function.encode(inputs: values, outputViews: views, to: stream)
+80 |         } catch {
+81 |             await stream.currentWorkCompleted()
+   |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+82 |             observer?(.nativeCompleted)
+83 |             throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:128:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+126 |             }
+127 |             observer?(H3ChainEvent(block: block, event: .nativeSubmitted))
+128 |             await stream.currentWorkCompleted()
+    |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+129 |             observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+130 |             try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:123:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+121 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+122 |             } catch {
+123 |                 await stream.currentWorkCompleted()
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+124 |                 observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+125 |                 throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:84:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+82 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+83 |         observer?(.nativeSubmitted)
+84 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+   |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+85 |         try Task.checkCancellation()
+86 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:82:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+80 |         let stream = self.stream
+81 |         do { _ = try function.encode(inputs: values, outputViews: views, to: stream) }
+82 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+   |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+83 |         observer?(.nativeSubmitted)
+84 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:74:13: error: lifetime-dependent variable 'views' escapes its scope
+72 |         var a = InferenceFunction.AsyncMutableValue(unsafeBuffer: first.buffer, scalarType: first.spec.scalarType.native, shape: first.spec.shape)
+73 |         var b = InferenceFunction.AsyncMutableValue(unsafeBuffer: second.buffer, scalarType: second.spec.scalarType.native, shape: second.spec.shape)
+74 |         var views = InferenceFunction.AsyncMutableViews()
+   |             `- error: lifetime-dependent variable 'views' escapes its scope
+75 |         views.insert(&a, for: first.name)
+76 |         if outputs.count == 2 { views.insert(&b, for: second.name) }
+   |                                              `- note: it depends on this scoped access to variable 'b'
+77 |         // The opaque SDK stream is not Sendable. This compatibility import is
+78 |         // confined here; the session retains admission and buffers until joined
+79 |         // completion, even after cancellation or a partial encode failure.
+80 |         let stream = self.stream
+81 |         do { _ = try function.encode(inputs: values, outputViews: views, to: stream) }
+   |                               `- note: this use of the lifetime-dependent value is out of scope
+82 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+83 |         observer?(.nativeSubmitted)
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+[#SendingRisksDataRace]: <https://docs.swift.org/compiler/documentation/diagnostics/sending-risks-data-race>
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

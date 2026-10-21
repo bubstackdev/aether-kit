@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "passed": true,
+  "scope": "CPU integrity of corrected run native-produced preparation; no native cache-hit generation or throughput claim",
+  "key": "4921295e4c9d18e3eb8c263c4ae98915436241bc11df523763351476cbf7d8ed",
+  "native_miss": true,
+  "embeddings": 8,
+  "blocks": 50,
+  "tensor_files": 408,
+  "total_tensor_bytes": 145313280,
+  "cache_record_sha256": "bd85f508ec6eec39b65c761c7a9baf130d7641af160eace0d172be19cc540e70",
+  "hashes_equal_unchanged_time_modulation_functions": true
+}

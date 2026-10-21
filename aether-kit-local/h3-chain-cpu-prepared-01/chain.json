@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "block_indices": [
+    0,
+    1,
+    2
+  ],
+  "bundle_sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "phase_manifest_sha256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "predefined_relative_l2_limit": 0.02,
+  "oracle_recipe_sha256": "6aed3532f27f8ae388add3f516f8264a75c5f36b96e1de3b9d208d3c9eea1fc3",
+  "cases": [
+    {
+      "name": "body-0",
+      "steps": [
+        {
+          "block": 0,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block0-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "2e6c57bf12cd09c21f4f2548773252f1bb65932822b888f0fb070ed2c649c2df"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/body-0/hidden_out.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ],
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ]
+          }
+        },
+        {
+          "block": 1,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block1-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "f2df59c2c66bc8e3da6e2ddbc299ffafee47f4a139c85f5395fb12560e24c50d"
+          },
+          "reference": null
+        },
+        {
+          "block": 2,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-0-block2-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "af484c7634f27ddde80e88b2fe24a30bbea106945cc63dca73f3e653e72360c7"
+          },
+          "reference": null
+        }
+      ]
+    },
+    {
+      "name": "body-1",
+      "steps": [
+        {
+          "block": 0,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block0-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "04d4be042a12add1d0f4c9c3b9f5b28635c874fb3627110f553337dae9b0141e"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/body-1/hidden_out.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ],
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ]
+          }
+        },
+        {
+          "block": 1,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block1-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "6e4d0590796ef873354f9436ddf851c5e5b230cff71dc01b300e4cced2964932"
+          },
+          "reference": null
+        },
+        {
+          "block": 2,
+          "temb": {
+            "name": "temb",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-prepared-01/body-1-block2-temb.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "c210cd77cc533b41a5e70fad18da2bea27f87cab5bb907fab928302cb57143c5"
+          },
+          "reference": null
+        }
+      ]
+    }
+  ]
+}

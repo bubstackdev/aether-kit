@@ -1,0 +1,3 @@
+{"elapsed_seconds":30.864601667,"event":"timing","index":null,"seconds":30.843000208,"stage":"integrity"}
+{"elapsed_seconds":35.030693208,"event":"timing","index":null,"seconds":4.162315583,"stage":"audio_decoder"}
+{"elapsed_seconds":35.031576292,"event":"audio_decoded","sha256":"e83333cf3f96a9d99db8739bc9b5063fb107e2d99dd8a6dacd9ef15c243f4712"}

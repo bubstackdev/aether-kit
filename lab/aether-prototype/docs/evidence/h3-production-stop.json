@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "status": "stopped_at_user_request",
+  "gpu_work": "paused",
+  "observed_utc": "2026-10-15T20:19:23.212502+00:00",
+  "pid": 15586,
+  "step_count": 22,
+  "last_event": {
+    "audio_sha256": "5e5a617858f2e60921a4ce48a806734050d36e7396de234080fd6e741872c546",
+    "event": "step",
+    "index": 21,
+    "video_sha256": "2982b5e6a31407bf9ac7c96c01edcd95639c0e13c4bf1853e7bcf09603f3d0d2"
+  },
+  "complete_generation": false,
+  "reason": "User requested termination because generation was too slow. No GPU retry authorized.",
+  "signal": "SIGTERM",
+  "termination_evidence_id": "ev_23fac2f37c4aa754a14bb148d3a6df624a1e6235d2793282eea8c24da2f4d636",
+  "process_absent_after_termination": true
+}

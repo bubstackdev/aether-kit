@@ -1,0 +1,43 @@
+{
+  "boundBufferBytes" : {
+    "heads-0" : 215255572,
+    "heads-1" : 215266324,
+    "prepare" : 215669248,
+    "time-0" : 10756,
+    "time-1" : 21512
+  },
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "cancellations" : [
+
+  ],
+  "cpuRecordSHA256" : "e2e173462816f26f82c8f5a6bbe703c53e4b1c2332387e8c053d532d5ba1eb95",
+  "limits" : {
+    "cycles" : 4,
+    "metalAllocatedBytes" : 19327352832,
+    "physicalFootprintBytes" : 21474836480,
+    "runsPerSession" : 2,
+    "settleSeconds" : [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes" : 536870912
+  },
+  "memorySamples" : 0,
+  "mode" : "--prepare-only",
+  "nativeExecuted" : false,
+  "nativeSubmissionBudget" : 30,
+  "numericalComparisonBudget" : 28,
+  "passed" : true,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "resources" : {
+
+  },
+  "runs" : [
+
+  ],
+  "schema" : 1,
+  "scope" : "Fixed prepare, time-0\/1 and heads-0\/1 boundaries with complete original CPU references, repeat\/recovery hashes and submitted-work cancellation. Not a linked backbone, complete Turbo8 trajectory, conditioner, decoder or benchmark.",
+  "selectedFilesVerified" : true,
+  "stage" : "ready"
+}

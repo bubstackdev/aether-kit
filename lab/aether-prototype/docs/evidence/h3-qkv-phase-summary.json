@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "passed": true,
+  "canonical_qkv": true,
+  "wall_seconds": 22.248133582994342,
+  "comparisons": 31,
+  "supported_calls": 25,
+  "skipped_calls": [
+    {
+      "case": "time-0",
+      "route": "metal_bound",
+      "reason": "public API explicitly requires fixed output descriptors; production uses automatic outputs for dynamic functions"
+    },
+    {
+      "case": "time-1",
+      "route": "metal_bound",
+      "reason": "public API explicitly requires fixed output descriptors; production uses automatic outputs for dynamic functions"
+    }
+  ],
+  "predefined_relative_l2_limit": 0.02,
+  "worst_relative_l2": 0.011005565585396282,
+  "all_tested_routes_same_output_hashes": true,
+  "child_joined": true,
+  "scope": "original CPU phase comparisons at production row geometry; no full-trajectory/quality claim; zero-binding case uses the source residual identity, independently checked on 128 CPU rows"
+}

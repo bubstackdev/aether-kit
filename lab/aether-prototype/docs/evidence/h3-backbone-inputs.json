@@ -1,0 +1,23 @@
+{
+  "generation_available": false,
+  "inputs": {
+    "blocks": 50,
+    "clip_generation_implemented": false,
+    "expected_output_sha256": "e4aabaed96045e8b86cd292f7c6234f4ad5d86dda2e33edc41330d3e9772e75b",
+    "missing_segment_assets": [],
+    "model_streams_hashed": false,
+    "records_sha256": {
+      "records/backbone-export.json": "996796bc00f95eb48123ce17e64ee6a06bd1edc98ae275a29a4c0883c1fe1361",
+      "records/backbone-streaming.json": "2c64731b7ce2083e7e9ce6350e4fc47a0e7160d505351e3d980334ab9581200e",
+      "records/backbone-tables.json": "1fc87aa782073d48ffb22481665c595544f2a59399938b1c1633bf0ae73f062a",
+      "records/block-oracle-19350.json": "b222c4e8287472560338c57428a21fc5d34d12de3d71c7fd0009196ddc1c8475",
+      "records/segments-25-export.json": "3f5015767945217a1a95f60ab86b4d551522259ed4513ef2319300d89c2c6f13"
+    },
+    "rows": 19350,
+    "scope": "fixed synthetic 50-block backbone inputs and reference; no native execution",
+    "segments": 2,
+    "tables": 50
+  },
+  "native_requested": false,
+  "schema": 1
+}

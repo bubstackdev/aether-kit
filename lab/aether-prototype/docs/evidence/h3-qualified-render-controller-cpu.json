@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "passed": true,
+  "gpu_work": false,
+  "scope": "CPU dummy-controller wiring only: successful sequence, failed gate prevents rendering, and interruption reaches/joins active controller. No model or GPU inference.",
+  "coordinator_sha256": "afb650f7d1f4e04b3c1e4133b708148eeb2e8079b30b83d4df1bee3fad608f1d",
+  "checks": [
+    {
+      "case": "pass",
+      "passed": true,
+      "coordinator": {
+        "schema": 1,
+        "passed": true,
+        "quality_accepted": false,
+        "wall_budget_seconds": 31,
+        "scope": "Numerical gate plus finished-render execution inside one shared GPU window; output quality requires separate review",
+        "coordinator_sha256": "afb650f7d1f4e04b3c1e4133b708148eeb2e8079b30b83d4df1bee3fad608f1d",
+        "controller_sha256": "07e19b06a8108790ee44df9b4eb05d1e64425d6660afadac838581eab3096c84",
+        "stages": [
+          {
+            "kind": "phase",
+            "controller": "/private/tmp/aether-qualified-controller-cpu-hzd631y3/pass/phase/controller.json",
+            "controller_sha256": "afa75c0178c2f4d0ceb5c9acf01905f98e209f0676dcf5deaa356bb1b6172ee5",
+            "passed": true,
+            "elapsed_seconds": 0.05,
+            "binary_sha256": "cpu-dummy",
+            "input_sha256": "cpu-dummy"
+          },
+          {
+            "kind": "render",
+            "controller": "/private/tmp/aether-qualified-controller-cpu-hzd631y3/pass/render/controller.json",
+            "controller_sha256": "afa75c0178c2f4d0ceb5c9acf01905f98e209f0676dcf5deaa356bb1b6172ee5",
+            "passed": true,
+            "elapsed_seconds": 0.05,
+            "binary_sha256": "cpu-dummy",
+            "input_sha256": "cpu-dummy"
+          }
+        ],
+        "elapsed_seconds": 0.10734387500269804
+      }
+    },
+    {
+      "case": "fail",
+      "passed": true,
+      "coordinator": {
+        "schema": 1,
+        "passed": false,
+        "quality_accepted": false,
+        "wall_budget_seconds": 31,
+        "scope": "Numerical gate plus finished-render execution inside one shared GPU window; output quality requires separate review",
+        "coordinator_sha256": "afb650f7d1f4e04b3c1e4133b708148eeb2e8079b30b83d4df1bee3fad608f1d",
+        "controller_sha256": "07e19b06a8108790ee44df9b4eb05d1e64425d6660afadac838581eab3096c84",
+        "stages": [
+          {
+            "kind": "phase",
+            "controller": "/private/tmp/aether-qualified-controller-cpu-hzd631y3/fail/phase/controller.json",
+            "controller_sha256": "815bc4994ff891a39092e3d5373ca3b891ecbf04f9dc7c9801e555787d674813",
+            "passed": false,
+            "elapsed_seconds": 0.05,
+            "binary_sha256": "cpu-dummy",
+            "input_sha256": "cpu-dummy"
+          }
+        ],
+        "error": "phase failed; no further stage will run",
+        "elapsed_seconds": 0.05703900000662543
+      }
+    },
+    {
+      "case": "slow",
+      "passed": true,
+      "coordinator": {
+        "schema": 1,
+        "passed": false,
+        "quality_accepted": false,
+        "wall_budget_seconds": 31,
+        "scope": "Numerical gate plus finished-render execution inside one shared GPU window; output quality requires separate review",
+        "coordinator_sha256": "afb650f7d1f4e04b3c1e4133b708148eeb2e8079b30b83d4df1bee3fad608f1d",
+        "controller_sha256": "07e19b06a8108790ee44df9b4eb05d1e64425d6660afadac838581eab3096c84",
+        "stages": [],
+        "error": "qualified-render coordinator interrupted",
+        "elapsed_seconds": 0.04427758300153073
+      }
+    }
+  ]
+}

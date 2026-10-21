@@ -1,0 +1,331 @@
+[0/1] Planning build
+Building for production...
+[0/9] Write sources
+[1/9] Copying Fixtures
+[1/9] Write sources
+[4/9] Write swift-version--58304C5D6DBC2206.txt
+[6/11] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:86:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+84 |         }
+85 |         observer?(.nativeSubmitted)
+86 |         await stream.currentWorkCompleted()
+   |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+87 |         observer?(.nativeCompleted)
+88 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:81:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+79 |             _ = try function.encode(inputs: values, outputViews: views, to: stream)
+80 |         } catch {
+81 |             await stream.currentWorkCompleted()
+   |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+82 |             observer?(.nativeCompleted)
+83 |             throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:173:26: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+171 |             }
+172 |             observer?(H3ChainEvent(block: block, event: .nativeSubmitted))
+173 |             await stream.currentWorkCompleted()
+    |                          |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                          `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+174 |             observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+175 |             try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift:168:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+166 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+167 |             } catch {
+168 |                 await stream.currentWorkCompleted()
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+169 |                 observer?(H3ChainEvent(block: block, event: .nativeCompleted))
+170 |                 throw error
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3Function.swift:71:51: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 69 |             }
+ 70 |         } catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+ 71 |         observer?(.nativeSubmitted); await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+    |                                                   |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                                   `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 72 |         try Task.checkCancellation()
+ 73 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3Function.swift:70:32: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 68 |                 _ = try function.encode(inputs: values, outputViews: views, to: stream)
+ 69 |             }
+ 70 |         } catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+    |                                |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 71 |         observer?(.nativeSubmitted); await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+ 72 |         try Task.checkCancellation()
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:92:22: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 90 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+ 91 |         observer?(.nativeSubmitted)
+ 92 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+    |                      |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                      `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 93 |         try Task.checkCancellation()
+ 94 |         var result: [String: H3TensorData] = [:]
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift:90:30: warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+ 88 |             }
+ 89 |         }
+ 90 |         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
+    |                              |- warning: sending 'stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                              `- note: sending 'self'-isolated 'stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+ 91 |         observer?(.nativeSubmitted)
+ 92 |         await stream.currentWorkCompleted(); observer?(.nativeCompleted)
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+[#SendingRisksDataRace]: <https://docs.swift.org/compiler/documentation/diagnostics/sending-risks-data-race>
+[7/13] Compiling AetherH3CoreAITests H3BlockSessionTests.swift
+[8/13] Compiling AetherH3Tests H3BlockPlanTests.swift
+[9/13] Compiling AetherProbe AetherProbe.swift
+[9/13] Write Objects.LinkFileList
+[10/13] Linking aether-probe
+[12/14] Compiling AetherProbeTests BatchCommandTests.swift
+[13/15] Compiling AetherKitPackageTests runner.swift
+[13/15] Write Objects.LinkFileList
+[14/15] Linking AetherKitPackageTests
+Build complete! (37.67s)
+Test Suite 'All tests' started at 2026-10-18 16:36:57.658.
+Test Suite 'All tests' passed at 2026-10-18 16:36:57.659.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.002) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test h3LinkedCancellationAndUnloadWaitForConsumerThenRejectLaterStages() started.
+◇ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() started.
+◇ Test h3LinkedConsumerFailureRestartsOriginalStateOnRetry() started.
+◇ Test h3StreamedConsumerFailureReleasesSlotForFreshRetry() started.
+◇ Test eulerPreservesRoundingAndRejectsInvalidInputs() started.
+◇ Test h3StreamedConsumerBackpressureKeepsOwnershipThroughCancellationAndUnload() started.
+◇ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() started.
+◇ Test h3PhaseSessionRejectsOverlapAndRetainsSlotThroughCancellation() started.
+◇ Test h3PhaseUnloadWaitsForSubmittedWorkAndPreservesOwnedOutputs() started.
+◇ Test specializationMatchesBothShapesAndSourceIdentity() started.
+◇ Test h3NativeFailureReleasesSlotForRetry() started.
+◇ Test promptTruncationPreservesChatSuffixAndInputs() started.
+◇ Test h3RuntimeDescriptorGateAdmitsOnlyActualDynamicDimensionsAndNamedPrecision() started.
+◇ Test h3PhaseNativeFailureReleasesSlotForRetry() started.
+◇ Test partialLoadFailureIsCleanedUpAndCanRetry() started.
+◇ Test h3ChainUnloadWaitsForActiveOutputs() started.
+◇ Test h3LinkedLoopCarriesBothModalitiesThroughEightOracleUpdatesAndAllBlockBoundaries() started.
+◇ Test scheduleMatchesExistingOracleBits() started.
+◇ Test h3BindingGateRejectsFP16StatesAndWrongDimensionsBeforeDispatch() started.
+◇ Test pipelineCancellationAndUnloadWaitForSubmittedWork() started.
+◇ Test h3PhaseBindingGateRequiresBothNamedOutputsWithExactPrecision() started.
+◇ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() started.
+◇ Test h3ChainCancellationOwnsTheSlotUntilCompletionAndCanRetry() started.
+◇ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() started.
+➜ Test nativeKreaSessionQualification() skipped.
+◇ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() started.
+➜ Test nativeDecoderCancellationAndRecovery() skipped.
+◇ Test h3UnloadWaitsForSubmittedWorkAndPreservesOwnedOutput() started.
+◇ Test unloadWaitsForPreparationAndClosesPermanently() started.
+◇ Test h3QualificationRequiresExplicitModeBeforeCreatingOutput() started.
+◇ Test eulerReplaysAllRetainedTowerSteps() started.
+◇ Test residentPromptGenerationRetainsEncoderUntilUnload() started.
+◇ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() started.
+◇ Test missingModelFailsBeforeNativeLoad() started.
+➜ Test nativeKreaDynamicParityAndStageCancellation() skipped.
+◇ Test mixedTensorCallsPreserveTypes() started.
+◇ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() started.
+◇ Test bundleVerificationDetectsModelAndTokenizerMutation() started.
+◇ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() started.
+◇ Test h3BlockSessionRejectsOverlapAndRetainsSlotThroughCancellation() started.
+◇ Test h3QualificationPreparationFailureCannotLaunchNativeOrClaimReady() started.
+◇ Test failedInferenceReleasesSessionSlot() started.
+◇ Test h3PhaseQualificationPreparationFailureCannotLaunchNativeOrClaimReady() started.
+◇ Test geometryIsBoundedBeforeAllocation() started.
+◇ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() started.
+◇ Test batchArgumentsValidateBeforeAnyModelOrOutputWork() started.
+◇ Test decoderCancellationRestoresPipelineAndCanRecover() started.
+◇ Test cancellationRetainsSlotUntilBackendCompletes() started.
+◇ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() started.
+◇ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() started.
+◇ Test h3OuterPlanLinksCorrectedGraphsCompleteCPUOutputsAndBackboneContext() started.
+◇ Test h3FileVerificationRejectsCorruptionAndKeepsOwnedBytes() started.
+◇ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() started.
+◇ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() started.
+◇ Test preparationFailureClosesEncoderAndAllowsRetry() started.
+◇ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() started.
+◇ Test rejectsOverlapAndUnloadWaitsForCompletion() started.
+◇ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() started.
+◇ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() started.
+◇ Test batchCancellationWaitsForGenerationThenClosesWithoutSaving() started.
+◇ Test rejectsMalformedTensorsBeforeNativeAllocation() started.
+◇ Test parityPreparationFailureWritesFailedReport() started.
+◇ Test h3BF16PreservesBitsAndExponentRangeWithoutFP16Narrowing() started.
+◇ Test h3PhaseQualificationRequiresExplicitModeBeforeCreatingOutput() started.
+◇ Test h3BackboneCancellationTraceRequiresTheMiddleBoundaryAndNoLaterWork() started.
+◇ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() started.
+◇ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() started.
+◇ Test batchFactoryFailureStillWritesIncompleteReport() started.
+◇ Test seededNoiseMatchesExistingOracleBits() started.
+◇ Test benchmarkStatisticsNeverCombineDifferentProfiles() started.
+◇ Test h3FiftyBlockPlanAdmitsOneResidentWeightSetAndRequiresAllHashesAndCheckpoints() started.
+➜ Test nativePipelineDecoderCancellationAndRecovery() skipped.
+◇ Test h3ChainCancellationRejectsLaterBlocksAndIncorrectOwnershipOrder() started.
+◇ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() started.
+◇ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() started.
+◇ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() started.
+◇ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() started.
+◇ Test batchPreparesOnceRendersOrderedSeedsAndSavesVerifiedFiles() started.
+◇ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() started.
+◇ Test rotaryMatchesEveryRetainedSwiftByte() started.
+◇ Test specializationRejectsTamperingAndUnknownFields() started.
+◇ Test h3TensorRejectsInvalidExtentsOverflowAndNonfiniteBits() started.
+◇ Test imageQuantizationAndPNGMatchReferenceConvention() started.
+◇ Test tokenizerMatchesEveryRetainedPrompt() started.
+◇ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() started.
+◇ Test batchRejectsExistingOutputWithoutStartingRenderer() started.
+◇ Test h3TurboSchedulerMatchesAllEightIndependentVideoAndAudioUpdates() started.
+◇ Test h3TimestepPlansPreserveActualCardinalityAndModalityRows() started.
+◇ Test h3GeometrySnapsFramesAndRejectsInvalidOrOverflowingRequests() started.
+◇ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() started.
+◇ Test h3CompleteComparisonHandlesBF16F32ZeroNormAndIncompatibleStorage() started.
+◇ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() started.
+◇ Test h3ProbePlanBindsCorrectedWeightsAndBothActualCardinalities() started.
+◇ Test h3CancellationTraceRejectsMissedSubmissionEarlyReleaseAndLateUnload() started.
+◇ Test h3LifecycleBoundsRejectFootprintPeaksMetalGrowthAndResidentGrowth() started.
+◇ Test h3OuterPlanRejectsStaleCPUAndBoundaryDeclarations() started.
+◇ Test h3OuterPlanRejectsWrongScheduleValuesAndInRangeWrongRowIndices() started.
+◇ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() started.
+◇ Test h3ChainRejectsStaleSourcesReorderedBlocksCardinalityAndContextHashes() started.
+◇ Test h3ChainModesAreExplicitAndFailedPreparationCannotLaunchNative() started.
+◇ Test h3DenoisingPlanPinsEightStepsFiftyModulationGraphsAndStreamedWeights() started.
+◇ Test h3LifecycleRequiresExplicitModeAndKeepsPreparationFailuresNonNative() started.
+◇ Test h3LayoutRejectsInvalidTagsAndAnchorOrder() started.
+◇ Test h3HeaderRequiresCorrectedQKVAndExactTurboAdapterIdentity() started.
+◇ Test batchFailuresCloseRendererAndPreserveCompletedImages() started.
+◇ Test h3ProbePlanRejectsAlteredBindingAndReferenceDeclarations() started.
+◇ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() started.
+◇ Test h3LayoutsMatchEveryCapturedPositionTagAndIndex() started.
+◇ Test h3SchedulerRejectsBadStepsShapesAndNonfiniteArithmetic() started.
+◇ Test h3HeaderAcceptsRetainedCorrectedPrototypeExport() started.
+◇ Test h3ReferenceComparisonSelectsOnlyCapturedRowsAndRejectsUndefinedError() started.
+◇ Test h3ChainRequiresCompleteReferencesForQualificationAndBindsThreeDistinctWeightSets() started.
+◇ Test h3VideoPatchOrderMatchesIndependentUpstreamOracle() started.
+◇ Test h3ModelStreamVerificationChecksBothDeclarationAndBytes() started.
+image 1/3, seed 17
+image 2/3, seed 18
+image 3/3, seed 17
+image 1/3, seed 17
+image 2/3, seed 18
+image 1/3, seed 17
+image 1/3, seed 17
+✔ Test scheduleMatchesExistingOracleBits() passed after 0.145 seconds.
+✔ Test eulerPreservesRoundingAndRejectsInvalidInputs() passed after 0.145 seconds.
+✔ Test h3RuntimeDescriptorGateAdmitsOnlyActualDynamicDimensionsAndNamedPrecision() passed after 0.145 seconds.
+✔ Test missingModelFailsBeforeNativeLoad() passed after 0.145 seconds.
+✔ Test promptTruncationPreservesChatSuffixAndInputs() passed after 0.145 seconds.
+✔ Test h3BindingGateRejectsFP16StatesAndWrongDimensionsBeforeDispatch() passed after 0.145 seconds.
+✔ Test h3PhaseBindingGateRequiresBothNamedOutputsWithExactPrecision() passed after 0.145 seconds.
+✔ Test h3QualificationRequiresExplicitModeBeforeCreatingOutput() passed after 0.145 seconds.
+✔ Test rotaryUsesSplitHalvesAndCorrectSpatialAxes() passed after 0.145 seconds.
+✔ Test geometryIsBoundedBeforeAllocation() passed after 0.145 seconds.
+✔ Test batchArgumentsValidateBeforeAnyModelOrOutputWork() passed after 0.145 seconds.
+✔ Test segmentContractsRejectMissingCarryWrongShapeAndEarlyVelocity() passed after 0.150 seconds.
+✔ Test benchmarkRejectsIncompleteAndOutOfOrderEvents() passed after 0.150 seconds.
+✔ Test h3FileVerificationRejectsCorruptionAndKeepsOwnedBytes() passed after 0.151 seconds.
+✔ Test h3LinkedLoopCarriesBothModalitiesThroughEightOracleUpdatesAndAllBlockBoundaries() passed after 0.152 seconds.
+✔ Test h3PhaseQualificationPreparationFailureCannotLaunchNativeOrClaimReady() passed after 0.152 seconds.
+✔ Test h3QualificationPreparationFailureCannotLaunchNativeOrClaimReady() passed after 0.152 seconds.
+✔ Test rejectsMalformedTensorsBeforeNativeAllocation() passed after 0.153 seconds.
+✔ Test parityPreparationFailureWritesFailedReport() passed after 0.153 seconds.
+✔ Test h3BF16PreservesBitsAndExponentRangeWithoutFP16Narrowing() passed after 0.153 seconds.
+✔ Test h3PhaseQualificationRequiresExplicitModeBeforeCreatingOutput() passed after 0.153 seconds.
+✔ Test h3BackboneCancellationTraceRequiresTheMiddleBoundaryAndNoLaterWork() passed after 0.153 seconds.
+✔ Test seededNoiseMatchesExistingOracleBits() passed after 0.163 seconds.
+✔ Test benchmarkStatisticsNeverCombineDifferentProfiles() passed after 0.163 seconds.
+✔ Test h3ChainCancellationRejectsLaterBlocksAndIncorrectOwnershipOrder() passed after 0.163 seconds.
+✔ Test bundleRejectsProvenanceMismatchAndMalformedDeclarations() passed after 0.208 seconds.
+✔ Test benchmarkReadsProcessMemoryWithoutInitializingMetal() passed after 0.216 seconds.
+✔ Test benchmarkStatisticsExcludeWarmupsFailuresAndOtherCases() passed after 0.216 seconds.
+✔ Test batchFactoryFailureStillWritesIncompleteReport() passed after 0.220 seconds.
+✔ Test h3TensorRejectsInvalidExtentsOverflowAndNonfiniteBits() passed after 0.220 seconds.
+✔ Test benchmarkPlanAndReferenceRequirePinnedCompatibleWorkloads() passed after 0.220 seconds.
+✔ Test bundleRejectsTraversalSymlinkEscapeAndAliasedModels() passed after 0.220 seconds.
+✔ Test imageQuantizationAndPNGMatchReferenceConvention() passed after 0.226 seconds.
+✔ Test batchRejectsExistingOutputWithoutStartingRenderer() passed after 0.226 seconds.
+✔ Test eulerReplaysAllRetainedTowerSteps() passed after 0.226 seconds.
+✔ Test h3GeometrySnapsFramesAndRejectsInvalidOrOverflowingRequests() passed after 0.226 seconds.
+✔ Test h3TurboSchedulerMatchesAllEightIndependentVideoAndAudioUpdates() passed after 0.226 seconds.
+✔ Test specializationMatchesBothShapesAndSourceIdentity() passed after 0.227 seconds.
+✔ Test h3CompleteComparisonHandlesBF16F32ZeroNormAndIncompatibleStorage() passed after 0.226 seconds.
+✔ Test h3CancellationTraceRejectsMissedSubmissionEarlyReleaseAndLateUnload() passed after 0.226 seconds.
+✔ Test batchPreparesOnceRendersOrderedSeedsAndSavesVerifiedFiles() passed after 0.226 seconds.
+✔ Test h3LifecycleBoundsRejectFootprintPeaksMetalGrowthAndResidentGrowth() passed after 0.226 seconds.
+✔ Test referenceParserKeepsEncodedAndProvidedBaselinesSeparate() passed after 0.226 seconds.
+✔ Test bundleVerificationDetectsModelAndTokenizerMutation() passed after 0.226 seconds.
+✔ Test h3ChainModesAreExplicitAndFailedPreparationCannotLaunchNative() passed after 0.656 seconds.
+✔ Test h3LayoutRejectsInvalidTagsAndAnchorOrder() passed after 0.656 seconds.
+✔ Test benchmarkPreparationFailurePersistsWithoutInferenceOrStatistics() passed after 0.656 seconds.
+✔ Test h3HeaderRequiresCorrectedQKVAndExactTurboAdapterIdentity() passed after 0.656 seconds.
+✔ Test h3LifecycleRequiresExplicitModeAndKeepsPreparationFailuresNonNative() passed after 0.656 seconds.
+✔ Test specializationRejectsTamperingAndUnknownFields() passed after 0.657 seconds.
+✔ Test providedConditioningSetupRejectsMismatchAndClosesOnEncoderFailure() passed after 0.656 seconds.
+✔ Test benchmarkProfilesPreserveOriginalPlansAndRejectUnknownProtocols() passed after 0.656 seconds.
+✔ Test h3SchedulerRejectsBadStepsShapesAndNonfiniteArithmetic() passed after 0.657 seconds.
+✔ Test h3HeaderAcceptsRetainedCorrectedPrototypeExport() passed after 0.656 seconds.
+✔ Test h3ReferenceComparisonSelectsOnlyCapturedRowsAndRejectsUndefinedError() passed after 0.657 seconds.
+✔ Test h3VideoPatchOrderMatchesIndependentUpstreamOracle() passed after 0.708 seconds.
+✔ Test h3ModelStreamVerificationChecksBothDeclarationAndBytes() passed after 0.708 seconds.
+✔ Test bundleRejectsUnsupportedRecipeBeforeModelsAreLoaded() passed after 0.708 seconds.
+✔ Test benchmarkMismatchStopsBeforeMeasurementsAndClosesPipeline() passed after 0.709 seconds.
+image 1/3, seed 17
+✔ Test batchFailuresCloseRendererAndPreserveCompletedImages() passed after 0.732 seconds.
+✔ Test h3OuterPlanLinksCorrectedGraphsCompleteCPUOutputsAndBackboneContext() passed after 0.732 seconds.
+✔ Test h3ProbePlanBindsCorrectedWeightsAndBothActualCardinalities() passed after 0.732 seconds.
+✔ Test parityHarnessRejectsIncompleteRunsAndRecordsMismatch() passed after 0.732 seconds.
+✔ Test h3TimestepPlansPreserveActualCardinalityAndModalityRows() passed after 0.732 seconds.
+✔ Test h3LayoutsMatchEveryCapturedPositionTagAndIndex() passed after 0.732 seconds.
+✔ Test h3ChainRequiresCompleteReferencesForQualificationAndBindsThreeDistinctWeightSets() passed after 0.732 seconds.
+✔ Test h3OuterPlanRejectsWrongScheduleValuesAndInRangeWrongRowIndices() passed after 0.732 seconds.
+✔ Test conditioningDropsExactlyTheSystemPrefixWithoutReordering() passed after 0.734 seconds.
+✔ Test mixedTensorCallsPreserveTypes() passed after 0.734 seconds.
+✔ Test benchmarkMemoryAndPersistenceFailuresCannotProducePassingMeasurements() passed after 0.735 seconds.
+✔ Test h3PhaseNativeFailureReleasesSlotForRetry() passed after 0.946 seconds.
+✔ Test h3NativeFailureReleasesSlotForRetry() passed after 0.946 seconds.
+✔ Test h3StreamedConsumerFailureReleasesSlotForFreshRetry() passed after 0.946 seconds.
+✔ Test failedInferenceReleasesSessionSlot() passed after 0.946 seconds.
+✔ Test h3LinkedConsumerFailureRestartsOriginalStateOnRetry() passed after 0.946 seconds.
+✔ Test rotaryMatchesEveryRetainedSwiftByte() passed after 0.985 seconds.
+✔ Test benchmarkLoopSeparatesWarmupsAndValidatesCompleteGenerations() passed after 1.168 seconds.
+✔ Test h3ProbePlanRejectsAlteredBindingAndReferenceDeclarations() passed after 1.169 seconds.
+✔ Test batchCancellationWaitsForGenerationThenClosesWithoutSaving() passed after 1.214 seconds.
+✔ Test shapeSwitchClosesSpecializedModelsBeforeLoadingFallback() passed after 1.215 seconds.
+✔warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+ Test preparedPromptRejectsAnotherBundleBeforeOpeningModels() passed after 1.215 seconds.
+✔ Test cancellationRetainsSlotUntilBackendCompletes() passed after 1.218 seconds.
+✔ Test h3LinkedCancellationAndUnloadWaitForConsumerThenRejectLaterStages() passed after 1.219 seconds.
+✔ Test h3PhaseUnloadWaitsForSubmittedWorkAndPreservesOwnedOutputs() passed after 1.219 seconds.
+✔ Test h3PhaseSessionRejectsOverlapAndRetainsSlotThroughCancellation() passed after 1.218 seconds.
+✔ Test h3StreamedConsumerBackpressureKeepsOwnershipThroughCancellationAndUnload() passed after 1.219 seconds.
+✔ Test h3ChainUnloadWaitsForActiveOutputs() passed after 1.218 seconds.
+✔ Test h3ChainCancellationOwnsTheSlotUntilCompletionAndCanRetry() passed after 1.218 seconds.
+✔ Test h3UnloadWaitsForSubmittedWorkAndPreservesOwnedOutput() passed after 1.218 seconds.
+✔ Test h3BlockSessionRejectsOverlapAndRetainsSlotThroughCancellation() passed after 1.218 seconds.
+✔ Test rejectsOverlapAndUnloadWaitsForCompletion() passed after 1.218 seconds.
+✔ Test pipelineCancellationAndUnloadWaitForSubmittedWork() passed after 1.219 seconds.
+✔ Test providedBenchmarkEncodesOnceAndClosesBeforeRepeatedGeneration() passed after 1.293 seconds.
+✔ Test h3FiftyBlockPlanAdmitsOneResidentWeightSetAndRequiresAllHashesAndCheckpoints() passed after 1.329 seconds.
+✔ Test partialLoadFailureIsCleanedUpAndCanRetry() passed after 1.458 seconds.
+✔ Test h3ChainRejectsStaleSourcesReorderedBlocksCardinalityAndContextHashes() passed after 1.651 seconds.
+✔ Test referencePipelineRoutesCarriesAcrossAllStepsAndReusesModels() passed after 1.695 seconds.
+✔ Test preparationFailureClosesEncoderAndAllowsRetry() passed after 1.818 seconds.
+✔ Test balancedPromptGenerationReleasesEncoderBeforeDenoiserLoad() passed after 1.820 seconds.
+✔ Test unloadWaitsForPreparationAndClosesPermanently() passed after 1.995 seconds.
+✔ Test decoderCancellationRestoresPipelineAndCanRecover() passed after 2.002 seconds.
+✔ Test preparingAnotherPromptPreservesPreviouslyOwnedConditioning() passed after 2.079 seconds.
+✔ Test h3DenoisingPlanPinsEightStepsFiftyModulationGraphsAndStreamedWeights() passed after 2.154 seconds.
+✔ Test balancedRepeatedPromptReleasesDenoisersBeforeEncoderAcquisition() passed after 2.223 seconds.
+✔ Test cancelledPreparationHoldsOperationSlotUntilEncodingReturns() passed after 2.358 seconds.
+✔ Test h3OuterPlanRejectsStaleCPUAndBoundaryDeclarations() passed after 2.378 seconds.
+✔ Test residentPromptGenerationRetainsEncoderUntilUnload() passed after 2.460 seconds.
+✔ Test preparationReleasesRetainedModelsEvenWithResidentPolicy() passed after 2.473 seconds.
+✔ Test preparedPromptReusesEncodingAndModelsAcrossSeedsAndSessions() passed after 2.557 seconds.
+✔ Test tokenizerMatchesEveryRetainedPrompt() passed after 2.835 seconds.
+✔ Test run with 114 tests in 0 suites passed after 2.836 seconds.

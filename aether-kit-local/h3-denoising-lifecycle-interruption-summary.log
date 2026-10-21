@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-19T01:04:02.273189+00:00",
+  "status": "interruptedAtUserRequest",
+  "passed": false,
+  "reason": "User requested cancellation, a handoff document and spin down. No restart authorized.",
+  "controllerJoined": true,
+  "exitCode": -15,
+  "timedOut": false,
+  "sourcePinsUnchanged": true,
+  "elapsedSeconds": 3592.2917470830143,
+  "completedRoles": [
+    "initial",
+    "retainedCancellation",
+    "retainedRecovery",
+    "closingCancellation"
+  ],
+  "progress": {
+    "initial": {
+      "outputs": 864,
+      "CPUComparisons": 464,
+      "lastOutput": "latents.7.-1.video",
+      "completed": true
+    },
+    "retainedCancellation": {
+      "outputs": 435,
+      "CPUComparisons": 410,
+      "lastOutput": "body.0.23.hidden",
+      "completed": true
+    },
+    "retainedRecovery": {
+      "outputs": 864,
+      "CPUComparisons": 464,
+      "lastOutput": "latents.7.-1.video",
+      "completed": true
+    },
+    "closingCancellation": {
+      "outputs": 435,
+      "CPUComparisons": 410,
+      "lastOutput": "body.0.23.hidden",
+      "completed": true
+    },
+    "reopenedRecovery": {
+      "outputs": 631,
+      "CPUComparisons": 431,
+      "lastOutput": "body.3.48.hidden",
+      "completed": false
+    }
+  },
+  "lastPersistedSampledPeak": {
+    "metalAllocatedBytes": 12455460864,
+    "physicalFootprintBytes": 11482075408,
+    "processLifetimePeakFootprintBytes": 11482075408,
+    "processLifetimePeakResidentBytes": 3670163456,
+    "residentBytes": 3645374464
+  },
+  "resources": {
+    "afterCPUVerification": {
+      "physicalFootprintBytes": 626787312,
+      "processLifetimePeakFootprintBytes": 626787312,
+      "processLifetimePeakResidentBytes": 633634816,
+      "residentBytes": 633634816
+    },
+    "firstSession.afterUnload0s": {
+      "metalAllocatedBytes": 1110114304,
+      "physicalFootprintBytes": 8122436128,
+      "processLifetimePeakFootprintBytes": 11482075408,
+      "processLifetimePeakResidentBytes": 3670163456,
+      "residentBytes": 1372192768
+    },
+    "firstSession.afterUnload1s": {
+      "metalAllocatedBytes": 1110114304,
+      "physicalFootprintBytes": 1176356928,
+      "processLifetimePeakFootprintBytes": 11482075408,
+      "processLifetimePeakResidentBytes": 3670163456,
+      "residentBytes": 818937856
+    },
+    "firstSession.afterUnload5s": {
+      "metalAllocatedBytes": 720896,
+      "physicalFootprintBytes": 1176291392,
+      "processLifetimePeakFootprintBytes": 11482075408,
+      "processLifetimePeakResidentBytes": 3670163456,
+      "residentBytes": 818937856
+    }
+  },
+  "remaining": [
+    "Complete reopened eight-step recovery",
+    "Second-session unload/settlement and 512 MiB growth gate",
+    "Final complete lifecycle report and qualification archive"
+  ]
+}

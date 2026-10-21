@@ -1,0 +1,8 @@
+Hashing source: /Users/zakkeown/Code/bubstackdev/aether-engine/forge/out.noindex/krea-2-turbo-realism/variants/macos-any-gpu
+Moved and verified: /Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu
+Hashing source: /Volumes/Scratch/atelier/krea-lab/forge/fixed-first
+Copying to cache staging: /Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/tower-20.import-db540cec2247419bb129b090c6b116a0
+Moved and verified: /Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/tower-20
+Hashing source: /Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/smoke-v1
+Moved and verified: /Users/zakkeown/.cache/huggingface/aether-kit/smoke-v1
+Migration complete; original paths are compatibility symlinks and .local/native-assets.env references the cache.

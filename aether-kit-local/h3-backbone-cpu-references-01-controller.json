@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-18T21:49:38.280950+00:00",
+  "command": [
+    "/Users/zakkeown/Code/aether-engine/forge/.venv/bin/python",
+    "-B",
+    "Scripts/prepare-h3-backbone-oracle.py",
+    "--lab",
+    "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab",
+    "--prototype",
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype",
+    "--bundle",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "--phases",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "--phase-cpu",
+    "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+    "--prior-chain",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/chain.json",
+    "--output",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01",
+    "--references",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-capture-01"
+  ],
+  "budgetSeconds": 600,
+  "gpuWork": false,
+  "passed": true,
+  "joined": true,
+  "timedOut": false,
+  "pid": 16552,
+  "exitCode": 0,
+  "elapsedSeconds": 159.0226375000202
+}

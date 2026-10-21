@@ -1,0 +1,416 @@
+{
+  "schema": 1,
+  "passed": true,
+  "gpu_work": false,
+  "scope": "Raw-checkpoint QKV input-contract correction; native timing/quality remains untested",
+  "source_bundle_sha256": "31b7011343599a4f5c4fded70fd8fe6d65faf7a961c27364d7399aa4c87871fc",
+  "corrected_base_bundle_sha256": "3e9f43a58a139e64200f96cbe1621f26188a30d60d88744b8ac2514b107a9034",
+  "canonical_layout": "raw_per_head_qkv_to_contiguous_qkv_v1",
+  "changed_block_bindings": [
+    {
+      "block": 0,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 1,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 2,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 3,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 4,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 5,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 6,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 7,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 8,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 9,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 10,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 11,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 12,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 13,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 14,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 15,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 16,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 17,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 18,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 19,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 20,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 21,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 22,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 23,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 24,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 25,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 26,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 27,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 28,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 29,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 30,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 31,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 32,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 33,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 34,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 35,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 36,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 37,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 38,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 39,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 40,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 41,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 42,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 43,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 44,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 45,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 46,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 47,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 48,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    },
+    {
+      "block": 49,
+      "changed": [
+        "block.attn.to_q.weight",
+        "block.attn.to_k.weight",
+        "block.attn.to_v.weight"
+      ]
+    }
+  ],
+  "old_prepare_sha256": "a0fb48261413d2ceaf23ce33aa6bbe4d604595633bf108cdab562b52c4c36d6c",
+  "corrected_prepare_sha256": "3cf433952176078030d11a0f7500ffbe8cdfcace5ff7ce8de1a6e63cdb5fd9eb",
+  "old_prepare_oracle_sha256": "e046eee9d693027a451fdcd990f0001cc46148b3c809a47306585ecb6cc0f7e3",
+  "corrected_prepare_oracle_sha256": "30d3979050158b7b4e812099a3709c1cde64e8efbf6f00a0c002c40c1c3e67df",
+  "qkv_recipe_sha256": "f1c05e5214fbd1c9700b898bc31e675e802b03b746a924548819c59030b02d6f"
+}

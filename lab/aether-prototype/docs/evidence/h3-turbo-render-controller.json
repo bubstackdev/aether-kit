@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "passed": true,
+  "kind": "render",
+  "command": [
+    "/private/tmp/aether-h3-spatial-ready/render/h3_generate",
+    "/private/tmp/aether-h3-spatial-ready/render/bundle.json",
+    "/private/tmp/aether-h3-spatial-ready/render-run-01/report.json",
+    "/private/tmp/aether-h3-spatial-ready/render-run-01/clip",
+    "--ffmpeg=/opt/homebrew/Cellar/ffmpeg/9.0.2/bin/ffmpeg",
+    "--cache=/private/tmp/aether-h3-preparation-cache"
+  ],
+  "wall_budget_seconds": 1200,
+  "cleanup_reserve_seconds": 10,
+  "binary_sha256": "968f6c68aa6b2ea2b80b5dc6293dc9366fb58d4ba51037f9ad8c45785c4f8f01",
+  "input_sha256": "f6b72a9576f56f7b6fb02e4c7d1f798ec15589054f4eb86f867777278fa3f78c",
+  "controller_sha256": "a35a814b959d066c44e73fdfb9991c8700380b2ed93190b52c50cd05154356bd",
+  "scope": "One explicitly invoked native process group; application report/exit and wall budget checked, no full environment capture",
+  "conflicts_before": [],
+  "application_passed": true,
+  "exit_status": 0,
+  "child_joined": true,
+  "elapsed_seconds": 701.0052974160062
+}

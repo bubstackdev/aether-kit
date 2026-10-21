@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "usable_visual_pilot": true,
+  "visual_review": {
+    "accepted": true,
+    "sampled_frames": [
+      0,
+      30,
+      60,
+      90,
+      123
+    ],
+    "finding": "Recognizable crafted bird on a wooden desk, wings rising across sampled frames, consistent subject and background; previous gray-texture failure resolved.",
+    "limitations": "Sampled stills establish a usable visual pilot, not an exhaustive real-time motion review or perfect paper appearance/takeoff adherence."
+  },
+  "audio_signal_audit_passed": true,
+  "audio_listening_review": false,
+  "scope": "One complete corrected Turbo8 native-prompt T2VA pilot; sampled visual acceptance plus audited audio/media, with subjective listening unassessed",
+  "mp4_sha256": "c26718137132e36b82a846d2d28192aa8687cb233d15613cb90329aeed240990"
+}

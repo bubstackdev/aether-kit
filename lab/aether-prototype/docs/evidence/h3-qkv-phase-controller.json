@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "passed": true,
+  "kind": "phase",
+  "command": [
+    "/private/tmp/aether-h3-qkv-ready/phase/h3_phase_probe",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "/private/tmp/aether-h3-qkv-ready/run-01/phase/report.json"
+  ],
+  "wall_budget_seconds": 180,
+  "cleanup_reserve_seconds": 10,
+  "binary_sha256": "ccb080cee4482f70656f0e904c69aa7c048345b6032ad17bac67dc727a1d6bad",
+  "input_sha256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "controller_sha256": "f06d83ca6a0331147786171378b375c68de6d649612b277b3ddfeee69b5c16a8",
+  "scope": "One explicitly invoked native process group; application report/exit and wall budget checked, no full environment capture",
+  "conflicts_before": [],
+  "application_passed": true,
+  "exit_status": 0,
+  "child_joined": true,
+  "elapsed_seconds": 22.248133582994342
+}

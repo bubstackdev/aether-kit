@@ -1,0 +1,42 @@
+{
+  "boundBufferBytes" : {
+    "body-0" : 3031109908,
+    "body-1" : 3031690516
+  },
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "cancellations" : [
+
+  ],
+  "captureComplete" : false,
+  "chainManifestPath" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-cpu-prepared-02\/chain.json",
+  "chainManifestSHA256" : "3668d74d9a676525d69080770d901a62f6d1f09e7316ea6d08c0ef77a3300d12",
+  "limits" : {
+    "captureNativeSubmissions" : 6,
+    "metalAllocatedBytes" : 19327352832,
+    "physicalFootprintBytes" : 21474836480,
+    "qualificationCyclesPerCase" : 3,
+    "qualificationNativeSubmissions" : 38,
+    "settleSeconds" : [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes" : 536870912
+  },
+  "memorySamples" : 0,
+  "mode" : "--prepare-only",
+  "nativeExecuted" : false,
+  "passed" : true,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "readyForQualification" : false,
+  "resources" : {
+
+  },
+  "runs" : [
+
+  ],
+  "schema" : 1,
+  "scope" : "Three corrected production blocks at 19333 rows and both captured T2VA cardinalities; independent per-block CPU checks at captured native contexts, not independent CPU chain\/trajectory parity or full generation",
+  "selectedFilesVerified" : true,
+  "stage" : "ready"
+}

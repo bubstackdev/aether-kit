@@ -1,0 +1,73 @@
+{
+  "error": null,
+  "events": [
+    {
+      "event": "denoiser_ready",
+      "specialized": true
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "df2ff892f06502edf9a55cc21997afd156a212ee26fb3fe587f1b80b11bbb296",
+      "step": 0
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "dea4fd66194d9c1f7dc1aaba19816e718c5d6ea2df325c7583cfc3ffd2181140",
+      "step": 1
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "25c26b11c84b1ee7546e2ef2a840c74153671abd2b7f0cc43a3e2212960cb842",
+      "step": 2
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "9738a39a0ebebf714cce68061e20216aea70fbb9d7d417f54abdd7ff2efe4c66",
+      "step": 3
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "9cb2e5ea7430eeb85e81b7f00e140fb25880b13cf8cf9e5328406fe2b46d9150",
+      "step": 4
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "73f1733fe3360a78ba04d9eb40b1106cdcf90c55dc2a61eb0180f71d259c506a",
+      "step": 5
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "fa0acaeab113132cf5499c9ee88ebc837cf0434387162d94c20008a209aeb540",
+      "step": 6
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "3869b757030e018ed74b48644dcb013179c6059633540e160ace531ea83f0d74",
+      "step": 7
+    },
+    {
+      "event": "decoded"
+    },
+    {
+      "event": "pixels",
+      "passed": true,
+      "sha256": "4fa6be3acbb37f7e0b52f6b7b0cbe0376757af308d333d436641fa8a0152f8c4"
+    }
+  ],
+  "load_policy": "parallel",
+  "mode": "provided",
+  "model_streams_verified": true,
+  "passed": true,
+  "reference": "/Users/zakkeown/Code/atelier/lab/krea-lab/records/round4/fixed-paired-tower/record.json",
+  "seconds": 24.403473209,
+  "shape_registration_verified": true,
+  "token_ids_match": true
+}

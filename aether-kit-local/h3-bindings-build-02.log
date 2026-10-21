@@ -1,0 +1,28 @@
+warning: 'aether-kit': Source files for target AetherH3CoreAITests should be located under 'Tests/AetherH3CoreAITests', or a custom sources path can be set with the 'path' property in Package.swift
+[0/1] Planning build
+Building for production...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/11] Compiling AetherH3CoreAI H3BlockSession.swift
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:75:22: error: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+73 |             throw error
+74 |         }
+75 |         await stream.currentWorkCompleted()
+   |                      |- error: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                      `- note: sending 'self'-isolated 'self.stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+76 |         try Task.checkCancellation()
+77 |         let data = Data(bytes: output.contents(), count: outputSpec.byteCount)
+
+/Users/zakkeown/Code/bubstackdev/aether/aether-kit/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift:72:26: error: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+70 |             _ = try function.encode(inputs: values, outputViews: views, to: stream)
+71 |         } catch {
+72 |             await stream.currentWorkCompleted()
+   |                          |- error: sending 'self.stream' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+   |                          `- note: sending 'self'-isolated 'self.stream' to @concurrent instance method 'currentWorkCompleted()' risks causing data races between @concurrent and 'self'-isolated uses
+73 |             throw error
+74 |         }
+
+[#RegionIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/region-isolation>
+[#SendingRisksDataRace]: <https://docs.swift.org/compiler/documentation/diagnostics/sending-risks-data-race>
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

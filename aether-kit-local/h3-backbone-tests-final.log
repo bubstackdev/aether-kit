@@ -1,0 +1,19 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[3/6] Write swift-version--58304C5D6DBC2206.txt
+[5/8] Compiling AetherH3CoreAITests H3BlockSessionTests.swift
+macro expansion #expect:1:22: error: errors thrown from here are not handled
+`- /Users/zakkeown/Code/bubstackdev/aether/aether-kit/Tests/AetherH3CoreAITests/H3ChainSessionTests.swift:103:94: note: expanded code originates here
+101 |     }
+102 |     #expect(await session.state == .ready)
+103 |     try await session.run(onOutput: { _, value in #expect(try value.floatValues().count == 1) })
+    |                                                   `- note: in expansion of macro 'expect' here
+    +--- macro expansion #expect ---------------------------------------
+    |1 | Testing.__checkValue(try value.floatValues().count == 1,expression: .__fromSyntaxNode("try value.floatValues().count == 1"),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+    |  |                      `- error: errors thrown from here are not handled
+    +-------------------------------------------------------------------
+104 |     #expect(await backend.calls == 2)
+105 |     await session.unload()
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

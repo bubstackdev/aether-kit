@@ -1,0 +1,20 @@
+{
+  "bundle": ".local/h3-diagnostic/bundle.json",
+  "diagnostic": true,
+  "elapsed_seconds": 27.321560334,
+  "events": [],
+  "frames": 22,
+  "height": 128,
+  "passed": true,
+  "prepare_only": true,
+  "prepare_oracle": {
+    "byte_identical": false,
+    "predefined_limit": 0.02,
+    "relative_l2": 0.0028912163259056096
+  },
+  "prompt": "integrated_multimodal_description: A painted paper bird unfolds its wings and gently lifts from a wooden desk. One continuous camera shot.\n\noverall_soundscape: Soft paper rustling and quiet room tone.\n\nnon_diegetic_music: No music.",
+  "provided_conditioning_and_noise": true,
+  "schema": 1,
+  "scope": "input projection/text-refinement boundary versus original CPU model; no body or decode execution",
+  "width": 128
+}

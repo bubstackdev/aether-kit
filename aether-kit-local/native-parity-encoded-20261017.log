@@ -1,0 +1,100 @@
+Verifying all model streams; this can read tens of GB.
+Verifying source-linked shape specialization.
+gate event: conditioning
+gate event: denoisers
+gate event: step
+gate event: step
+gate event: step
+gate event: step
+gate event: step
+gate event: step
+gate event: step
+gate event: step
+gate event: decoded
+{
+  "bundleFingerprint" : "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+  "events" : [
+    {
+      "event" : "conditioning",
+      "passed" : true,
+      "sha256" : "10c6d354ae88f4f33d950ef9f9d45e06d8a0a2308dbcc6576e7968a4480f7cab"
+    },
+    {
+      "event" : "denoisers",
+      "passed" : true,
+      "selectionIdentity" : "e93c8c22d197e4ce6206ddad0b9556590d573537104c728d1dd8111ccf0973c1"
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "be46d444bc1ae51dd87d70af33fb2ae19e2796c7dc18bb7872085442ac87cdce",
+      "step" : 0
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "6648b0469606d208bedf40712de74bdba7857e55530c3fd98d836b5283ec6fc3",
+      "step" : 1
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "129b2c517cb2bb1651bc7064c3e5cc309f3f6a7e45ce7ecd3e53e9770dc90f40",
+      "step" : 2
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "949a2cda554c23627a2675b9a6e78c2b7b519ac0cf9f422b461c78550eecb01f",
+      "step" : 3
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "d47c7972dd390d5ed2de07697804f5c306c67aa9c86377ccf4b143836389d1f0",
+      "step" : 4
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "ccbf28e0509f005be40cfbe7c91c6a6cef6d82745aa4d5908c80e2b31c89df8a",
+      "step" : 5
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "97a710bc8450a33957a5a4fa9963c016392118763ea9d1e646773b0d0ce89ba9",
+      "step" : 6
+    },
+    {
+      "event" : "step",
+      "passed" : true,
+      "sha256" : "898f4ff656cedfca1348b0b139fc07145252bdf0e9fff86d49278d27b2bde788",
+      "step" : 7
+    },
+    {
+      "event" : "decoded"
+    },
+    {
+      "event" : "pixels",
+      "passed" : true,
+      "sha256" : "9b40e6017aabb0fddb81c29e11f928b9ceb4eda4d8e9639f49a9508e88937d25"
+    }
+  ],
+  "fixtureSHA256" : {
+    "ids" : "9e244b771451cfce864d4677fedc188738f5df2428d0614e1bd7e35c03154ce4",
+    "mask" : "01f50e9d6f16e5678169b244083866b4f53af40c4f32303a9ff799ae6ca10e29",
+    "noise" : "946d62cbf0cbe41a2260a5becf44fde4e44793609503b8b5c743aaa456bfb73a",
+    "text" : "440ed8b4c7020699e9a7f38964ba29f924bb423a685db5f1ca4779691d81dacc"
+  },
+  "mode" : "encoded",
+  "modelStreamsVerified" : true,
+  "passed" : true,
+  "reference" : "\/Users\/zakkeown\/Code\/atelier\/lab\/krea-lab\/records\/round4\/fixed-encoded-tower\/record.json",
+  "referenceSHA256" : "0559c883d9fbd00105cc0fbf56f00f89529691eb0a0a6ec8f89c957638c930fd",
+  "registrationSHA256" : "a01c2725f3a9b9b9e9af0dc3e496f0863650d29da5f505f03d41e985d995b92d",
+  "seconds" : 365.708891333,
+  "shapeRegistrationVerified" : true,
+  "stage" : "complete",
+  "tokenIDsMatch" : true
+}

@@ -1,0 +1,16 @@
+{
+  "operator_terminated": true,
+  "reason": "Bounded diagnostic run: baseline passed; repeat is slowing in native execution before decoder cancellation. Stop to compare function lifetime without continuing the large memory-pressure workload.",
+  "last_event": {
+    "instance": "B2523CE6-DFD8-4591-91C0-857C71C09FCD",
+    "uptime": 300640.92752533336,
+    "call": 447,
+    "event": "nativeBegin",
+    "sequence": 447,
+    "model": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu/krea_2_turbo_realism-denoiser2.aimodel",
+    "phase": "cancel"
+  },
+  "completed_native_calls": 43,
+  "pid": 96388,
+  "benchmark": false
+}

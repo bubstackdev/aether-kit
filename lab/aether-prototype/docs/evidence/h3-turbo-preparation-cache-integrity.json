@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "passed": true,
+  "scope": "CPU integrity audit of the first native-generated preparation cache. No second generation or native hit-throughput claim.",
+  "key": "652c5b1478af113e5cf52e27ebbdab78b463f2028de1b7ca1dbb9771650301fc",
+  "native_miss": true,
+  "embeddings": 8,
+  "blocks": 50,
+  "evaluations_per_block": 8,
+  "tensor_files": 408,
+  "total_tensor_bytes": 145313280,
+  "cache_record_sha256": "bf663f3af724b53437ebf4a8bf4f09869f8159680ae7270e90843bd8684aa0cf",
+  "elapsed_seconds": 0.11447670799680054
+}

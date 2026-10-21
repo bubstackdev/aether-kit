@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "gpu_work": false,
+  "adapter": {
+    "repository": "lightx2v/Minimax-h3-Turbo",
+    "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "execution": "dynamic_lora",
+    "rank": 128,
+    "alpha": 8.0
+  },
+  "target_count": 312,
+  "block_count": 50,
+  "bindings_per_block": 22,
+  "source_schedule_evaluations": 8,
+  "original_prepare_byte_identical": true,
+  "original_small_block_byte_identical": true,
+  "full_generation_checked": false,
+  "recipe_sha256": "5187abaa362fa88c1e9efb6c2d7401615edef902af1f20b2d394aaef852b0fb2",
+  "bundle_sha256": "484284f1f3db741eda7dadcf1e7b2b6d09af789ee6ef0cc1f83301e7f5895e46"
+}

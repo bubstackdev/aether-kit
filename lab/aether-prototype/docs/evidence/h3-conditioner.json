@@ -1,0 +1,20 @@
+{
+  "bundle": ".local/h3-diagnostic/bundle.json",
+  "conditioner_oracle": {
+    "byte_identical": false,
+    "predefined_limit": 0.02,
+    "relative_l2": 0.0013552200533725476
+  },
+  "diagnostic": true,
+  "elapsed_seconds": 192.773095292,
+  "events": [],
+  "frames": 22,
+  "height": 128,
+  "passed": true,
+  "prepare_only": false,
+  "prompt": "integrated_multimodal_description: A painted paper bird unfolds its wings and gently lifts from a wooden desk. One continuous camera shot.\n\noverall_soundscape: Soft paper rustling and quiet room tone.\n\nnon_diegetic_music: No music.",
+  "provided_conditioning_and_noise": false,
+  "schema": 1,
+  "scope": "native 50-layer conditioner tap versus original CPU hidden_states[50]; no denoising or decode",
+  "width": 128
+}

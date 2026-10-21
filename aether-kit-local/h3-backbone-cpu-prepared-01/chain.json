@@ -1,0 +1,2165 @@
+{
+  "schema": 2,
+  "block_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "reference_blocks": [
+    0,
+    1,
+    2,
+    24,
+    49
+  ],
+  "weight_residency": "one_block",
+  "bundle_sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "phase_manifest_sha256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "predefined_relative_l2_limit": 0.02,
+  "oracle_recipe_sha256": "69b632b752ba5ec8902e218fb954ef85e7ff4b816e460b9dc11bee31c7f52f97",
+  "cases": [
+    {
+      "name": "body-0",
+      "steps": [
+        {
+          "block": 0,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-0-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "2e6c57bf12cd09c21f4f2548773252f1bb65932822b888f0fb070ed2c649c2df"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-0-block0-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084"
+        },
+        {
+          "block": 1,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-1-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "f2df59c2c66bc8e3da6e2ddbc299ffafee47f4a139c85f5395fb12560e24c50d"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-0-block1-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "25045a78679c2312c8609f17efecf473b6681589b9c7086a73516812e31b8ebd",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "5f45e294b6b7b253230a05a1254fa9f0ccf78e9f11b73e21735d2c6f8baf0895"
+        },
+        {
+          "block": 2,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-2-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "af484c7634f27ddde80e88b2fe24a30bbea106945cc63dca73f3e653e72360c7"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-0-block2-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "68ae790e2886ef44eb273385020ed6ada34fdde3c1a8f8e9186997b0e6cf61ad",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "9fb4aeef54096f346481621fc3b852c48e7bb8ddfdc703242e97bde8666ca9f6"
+        },
+        {
+          "block": 3,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-3-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "82dbc0f1ff55dafd0cf62f3def9945242f9df69265bd4d19bf1ae14b1727941b"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 4,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-4-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "d3d73ea3eabeb50712d469e509a08f10fb42ff9f3a73e89870e5757686a366b4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 5,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-5-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "3845c5155cafb81684700b49d2195772e70b280f4ff9b929df5a78fa4c5a4fee"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 6,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-6-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "4205e5a0c49a8f0c28efe7ce455fcc72bd79cd643dcec786125673d766b6742c"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 7,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-7-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "bb34adb41103d7ab4be9baa6563887532e8a7562d6bdc52ae87b44dc02e614a4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 8,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-8-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "c5cff31bd37b6a0753c1596da375420e14ace0202d820782e453da5f86d94e11"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 9,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-9-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "f8e567601f44453de2820df52f0e33268bb43fd4e0e9dfb0be246f081743a328"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 10,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-10-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "d24fb24821b18d154b2ea721ca823aa5786eb5344df5dfbc7888cdbaabab19ee"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 11,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-11-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "a7490d348fb2cb66ef500e343c070029ae5dbcbefbf1d05dd33f00c787c89d8f"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 12,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-12-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "01ad5ba5b3823f3120534bfc1737843f782570153157684544cdf0b297b0e4ad"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 13,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-13-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "12f4286d5f825f9ddfb02dae37a78e90cbeefe3a7a1d41b46e36a13bd0bad741"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 14,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-14-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "dc75f22411ae49087c079d72d21b264bb0c097ae4cd03900b434616255a89dbd"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 15,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-15-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "c815c6f9c0069f85c8deb74693f60e425646bef1b7e85834bb54267264191d59"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 16,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-16-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "7846cf52debfd886bc37ff85aba72002d1fed0b97e3348a30088862bd806cf9e"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 17,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-17-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "a3d8fee355ef5174ecafe16485538873aa92f60e5d69a4ca107180529775f150"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 18,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-18-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "2859b747719da4209c442c2e1aa2025706b14ecc25376c479332507ff4ec4486"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 19,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-19-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "0a71461618089863e11cba114c700c8b4ef2d031dc7ed04719ccedde653f8f3b"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 20,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-20-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "2676c6498a2e6c71b5ab07ba537b22c769f3a2bdd8b1e298d4dfb1d8703a5082"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 21,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-21-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "db603986bc47e7e205927e76ec08ce192d8c5ed66355db10ada0c6f00052b67f"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 22,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-22-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "23e09afc6a31ec61dd704ba53544be302393c81239ba597e04d9453b102c76f6"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 23,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-23-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "9b4d0fa2bfbe56e8b12a7c54a0c1160a0a89a2472a5a4d052838c47dc9847b85"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 24,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-24-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "e9013b45d922a90579203a23465b994d80f5f139f1c1b693b65eead645823481"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 25,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-25-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "d4e5a7096bc848fb6cc35573e072f1cb8cccd31a8e2365927cad6042a25745a9"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 26,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-26-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "172af5fea9d9da5bb911dfef9a94942414712a3f82aee6b798d1df68f400f532"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 27,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-27-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "3fc448d1e74fbae697a31e83f37c710c9725c4dfc3f53f482e6a09ee414ef560"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 28,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-28-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "9fa6c62e5be2965bd8278fce3b85a91156598c0566713f42c3135258101b848f"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 29,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-29-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "34b227f13bc3a122b6c7e796ee6a71e2890440ce5aaa864bfda2519da6160621"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 30,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-30-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "f90f38d3d790b3de4a3fdaefc449c8d713b11cf9a6d3a5c33ec4c0c4fe2bf2de"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 31,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-31-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "b88278def97462c05a0a2e7ba91aa06666cd749d547a063ca2cfd37a82ec8f81"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 32,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-32-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "a7ae9d044f83fe5e9643fa28bb5044f98c898f40f31b364503d0c515d4bff994"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 33,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-33-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "591d20cc26da6df7391fa7400decebbb8a2ad91b8859520ac3b3df77b91f110f"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 34,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-34-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "519e39939af469364bfb3c5eeb2285d4104d2dee5ecb8358b745d712d39e2ad5"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 35,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-35-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "bbe938d7a57184b1d4ac19973fc31bddb7b12c0a2732bf2c274870641a930f82"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 36,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-36-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "6e216ad8fca09aac8bd8bbe59eb0aeb6c27f5c86b91d8e9bf2db8a8463c164ab"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 37,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-37-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "b68214d9b717b089f8510c01ba369314bf11e63b862bb1185c06d9ab4c24f0a5"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 38,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-38-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "af3fadeeabdc975ffab6e74d316e682c2a47a4be9cb75879c015335f6277f8e0"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 39,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-39-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "e35c927f7ebffe357fd16f0d44786f9417c81b452b2935f6cef641ec9eeaf7c9"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 40,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-40-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "7c05e58ad3932942239fa2a3c7c99fe02b2cff3f7738bbf5cc9c8598ebb78d42"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 41,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-41-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "f40420142978d1243853eebd12aee620c1408cffec0ae416f680a7aec5b28962"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 42,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-42-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "af163a2ae8e991f8a12b5936b236e34a8fa2854457065992e6538573d2396e8b"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 43,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-43-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "75a411f1b7a7e47f246d64931749c297664997753e077501c3a8ae3dcc564b15"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 44,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-44-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "0268db5af625deb6efe0f0cf035418d96f1c20468d88997cfb448f81f38673f8"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 45,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-45-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "9a8108e064ec516ff5f4ac46adaf38ca495c9032a4f733a2ba0c966af02890e0"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 46,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-46-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "230dc7a91aa0d60b0dbe757b7a0cd35803b673ac0abc59450c73af14815d6792"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 47,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-47-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "1ca7fdac7beae7205893463b41aa8b09b16339e821d68c98a4c1942e4d56279a"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 48,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-48-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "7012bdcfd7c05890b7a4ae7e571b90c98253801ddae0cb91a917e4dd98d731c9"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 49,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-49-step-0.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              3,
+              5376
+            ],
+            "sha256": "2e423c0bf7c0d80388b23b10ee0741ef4af72adde7b951bd8cec2e57fc517119"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        }
+      ]
+    },
+    {
+      "name": "body-1",
+      "steps": [
+        {
+          "block": 0,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-0-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "04d4be042a12add1d0f4c9c3b9f5b28635c874fb3627110f553337dae9b0141e"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-1-block0-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27"
+        },
+        {
+          "block": 1,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-1-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "6e4d0590796ef873354f9436ddf851c5e5b230cff71dc01b300e4cced2964932"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-1-block1-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "169a455a4356ca2a03ce5f83d86b98f034d844d0100863bf8c1c6c1eeb9295d6",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "006103cb3e1534079f81d64be48fb4c093095c129ef1691d4ada93fd8f12d342"
+        },
+        {
+          "block": 2,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-2-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "c210cd77cc533b41a5e70fad18da2bea27f87cab5bb907fab928302cb57143c5"
+          },
+          "reference": {
+            "name": "hidden_out",
+            "path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-chain-cpu-references-01/body-1-block2-reference.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              1,
+              64,
+              5376
+            ],
+            "sha256": "71147e27bf03265b34213814f758ccc3c649c089dc71bd752407a7af6f616d4b",
+            "row_indices": [
+              0,
+              6,
+              13,
+              20,
+              27,
+              34,
+              41,
+              48,
+              49,
+              76,
+              104,
+              131,
+              159,
+              186,
+              214,
+              241,
+              269,
+              296,
+              324,
+              351,
+              379,
+              406,
+              434,
+              462,
+              463,
+              946,
+              1430,
+              1914,
+              2398,
+              2882,
+              3365,
+              3849,
+              4333,
+              4817,
+              5301,
+              5785,
+              6268,
+              6752,
+              7236,
+              7720,
+              8204,
+              8687,
+              9171,
+              9655,
+              10139,
+              10623,
+              11107,
+              11590,
+              12074,
+              12558,
+              13042,
+              13526,
+              14009,
+              14493,
+              14977,
+              15461,
+              15945,
+              16429,
+              16912,
+              17396,
+              17880,
+              18364,
+              18848,
+              19332
+            ],
+            "native_shape": [
+              1,
+              19333,
+              5376
+            ]
+          },
+          "expected_output_sha256": "e9d9b7a6661375e39189b658bb62055b10701dc49c7f1a1fa7f784c5ba939025"
+        },
+        {
+          "block": 3,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-3-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "fd9979ae098bd9dafe3a86e8b7bec3e019d6e71a3e98851bbd2be6bbbb5285c9"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 4,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-4-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "2ab89a8d39915d9930a2e7496eb995288961e004ae9c88e5f5d72cb9a2e1b255"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 5,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-5-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "b96a2c2f662cdbf90e998dd08f0a77f97354d4ee57b2e91f23bdbe00c67415d0"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 6,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-6-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "4ebb93423fd4ec9745a054d317e40d720201c2f4feb437c49b3906065aa59daa"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 7,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-7-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "fbd4c5aa9cdf262b717bc593a76b3de4c928a0f4adbeffb79ef625e1b5d973f4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 8,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-8-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "1771f27c58dfe1a004838471d57cd38cd8e9d79ff8c36f07608559f0f24bcf4d"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 9,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-9-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "85f7ae7fbc266122f8a79455bd1cd62391ebac3ed6deab9cd37dad9dc6c2619f"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 10,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-10-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "eaf9cfe554f4d745eccdc82b4a6cadc177233db529b2f622f3dbfcfe2acbdc4c"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 11,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-11-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "de08956261423d8bb24d64e1a15be6854270a5dbfc281e167837f0130879c41d"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 12,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-12-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "8ce2e6d8e799a0e22a558d38d2b0328a05a56eb0e3f62a6a0ffbcbcf6c79d90a"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 13,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-13-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "2cfda55a2ad141bf42a263d7ce2801d218da7e983abdd8cc6f55400023a64449"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 14,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-14-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "72aa66b7df83e57f0c6a705ed9a8f4d0a3d9a7f671fecfb287e449ac23896d7a"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 15,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-15-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "3a886cc1c886ca047db5e88a58aee0e3149eccb595e5be96f3a7c4f1807d014b"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 16,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-16-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "c7645c9c58226ec74b6a1559bf278fa656283a4a4d9c6ee8f61a048de4b30f56"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 17,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-17-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "b50ad2fba0d1abf635429839e6ea6072e82f51262f8da8e5afeda427b9741508"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 18,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-18-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "6c01dd2840a0f200d4f7f62588ec84811294072a52163470408e8a3d79372db4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 19,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-19-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "084f4c656df8f38e5d4f61a6d753d6eb64e3e99ca1516a9f9800061c75e17042"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 20,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-20-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "0fc92c39d0469bfd6e46eadc0cb3cfe22b01b96a76d30f663165c70a06a96007"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 21,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-21-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "0e01204ff6db79e9723167aeb353360e28977cdb9e97f74b9a08ffa7314762f9"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 22,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-22-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "6d3477bb4f994d081632de8ab23efb90ed7514debf89a3ca3b0ae4cd46f9d334"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 23,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-23-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "e6832abcb2726f30ad397ec367ac51af840b587ee3499efae9694f311b43f70a"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 24,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-24-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "8486c768d1127ee07c2e75b6fe1e5fb7a89aa9eba35b00a2a9344ebf4be086e4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 25,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-25-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "d84eaa78cff8364d51535317ebb091bb843fb964f34c9e06b91421feb880c9e8"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 26,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-26-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "cfc032e49f3fa39e19ea31d68ae113135fce5395f3a756bc9e0236b826242fd4"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 27,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-27-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "87476a1a7e4ce071d00a2645fb16549c9ccc0800efd7e33c77f5f2a7afdf3002"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 28,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-28-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "2bcecb9847ccc734dd97d9fe88aa81154ab75823c7610ea38f9240be1a4df902"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 29,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-29-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "a24beea39581be4d6a7e0f3e936daec9a944f5ba26c6e8960c82b0a1a7be0abb"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 30,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-30-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "1ddcfe45f44d396282539c2f3fa0235dfa00ec9f1b9e8af4eca84de7c96813dd"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 31,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-31-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "b498835fca7f968b384090624eb81141f99ae9af5ccc28592530d7b800fe99e0"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 32,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-32-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "73109428fe7f72c1f59e98886b7735f7848e1ed69667cf879a8f37f8eb4d500c"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 33,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-33-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "0810df29c166d6c1c8f1efa3dca335f5bb2d8d55b52e3d59b8abc3c0858ce8f5"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 34,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-34-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "b79d8d1041079743bb9937ce6c2adc5cd02433aa227f55d591673d233c541f42"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 35,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-35-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "6b98f021b49f2a36e416ccc94cff7e79601a3e98b8ccd661b76597bd32fc1944"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 36,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-36-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "cd97dfef0b305374d0a069677381ef02b625dac37c67466bc07bcd288b11f683"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 37,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-37-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "d529f542d98a7685f4d5066a0b335622e1c3a4679020d47688757cdf1112e534"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 38,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-38-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "a7cd8db007846bb063b26c622a76cc15342e1524a28a05dabedc3e881f4b6cfc"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 39,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-39-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "ed0f00d97fba975bb4f7ea0738d630d25e91128442362668c9e467ee6f3d8808"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 40,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-40-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "99e3d9831737679ed4e9a8c5cd53d32fab83f3908d980a4761c3266833fa6443"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 41,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-41-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "9a5a39f546a12caa4f5a2fa0922c17aef20af888f0ca19afb155c3fe0d4e5c42"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 42,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-42-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "28ffaaf530aff17d45f705043f2ef8a65cbc20ec652feedbcad99b48fb0e3599"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 43,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-43-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "062fe9e13b81a6b338b881bda55ccb95d1fc9b1529feca44c6d751207cb50329"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 44,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-44-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "9a2b581bfa5b1e3f87fbdec5d22903985f8e669d3f98f55ecbf270409d6e8927"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 45,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-45-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "784ed9679785dc0c4746b6c16afe45bc6b48e5eae733f3907ac052f242a1e6ac"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 46,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-46-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "ca03f508bcba05260897f37b0d81a41f7d18d88d1c74c91f9a12c3d5e8daa3c7"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 47,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-47-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "3ae963185c0ae1b363fbb1414349833b369fd4994089e1f1a84c3dabf73aa954"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 48,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-48-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "4a8f1258b945f3385aa2bf10c645bd951c28068c5d0af04be9c2bdb852cef468"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        },
+        {
+          "block": 49,
+          "temb": {
+            "name": "temb",
+            "path": "/private/tmp/aether-h3-qkv-phase-oracles/fixtures/cache-reference/block-49-step-1.raw",
+            "dtype": "bfloat16",
+            "shape": [
+              6,
+              6,
+              5376
+            ],
+            "sha256": "360ffa0bc874d5454a0960374c5c41ddb49ab5add7bb18a472ed9240843b01bb"
+          },
+          "reference": null,
+          "expected_output_sha256": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+Aether prototype
+
+Krea schedule, latent conventions, prompt rendering, rotary-table and seeded-noise
+algorithms were ported with reference to the Apache-2.0 Swift Aether sources in
+the local Aether Engine and Atelier Krea Lab projects. The lab snapshot identifies
+upstream revision 7aff977df6e88005649b13bc63995f75eb4b217b.
+
+Original Aether / Atelier sources are copyright their respective contributors.
+The accompanying LICENSE preserves the Apache License, Version 2.0.
+
+External model weights, tokenizer assets and adapters are not distributed here;
+their original licenses apply independently.
+
+H3 packing, scheduler, normalization and conditioning conventions follow
+Diffusers commit 7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941, copyright 2026
+The MiniMax and HuggingFace Teams, licensed under Apache-2.0. Aether implements
+those application conventions in Rust. Its offline Forge wrappers call the
+unmodified Diffusers/Transformers modules and converter. The parameter-lifting
+utility comes from the local Atelier H3 lab. No model weights are distributed.

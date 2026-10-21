@@ -1,0 +1,20 @@
+{
+  "scope": "full raw original CPU decoder comparison; no lossy media comparison",
+  "passed": true,
+  "predefined_relative_l2_limit": 0.02,
+  "relative_l2": 9.733083469539682e-07,
+  "max_absolute_error": 6.109476089477539e-06,
+  "finite": true,
+  "shape": [
+    1,
+    3,
+    22,
+    128,
+    128
+  ],
+  "actual_sha256": "443bf7aa7f1cb92972f02fb0c201cee64ef6d26a449c9a1d3d7ce93ff37ee145",
+  "reference_sha256": "2b4f1ef29f6257331254d4a272281039a105d534d435ca2de1997e38e2b90f6e",
+  "byte_identical": false,
+  "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941"
+}

@@ -1,0 +1,25 @@
+{
+  "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/recipes/turbo8-schedule.json": {
+    "sha256": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "copiedTo": "Sources/AetherH3/Resources/turbo8-schedule.json"
+  },
+  "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/tests/fixtures/h3-turbo-numerics.json": {
+    "sha256": "c54f477946f51e82d2dd1539fdd2ca8bf7d36fed7870a88dd22b49381b8021fb",
+    "copiedTo": "Tests/AetherH3Tests/Fixtures/turbo8-numerics.json"
+  },
+  "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/tests/fixtures/h3-numerics.json": {
+    "sha256": "df68dd15e12de3a5e53ca6461968bd43a2c78dd2cf0d1f77a5326e707e790922",
+    "derivedFixture": "Tests/AetherH3Tests/Fixtures/video-packing-oracle.json",
+    "derivation": "Retained the independent upstream patchify SHA256. Source tensor is [24,7,4,4] with sequential Float32(i), as specified by the original oracle and prototype test."
+  },
+  "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/records/packed-layout.json": {
+    "sha256": "d1ac74270eb7cf28c06313acb3d8625afdf73a2635fe8e4790b314a4927c56fe",
+    "derivedFixture": "Tests/AetherH3Tests/Fixtures/layout-oracle.json",
+    "derivation": "Verified all six raw tensor hashes per case; narrowed f64 coordinates once to f32 and i64 tags/indices to i32, then hashed the little-endian bytes. Text tags retained for replay."
+  },
+  "/private/tmp/aether-h3-qkv-ready/render/bundle.json": {
+    "sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "derivedFixture": "Tests/AetherH3Tests/Fixtures/corrected-export-header.json",
+    "derivation": "Copied only identity fields from the retained corrected Turbo8 export. No model paths or weights copied."
+  }
+}

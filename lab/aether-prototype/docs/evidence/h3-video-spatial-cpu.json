@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "gpu_work": false,
+  "original_diagnostic_decode_byte_identical": true,
+  "scope": "original 256px/22-frame source-precision VAE; explicit weights versus original CPU module; CPU module versus lifted graph, no native or full-profile decode result",
+  "parameters": 703,
+  "parameter_bytes": 10415475936,
+  "source_snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "recipe_sha256": "f1fb798394dba8e74dcd3edba66cfa4b2100ecb0447ebff6f5d59f1b073ba399",
+  "bundle_sha256": "f6b72a9576f56f7b6fb02e4c7d1f798ec15589054f4eb86f867777278fa3f78c",
+  "reference_shape": [
+    1,
+    3,
+    22,
+    256,
+    256
+  ],
+  "metadata_note": "Diagnostic shape label corrected from probe record; recipe SHA identifies the executed exporter.",
+  "executed_recipe_source": "/private/tmp/aether-h3-spatial-ready/decoder/sources/aether/forge/h3_video_functional.py"
+}

@@ -1,0 +1,21 @@
+{
+  "version": "0.3.0",
+  "registry": "https://index.crates.io/",
+  "archive_url": "https://static.crates.io/crates/corsairs/corsairs-0.3.0.crate",
+  "sha256": "e7f23287a680009a43aa5a46e8646a66918f5c4c3e2bdb627a18091b21fe3e3a",
+  "index_entry": {
+    "name": "corsairs",
+    "vers": "0.3.0",
+    "deps": [],
+    "cksum": "e7f23287a680009a43aa5a46e8646a66918f5c4c3e2bdb627a18091b21fe3e3a",
+    "features": {
+      "abi-research": [],
+      "default": []
+    },
+    "yanked": false,
+    "rust_version": "1.99",
+    "pubtime": "2026-10-15T22:22:49Z"
+  },
+  "cargo_home": "/private/tmp/aether-cargo-published-v03",
+  "scope": "Published registry archive, checksum verified; existing dependency caches are read-only symlinks, new package/cache files stay in temp."
+}

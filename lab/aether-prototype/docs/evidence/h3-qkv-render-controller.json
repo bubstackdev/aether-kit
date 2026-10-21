@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "passed": true,
+  "kind": "render",
+  "command": [
+    "/private/tmp/aether-h3-qkv-ready/render/h3_generate",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "/private/tmp/aether-h3-qkv-ready/run-01/render/report.json",
+    "/private/tmp/aether-h3-qkv-ready/run-01/render/clip",
+    "--ffmpeg=/opt/homebrew/Cellar/ffmpeg/9.0.2/bin/ffmpeg",
+    "--cache=/private/tmp/aether-h3-preparation-cache"
+  ],
+  "wall_budget_seconds": 1176,
+  "cleanup_reserve_seconds": 10,
+  "binary_sha256": "21beca81fc99169d14bd6367f09c4d735c286d5574b174546ca6f36b6d3cb33b",
+  "input_sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "controller_sha256": "f06d83ca6a0331147786171378b375c68de6d649612b277b3ddfeee69b5c16a8",
+  "scope": "One explicitly invoked native process group; application report/exit and wall budget checked, no full environment capture",
+  "conflicts_before": [],
+  "application_passed": true,
+  "exit_status": 0,
+  "child_joined": true,
+  "elapsed_seconds": 686.0167762920028
+}

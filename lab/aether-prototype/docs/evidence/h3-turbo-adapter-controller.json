@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "passed": true,
+  "kind": "adapter",
+  "command": [
+    "/private/tmp/aether-h3-turbo-ready/adapter/h3_turbo_probe",
+    "/private/tmp/aether-h3-turbo-ready/adapter/bundle.json",
+    "/private/tmp/aether-h3-turbo-ready/adapter-run-01/report.json"
+  ],
+  "wall_budget_seconds": 300,
+  "cleanup_reserve_seconds": 10,
+  "binary_sha256": "1499c72d55f29284a1e2a0653c50810fea62b60dc1e3b0b6b7dc7033c202d361",
+  "input_sha256": "a8c916b8529dc4028b78f53c9259f58b58b8cb1a1c3483b9397dce59875bf1b1",
+  "controller_sha256": "a35a814b959d066c44e73fdfb9991c8700380b2ed93190b52c50cd05154356bd",
+  "scope": "One explicitly invoked native process group; application report/exit and wall budget checked, no full environment capture",
+  "conflicts_before": [],
+  "application_passed": true,
+  "exit_status": 0,
+  "child_joined": true,
+  "elapsed_seconds": 6.170113458007108
+}

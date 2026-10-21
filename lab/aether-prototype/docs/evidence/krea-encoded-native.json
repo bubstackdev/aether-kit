@@ -1,0 +1,80 @@
+{
+  "error": null,
+  "events": [
+    {
+      "cached": false,
+      "event": "text",
+      "passed": true,
+      "rows": 20,
+      "sha256": "10c6d354ae88f4f33d950ef9f9d45e06d8a0a2308dbcc6576e7968a4480f7cab"
+    },
+    {
+      "event": "denoiser_ready",
+      "specialized": true
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "be46d444bc1ae51dd87d70af33fb2ae19e2796c7dc18bb7872085442ac87cdce",
+      "step": 0
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "6648b0469606d208bedf40712de74bdba7857e55530c3fd98d836b5283ec6fc3",
+      "step": 1
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "129b2c517cb2bb1651bc7064c3e5cc309f3f6a7e45ce7ecd3e53e9770dc90f40",
+      "step": 2
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "949a2cda554c23627a2675b9a6e78c2b7b519ac0cf9f422b461c78550eecb01f",
+      "step": 3
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "d47c7972dd390d5ed2de07697804f5c306c67aa9c86377ccf4b143836389d1f0",
+      "step": 4
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "ccbf28e0509f005be40cfbe7c91c6a6cef6d82745aa4d5908c80e2b31c89df8a",
+      "step": 5
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "97a710bc8450a33957a5a4fa9963c016392118763ea9d1e646773b0d0ce89ba9",
+      "step": 6
+    },
+    {
+      "event": "step",
+      "passed": true,
+      "sha256": "898f4ff656cedfca1348b0b139fc07145252bdf0e9fff86d49278d27b2bde788",
+      "step": 7
+    },
+    {
+      "event": "decoded"
+    },
+    {
+      "event": "pixels",
+      "passed": true,
+      "sha256": "9b40e6017aabb0fddb81c29e11f928b9ceb4eda4d8e9639f49a9508e88937d25"
+    }
+  ],
+  "load_policy": "parallel",
+  "mode": "encoded",
+  "model_streams_verified": true,
+  "passed": true,
+  "reference": "/Users/zakkeown/Code/atelier/lab/krea-lab/records/round4/fixed-encoded-tower/record.json",
+  "seconds": 199.798440416,
+  "shape_registration_verified": true,
+  "token_ids_match": true
+}

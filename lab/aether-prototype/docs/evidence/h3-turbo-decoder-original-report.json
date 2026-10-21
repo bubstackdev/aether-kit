@@ -1,0 +1,6 @@
+{
+  "events": [],
+  "passed": false,
+  "schema": 1,
+  "scope": "both original decoders at full profile geometry with seeded synthetic latents; no denoising, media or quality claim"
+}

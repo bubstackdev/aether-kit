@@ -1,0 +1,239 @@
+{
+  "boundBufferBytes" : {
+    "body-0" : 3031109908,
+    "body-1" : 3031690516
+  },
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "cancellations" : [
+
+  ],
+  "captureComplete" : true,
+  "chainManifestPath" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-cpu-prepared-02\/chain.json",
+  "chainManifestSHA256" : "3668d74d9a676525d69080770d901a62f6d1f09e7316ea6d08c0ef77a3300d12",
+  "limits" : {
+    "captureNativeSubmissions" : 6,
+    "metalAllocatedBytes" : 19327352832,
+    "physicalFootprintBytes" : 21474836480,
+    "qualificationCyclesPerCase" : 3,
+    "qualificationNativeSubmissions" : 38,
+    "settleSeconds" : [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes" : 536870912
+  },
+  "memorySamples" : 1244,
+  "mode" : "--capture",
+  "nativeExecuted" : true,
+  "passed" : false,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "readyForQualification" : false,
+  "resources" : {
+    "body-0.cycle1.afterLoad" : {
+      "metalAllocatedBytes" : 7882129408,
+      "physicalFootprintBytes" : 8084687800,
+      "processLifetimePeakFootprintBytes" : 8084687800,
+      "processLifetimePeakResidentBytes" : 3244310528,
+      "residentBytes" : 3244310528
+    },
+    "body-0.cycle1.afterUnload0s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 5416258152,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 2139127808
+    },
+    "body-0.cycle1.afterUnload1s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 843040448,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 858718208
+    },
+    "body-0.cycle1.afterUnload5s" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 842974912,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 858652672
+    },
+    "body-0.cycle1.beforeLoad" : {
+      "metalAllocatedBytes" : 65536,
+      "physicalFootprintBytes" : 612746320,
+      "processLifetimePeakFootprintBytes" : 612746320,
+      "processLifetimePeakResidentBytes" : 621264896,
+      "residentBytes" : 621264896
+    },
+    "body-0.cycle1.capture" : {
+      "metalAllocatedBytes" : 8992227328,
+      "physicalFootprintBytes" : 9974074872,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 3475079168
+    },
+    "body-1.cycle1.afterLoad" : {
+      "metalAllocatedBytes" : 7883161600,
+      "physicalFootprintBytes" : 8310967776,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 2784985088
+    },
+    "body-1.cycle1.afterUnload0s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 4571433120,
+      "processLifetimePeakFootprintBytes" : 9989344784,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 1318338560
+    },
+    "body-1.cycle1.afterUnload1s" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 843171496,
+      "processLifetimePeakFootprintBytes" : 9989344784,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 839122944
+    },
+    "body-1.cycle1.afterUnload5s" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 843138728,
+      "processLifetimePeakFootprintBytes" : 9989344784,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 839090176
+    },
+    "body-1.cycle1.beforeLoad" : {
+      "metalAllocatedBytes" : 720896,
+      "physicalFootprintBytes" : 842974912,
+      "processLifetimePeakFootprintBytes" : 9974402552,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 858652672
+    },
+    "body-1.cycle1.capture" : {
+      "metalAllocatedBytes" : 8992997376,
+      "physicalFootprintBytes" : 9949859344,
+      "processLifetimePeakFootprintBytes" : 9989344784,
+      "processLifetimePeakResidentBytes" : 3475193856,
+      "residentBytes" : 2837987328
+    }
+  },
+  "runs" : [
+    {
+      "cycle" : 1,
+      "name" : "body-0",
+      "outputs" : [
+        {
+          "block" : 0,
+          "comparison" : {
+            "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+            "byteIdentical" : false,
+            "maximumAbsoluteError" : 1536,
+            "passed" : true,
+            "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+            "relativeL2" : 0.011005565585396282
+          },
+          "dtype" : "bfloat16",
+          "inputSHA256" : "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-0-block0.raw",
+          "sha256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        },
+        {
+          "block" : 1,
+          "dtype" : "bfloat16",
+          "inputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-0-block1.raw",
+          "sha256" : "5f45e294b6b7b253230a05a1254fa9f0ccf78e9f11b73e21735d2c6f8baf0895",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        },
+        {
+          "block" : 2,
+          "dtype" : "bfloat16",
+          "inputSHA256" : "5f45e294b6b7b253230a05a1254fa9f0ccf78e9f11b73e21735d2c6f8baf0895",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-0-block2.raw",
+          "sha256" : "9fb4aeef54096f346481621fc3b852c48e7bb8ddfdc703242e97bde8666ca9f6",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        }
+      ],
+      "role" : "capture"
+    },
+    {
+      "cycle" : 1,
+      "name" : "body-1",
+      "outputs" : [
+        {
+          "block" : 0,
+          "comparison" : {
+            "actualSHA256" : "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+            "byteIdentical" : false,
+            "maximumAbsoluteError" : 512,
+            "passed" : true,
+            "referenceSHA256" : "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+            "relativeL2" : 0.004303844536004717
+          },
+          "dtype" : "bfloat16",
+          "inputSHA256" : "d2b5283a8c3cd87542571bbeee3a33c72bd57bbb5ace18da1cd25916c445401b",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-1-block0.raw",
+          "sha256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        },
+        {
+          "block" : 1,
+          "dtype" : "bfloat16",
+          "inputSHA256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-1-block1.raw",
+          "sha256" : "006103cb3e1534079f81d64be48fb4c093095c129ef1691d4ada93fd8f12d342",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        },
+        {
+          "block" : 2,
+          "dtype" : "bfloat16",
+          "inputSHA256" : "006103cb3e1534079f81d64be48fb4c093095c129ef1691d4ada93fd8f12d342",
+          "name" : "hidden_out",
+          "path" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-chain-capture-01\/body-1-block2.raw",
+          "sha256" : "e9d9b7a6661375e39189b658bb62055b10701dc49c7f1a1fa7f784c5ba939025",
+          "shape" : [
+            1,
+            19333,
+            5376
+          ]
+        }
+      ],
+      "role" : "capture"
+    }
+  ],
+  "sampledPeak" : {
+    "metalAllocatedBytes" : 8993128448,
+    "physicalFootprintBytes" : 9989344784,
+    "processLifetimePeakFootprintBytes" : 9989344784,
+    "processLifetimePeakResidentBytes" : 3475193856,
+    "residentBytes" : 3475193856
+  },
+  "schema" : 1,
+  "scope" : "Three corrected production blocks at 19333 rows and both captured T2VA cardinalities; independent per-block CPU checks at captured native contexts, not independent CPU chain\/trajectory parity or full generation",
+  "selectedFilesVerified" : true,
+  "stage" : "capturedAwaitingCPUReferences"
+}

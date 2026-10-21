@@ -1,0 +1,4 @@
+{"elapsed_seconds":9.693931208,"event":"timing","index":null,"seconds":9.668154125000001,"stage":"video_decoder_oracle"}
+{"elapsed_seconds":42.470483875,"event":"timing","index":null,"seconds":32.702157333,"stage":"integrity"}
+{"elapsed_seconds":44.4874115,"event":"timing","index":null,"seconds":2.013173791,"stage":"audio_decoder"}
+{"elapsed_seconds":44.488507792,"event":"audio_decoded","sha256":"e83333cf3f96a9d99db8739bc9b5063fb107e2d99dd8a6dacd9ef15c243f4712"}

@@ -1,0 +1,113 @@
+{
+  "boundBufferBytes" : {
+    "body-0" : 1228188436,
+    "body-1" : 1228381972
+  },
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "mode" : "--run",
+  "nativeExecuted" : true,
+  "passed" : true,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "resources" : {
+    "body-0.afterRun" : {
+      "metalAllocatedBytes" : 12039880704,
+      "physicalFootprintBytes" : 12824807752,
+      "processLifetimePeakFootprintBytes" : 12837177672,
+      "processLifetimePeakResidentBytes" : 1683652608,
+      "residentBytes" : 1681981440
+    },
+    "body-0.afterUnload" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 12681644336,
+      "processLifetimePeakFootprintBytes" : 12837177672,
+      "processLifetimePeakResidentBytes" : 1683652608,
+      "residentBytes" : 1679867904
+    },
+    "body-0.beforeLoad" : {
+      "metalAllocatedBytes" : 65536,
+      "physicalFootprintBytes" : 612631608,
+      "processLifetimePeakFootprintBytes" : 612631608,
+      "processLifetimePeakResidentBytes" : 621002752,
+      "residentBytes" : 621002752
+    },
+    "body-1.afterRun" : {
+      "metalAllocatedBytes" : 12040437760,
+      "physicalFootprintBytes" : 12826380616,
+      "processLifetimePeakFootprintBytes" : 12840159560,
+      "processLifetimePeakResidentBytes" : 1686274048,
+      "residentBytes" : 1683193856
+    },
+    "body-1.afterUnload" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 12683217200,
+      "processLifetimePeakFootprintBytes" : 12840159560,
+      "processLifetimePeakResidentBytes" : 1686274048,
+      "residentBytes" : 1681080320
+    },
+    "body-1.beforeLoad" : {
+      "metalAllocatedBytes" : 1110114304,
+      "physicalFootprintBytes" : 12681644336,
+      "processLifetimePeakFootprintBytes" : 12837177672,
+      "processLifetimePeakResidentBytes" : 1683652608,
+      "residentBytes" : 1679867904
+    }
+  },
+  "runs" : [
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "repetition" : 1
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "df549ef8984394104017b7edf5898b302481dd5b65a0799e7f9136af429ac520",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 1536,
+        "passed" : true,
+        "referenceSHA256" : "6ffd1395fec48caa6353589a6aed866b630da8f607a6dc857ad7dcb5cc3eb339",
+        "relativeL2" : 0.011005565585396282
+      },
+      "fullOutputSHA256" : "47881fda1fd57203540abf9eb4bd8f8311ce30002444b7814a5c431a9b30d084",
+      "name" : "body-0",
+      "repetition" : 2
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 512,
+        "passed" : true,
+        "referenceSHA256" : "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+        "relativeL2" : 0.004303844536004717
+      },
+      "fullOutputSHA256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "name" : "body-1",
+      "repetition" : 1
+    },
+    {
+      "comparison" : {
+        "actualSHA256" : "603222cb5c5a6af3c19d86b92fc1509a7ead6e2b190efd0b1b50759fa8656014",
+        "byteIdentical" : false,
+        "maximumAbsoluteError" : 512,
+        "passed" : true,
+        "referenceSHA256" : "03b09f6fc79408a03fee2e91b3067e97519400e4bb2373df23b92c0e97a689ed",
+        "relativeL2" : 0.004303844536004717
+      },
+      "fullOutputSHA256" : "72d57bec5667eef4e53975bd50713a2442fdb8e9dd915174ebb6df0d37a53c27",
+      "name" : "body-1",
+      "repetition" : 2
+    }
+  ],
+  "schema" : 1,
+  "scope" : "Corrected Turbo8 block 0 at the two captured T2VA cardinalities; sampled CPU oracle comparison, not full pipeline qualification or a benchmark",
+  "selectedFilesVerified" : true,
+  "stage" : "complete"
+}
