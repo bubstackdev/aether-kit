@@ -1,4 +1,5 @@
 import AetherH3
+import AetherAssets
 import AetherKit
 import Foundation
 import Testing
@@ -87,4 +88,44 @@ import Testing
     #expect(throws: AetherError.self) { try outside.read() }
     try Data([9, 9, 1, 0, 2, 1, 9]).write(to: a)
     #expect(throws: AetherError.self) { try file.read() }
+}
+
+
+@Test func h3LeasedSegmentsKeepOrderAndEmbeddingRowsUseOriginalDescriptors() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let shard = root.appendingPathComponent("shard")
+    let bytes = Data([128,63, 0,64, 64,64, 128,64]) // BF16 1, 2, 3, 4.
+    try bytes.write(to: shard)
+    let lease = try ExternalFileLease(files: [shard])
+    let expected = Data([64,64, 128,63, 0,64])
+    let file = try H3TensorFile(name: "qkv", segments: [.init(url: shard, offset: 4, length: 2), .init(url: shard, offset: 0, length: 4)],
+                               spec: H3TensorSpec(scalarType: .bfloat16, shape: [3]), sha256: h3SHA256(expected)).holding(lease)
+    let embedding = try H3EmbeddingTable(url: shard, offset: 0, rows: 2, width: 2, byteCount: 8, sha256: h3SHA256(bytes)).holding(lease)
+    try FileManager.default.moveItem(at: shard, to: root.appendingPathComponent("old"))
+    try Data(repeating: 0, count: 8).write(to: shard)
+    #expect(try file.read().floatValues() == [3, 1, 2])
+    var destination = Data(count: 6)
+    try destination.withUnsafeMutableBytes { try file.read(into: $0, verify: true) }
+    #expect(destination == expected)
+    try embedding.verify()
+    #expect(try embedding.rows([1, 0]).floatValues() == [3, 4, 1, 2])
+}
+
+@Test func h3LeasedTensorRejectsCoverageExtentAndOverflowBeforeAllocating() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let shard = root.appendingPathComponent("shard")
+    try Data([0,0]).write(to: shard)
+    let lease = try ExternalFileLease(files: [shard])
+    let spec = try H3TensorSpec(scalarType: .bfloat16, shape: [1])
+    let file = try H3TensorFile(name: "w", segments: [.init(url: shard, offset: 1, length: 2)], spec: spec, sha256: h3SHA256(Data([0,0])))
+    #expect(throws: AetherError.self) { try file.holding(lease) }
+    #expect(throws: AetherError.self) {
+        try H3TensorFile(name: "overflow", segments: [.init(url: shard, offset: 0, length: Int.max), .init(url: shard, offset: 0, length: Int.max)],
+                         spec: spec, sha256: h3SHA256(Data([0,0])))
+    }
+    #expect(throws: AetherError.self) { try H3EmbeddingTable(url: shard, offset: 0, rows: 1, width: Int.max, byteCount: 2, sha256: h3SHA256(Data([0,0]))) }
 }

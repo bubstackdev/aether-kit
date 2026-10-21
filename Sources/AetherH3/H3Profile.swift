@@ -1,4 +1,5 @@
 import AetherKit
+import AetherAssets
 import CryptoKit
 import Foundation
 
@@ -78,11 +79,11 @@ public struct H3Profile: Sendable {
     public let cardinalityLimits: ClosedRange<Int>
     public let textTokenLimits: ClosedRange<Int>
     public let tokenizer: URL
-    public let conditioner: Conditioner?
-    public let prepare: Prepare?
+    public private(set) var conditioner: Conditioner?
+    public private(set) var prepare: Prepare?
     public let body: H3ModelAsset
     public let heads: H3ModelAsset
-    public let parameters: [[H3TensorFile]]
+    public private(set) var parameters: [[H3TensorFile]]
     public let recipes: [String: Recipe]
     public let videoDecoder: VideoDecoder
     /// First-frame (FL2VA keyframe) encoders, one static graph per canvas, keyed "WIDTHxHEIGHT".
@@ -216,6 +217,26 @@ public struct H3Profile: Sendable {
         self.recipes = recipes
     }
 
+    /// Pins checkpoint/adapter weight sources without copying or hashing the complete checkpoint.
+    /// Every later tensor/embedding read uses these descriptors and the existing range hashes.
+    /// Profile graphs, tokenizer and schedule tables keep their existing caller-owned immutability contract.
+    public func protectingWeights() throws -> Self {
+        let weights = parameters.flatMap { $0 } + (conditioner?.parameters.flatMap { $0 } ?? []) + (prepare?.textParameters ?? [])
+        let urls = weights.flatMap { $0.segments.map { $0.url } } + (conditioner.map { [$0.embedding.url] } ?? [])
+        let lease = try ExternalFileLease(files: urls)
+        var result = self
+        result.parameters = try parameters.map { try $0.map { try $0.holding(lease) } }
+        if let c = conditioner {
+            result.conditioner = Conditioner(embedding: try c.embedding.holding(lease), layer: c.layer,
+                                             parameters: try c.parameters.map { try $0.map { try $0.holding(lease) } },
+                                             tap: c.tap, ropeCos: c.ropeCos, ropeSin: c.ropeSin)
+        }
+        if let prepare {
+            result.prepare = Prepare(text: prepare.text, textParameters: try prepare.textParameters.map { try $0.holding(lease) }, pack: prepare.pack)
+        }
+        return result
+    }
+
     /// The step tables for `layout` under `recipe`. The layout's own row timesteps must equal the recorded ones for
     /// every step, so a table can never be applied to rows it was not computed for.
     public func steps(recipe name: String, layout: H3Layout) throws -> [Step] {
@@ -314,13 +335,34 @@ public struct H3EmbeddingTable: Sendable {
     public let rows: Int
     public let width: Int
     public let sha256: String
+    private var lease: ExternalFileLease? = nil
     public init(url: URL, offset: Int, rows: Int, width: Int, byteCount: Int, sha256: String) throws {
-        let extent = rows.multipliedReportingOverflow(by: width * 2)
-        guard url.isFileURL, offset >= 0, rows > 0, width > 0, !extent.overflow, extent.partialValue == byteCount,
+        let stride = width.multipliedReportingOverflow(by: 2)
+        let extent = rows.multipliedReportingOverflow(by: stride.partialValue)
+        guard url.isFileURL, offset >= 0, rows > 0, width > 0, !stride.overflow,
+              !extent.overflow, !offset.addingReportingOverflow(byteCount).overflow, extent.partialValue == byteCount,
               h3IsSHA256(sha256) else { throw AetherError.invalidModel("invalid H3 embedding table") }
         self.url = url.standardizedFileURL; self.offset = offset; self.rows = rows; self.width = width; self.sha256 = sha256
     }
+    public func holding(_ lease: ExternalFileLease) throws -> Self {
+        let size = try lease.byteCount(of: url), count = UInt64(rows * width * 2)
+        guard UInt64(offset) <= size, count <= size - UInt64(offset) else { throw AetherError.invalidModel("H3 leased embedding extent differs") }
+        var result = self; result.lease = lease; return result
+    }
+
     public func verify() throws {
+        if let lease {
+            var hasher = SHA256(), consumed = 0
+            while consumed < rows * width * 2 {
+                try autoreleasepool {
+                    var chunk = Data(count: min(8 << 20, rows * width * 2 - consumed))
+                    try chunk.withUnsafeMutableBytes { try lease.read(into: $0, from: url, offset: UInt64(offset + consumed)) }
+                    hasher.update(data: chunk); consumed += chunk.count
+                }
+            }
+            guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else { throw AetherError.invalidModel("H3 embedding table hash mismatch") }
+            return
+        }
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
         try handle.seek(toOffset: UInt64(offset))
         var hasher = SHA256(), remaining = rows * width * 2
@@ -337,8 +379,19 @@ public struct H3EmbeddingTable: Sendable {
     public func rows(_ ids: [Int32]) throws -> H3TensorData {
         guard !ids.isEmpty, ids.allSatisfy({ $0 >= 0 && Int($0) < rows }) else { throw AetherError.invalidTensor("H3 token id outside the embedding table") }
         let stride = width * 2
+        let spec = try H3TensorSpec(scalarType: .bfloat16, shape: [1, ids.count, width])
+        if let lease {
+            var bytes = Data(count: spec.byteCount)
+            try bytes.withUnsafeMutableBytes { raw in
+                for (index, id) in ids.enumerated() {
+                    let row = UnsafeMutableRawBufferPointer(rebasing: raw[(index * stride)..<((index + 1) * stride)])
+                    try lease.read(into: row, from: url, offset: UInt64(offset + Int(id) * stride))
+                }
+            }
+            return try H3TensorData(spec: spec, bytes: bytes)
+        }
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
-        var bytes = Data(capacity: ids.count * stride)
+        var bytes = Data(capacity: spec.byteCount)
         for id in ids {
             try handle.seek(toOffset: UInt64(offset + Int(id) * stride))
             guard let row = try handle.read(upToCount: stride), row.count == stride else { throw AetherError.invalidTensor("H3 embedding row is short") }

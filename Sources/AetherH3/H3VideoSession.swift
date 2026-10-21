@@ -58,7 +58,7 @@ public struct H3DecodedFrames: Sendable {
     public let rgb: [[UInt8]]
 }
 
-public enum H3VideoStage: String, Sendable, Codable { case encoding, encodingKeyframe, denoising, decodingVideo, decodingAudio }
+public enum H3VideoStage: String, Sendable, Codable, Hashable { case encoding, encodingKeyframe, denoising, decodingVideo, decodingAudio }
 
 public enum H3VideoEvent: Sendable {
     case stageStarted(H3VideoStage)
@@ -116,9 +116,12 @@ public struct H3VideoStages: Sendable {
     public let denoiser: any H3Denoiser
     public let video: any H3WindowDecoder
     public let audio: any H3AudioDecoder
+    /// Exact profile/recipe identity for resource estimates; custom stages must supply their own stable identity.
+    public let resourceIdentity: String?
     public init(conditioner: any H3PromptConditioner, keyframes: (any H3KeyframeEncoder)? = nil, denoiser: any H3Denoiser,
-                video: any H3WindowDecoder, audio: any H3AudioDecoder) {
+                video: any H3WindowDecoder, audio: any H3AudioDecoder, resourceIdentity: String? = nil) {
         self.conditioner = conditioner; self.keyframes = keyframes; self.denoiser = denoiser; self.video = video; self.audio = audio
+        self.resourceIdentity = resourceIdentity
     }
 }
 
@@ -132,19 +135,23 @@ public actor H3VideoSession {
     public private(set) var state: State = .ready
     private var stages: H3VideoStages?
     private var active: Task<H3VideoResult, any Error>?
+    private let resources: H3ResourceAdmission?
+    private var closingTask: Task<Void, Never>?
 
-    public init(stages: H3VideoStages) { self.stages = stages }
+    public init(stages: H3VideoStages) { self.stages = stages; resources = nil }
+
+    public init(stages: H3VideoStages, resources: H3ResourceAdmission) throws {
+        guard stages.resourceIdentity == resources.executionIdentity else {
+            throw AetherError.invalidRequest("H3 resource profile belongs to different execution stages")
+        }
+        self.stages = stages; self.resources = resources
+    }
 
     public func generate(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler = { _ in }) async throws -> H3VideoResult {
         try Task.checkCancellation()
-        guard state != .closing, state != .closed, let stages else { throw AetherError.sessionClosed }
+        guard state != .closing, state != .closed, stages != nil else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
-        guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
-        if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
-            throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
-        }
-        let task = Task { try await Self.run(request, stages: stages, onEvent: onEvent) }
+        let task = try startRun(request, onEvent: onEvent)
         active = task; state = .running
         defer { active = nil; if state == .running { state = .ready } }
         return try await withTaskCancellationHandler {
@@ -152,45 +159,74 @@ public actor H3VideoSession {
         } onCancel: { task.cancel() }
     }
 
+    private func startRun(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler) throws -> Task<H3VideoResult, any Error> {
+        guard let stages else { throw AetherError.sessionClosed }
+        guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
+        guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
+        if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
+            throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
+        }
+        try resources?.check(request)
+        let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        let resources = resources
+        return Task {
+            defer { reservation?.release() }
+            return try await Self.run(request, stages: stages, resources: resources, onEvent: onEvent)
+        }
+    }
+
     /// Waits for any active call, then releases every stage.
     public func unload() async {
         guard state != .closed else { return }
+        if let closingTask { await closingTask.value; return }
         state = .closing
-        if let active { _ = await active.result }
-        if let stages { await Self.releaseAll(stages) }
-        stages = nil; state = .closed
+        let task = Task { [self] in
+            if let active { _ = await active.result }
+            if let stages { await Self.releaseAll(stages) }
+            stages = nil; state = .closed
+        }
+        closingTask = task
+        await task.value
     }
 
-    private static func run(_ request: H3VideoRequest, stages: H3VideoStages, onEvent: @escaping H3VideoEventHandler) async throws -> H3VideoResult {
+    private static func run(_ request: H3VideoRequest, stages: H3VideoStages, resources: H3ResourceAdmission?,
+                            onEvent: @escaping H3VideoEventHandler) async throws -> H3VideoResult {
         let geometry = request.geometry
+        var stageReservation: ResourceReservation?
+        func begin(_ stage: H3VideoStage) throws { stageReservation = try resources?.reserve(stage) }
+        func finished() { stageReservation?.release(); stageReservation = nil }
         do {
             try Task.checkCancellation()
+            try begin(.encoding)
             try await onEvent(.stageStarted(.encoding))
             let conditioning = try await forwarding({ .conditionerLayer($0, of: $1) }, to: onEvent) { report in
                 try await stages.conditioner.encode(request.prompt, geometry: geometry, onLayer: report)
             }
-            await stages.conditioner.release(); try await onEvent(.stageReleased(.encoding))
+            await stages.conditioner.release(); finished(); try await onEvent(.stageReleased(.encoding))
 
             try Task.checkCancellation()
             var initial = try geometry.initialLatents(seed: request.seed)
             var conditionRows = 0
             if let keyframe = request.firstFrame, let encoder = stages.keyframes {
+                try begin(.encodingKeyframe)
                 try await onEvent(.stageStarted(.encodingKeyframe))
                 let condition = try await encoder.encode(keyframe, geometry: geometry)
-                await encoder.release(); try await onEvent(.stageReleased(.encodingKeyframe))
+                await encoder.release(); finished(); try await onEvent(.stageReleased(.encodingKeyframe))
                 initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: condition)
                 conditionRows = initial.video.spec.shape[1] - geometry.targetVideoRows
             }
+            try begin(.denoising)
             try await onEvent(.stageStarted(.denoising))
             let denoised = try await forwarding({ .step($0, of: $1) }, to: onEvent) { report in
                 try await stages.denoiser.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: report)
             }
-            await stages.denoiser.release(); try await onEvent(.stageReleased(.denoising))
+            await stages.denoiser.release(); finished(); try await onEvent(.stageReleased(.denoising))
             guard denoised.video.spec == initial.video.spec, denoised.audio.spec == initial.audio.spec else {
                 throw AetherError.invalidTensor("H3 denoiser output geometry differs from its initial latents")
             }
 
             try Task.checkCancellation()
+            try begin(.decodingVideo)
             try await onEvent(.stageStarted(.decodingVideo))
             // Only the generated rows are decoded; the keyframe anchors lead the video rows (the pipeline's `latents[ncv:]`).
             let packed = Array(try denoised.video.floatValues().dropFirst(conditionRows * 96))
@@ -209,13 +245,14 @@ public actor H3VideoSession {
             }
             try await deliver(stitcher.finish())
             guard emitted == geometry.frames else { throw AetherError.invalidTensor("H3 decoded frame count differs") }
-            await stages.video.release(); try await onEvent(.stageReleased(.decodingVideo))
+            await stages.video.release(); finished(); try await onEvent(.stageReleased(.decodingVideo))
 
             if request.audio {
                 try Task.checkCancellation()
+                try begin(.decodingAudio)
                 try await onEvent(.stageStarted(.decodingAudio))
                 let pcm = try await stages.audio.decode(denoised.audio, geometry: geometry)
-                await stages.audio.release(); try await onEvent(.stageReleased(.decodingAudio))
+                await stages.audio.release(); finished(); try await onEvent(.stageReleased(.decodingAudio))
                 // One audio latent is 1/40 s; the decoded track must cover the clip to within it.
                 guard abs(pcm.durationSeconds - geometry.durationSeconds) <= 1.0 / 40 else {
                     throw AetherError.invalidTensor("H3 audio duration differs from the video")
@@ -225,6 +262,7 @@ public actor H3VideoSession {
             return H3VideoResult(frames: emitted, seed: request.seed, steps: stages.denoiser.steps, audio: request.audio)
         } catch {
             await releaseAll(stages)
+            finished()
             throw error
         }
     }
