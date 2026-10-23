@@ -21,6 +21,7 @@ private actor BatchFake: BatchRenderer {
     let output: URL
     var prepares = 0
     var seeds: [UInt64] = []
+    var steps: [Int] = []
     var closes = 0
     init(_ fault: Fault = .none, output: URL) { self.fault = fault; self.output = output }
     func prepare() throws -> BatchPreparation {
@@ -32,6 +33,7 @@ private actor BatchFake: BatchRenderer {
     }
     func generate(_ configuration: KreaConfiguration) throws -> GeneratedImage {
         seeds.append(configuration.seed)
+        steps.append(configuration.steps)
         if fault == .secondImage && seeds.count == 2 { throw AetherError.invalidTensor("injected generation failure") }
         if fault == .save {
             try FileManager.default.createDirectory(at: output.appendingPathComponent("001-seed-17.png"), withIntermediateDirectories: false)
@@ -60,6 +62,23 @@ private func batchReport(_ output: URL) throws -> [String: Any] {
     }
     #expect(throws: AetherError.self) { try KreaBatchOptions(["render-krea-batch"]) }
     #expect(try KreaBatchOptions(batchArguments(output: output) + ["/shape.json"]).registration?.path == "/shape.json")
+    #expect(valid.steps == 8)
+    let stepped = try KreaBatchOptions(batchArguments(output: output) + ["/shape.json", "--steps=16"])
+    #expect(stepped.steps == 16 && stepped.registration?.path == "/shape.json")
+    #expect(try KreaBatchOptions(["render-krea-batch", "--steps=12"] + batchArguments(output: output).dropFirst()).steps == 12)
+    for invalid in [["--steps=0"], ["--steps=51"], ["--steps="], ["--steps=+8"], ["--steps=8", "--steps=16"]] {
+        #expect(throws: AetherError.self) { try KreaBatchOptions(batchArguments(output: output) + invalid) }
+    }
+}
+
+@Test func batchStepsReachEveryConfigurationAndTheReport() async throws {
+    let root = try batchTemporaryRoot(); defer { try? FileManager.default.removeItem(at: root) }
+    let output = root.appendingPathComponent("batch")
+    let fake = BatchFake(output: output)
+    let report = try await KreaBatchCommand.execute(options: KreaBatchOptions(batchArguments(output: output) + ["--steps=16"])) { fake }
+    #expect(await fake.steps == [16, 16, 16])
+    #expect(report.steps == 16)
+    #expect(try batchReport(output)["steps"] as? Int == 16)
 }
 
 @Test func batchPreparesOnceRendersOrderedSeedsAndSavesVerifiedFiles() async throws {
