@@ -20,7 +20,8 @@ public struct KreaModelAsset: Sendable {
     }
 }
 
-/// The prototype's dynamic, text-only Krea 2 Turbo realism bundle.
+/// The prototype's dynamic Krea 2 Turbo bundle: the realism export (`krea_2_turbo_realism`, the base model with the
+/// realism adapter merged) or the vanilla export (`krea_2_turbo`, no adapter). Both share one recipe; only weights differ.
 /// Opening reads headers, hash declarations and tokenizer files, not model streams.
 /// Keep external files immutable for the lifetime of any model using this bundle.
 public struct KreaAssets: Sendable {
@@ -369,10 +370,13 @@ private struct Manifest: Decodable {
         }
     }
 
+    /// Export names of the same recipe. The fingerprint covers the metadata and weights, so approvals never carry over.
+    static let supportedNames: Set<String> = ["krea_2_turbo_realism", "krea_2_turbo"]
+
     func validate(name: String) throws {
         let d = diffusion
         let p = d.prompt
-        guard schema == 1, driver == "diffusion", name == "krea_2_turbo_realism",
+        guard schema == 1, driver == "diffusion", Self.supportedNames.contains(name),
               target.backend == "coreai", target.platform == "macos", target.arch == "any",
               !target.compiled, target.minOS == "27.0",
               d.latentChannels == 64, d.pixelsPerToken == 16, d.steps == 8,
@@ -386,7 +390,7 @@ private struct Manifest: Decodable {
               p.systemMessage == KreaPrompt.systemMessage, p.template == "chat",
               p.dropLeadingRows == 34, p.maxLength == 546, p.keepTrailingTokens == 5,
               p.padding == "none", p.thinking == nil, text.tokenizer == "tokenizer/" else {
-            throw AetherError.unsupported("expected the dynamic macOS Krea 2 Turbo realism recipe")
+            throw AetherError.unsupported("expected the dynamic macOS Krea 2 Turbo recipe")
         }
         let roles = ["textEncoder/encode": "encodeText", "vaeDecoder/decode": "decodeLatents"]
             .merging(Dictionary(uniqueKeysWithValues: (0..<4).map { ("denoiser\($0)/segment", "denoiseSegment") })) { $1 }

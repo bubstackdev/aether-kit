@@ -94,6 +94,21 @@ struct BundleFixture {
     }
 }
 
+@Test func bundleAcceptsTheVanillaExportAndRejectsOtherNames() throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let realism = try KreaAssets.open(at: fixture.root)
+    try fixture.edit("metadata.json") { $0["name"] = "krea_2_turbo" }
+    let vanilla = try KreaAssets.open(at: fixture.root)
+    #expect(vanilla.denoisers.count == 4)
+    // The metadata (and so the name) is part of the identity: approvals for one export never cover the other.
+    #expect(vanilla.fingerprint != realism.fingerprint)
+    for name in ["krea_2_raw", "krea_2_turbo_realism_v2", ""] {
+        try fixture.edit("metadata.json") { $0["name"] = name }
+        #expect(throws: AetherError.self) { try KreaAssets.open(at: fixture.root) }
+    }
+}
+
 @Test func bundleRejectsTraversalSymlinkEscapeAndAliasedModels() throws {
     let fixture = try BundleFixture()
     defer { fixture.cleanup() }
