@@ -151,17 +151,22 @@ private func loadNativeFunction(_ name: String, model: AIModel,
     return function
 }
 
-private func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(
+func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(
     _ array: NDArray, as type: Scalar.Type
 ) throws -> Tensor<Scalar> {
     let view = array.view(as: type)
     guard let elements = view.contiguousElements else {
         throw AetherError.unsupported("noncontiguous tensor output")
     }
-    _ = try Tensor<Scalar>.elementCount(for: array.shape)
-    var values: [Scalar] = []
-    values.reserveCapacity(elements.count)
-    for index in 0..<elements.count { values.append(elements[index]) }
+    let count = try Tensor<Scalar>.elementCount(for: array.shape)
+    guard elements.count == count else { throw AetherError.invalidTensor("native output extent does not match shape") }
+    // Own an independent Swift allocation, copying contiguous scalars in bulk. Tensor.init still validates finiteness.
+    let values = Array<Scalar>(unsafeUninitializedCapacity: count) { destination, initialized in
+        view.withUnsafePointer { source, _, _ in
+            destination.baseAddress!.initialize(from: source, count: count)
+        }
+        initialized = count
+    }
     return try Tensor(shape: array.shape, values: values)
 }
 
