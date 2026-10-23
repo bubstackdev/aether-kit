@@ -77,7 +77,7 @@ A [separate consumer package](Examples/LocalPackage) exercises the Krea product 
 
 See [Krea asset and conditioning preparation](docs/krea-conditioning.md) for local bundle usage and fixture checks. The tokenizer dependency is pinned to swift-transformers 1.1.0; `Package.resolved` records this checkout's full dependency resolution.
 
-The CLI exposes the same reuse through `aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json]`. It renders seeds serially after one preparation, saving indexed PNGs and a report with hashes and timing scope. See the [batch command example](docs/krea-generation.md#batch-rendering-from-the-cli).
+The CLI exposes the same reuse through `aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N]`. It renders seeds serially after one preparation, saving indexed PNGs and a report with hashes and timing scope. See the [batch command example](docs/krea-generation.md#batch-rendering-from-the-cli).
 
 For repeated images of one prompt, use `session.prepare(prompt:)` once, then `generate(configuration:preparedPrompt:)` on the same session. This releases the encoder after preparation and reuses conditioning, denoisers and decoder. Prepared values are caller-owned, report their conditioning byte count and reject incompatible bundles. See the [prepared-prompt example](docs/krea-generation.md#prepare-once-render-multiple-seeds).
 

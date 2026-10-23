@@ -7,16 +7,29 @@ import Darwin
 import Foundation
 
 struct KreaBatchOptions: Sendable {
-    static let usage = "use render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json]"
+    static let usage = "use render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N]"
     let bundle: URL
     let output: URL
     let prompt: String
     let width: Int
     let height: Int
     let seeds: [UInt64]
+    let steps: Int
     let registration: URL?
 
+    /// `--steps=N` (1...50, default 8) may appear once anywhere after the command name.
     init(_ arguments: [String]) throws {
+        let stepFlags = arguments.dropFirst().filter { $0.hasPrefix("--steps=") }
+        guard stepFlags.count <= 1 else { throw AetherError.invalidRequest(Self.usage) }
+        var steps = 8
+        if let flag = stepFlags.first {
+            let value = flag.dropFirst("--steps=".count)
+            guard !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) }), let parsed = Int(value) else {
+                throw AetherError.invalidRequest("batch --steps must be a decimal integer")
+            }
+            steps = parsed
+        }
+        let arguments = arguments.filter { !$0.hasPrefix("--steps=") }
         guard (7...8).contains(arguments.count), arguments[0] == "render-krea-batch",
               let width = Int(arguments[4]), let height = Int(arguments[5]),
               !arguments[3].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -30,13 +43,14 @@ struct KreaBatchOptions: Sendable {
             }
             return seed
         }
-        _ = try KreaConfiguration(width: width, height: height)
+        _ = try KreaConfiguration(width: width, height: height, steps: steps)
         self.bundle = URL(fileURLWithPath: arguments[1], isDirectory: true)
         self.output = URL(fileURLWithPath: arguments[2], isDirectory: true).standardizedFileURL
         self.prompt = arguments[3]
         self.width = width
         self.height = height
         self.seeds = seeds
+        self.steps = steps
         self.registration = arguments.count == 8 ? URL(fileURLWithPath: arguments[7]) : nil
     }
 }
@@ -140,7 +154,7 @@ enum KreaBatchCommand {
         }
         let started = ContinuousClock.now
         var report = KreaBatchReport(bundlePath: options.bundle.path, prompt: options.prompt,
-            width: options.width, height: options.height, steps: 8, seeds: options.seeds,
+            width: options.width, height: options.height, steps: options.steps, seeds: options.seeds,
             registrationPath: options.registration?.path)
         var renderer: (any BatchRenderer)?
         func write() throws {
@@ -165,7 +179,7 @@ enum KreaBatchCommand {
                 report.images.append(BatchImageRecord(index: index + 1, seed: seed, png: name))
                 try write()
                 log("image \(index + 1)/\(options.seeds.count), seed \(seed)")
-                let configuration = try KreaConfiguration(width: options.width, height: options.height, seed: seed)
+                let configuration = try KreaConfiguration(width: options.width, height: options.height, steps: options.steps, seed: seed)
                 let generationStarted = ContinuousClock.now
                 let image = try await pipeline.generate(configuration)
                 report.images[index].generationSeconds = AetherProbe.seconds(generationStarted.duration(to: .now))

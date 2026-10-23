@@ -106,7 +106,7 @@ source .local/native-assets.env
   'a red fox in fresh snow' 512 512 17017,17018,17019
 ```
 
-The command accepts 1–64 comma-separated unsigned 64-bit decimal seeds and renders eight steps per image. It prepares the prompt once, unloads the encoder, then serially reuses conditioning and the same generation session. Append an optional trusted `SHAPE.json` registration as with `render-krea`. Duplicate seeds are allowed; filenames include a one-based index, such as `001-seed-17017.png`, so repeats have distinct paths.
+The command accepts 1–64 comma-separated unsigned 64-bit decimal seeds and renders eight steps per image unless `--steps=N` (1–50) asks for another count; the report records the count used. It prepares the prompt once, unloads the encoder, then serially reuses conditioning and the same generation session. Append an optional trusted `SHAPE.json` registration as with `render-krea`. Duplicate seeds are allowed; filenames include a one-based index, such as `001-seed-17017.png`, so repeats have distinct paths.
 
 The output directory must be new. `report.json` is written atomically before setup and as each image progresses; it records the prompt, requested seeds and dimensions, bundle fingerprint, conditioning hash/payload size, optional registration hash, OS/RAM, setup duration, per-image generation durations, float32 pixel hashes and PNG byte hashes. A successful command prints the complete report as JSON to stdout; progress goes to stderr. `completed: true` means all PNGs were saved and the session unloaded, rather than an independent numerical parity assertion.
 

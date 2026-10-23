@@ -4,7 +4,7 @@ This records the conditioning slice. The subsequent [generation slice](krea-gene
 
 ## Implemented
 
-`AetherKrea` opens the prototype's dynamic macOS Krea 2 Turbo realism bundle and rejects unsupported schema/recipe/target/function/binding declarations. Asset references stay inside the bundle, including symlink resolution. Six distinct model assets are required.
+`AetherKrea` opens the prototype's dynamic macOS Krea 2 Turbo bundle, either the realism export (`krea_2_turbo_realism`) or the vanilla export without the adapter (`krea_2_turbo`), and rejects unsupported schema/recipe/target/function/binding declarations. Asset references stay inside the bundle, including symlink resolution. Six distinct model assets are required.
 
 Opening checks the model hash declarations and small model metadata, hashes tokenizer/configuration files, and compares those identities with provenance when supplied. It does **not** hash the large model streams. `assets.verify()` explicitly streams all six model streams through SHA-256 and rechecks model metadata and tokenizer files. Bundle fingerprints identify the header snapshot, model declarations/metadata and tokenizer bytes. These checks establish content consistency, not publisher authenticity. Keep external files immutable while using them.
 
