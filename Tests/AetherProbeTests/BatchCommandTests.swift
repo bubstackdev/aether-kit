@@ -193,3 +193,27 @@ private actor BatchCancellationGate: BatchRenderer {
     #expect(report["stage"] as? String == "failed")
     #expect(try FileManager.default.contentsOfDirectory(atPath: output.path) == ["report.json"])
 }
+
+@Test func batchReferencesParseInOrderAndAreBounded() throws {
+    let output = URL(fileURLWithPath: "/unused-output")
+    #expect(try KreaBatchOptions(batchArguments(output: output)).references.isEmpty)
+    let refs = try KreaBatchOptions(batchArguments(output: output) + ["--ref=/a.png", "--steps=16", "--ref=/b.png"])
+    #expect(refs.references.map(\.path) == ["/a.png", "/b.png"] && refs.steps == 16 && refs.registration == nil)
+    let four = (1...4).map { "--ref=/\($0).png" }
+    #expect(try KreaBatchOptions(batchArguments(output: output) + ["/shape.json"] + four).references.count == 4)
+    for invalid in [four + ["--ref=/5.png"], ["--ref="]] {
+        #expect(throws: AetherError.self) { try KreaBatchOptions(batchArguments(output: output) + invalid) }
+    }
+}
+
+@Test func batchReportRecordsReferencePathsAndHashes() async throws {
+    let root = try batchTemporaryRoot(); defer { try? FileManager.default.removeItem(at: root) }
+    let picture = root.appendingPathComponent("face.png")
+    try Data("not really a png".utf8).write(to: picture)
+    let output = root.appendingPathComponent("batch")
+    let report = try await KreaBatchCommand.execute(
+        options: KreaBatchOptions(batchArguments(output: output) + ["--ref=\(picture.path)"])) { BatchFake(output: output) }
+    #expect(report.referencePaths == [picture.path])
+    #expect(report.referenceSHA256s == [SHA256.hash(data: Data("not really a png".utf8)).map { String(format: "%02x", $0) }.joined()])
+    #expect(try batchReport(output)["referencePaths"] as? [String] == [picture.path])
+}

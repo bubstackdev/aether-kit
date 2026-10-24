@@ -7,7 +7,7 @@ import Darwin
 import Foundation
 
 struct KreaBatchOptions: Sendable {
-    static let usage = "use render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N]"
+    static let usage = "use render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N] [--ref=IMAGE ...]"
     let bundle: URL
     let output: URL
     let prompt: String
@@ -15,9 +15,11 @@ struct KreaBatchOptions: Sendable {
     let height: Int
     let seeds: [UInt64]
     let steps: Int
+    let references: [URL]
     let registration: URL?
 
-    /// `--steps=N` (1...50, default 8) may appear once anywhere after the command name.
+    /// `--steps=N` (1...50, default 8) may appear once anywhere after the command name. `--ref=IMAGE` may repeat up
+    /// to `KreaReferenceContract.maximumImages` times; the prompt refers to them in order as "Picture 1", "Picture 2"...
     init(_ arguments: [String]) throws {
         let stepFlags = arguments.dropFirst().filter { $0.hasPrefix("--steps=") }
         guard stepFlags.count <= 1 else { throw AetherError.invalidRequest(Self.usage) }
@@ -29,7 +31,11 @@ struct KreaBatchOptions: Sendable {
             }
             steps = parsed
         }
-        let arguments = arguments.filter { !$0.hasPrefix("--steps=") }
+        let references = arguments.dropFirst().filter { $0.hasPrefix("--ref=") }.map { String($0.dropFirst("--ref=".count)) }
+        guard references.count <= KreaReferenceContract.maximumImages, references.allSatisfy({ !$0.isEmpty }) else {
+            throw AetherError.invalidRequest("batch takes at most \(KreaReferenceContract.maximumImages) non-empty --ref=IMAGE paths")
+        }
+        let arguments = arguments.filter { !$0.hasPrefix("--steps=") && !$0.hasPrefix("--ref=") }
         guard (7...8).contains(arguments.count), arguments[0] == "render-krea-batch",
               let width = Int(arguments[4]), let height = Int(arguments[5]),
               !arguments[3].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -51,6 +57,7 @@ struct KreaBatchOptions: Sendable {
         self.height = height
         self.seeds = seeds
         self.steps = steps
+        self.references = references.map { URL(fileURLWithPath: $0) }
         self.registration = arguments.count == 8 ? URL(fileURLWithPath: arguments[7]) : nil
     }
 }
@@ -70,21 +77,31 @@ protocol BatchRenderer: Sendable {
 }
 
 private actor NativeBatchRenderer: BatchRenderer {
+    enum Source: Sendable {
+        case text(KreaPrompt)
+        case references(KreaReferencePrompt, [KreaReferencePixels])
+    }
     let session: KreaGenerationSession
-    let prompt: KreaPrompt
+    let source: Source
     var prepared: KreaPreparedPrompt?
 
-    init(assets: KreaAssets, prompt: KreaPrompt) {
+    init(assets: KreaAssets, source: Source) {
         session = KreaGenerationSession(assets: assets, compute: .preferGPU, residency: .balanced)
-        self.prompt = prompt
+        self.source = source
     }
     func prepare() async throws -> BatchPreparation {
-        let value = try await session.prepare(prompt: prompt)
+        let value: KreaPreparedPrompt, truncated: Bool
+        switch source {
+        case .text(let prompt):
+            value = try await session.prepare(prompt: prompt); truncated = prompt.wasTruncated
+        case .references(let prompt, let pixels):
+            value = try await session.prepare(referencePrompt: prompt, references: pixels); truncated = prompt.wasTruncated
+        }
         prepared = value
         return BatchPreparation(bundleFingerprint: value.bundleFingerprint,
             conditioningSHA256: floatHash(value.conditioning.tensor.values.map(Float.init)),
             conditioningByteCount: value.conditioningByteCount, conditioningRows: value.conditioning.rows,
-            wasTruncated: prompt.wasTruncated)
+            wasTruncated: truncated)
     }
     func generate(_ configuration: KreaConfiguration) async throws -> GeneratedImage {
         guard let prepared else { throw AetherError.invalidRequest("batch prompt has not been prepared") }
@@ -120,6 +137,8 @@ struct KreaBatchReport: Encodable, Sendable {
     let seeds: [UInt64]
     let registrationPath: String?
     var registrationSHA256: String?
+    let referencePaths: [String]
+    var referenceSHA256s: [String] = []
     let computePolicy = "preferGPU"
     let residency = "balanced"
     let modelStreamsVerified = false
@@ -139,7 +158,15 @@ enum KreaBatchCommand {
             var assets = try KreaAssets.open(at: options.bundle)
             if let registration = options.registration { assets = try assets.registeringSpecialization(at: registration) }
             let tokenizer = try await KreaTokenizer.open(assets: assets)
-            return NativeBatchRenderer(assets: assets, prompt: try tokenizer.prepare(options.prompt))
+            guard !options.references.isEmpty else {
+                return NativeBatchRenderer(assets: assets, source: .text(try tokenizer.prepare(options.prompt)))
+            }
+            try assets.verifyIncludingReferences()
+            let pixels = try options.references.map {
+                try KreaReferencePreprocessing.prepare(KreaReferenceImage(encoded: Data(contentsOf: $0)))
+            }
+            return NativeBatchRenderer(assets: assets,
+                source: .references(try tokenizer.prepare(options.prompt, references: pixels), pixels))
         }
         try AetherProbe.printJSON(report)
         return true
@@ -155,7 +182,7 @@ enum KreaBatchCommand {
         let started = ContinuousClock.now
         var report = KreaBatchReport(bundlePath: options.bundle.path, prompt: options.prompt,
             width: options.width, height: options.height, steps: options.steps, seeds: options.seeds,
-            registrationPath: options.registration?.path)
+            registrationPath: options.registration?.path, referencePaths: options.references.map(\.path))
         var renderer: (any BatchRenderer)?
         func write() throws {
             report.totalSeconds = AetherProbe.seconds(started.duration(to: .now))
@@ -166,6 +193,7 @@ enum KreaBatchCommand {
         do {
             try write()
             if let registration = options.registration { report.registrationSHA256 = try fileSHA256(registration) }
+            report.referenceSHA256s = try options.references.map(fileSHA256)
             let setupStarted = ContinuousClock.now
             let pipeline = try await makeRenderer()
             renderer = pipeline
