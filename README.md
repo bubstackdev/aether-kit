@@ -15,6 +15,8 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 | `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload. |
 | `AetherH3`, `AetherH3Tokenizers` | **Experimental** | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |
 | `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. End-to-end media qualification is pending. |
+| `AetherFlux2`, `AetherFlux2Tokenizers` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B CPU contracts: bundle validation, padded Qwen3 prompt, empirical-shift schedule, 4-axis rotary, reference-image policy, and a local tokenizer. |
+| `AetherFlux2CoreAI` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B text-to-image and multi-reference editing: Qwen3 encoder → three denoiser segments → Euler → VAE ([guide](docs/flux2-klein.md)). |
 | `aether-probe` | Dev tool | Qualification, rendering and benchmark CLI; not SDK surface. |
 
 ## Requirements
@@ -72,6 +74,10 @@ Measured 2026-10-26 on the M5 Max at 512×512, eight steps. Every image matched 
 | Fresh prompt each request, `balanced` (reloads about 19 GB of models) | 14.1 s median | 54 s median (37–85 s), reload-bound |
 
 The quiet-machine column was measured the same day on a parallel development line that shares this sampling path. The resident results agree across the two runs. A quiet-window re-measure of balanced mode on this line is pending. Balanced mode's fresh-prompt latency depends heavily on memory pressure, because every request reloads the encoder and denoisers. GPU memory peaks at about 15 GB balanced and about 23 GB resident.
+
+## FLUX.2 [klein] text-to-image and reference editing (experimental)
+
+`Flux2GenerationSession` runs a locally exported FLUX.2 [klein] 4B bundle (Apache-2.0 checkpoint). It generates images in four steps without guidance, optionally conditioned on up to two reference pictures. Prompt and reference preparation, residency, cancellation and unload follow the Krea session's contract. Native parity against independent float32 Diffusers references passes at 12 cases from 512² to 1344×768. See the [FLUX.2 klein guide](docs/flux2-klein.md) for the bundle recipe, API and the scope of that evidence.
 
 ## Language generation (experimental)
 

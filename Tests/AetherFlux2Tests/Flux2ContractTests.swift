@@ -128,7 +128,7 @@ extension Flux2Prompt {
     let plain = try Flux2Assets.open(at: textOnly.root)
     #expect(!plain.supportsReferences && plain.referenceFingerprint == nil)
 
-    for change in ["schema", "shift", "rotary", "prompt", "target", "binding", "segments", "role", "references", "source"] {
+    for change in ["schema", "shift", "rotary", "prompt", "target", "binding", "segments", "role", "references", "source", "revision"] {
         let bad = try Flux2BundleFixture()
         defer { bad.cleanup() }
         try bad.edit("aether.json") { json in
@@ -143,7 +143,8 @@ extension Flux2Prompt {
             case "segments": d["denoiserSegments"] = ["denoiser0", "denoiser1"]
             case "role": var f = json["functions"] as! [String: Any]; f["vaeDecoder/decode"] = ["role": "decode"]; json["functions"] = f
             case "references": var r = d["referenceImages"] as! [String: Any]; r["positionStride"] = 1; d["referenceImages"] = r
-            default: json["provenance"] = ["source": ["hfRepo": "other/model", "revision": "x"], "files": [String: String]()]
+            case "revision": json["provenance"] = ["source": ["hfRepo": "black-forest-labs/FLUX.2-klein-4B", "revision": "x"], "files": [String: String]()]
+            default: json["provenance"] = ["source": ["hfRepo": "other/model", "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"], "files": [String: String]()]
             }
             json["diffusion"] = d
         }
@@ -155,7 +156,7 @@ extension Flux2Prompt {
     let fixture = try Flux2BundleFixture()
     defer { fixture.cleanup() }
     try fixture.edit("aether.json") { json in
-        json["provenance"] = ["source": ["hfRepo": "black-forest-labs/FLUX.2-klein-4B", "revision": "r"],
+        json["provenance"] = ["source": ["hfRepo": "black-forest-labs/FLUX.2-klein-4B", "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"],
                               "files": ["vaeDecoder.aimodel/main.mlirb": "sha256:" + String(repeating: "0", count: 64)]]
     }
     #expect(throws: AetherError.self) { try Flux2Assets.open(at: fixture.root) }

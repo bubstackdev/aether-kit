@@ -1,0 +1,38 @@
+{"message": "start", "stage": "checkpoint", "t": 1793046312.278}
+{"message": "done", "seconds": 0.347, "stage": "checkpoint", "t": 1793046312.625}
+{"message": "start", "stage": "adapters", "t": 1793046312.625}
+{"message": "done", "seconds": 0.005, "stage": "adapters", "t": 1793046312.63}
+{"message": "start", "stage": "build-text-encoder", "t": 1793046313.873}
+{"message": "done", "seconds": 15.515, "stage": "build-text-encoder", "t": 1793046329.388}
+{"message": "start", "stage": "export-text-encoder", "t": 1793046329.388}
+{"message": "done", "seconds": 8.768, "stage": "export-text-encoder", "t": 1793046338.155}
+{"message": "start", "stage": "eager-text-encoder", "t": 1793046338.156}
+{"message": "done", "seconds": 1.269, "stage": "eager-text-encoder", "t": 1793046339.425}
+{"message": "start", "stage": "self-check-text-encoder", "t": 1793046339.425}
+{"cosine": [0.999998, 0.999998], "message": "real-row cosine vs eager (cpu_only)", "stage": "self-check-text-encoder", "t": 1793046356.088}
+{"message": "done", "seconds": 16.663, "stage": "self-check-text-encoder", "t": 1793046356.088}
+{"message": "start", "stage": "build-denoiser", "t": 1793046356.094}
+{"message": "done", "seconds": 14.438, "stage": "build-denoiser", "t": 1793046370.531}
+{"message": "start", "stage": "export-denoiser0", "t": 1793046370.535}
+{"message": "done", "seconds": 5.83, "stage": "export-denoiser0", "t": 1793046376.365}
+{"message": "start", "stage": "export-denoiser1", "t": 1793046376.366}
+{"message": "done", "seconds": 2.803, "stage": "export-denoiser1", "t": 1793046379.169}
+{"message": "start", "stage": "export-denoiser2", "t": 1793046379.169}
+{"message": "done", "seconds": 3.411, "stage": "export-denoiser2", "t": 1793046382.58}
+{"message": "start", "stage": "eager-denoiser", "t": 1793046382.58}
+{"cosine": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "message": "segmented chain vs the whole module (cosine)", "stage": "eager-denoiser", "t": 1793046390.285}
+{"message": "done", "seconds": 7.845, "stage": "eager-denoiser", "t": 1793046390.425}
+{"message": "start", "stage": "build-vae", "t": 1793046390.445}
+{"message": "done", "seconds": 0.153, "stage": "build-vae", "t": 1793046390.597}
+{"message": "start", "stage": "export-vae", "t": 1793046390.597}
+{"message": "done", "seconds": 2.254, "stage": "export-vae", "t": 1793046392.852}
+{"message": "start", "stage": "eager-vae", "t": 1793046392.852}
+{"message": "done", "seconds": 4.433, "stage": "eager-vae", "t": 1793046397.285}
+{"message": "start", "stage": "build-reference-encoder", "t": 1793046397.289}
+{"message": "done", "seconds": 0.093, "stage": "build-reference-encoder", "t": 1793046397.382}
+{"message": "start", "stage": "export-reference-encoder", "t": 1793046397.382}
+{"message": "done", "seconds": 3.478, "stage": "export-reference-encoder", "t": 1793046400.86}
+{"message": "start", "stage": "eager-reference-encoder", "t": 1793046400.86}
+{"message": "done", "seconds": 0.638, "stage": "eager-reference-encoder", "t": 1793046401.498}
+{"message": "start", "stage": "tokenizer", "t": 1793046401.499}
+{"message": "done", "seconds": 0.018, "stage": "tokenizer", "t": 1793046401.518}

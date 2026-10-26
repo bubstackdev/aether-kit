@@ -29,3 +29,11 @@ only by the optional AetherKreaTokenizers and AetherH3Tokenizers products:
 - swift-collections 1.7.3 (https://github.com/apple/swift-collections), Apache
   License 2.0 with Runtime Library Exception, copyright Apple Inc. and the Swift
   project authors.
+
+FLUX.2 [klein] schedule, rotary layout, prompt rendering, reference-image
+positions and bundle recipe are derived from the Apache-2.0 Aether prototype
+(spec 11 Part B, recipes/flux2-klein-4b*.toml) and observed behavior of the
+pinned black-forest-labs/FLUX.2-klein-4B checkpoint at revision
+e7b7dc27f91deacad38e78976d1f2b499d76a294 (Apache-2.0) through unmodified
+Diffusers 0.37.1. No weights or fixtures are distributed; local exports keep
+the checkpoint's LICENSE.md beside the assets.

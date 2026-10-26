@@ -1,0 +1,222 @@
+{
+  "architecture": {
+    "class": "diffusion"
+  },
+  "capabilities": [
+    "imageOutput"
+  ],
+  "diffusion": {
+    "assetBytes": {
+      "denoiser0": 1903883457,
+      "denoiser1": 1283968516,
+      "denoiser2": 1444859682,
+      "textEncoder": 3116676234,
+      "vaeDecoder": 101515318,
+      "vaeEncoder": 70793708
+    },
+    "decoderAsset": "vaeDecoder",
+    "denoiserAsset": "denoiser",
+    "denoiserSegments": [
+      "denoiser0",
+      "denoiser1",
+      "denoiser2"
+    ],
+    "denoiserStreaming": {
+      "minImageTokens": 2305
+    },
+    "expectFrequentReshapes": true,
+    "guidance": false,
+    "latentChannels": 128,
+    "maxSteps": 50,
+    "pixelsPerToken": 16,
+    "prompt": {
+      "maxLength": 512,
+      "padToken": 151643,
+      "padding": "right",
+      "template": "chat",
+      "thinking": "off"
+    },
+    "referenceImages": {
+      "encoderAsset": "vaeEncoder",
+      "kind": "packedLatents",
+      "maxImages": 2,
+      "maxSide": 512,
+      "maxTotalTokens": 4096,
+      "positionStride": 10
+    },
+    "rotary": {
+      "axes": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "theta": 2000.0
+    },
+    "sigmaShift": {
+      "highIntercept": 0.45666666,
+      "highSlope": 0.00016927,
+      "highSteps": 200,
+      "lowIntercept": 1.89833333,
+      "lowSlope": 8.73809524e-05,
+      "lowSteps": 10,
+      "rule": "empirical",
+      "tokenThreshold": 4300
+    },
+    "sizes": [
+      {
+        "height": 512,
+        "width": 512
+      },
+      {
+        "height": 768,
+        "width": 768
+      }
+    ],
+    "steps": 4,
+    "textEncoderAsset": "textEncoder",
+    "trainTimesteps": 1000
+  },
+  "driver": "diffusion",
+  "functions": {
+    "denoiser0/segment": {
+      "role": "denoiseSegment"
+    },
+    "denoiser1/segment": {
+      "role": "denoiseSegment"
+    },
+    "denoiser2/segment": {
+      "role": "denoiseSegment"
+    },
+    "textEncoder/encode": {
+      "role": "encodeText"
+    },
+    "vaeDecoder/decode": {
+      "role": "decodeLatents"
+    },
+    "vaeEncoder/encode": {
+      "role": "encodeLatents"
+    }
+  },
+  "inputs": {
+    "attention_mask": {
+      "bind": "tokenMask",
+      "dtype": "int32"
+    },
+    "cond": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "image_1": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "image_2": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "input_ids": {
+      "bind": "tokens",
+      "dtype": "int32"
+    },
+    "latents": {
+      "bind": "latents",
+      "dtype": "float16"
+    },
+    "position_ids": {
+      "bind": "positions",
+      "dtype": "int32",
+      "mode": "running"
+    },
+    "reference_pixels": {
+      "bind": "image",
+      "dtype": "float32"
+    },
+    "rope_image": {
+      "bind": "imageRotary",
+      "dtype": "float32"
+    },
+    "rope_text": {
+      "bind": "textRotary",
+      "dtype": "float32"
+    },
+    "sigma": {
+      "bind": "timestep",
+      "dtype": "float32"
+    },
+    "text_1": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "text_2": {
+      "bind": "carry",
+      "dtype": "float32"
+    },
+    "text_embeds": {
+      "bind": "textEmbeddings",
+      "dtype": "float16"
+    }
+  },
+  "memory": {
+    "weightsBytes": 7921696915
+  },
+  "outputs": {
+    "cond": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "image": {
+      "dtype": "float32",
+      "role": "pixels"
+    },
+    "image_1": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "image_2": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "reference_latents": {
+      "dtype": "float32",
+      "role": "latents"
+    },
+    "text_1": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "text_2": {
+      "dtype": "float32",
+      "role": "carry"
+    },
+    "text_embeds": {
+      "dtype": "float16",
+      "role": "textEmbeddings"
+    },
+    "velocity": {
+      "dtype": "float16",
+      "role": "velocity"
+    }
+  },
+  "provenance": {
+    "exportedOn": {
+      "date": "2026-10-05",
+      "os": "26A434"
+    },
+    "forge": "0.1.0",
+    "recipe": "flux2-klein-4b-reference@1",
+    "source": {
+      "hfRepo": "black-forest-labs/FLUX.2-klein-4B",
+      "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"
+    }
+  },
+  "quantization": {
+    "exceptions": {
+      "singles.*.proj_out": "none"
+    },
+    "notes": "weight-only PTQ on the torch module (coreai-opt eager Quantizer); exceptions resolve first-match in declaration order, then default; modules: int8-linear-perchannel \u00d7205, none \u00d720",
+    "scheme": "int8-linear-perchannel",
+    "weightBits": 8
+  },
+  "schema": 1
+}

@@ -1,0 +1,618 @@
+{
+  "bundle" : {
+    "fingerprint" : "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+    "referenceFingerprint" : "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79",
+    "revision" : "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "root" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/macos-any-gpu"
+  },
+  "checkCount" : 45,
+  "checks" : [
+    {
+      "bar" : 1,
+      "case" : "cat-1024",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.9999723492511845
+    },
+    {
+      "bar" : 1,
+      "case" : "harbor-768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997241843322127
+    },
+    {
+      "bar" : 1,
+      "case" : "street-1024x576",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.9999723975038185
+    },
+    {
+      "bar" : 1,
+      "case" : "desk-1024x768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.9999723743275537
+    },
+    {
+      "bar" : 1,
+      "case" : "canyon-1344x768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997235369513449
+    },
+    {
+      "bar" : 1,
+      "case" : "cat-1024",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99967603511681857
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99942707959226063
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99964329320079515
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983432209984457
+    },
+    {
+      "bar" : 1,
+      "case" : "harbor-768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99989095726597588
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99956097328914251
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99964317097924582
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99982689425095861
+    },
+    {
+      "bar" : 1,
+      "case" : "street-1024x576",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99976817054967437
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99940189462057172
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99958348892994342
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99973506015878921
+    },
+    {
+      "bar" : 1,
+      "case" : "desk-1024x768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99982081309332493
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99924153004612892
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99970296787461044
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983614078597494
+    },
+    {
+      "bar" : 1,
+      "case" : "canyon-1344x768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.9998517254096394
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.9995368131734983
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99964884583373459
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983484710605697
+    },
+    {
+      "bar" : 35,
+      "case" : "cat-1024",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 94.206901662195691
+    },
+    {
+      "bar" : 35,
+      "case" : "harbor-768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 91.802329004328328
+    },
+    {
+      "bar" : 35,
+      "case" : "street-1024x576",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 87.690244693095963
+    },
+    {
+      "bar" : 35,
+      "case" : "desk-1024x768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 97.45350349324616
+    },
+    {
+      "bar" : 35,
+      "case" : "canyon-1344x768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 91.229492554587367
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "cat-1024",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.96419203995566261
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "harbor-768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99372706166684288
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "street-1024x576",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.96176650219116977
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "desk-1024x768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98512552605902581
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "canyon-1344x768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98707312895072474
+    }
+  ],
+  "elapsedSeconds" : "87.6",
+  "fixtures" : {
+    "cases" : "cat-1024,harbor-768,street-1024x576,desk-1024x768,canyon-1344x768",
+    "t2i" : "6a8a53d8f3b30817"
+  },
+  "kind" : "flux2-native-parity",
+  "passed" : true,
+  "phases" : [
+    {
+      "footprintBytesAfter" : 508691776,
+      "lifetimePeakFootprintBytes" : 861163216,
+      "name" : "textEncoder",
+      "seconds" : 3.7698800563812256
+    },
+    {
+      "footprintBytesAfter" : 2258339424,
+      "lifetimePeakFootprintBytes" : 5512861960,
+      "name" : "denoiser",
+      "seconds" : 21.545468926429749
+    },
+    {
+      "footprintBytesAfter" : 3820144800,
+      "lifetimePeakFootprintBytes" : 14617201328,
+      "name" : "vae",
+      "seconds" : 4.0435860157012939
+    },
+    {
+      "footprintBytesAfter" : 5690018144,
+      "lifetimePeakFootprintBytes" : 14617201328,
+      "name" : "session",
+      "seconds" : 54.456571102142334
+    }
+  ],
+  "records" : [
+    {
+      "case" : "cat-1024",
+      "name" : "imagePathPSNR",
+      "value" : 27.869664325213407
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.86782701854037292
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "imagePathPSNR",
+      "value" : 36.130098723575017
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.9277018759015847
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "imagePathPSNR",
+      "value" : 29.585823546004267
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.8393929471419006
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "imagePathPSNR",
+      "value" : 34.37074331277033
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.87795702658391261
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "imagePathPSNR",
+      "value" : 33.648351831012697
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.92742636075734697
+    }
+  ],
+  "schema" : 1,
+  "timings" : [
+    {
+      "name" : "verifyBundle",
+      "seconds" : 2.7614489793777466
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "textEncode",
+      "seconds" : 3.5113649368286133
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "textEncode",
+      "seconds" : 0.055683016777038574
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "textEncode",
+      "seconds" : 0.055047988891601562
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "textEncode",
+      "seconds" : 0.054677963256835938
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "textEncode",
+      "seconds" : 0.055150985717773438
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 7.2601369619369507
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 1.0185830593109131
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 0.92763900756835938
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 0.94123208522796631
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.5364149808883667
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.56898295879364014
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.58466601371765137
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.61952793598175049
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.60359799861907959
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.58493196964263916
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.56764090061187744
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.54930591583251953
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.70644402503967285
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.71411693096160889
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.70799398422241211
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.71311604976654053
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.92953896522521973
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.93441998958587646
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.94032394886016846
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.96082103252410889
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "decode",
+      "seconds" : 1.0917190313339233
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "decode",
+      "seconds" : 0.59806108474731445
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "decode",
+      "seconds" : 0.59319210052490234
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "decode",
+      "seconds" : 0.73497498035430908
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "decode",
+      "seconds" : 0.91214597225189209
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "generateProvided",
+      "seconds" : 6.034343957901001
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "generateFromPrompt",
+      "seconds" : 6.4950709342956543
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "generateProvided",
+      "seconds" : 4.1176869869232178
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.6430289745330811
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "generateProvided",
+      "seconds" : 3.0851540565490723
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.8597269058227539
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "generateProvided",
+      "seconds" : 5.3413879871368408
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "generateFromPrompt",
+      "seconds" : 5.8865969181060791
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "generateProvided",
+      "seconds" : 6.5914820432662964
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "generateFromPrompt",
+      "seconds" : 6.6332310438156128
+    }
+  ]
+}

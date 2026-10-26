@@ -1,0 +1,65 @@
+Building for production...
+[Computing dependencies]
+[1 / 3] AetherProbeTests-product
+Build complete! (0.65 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test flux2NativeParityAgainstIndependentReferences() started.
+flux2 check tokenIDs cat-1024: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine cat-1024: 0.9999723492511845 (bar 0.999) pass
+flux2 check tokenIDs harbor-768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine harbor-768: 0.9999724184332213 (bar 0.999) pass
+flux2 check tokenIDs street-1024x576: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine street-1024x576: 0.9999723975038185 (bar 0.999) pass
+flux2 check tokenIDs desk-1024x768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine desk-1024x768: 0.9999723743275537 (bar 0.999) pass
+flux2 check tokenIDs canyon-1344x768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine canyon-1344x768: 0.9999723536951345 (bar 0.999) pass
+flux2 check timesteps cat-1024: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] cat-1024: 0.9996760351168186 (bar 0.999) pass
+flux2 check velocityCosine[1] cat-1024: 0.9994270795922606 (bar 0.999) pass
+flux2 check velocityCosine[2] cat-1024: 0.9996432932007951 (bar 0.999) pass
+flux2 check velocityCosine[3] cat-1024: 0.9998343220998446 (bar 0.999) pass
+flux2 check timesteps harbor-768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] harbor-768: 0.9998909572659759 (bar 0.999) pass
+flux2 check velocityCosine[1] harbor-768: 0.9995609732891425 (bar 0.999) pass
+flux2 check velocityCosine[2] harbor-768: 0.9996431709792458 (bar 0.999) pass
+flux2 check velocityCosine[3] harbor-768: 0.9998268942509586 (bar 0.999) pass
+flux2 check timesteps street-1024x576: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] street-1024x576: 0.9997681705496744 (bar 0.999) pass
+flux2 check velocityCosine[1] street-1024x576: 0.9994018946205717 (bar 0.999) pass
+flux2 check velocityCosine[2] street-1024x576: 0.9995834889299434 (bar 0.999) pass
+flux2 check velocityCosine[3] street-1024x576: 0.9997350601587892 (bar 0.999) pass
+flux2 check timesteps desk-1024x768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] desk-1024x768: 0.9998208130933249 (bar 0.999) pass
+flux2 check velocityCosine[1] desk-1024x768: 0.9992415300461289 (bar 0.999) pass
+flux2 check velocityCosine[2] desk-1024x768: 0.9997029678746104 (bar 0.999) pass
+flux2 check velocityCosine[3] desk-1024x768: 0.9998361407859749 (bar 0.999) pass
+flux2 check timesteps canyon-1344x768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] canyon-1344x768: 0.9998517254096394 (bar 0.999) pass
+flux2 check velocityCosine[1] canyon-1344x768: 0.9995368131734983 (bar 0.999) pass
+flux2 check velocityCosine[2] canyon-1344x768: 0.9996488458337346 (bar 0.999) pass
+flux2 check velocityCosine[3] canyon-1344x768: 0.999834847106057 (bar 0.999) pass
+flux2 check decoderPSNR cat-1024: 94.20690166219569 (bar 35.0) pass
+flux2 check decoderPSNR harbor-768: 91.80232900432833 (bar 35.0) pass
+flux2 check decoderPSNR street-1024x576: 87.69024469309596 (bar 35.0) pass
+flux2 check decoderPSNR desk-1024x768: 97.45350349324616 (bar 35.0) pass
+flux2 check decoderPSNR canyon-1344x768: 91.22949255458737 (bar 35.0) pass
+flux2 check imagePathSSIM cat-1024: 0.9641920399556626 (bar 0.94) pass
+flux2 record imagePathPSNR cat-1024: 27.869664325213407
+flux2 record wholePipelineSSIM cat-1024: 0.8678270185403729
+flux2 check imagePathSSIM harbor-768: 0.9937270616668429 (bar 0.94) pass
+flux2 record imagePathPSNR harbor-768: 36.13009872357502
+flux2 record wholePipelineSSIM harbor-768: 0.9277018759015847
+flux2 check imagePathSSIM street-1024x576: 0.9617665021911698 (bar 0.94) pass
+flux2 record imagePathPSNR street-1024x576: 29.585823546004267
+flux2 record wholePipelineSSIM street-1024x576: 0.8393929471419006
+flux2 check imagePathSSIM desk-1024x768: 0.9851255260590258 (bar 0.94) pass
+flux2 record imagePathPSNR desk-1024x768: 34.37074331277033
+flux2 record wholePipelineSSIM desk-1024x768: 0.8779570265839126
+flux2 check imagePathSSIM canyon-1344x768: 0.9870731289507247 (bar 0.94) pass
+flux2 record imagePathPSNR canyon-1344x768: 33.6483518310127
+flux2 record wholePipelineSSIM canyon-1344x768: 0.927426360757347
+✔ Test flux2NativeParityAgainstIndependentReferences() passed after 87.618 seconds.
+✔ Test run with 1 test in 0 suites passed after 87.618 seconds.

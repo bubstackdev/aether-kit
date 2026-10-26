@@ -1,0 +1,39 @@
+[forge:checkpoint] start
+[forge:checkpoint] done
+[forge:adapters] start
+[forge:adapters] done
+[forge:build-text-encoder] start
+[forge:build-text-encoder] done
+[forge:export-text-encoder] start
+[forge:export-text-encoder] done
+[forge:eager-text-encoder] start
+[forge:eager-text-encoder] done
+[forge:self-check-text-encoder] start
+[forge:self-check-text-encoder] real-row cosine vs eager (cpu_only)
+[forge:self-check-text-encoder] done
+[forge:build-denoiser] start
+[forge:build-denoiser] done
+[forge:export-denoiser0] start
+[forge:export-denoiser0] done
+[forge:export-denoiser1] start
+[forge:export-denoiser1] done
+[forge:export-denoiser2] start
+[forge:export-denoiser2] done
+[forge:eager-denoiser] start
+[forge:eager-denoiser] segmented chain vs the whole module (cosine)
+[forge:eager-denoiser] done
+[forge:build-vae] start
+[forge:build-vae] done
+[forge:export-vae] start
+[forge:export-vae] done
+[forge:eager-vae] start
+[forge:eager-vae] done
+[forge:build-reference-encoder] start
+[forge:build-reference-encoder] done
+[forge:export-reference-encoder] start
+[forge:export-reference-encoder] done
+[forge:eager-reference-encoder] start
+[forge:eager-reference-encoder] done
+[forge:tokenizer] start
+[forge:tokenizer] done
+AETHER_FORGE_RESULT {"appleMetadata": "apple-metadata.json", "assets": {"denoiser0": "flux2_klein_4b_reference-denoiser0.aimodel", "denoiser1": "flux2_klein_4b_reference-denoiser1.aimodel", "denoiser2": "flux2_klein_4b_reference-denoiser2.aimodel", "textEncoder": "flux2_klein_4b_reference-text.aimodel", "vaeDecoder": "flux2_klein_4b_reference-vae.aimodel", "vaeEncoder": "flux2_klein_4b_reference-vae-encoder.aimodel"}, "bundle": "bundle", "bytes": {"assets": {"denoiser0": 1903883457, "denoiser1": 1283968516, "denoiser2": 1444859682, "textEncoder": 3116676234, "vaeDecoder": 101515318, "vaeEncoder": 70793708}, "bundle": 7937579147}, "durations": {"adapters": 0.005, "build-denoiser": 14.438, "build-reference-encoder": 0.093, "build-text-encoder": 15.515, "build-vae": 0.153, "checkpoint": 0.347, "eager-denoiser": 7.845, "eager-reference-encoder": 0.638, "eager-text-encoder": 1.269, "eager-vae": 4.433, "export-denoiser0": 5.83, "export-denoiser1": 2.803, "export-denoiser2": 3.411, "export-reference-encoder": 3.478, "export-text-encoder": 8.768, "export-vae": 2.254, "self-check-text-encoder": 16.663, "tokenizer": 0.018}, "exportedAt": {"date": "2026-10-26", "os": "26A434"}, "exports": {"denoiser0": {"bytes": 1903883457, "seconds": 5.8}, "denoiser1": {"bytes": 1283968516, "seconds": 2.8}, "denoiser2": {"bytes": 1444859682, "seconds": 3.4}, "textEncoder": {"bytes": 3116676234, "seconds": 8.6}, "vaeDecoder": {"bytes": 101515318, "seconds": 2.3}, "vaeEncoder": {"bytes": 70793708, "seconds": 3.5}}, "gpuSelfCheck": "selfcheck/checks.json", "log": "forge-log.jsonl", "manifestFragment": "manifest-fragment.json", "recipe": "flux2-klein-4b-reference@1", "segmentParity": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "selfCheck": {"denoiser0": null, "denoiser1": null, "denoiser2": null, "textEncoder": {"bar": 0.999, "cpuOnlyRealRowCosine": [0.999998, 0.999998]}, "vaeDecoder": null, "vaeEncoder": null}, "stage": "export", "status": "ok", "targets": [{"arch": "any", "compile": false, "compute": "gpu", "platform": "macos"}, {"arch": "any", "compile": false, "compute": "gpu", "platform": "ios"}], "tokenizer": "bundle/tokenizer", "warnings": []}

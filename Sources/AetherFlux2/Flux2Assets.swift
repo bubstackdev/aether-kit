@@ -9,6 +9,8 @@ import Foundation
 /// Keep external files immutable for the lifetime of any model using this bundle.
 public struct Flux2Assets: Sendable {
     public static let segmentCount = 3
+    /// The supported Apache-2.0 checkpoint revision.
+    public static let sourceRevision = "e7b7dc27f91deacad38e78976d1f2b499d76a294"
     public let root: URL
     public let textEncoder: DeclaredModelAsset
     public let denoisers: [DeclaredModelAsset]
@@ -111,7 +113,7 @@ public struct Flux2Assets: Sendable {
         do {
             var files = try ["metadata.json", "aether.json"].map { try BundleFiles.portable($0, in: root) }
             files += try tokenizerFiles.map { try BundleFiles.portable($0.key, in: root, sha256: $0.value) }
-            for name in ["tokenizer/vocab.json", "tokenizer/merges.txt", "tokenizer/added_tokens.json",
+            for name in ["LICENSE.md", "tokenizer/vocab.json", "tokenizer/merges.txt", "tokenizer/added_tokens.json",
                          "tokenizer/special_tokens_map.json", "tokenizer/chat_template.jinja"]
                 where FileManager.default.fileExists(atPath: root.appendingPathComponent(name).path) {
                 files.append(try BundleFiles.portable(name, in: root))
@@ -225,7 +227,8 @@ struct Flux2Manifest: Decodable {
               d.rotary.axes == Flux2Rotary.axes, d.rotary.theta == Flux2Rotary.theta,
               p.template == "chat", p.thinking == "off", p.maxLength == Flux2Prompt.length, p.padding == "right",
               p.padToken == Int(Flux2Prompt.padToken),
-              provenance.source.hfRepo == "black-forest-labs/FLUX.2-klein-4B" else {
+              provenance.source.hfRepo == "black-forest-labs/FLUX.2-klein-4B",
+              provenance.source.revision == Flux2Assets.sourceRevision else {
             throw AetherError.unsupported("expected the FLUX.2 [klein] 4B macOS recipe")
         }
         var roles = ["textEncoder/encode": "encodeText", "vaeDecoder/decode": "decodeLatents"]
