@@ -378,3 +378,35 @@ The predefined gate permits 3,340 native submissions within a 5,400-second owned
 The process samples memory every 20 ms and retains the 20 GiB physical-footprint/lifetime-peak and 18 GiB Metal limits. Each session is measured at 0, 1 and 5 seconds after unload. The reopened session's final footprint, resident memory and Metal allocation may each grow by at most 512 MiB relative to the first unloaded session. Per-role `progress.json` files retain output identities and numerical comparisons without retaining tensor arrays. The final report records ordered native and lifecycle events. These bounded checks qualify the provided-conditioning trajectory's lifecycle; they do not establish long-running soak behavior, real conditioning, decoder correctness, media quality or benchmark performance.
 
 The first lifecycle attempt was [stopped at the user's request](handoffs/h3-denoising-lifecycle-2026-10-18.md). Initial and retained full runs, retained cancellation and concurrent-unload cancellation passed; reopened recovery was interrupted near the end of its fourth step. The overall lifecycle gate remains incomplete. The handoff preserves the controller's joined termination, partial numerical results, completed ownership traces, outstanding memory-growth check and repeat instructions. GPU work is stopped pending a request to resume.
+
+## Schema-3 graph gate at 960×544: 2026-10-26
+
+`Scripts/qualify-h3-profile-graphs.py` runs a fixed sequence of stages. Each stage runs as an owned process group with a wall budget and is joined before the next one starts:
+
+1. CPU dumps for T2VA and FL2VA (the FL2VA dump adds a first frame).
+2. The original-module CPU text oracle.
+3. `aether-probe h3-profile-run --graphs` for both dumps, each under `~/.cache/aether-kit/with-gpu-lock.sh`. That lock now also takes Atelier's `/tmp/atelier-gpu.lock` lease.
+4. The original-module CPU graph oracles.
+5. `--part compare`.
+6. A gate.
+
+The gate requires every listed tensor to be present, finite, the same shape and within the predefined 0.02 relative-L2 limit. It also requires the oracle's tokenizer and layout checks to pass, and every source, executable, input and profile pin to be unchanged. CPU stages never hold the GPU lock. Each one waits for at least 40% free memory and is stopped if its resident memory exceeds 20 GiB.
+
+The run used profile `00669ed7…` at 960×544 and 124 frames (19,333 rows, 49 prompt tokens), seed 1043, Turbo8, with the [prototype production prompt](evidence/h3-profile-graphs-prompt-2026-10-26.txt). Each native graph after the conditioner tap receives the CPU oracle's own inputs, so each comparison isolates one graph. [The gate record](evidence/h3-profile-graphs-960-2026-10-26.json) **fails on one comparison: block 49.** Every other check passes:
+
+| Graph | Relative L2 | Cosine |
+| --- | ---: | ---: |
+| Conditioner tap (native vs CPU, independent) | 0.851% | 0.999998 |
+| Prepare text (refined) | 0.660% | 0.999978 |
+| Prepare pack | 0.0014% | 1.000000 |
+| Block 0, step-0 table | 0.484% | 0.999988 |
+| **Block 49, step-0 table** | **2.640%** | 0.999652 |
+| Heads, video | 0.283% | 0.999996 |
+| Heads, audio | 0.295% | 0.999996 |
+| Tile decoder (bf16), one window | 0.631% | 0.999980 |
+| Audio decoder (fixed Na 207) | 0.0022% | 1.000000 |
+| First-frame encoder 960×544 (FL2VA) | 0.022% | 1.000000 |
+
+The tokenizer ids equal Transformers, and the layout and step-plan checks are all true. [A CPU float32 diagnostic](evidence/h3-profile-graphs-960-block49-diagnostic-2026-10-26.json) shows that the native block-49 output is closer to the float32 module (2.43%) than the original bf16 CPU module itself is (2.63%). The gap matches bf16 arithmetic noise for block 49 on the gate's synthetic unit-variance probe input. It is not evidence of a native defect. The error is spread across video rows (median per-row 1.45%), and both outputs have zero text rows. The 0.0.1 gate checked block 49 on real captured contexts, where its errors stayed at or below 0.56%. The verdict stands as specified. Rerunning needs a decision: either give blocks a realistic probe context, or define a block criterion against the float32 module. The 0.02 limit was not relaxed.
+
+GPU-lock hold times were 47 s for the T2VA graphs and 31 s for the FL2VA encoder, after waits of about 1.8 and 4.3 minutes for other agents. The native T2VA graphs peaked at a 13.9 GB footprint with 13.5 GB of sampled Metal. The FL2VA first-frame encoder peaked at an 11.0 GB footprint but **29.3 GB of sampled Metal**, well above the 18 GiB bound used by earlier probes. The CPU oracle took 20 minutes, mostly bf16 attention for blocks 0 and 49, with a sampled process-group resident peak of 12.9 GB. This gate checks isolated graphs only. It is not a denoising-trajectory, decoded-clip, lifecycle, memory-limit or performance qualification.

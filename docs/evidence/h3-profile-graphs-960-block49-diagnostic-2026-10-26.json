@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "diagnostic": "block 49 precision floor on the gate probe input",
+  "gpuWork": false,
+  "script": "h3-profile-graphs-960-block49-diagnostic-2026-10-26.py",
+  "scriptSHA256": "f411038c2803c4152a0641a181a20d21923193e3e0e1d5638e5a0b583fd80817",
+  "method": "The original block 49 (base weights plus PEFT Turbo LoRA, built as the oracle builds it) upcast to float32 and run on CPU on the same probe_hidden, step-0 temb, AdaLN indices and rotary tables as the gate. The native output and the gate CPU bf16 reference are both compared against this float32 output. Run without the GPU lock, 8 threads.",
+  "result": {
+    "block": 49,
+    "fp32_seconds": 16.9,
+    "native_vs_cpu_bf16": 0.02640266639504092,
+    "native_vs_cpu_fp32": 0.024300144499707726,
+    "cpu_bf16_vs_cpu_fp32": 0.026260072442906075,
+    "video": {
+      "native_vs_fp32": 0.023496660547389667,
+      "bf16_vs_fp32": 0.025456170500316382
+    },
+    "audio": {
+      "native_vs_fp32": 0.14534074703806296,
+      "bf16_vs_fp32": 0.15138814241691706
+    },
+    "fp32_output_sha": "e405c89806fd74e051549409aeaa109195ea110506ed09115cd04e65b0f2d6b6"
+  },
+  "interpretation": "The native graph is closer to the float32 module (2.43% relative L2) than the original bf16 CPU module is (2.63%). The 2.64% native-vs-CPU-bf16 gap matches the bf16 arithmetic noise of this block on a synthetic unit-variance input; it is not evidence of a native defect. The gate verdict is unchanged: block 49 fails the predefined 0.02 limit as specified, and the criterion or probe input needs a decision before a rerun.",
+  "gateVerdictUnchanged": true
+}

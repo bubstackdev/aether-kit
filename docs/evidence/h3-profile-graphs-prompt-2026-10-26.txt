@@ -1,0 +1,5 @@
+integrated_multimodal_description: A painted paper bird unfolds its wings and gently lifts from a wooden desk. One continuous camera shot.
+
+overall_soundscape: Soft paper rustling and quiet room tone.
+
+non_diegetic_music: No music.

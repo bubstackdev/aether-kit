@@ -1,0 +1,6 @@
+2026-10-26 14:22:37 waiting  pid=48144 h3-graph-gate: native-t2va
+2026-10-26 14:24:24 acquired pid=50275 h3-graph-gate: native-t2va
+2026-10-26 14:25:11 released pid=50275 h3-graph-gate: native-t2va rc=0
+2026-10-26 14:25:11 waiting  pid=50712 h3-graph-gate: native-fl2va
+2026-10-26 14:29:28 acquired pid=53442 h3-graph-gate: native-fl2va
+2026-10-26 14:29:59 released pid=53442 h3-graph-gate: native-fl2va rc=0
