@@ -25,7 +25,7 @@ async def run_coreai(durations_asset, decoder_asset, compute, ids, style, seed):
     if compute == "cpu":
         options = rt.SpecializationOptions.cpu_only()
     elif compute == "gpu":
-        options = rt.SpecializationOptions.from_preferred_compute_unit_kind(rt.ComputeUnitKind.gpu)
+        options = rt.SpecializationOptions.from_preferred_compute_unit_kind(rt.ComputeUnitKind.gpu())
     else:
         options = rt.SpecializationOptions.default()
     t0 = time.monotonic()
@@ -38,6 +38,7 @@ async def run_coreai(durations_asset, decoder_asset, compute, ids, style, seed):
     d = torch.from_numpy(out["prosody"].numpy().copy())
     t_en = torch.from_numpy(out["text"].numpy().copy())
     t2 = time.monotonic()
+    print("durations ran", flush=True)
     dur = round_durations(sums, 1.0)
     en, asr = align(d, t_en, dur)
     frames = en.shape[-1]

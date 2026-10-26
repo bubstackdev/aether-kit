@@ -68,6 +68,20 @@ public struct KokoroResourceAdmission: Sendable {
     }
 }
 
+/// Compute preference per graph. `recommended` runs the small duration graph on the CPU and the
+/// vocoder on the GPU: on macOS 27.0.1 GPU specialization of the duration graph fails inside
+/// MPSGraph (ANE region formation), while the decoder specializes and runs on the GPU.
+public struct KokoroComputePlacement: Sendable, Equatable {
+    public let durations: ModelComputePolicy
+    public let decoder: ModelComputePolicy
+    public init(durations: ModelComputePolicy, decoder: ModelComputePolicy) {
+        self.durations = durations
+        self.decoder = decoder
+    }
+    public static let recommended = KokoroComputePlacement(durations: .cpuOnly, decoder: .preferGPU)
+    public static func uniform(_ policy: ModelComputePolicy) -> Self { Self(durations: policy, decoder: policy) }
+}
+
 /// Kokoro-82M speech synthesis: validated phonemes in, 24 kHz float32 PCM out.
 ///
 /// The durations graph predicts frames per phoneme; the host rounds and aligns them; the decoder
@@ -87,14 +101,14 @@ public actor KokoroSpeechSession {
     private let resources: KokoroResourceAdmission?
     private var active: Task<Void, Never>?
 
-    public init(assets: KokoroAssets, compute: ModelComputePolicy = .preferGPU, resources: KokoroResourceAdmission? = nil) {
+    public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil) {
         self.assets = assets
         self.resources = resources
         runner = KokoroRunner(assets: assets, factory: NativeKokoroFactory(compute: compute, installation: nil, resources: resources))
     }
 
     /// Holds installation protection until terminal joined unload.
-    public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
+    public init(installed installation: AssetReadLease, compute: KokoroComputePlacement = .recommended,
                 resources: KokoroResourceAdmission? = nil) throws {
         assets = try KokoroAssets.open(in: installation)
         self.resources = resources
@@ -209,21 +223,26 @@ private final class KokoroInstallationAccess: Sendable {
 }
 
 private struct NativeKokoroFactory: KokoroModelFactory {
-    let compute: ModelComputePolicy
+    let compute: KokoroComputePlacement
     let installation: KokoroInstallationAccess?
     let resources: KokoroResourceAdmission?
 
     func open(_ asset: KokoroModelAsset) async throws -> any KokoroExecutable {
         let admission = try resources?.admission(for: asset)
-        // Sequence lengths change per utterance; both graphs are dynamic.
+        let compute = asset.function == "durations" ? compute.durations : compute.decoder
+        // Sequence lengths change per utterance. The reshape hint is used only on the CPU: on macOS
+        // 27.0.1 a GPU-specialized decoder opened with it aborts in CoreAIRuntime ("Cannot make a
+        // Tensor.Layout from an unresolved TensorRequirements"); without it each new GPU shape
+        // specializes once (about 1-3 s on the qualification host) and is then reused.
+        let reshapes = compute == .cpuOnly
         if let installation {
             guard let lease = installation.lease, asset.url.path.hasPrefix(lease.directory.path + "/") else {
                 throw AetherError.invalidModel("model is outside the installed Kokoro bundle")
             }
             return try await ModelSession.open(modelPath: asset.relativePath, in: lease, compute: compute,
-                                               expectFrequentReshapes: true, admission: admission)
+                                               expectFrequentReshapes: reshapes, admission: admission)
         }
-        return try await ModelSession.open(at: asset.url, compute: compute, expectFrequentReshapes: true, admission: admission)
+        return try await ModelSession.open(at: asset.url, compute: compute, expectFrequentReshapes: reshapes, admission: admission)
     }
 
     func finish() async { installation?.release() }
