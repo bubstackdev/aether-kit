@@ -20,7 +20,8 @@ original pipeline/oracle values, not model weights. Their source hashes and
 scope are recorded in docs/evidence/h3-cpu-readiness-2026-10-18.json.
 
 Third-party Swift packages, resolved by SwiftPM and not vendored here, are used
-only by the optional AetherKreaTokenizers and AetherH3Tokenizers products:
+only by the optional AetherKreaTokenizers, AetherH3Tokenizers and
+AetherFlux2Tokenizers products:
 
 - swift-transformers 1.1.0 (https://github.com/huggingface/swift-transformers),
   Apache License 2.0, copyright Hugging Face.
