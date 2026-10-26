@@ -66,27 +66,3 @@ import Testing
     #expect(throws: AetherError.self) { try model.verify() }
 }
 
-@Test func h3StreamedReadFillsDestinationAndRejectsCorruptionOrExtent() throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
-    defer { try? FileManager.default.removeItem(at: root) }
-    // Two complete 8 MiB chunks and a partial tail of finite BF16 values.
-    var raw = Data(repeating: 0x3f, count: 16 << 20)
-    raw.append(contentsOf: [0x80, 0x3f, 0x00, 0x40])
-    let url = root.appendingPathComponent("weights.raw")
-    try raw.write(to: url)
-    let file = try H3TensorFile(name: "weight", url: url, spec: H3TensorSpec(scalarType: .bfloat16, shape: [raw.count / 2]), sha256: h3SHA256(raw))
-    let destination = UnsafeMutableRawBufferPointer.allocate(byteCount: raw.count, alignment: 16)
-    defer { destination.deallocate() }
-    try file.read(into: destination)
-    #expect(Data(destination) == raw)
-    let short = UnsafeMutableRawBufferPointer.allocate(byteCount: raw.count - 2, alignment: 16)
-    defer { short.deallocate() }
-    #expect(throws: AetherError.self) { try file.read(into: short) }
-    var corrupt = raw
-    corrupt[(8 << 20) + 5] ^= 1 // Second chunk.
-    try corrupt.write(to: url)
-    #expect(throws: AetherError.invalidModel("H3 tensor hash mismatch: weight")) { try file.read(into: destination) }
-    try raw.prefix(raw.count - 2).write(to: url)
-    #expect(throws: AetherError.self) { try file.read(into: destination) }
-}

@@ -35,7 +35,6 @@ First experimental developer preview. Qualified on one Apple M5 Max running macO
 ### Performance
 
 - Model-stream verification drains each read chunk and hashes Krea streams concurrently. Peak memory during `verify-krea` fell from about 19.4 GiB to 29 MiB, and wall time from about 7 s to about 3 s.
-- H3 plan and session verification no longer repeats passes over unchanged files, and streamed weights are read directly into their GPU slots.
 - Language token delivery overlaps the next decode step.
 - Measured Krea 512×512 performance is in the [benchmark notes](docs/krea-benchmarks.md#residency-and-load-path-2026-10-26).
 

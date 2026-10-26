@@ -33,7 +33,7 @@ Status: proposed, 2026-10-26. Unchecked items are open; checked items cite their
 
 ## 2. Package and build
 
-- [ ] **Clean clone.** From a fresh clone with only `Package.resolved`, `swift build` and `swift test -c release` pass with the default build system. Switch `Scripts/check.sh` (and `Scripts/benchmark-krea.sh`) to SwiftPM's default engine, keeping `AETHER_BUILD_SYSTEM=native` as the sandbox opt-in.
+- [x] **Clean clone.** A fresh clone of `93a769c` resolves from `Package.resolved`, passes all 136 Release tests on the default build engine, and builds the consumer example. `Scripts/check.sh` defaults to that engine, with `AETHER_BUILD_SYSTEM=native` as the sandbox opt-in.
 - [x] **Consumer example.** `Examples/LocalPackage` depends on every library product and type-checks the README examples; it builds and runs.
 - [x] **Toolchain floor.** The README states Xcode 27.1 / Swift 6.4 and the `Lifetimes` requirement; the separate example package builds with it.
 - [ ] **Warnings.** The release build is warning-free apart from the eight known Core AI `ComputeStream` "sending risks data race" diagnostics. List those as SDK interop warnings or remove them.
@@ -46,7 +46,7 @@ Status: proposed, 2026-10-26. Unchecked items are open; checked items cite their
 - [x] **CPU suite.** 133 Release tests pass; the opt-in native and external-fixture suites are skipped. Rerun on the release commit.
 - [ ] **Krea native suites.** The dynamic parity suite passed on the release candidate: 65 checks, including real-bundle concurrent verification ([record](evidence/krea-release-dynamic-2026-10-26.json)). The `AETHER_NATIVE_QUALIFICATION` and decoder pipeline suites need the tower fixture directory, which was deleted and is being regenerated.
 - [ ] **Krea benchmarks.** Rerun the matched encoded/provided comparison, plus a resident plan, on the release commit and replace the October 18 figures. Those showed 2.08 s per step; [2026-10-26 runs](krea-benchmarks.md#residency-and-load-path-2026-10-26) show about 0.535 s at 512×512 with identical outputs.
-- [ ] **H3 trajectory.** `qualify-h3-denoising --run` reproduces all 864 captured hashes after the verification changes: streamed slot reads, pre-verified opens inside a session, and deduplicated plan verification.
+- [x] **H3 trajectory.** Resolved by reverting the H3 verification change (`998f72f`) for 0.0.1. The shipped H3 library sources are byte-identical to those pinned by the October 18 GPU gates. The qualification inputs (exported models, fixtures, render bundle) were deleted by macOS temporary-file cleanup, and Core AI exports aren't byte-reproducible. Regeneration into `/Volumes/Scratch` plus a full capture/CPU-reference/qualification redo is a post-0.0.1 project, after which the change can be re-landed.
 - [ ] **H3 whole-run lifecycle.** Complete `--lifecycle`. The last attempt stopped at user request on 2026-10-19 ([record](evidence/h3-denoising-lifecycle-interruption-2026-10-18.json), [handoff](handoffs/h3-denoising-lifecycle-2026-10-18.md)). Otherwise state it as unqualified in the release notes.
 - [ ] **Language native check.** The `onToken` overlap is tested on CPU only. Run a registered model with streaming against the consumer's reference fixtures, and record time to first token and tokens/s. An opt-in native test inside aether-kit would remove the dependency on external fixtures.
 

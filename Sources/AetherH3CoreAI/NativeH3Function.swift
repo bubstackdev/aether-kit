@@ -17,14 +17,9 @@ actor NativeH3Function {
     private var inputs: [String: any MTLBuffer] = [:]
     private var outputs: [String: any MTLBuffer] = [:]
     private var busy = false
-    /// `preverified` skips rehashing a model stream the owning session has
-    /// already verified. Files must remain immutable during use.
-    static func open(_ asset: H3ModelAsset, preverified: Bool = false) async throws -> NativeH3Function {
-        try await NativeH3Function(asset, preverified: preverified)
-    }
-    private init(_ asset: H3ModelAsset, preverified: Bool) async throws {
-        if !preverified { try asset.verify() }
-        try Task.checkCancellation()
+    static func open(_ asset: H3ModelAsset) async throws -> NativeH3Function { try await NativeH3Function(asset) }
+    private init(_ asset: H3ModelAsset) async throws {
+        try asset.verify(); try Task.checkCancellation()
         guard let device = MTLCreateSystemDefaultDevice() else { throw AetherError.unsupported("H3 requires a Metal device") }
         var options = SpecializationOptions(preferredComputeUnitKind: .gpu); options.expectFrequentReshapes = true
         let model = try await AIModel(contentsOf: asset.url, options: options)

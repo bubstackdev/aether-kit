@@ -83,32 +83,6 @@ public struct H3TensorFile: Sendable {
         try Task.checkCancellation()
         return try H3TensorData(spec: spec, bytes: data)
     }
-    /// Streams the file directly into caller-owned storage, hashing the destination
-    /// bytes as they land. No intermediate copy is allocated. For an identity that
-    /// `read()` has already admitted, a matching hash implies the same finite values,
-    /// so the element scan is not repeated. On failure the destination is partial.
-    public func read(into destination: UnsafeMutableRawBufferPointer) throws {
-        try Task.checkCancellation()
-        let count = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-        guard count.isRegularFile == true, count.fileSize == spec.byteCount, destination.count == spec.byteCount,
-              let base = destination.baseAddress else { throw AetherError.invalidTensor("H3 tensor file extent differs: \(name)") }
-        let descriptor = open(url.path, O_RDONLY)
-        guard descriptor >= 0 else { throw AetherError.invalidModel("H3 tensor file could not be opened: \(name)") }
-        defer { close(descriptor) }
-        var hasher = SHA256(), offset = 0
-        while offset < spec.byteCount {
-            try Task.checkCancellation()
-            let chunk = Darwin.read(descriptor, base + offset, min(8 << 20, spec.byteCount - offset))
-            if chunk < 0 && errno == EINTR { continue }
-            guard chunk > 0 else { throw AetherError.invalidModel("H3 tensor file read failed: \(name)") }
-            hasher.update(bufferPointer: UnsafeRawBufferPointer(start: base + offset, count: chunk))
-            offset += chunk
-        }
-        guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else {
-            throw AetherError.invalidModel("H3 tensor hash mismatch: \(name)")
-        }
-        try Task.checkCancellation()
-    }
 }
 
 public func h3SHA256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
