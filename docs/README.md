@@ -49,3 +49,8 @@ Update the decision register when an experiment changes a recommendation. Each p
 [H3 foundations](h3-foundations.md) covers descriptor-pinned checkpoint ranges, profile weight ownership and shared stage admission.
 
 [Asset stage recovery](asset-stage-recovery.md) covers explicit lock-coordinated cleanup of abandoned imports and conservative handling of legacy stages.
+
+## 0.0.1 release (2026-10-26)
+
+[Release notes](release-notes/0.0.1.md), [release checklist](release-0.0.1-checklist.md) and the [changelog](../CHANGELOG.md). The [0.0.2 roadmap](roadmap-0.0.2.md) records the agreed next scope. [Experimental language generation](language-generation.md) covers the dense-language runtime ported from the parallel local line (`local-line-2026-10-26`).
+

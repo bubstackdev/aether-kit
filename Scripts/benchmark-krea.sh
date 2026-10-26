@@ -16,7 +16,7 @@ benchmark_plan=${3:-Benchmarks/krea-baseline.json}
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/.build/swift-module-cache"
 benchmark_build() {
-    swift build --build-system "${AETHER_BUILD_SYSTEM:-native}" --disable-sandbox \
+    swift build --build-system "${AETHER_BUILD_SYSTEM:-swiftbuild}" --disable-sandbox \
         --cache-path "$PWD/.build/cache" --config-path "$PWD/.build/config" \
         --security-path "$PWD/.build/security" -c release "$@"
 }

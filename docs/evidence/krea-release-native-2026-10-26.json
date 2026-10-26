@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "sourceCommit": "ded78b55c1a6839a9aa49f51f5e9df451d7ddc16",
+  "scope": "Opt-in Krea native suites on the 0.0.1 release branch (main line plus the ported language runtime, concurrent verification and benchmark residency option): full eight-step independent dynamic parity at 512x512 and 384x512 with encoder/decoder cancellation, prepared repeats and real-bundle concurrent verification; session lifecycle (model reuse, cancellation/recovery, unload during work, dynamic fallback); one-step decoder-pipeline cancellation/recovery. One Apple M5 Max, macOS 27.0.1, Xcode 27.1. Run under the shared GPU lock.",
+  "fixtures": {
+    "id": "4c12ae019488ff1c",
+    "location": "~/.cache/huggingface/aether-kit/krea-2-turbo-realism/fixtures/4c12ae019488ff1c",
+    "regeneration": "Forge krea2_fixtures with recipe krea-2-turbo-realism@3 reproduced the original content-hash directory ID on 2026-10-26, so every file is byte-identical to the deleted original."
+  },
+  "runs": [
+    {
+      "suite": "AETHER_NATIVE_DYNAMIC_QUALIFICATION",
+      "passed": true,
+      "stage": "complete",
+      "checks": 65,
+      "testSeconds": 497.085,
+      "reportSHA256": "d7f3d68c2d05057b9e844abf6c96334a4e8f98fb0aaa2f3a881c8bc92ebcffc0",
+      "bundleFingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+      "referenceBinarySHA256": "6f431a0fcc365e5438ad948393261fbdd0da515701a8de34c04ad23f230e1c99",
+      "modelStreamsVerified": true
+    },
+    {
+      "suite": "AETHER_NATIVE_QUALIFICATION",
+      "passed": true,
+      "stage": "complete",
+      "checks": 23,
+      "testSeconds": 181.73,
+      "reportSHA256": "18601abbb6a8840d0859b8e4d000d142e61ad092475d4a0f745ecc89ff30d442",
+      "bundleFingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+      "modelStreamsVerified": true
+    },
+    {
+      "suite": "AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION",
+      "passed": true,
+      "stage": "complete",
+      "checks": 10,
+      "testSeconds": 21.264,
+      "reportSHA256": "eceb027c4d1648d67e6dd359b84591ea3586b234a059f8d365b15ea67ec24db8"
+    }
+  ],
+  "rawReports": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/rel2-native-* (untracked local outputs)"
+}
