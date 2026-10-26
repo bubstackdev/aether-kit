@@ -52,10 +52,12 @@ struct AetherProbe {
             GPU commands (inspect, smoke, render-krea, render-krea-batch, parity-krea, h3-profile-run,
             h3-profile-decode, and the qualify-h3* and benchmark-krea modes other than --prepare-only) take the
             shared GPU lease /tmp/atelier-gpu.lock themselves, waiting while Atelier or another tool holds it.
-            A lease held by a parent process (such as a wrapper) counts as held for this command.
-              AETHER_GPU_LEASE=off            do not take the lease (special cases only)
-              AETHER_GPU_LEASE_TIMEOUT=SECONDS  stop waiting after SECONDS; 0 fails fast
+            Malformed commands print their usage error without waiting.
+              AETHER_GPU_LEASE=off              do not take the lease (special cases only)
+              AETHER_GPU_LEASE_TIMEOUT=SECONDS  stop waiting after SECONDS (at most one year); 0 fails fast
               AETHER_GPU_LEASE_PATH=/abs/dir    use another lease directory
+              AETHER_GPU_LEASE_HOLDER=PID       an ancestor (such as a wrapper) holding the lease hands it to this
+                                                command; without it, a lease an ancestor holds is waited for
             """)
             return
         }

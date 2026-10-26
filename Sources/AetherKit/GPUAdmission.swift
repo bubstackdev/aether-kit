@@ -28,7 +28,12 @@ public enum GPUAdmissionError: Error, Sendable, Equatable, CustomStringConvertib
 /// With `crossProcessLease`, the admission also holds a ``SharedGPULease`` while any grant runs, so other cooperating
 /// processes (Atelier, Kit tools) are excluded. Lease errors surface as ``SharedGPULeaseError``. Use it only in
 /// unsandboxed hosts: a sandboxed app's temporary directory is private, so the lease would exclude nothing outside it.
-/// The lease is polled; there is no fairness between processes.
+///
+/// The lease is polled, so under steady in-process load another process could starve. The admission therefore keeps
+/// an owned lease across consecutive grants for at most `crossProcessTurn`, then releases it and waits
+/// `crossProcessHandOffGap` before re-acquiring, so a process polling at least that often can take a turn. Pollers
+/// with longer intervals (the development wrapper polls every 5 s) can still miss the gap. Before each grant an
+/// inherited lease is re-checked: its holder must still be named by the lease and alive.
 public final class GPUAdmission: Sendable {
     public enum Waiting: Sendable, Equatable {
         /// Wait for a slot, up to `timeout` when given.
@@ -40,20 +45,26 @@ public final class GPUAdmission: Sendable {
     public let maximumConcurrent: Int
     public let waiting: Waiting
     public let crossProcessLease: SharedGPULease.Configuration?
+    public let crossProcessTurn: Duration
+    public let crossProcessHandOffGap: Duration
 
-    private enum Step: Sendable { case granted, acquireLease }
+    private enum Step: Sendable, Equatable { case granted, acquireLease(after: Duration) }
     private struct State: Sendable {
         var queue: FairInferenceQueue<String, Void>
         var waiters: [UUID: CheckedContinuation<Step, any Error>] = [:]
         var cancelledBeforeQueueing: Set<UUID> = []
         var lease: SharedGPULease?
-        var leaseUsers = 0
-        var leaseAcquiring = false
+        var leaseGrants: Set<UUID> = []
+        var leaseSince: ContinuousClock.Instant?
+        var handOffUntil: ContinuousClock.Instant?
+        /// One task at a time acquires or releases the lease; no other request starts meanwhile.
+        var leaseBusy = false
     }
     private let state: Mutex<State>
 
     public init(maximumConcurrent: Int = 1, waiting: Waiting = .queue(), maximumOutstanding: Int = 64,
-                maximumOutstandingPerOwner: Int = 8, crossProcessLease: SharedGPULease.Configuration? = nil) throws {
+                maximumOutstandingPerOwner: Int = 8, crossProcessLease: SharedGPULease.Configuration? = nil,
+                crossProcessTurn: Duration = .seconds(30), crossProcessHandOffGap: Duration = .milliseconds(500)) throws {
         let queue: FairInferenceQueue<String, Void>
         do {
             queue = try FairInferenceQueue(maximumOutstanding: maximumOutstanding,
@@ -63,6 +74,8 @@ public final class GPUAdmission: Sendable {
         self.maximumConcurrent = maximumConcurrent
         self.waiting = waiting
         self.crossProcessLease = crossProcessLease
+        self.crossProcessTurn = crossProcessTurn
+        self.crossProcessHandOffGap = crossProcessHandOffGap
         state = Mutex(State(queue: queue))
     }
 
@@ -93,24 +106,59 @@ public final class GPUAdmission: Sendable {
         }
     }
 
+    /// Joins the held lease if it is still valid; drops it otherwise. Reads only the pid file.
+    private static func joinLease(_ state: inout State, _ id: UUID) -> Bool {
+        guard let lease = state.lease else { return false }
+        guard lease.isStillValid else {
+            state.lease = nil
+            state.leaseGrants = []
+            state.leaseSince = nil
+            return false
+        }
+        state.leaseGrants.insert(id)
+        return true
+    }
+
     private func admitImmediately(owner: String) throws -> GPUAdmissionGrant {
         try Task.checkCancellation()
         let id = UUID()
-        try state.withLock { state in
-            guard state.queue.queuedCount == 0, state.queue.runningCount < maximumConcurrent, !state.leaseAcquiring else {
+        let mustAcquire = try state.withLock { state -> Bool in
+            guard state.queue.queuedCount == 0, state.queue.runningCount < maximumConcurrent, !state.leaseBusy else {
                 throw GPUAdmissionError.busy
             }
             do { try state.queue.enqueue(id: id, owner: owner, work: ()) }
             catch let error as InferenceAdmissionError { throw GPUAdmissionError.limit(error) }
             guard state.queue.next()?.id == id else { preconditionFailure("an idle fair queue must start its only ticket") }
-            guard let configuration = crossProcessLease else { return }
-            if state.lease == nil {
-                do { state.lease = try SharedGPULease.tryAcquire(configuration) }
-                catch { try? state.queue.release(id: id); throw error }
+            guard crossProcessLease != nil, !Self.joinLease(&state, id) else { return false }
+            state.leaseBusy = true
+            return true
+        }
+        if mustAcquire, let configuration = crossProcessLease {
+            // The lease's mkdir, reclaim and flock run outside the state lock; `leaseBusy` keeps others out meanwhile.
+            do {
+                let lease = try SharedGPULease.tryAcquire(configuration)
+                installLease(lease, for: id)
+            } catch {
+                state.withLock { state in
+                    state.leaseBusy = false
+                    try? state.queue.release(id: id)
+                }
+                pump()
+                throw error
             }
-            state.leaseUsers += 1
+            pump()
         }
         return GPUAdmissionGrant(admission: self, id: id, owner: owner)
+    }
+
+    private func installLease(_ lease: SharedGPULease, for id: UUID) {
+        state.withLock { state in
+            state.lease = lease
+            state.leaseGrants = [id]
+            state.leaseSince = ContinuousClock.now
+            state.handOffUntil = nil
+            state.leaseBusy = false
+        }
     }
 
     private func admitQueued(owner: String, timeout: Duration?) async throws -> GPUAdmissionGrant {
@@ -142,18 +190,17 @@ public final class GPUAdmission: Sendable {
         } onCancel: {
             abandon(id, with: CancellationError(), beforeQueueing: true)
         }
-        if step == .acquireLease, let configuration = crossProcessLease {
+        if case .acquireLease(let delay) = step, let configuration = crossProcessLease {
             do {
-                let remaining = deadline.map { max(.zero, clock.now.duration(to: $0)) }
-                let lease = try await SharedGPULease.acquire(configuration, timeout: remaining)
-                state.withLock { state in
-                    state.lease = lease
-                    state.leaseUsers += 1
-                    state.leaseAcquiring = false
+                if delay > .zero {
+                    if let deadline, clock.now.advanced(by: delay) >= deadline { throw GPUAdmissionError.timedOut }
+                    try await Task.sleep(for: delay)
                 }
+                let remaining = deadline.map { max(.zero, clock.now.duration(to: $0)) }
+                installLease(try await SharedGPULease.acquire(configuration, timeout: remaining), for: id)
             } catch {
                 state.withLock { state in
-                    state.leaseAcquiring = false
+                    state.leaseBusy = false
                     try? state.queue.release(id: id)
                 }
                 pump()
@@ -178,24 +225,22 @@ public final class GPUAdmission: Sendable {
         waiter?.resume(throwing: error)
     }
 
-    /// Starts as many queued requests as slots allow. While one request acquires the cross-process lease, no other
-    /// starts, so at most one task ever waits on the lease.
+    /// Starts as many queued requests as slots allow. While one request acquires (or the admission releases) the
+    /// cross-process lease, no other starts, so at most one task ever waits on the lease.
     private func pump() {
         let started: [(CheckedContinuation<Step, any Error>, Step)] = state.withLock { state in
             var started: [(CheckedContinuation<Step, any Error>, Step)] = []
-            while !(crossProcessLease != nil && state.leaseAcquiring), let ticket = state.queue.next() {
+            while !(crossProcessLease != nil && state.leaseBusy), let ticket = state.queue.next() {
                 guard let waiter = state.waiters.removeValue(forKey: ticket.id) else {
                     try? state.queue.release(id: ticket.id)
                     continue
                 }
-                if crossProcessLease == nil {
-                    started.append((waiter, .granted))
-                } else if state.lease != nil {
-                    state.leaseUsers += 1
+                if crossProcessLease == nil || Self.joinLease(&state, ticket.id) {
                     started.append((waiter, .granted))
                 } else {
-                    state.leaseAcquiring = true
-                    started.append((waiter, .acquireLease))
+                    state.leaseBusy = true
+                    let delay = state.handOffUntil.map { max(.zero, ContinuousClock.now.duration(to: $0)) } ?? .zero
+                    started.append((waiter, .acquireLease(after: delay)))
                 }
             }
             return started
@@ -204,14 +249,25 @@ public final class GPUAdmission: Sendable {
     }
 
     fileprivate func release(_ id: UUID) {
-        state.withLock { state in
-            guard (try? state.queue.release(id: id)) != nil else { return }
-            guard crossProcessLease != nil, state.lease != nil else { return }
-            state.leaseUsers -= 1
-            if state.leaseUsers == 0 {
-                state.lease?.release()
-                state.lease = nil
+        let finished: SharedGPULease? = state.withLock { state in
+            guard (try? state.queue.release(id: id)) != nil else { return nil }
+            guard state.leaseGrants.remove(id) != nil, state.leaseGrants.isEmpty, let lease = state.lease else { return nil }
+            let now = ContinuousClock.now
+            let othersWaiting = state.queue.queuedCount > 0
+            if othersWaiting, lease.holding == .owned, let since = state.leaseSince,
+               since.duration(to: now) < crossProcessTurn {
+                return nil // Hand the lease straight to the next in-process request.
             }
+            state.lease = nil
+            state.leaseSince = nil
+            if othersWaiting, lease.holding == .owned { state.handOffUntil = now.advanced(by: crossProcessHandOffGap) }
+            state.leaseBusy = true
+            return lease
+        }
+        if let finished {
+            // File I/O outside the state lock; `leaseBusy` holds back acquisition until the directory is gone.
+            finished.release()
+            state.withLock { $0.leaseBusy = false }
         }
         pump()
     }
@@ -251,5 +307,55 @@ public struct GPUAdmissionOwner: Sendable {
 
     public func admit(waiting: GPUAdmission.Waiting? = nil) async throws -> GPUAdmissionGrant {
         try await admission.admit(owner: name, waiting: waiting)
+    }
+}
+
+/// One session operation's admission, which the session's close can withdraw while it is still waiting so unload
+/// never waits behind the GPU queue. A withdrawal after the grant but before `admit` returns releases the grant.
+package final class GPUAdmissionAttempt: Sendable {
+    private enum Phase: Sendable { case idle, waiting(Task<GPUAdmissionGrant, any Error>), granted, withdrawn }
+    private let phase = Mutex(Phase.idle)
+    private let owner: GPUAdmissionOwner
+
+    package init(_ owner: GPUAdmissionOwner) { self.owner = owner }
+
+    /// Throws `closed()` when withdrawn.
+    package func admit(orThrow closed: @Sendable () -> any Error) async throws -> GPUAdmissionGrant {
+        let owner = owner
+        let task: Task<GPUAdmissionGrant, any Error>? = phase.withLock { phase in
+            guard case .idle = phase else { return nil }
+            let task = Task { try await owner.admit() }
+            phase = .waiting(task)
+            return task
+        }
+        guard let task else { throw closed() }
+        let grant: GPUAdmissionGrant
+        do {
+            grant = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        } catch {
+            if isWithdrawn { throw closed() }
+            throw error
+        }
+        let kept = phase.withLock { phase -> Bool in
+            guard case .waiting = phase else { return false }
+            phase = .granted
+            return true
+        }
+        guard kept else { grant.release(); throw closed() }
+        return grant
+    }
+
+    private var isWithdrawn: Bool { phase.withLock { if case .withdrawn = $0 { true } else { false } } }
+
+    /// Withdraws a request that has not been granted yet. Has no effect once granted.
+    package func withdraw() {
+        let task: Task<GPUAdmissionGrant, any Error>? = phase.withLock { phase in
+            switch phase {
+            case .idle: phase = .withdrawn; return nil
+            case .waiting(let task): phase = .withdrawn; return task
+            case .granted, .withdrawn: return nil
+            }
+        }
+        task?.cancel()
     }
 }

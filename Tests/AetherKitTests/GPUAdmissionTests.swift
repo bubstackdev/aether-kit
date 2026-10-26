@@ -182,3 +182,103 @@ private func isBusy(_ error: any Error) -> Bool { (error as? GPUAdmissionError) 
     #expect(grant.owner == "b" && pidText(directory) == String(getpid()))
     grant.release()
 }
+
+@Test func anInheritedLeaseIsRecheckedBeforeEveryGrant() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    // A wrapper-like ancestor (this test's parent) holds the lease and hands it to this process.
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    try Data(String(getppid()).utf8).write(to: directory.appendingPathComponent("pid"))
+    let admission = try GPUAdmission(maximumConcurrent: 2,
+                                     crossProcessLease: leaseConfiguration(directory, handedOffBy: getppid()))
+    let first = try await admission.admit(owner: "a", waiting: .failFast)
+    #expect(admission.snapshot.holdsCrossProcessLease && pidText(directory) == String(getppid()))
+    // The holder's lease is replaced by an unrelated live holder: the next grant must not ride on it.
+    try Data("1".utf8).write(to: directory.appendingPathComponent("pid"), options: .atomic)
+    await #expect(throws: SharedGPULeaseError.held(holder: 1)) { try await admission.admit(owner: "b", waiting: .failFast) }
+    first.release()
+    // Once the holder is gone, a grant takes a lease of its own.
+    try FileManager.default.removeItem(at: directory)
+    let owned = try await admission.admit(owner: "b")
+    #expect(pidText(directory) == String(getpid()))
+    owned.release()
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
+}
+
+@Test func anOwnedLeasePassesStraightToTheNextRequestWithinItsTurn() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let admission = try GPUAdmission(crossProcessLease: leaseConfiguration(directory), crossProcessTurn: .seconds(60))
+    let first = try await admission.admit(owner: "a")
+    let next = Task { try await admission.admit(owner: "b") }
+    try await eventually { admission.snapshot.queued == 1 }
+    let watcher = LeaseWatcher(directory)
+    first.release()
+    let grant = try await next.value
+    #expect(watcher.stop() == 0) // The lease directory never disappeared between the two grants.
+    grant.release()
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
+}
+
+@Test func afterItsTurnTheLeaseIsReleasedWithAGapAnotherProcessCanUse() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let admission = try GPUAdmission(crossProcessLease: leaseConfiguration(directory), crossProcessTurn: .zero,
+                                     crossProcessHandOffGap: .seconds(2))
+    let first = try await admission.admit(owner: "a")
+    let next = Task { try await admission.admit(owner: "b") }
+    try await eventually { admission.snapshot.queued == 1 }
+    first.release()
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
+    // An outside process takes the lease inside the gap; the queued request then waits for it.
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    try Data(String(getppid()).utf8).write(to: directory.appendingPathComponent("pid"))
+    try await Task.sleep(for: .milliseconds(2300))
+    #expect(admission.snapshot.running == 1 && pidText(directory) == String(getppid()))
+    try FileManager.default.removeItem(at: directory)
+    let grant = try await next.value
+    #expect(pidText(directory) == String(getpid()))
+    grant.release()
+}
+
+/// Counts moments the lease directory is missing, sampled from a background thread.
+private final class LeaseWatcher: @unchecked Sendable {
+    private let missing = Mutex(0)
+    private let running = Mutex(true)
+    private let finished = DispatchSemaphore(value: 0)
+    init(_ directory: URL) {
+        Thread.detachNewThread { [self] in
+            while running.withLock({ $0 }) {
+                if !FileManager.default.fileExists(atPath: directory.path) { missing.withLock { $0 += 1 } }
+                usleep(200)
+            }
+            finished.signal()
+        }
+    }
+    func stop() -> Int {
+        running.withLock { $0 = false }
+        finished.wait()
+        return missing.withLock { $0 }
+    }
+}
+
+@Test func aWithdrawnAttemptStopsWaitingAndNeverKeepsAGrant() async throws {
+    let admission = try GPUAdmission()
+    let held = try await admission.admit(owner: "a")
+    struct Closed: Error {}
+    let waiting = GPUAdmissionAttempt(admission.owner("b"))
+    let task = Task { try await waiting.admit(orThrow: { Closed() }) }
+    try await eventually { admission.snapshot.queued == 1 }
+    waiting.withdraw()
+    await #expect(throws: Closed.self) { try await task.value }
+    #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
+    // Withdrawn before asking: refused without queueing.
+    let early = GPUAdmissionAttempt(admission.owner("c"))
+    early.withdraw()
+    await #expect(throws: Closed.self) { try await early.admit(orThrow: { Closed() }) }
+    held.release()
+    // Withdrawing after the grant has no effect.
+    let granted = GPUAdmissionAttempt(admission.owner("d"))
+    let grant = try await granted.admit(orThrow: { Closed() })
+    granted.withdraw()
+    #expect(admission.snapshot.running == 1)
+    grant.release()
+    #expect(admission.snapshot.running == 0)
+}

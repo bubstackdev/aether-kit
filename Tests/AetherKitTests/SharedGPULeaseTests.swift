@@ -17,8 +17,8 @@ func privateLeaseDirectory() throws -> URL {
 
 func removeLeaseParent(_ directory: URL) { try? FileManager.default.removeItem(at: directory.deletingLastPathComponent()) }
 
-func leaseConfiguration(_ directory: URL, inherit: Bool = false) -> SharedGPULease.Configuration {
-    SharedGPULease.Configuration(directory: directory, inheritsAncestorLease: inherit, pollInterval: .milliseconds(20))
+func leaseConfiguration(_ directory: URL, handedOffBy: Int32? = nil) -> SharedGPULease.Configuration {
+    SharedGPULease.Configuration(directory: directory, handedOffBy: handedOffBy, pollInterval: .milliseconds(20))
 }
 
 /// An externally created lease, as another implementation would leave it.
@@ -266,33 +266,83 @@ private func clearsStaleSoon(_ directory: URL) -> Bool {
 @Test func waitingAcquisitionTakesTheLeaseOnceReleasedAndReportsTheHolder() async throws {
     let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
     let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
-    let reported = HolderLog()
+    let reported = BusyLog()
     let waiter = Task { try await SharedGPULease.acquire(leaseConfiguration(directory), onBusy: { reported.append($0) }) }
-    try await Task.sleep(for: .milliseconds(150))
+    // Release only once the waiter has reported the holder, however slowly it starts.
+    let deadline = Date().addingTimeInterval(30)
+    while reported.values.isEmpty, Date() < deadline { usleep(5_000) }
     held.release()
     let lease = try await waiter.value
     #expect(lease.holding == .owned && pidText(directory) == ownPID)
-    #expect(reported.values == [getpid()])
+    #expect(reported.values == [.process(getpid())])
     lease.release()
 }
 
-final class HolderLog: Sendable {
-    private let log = Mutex<[Int32?]>([])
-    func append(_ value: Int32?) { log.withLock { $0.append(value) } }
-    var values: [Int32?] { log.withLock { $0 } }
+final class BusyLog: Sendable {
+    private let log = Mutex<[SharedGPULease.Busy]>([])
+    func append(_ value: SharedGPULease.Busy) { log.withLock { $0.append(value) } }
+    var values: [SharedGPULease.Busy] { log.withLock { $0 } }
+}
+
+@Test func busyReportsNameAnAncestorWithoutHandOffAndAPidLessLease() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    try externalLease(directory, holder: String(getppid()))
+    let reported = BusyLog()
+    let policy = SharedGPULease.ToolPolicy(configuration: leaseConfiguration(directory), timeout: .milliseconds(60))
+    await #expect(throws: SharedGPULeaseError.timedOut(holder: getppid())) { try await policy.acquire { reported.append($0) } }
+    #expect(reported.values.first == .ancestorWithoutHandOff(getppid()))
+    #expect(policy.message(.ancestorWithoutHandOff(getppid()), tool: "t").contains("AETHER_GPU_LEASE_HOLDER=\(getppid())"))
+    // A pid-less lease is reported as such, repeatedly while it persists, and is never reclaimed.
+    try FileManager.default.removeItem(at: directory.appendingPathComponent("pid"))
+    let pidless = BusyLog()
+    var configuration = leaseConfiguration(directory)
+    configuration.busyReportInterval = .milliseconds(40)
+    await #expect(throws: SharedGPULeaseError.timedOut(holder: nil)) {
+        try await SharedGPULease.acquire(configuration, timeout: .milliseconds(300)) { pidless.append($0) }
+    }
+    #expect(pidless.values.count >= 2 && pidless.values.allSatisfy { $0 == .unidentified })
+    #expect(policy.message(.unidentified, tool: "t").contains("never reclaims a pid-less lease"))
+    #expect(FileManager.default.fileExists(atPath: directory.path))
+}
+
+@Test func anExplicitHandOffIsInheritedOnlyFromTheNamedLiveAncestor() throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    try externalLease(directory, holder: String(getppid()))
+    // No hand-off: an ancestor's lease is held like any other.
+    #expect { try SharedGPULease.tryAcquire(leaseConfiguration(directory)) } throws: { isHeld($0, by: getppid()) }
+    // A hand-off naming someone else is not accepted.
+    #expect { try SharedGPULease.tryAcquire(leaseConfiguration(directory, handedOffBy: 1)) } throws: { isHeld($0, by: getppid()) }
+    let inherited = try SharedGPULease.tryAcquire(leaseConfiguration(directory, handedOffBy: getppid()))
+    #expect(inherited.holding == .inherited(holder: getppid()) && inherited.isStillValid)
+    #expect(inherited.handOffEnvironment == ["AETHER_GPU_LEASE_HOLDER": String(getppid())])
+    inherited.release()
+    #expect(pidText(directory) == String(getppid()))
+    // Once the lease names anyone else, or is gone, the inherited lease no longer protects this process.
+    try Data("1".utf8).write(to: directory.appendingPathComponent("pid"), options: .atomic)
+    #expect(!inherited.isStillValid)
+    try FileManager.default.removeItem(at: directory)
+    #expect(!inherited.isStillValid)
+    let owned = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    #expect(owned.isStillValid && owned.handOffEnvironment == ["AETHER_GPU_LEASE_HOLDER": String(getpid())])
+    owned.release()
+    #expect(!owned.isStillValid)
 }
 
 @Test func toolPolicyReadsTheDocumentedEnvironment() throws {
     let standard = try SharedGPULease.ToolPolicy.environment([:])
     #expect(standard.configuration?.directory.path == SharedGPULease.sharedDirectory.path)
-    #expect(standard.configuration?.inheritsAncestorLease == true && standard.timeout == nil)
+    #expect(standard.configuration?.handedOffBy == nil && standard.timeout == nil)
+    #expect(try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE_HOLDER": "4242"]).configuration?.handedOffBy == 4242)
+    #expect(try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE_TIMEOUT": "31536000"]).timeout == .seconds(31_536_000))
     #expect(try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE": "on"]).configuration != nil)
     #expect(try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE": "0"]).configuration == nil)
     #expect(try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE": "OFF"]).configuration == nil)
     let custom = try SharedGPULease.ToolPolicy.environment(["AETHER_GPU_LEASE_PATH": "/private/tmp/x.lock", "AETHER_GPU_LEASE_TIMEOUT": "2.5"])
     #expect(custom.configuration?.directory.path == "/private/tmp/x.lock" && custom.timeout == .milliseconds(2500))
     for bad in [["AETHER_GPU_LEASE": "maybe"], ["AETHER_GPU_LEASE_PATH": "relative.lock"], ["AETHER_GPU_LEASE_TIMEOUT": "-1"],
-                ["AETHER_GPU_LEASE_TIMEOUT": "soon"]] {
+                ["AETHER_GPU_LEASE_TIMEOUT": "soon"], ["AETHER_GPU_LEASE_TIMEOUT": "1e17"], ["AETHER_GPU_LEASE_TIMEOUT": "nan"],
+                ["AETHER_GPU_LEASE_TIMEOUT": "inf"], ["AETHER_GPU_LEASE_TIMEOUT": "31536001"], ["AETHER_GPU_LEASE_HOLDER": "1"],
+                ["AETHER_GPU_LEASE_HOLDER": "wrapper"]] {
         #expect { try SharedGPULease.ToolPolicy.environment(bad) } throws: { error in
             if case SharedGPULeaseError.invalidEnvironment = error { return true }
             return false
@@ -323,10 +373,15 @@ private func helperURL() throws -> URL {
 }
 
 /// Starts a process and waits for `marker` on its standard output.
-private func start(_ executable: URL, _ arguments: [String], until marker: String?) throws -> (Process, Pipe) {
+/// Children never inherit a hand-off from the test runner's environment; tests pass one explicitly.
+private func start(_ executable: URL, _ arguments: [String], until marker: String?,
+                   environment: [String: String] = [:]) throws -> (Process, Pipe) {
     let process = Process(), output = Pipe()
     process.executableURL = executable
     process.arguments = arguments
+    var inherited = ProcessInfo.processInfo.environment
+    inherited.removeValue(forKey: SharedGPULease.holderEnvironmentKey)
+    process.environment = inherited.merging(environment) { $1 }
     process.standardOutput = output
     process.standardError = FileHandle.nullDevice
     try process.run()
@@ -352,8 +407,8 @@ private func startHelper(_ mode: String, _ directory: URL, holding: Bool = true)
 }
 
 /// Runs to completion and returns status and trimmed standard output.
-private func runToEnd(_ executable: URL, _ arguments: [String]) throws -> (Int32, String) {
-    let (process, output) = try start(executable, arguments, until: nil)
+private func runToEnd(_ executable: URL, _ arguments: [String], environment: [String: String] = [:]) throws -> (Int32, String) {
+    let (process, output) = try start(executable, arguments, until: nil, environment: environment)
     let data = output.fileHandleForReading.readDataToEndOfFile()
     process.waitUntilExit()
     return (process.terminationStatus, String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
@@ -407,21 +462,28 @@ while true; do sleep 0.05; done
     lease.release()
 }
 
-@Test func aChildInheritsOnlyWhenAskedAndOnlyFromAnAncestor() throws {
+@Test func aChildInheritsOnlyAnExplicitHandOffFromAnAncestor() throws {
     let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
     let helper = try helperURL()
     let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    let handOff = held.handOffEnvironment
     #expect(try runToEnd(helper, ["try", directory.path]) == (2, "held \(getpid())"))
-    #expect(try runToEnd(helper, ["try", directory.path, "inherit"]) == (0, "inherited \(getpid())"))
+    // Being an ancestor is not enough: without the hand-off the child waits like any other process.
+    #expect(try runToEnd(helper, ["try", directory.path, "inherit"]) == (2, "held \(getpid())"))
+    #expect(try runToEnd(helper, ["try", directory.path, "inherit"], environment: ["AETHER_GPU_LEASE_HOLDER": "1"])
+            == (2, "held \(getpid())"))
+    #expect(try runToEnd(helper, ["try", directory.path, "inherit"], environment: handOff) == (0, "inherited \(getpid())"))
     // Through an intermediate shell, as under a wrapper; the inherited lease is left in place.
     let shell = URL(fileURLWithPath: "/bin/sh")
-    #expect(try runToEnd(shell, ["-c", "\"$0\" try \"$1\" inherit; echo status=$?", helper.path, directory.path])
-            == (0, "inherited \(getpid())\nstatus=0"))
+    #expect(try runToEnd(shell, ["-c", "\"$0\" try \"$1\" inherit; echo status=$?", helper.path, directory.path],
+                         environment: handOff) == (0, "inherited \(getpid())\nstatus=0"))
     #expect(pidText(directory) == ownPID)
     held.release()
-    // A sibling holder is not an ancestor.
+    // A hand-off naming a sibling holder is refused: the sibling is not an ancestor.
     let sibling = try startHelper("default", directory)
-    #expect(try runToEnd(helper, ["try", directory.path, "inherit"]) == (2, "held \(sibling.processIdentifier)"))
+    #expect(try runToEnd(helper, ["try", directory.path, "inherit"],
+                         environment: ["AETHER_GPU_LEASE_HOLDER": String(sibling.processIdentifier)])
+            == (2, "held \(sibling.processIdentifier)"))
     kill(sibling.processIdentifier, SIGTERM)
     #expect(exited(sibling))
 }
@@ -486,7 +548,12 @@ func defaultTerminationReleasesTheLeaseBeforeTheProcessDies(signal: Int32) throw
     let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
     let process = try startHelper("ignored", directory)
     kill(process.processIdentifier, SIGHUP)
-    usleep(300_000)
+    // Give an unwanted release or termination ample time to show, then check twice.
+    usleep(500_000)
+    #expect(process.isRunning)
+    #expect(pidText(directory) == String(process.processIdentifier))
+    kill(process.processIdentifier, SIGHUP)
+    usleep(200_000)
     #expect(process.isRunning)
     #expect(pidText(directory) == String(process.processIdentifier))
     kill(process.processIdentifier, SIGTERM)

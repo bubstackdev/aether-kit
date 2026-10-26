@@ -137,10 +137,12 @@ public actor H3VideoSession {
     private var active: Task<H3VideoResult, any Error>?
     private let resources: H3ResourceAdmission?
     private let gpu: GPUAdmissionOwner?
+    private var pendingGPU: GPUAdmissionAttempt?
     private var closingTask: Task<Void, Never>?
 
     /// `gpu` opts into a host-shared ``GPUAdmission``: each generation waits for (or, in fail-fast mode, requires) a
-    /// grant before its first stage and holds it until every stage has been released.
+    /// grant before its first stage and holds it until every stage has been released. With admission, the operation's
+    /// resource reservation is taken after the grant, and `unload()` withdraws a generation still waiting.
     public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) { self.stages = stages; resources = nil; self.gpu = gpu }
 
     public init(stages: H3VideoStages, resources: H3ResourceAdmission, gpu: GPUAdmissionOwner? = nil) throws {
@@ -156,7 +158,7 @@ public actor H3VideoSession {
         guard active == nil else { throw AetherError.sessionBusy }
         let task = try startRun(request, onEvent: onEvent)
         active = task; state = .running
-        defer { active = nil; if state == .running { state = .ready } }
+        defer { active = nil; pendingGPU = nil; if state == .running { state = .ready } }
         return try await withTaskCancellationHandler {
             let result = try await task.value; try Task.checkCancellation(); return result
         } onCancel: { task.cancel() }
@@ -170,12 +172,20 @@ public actor H3VideoSession {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
         }
         try resources?.check(request)
-        let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
-        let resources = resources, gpu = gpu
+        let resources = resources
+        let reserve: @Sendable () throws -> ResourceReservation? = {
+            try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        }
+        // Without GPU admission, reserve before starting, as before. With it, reserve only once granted, so a request
+        // waiting for the GPU never holds capacity the running one needs.
+        let early = gpu == nil ? try reserve() : nil
+        let attempt = gpu.map(GPUAdmissionAttempt.init)
+        pendingGPU = attempt
         return Task {
-            defer { reservation?.release() }
-            let grant = try await gpu?.admit()
+            let grant = try await attempt?.admit(orThrow: { AetherError.sessionClosed })
             defer { grant?.release() }
+            let reservation = try attempt == nil ? early : reserve()
+            defer { reservation?.release() }
             return try await Self.run(request, stages: stages, resources: resources, onEvent: onEvent)
         }
     }
@@ -185,6 +195,8 @@ public actor H3VideoSession {
         guard state != .closed else { return }
         if let closingTask { await closingTask.value; return }
         state = .closing
+        // A generation still waiting for GPU admission is withdrawn instead of waited for.
+        pendingGPU?.withdraw()
         let task = Task { [self] in
             if let active { _ = await active.result }
             if let stages { await Self.releaseAll(stages) }

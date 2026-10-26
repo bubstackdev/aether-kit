@@ -20,6 +20,7 @@ import Testing
                && nativeEnvironment["AETHER_FLUX2_LIFECYCLE_OUTPUT"] != nil),
       .timeLimit(.minutes(60)))
 func flux2NativeLifecycleQualification() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let env = nativeEnvironment
     let output = URL(fileURLWithPath: try #require(env["AETHER_FLUX2_LIFECYCLE_OUTPUT"]))
     #expect(!FileManager.default.fileExists(atPath: output.path), "output directory must be new")

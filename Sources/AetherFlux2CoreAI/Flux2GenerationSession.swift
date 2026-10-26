@@ -63,23 +63,30 @@ public actor Flux2GenerationSession {
     private let resources: Flux2ResourceAdmission?
     private let assets: Flux2Assets
     private var active: Task<Void, Never>?
+    private let gpu: GPUAdmissionOwner?
+    private var pendingGPU: GPUAdmissionAttempt?
 
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each operation waits for (or, in fail-fast mode, requires) a
+    /// grant before any model work and holds it until the operation's native work has joined. With admission, the
+    /// operation's resource reservation is taken after the grant, and `unload()` withdraws an operation still waiting.
     public init(assets: Flux2Assets, compute: ModelComputePolicy = .preferGPU, residency: Flux2Residency = .balanced,
-                resources: Flux2ResourceAdmission? = nil) {
+                resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
         self.init(assets: assets, factory: NativeFlux2Factory(compute: compute, installation: nil),
-                  residency: residency, resources: resources)
+                  residency: residency, resources: resources, gpu: gpu)
     }
 
     /// Holds installation protection through every stage until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
-                residency: Flux2Residency = .balanced, resources: Flux2ResourceAdmission? = nil) throws {
+                residency: Flux2Residency = .balanced, resources: Flux2ResourceAdmission? = nil,
+                gpu: GPUAdmissionOwner? = nil) throws {
         let assets = try Flux2Assets.open(in: installation)
         self.init(assets: assets, factory: NativeFlux2Factory(compute: compute, installation: InstallationAccess(installation)),
-                  residency: residency, resources: resources)
+                  residency: residency, resources: resources, gpu: gpu)
     }
 
     init(assets: Flux2Assets, factory: any Flux2ModelFactory, residency: Flux2Residency = .balanced,
-         resources: Flux2ResourceAdmission? = nil) {
+         resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
+        self.gpu = gpu
         bundleFingerprint = assets.fingerprint
         referenceFingerprint = assets.referenceFingerprint
         limits = assets.references
@@ -182,15 +189,26 @@ public actor Flux2GenerationSession {
         try Task.checkCancellation()
         guard state != .closing, state != .closed else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        let resources = resources
+        let reserve: @Sendable () throws -> ResourceReservation? = {
+            try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        }
+        // Without GPU admission, reserve before starting, as before. With it, reserve only once granted.
+        let early = gpu == nil ? try reserve() : nil
+        let attempt = gpu.map(GPUAdmissionAttempt.init)
         let task = Task {
+            let grant = try await attempt?.admit(orThrow: { AetherError.sessionClosed })
+            defer { grant?.release() }
+            let reservation = try attempt == nil ? early : reserve()
             defer { reservation?.release() }
             return try await operation()
         }
         active = Task { _ = await task.result }
+        pendingGPU = attempt
         state = .running
         defer {
             active = nil
+            pendingGPU = nil
             if state == .running { state = .ready }
         }
         return try await withTaskCancellationHandler {
@@ -204,6 +222,8 @@ public actor Flux2GenerationSession {
     public func unload() async {
         guard state != .closed else { return }
         state = .closing
+        // An operation still waiting for GPU admission is withdrawn instead of waited for.
+        pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
         state = .closed

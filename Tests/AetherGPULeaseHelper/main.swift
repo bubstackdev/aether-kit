@@ -10,13 +10,15 @@ import Synchronization
 //   handled DIR   first install an own graceful SIGTERM shutdown that releases and exits 42
 //   ignored DIR   first ignore SIGHUP (as nohup does)
 //   late DIR      take the lease, install a SIGTERM handler that exits 43, release, print "ready", block
-//   try DIR [inherit]   one attempt: print "owned" or "inherited <pid>" and exit 0, or print "held <pid>" and exit 2
+//   try DIR [inherit]   one attempt: print "owned" or "inherited <pid>" and exit 0, or print "held <pid>" and exit 2;
+//                       with inherit, accept a hand-off named by AETHER_GPU_LEASE_HOLDER
 //   wait DIR SECONDS    wait up to SECONDS: print "acquired", release, exit 0; exit 3 on timeout
 //   pair DIR      take DIR and its sibling DIR.second, release DIR, print "ready", block
 private final class Held: Sendable { let lease = Mutex<SharedGPULease?>(nil) }
 
 private func configuration(_ path: String, inherit: Bool = false) -> SharedGPULease.Configuration {
-    SharedGPULease.Configuration(directory: URL(fileURLWithPath: path, isDirectory: true), inheritsAncestorLease: inherit,
+    let handedOffBy = inherit ? ProcessInfo.processInfo.environment[SharedGPULease.holderEnvironmentKey].flatMap { Int32($0) } : nil
+    return SharedGPULease.Configuration(directory: URL(fileURLWithPath: path, isDirectory: true), handedOffBy: handedOffBy,
                                  pollInterval: .milliseconds(20))
 }
 
