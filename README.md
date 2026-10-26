@@ -1,88 +1,135 @@
 # AetherKit
 
-Production generative AI on Apple Core AI, with model-specific optimization for Apple silicon.
+Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
-Status: experimental implementation, 2026-10-17. The Krea reference image pipeline has passed native provided-conditioning and full encoded parity for the retained 768×1344 tower fixture, including all eight latent hashes and decoded pixels against each mode's independent reference. See [generation validation](docs/krea-generation.md) for scope and remaining gates. Publication is pending.
+**Status: 0.0.1 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. See the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
 
-Requires Apple silicon, macOS 27 and Xcode 27.1 / Swift 6.4 for the currently tested build. The package also declares iOS 27; iOS builds and execution are not qualified yet. The optional tokenizer adapter uses Hugging Face's `Tokenizers` product; the core, execution and Krea contract targets do not link it.
+| Product | Maturity | What it provides |
+| --- | --- | --- |
+| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, language model registration. No Core AI dependency. |
+| `AetherAssets` | Preview | Immutable local asset installation: staged SHA-256-verified import, installation IDs, reader leases, abandoned-stage recovery. No Core AI dependency. |
+| `AetherCoreAI` | Preview | Local Core AI model loading and introspection, a stateless typed reference executor, installed-asset model sessions and optional shared resource reservations. |
+| `AetherKrea` | Preview | Krea bundle validation, prompt/conditioning and reference-image contracts, refine schedules, rotary inputs and seeded noise. |
+| `AetherKreaTokenizers` | Preview | Optional local tokenizer adapter (Hugging Face `Tokenizers`); never downloads files. |
+| `AetherKreaCoreAI` | Preview | Krea 2 Turbo text-to-image, with reference images and image-to-image refine: Qwen text encoder → four denoiser segments → Euler sampling → VAE decode. |
+| `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload. |
+| `AetherH3`, `AetherH3Tokenizers` | **Experimental** | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |
+| `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. End-to-end media qualification is pending. |
+| `aether-probe` | Dev tool | Qualification, rendering and benchmark CLI; not SDK surface. |
 
-| Product | Current implementation |
-| --- | --- |
-| `AetherAssets` | Immutable local file installation, SHA-256 verification and reader leases; no native execution |
-| `AetherKit` | Owned tensors, typed errors and decoded RGB/PNG artifacts; no Core AI dependency |
-| `AetherCoreAI` | Local model loading/introspection and a stateless typed reference executor |
-| `AetherH3CoreAI` | Experimental BF16 runtime; eight-step provided-conditioning GPU gate passes |
-| `AetherH3` | Experimental CPU H3 geometry, packing, Turbo8 schedule and export-header identity checks |
-| `AetherKrea` | Bundle validation, prompt/conditioning contracts, rotary inputs, schedule and noise |
-| `AetherKreaTokenizers` | Optional local tokenizer adapter; no model/tokenizer downloads |
-| `AetherKreaCoreAI` | Reference Qwen → four denoisers → Euler sampling → VAE generation session |
-| `aether-probe` | Device information, loaded-model inspection and affine native smoke check |
+## Requirements
 
-## Build and check
+- Apple silicon, macOS 27.
+- Xcode 27.1 / Swift 6.4. Several targets enable Swift's experimental `Lifetimes` feature, which Core AI's span-based APIs require, so older toolchains are unsupported.
+- **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434).** Other Macs are expected to work but are unqualified. The package declares iOS 27, but iOS is unqualified in this repository.
+- Model assets: your own local Core AI exports (see [Models and assets](#models-and-assets)).
 
-```sh
-Scripts/check.sh
-.build/arm64-apple-macosx/release/aether-probe doctor
-```
-
-The check script keeps caches inside `.build` and uses SwiftPM's deprecated native build engine to avoid a sandboxed `dsymutil` failure in this environment. On unrestricted machines, use `AETHER_BUILD_SYSTEM=swiftbuild Scripts/check.sh`, or normal `swift build` / `swift test -c release`.
-
-Real-weight session qualification is opt-in. With the local bundle and CPU fixture paths configured, set `AETHER_NATIVE_QUALIFICATION=1`, `AETHER_KREA_SHAPE` to the tower registration JSON, and `AETHER_NATIVE_OUTPUT` to a new output directory before running `Scripts/check.sh`. It checks native model reuse, cancellation/recovery, unload during work and dynamic fallback at two additional shapes. Ordinary runs skip this test and do not load model weights. See [generation validation](docs/krea-generation.md) for the complete command and evidence.
-
-Full eight-step dynamic parity and encoder/decoder cancellation use a separate opt-in suite: `AETHER_NATIVE_DYNAMIC_QUALIFICATION=1`, `AETHER_NATIVE_DYNAMIC_OUTPUT` set to a new directory, and `AETHER_KREA_REFERENCE_PROBE` pointing to the existing independent KreaLab executable. Targeted decoder checks use `AETHER_NATIVE_DECODER_QUALIFICATION` (isolated native decoder) or `AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION` (one-step native pipeline by default). Run one native suite at a time; ordinary runs skip all four. See [current qualification and limits](docs/krea-generation.md): lazy per-session native function reuse now passes full eight-step independent parity at both dynamic shapes, encoder cancellation with re-encoding recovery, and decoder cancellation with bit-exact recovery. The previous GPU-residency failures remain preserved as historical evidence.
-
-This checkout's local Core AI exports live under `~/.cache/huggingface/aether-kit/`. Source `.local/native-assets.env` to set the cached Krea bundle, tower registration and affine fixture paths, plus the existing reference/fixture paths. Original export locations remain compatibility symlinks. These are local Core AI exports stored under the Hugging Face cache root; their model assets and registration are separate from Apple's derived `coreai-cache`.
-
-
-A repeatable benchmark harness is available through `Scripts/benchmark-krea.sh`. Use `prepare NEW_OUTPUT_DIRECTORY` to validate the pinned two-workload plan without inference, and `run NEW_OUTPUT_DIRECTORY` during the quiet window. Warm-ups are separate from measurements; reports include stage timings, sampled memory, numerical hashes and source/model/environment identities. See the [benchmark workflow](docs/krea-benchmarks.md). Preparation does not establish a performance result. Matched encoded/provided comparison plans add three warm-ups and five measurements per workload, with one-time encoding excluded and recorded separately for the provided profile.
-
-## Native integration probe
-
-Use a Python environment with PyTorch and Apple's `coreai-torch` installed. Python is only needed to export this weight-free fixture, not to run the SDK.
-
-```sh
-python3 Forge/export_smoke.py ~/.cache/huggingface/aether-kit/new-smoke
-.build/arm64-apple-macosx/release/aether-probe inspect ~/.cache/huggingface/aether-kit/new-smoke/affine.aimodel
-.build/arm64-apple-macosx/release/aether-probe smoke ~/.cache/huggingface/aether-kit/new-smoke/affine.aimodel cpuOnly
-```
-
-The exporter requires a new output directory and records dependency versions and source/model hashes. To use the already exported fixture, source `.local/native-assets.env` and pass `"$AETHER_SMOKE_MODEL"` to `smoke`. `smoke` checks two executions and retained output after unload. `inspect` loads/specializes the model and can create a Core AI cache entry. Neither command downloads weights. Native execution needs normal access to Apple's model cache. On 2026-10-17, smoke checks passed with `cpuOnly`, `automatic` and `preferGPU` when run outside the agent sandbox. The sandbox itself currently fails to start because its configured cache writable root is a symlink; use approved execution outside the sandbox for these checks.
-
-## Local Swift integration
-
-Add `.package(path: "/path/to/aether-kit")` and the desired products to a consumer's `Package.swift`. For the reference executor:
+## Installation
 
 ```swift
-import AetherKit
-import AetherCoreAI
-import Foundation
-
-let session = try await ModelSession.open(at: modelURL)
-do {
-    let x = try FloatTensor(shape: [1, 4], values: [-2, 0, 1, 3])
-    let result = try await session.run(inputs: ["x": x])
-    await session.unload()
-    print(result["y"]?.values ?? [])
-} catch {
-    await session.unload()
-    throw error
-}
+.package(url: "https://github.com/atelier-private-dev/aether-kit", exact: "0.0.1")
 ```
 
-This path copies inputs and outputs and rejects concurrent calls on one session. `run` is the float32 convenience API; `runTensors` supports float32, fp16 and int32. It is a correctness reference for runtime evaluation, not the eventual optimized generation API. The code example assumes the affine fixture's names and shape.
+```swift
+.product(name: "AetherKreaCoreAI", package: "aether-kit"),
+.product(name: "AetherKreaTokenizers", package: "aether-kit"),
+```
 
-See [current validation](docs/implementation-status.md) and the [engineering documentation](docs/README.md). The Rust prototype remains in `../lab/aether-prototype` as the migration reference and is unchanged. Source uses Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). External model assets retain their own terms.
+## Krea text-to-image
 
-A [separate consumer package](Examples/LocalPackage) exercises the Krea product without loading Core AI or weights.
+```swift
+import AetherKrea
+import AetherKreaCoreAI
+import AetherKreaTokenizers
+import Foundation
 
-See [Krea asset and conditioning preparation](docs/krea-conditioning.md) for local bundle usage and fixture checks. The tokenizer dependency is pinned to swift-transformers 1.1.0; `Package.resolved` records this checkout's full dependency resolution.
+let assets = try KreaAssets.open(at: bundleURL)            // reads headers, not model streams
+let tokenizer = try await KreaTokenizer.open(assets: assets)
+let session = KreaGenerationSession(assets: assets)       // preferGPU, balanced residency
+let configuration = try KreaConfiguration(width: 512, height: 512, seed: 17017)
+let image = try await session.generate(configuration: configuration,
+                                       prompt: tokenizer.prepare("a red fox in fresh snow"))
+try image.savePNG(to: outputURL)
+await session.unload()
+```
 
-The CLI exposes the same reuse through `aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N]`. It renders seeds serially after one preparation, saving indexed PNGs and a report with hashes and timing scope. See the [batch command example](docs/krea-generation.md#batch-rendering-from-the-cli).
+- **Repeated images of one prompt:** call `prepare(prompt:)` once, then `generate(configuration:preparedPrompt:)` for each seed.
+- **Reference images:** `prepare(referencePrompt:references:)` runs reference pictures through the bundle's vision encoder ([guide](docs/krea-reference-images.md)).
+- **Image-to-image refine:** `refine(...)` runs a partial schedule from encoded start latents ([generation guide](docs/krea-generation.md)).
+- **Installed assets:** to bind native models to verified, lease-protected local installations, open sessions from an `AetherAssets` installation with `KreaGenerationSession(installed:)`.
+- **Shared memory budgets:** `KreaResourceAdmission` reserves host-qualified estimates against a `ResourceCoordinator` ([Krea foundations](docs/krea-foundations.md)).
+- **Residency:** `balanced` (the default) releases the encoder before loading denoisers. `.resident` keeps everything loaded, so later fresh prompts are much faster at the cost of more GPU memory (see measured performance below).
+- **Concurrency:** one request runs per session at a time. Overlapping calls fail with `sessionBusy`. Cancel the calling task to stop between native calls. `unload()` waits for active work, then closes the session permanently.
 
-For repeated images of one prompt, use `session.prepare(prompt:)` once, then `generate(configuration:preparedPrompt:)` on the same session. This releases the encoder after preparation and reuses conditioning, denoisers and decoder. Prepared values are caller-owned, report their conditioning byte count and reject incompatible bundles. See the [prepared-prompt example](docs/krea-generation.md#prepare-once-render-multiple-seeds).
+### Measured performance
 
-See [Krea reference generation](docs/krea-generation.md) for shape registration, PNG rendering, and strict native parity commands. Segment tensors currently copy through host memory; this implementation makes no optimized performance claim.
+Measured 2026-10-26 on the M5 Max at 512×512, eight steps. Every image matched the independent references. See the [release-line record](docs/evidence/krea-release-benchmarks-2026-10-26.json) and [benchmark methodology](docs/krea-benchmarks.md).
 
-MiniMax H3 has CPU preparation contracts in `AetherH3` and an experimental BF16 runtime in `AetherH3CoreAI`. The [eight-step provided-conditioning GPU gate](docs/h3-integration.md#denoising-qualification-2026-10-18) passes 464 scoped CPU comparisons and reproduces all 864 captured hashes with one resident block-weight set. [Earlier native lifecycle probes](docs/h3-integration.md#outer-phase-qualification-2026-10-18) pass per-module cancellation/recovery. Whole-trajectory lifecycle qualification, the conditioner, decoders and media acceptance remain pending; ordinary tests perform no H3 GPU work.
+| Scenario | Quiet machine | Release line, heavy concurrent load |
+| --- | --- | --- |
+| Fresh prompt each request, `resident` | 5.0 s | 5.0 s median (4.8–5.5 s) |
+| Repeat image, conditioning already prepared | 4.6 s (about 0.535 s per step) | 6.5 s median |
+| Fresh prompt each request, `balanced` (reloads about 19 GB of models) | 14.1 s median | 54 s median (37–85 s), reload-bound |
 
-Optional SDK foundations include shared resource reservations and installed-asset model loading. See [contracts and validation](docs/sdk-foundations.md) and the [remaining implementation sequence](docs/sdk-roadmap.md).
+The quiet-machine column was measured the same day on a parallel development line that shares this sampling path. The resident results agree across the two runs. A quiet-window re-measure of balanced mode on this line is pending. Balanced mode's fresh-prompt latency depends heavily on memory pressure, because every request reloads the encoder and denoisers. GPU memory peaks at about 15 GB balanced and about 23 GB resident.
+
+## Language generation (experimental)
+
+```swift
+import AetherLanguageCoreAI
+
+let session = try await LanguageGenerationSession.open(bundle: bundleURL, platform: .macos)
+let reply = try await session.generate(prompt: renderedTokenIDs, maximumTokens: 512,
+                                       prefillChunkSize: 64, onToken: { token in /* stream */ })
+await session.unload()
+```
+
+Bundles are registered with a `language-model.json` manifest that Kit verifies before loading. Tokens stream while the next decode step runs on the GPU. The current export contract reloads the native model every 128 submissions. See [language generation](docs/language-generation.md).
+
+## H3 video with audio (experimental)
+
+`H3VideoSession` takes an `H3VideoRequest` and returns frames and audio. The request carries the prompt, geometry, seed, optional first and last keyframes, and whether to generate audio. It runs over a validated schema-3 H3 profile. The stages are implemented and have been exercised natively, but committed end-to-end qualification records (graphs, trajectory, decoders, lifecycle, media audit) are still pending, so treat outputs and APIs as experimental. See [H3 foundations](docs/h3-foundations.md) and [H3 integration](docs/h3-integration.md).
+
+## Models and assets
+
+AetherKit loads local Core AI exports that you supply and never downloads weights.
+
+- **Krea:** a bundle directory containing `aether.json` (the recipe), `metadata.json`, six or seven `.aimodel` assets with `main.hash` declarations, and `tokenizer/`. It can optionally be installed through `AetherAssets`. A full written bundle specification isn't published yet.
+- **Language:** a registered bundle with `language-model.json`.
+- **H3:** a schema-3 profile that references checkpoint ranges in place.
+
+Assets keep their own licenses.
+
+## Development
+
+```sh
+sh Scripts/check-cpu.sh                         # weight-free Release suite (clears AETHER_* opt-ins)
+swift run -c release aether-probe doctor
+```
+
+`Scripts/check.sh` uses SwiftPM's default build engine. Set `AETHER_BUILD_SYSTEM=native` in restricted sandboxes where the default engine's `dsymutil` step can't run. CI runs the CPU suite and the independent `Examples/Foundations` consumer on a macOS 27 / Xcode 27.1 runner (`AETHER_MAC_RUNNER`).
+
+Real-weight suites are opt-in and skipped by default:
+
+- `AETHER_NATIVE_QUALIFICATION`
+- `AETHER_NATIVE_DYNAMIC_QUALIFICATION`
+- `AETHER_NATIVE_DECODER_QUALIFICATION`
+- `AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION`
+- the H3 profile tests
+
+Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands must run while holding the shared GPU lease (`/tmp/atelier-gpu.lock`). Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.1 checklist](docs/release-0.0.1-checklist.md) and the [SDK roadmap](docs/sdk-roadmap.md).
+
+## Known limitations
+
+- **Single qualified device:** one M5 Max running macOS 27.0.1. iOS is unqualified here.
+- **No Krea bundle specification**, and no hosted assets or download transport.
+- **Slow first image:** model first-load dominates the first image in a process.
+- **Krea progress callbacks are synchronous:** a slow observer stalls sampling.
+- **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped.
+- **Language:** the export contract reloads the native model every 128 submissions.
+- **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
+- **CI** needs an equipped macOS 27 runner; until then, checks run locally.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE), which includes third-party notices. External model assets keep their own terms.

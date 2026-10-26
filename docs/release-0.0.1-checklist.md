@@ -27,14 +27,14 @@ Status: in progress, 2026-10-26. Unchecked items are open; checked items cite th
 - [x] **Local line preserved:** remote branch `local-line-2026-10-26`.
 - [x] **Third-party notices:** `NOTICE` lists swift-transformers, swift-jinja and swift-collections, used by both tokenizer products.
 - [x] **Scripts:** `Scripts/check.sh` and `Scripts/benchmark-krea.sh` default to the default build engine.
-- [ ] **CPU suite** on the release commit: `sh Scripts/check-cpu.sh`.
-- [ ] **Clean clone:** resolve, test, and build both examples (`Examples/LocalPackage` imports every product and type-checks the README snippets; `Examples/Foundations` is CI's independent consumer).
-- [ ] **Warnings:** only the known Core AI `ComputeStream` sending diagnostics remain.
+- [x] **CPU suite:** 246 Release tests pass on `b091f58` (`sh Scripts/check-cpu.sh`), with the opt-in native and external-fixture tests skipped.
+- [x] **Clean clone:** a fresh clone of `b091f58` resolves, passes the CPU suite, builds `Examples/LocalPackage` (every product, with the README snippets type-checked) and runs `Examples/Foundations`.
+- [x] **Warnings:** the only warnings are the 24 known Core AI `ComputeStream` "sending risks data race" diagnostics.
 
 ## Qualification on this line
 
-- [ ] **Krea native suites:** dynamic parity, session lifecycle and decoder pipeline, using the byte-identical regenerated tower fixture at `~/.cache/huggingface/aether-kit/krea-2-turbo-realism/fixtures/4c12ae019488ff1c`.
-- [ ] **Krea performance:** re-measure provided, balanced and resident fresh-prompt timings on this line's session.
+- [x] **Krea native suites:** all passed on this line, using the byte-identical regenerated tower fixture ([record](evidence/krea-release-native-2026-10-26.json)): dynamic parity (65 checks), session lifecycle (23) and decoder pipeline (10).
+- [x] **Krea performance:** measured on this line under heavy concurrent load ([record](evidence/krea-release-benchmarks-2026-10-26.json)): resident 5.0 s, matching the quiet-machine figure; balanced fresh prompts reload-bound. A quiet-window balanced re-measure is a follow-up.
 - [x] **H3:** not rerun for 0.0.1 (decision above).
 - [x] **Language:** CPU-qualified in this repository. On-device qualification is tracked by the consuming app.
 
@@ -43,7 +43,7 @@ Status: in progress, 2026-10-26. Unchecked items are open; checked items cite th
 - [x] **README:** maturity table, support matrix, toolchain floor, quick starts, known limitations.
 - [x] **CHANGELOG.**
 - [x] **DocC:** experimental catalogs for the language and H3 modules, and an updated `AetherKit` overview.
-- [ ] **Release notes** with the qualification results.
+- [x] **Release notes:** [0.0.1](release-notes/0.0.1.md).
 
 ## Deferred to 0.1.0
 
