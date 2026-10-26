@@ -1,0 +1,29 @@
+--- before/NativeH3BlockBackend.swift
++++ after/NativeH3BlockBackend.swift
+@@ -16,6 +16,7 @@
+     private let inputs: [Binding]
+     private let output: any MTLBuffer
+     private let outputSpec: H3TensorSpec
++    private let stream: ComputeStream
+     private let observer: (@Sendable (H3BlockEvent) -> Void)?
+ 
+     static func open(_ probe: H3BlockProbePlan.Case,
+@@ -53,6 +54,7 @@
+         guard let output = device.makeBuffer(length: probe.output.byteCount, options: .storageModeShared) else { throw AetherError.unsupported("could not allocate H3 shared output") }
+         self.model = model; self.function = function; self.inputs = inputs
+         self.output = output; self.outputSpec = probe.output
++        self.stream = ComputeStream()
+         self.observer = observer
+     }
+ 
+@@ -63,7 +65,9 @@
+         // Core AI's opaque stream is not Sendable in this SDK. The compatibility
+         // import is confined here; this actor owns buffers, and H3BlockSession
+         // admits one call until stream completion, including cancellation/errors.
+-        let stream = ComputeStream()
++        // The session serializes calls and joins each one before this stream
++        // is reused, including cancellation and partial encode failures.
++        let stream = self.stream
+         let values = Dictionary(uniqueKeysWithValues: inputs.map { binding in
+             (binding.name, InferenceFunction.AsyncValue(unsafeBuffer: binding.buffer,
+                 scalarType: binding.spec.scalarType.native, shape: binding.spec.shape))

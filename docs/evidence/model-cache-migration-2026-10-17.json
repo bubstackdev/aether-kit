@@ -1,0 +1,222 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "passed": true,
+  "cache_root": "/Users/zakkeown/.cache/huggingface/aether-kit",
+  "moves": [
+    {
+      "original_path": "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/variants/macos-any-gpu",
+      "resolved_original_path": "/Users/zakkeown/Code/bubstackdev/aether-engine/forge/out.noindex/krea-2-turbo-realism/variants/macos-any-gpu",
+      "cache_path": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu",
+      "compatibility_symlink": "/Users/zakkeown/Code/bubstackdev/aether-engine/forge/out.noindex/krea-2-turbo-realism/variants/macos-any-gpu",
+      "method": "rename",
+      "bytes": 21568132804,
+      "files": {
+        "aether.json": {
+          "bytes": 12157,
+          "sha256": "48988bd46c2d59b65abc14e302078988686609591885acd0e4dcfd61646b23fe"
+        },
+        "krea_2_turbo_realism-denoiser0.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "ca8443b4c6e0447b9e7780d3114541b8fdd1c1a56f29ab71d605e31533158d2f"
+        },
+        "krea_2_turbo_realism-denoiser0.aimodel/main.mlirb": {
+          "bytes": 3704873004,
+          "sha256": "b4e6aa51bad9552a95a285882fe382999456055cfac6a53a622d58f1b90bc8f1"
+        },
+        "krea_2_turbo_realism-denoiser0.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "ab39a80e5f563d2925bc59fd3ead4b8c6f708ef21615cebcaef20a2c7d111fa3"
+        },
+        "krea_2_turbo_realism-denoiser1.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "e2dbf8a0f8425d913133fa94de332a3340d5c6373f05837d520181effb110c8f"
+        },
+        "krea_2_turbo_realism-denoiser1.aimodel/main.mlirb": {
+          "bytes": 3041087451,
+          "sha256": "805edac9e1a7f74e3db3feb84b4bdb24cb863220bd2d8c1d691b16eceb95a1e8"
+        },
+        "krea_2_turbo_realism-denoiser1.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "03b40879f325918dfc4dd472f03883c8eddd313790cf51708c73d0605025fa49"
+        },
+        "krea_2_turbo_realism-denoiser2.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "48063797378b3066e12055c6561a3fe213ce2cad8e923af7119258853e61bb68"
+        },
+        "krea_2_turbo_realism-denoiser2.aimodel/main.mlirb": {
+          "bytes": 3041087451,
+          "sha256": "7f377b05a6e9889a26c49f23987a8879328cb80fac8bb6eb95ab4d41482e45f2"
+        },
+        "krea_2_turbo_realism-denoiser2.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "4e74cffc08daa0afda479669f2faea39517a051f18fe671e6a71b209f655a8ba"
+        },
+        "krea_2_turbo_realism-denoiser3.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "1a356427466798e81f1c2bb58a7d98d9e8bfadeba67d2c220493085f4a831ee6"
+        },
+        "krea_2_turbo_realism-denoiser3.aimodel/main.mlirb": {
+          "bytes": 3041507977,
+          "sha256": "3bc17fa4ef170b0d4823181b1e4527e0891c4a27488b67558bdb902c3f097920"
+        },
+        "krea_2_turbo_realism-denoiser3.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "c8e6154c507b004383739db7ad3a3cedf77a3a05e3c2b84661ad77b8884c4006"
+        },
+        "krea_2_turbo_realism-text.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "b49d9a0e70bde56c3456749452ac7554acc9527b96aa4bc2b7f114127cb09836"
+        },
+        "krea_2_turbo_realism-text.aimodel/main.mlirb": {
+          "bytes": 7843929312,
+          "sha256": "e5a028b942e6c4d9b18c0465ac91295a72b38d6f2f3a0b0b9d84160cb5093b41"
+        },
+        "krea_2_turbo_realism-text.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "c4a6e8c9c96b714ac53a5304afaedbd320bc9c9f9e40a52a85833e2a19026aa7"
+        },
+        "krea_2_turbo_realism-vae.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "36c50ccac31b40a5c0c464480a7ee19865fa2148d696b45da920f98b45302664"
+        },
+        "krea_2_turbo_realism-vae.aimodel/main.mlirb": {
+          "bytes": 52566110,
+          "sha256": "fc98ff142fd0f5499fd2bd26e6a7b4ec50bab00da3bda6d7b57afece16b24581"
+        },
+        "krea_2_turbo_realism-vae.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "1e18abb4d36ff23045e27531b9927cf59da4736a0892f5c87bbd91202244ac3e"
+        },
+        "krea_2_turbo_realism-vision.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "5fafd32e67b90797b2c5b8c1cb76d5734054b8a32f99580b2970dbc60b592b61"
+        },
+        "krea_2_turbo_realism-vision.aimodel/main.mlirb": {
+          "bytes": 831639047,
+          "sha256": "1c26c8077fc1f28984629cb56940707135f214d273adc17735ba38e9ce8b6985"
+        },
+        "krea_2_turbo_realism-vision.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "4a1a69ca516c42d96dcbe19bea2f5a6c06af7dbf09d694532f147781d83689e6"
+        },
+        "metadata.json": {
+          "bytes": 730,
+          "sha256": "20298e7172a23173bdfb4f4327ffedb68a3780c83b98bda522ae966f0bc41a1a"
+        },
+        "tokenizer/chat_template.jinja": {
+          "bytes": 5292,
+          "sha256": "3636d0f0bd6bef02654cdffdc447b79cb2cef8ab02cc75267345946291a489e4"
+        },
+        "tokenizer/tokenizer.json": {
+          "bytes": 11422650,
+          "sha256": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506"
+        },
+        "tokenizer/tokenizer_config.json": {
+          "bytes": 664,
+          "sha256": "c871ed314285a377eccf509b906aa5fe015d5e79a3ddab2c198467329127ead6"
+        }
+      }
+    },
+    {
+      "original_path": "/Users/zakkeown/Code/atelier/lab/krea-lab/forge/fixed-first",
+      "resolved_original_path": "/Volumes/Scratch/atelier/krea-lab/forge/fixed-first",
+      "cache_path": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/tower-20",
+      "compatibility_symlink": "/Volumes/Scratch/atelier/krea-lab/forge/fixed-first",
+      "method": "hash-verified copy then remove source",
+      "bytes": 12828546656,
+      "files": {
+        "export.json": {
+          "bytes": 231,
+          "sha256": "431f3a73a1d72fb6eba1bef855961948a57d6eabc628f3b76eb9d084883d6087"
+        },
+        "later-export.json": {
+          "bytes": 657,
+          "sha256": "607a7046ccf0b910e89a0f04a5f1e687eef5dc9834d2384b9027d2feac305af8"
+        },
+        "tower-first.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "0dee491624dbd4a22f978f140e18ea16b02ed8a05217dcb89176819090d01b85"
+        },
+        "tower-first.aimodel/main.mlirb": {
+          "bytes": 3704868693,
+          "sha256": "bec8df89165b2dfa2aa69a793fb589c28e0e44d23179727cd5d796874945569a"
+        },
+        "tower-first.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "70e49692f9b018ecc5685f226422708bcca7c9aecfa2b6a79c744744afd793d8"
+        },
+        "tower-later1.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "3afa7ca628669744e15b2377e5fe43bd193ab9a2bd112c3b13907c02d3ac301c"
+        },
+        "tower-later1.aimodel/main.mlirb": {
+          "bytes": 3041085348,
+          "sha256": "fb1107e8f9ac4acc911cfe99508b6b6994a714cc07fd3e2abcc7c9e2ceb01939"
+        },
+        "tower-later1.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "2cd57dc31fd273ebace36cbc430d4895e0da6aab1f3bc24e2b386fdd36714028"
+        },
+        "tower-later2.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "06b5958de869ab507247b9116598786c7fb36842ee34334e8170a41290dcc172"
+        },
+        "tower-later2.aimodel/main.mlirb": {
+          "bytes": 3041085341,
+          "sha256": "cd7a539c56c439e15780e647c1b188d0cf3b1323c8b60121bec541bcce0b8cc8"
+        },
+        "tower-later2.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "086127f19ecea7f9062375f80691c738aeec7c0070bcac382a050d7a7dd396d9"
+        },
+        "tower-later3.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "629f09e9d5a8ae84a0e68620aaa7f675bf197cf26a083552fcba1f9f6548da80"
+        },
+        "tower-later3.aimodel/main.mlirb": {
+          "bytes": 3041505838,
+          "sha256": "a5ae06b35ec294d82e7f3af23353e002f67069ef01b375f4bcd4879c892a3983"
+        },
+        "tower-later3.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "e111700e32c6b455bce199fbbe0f234db03ef73014536180ea2e5f371e58103a"
+        }
+      }
+    },
+    {
+      "original_path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/smoke-v1",
+      "resolved_original_path": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/smoke-v1",
+      "cache_path": "/Users/zakkeown/.cache/huggingface/aether-kit/smoke-v1",
+      "compatibility_symlink": "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/smoke-v1",
+      "method": "rename",
+      "bytes": 1823,
+      "files": {
+        "affine.aimodel/main.hash": {
+          "bytes": 32,
+          "sha256": "d71fb91baa6d16b3bfb7a3b46e40e5a5f724d37295f59a50542dc7de68a004ff"
+        },
+        "affine.aimodel/main.mlirb": {
+          "bytes": 950,
+          "sha256": "a9fe6683ee0306635d9f1c9a7af9743c43c32aee24a31ed20aafe9277580aa9b"
+        },
+        "affine.aimodel/metadata.json": {
+          "bytes": 105,
+          "sha256": "64a67730a4a5079b986eacc0d3d2ade3dee1fc8152c4921b0fe7ce58ae263376"
+        },
+        "export.json": {
+          "bytes": 736,
+          "sha256": "7c88aeba3d90ff6f06429049d4df5ea14eae9ca03a6e642fbc029aca576c59c5"
+        }
+      }
+    }
+  ],
+  "registration": {
+    "original": "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/.local/tower-20.json",
+    "original_sha256": "a01c2725f3a9b9b9e9af0dc3e496f0863650d29da5f505f03d41e985d995b92d",
+    "cache_path": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/tower-20.json",
+    "cache_sha256": "80972ac18da17536bb24c0addce104c1cc548a5f85bcc8e6a6e86081847206de",
+    "only_segments_changed": true
+  },
+  "project_environment": ".local/native-assets.env"
+}

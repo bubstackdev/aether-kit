@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "passed": false,
+  "benchmark": false,
+  "scope": "Native KreaGenerationSession decoder cancellation/recovery, 8-step dynamic generation with retained fixture conditioning; output compared with its own pre-cancellation baseline",
+  "steps_per_generation": 8,
+  "baseline_completed": true,
+  "baseline_native_calls": 33,
+  "baseline_pixels_sha256": "470c311a55e51a417ce0c0c3419463ccc8f084d777ff35cde2108d9bd96686c5",
+  "decoder_cancellation_checks_passed": {
+    "decoderCancellationFollowsCompleteSamplingAndReportsNoImage": true,
+    "nativeDynamicBaselineCompleted": true,
+    "pipelineCancellationWaitsForNativeDecoderReturn": true,
+    "pipelineReturnsReadyAfterDecoderCancellation": true
+  },
+  "native_calls_completed_before_recovery": 66,
+  "recovery_qualified": false,
+  "reason": "Recovery remained incomplete for more than ten minutes. Operator sent SIGTERM to only this test helper; this is an incomplete run, not a test assertion failure or a passing suite.",
+  "diagnosis": "Samples during repetition and recovery show MPSGraph requestResidency / IOGPUResourceSetPurgeable. Cause is not isolated.",
+  "host_conditions": "User requested GPU retry; quiet conditions were not independently established. Read-only diagnostics recorded about 9.5 GiB swap in use.",
+  "source_sha256": {
+    "Tests/AetherNativeTests/DecoderCancellationTests.swift": "522fcac500da894b62fb7c41d8fa9c34fee212bbb6aa11f1d6aba71e7137b205",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "3c237f41b3381fc841e05cf9318c1e2287324561e3675bcef929d3ffef180ad1",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "843c2102cc8a4cb33f75318b4d1c127e6710229eb6057202401166cd381a106b"
+  },
+  "records": {
+    "krea-gpu-retry-2026-10-17-report.json": "c2ffbc2b145671177803ec5fc883c3ef646387e6938ac6a7eef2befa407d6686",
+    "krea-gpu-retry-2026-10-17-tests.log": "0da66e54467928f4df646368944078a38af895d385cb0611f880e972ee19f9bf",
+    "krea-gpu-retry-2026-10-17-repeat.sample.txt": "b37215c2cf8eb31e00c977a09b8b08796f5d8319d25e5ee96c7bd4c1aab107d2",
+    "krea-gpu-retry-2026-10-17-recovery.sample.txt": "42d98e47e1d0c65df28c85ba6df1d830681be54d42eb2e8f96a717faa3ee20e3",
+    "krea-gpu-retry-2026-10-17-memory.json": "214dde78ae55721bb4a99ff2f57b2e00e7bbfc2c9db7c4f889046c5381759529"
+  },
+  "next_step": "Investigate native function/resource lifetime with a small repeated-generation reproducer and live per-call checkpoints; retain the existing independent parity baselines.",
+  "process_exited_after_sigterm": true,
+  "command_exit_code": 1
+}

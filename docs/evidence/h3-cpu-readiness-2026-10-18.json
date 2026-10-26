@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-18T18:56:43.189749+00:00",
+  "passed": true,
+  "scope": "First CPU-only MiniMax H3 Turbo8 preparation contracts. No native H3 executor, model loading, model conversion, GPU work or benchmark.",
+  "registeredTests": 73,
+  "passedCPUTests": 69,
+  "skippedNativeSuites": 4,
+  "newH3Tests": [
+    "h3GeometrySnapsFramesAndRejectsInvalidOrOverflowingRequests",
+    "h3TurboSchedulerMatchesAllEightIndependentVideoAndAudioUpdates",
+    "h3SchedulerRejectsBadStepsShapesAndNonfiniteArithmetic",
+    "h3LayoutsMatchEveryCapturedPositionTagAndIndex",
+    "h3TimestepPlansPreserveActualCardinalityAndModalityRows",
+    "h3LayoutRejectsInvalidTagsAndAnchorOrder",
+    "h3HeaderRequiresCorrectedQKVAndExactTurboAdapterIdentity",
+    "h3VideoPatchOrderMatchesIndependentUpstreamOracle",
+    "h3HeaderAcceptsRetainedCorrectedPrototypeExport"
+  ],
+  "qkvSentinelRegression": {
+    "passed": true,
+    "testFunctions": 1,
+    "covers": [
+      "body fused-QKV raw checkpoint conversion",
+      "text-refiner fused-QKV raw checkpoint conversion"
+    ],
+    "command": "PYTHONDONTWRITEBYTECODE=1 AETHER_H3_LAB=/Users/zakkeown/Code/atelier/lab/minimax-h3-lab /Users/zakkeown/Code/aether-engine/forge/.venv/bin/python -B /Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/test_h3_weights.py"
+  },
+  "swiftTestCommand": "source .local/native-assets.env; AETHER_NATIVE_QUALIFICATION=0 AETHER_NATIVE_DYNAMIC_QUALIFICATION=0 AETHER_NATIVE_DECODER_QUALIFICATION=0 AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION=0 Scripts/check.sh",
+  "targetDependencies": [
+    "AetherKit"
+  ],
+  "gpuWorkExecuted": false,
+  "modelWeightsRead": false,
+  "checks": {
+    "allEightVideoAndAudioUpdateHashesMatchIndependentCPUOracle": true,
+    "videoPatchOrderMatchesIndependentCPUOracle": true,
+    "allFourCapturedLayoutPositionTagAndIndexHashesMatch": true,
+    "geometryBoundsSnappingAndOverflowChecked": true,
+    "timestepCardinalityAndModalityMappingChecked": true,
+    "oldMissingQKVMarkerAndIncompatibleAdaptersRejected": true,
+    "retainedCorrectedExportHeaderAccepted": true,
+    "originalQKVCPURegressionPassed": true,
+    "noCoreAIOrMetalDependencyInH3Target": true
+  },
+  "sourceSHA256": {
+    "NOTICE": "3babadeb65ae333d9d2e62faa6e58f8fb902a9fb0535b49cabd52dbfa2d9d83d",
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4",
+    "Package.swift": "daec8f2fbf3573648055d9a5ec86947c77d639bcb9479dd1925933220c1c5054",
+    "Scripts/check.sh": "16fe14075cd6ce010f20b849aa4a25df28fc7fce552293aae52a01e0166a47d9",
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "5029221f9045e8d42a5c7d60fdd41e50f1506859aa23d4176fe66aec63bade40",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherH3/H3ExportHeader.swift": "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "Sources/AetherH3/H3Geometry.swift": "91fec0ac4f0414e4af3de14a9d9cfc207a2cceb625e0eb30b5a2c37276418f9a",
+    "Sources/AetherH3/H3Layout.swift": "4d932eeb2afa25c6a31a4934305978d48916adc457566e60494bdbe62d96a76d",
+    "Sources/AetherH3/H3Schedule.swift": "482d309dfd60877c04ec633b7ea8946f20a7817033b048af4958188f248a3a95",
+    "Sources/AetherH3/Resources/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "8bd8d5a5e3cd33af3654e0f7dbbbf5e5c60d6dd8a871389339352cfb045873d4",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "00a3d0c3b4761ea2263a0dee4159e8d72d5bc0f9ffd1338cfe200a3d66fc38f7",
+    "Sources/AetherProbe/KreaBatchCommand.swift": "220e011dbb606b74a1338f03803be3203dadab1efcc236e5472308405bd33883",
+    "Sources/AetherProbe/KreaBenchmark.swift": "3e714ac1dddb93e1e06f720ceff2066684bc225b7327322545d3f286a3edc89a",
+    "Sources/AetherProbe/KreaBenchmarkCommand.swift": "790ed232b37e285bd62aedfabe400f172a0092d9b23d5d7914d7c46209d9abbb",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Tests/AetherCoreAITests/ModelSessionTests.swift": "2a6c768db2fb82c19107dbf5971bec314d1096abdddcfc8bbfde7cad9ca04ae5",
+    "Tests/AetherH3Tests/Fixtures/corrected-export-header.json": "33e31d0104ced20ba1a2a1c1558cf710dfcbd9028de6dc90a30c37f2fdc7f983",
+    "Tests/AetherH3Tests/Fixtures/layout-oracle.json": "5bdddf8d468be34a758086c65bfb761af505cf030e270cc80bf0b683f979d3c7",
+    "Tests/AetherH3Tests/Fixtures/turbo8-numerics.json": "c54f477946f51e82d2dd1539fdd2ca8bf7d36fed7870a88dd22b49381b8021fb",
+    "Tests/AetherH3Tests/Fixtures/video-packing-oracle.json": "7e92f3258c767c32befad8f853655ab204a787aa71883fd4e0c62c9730e171df",
+    "Tests/AetherH3Tests/H3ContractsTests.swift": "1f53f1d160abf9f4355a96a57d984149e54ce1c53aeec75d99593947b1a319e0",
+    "Tests/AetherKitTests/FloatTensorTests.swift": "64ac32d4afe56b0c925264ff5330c0a9dc5c87d3583490483b5af58a3535224b",
+    "Tests/AetherKitTests/GeneratedImageTests.swift": "5d5a71dbde5c25d9b6ff34b607c77e2d2bdb142403f951da6c536ddecb85187e",
+    "Tests/AetherKreaTests/KreaAssetsTests.swift": "6e72e5b09d9b9438a37b45f99b2474a7a61155c45a2bf6a9d1a249c3f0eb1c83",
+    "Tests/AetherKreaTests/KreaConditioningTests.swift": "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests/AetherKreaTests/KreaEulerFixtureTests.swift": "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests/AetherKreaTests/KreaPipelineTests.swift": "b01c395f8a281b45d3dd137ddba6b56294a1b1d4737dc6542e2aa52ad76a80a2",
+    "Tests/AetherKreaTests/KreaReferenceTests.swift": "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests/AetherKreaTests/KreaSpecializationTests.swift": "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests/AetherKreaTokenizersTests/LocalFixtureTests.swift": "bd58adbc72cead5234d73cb3bcdbbb377245ff341a2f738d8a6ed7629e4679a4",
+    "Tests/AetherNativeTests/DecoderCancellationTests.swift": "cdb432356050d5cde7f016047225ece64e1a2478d1caa2be60e769fb6a544402",
+    "Tests/AetherNativeTests/DynamicParityTests.swift": "df8dfe8a1074be6ae9a1c027ae4ae20ad2935f0d4612fea5b6e168ab1d974089",
+    "Tests/AetherNativeTests/NativeSessionTests.swift": "282e0916b34cff830a5709ed769ddf3f0d29e95a854c6c79a6b2e710bbfda128",
+    "Tests/AetherProbeTests/BatchCommandTests.swift": "2e949c2d1247b3882c9119d271533fb79eb46f1253b112b5989ee24c3cacdf54",
+    "Tests/AetherProbeTests/BenchmarkTests.swift": "ba180d5b27995d1217125b377a8f471255db4827b14626d2e0b90a942a717487",
+    "Tests/AetherProbeTests/ParityHarnessTests.swift": "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1"
+  },
+  "fixtureAndReferenceProvenance": {
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/recipes/turbo8-schedule.json": {
+      "sha256": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+      "copiedTo": "Sources/AetherH3/Resources/turbo8-schedule.json"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/tests/fixtures/h3-turbo-numerics.json": {
+      "sha256": "c54f477946f51e82d2dd1539fdd2ca8bf7d36fed7870a88dd22b49381b8021fb",
+      "copiedTo": "Tests/AetherH3Tests/Fixtures/turbo8-numerics.json"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/tests/fixtures/h3-numerics.json": {
+      "sha256": "df68dd15e12de3a5e53ca6461968bd43a2c78dd2cf0d1f77a5326e707e790922",
+      "derivedFixture": "Tests/AetherH3Tests/Fixtures/video-packing-oracle.json",
+      "derivation": "Retained the independent upstream patchify SHA256. Source tensor is [24,7,4,4] with sequential Float32(i), as specified by the original oracle and prototype test."
+    },
+    "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/records/packed-layout.json": {
+      "sha256": "d1ac74270eb7cf28c06313acb3d8625afdf73a2635fe8e4790b314a4927c56fe",
+      "derivedFixture": "Tests/AetherH3Tests/Fixtures/layout-oracle.json",
+      "derivation": "Verified all six raw tensor hashes per case; narrowed f64 coordinates once to f32 and i64 tags/indices to i32, then hashed the little-endian bytes. Text tags retained for replay."
+    },
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json": {
+      "sha256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+      "derivedFixture": "Tests/AetherH3Tests/Fixtures/corrected-export-header.json",
+      "derivation": "Copied only identity fields from the retained corrected Turbo8 export. No model paths or weights copied."
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/contract.rs": {
+      "sha256": "886e22cac5c42668cb4b5a3ce14dfb93652306651eafcabc51a5851d0342bd80",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/layout.rs": {
+      "sha256": "d5cf83be46a2164a5d5586f2e1e849b7f4b765fd7e759f188f1e5f7b19e03cfa",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/assets.rs": {
+      "sha256": "324261ba6d5339d8f8cab4beab7940fbb2e3c44c99d08e27c78c14f584c9d278",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/src/h3/mod.rs": {
+      "sha256": "4ab177f768687941b9a42aac686a8179ddf0488155d3b20384d5808146b6f7f1",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/tests/h3.rs": {
+      "sha256": "a2810f0ea9f5ed340035ff1b4384e8bc3a890ec5b1d19bac70e03edf4dc9832e",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/h3_oracles.py": {
+      "sha256": "295b2e52117b7ca9dd82a5ee8f8490408214388368277c67b75b6f5c7b43c009",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/test_h3_weights.py": {
+      "sha256": "da660ce0b879bc8a3a4ded470c1e84e3f7e286fee59446ed0ac4764c01d0d14d",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/forge/h3_weights.py": {
+      "sha256": "f1c05e5214fbd1c9700b898bc31e675e802b03b746a924548819c59030b02d6f",
+      "role": "Reference code; not a runtime dependency"
+    },
+    "/Users/zakkeown/Code/atelier/lab/minimax-h3-lab/forge/vendor/diffusers/scripts/convert_minimax_h3_to_diffusers.py": {
+      "sha256": "86f61f62934d1eccf2a76ec57b6d072e2c23767c6e49d96aa1cf24d40422b42c",
+      "role": "Reference code; not a runtime dependency"
+    }
+  },
+  "artifactsSHA256": {
+    "docs/evidence/h3-cpu-tests-2026-10-18.log": "0ffadfb42b13c818b5c41e9c94981eeee92447a10acce34d8a0e9eceeb58c391",
+    "docs/evidence/h3-qkv-cpu-regression-2026-10-18.log": "85475650c5cbfb049ad64d2a131d7def66c0d431625910075c2ab2deefb9464a",
+    "docs/evidence/h3-package-description-2026-10-18.json": "c1eb4186920c164c370c0e04f0bd8e6e9dd52e7bba070472d120f488dc7ca240"
+  },
+  "limits": [
+    "Only CPU contracts are implemented; prototype native performance and quality are not qualification of this Swift target.",
+    "Header inspection validates identity declarations, not actual asset integrity, tensor bindings or correctness of weight conversion.",
+    "Keyframe layout fixtures used stub encoded features; native keyframe encoding/fidelity is not qualified.",
+    "Scheduler oracles supply finite 32-element samples/velocities, not a full denoising trajectory.",
+    "BF16 storage/binding, native conditioner/backbone/heads/VAEs, decoding, media output, cancellation/recovery and memory qualification remain future work.",
+    "No GPU work will be launched automatically after the user-estimated busy period."
+  ]
+}

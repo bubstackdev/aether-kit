@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-19T00:03:25.491912+00:00",
+  "command": [
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.build/arm64-apple-macosx/release/aether-probe",
+    "qualify-h3-denoising",
+    "/private/tmp/aether-h3-qkv-ready/render/bundle.json",
+    "/private/tmp/aether-h3-qkv-ready/phase/bundle.json",
+    "/private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-backbone-cpu-references-01/chain.json",
+    "/Volumes/Scratch/aether/aether-prototype/.local/h3-diagnostic/models",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-cpu-references-01/references.json",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.local/h3-denoising-lifecycle-native-01",
+    "--lifecycle"
+  ],
+  "budgetSeconds": 5400,
+  "gpuWorkRequested": true,
+  "passed": false,
+  "joined": true,
+  "timedOut": false,
+  "pid": 74347,
+  "exitCode": -15,
+  "elapsedSeconds": 3592.2917470830143,
+  "sourcePinsUnchanged": true
+}

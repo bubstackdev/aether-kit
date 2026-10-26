@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "passed": true,
+  "scope": "All native session qualification repeated from Hugging Face cache paths after hash-verified model relocation",
+  "cache_root": "/Users/zakkeown/.cache/huggingface/aether-kit",
+  "environment": {
+    "AETHER_KREA_BUNDLE": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu",
+    "AETHER_KREA_SHAPE": "/Users/zakkeown/.cache/huggingface/aether-kit/krea-2-turbo-realism/tower-20.json",
+    "AETHER_SMOKE_MODEL": "/Users/zakkeown/.cache/huggingface/aether-kit/smoke-v1/affine.aimodel"
+  },
+  "project_environment_file": ".local/native-assets.env",
+  "environment_file_sha256": "04d1e7c75b13a64b4f8ec1594e97235416d49931cd807324a22a3eb396dfc1c3",
+  "migration": "model-cache-migration-2026-10-17.json",
+  "migration_sha256": "d7cfa71ca4fb06423037fbc8de391059428f3aa4dc8144e620768b9ed90470de",
+  "native_report": "krea-hf-cache-session-2026-10-17.json",
+  "native_report_sha256": "14780be58f3ec29d2a750b18ac9a252a0eee4bea286c617195727cbdaac6ab51",
+  "tests": {
+    "passed": 34,
+    "skipped": 0,
+    "native_checks_passed": 23,
+    "log": "krea-hf-cache-tests-2026-10-17.log",
+    "log_sha256": "2c80da8e38f44cd7b67e5c7bad34065494d8edae870fb6dc5993421ba4ea0e27"
+  },
+  "all_model_loads_from_cache": true,
+  "all_seven_outputs_match_before_migration": true,
+  "affine_smoke": {
+    "cpuOnly": {
+      "computePolicy": "cpuOnly",
+      "loadSeconds": 0.007862333,
+      "output": [
+        -3,
+        1,
+        3,
+        7
+      ],
+      "passed": true,
+      "runSeconds": [
+        0.00381075,
+        0.000275834
+      ]
+    },
+    "automatic": {
+      "computePolicy": "automatic",
+      "loadSeconds": 0.006845125,
+      "output": [
+        -3,
+        1,
+        3,
+        7
+      ],
+      "passed": true,
+      "runSeconds": [
+        0.103550666,
+        0.004843166
+      ]
+    },
+    "preferGPU": {
+      "computePolicy": "preferGPU",
+      "loadSeconds": 0.005341791,
+      "output": [
+        -3,
+        1,
+        3,
+        7
+      ],
+      "passed": true,
+      "runSeconds": [
+        0.042398042,
+        0.003272459
+      ]
+    }
+  },
+  "source_and_toolchain_record": "krea-native-session-validation-2026-10-17.json",
+  "source_and_toolchain_record_sha256": "0a9b4c833d0322796cd83a0ed59caade6fd3bd0628c12d02e74c42bb8009be43",
+  "sources_unchanged_since_that_record": true,
+  "command": "source .local/native-assets.env\nAETHER_NATIVE_QUALIFICATION=1 AETHER_NATIVE_OUTPUT=\"$PWD/.local/native-session-hf-cache-20261017\" Scripts/check.sh",
+  "images": {
+    "first": {
+      "path": ".local/native-session-hf-cache-20261017/first.png",
+      "sha256": "bbfa27e64f137442a475887f5a0c7929653a4e50d0316c680ca99d767b28c8e1"
+    },
+    "repeat": {
+      "path": ".local/native-session-hf-cache-20261017/repeat.png",
+      "sha256": "bbfa27e64f137442a475887f5a0c7929653a4e50d0316c680ca99d767b28c8e1"
+    },
+    "recovery": {
+      "path": ".local/native-session-hf-cache-20261017/recovery.png",
+      "sha256": "bbfa27e64f137442a475887f5a0c7929653a4e50d0316c680ca99d767b28c8e1"
+    },
+    "dynamic512": {
+      "path": ".local/native-session-hf-cache-20261017/dynamic512.png",
+      "sha256": "1017a42e48f166fcbce4a551e22b3dd74c6d5304e2629602042183198dfa8ec0"
+    },
+    "dynamic512-repeat": {
+      "path": ".local/native-session-hf-cache-20261017/dynamic512-repeat.png",
+      "sha256": "1017a42e48f166fcbce4a551e22b3dd74c6d5304e2629602042183198dfa8ec0"
+    },
+    "dynamic384": {
+      "path": ".local/native-session-hf-cache-20261017/dynamic384.png",
+      "sha256": "739f2de2c2b9f9204a834342368248021a946c6d8722a444d45c1c5aaf0bd4be"
+    },
+    "unload-active": {
+      "path": ".local/native-session-hf-cache-20261017/unload-active.png",
+      "sha256": "739f2de2c2b9f9204a834342368248021a946c6d8722a444d45c1c5aaf0bd4be"
+    }
+  },
+  "benchmark": false,
+  "host_load": "Shared host under significant concurrent load; quiet-window benchmarking deferred",
+  "limits": [
+    "One-step lifecycle and dynamic-shape checks; eight-step independent parity is recorded separately",
+    "Native event boundaries bracket the awaited function.run before output copying; no GPU queue instrumentation",
+    "Dynamic outputs checked for shape, finite values and repeat stability, without an independent image baseline",
+    "Model reuse means identical ModelSession instances; OS cache eviction and physical memory release are not asserted"
+  ]
+}

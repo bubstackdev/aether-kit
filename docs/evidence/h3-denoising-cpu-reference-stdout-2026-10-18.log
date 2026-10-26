@@ -1,0 +1,76 @@
+CPU load outer modules; native trajectory remains unqualified
+CPU prepare/heads/update 0
+CPU prepare/heads/update 1
+CPU prepare/heads/update 2
+CPU prepare/heads/update 3
+CPU prepare/heads/update 4
+CPU prepare/heads/update 5
+CPU prepare/heads/update 6
+CPU prepare/heads/update 7
+CPU modulation block 0
+CPU modulation block 1
+CPU modulation block 2
+CPU modulation block 3
+CPU modulation block 4
+CPU modulation block 5
+CPU modulation block 6
+CPU modulation block 7
+CPU modulation block 8
+CPU modulation block 9
+CPU modulation block 10
+CPU modulation block 11
+CPU modulation block 12
+CPU modulation block 13
+CPU modulation block 14
+CPU modulation block 15
+CPU modulation block 16
+CPU modulation block 17
+CPU modulation block 18
+CPU modulation block 19
+CPU modulation block 20
+CPU modulation block 21
+CPU modulation block 22
+CPU modulation block 23
+CPU modulation block 24
+CPU modulation block 25
+CPU modulation block 26
+CPU modulation block 27
+CPU modulation block 28
+CPU modulation block 29
+CPU modulation block 30
+CPU modulation block 31
+CPU modulation block 32
+CPU modulation block 33
+CPU modulation block 34
+CPU modulation block 35
+CPU modulation block 36
+CPU modulation block 37
+CPU modulation block 38
+CPU modulation block 39
+CPU modulation block 40
+CPU modulation block 41
+CPU modulation block 42
+CPU modulation block 43
+CPU modulation block 44
+CPU modulation block 45
+CPU modulation block 46
+CPU modulation block 47
+CPU modulation block 48
+CPU modulation block 49
+CPU body reference 0 0
+CPU body reference 1 0
+CPU body reference 2 0
+CPU body reference 3 0
+CPU body reference 4 0
+CPU body reference 5 0
+CPU body reference 6 0
+CPU body reference 7 0
+CPU body reference 0 49
+CPU body reference 1 49
+CPU body reference 2 49
+CPU body reference 3 49
+CPU body reference 4 49
+CPU body reference 5 49
+CPU body reference 6 49
+CPU body reference 7 49
+CPU references complete; no GPU work

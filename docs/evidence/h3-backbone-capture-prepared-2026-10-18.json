@@ -1,0 +1,50 @@
+{
+  "boundBufferBytes" : {
+    "body-0" : 1445540116,
+    "body-1" : 1455216916
+  },
+  "bundleSHA256" : "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+  "cancellations" : [
+
+  ],
+  "captureComplete" : false,
+  "chainManifestPath" : "\/Users\/zakkeown\/Code\/bubstackdev\/aether\/aether-kit\/.local\/h3-backbone-cpu-prepared-01\/chain.json",
+  "chainManifestSHA256" : "72dc3f7982a67a9e258100191dff8c0064cdfa87ff3669a41b11b8582d36d1e1",
+  "limits" : {
+    "captureNativeSubmissions" : 100,
+    "metalAllocatedBytes" : 19327352832,
+    "physicalFootprintBytes" : 21474836480,
+    "qualificationCyclesPerCase" : 2,
+    "qualificationNativeSubmissions" : 250,
+    "settleSeconds" : [
+      0,
+      1,
+      5
+    ],
+    "settledGrowthBytes" : 536870912
+  },
+  "memorySamples" : 0,
+  "mode" : "--prepare-only",
+  "nativeExecuted" : false,
+  "numericalCheckpointBlocks" : [
+    0,
+    1,
+    2,
+    24,
+    49
+  ],
+  "passed" : true,
+  "phaseManifestSHA256" : "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+  "readyForQualification" : false,
+  "resources" : {
+
+  },
+  "runs" : [
+
+  ],
+  "schema" : 1,
+  "scope" : "Fifty corrected production blocks at 19333 rows and two T2VA cardinalities; one resident weight set, every-block hashes\/finite values and CPU numerical checkpoints 0,1,2,24,49. Not all-block CPU numerical parity or full generation.",
+  "selectedFilesVerified" : true,
+  "stage" : "ready",
+  "streamedWeights" : true
+}

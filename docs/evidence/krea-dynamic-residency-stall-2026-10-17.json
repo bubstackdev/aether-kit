@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "passed": false,
+  "stage": "dynamic512.recovery",
+  "reason": "Operator stopped the test after prolonged lack of completed-generation progress during encoder-cancellation recovery. Stack sample shows MPSGraph GPU residency requests. Host is shared; root cause not established.",
+  "completed_checks": {
+    "dynamic512.allEightLatentsMatchIndependentReference": true,
+    "dynamic512.cancelEncoder.cancellationWaitsForNativeReturn": true,
+    "dynamic512.cancelEncoder.denoisingNeverStarted": true,
+    "dynamic512.cancelEncoder.encoderClosedAfterNativeReturn": true,
+    "dynamic512.cancelEncoder.noCompletedImageReported": true,
+    "dynamic512.cancelEncoder.sessionReturnsReady": true,
+    "dynamic512.decodedPixelsMatchIndependentReference": true,
+    "dynamic512.dynamicGenerationComplete": true,
+    "dynamic512.encoderMatchesIndependentReference": true,
+    "dynamic512.independentReferenceComplete": true,
+    "dynamic512.independentReferenceHasEightStepsAndPixels": true,
+    "dynamic512.independentReferenceIdentitiesMatch": true
+  },
+  "partial_report": ".local/native-dynamic-20261017/report.json",
+  "partial_report_sha256": "81ad2940f8ad79013c0d31e0b50ee4310b307da8b3f995691984ff0deca66540",
+  "sample": ".local/native-dynamic-recovery.sample.txt",
+  "next_action": "Release denoisers before encoder acquisition in balanced mode, then rerun qualification.",
+  "preserved_evidence": {
+    "krea-dynamic-residency-stall-report-2026-10-17.json": "81ad2940f8ad79013c0d31e0b50ee4310b307da8b3f995691984ff0deca66540",
+    "krea-dynamic-residency-stall-2026-10-17.sample.txt": "3971ab392d65f7d0502779360974a78e2923b66778c69db8b4b8f83c395af94b"
+  }
+}

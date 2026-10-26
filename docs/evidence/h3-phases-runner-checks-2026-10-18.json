@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "gpuWork": false,
+  "passed": true,
+  "checks": [
+    {
+      "fault": "controller",
+      "rejectedBeforeNativeLaunch": true,
+      "exitCode": 2
+    },
+    {
+      "fault": "sourcePins",
+      "rejectedBeforeNativeLaunch": true,
+      "exitCode": 2
+    },
+    {
+      "fault": "readiness",
+      "rejectedBeforeNativeLaunch": true,
+      "exitCode": 2
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "scope": "Native correctness of the retained Krea tower fixture, provided and encoded conditioning",
+  "base_commit": "1e7048d7575146c0be9bda949526091e6c589a30",
+  "working_tree_changes_present": true,
+  "execution": "Approved execution outside the agent sandbox; normal Core AI cache access",
+  "host_load": "Shared host under significant concurrent load, confirmed by user",
+  "benchmark": false,
+  "cache_state": "Uncontrolled OS specialization cache; no cold/warm performance claims",
+  "doctor": {
+    "architecture": "h17c",
+    "computeUnits": "cpu, gpu, neuralEngine",
+    "os": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes": "68719476736"
+  },
+  "toolchain": {
+    "swift": "6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)",
+    "xcode": "27.1 (27A9275)"
+  },
+  "assets": {
+    "bundle": "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/variants/macos-any-gpu",
+    "fixtures": "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/fixtures/4c12ae019488ff1c",
+    "lab": "/Users/zakkeown/Code/atelier/lab/krea-lab",
+    "registration": "../lab/aether-prototype/.local/tower-20.json"
+  },
+  "affine_smoke": {
+    "passed": true,
+    "policies": [
+      "cpuOnly",
+      "automatic",
+      "preferGPU"
+    ],
+    "expected_output": [
+      -3,
+      1,
+      3,
+      7
+    ],
+    "checks": "Two executions and output retention after unload for each policy",
+    "command_template": [
+      ".build/arm64-apple-macosx/release/aether-probe",
+      "smoke",
+      ".local/smoke-v1/affine.aimodel",
+      "POLICY"
+    ],
+    "observation": "All three commands exited 0 earlier in this session"
+  },
+  "release_tests": {
+    "passed": true,
+    "count": 33,
+    "skipped": 0,
+    "command": [
+      "env",
+      "AETHER_KREA_BUNDLE=/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/variants/macos-any-gpu",
+      "AETHER_KREA_FIXTURES=/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/fixtures/4c12ae019488ff1c",
+      "AETHER_KREA_LAB=/Users/zakkeown/Code/atelier/lab/krea-lab",
+      "Scripts/check.sh"
+    ],
+    "log": "krea-native-tests-2026-10-17.log",
+    "log_sha256": "0b21ffc2a22ccd9a946a0f52b973b24fab00d6c9ce253da49421932ea738cfe9"
+  },
+  "parity": {
+    "provided": {
+      "passed": true,
+      "report": "krea-native-provided-2026-10-17.json",
+      "report_sha256": "0bbd60cce4a0c9e7c797e5620c347174961e4dcac29ed7cf741911ddc1ca3a12",
+      "output_png": ".local/native-parity-provided-20261017/image.png",
+      "output_png_sha256": "7e8b9fb2087d6273efe93390ce6496b8c20691c4f79cd3d99543331ee541c27c",
+      "command": [
+        ".build/arm64-apple-macosx/release/aether-probe",
+        "parity-krea",
+        "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/variants/macos-any-gpu",
+        "/Users/zakkeown/Code/atelier/lab/krea-lab",
+        "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/fixtures/4c12ae019488ff1c",
+        "../lab/aether-prototype/.local/tower-20.json",
+        ".local/native-parity-provided-20261017",
+        "provided"
+      ]
+    },
+    "encoded": {
+      "passed": true,
+      "report": "krea-native-encoded-2026-10-17.json",
+      "report_sha256": "8cb5f1b9385d48f5a0d7fdfb951004b43ba2d5ee2adbcfb202b5798182ac4f75",
+      "output_png": ".local/native-parity-encoded-20261017/image.png",
+      "output_png_sha256": "3c0f29c3c0c4c67cd45c8e51b1b6812f01d066efca3d5c7bcd5beee8a7a0a4f5",
+      "command": [
+        ".build/arm64-apple-macosx/release/aether-probe",
+        "parity-krea",
+        "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/variants/macos-any-gpu",
+        "/Users/zakkeown/Code/atelier/lab/krea-lab",
+        "/Users/zakkeown/Code/aether-engine/forge/out/krea-2-turbo-realism/fixtures/4c12ae019488ff1c",
+        "../lab/aether-prototype/.local/tower-20.json",
+        ".local/native-parity-encoded-20261017",
+        "encoded"
+      ]
+    }
+  },
+  "source_sha256": {
+    "Sources/AetherCoreAI/CoreAIBackend.swift": "6726c17bbd71f6ea93eeb1f3149564a93af084dce4eec6dd3899f0e91f7e19f4",
+    "Sources/AetherCoreAI/ModelDescription.swift": "94762fb1d7b0bab3028d7d7e03e94a833e1e6d874611afe361ca005699d1ab1e",
+    "Sources/AetherCoreAI/ModelSession.swift": "6c7385c037a7e8446ee18458fe7d416f5f89d8890ab18683cc8913e065faaf5b",
+    "Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources/AetherKit/FloatTensor.swift": "03d1f36ab0d606eb82a4c24bf26b5fd2203220bced13e3895db579b7a71070ee",
+    "Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "Sources/AetherKrea/KreaAssets.swift": "33c112aa957ae737ba1b20a975ce6572113595cf24fc0fb917b47649bd8978b8",
+    "Sources/AetherKrea/KreaConditioning.swift": "ca3729740f402e46571553162cc5210840768a7c6da71d1e79298665de412ecc",
+    "Sources/AetherKrea/KreaConfiguration.swift": "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources/AetherKrea/KreaNoise.swift": "cfcb8b695861be00c475fd41172c648038768160aac7c450182491cae398abb8",
+    "Sources/AetherKrea/KreaPrompt.swift": "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources/AetherKrea/KreaRotary.swift": "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources/AetherKrea/KreaSchedule.swift": "021b195ad4b909cd6c8fcfdac8f066f1c299cc73c05aa1cfc21b13a9dc94e067",
+    "Sources/AetherKreaCoreAI/KreaContracts.swift": "a0d9909a69f75c2301db1a874751147612b94afc524c0de5ceb4dc2bab0db06c",
+    "Sources/AetherKreaCoreAI/KreaGenerationSession.swift": "0e17fcb3976833145fdc36b8a83a4a262361b2299214a09bf70a52c916184e18",
+    "Sources/AetherKreaCoreAI/KreaTextEncoder.swift": "df39846e776f848960ad09e2e7ce45c437c88cd912a76c2280e5ee9775ed618a",
+    "Sources/AetherKreaTokenizers/KreaTokenizer.swift": "356e1f6d16fbe6f50238956696001233cbdb6eff7b73dfef71f7f45a70182f73",
+    "Sources/AetherProbe/AetherProbe.swift": "6d1cf58c7574c77337a5f4097a54f58a38b25ca5faea81051969bf733a5c6382",
+    "Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "Package.swift": "6aadb504c62f21561c2f586b61255c9bddc01419304ce101448f2968024afce2",
+    "Package.resolved": "e759921ca7fb787894af9b5498cd71bda7d0605cd7fe1aebc86498f17e4d66b4"
+  },
+  "binary_sha256": "a5e628b14effb5b759bbdb5ab64b7319f3399f0be3f88589693eb1dc13d53e9f",
+  "limitations": [
+    "One retained 768x1344, eight-step, seed-71344 fixture with its source-linked specialization",
+    "No qualification of other shapes, prompts, dynamic fallback, or physical iOS execution",
+    "Native repeated-session residency, cancellation/drain, and malformed-input gates remain pending",
+    "Host-copy reference executor; device-resident optimization and performance benchmarking remain pending"
+  ]
+}
