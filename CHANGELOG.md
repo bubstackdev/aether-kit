@@ -6,7 +6,7 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ### Added
 
-- **AetherFlux2, AetherFlux2Tokenizers, AetherFlux2CoreAI** (experimental): FLUX.2 [klein] 4B text-to-image and multi-reference editing. Includes bundle validation with provenance and revision pins, portable installation, the empirical-shift schedule, 4-axis rotary tables, the padded Qwen3 prompt, reference-image policy and preparation, and `Flux2GenerationSession`. The session supports prepared prompts and references, balanced/resident residency, cancellation, terminal unload and optional resource admission. Native parity against independent float32 Diffusers references passes at 12 cases ([guide](docs/flux2-klein.md)).
+- **AetherFlux2, AetherFlux2Tokenizers, AetherFlux2CoreAI** (experimental): FLUX.2 [klein] 4B text-to-image and multi-reference editing. Includes bundle validation with provenance and revision pins, portable installation, the empirical-shift schedule, 4-axis rotary tables, the padded Qwen3 prompt, reference-image policy and preparation, and `Flux2GenerationSession`. The session supports prepared prompts and references, balanced/resident residency, cancellation, terminal unload and optional resource admission. Native parity against independent float32 Diffusers references passes at 12 cases, and the native lifecycle suite passes 44/44 checks: cancellation, unload during work, resident reuse and admission ([guide](docs/flux2-klein.md)).
 - **Shared:** `AetherKit.SeededGaussianNoise` (Krea noise delegates to it, with identical values), `AetherAssets.DeclaredModelAsset`/`BundleFiles`, and a package-internal staged-model admission decorator in `AetherCoreAI`.
 
 ## 0.0.1 — 2026-10-26

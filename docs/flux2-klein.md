@@ -1,7 +1,7 @@
 # FLUX.2 [klein] 4B: text-to-image and multi-reference generation
 
 Status: experimental, 2026-10-26 (0.0.2). The products, local bundle, independent references and opt-in native
-parity gate are in place. Results and their scope are in [Verification](#verification). There is no iOS execution,
+parity and lifecycle gates are in place. Results and their scope are in [Verification](#verification). There is no iOS execution,
 benchmark protocol or published bundle yet.
 
 ## Model and license
@@ -226,10 +226,68 @@ AETHER_FLUX2_OUTPUT=/new/output/dir \
 
 `AETHER_FLUX2_CASES` selects text-to-image cases (default: the five 512²-class cases; `all` for all ten).
 
+### Post-rebase parity (2026-10-26)
+
+After rebasing onto the 0.0.1 release (origin/main `128573d`), the parity suite ran again with all 12 cases in one
+process (`AETHER_FLUX2_CASES=all`). It passed **113/113 checks**, and every check value for the seven 512²-class
+cases equals the pre-rebase report bit for bit. The minimums are unchanged: velocity 0.99924, image-path SSIM 0.9602,
+decoder 87.7 dB. The process's lifetime peak was 17.3 GB, reached while the component VAE phase decoded twelve sizes
+in one decoder session (see the memory note above). See the
+[report](evidence/flux2-klein-native-parity-rebased-2026-10-26.json) and
+[log](evidence/flux2-klein-native-parity-rebased-2026-10-26.log).
+
+### Native lifecycle qualification (2026-10-26)
+
+`flux2NativeLifecycleQualification` (`AETHER_NATIVE_FLUX2_LIFECYCLE=1`, `AETHER_FLUX2_LIFECYCLE_OUTPUT` set to a new
+directory, plus the bundle and fixture paths) is modeled on Krea's native session suite. A tracked factory opens real
+Core AI sessions. Backend observers bracket the awaited native `function.run`, and an event journal is written as each
+event happens. Nothing gates or delays native work. It uses the `fox-512` reference conditioning and noise as a
+baseline, and passed **44/44 checks** in 27.6 s: 176 native calls, 34 model instances (each closed exactly once), 32
+function loads and 144 reuses.
+
+- **Repeat:** an exact pixel repeat with no model opens or closes and no native function loads (13 calls).
+- **Cancellation during a native denoiser call and during the native decoder call:**
+  - an overlapping `prepare` is rejected with `sessionBusy`;
+  - the observed call returns before cancellation does;
+  - no native call starts after the request;
+  - the state returns to ready;
+  - recovery reproduces the baseline pixels exactly while reusing every model.
+- **Balanced prompt:** the denoisers close before the text encoder opens, and the encoder closes before the denoisers
+  reload.
+- **References:** the VAE encoder opens once and is released; the denoisers are recycled for the new token count; SSIM
+  against the reference is 0.998.
+- **Unload during an active denoiser call:**
+  - new work is rejected while closing;
+  - the active generation completes with the baseline pixels;
+  - all four releases follow the final native return;
+  - work is rejected after close, and the owned output stays valid.
+- **Resident reuse across prompts and sizes:**
+  - a second prompt reuses the text encoder and denoisers;
+  - a new size keeps the encoder and recycles exactly the denoisers and decoder;
+  - returning to the baseline reproduces its pixels exactly.
+- **Admission:** these use logical estimates, not measured memory.
+  - During an in-flight call the coordinator holds operation storage, three denoiser residencies and one call's
+    scratch; after completion it holds only model residency.
+  - An oversized request, and a reference encoder with no estimate, are refused before any stage is released or loaded.
+  - Unload returns the ledger to zero.
+  - With capacity for only two segments, generation fails with `insufficientCapacity`, the opened segments are
+    released, and the ledger returns to zero.
+
+The first attempt passed 43/44 checks. Its unload-ordering check also counted the shape-recycle closes at the start of
+that generation, while its own journal shows every unload release after the final native return. The check now counts
+only releases after an explicit `unloadRequested` marker, and no library code changed. That attempt is preserved as
+[attempt 1](evidence/flux2-klein-native-lifecycle-attempt1-2026-10-26.json). See the
+[lifecycle record](evidence/flux2-klein-lifecycle-qualification-2026-10-26.json),
+[report](evidence/flux2-klein-native-lifecycle-2026-10-26.json),
+[event journal](evidence/flux2-klein-native-lifecycle-events-2026-10-26.jsonl) and
+[log](evidence/flux2-klein-native-lifecycle-2026-10-26.log).
+
+These additional GPU-lock jobs took about 3.5 minutes: parity 2.3, lifecycle 0.5 + 0.5.
+
 ### Not yet qualified
 
-- Native lifecycle: cancellation during a native call, unload during work, resident reuse and admission accounting
-  are scripted CPU tests only.
+- Native cancellation of the text encoder and the reference encoder. Their discard-on-failure paths are covered by CPU
+  tests only.
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
 - Prompt adherence (T3) and a subjective review across more prompts and seeds.
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.

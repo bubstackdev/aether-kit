@@ -1,0 +1,135 @@
+{
+  "bundle": {
+    "fingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+    "referenceFingerprint": "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79"
+  },
+  "date": "2026-10-26",
+  "failedAttempt": {
+    "cause": "test logic: the check counted the shape-recycle closes at the start of the activeUnload generation (the previous phase used a reference token count). Its own event journal shows every unload release after the final native return. The check now counts only closes after an explicit unloadRequested marker; no library code changed.",
+    "log": "flux2-klein-native-lifecycle-attempt1-2026-10-26.log",
+    "report": "flux2-klein-native-lifecycle-attempt1-2026-10-26.json",
+    "result": "43 of 44 checks passed; nativeReturnsPrecedeModelRelease failed"
+  },
+  "gpuLock": [
+    {
+      "acquired": "15:20:02",
+      "label": "native parity post-rebase (all cases)",
+      "released": "15:22:18"
+    },
+    {
+      "acquired": "15:24:38",
+      "label": "native lifecycle (failed check)",
+      "released": "15:25:11"
+    },
+    {
+      "acquired": "15:26:11",
+      "label": "native lifecycle (rerun)",
+      "released": "15:26:41"
+    }
+  ],
+  "host": "Mac17,6 Apple M5 Max, 64 GB, macOS 27.0.1; shared host, GPU work serialized by the shared lock",
+  "kind": "flux2-klein-lifecycle-and-rebased-parity",
+  "lifecycle": {
+    "checks": 44,
+    "elapsedSeconds": 27.6,
+    "events": "flux2-klein-native-lifecycle-events-2026-10-26.jsonl",
+    "functionLoads": 32,
+    "functionReuses": 144,
+    "modelInstances": 34,
+    "nativeCalls": 176,
+    "outputs": {
+      "active-unload.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588",
+      "balanced-prompt.png": "sha256:7270eec96556da3a5cfd03f82c5fc9939e8dfb42eb712139ace57100eeefb52d",
+      "baseline.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588",
+      "decoderCancellation-recovery.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588",
+      "denoiserCancellation-recovery.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588",
+      "reference-fox-watercolor-ref1.png": "sha256:5adf711a35efdfdbde3c33e4252c78b246b18b24da79d895b71e43dc48db3faf",
+      "repeat.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588"
+    },
+    "passed": true,
+    "phases": [
+      "baseline",
+      "repeat",
+      "denoiserCancellation(+Recovery)",
+      "decoderCancellation(+Recovery)",
+      "balancedPrompt",
+      "references",
+      "activeUnload",
+      "resident",
+      "residentSecondPrompt",
+      "residentNewSize",
+      "residentReturn",
+      "admission",
+      "summary"
+    ],
+    "report": "flux2-klein-native-lifecycle-2026-10-26.json"
+  },
+  "limits": [
+    "Native boundaries bracket the awaited function.run; GPU command queues are not instrumented.",
+    "Cancellation is cooperative between native calls: an observed in-flight call always completes before cancellation returns.",
+    "Admission uses logical test estimates (2 GiB per model, 0.25 GiB scratch), not measured memory.",
+    "The parity run's 17.3 GB lifetime peak is the component VAE phase decoding twelve sizes in one decoder session; the generation session recycles the decoder per size.",
+    "One shared host, no quiet window; timings are not benchmarks. iOS is not covered."
+  ],
+  "rebasedParity": {
+    "cases": 12,
+    "checks": 113,
+    "elapsedSeconds": 132.3,
+    "identicalToPreRebase": "every check value of the seven 512\u00b2-class cases equals the pre-rebase report bit for bit",
+    "minimum": {
+      "decoderPSNR": 87.69024469309596,
+      "imagePathSSIM": 0.9601581967627534,
+      "referenceLatentCosine": 0.9999999999996574,
+      "referencePositions": 1,
+      "textRealRowCosine": 0.9999723492511845,
+      "timesteps": 1,
+      "tokenIDs": 1,
+      "velocityCosine": 0.9992415300461289
+    },
+    "passed": true,
+    "phases": [
+      {
+        "footprintBytesAfter": 677152160,
+        "lifetimePeakFootprintBytes": 1029443376,
+        "name": "textEncoder",
+        "seconds": 4.486923098564148
+      },
+      {
+        "footprintBytesAfter": 1177044816,
+        "lifetimePeakFootprintBytes": 8090851880,
+        "name": "denoiser",
+        "seconds": 27.545685052871704
+      },
+      {
+        "footprintBytesAfter": 1395919248,
+        "lifetimePeakFootprintBytes": 17258302512,
+        "name": "vae",
+        "seconds": 6.736252069473267
+      },
+      {
+        "footprintBytesAfter": 2269448640,
+        "lifetimePeakFootprintBytes": 17258302512,
+        "name": "session",
+        "seconds": 89.3383160829544
+      }
+    ],
+    "recordedRanges": {
+      "imagePathPSNR": [
+        27.869664325213407,
+        52.24274856254447
+      ],
+      "wholePipelineSSIM": [
+        0.8120775806210735,
+        0.998643031164415
+      ]
+    },
+    "report": "flux2-klein-native-parity-rebased-2026-10-26.json"
+  },
+  "schema": 1,
+  "source": {
+    "base": "origin/main 128573d (0.0.1)",
+    "branch": "v0.0.2/flux2-klein",
+    "commit": "c3d00d9 + Tests/AetherNativeTests/Flux2NativeLifecycleTests.swift (committed next)",
+    "note": "native binaries built from this tree; library sources are identical to commit c3d00d9, only the lifecycle test was added"
+  }
+}
