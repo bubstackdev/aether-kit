@@ -126,7 +126,9 @@ All checks passed: [native report](evidence/kokoro-native-2026-10-26.json), [tes
 - **CPU-only run.** An earlier run with `.uniform(.cpuOnly)` also passed every gate, with rel. L2 0.010–0.040 and warm RTF 1.25–1.34; see the [CPU-only report](evidence/kokoro-native-cpu-only-2026-10-26.json).
 - **Eager export graph.** On the CPU, before Core AI conversion, the export graph sits at the same precision floor (0.7–2.5%) against upstream, as recorded in the [references](evidence/kokoro-references-2026-10-26.json).
 
-The [CPU suite](evidence/kokoro-cpu-tests-2026-10-26.log) passes 249 tests. Weight-free coverage includes: tokenization against upstream fixtures, noise parity with the Python harness, torch-round frame parity, alignment, WAV encoding, bundle validation (corruption, traversal, symlink escape, duplicate voices, contract drift), `LocalAssetStore` round trip, chunk ordering and seeds, busy rejection, cancellation recovery, unload ordering, contract violations, frame limits, admission, and the phonemizer path.
+**Recheck after rebasing onto 0.0.1 (`128573d`).** The four parity cases and lifecycle checks passed again with bit-identical audio and identical metrics; see the [recheck report](evidence/kokoro-native-recheck-0.0.1-base-2026-10-26.json). The CPU suite with the default `swiftbuild` engine registers 263 tests and passes, with 15 opt-in native suites skipped ([log](evidence/kokoro-cpu-tests-0.0.1-base-2026-10-26.log)).
+
+The pre-rebase [CPU suite](evidence/kokoro-cpu-tests-2026-10-26.log) passed 249 tests. Weight-free coverage includes: tokenization against upstream fixtures, noise parity with the Python harness, torch-round frame parity, alignment, WAV encoding, bundle validation (corruption, traversal, symlink escape, duplicate voices, contract drift), `LocalAssetStore` round trip, chunk ordering and seeds, busy rejection, cancellation recovery, unload ordering, contract violations, frame limits, admission, and the phonemizer path.
 
 ## Reproduce
 

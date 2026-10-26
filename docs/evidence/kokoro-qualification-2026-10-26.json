@@ -92,5 +92,15 @@
     "Forge/kokoro/speech_metrics.py": "86be69b7ad98fcee38582edfc03e1cf5c89f6cd69e3028c85067335127c81eda"
   },
   "gpu_lock_seconds_total": 247,
-  "not_verified": ["iOS build/device", "fp16/int8 exports", "sub-utterance streaming", "subjective listening review", "quiet-host benchmarks", "admission estimates for real model sizes"]
+  "not_verified": ["iOS build/device", "fp16/int8 exports", "sub-utterance streaming", "subjective listening review", "quiet-host benchmarks", "admission estimates for real model sizes"],
+  "post_rebase_recheck": {
+    "base": "origin/main 128573d (0.0.1 release)",
+    "cpu_suite": {"command": "AETHER_BUILD_SYSTEM=swiftbuild sh Scripts/check-cpu.sh", "log": "kokoro-cpu-tests-0.0.1-base-2026-10-26.log",
+                  "tests_registered": 263, "skipped_opt_in": 15, "failures": 0},
+    "native": {"report": "kokoro-native-recheck-0.0.1-base-2026-10-26.json", "log": "kokoro-native-recheck-0.0.1-base-2026-10-26.log",
+               "passed": true, "audio_sha256_identical_to_pre_rebase": true, "metrics_identical_to_pre_rebase": true,
+               "frames_exact": true, "lifecycle_passed": true, "gpu_lock_seconds": 13,
+               "note": "novel-shape first synthesis 0.48-0.57 s because the earlier run had already specialized those lengths (cached across processes)"},
+    "gpu_lock_seconds_total_including_recheck": 260
+  }
 }
