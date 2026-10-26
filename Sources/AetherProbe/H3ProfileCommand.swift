@@ -287,31 +287,36 @@ enum H3ProfileCommand {
                 let refined = try await timed("prepare.text") { try await qualifier.refine(referenceTap) }
                 try out.put("refined", refined)
                 let referenceRefined = try references.map { try H3RawDirectory.read($0, "refined") } ?? refined
-                try out.put("packed", try await timed("prepare.pack") {
+                let packed = try await timed("prepare.pack") {
                     try await qualifier.pack(video: try H3RawDirectory.read(dump, "latents_video"), audio: try H3RawDirectory.read(dump, "latents_audio"),
                                              text: referenceRefined, gather: try H3RawDirectory.read(dump, "gather"))
-                })
+                }
+                try out.put("packed", packed)
                 let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: tokens.count))
                 let step0 = try profile.steps(recipe: recipe, layout: layout)[0]
-                let hidden = try H3RawDirectory.read(dump, "probe_hidden"), tags = try H3RawDirectory.read(dump, "step0_adaln")
+                let tags = try H3RawDirectory.read(dump, "step0_adaln")
                 let cos = try H3RawDirectory.read(dump, "cos"), sin = try H3RawDirectory.read(dump, "sin")
-                for block in [0, 49] {
-                    let table = try step0.tables[block].read()
-                    // The first call of a graph includes its specialization; the second is the warm timing.
-                    for pass in ["cold", "warm"] {
-                        let value = try await timed("block\(block).\(pass)") { try await qualifier.block(block, hidden: hidden, table: table, tags: tags, cos: cos, sin: sin) }
-                        if pass == "warm" { try out.put(String(format: "block%02d", block), value) }
-                    }
+                // Real step-0 contexts: the packed sequence enters block 0, and the native chain 0...48 supplies block 49's input.
+                // Each checked block's input (`contextNN`, the predecessor's native output) and output are saved, so the CPU
+                // oracle evaluates that one block on exactly these bytes. Heads then read block 49's output.
+                let checked: Set<Int> = [0, 49]
+                var hidden = packed
+                for block in 0..<50 {
+                    if checked.contains(block) && block > 0 { try out.put(String(format: "context%02d", block), hidden) }
+                    let table = try step0.tables[block].read(), input = hidden
+                    hidden = try await timed("block\(block)") { try await qualifier.block(block, hidden: input, table: table, tags: tags, cos: cos, sin: sin) }
+                    if checked.contains(block) { try out.put(String(format: "block%02d", block), hidden) }
                 }
+                let final = hidden
                 let heads = try await timed("heads") {
-                    try await qualifier.heads(hidden: hidden, temb: try step0.embedding.read(), indices: try H3RawDirectory.read(dump, "step0_indices"),
+                    try await qualifier.heads(hidden: final, temb: try step0.embedding.read(), indices: try H3RawDirectory.read(dump, "step0_indices"),
                                               videoIndices: try H3RawDirectory.read(dump, "video_indices"), audioIndices: try H3RawDirectory.read(dump, "audio_indices"),
                                               video: try H3RawDirectory.read(dump, "latents_video").spec, audio: try H3RawDirectory.read(dump, "latents_audio").spec)
                 }
                 try out.put("heads_video", heads.video); try out.put("heads_audio", heads.audio)
-                let packed = try H3RawDirectory.read(dump, "latents_video").floatValues()
+                let packedVideo = try H3RawDirectory.read(dump, "latents_video").floatValues()
                 let tiling = try H3SpatialTiling.source(width: geometry.width, height: geometry.height)
-                let rows = try tiling.extract(width: geometry.width, height: geometry.height, packed: try geometry.videoWindowRows(packed, index: 0), index: 0)
+                let rows = try tiling.extract(width: geometry.width, height: geometry.height, packed: try geometry.videoWindowRows(packedVideo, index: 0), index: 0)
                 for pass in ["cold", "warm"] {
                     let tile = try await timed("tile.\(pass)") { try await qualifier.tile(try floats(rows, [448, 96])) }
                     if pass == "warm" { try out.put("tile", tile); try out.put("tile_rows", try floats(rows, [448, 96])) }

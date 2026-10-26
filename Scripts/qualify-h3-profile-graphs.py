@@ -6,7 +6,9 @@ Stages run strictly in order, each as an owned process group with a wall budget,
   dump-t2va, dump-fl2va    aether-probe h3-profile-dump (CPU): token ids, layout, step plan, seeded latents, probe hidden.
   oracle-text              prepare-h3-profile-oracle.py --part text (CPU): the original Qwen3-VL tap and refined text.
   native-t2va, native-fl2va  aether-probe h3-profile-run --graphs (GPU, under ~/.cache/aether-kit/with-gpu-lock.sh):
-                           conditioner tap, prepare text/pack, blocks 0 and 49, heads, one tile window, audio decoder;
+                           conditioner tap, prepare text/pack, the native step-0 chain of all 50 blocks (block 0 reads
+                           the packed sequence; blocks 0 and 49 and block 49's input are saved), heads on the block-49
+                           output, one tile window, audio decoder;
                            the FL2VA dump runs the first-frame encoder only. Each later graph consumes the CPU oracle's
                            own inputs, so every comparison isolates one graph.
   oracle-graphs-t2va, oracle-graphs-fl2va  --part graphs (CPU): the same graphs with the original modules.
@@ -232,7 +234,11 @@ def main():
             elif not (row["finite"] and math.isfinite(row["relative_l2"]) and row["relative_l2"] <= LIMIT):
                 failures.append(f"{key}: relative L2 {row['relative_l2']} (finite {row['finite']})")
     text_report = manifest("oracle-text")["report"]
-    layout = manifest("oracle-graphs-t2va")["report"].get("layout", {})
+    graphs_report = manifest("oracle-graphs-t2va")["report"]
+    layout = graphs_report.get("layout", {})
+    expected_inputs = {"block00": "packed", "block49": "context49"}
+    if graphs_report.get("block_inputs") != expected_inputs or graphs_report.get("heads_input") != "native block49 output":
+        failures.append(f"oracle-graphs-t2va: blocks/heads did not read the real step-0 contexts: {graphs_report.get('block_inputs')}, {graphs_report.get('heads_input')}")
     if text_report.get("token_ids_equal_transformers") is not True:
         failures.append("oracle-text: Swift token ids differ from Transformers")
     if not layout or not all(layout.values()):
@@ -245,7 +251,14 @@ def main():
     if not pins_unchanged:
         failures.append("pins changed during the gate")
     dump_fields = manifest("dump-t2va")["fields"]
-    gate = dict(schema=1, gate="h3-profile-graphs", completedAt=now(), passed=not failures, failures=failures,
+    # Not acceptance criteria here (no memory limit is defined for this gate); recorded so they stay visible.
+    open_items = []
+    for n, m in native.items():
+        metal = ((m.get("report") or {}).get("sampledPeak") or {}).get("metalAllocatedBytes")
+        if metal and metal > 18 * (1 << 30):
+            open_items.append(f"{n}: sampled Metal peak {metal / (1 << 30):.2f} GiB exceeds the 18 GiB bound earlier H3 probes used; "
+                              "memory limits for the profile path are not yet defined (open memory-limit item)")
+    gate = dict(schema=1, gate="h3-profile-graphs", completedAt=now(), passed=not failures, failures=failures, openItems=open_items,
                 predefinedRelativeL2Limit=LIMIT, canvas=dict(width=args.width, height=args.height, frames=int(dump_fields["frames"]),
                 rows=int(dump_fields["rows"]), tokens=int(dump_fields["tokens"]), seed=args.seed, recipe=args.recipe),
                 profileSHA256=dump_fields["profile_sha256"], comparisons=comparisons,
@@ -254,8 +267,10 @@ def main():
                 oracleFields={n: manifest(n)["fields"] for n in ("oracle-text", "oracle-graphs-t2va", "oracle-graphs-fl2va")},
                 nativeReports={n: m["report"] for n, m in native.items()}, controllers=records,
                 pinsDigest=pins_digest, pinsUnchanged=pins_unchanged, filesSHA256=pins,
-                scope=("Isolated native graphs (conditioner tap, prepare text/pack, blocks 0 and 49 at step 0, heads, one 256 px "
-                       "tile window, fixed audio decoder, first-frame encoder) against the original CPU modules on identical inputs. "
+                scope=("Isolated native graphs (conditioner tap, prepare text/pack, blocks 0 and 49 at their real step-0 contexts "
+                       "from the native chain, heads on the native block-49 output, one 256 px tile window, fixed audio decoder, "
+                       "first-frame encoder) against the original-precision CPU modules on identical input bytes. Step 0 only "
+                       "(one timestep cardinality). "
                        "Not a denoising trajectory, decoded clip, lifecycle, memory-limit or performance qualification."))
     (work / "gate.json").write_text(json.dumps(gate, indent=2) + "\n")
     print(json.dumps(dict(passed=gate["passed"], failures=failures, gate=str(work / "gate.json")), indent=2), flush=True)

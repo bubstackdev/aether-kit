@@ -6,8 +6,10 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
   text     The conditioner tap and the refined text. The tap runs the ORIGINAL Qwen3-VL model forward
            (`text_encoder.model`, as the Diffusers encoder step calls it) with decoder layers streamed in place and the
            forward stopped after layer 49 (`hidden_states[50]`); then context_embedder + token_refiner + Turbo LoRA.
-  graphs   Each native graph on the CPU, on the same inputs the native `--graphs` run used: pack, blocks 0 and 49 (live
-           AdaLN from the live time embedding, i.e. independent of the precomputed tables), heads, one tile window
+  graphs   Each native graph on the CPU, on the same inputs the native `--graphs` run used: pack, blocks 0 and 49 at real
+           step-0 contexts (the native packed sequence, and the native block-48 output from the run's chain), with live
+           AdaLN from the live time embedding, i.e. independent of the precomputed tables; heads on the native block-49
+           output; one tile window
            (`vae._decode`, untiled) and the audio decoder. Also checks the dump's layout and row timesteps against the
            pipeline's own `build_packed_sequence` / `build_row_timesteps` and scheduler.
   render   A complete T2VA trajectory: the original transformer forward with its 50 blocks streamed (each built with
@@ -242,12 +244,21 @@ def graphs_part(dump, out, run, text, blocks=(0, 49)):
         temb = model.time_embedder(model.time_proj(unique).to(torch.float32))
         rotary = model.rope(shape["position_ids"])
         adaln = inverse * 3 + shape["token_tags"]
+        # Real step-0 contexts, as the native --graphs run evaluated them: block 0 reads the native packed sequence and
+        # block b > 0 reads the native output of block b - 1 (`contextNN`); heads read the native block-49 output.
+        # A run from before these contexts existed falls back to the dump's synthetic probe hidden state.
         probe = dump.get("probe_hidden")
+        report["block_inputs"] = {}
         for b in blocks:
+            name = "packed" if b == 0 else f"context{b:02d}"
+            source = run.get(name) if run.has(name) else probe
+            report["block_inputs"][f"block{b:02d}"] = name if run.has(name) else "probe_hidden"
             t = time.monotonic()
-            out.put(f"block{b:02d}", real_block(checkpoint, adapter, b)(probe, temb, adaln, rotary))
+            out.put(f"block{b:02d}", real_block(checkpoint, adapter, b)(source, temb, adaln, rotary))
             report[f"block{b:02d}_seconds"] = round(time.monotonic() - t, 1)
-        states = model.norm_out(probe, temb, inverse).to(model.proj_out.weight.dtype)
+        head_input = run.get("block49") if run.has("block49") and run.has("context49") else probe
+        report["heads_input"] = "native block49 output" if head_input is not probe else "probe_hidden"
+        states = model.norm_out(head_input, temb, inverse).to(model.proj_out.weight.dtype)
         out.put("heads_video", model.proj_out(states).index_select(1, shape["video_indices"]))
         out.put("heads_audio", model.audio_proj_out(states).index_select(1, shape["audio_indices"]))
         del model

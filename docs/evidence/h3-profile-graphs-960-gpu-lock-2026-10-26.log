@@ -4,3 +4,9 @@
 2026-10-26 14:25:11 waiting  pid=50712 h3-graph-gate: native-fl2va
 2026-10-26 14:29:28 acquired pid=53442 h3-graph-gate: native-fl2va
 2026-10-26 14:29:59 released pid=53442 h3-graph-gate: native-fl2va rc=0
+2026-10-26 14:58:34 waiting  pid=78885 h3-graph-gate: native-t2va
+2026-10-26 15:02:57 acquired pid=82873 h3-graph-gate: native-t2va
+2026-10-26 15:04:42 released pid=82873 h3-graph-gate: native-t2va rc=0
+2026-10-26 15:04:42 waiting  pid=84737 h3-graph-gate: native-fl2va
+2026-10-26 15:09:20 acquired pid=87733 h3-graph-gate: native-fl2va
+2026-10-26 15:09:43 released pid=87733 h3-graph-gate: native-fl2va rc=0
