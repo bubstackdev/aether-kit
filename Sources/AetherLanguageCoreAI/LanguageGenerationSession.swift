@@ -139,20 +139,14 @@ public actor LanguageGenerationSession {
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { busy = false }
         let start = ContinuousClock.now
-        var next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
+        let next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
         let first = elapsed(start)
-        var generated: [Int] = []
-        var reason = "output-limit"
-        for index in 0..<maximumTokens {
-            try Task.checkCancellation()
-            if stopTokenIDs.contains(next) { reason = "eos"; break }
-            generated.append(next)
-            try await onToken?(next)
-            if index + 1 < maximumTokens {
-                next = try Self.greedy(await step(tokens: [Int32(next)], position: prompt.count + index, observer: observer))
-            }
-        }
-        return Reply(tokens: generated, timeToFirstTokenSeconds: first, totalSeconds: elapsed(start), stopReason: reason)
+        // Token delivery overlaps the following native step instead of idling the GPU.
+        let decoded = try await LanguageDecodeLoop.run(first: next, prompt: prompt.count, maximumTokens: maximumTokens,
+            stopTokenIDs: stopTokenIDs, step: { token, position in
+                try Self.greedy(await self.step(tokens: [Int32(token)], position: position, observer: observer))
+            }, onToken: onToken)
+        return Reply(tokens: decoded.tokens, timeToFirstTokenSeconds: first, totalSeconds: elapsed(start), stopReason: decoded.reason)
     }
 
     /// Last-row logits after a fresh-cache prefill. Different chunk sizes exercise

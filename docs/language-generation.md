@@ -37,8 +37,15 @@ rendering remain explicit consumer responsibilities in this first product.
 Each actor admits one request; overlap fails. Submitted work is joined before
 reading or changing buffers, including cancellation. Starting a new request resets
 its own cache. Prefill uses the full running position range, and registered EOS IDs
-stop decoding. A cancelled generation throws after the native join; partial token
-streaming and explicit close/unload are not exposed by this initial API.
+stop decoding. A cancelled generation throws after the native join; explicit
+close/unload is not exposed by this initial API.
+
+`generate(onToken:)` streams each emitted token while the next decode step runs on
+the GPU, so consumer work (for example a main-actor UI update) no longer idles the
+device between tokens. Deliveries stay in order with at most one in flight, and
+every delivery finishes before `generate` returns or throws. If a delivery throws,
+the step already submitted alongside it joins first and its result is discarded; if
+that step fails, the in-flight delivery is cancelled and awaited.
 
 For raw-asset opening, Kit can recycle native model/function/stream ownership
 after a bounded number of joined submissions (128 by default), preserving the
