@@ -12,7 +12,9 @@ A caller supplies `language-model.json` in the model bundle. The manifest names
 relative model/tokenizer directories, immutable upstream source identity, SHA-256
 hashes, platform, quantization, stop IDs and a maximum context. `LanguageModelManifest`
 lives in the Core-AI-independent `AetherKit` target. Verification rejects mismatched
-platforms, integrity failures and paths escaping the local bundle.
+platforms, integrity failures and paths escaping the local bundle. The optional
+`supportsReasoning` field is consumer-facing metadata, for example whether a chat
+app offers a reasoning mode; Kit decodes it but does not act on it.
 
 ```swift
 import AetherKit

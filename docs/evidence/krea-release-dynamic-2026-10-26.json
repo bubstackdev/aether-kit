@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "sourceCommit": "77da192bb98d28ea14284249510e13f01ae4d4bb",
+  "scope": "Opt-in AETHER_NATIVE_DYNAMIC_QUALIFICATION suite on the release candidate: full eight-step independent parity at 512x512 and 384x512 against the unmodified KreaLab reference executable, encoder and decoder cancellation with recovery, prepared-prompt repeats, and real-bundle concurrent stream verification. One Apple M5 Max, macOS 27.0.1.",
+  "passed": true,
+  "stage": "complete",
+  "checks": 65,
+  "modelStreamsVerified": true,
+  "testSeconds": 363.623,
+  "referenceBinarySHA256": "6f431a0fcc365e5438ad948393261fbdd0da515701a8de34c04ad23f230e1c99",
+  "bundleFingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+  "reportSHA256": "d076a74f30d4fb4e8f54132bed0e3a1dd022ee87f044c8eb31fec028742670ae",
+  "rawReport": ".local/release-dynamic-01/report.json (untracked local output)",
+  "notRerun": "AETHER_NATIVE_QUALIFICATION and decoder pipeline suites: their tower fixture directory was deleted and is being regenerated."
+}
