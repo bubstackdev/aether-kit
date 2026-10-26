@@ -155,6 +155,10 @@ The bucketed contract's native qualification
   grows by about 1.8 GiB), with no reloads and 16 distinct shapes.
 - Both exports pass the Forge cpu_only self-check (cosine ≥ 0.99, argmax equal, no
   lost cache rows) and declare their export bounds (chunk 512, capacity 16,384).
+- GPU admission (`languageSessionGPUAdmissionAdmitsAndWithdraws`, opt-in): with a
+  `gpu:` owner, the bucketed session holds one grant for exactly the request's
+  native work, and `unload()` withdraws a request queued behind another holder (it
+  throws `closed`) without waiting for the GPU.
 
 Not yet covered: phone, other model sizes or quantizations, a lower prefill
 submission count (padding prompts to a bucket), and cancellation or unload
