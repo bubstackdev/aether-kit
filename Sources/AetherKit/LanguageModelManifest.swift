@@ -26,6 +26,9 @@ public struct LanguageModelManifest: Codable, Sendable {
     public let tokenizerFiles: [String: String]?
     /// Provenance only: the upstream model a fine-tune derives from (for example `Qwen/Qwen3-4B-Instruct-2507`).
     public let baseModel: String?
+    /// Image input (Qwen3-VL): the vision encoder asset and its preprocessing. Verified with the
+    /// rest of the registration; see ``verifyVision(in:)``.
+    public let vision: LanguageVisionRegistration?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
@@ -38,6 +41,12 @@ public struct LanguageModelManifest: Codable, Sendable {
               !sourceRepository.isEmpty, exportBounds?.isValid ?? true,
               maximumContextLength <= exportBounds?.maximumCacheCapacity ?? .max
         else { throw AetherError.invalidModel("invalid language model registration or platform") }
+        if let vision {
+            try vision.validate()
+            guard exportBounds?.maximumImageChunk.map({ vision.maximumImageTokens <= $0 }) ?? false else {
+                throw AetherError.invalidModel("an image registration needs export bounds covering its largest image")
+            }
+        }
         let model = try Self.child(modelDirectory, of: directory)
         let tokenizer = try Self.child(tokenizerDirectory, of: directory)
         guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
@@ -98,6 +107,17 @@ public struct LanguageModelManifest: Codable, Sendable {
         }
         return files
     }
+    /// Verifies the vision encoder asset's checksum and returns its URL (nil without image input).
+    public func verifyVision(in directory: URL) throws -> URL? {
+        guard let vision else { return nil }
+        try vision.validate()
+        let model = try Self.child(vision.modelDirectory, of: directory)
+        guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == vision.modelSHA256 else {
+            throw AetherError.invalidModel("vision model checksum mismatch")
+        }
+        return model
+    }
+
     public static func fileHash(_ url: URL) throws -> String {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
@@ -132,11 +152,84 @@ public struct LanguageModelManifest: Codable, Sendable {
 public struct LanguageExportBounds: Codable, Sendable, Equatable {
     public let maximumPrefillChunk: Int
     public let maximumCacheCapacity: Int
+    /// Largest image submission (`withImage`), for assets with image input: an image's tokens
+    /// always go in one submission.
+    public let maximumImageChunk: Int?
 
-    public init(maximumPrefillChunk: Int, maximumCacheCapacity: Int) {
+    public init(maximumPrefillChunk: Int, maximumCacheCapacity: Int, maximumImageChunk: Int? = nil) {
         self.maximumPrefillChunk = maximumPrefillChunk
         self.maximumCacheCapacity = maximumCacheCapacity
+        self.maximumImageChunk = maximumImageChunk
     }
 
-    public var isValid: Bool { maximumPrefillChunk > 0 && maximumCacheCapacity >= 2 }
+    public var isValid: Bool { maximumPrefillChunk > 0 && maximumCacheCapacity >= 2 && (maximumImageChunk ?? 1) > 0 }
+}
+
+/// Image input for a language registration (Qwen3-VL): the vision encoder asset, the special tokens
+/// that mark an image, and the preprocessing the encoder was exported for.
+public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
+    public let modelDirectory: String
+    public let modelSHA256: String
+    public let imageTokenID: Int
+    public let visionStartTokenID: Int
+    public let visionEndTokenID: Int
+    public let patchSize: Int
+    public let mergeSize: Int
+    public let temporalPatchSize: Int
+    public let minimumPixels: Int
+    public let maximumPixels: Int
+    public let imageMean: [Float]
+    public let imageStandardDeviation: [Float]
+    public let positionTableSide: Int
+    /// Largest image the registration admits, in decoder tokens.
+    public let maximumImageTokens: Int
+    /// The encoder asset's `expectFrequentReshapes` specialization request. It must be absent or
+    /// false: with it, the dynamic-shape encoder computes wrong outputs on the GPU (engine F-P3-26,
+    /// reproduced by Kit), so verification refuses a registration requesting it while
+    /// ``reshapesQualified`` is false.
+    public let expectFrequentReshapes: Bool?
+
+    /// Whether any qualification has shown reshape-optimized specialization correct for the encoder.
+    public static let reshapesQualified = false
+
+    public init(modelDirectory: String, modelSHA256: String, imageTokenID: Int, visionStartTokenID: Int, visionEndTokenID: Int,
+                patchSize: Int = 16, mergeSize: Int = 2, temporalPatchSize: Int = 2, minimumPixels: Int = 65_536,
+                maximumPixels: Int = 16_777_216, imageMean: [Float] = [0.5, 0.5, 0.5],
+                imageStandardDeviation: [Float] = [0.5, 0.5, 0.5], positionTableSide: Int = 48, maximumImageTokens: Int = 1024,
+                expectFrequentReshapes: Bool? = nil) {
+        self.modelDirectory = modelDirectory
+        self.modelSHA256 = modelSHA256
+        self.imageTokenID = imageTokenID
+        self.visionStartTokenID = visionStartTokenID
+        self.visionEndTokenID = visionEndTokenID
+        self.patchSize = patchSize
+        self.mergeSize = mergeSize
+        self.temporalPatchSize = temporalPatchSize
+        self.minimumPixels = minimumPixels
+        self.maximumPixels = maximumPixels
+        self.imageMean = imageMean
+        self.imageStandardDeviation = imageStandardDeviation
+        self.positionTableSide = positionTableSide
+        self.maximumImageTokens = maximumImageTokens
+        self.expectFrequentReshapes = expectFrequentReshapes
+    }
+
+    /// The encoder's specialization flag: false, or a refusal for a registration requesting true.
+    public func encoderExpectsFrequentReshapes() throws -> Bool {
+        guard expectFrequentReshapes == true else { return false }
+        guard Self.reshapesQualified else {
+            throw AetherError.invalidModel("the vision encoder must not be specialized with expectFrequentReshapes (F-P3-26)")
+        }
+        return true
+    }
+
+    public func validate() throws {
+        _ = try encoderExpectsFrequentReshapes()
+        let tokens = Set([imageTokenID, visionStartTokenID, visionEndTokenID])
+        guard tokens.count == 3, tokens.allSatisfy({ $0 >= 0 }), patchSize > 0, mergeSize > 0, temporalPatchSize > 0,
+              minimumPixels > 0, maximumPixels >= minimumPixels, imageMean.count == 3, imageStandardDeviation.count == 3,
+              imageStandardDeviation.allSatisfy({ $0 > 0 }), positionTableSide > 1, maximumImageTokens > 0,
+              modelSHA256.utf8.count == 64, modelSHA256.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) })
+        else { throw AetherError.invalidModel("invalid vision registration") }
+    }
 }

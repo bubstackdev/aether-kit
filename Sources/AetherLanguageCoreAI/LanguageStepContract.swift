@@ -64,11 +64,23 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         guard logitsShape.count == 3, logitsShape[0] == 1, logitsShape[2] > 0 else { return nil }
         if inputNames == ["input_ids", "position_ids"], outputNames == ["logits"],
            stateNames == ["keyCache", "valueCache"], logitsShape[1] == -1 { return .runningPositions }
-        if inputNames == ["input_ids", "cache_positions", "keyCache", "valueCache"],
+        let bucketedInputs: Set<String> = ["input_ids", "cache_positions", "keyCache", "valueCache"]
+        if inputNames == bucketedInputs || inputNames == bucketedInputs.union(["rope_positions"]),
            outputNames == ["logits", "keyUpdate", "valueUpdate"], stateNames.isEmpty, logitsShape[1] == 1 {
             return .bucketedPositions
         }
         return nil
+    }
+
+    /// Whether a bucketed function also takes 3-axis rotary positions (`rope_positions` [3, q],
+    /// Qwen3-VL's M-RoPE), separate from the cache positions that address rows and the mask.
+    static func takesRopePositions(_ inputNames: Set<String>) -> Bool { inputNames.contains("rope_positions") }
+
+    /// The image entry point of a bucketed asset: the step inputs plus image rows and DeepStack
+    /// features, with the same outputs.
+    static func isImageStep(inputNames: Set<String>, outputNames: Set<String>, stateNames: Set<String>) -> Bool {
+        inputNames == ["input_ids", "cache_positions", "rope_positions", "image_embeds", "deepstack", "keyCache", "valueCache"]
+            && outputNames == ["logits", "keyUpdate", "valueUpdate"] && stateNames.isEmpty
     }
 
     /// Position values for submitting `count` tokens at cache `position`.

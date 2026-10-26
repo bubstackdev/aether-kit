@@ -58,6 +58,17 @@ public actor LanguageGenerationSession {
     private let initialCapacity: Int
     /// Largest prefill submission (the declared export bound), nil when undeclared.
     private let prefillLimit: Int?
+    /// Largest image submission (the declared export bound), nil when undeclared.
+    private let imageLimit: Int?
+    /// Qwen3-VL decoders take 3-axis rotary positions (`rope_positions`) beside the cache positions.
+    public nonisolated let takesRopePositions: Bool
+    /// The asset has a `withImage` entry point, so image prompts are accepted.
+    public nonisolated let acceptsImages: Bool
+    private var imageFunction: InferenceFunction?
+    /// The current request's prompt rotary positions (rows: time, height, width); tokens past the
+    /// prompt take `position + ropeDelta` on every axis.
+    private var promptRope: [[Int32]] = []
+    private var ropeDelta = 0
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
@@ -135,6 +146,19 @@ public actor LanguageGenerationSession {
             }
         }
         let prefillLimit = try contract.admit(bounds: exportBounds, maximumContextLength: capacity)
+        let takesRope = LanguageStepContract.takesRopePositions(Set(d.inputNames))
+        if takesRope {
+            guard case .ndArray(let rope)? = d.inputDescriptor(of: "rope_positions"), rope.scalarType == .int32, rope.shape == [3, -1]
+            else { throw LanguageGenerationError.invalid("Unsupported rotary position contract") }
+        }
+        var imageFunction: InferenceFunction?
+        if let image = model.functionDescriptor(for: "withImage") {
+            guard takesRope, LanguageStepContract.isImageStep(inputNames: Set(image.inputNames), outputNames: Set(image.outputNames),
+                                                              stateNames: Set(image.stateNames)),
+                  let loaded = try model.loadFunction(named: "withImage")
+            else { throw LanguageGenerationError.invalid("Unsupported image step contract") }
+            imageFunction = loaded
+        }
         var shape = key.shape
         let initial = min(initialCacheCapacity, capacity)
         shape[3] = initial
@@ -165,6 +189,72 @@ public actor LanguageGenerationSession {
         self.initialCapacity = initial
         self.contract = contract
         self.prefillLimit = prefillLimit
+        self.imageLimit = exportBounds?.maximumImageChunk
+        self.takesRopePositions = takesRope
+        self.acceptsImages = imageFunction != nil
+        self.imageFunction = imageFunction
+    }
+
+    /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
+    /// placeholder expands to its tokens, which go to the decoder in one `withImage` submission;
+    /// text runs use the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
+    public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
+                         prefillChunkSize: Int? = nil, onToken: (@Sendable (Int) async throws -> Void)? = nil,
+                         observer: Observer? = nil) async throws -> Reply {
+        guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
+        let plan = try imagePlan(prompt, imageTokens: imageTokens)
+        try begin(prompt: plan.ids, reserve: maximumTokens, chunkSize: prefillChunkSize)
+        defer { lifecycle.finish() }
+        promptRope = plan.rope
+        ropeDelta = plan.ropeDelta
+        let grant = try await admitGPU()
+        defer { grant?.release() }
+        let start = ContinuousClock.now
+        let next = try Self.greedy(await prefill(plan, images: prompt.images, chunkSize: prefillChunkSize, observer: observer))
+        let first = elapsed(start)
+        let decoded = try await LanguageDecodeLoop.run(first: next, prompt: plan.ids.count, maximumTokens: maximumTokens,
+            stopTokenIDs: stopTokenIDs, step: { token, position in
+                try Self.greedy(await self.step(tokens: [Int32(token)], position: position, observer: observer))
+            }, onToken: onToken)
+        return Reply(tokens: decoded.tokens, timeToFirstTokenSeconds: first, totalSeconds: elapsed(start), stopReason: decoded.reason)
+    }
+
+    /// Teacher-forced last-row logits for an image prompt: after the prefill, then after each
+    /// continuation token (qualification against an independent reference).
+    public func teacherForcedLogits(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens,
+                                    continuation: [Int]) async throws -> [[Float]] {
+        let plan = try imagePlan(prompt, imageTokens: imageTokens)
+        try begin(prompt: plan.ids + continuation, reserve: 0, chunkSize: nil)
+        defer { lifecycle.finish() }
+        promptRope = plan.rope
+        ropeDelta = plan.ropeDelta
+        let grant = try await admitGPU()
+        defer { grant?.release() }
+        var rows = [try await prefill(plan, images: prompt.images, chunkSize: nil, observer: nil)]
+        for (index, token) in continuation.enumerated() {
+            rows.append(try await step(tokens: [Int32(token)], position: plan.ids.count + index, observer: nil))
+        }
+        return rows
+    }
+
+    private func imagePlan(_ prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens) throws -> LanguagePromptPlan {
+        guard acceptsImages else { throw LanguageGenerationError.invalid("This asset has no image input") }
+        let plan = try LanguagePromptPlan.expand(prompt, tokens: imageTokens)
+        if let imageLimit, let largest = plan.spans.map(\.count).max(), largest > imageLimit {
+            throw LanguageGenerationError.invalid("An image has more tokens than the exported image chunk (\(imageLimit))")
+        }
+        return plan
+    }
+
+    private func prefill(_ plan: LanguagePromptPlan, images: [LanguageImageFeatures], chunkSize: Int?,
+                         observer: Observer?) async throws -> [Float] {
+        var last: [Float] = []
+        for submission in plan.submissions(contract: contract, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+            let tokens = plan.ids[submission.start..<(submission.start + submission.count)].map(Int32.init)
+            last = try await step(tokens: tokens, position: submission.start, observer: observer,
+                                  image: submission.image.map { images[$0] })
+        }
+        return last
     }
 
     public func generate(prompt: [Int], maximumTokens: Int = 48, prefillChunkSize: Int? = nil,
@@ -232,6 +322,8 @@ public actor LanguageGenerationSession {
             throw LanguageGenerationError.contextLimit(limit: capacity)
         }
         materializedTokens = 0
+        promptRope = []
+        ropeDelta = 0
         // A bucketed request restarts at the initial capacity rather than keeping a previous long
         // request's caches (memory, and the zeroing below, follow the allocation).
         let start = LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
@@ -266,12 +358,26 @@ public actor LanguageGenerationSession {
         return last
     }
 
-    private func step(tokens: [Int32], position: Int, observer: Observer?) async throws -> [Float] {
+    /// [3, count] rotary positions, row-major: the prompt's planned rows, then `position + ropeDelta`
+    /// on every axis (text-only requests have no planned rows and a zero delta).
+    private func ropeRows(at position: Int, count: Int) -> [Int32] {
+        var out = [Int32](repeating: 0, count: 3 * count)
+        for axis in 0..<3 {
+            for i in 0..<count {
+                let p = position + i
+                out[axis * count + i] = p < promptRope.first?.count ?? 0 ? promptRope[axis][p] : Int32(p + ropeDelta)
+            }
+        }
+        return out
+    }
+
+    private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil) async throws -> [Float] {
         try Task.checkCancellation()
         guard position == materializedTokens else { throw LanguageGenerationError.invalid("Noncontiguous cache position") }
         try await recycleModelIfNeeded()
         try Task.checkCancellation()
-        guard let function, let stream else { throw LanguageGenerationError.invalid("Missing native model handle") }
+        guard let function = image == nil ? self.function : imageFunction, let stream
+        else { throw LanguageGenerationError.invalid("Missing native model handle") }
         try growCache(to: position + tokens.count)
         guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
         // Running: the full index 0..<position+count. Bucketed: only the new tokens' positions.
@@ -287,6 +393,16 @@ public actor LanguageGenerationSession {
                 shape: keyDescriptor.shape, strides: keyDescriptor.preferredStrides, interleaveLayout: keyDescriptor.interleaveLayout)
             inputs["valueCache"] = InferenceFunction.AsyncValue(unsafeBuffer: values, scalarType: .float16,
                 shape: valueDescriptor.shape, strides: valueDescriptor.preferredStrides, interleaveLayout: valueDescriptor.interleaveLayout)
+        }
+        if takesRopePositions {
+            inputs["rope_positions"] = InferenceFunction.AsyncValue(NDArray(scalars: ropeRows(at: position, count: tokens.count),
+                                                                             shape: [3, tokens.count]))
+        }
+        if let image {
+            guard image.tokenCount == tokens.count else { throw LanguageGenerationError.invalid("Image span does not match its features") }
+            inputs["image_embeds"] = InferenceFunction.AsyncValue(NDArray(scalars: image.embeddings, shape: [image.tokenCount, image.hiddenSize]))
+            inputs["deepstack"] = InferenceFunction.AsyncValue(NDArray(scalars: image.deepstack,
+                                                                      shape: [image.deepstackLevels, image.tokenCount, image.hiddenSize]))
         }
         stepShapes.insert(StepShape(count: tokens.count, capacity: allocatedCapacity))
         let outputs: [String: InferenceFunction.AsyncValue]
@@ -390,12 +506,15 @@ public actor LanguageGenerationSession {
         pendingGPU?.withdraw()
         guard await lifecycle.beginClose() else { return }
         function = nil
+        imageFunction = nil
         stream = nil
         model = nil
         reopenConfiguration = nil
         keys = nil
         values = nil
         materializedTokens = 0
+        promptRope = []
+        ropeDelta = 0
         lifecycle.didClose()
     }
 
@@ -408,6 +527,7 @@ public actor LanguageGenerationSession {
         let exhausted = configuration.maximumSubmissions.map { submissionsSinceReload >= $0 } ?? false
         guard function == nil || exhausted else { return }
         function = nil
+        imageFunction = nil
         stream = nil
         model = nil
         try Task.checkCancellation()
@@ -422,6 +542,12 @@ public actor LanguageGenerationSession {
         try Task.checkCancellation()
         guard let loadedFunction = try loaded.loadFunction(named: "main") else {
             throw LanguageGenerationError.invalid("Missing function after model reload")
+        }
+        if acceptsImages {
+            guard let loadedImage = try loaded.loadFunction(named: "withImage") else {
+                throw LanguageGenerationError.invalid("Missing image function after model reload")
+            }
+            imageFunction = loadedImage
         }
         model = loaded
         function = loadedFunction
