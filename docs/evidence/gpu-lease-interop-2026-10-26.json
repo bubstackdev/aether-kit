@@ -1,0 +1,67 @@
+{
+  "recordedAt": "2026-10-26",
+  "branch": "v0.0.2/gpu-lease",
+  "codeRevision": "21ffbe4bd784fda706ffa064703972b8ea804ae5",
+  "scope": "Kit SharedGPULease and aether-probe against Atelier's SharedGPULock (verbatim source, compiled into a private-directory simulator) and against the with-gpu-lock.sh lease protocol. The recorded runs used a private lease directory only (see notes); Atelier's app was not run; no GPU or model work ran (the probe targeted a missing model, which fails before any Core AI call).",
+  "environment": {
+    "macOS": "27.0.1",
+    "chip": "Apple M5 Max",
+    "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0"
+  },
+  "atelierSource": {
+    "path": "atelier/app/Native/Sources/AtelierNativeRuntime/Resources.swift",
+    "sha256": "b1221de70019451362eab84468e0c149e3618b185c65c28e17b3b706487f1049",
+    "sharedGPULockLines": [
+      135,
+      231
+    ],
+    "sharedGPULockSHA256": "64f4b5135e8841ac8803f16a37d835ed00af4cf88b9beff2568a6769c5aae97b",
+    "simulator": "The SharedGPULock class copied verbatim (package access removed), a one-case NativeHostError, and a main with modes hold DIR and try DIR; built with swiftc -O -swift-version 6.",
+    "simulatorSourceSHA256": "b7dc89fb009c6c989504c0c47533a2916bbe2b11a0cb1c85849d57ebab7e7812",
+    "simulatorBinarySHA256": "f434450af2889552438ece7f46dbd155ff4a3e32ba0ed0cc08ae3eb83d221a9a"
+  },
+  "kitBinaries": {
+    "AetherGPULeaseHelper": "9633352f42e59801d62823d3ff0036c23594faa58894b01c3ad1097d2d2cb5fb",
+    "aether-probe": "95bc43e4d8e3c12aaa266f3109ae23cf39555353266ea5fdf3e0157fba1a2c69",
+    "configuration": "release, built by Scripts/check-cpu.sh at codeRevision"
+  },
+  "driver": {
+    "script": "gpu-lease-interop-check.zsh",
+    "sha256": "2bf32878d2b8b0d9e0bd5e99c5e4e34b7ca638f4edcdb245ae2f38fdc8fdc97d"
+  },
+  "interop": {
+    "log": "gpu-lease-interop-2026-10-26.log",
+    "logSHA256": "9033e82b4fadd47e134d424eebe212961889104983c560818b87a0cd152250b4",
+    "checks": 26,
+    "passed": 26,
+    "failed": 0,
+    "scenarios": [
+      "Atelier holds: Kit fail-fast reports held by the Atelier pid, Kit timed wait times out, aether-probe inspect times out before touching the model",
+      "Kit waits; Atelier default SIGTERM handling releases; Kit acquires",
+      "Kit holds: Atelier is reserved; Kit SIGTERM release lets Atelier acquire",
+      "Each side reclaims the other's SIGKILLed lease through the shared 0600 .reclaim flock file",
+      "aether-probe waits for an Atelier holder, then runs and releases on its error path",
+      "aether-probe under a wrapper-style parent inherits the parent's lease and leaves it in place",
+      "Kit fail-fast and waiting acquisition against a wrapper-style holder"
+    ],
+    "repeatRuns": 2,
+    "notes": "An earlier draft of the driver did not pin aether-probe to the private lease in scenario 6, so that scenario exercised the shared /tmp/atelier-gpu.lock instead of inheritance (the probe took and released the free shared lease for milliseconds, then timed out once while another agent held it). Those runs are superseded. The driver now exports AETHER_GPU_LEASE_PATH for every probe, and these runs passed while the shared lease was held by an unrelated process, so the probe cannot have used it."
+  },
+  "sourceSHA256": {
+    "Sources/AetherKit/SharedGPULease.swift": "85d7e4d213902ed57ac0d7ca8cb5133aaaf2c50a2ff845a23ca670791aca3616",
+    "Sources/AetherKit/GPUAdmission.swift": "102f8bf7ae0e80a645681d687abafe9fc3ac788bc722077be605f04f80d148ed",
+    "Sources/AetherKit/FairInferenceQueue.swift": "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
+    "Sources/AetherProbe/ProbeGPULease.swift": "40e23fbb940bf0ccd01de4a3cf4b9b765eab871192697f44966b810853c06a59",
+    "Sources/AetherProbe/AetherProbe.swift": "4a573551d0bb11317cd9df6a8bd54ad26c04af6cd8602e65e71a11d1340bc836",
+    "Tests/AetherGPULeaseHelper/main.swift": "25093bc1dbdb5de17d6c96fb2ff1de3f15f75d40732a8d4a5dc4a9ad9018775c"
+  },
+  "cpuSuite": {
+    "command": "sh Scripts/check-cpu.sh",
+    "registered": 293,
+    "passed": 279,
+    "skipped": 14,
+    "failed": 0,
+    "log": "gpu-lease-cpu-tests-2026-10-26.log",
+    "logSHA256": "6df7e1caa091f1d8eba0d9148e4a004433185ae74f3367aaddb2e9d94552926b"
+  }
+}

@@ -8,6 +8,19 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 - **AetherFlux2, AetherFlux2Tokenizers, AetherFlux2CoreAI** (experimental): FLUX.2 [klein] 4B text-to-image and multi-reference editing. Includes bundle validation with provenance and revision pins, portable installation, the empirical-shift schedule, 4-axis rotary tables, the padded Qwen3 prompt, reference-image policy and preparation, and `Flux2GenerationSession`. The session supports prepared prompts and references, balanced/resident residency, cancellation, terminal unload and optional resource admission. Native parity against independent float32 Diffusers references passes at 12 cases, and the native lifecycle suite passes 44/44 checks: cancellation, unload during work, resident reuse and admission ([guide](docs/flux2-klein.md)).
 - **Shared:** `AetherKit.SeededGaussianNoise` (Krea noise delegates to it, with identical values), `AetherAssets.DeclaredModelAsset`/`BundleFiles`, and a package-internal staged-model admission decorator in `AetherCoreAI`.
+- **AetherKit:**
+  - `SharedGPULease`, a cross-process GPU lease wire-compatible with Atelier's `/tmp/atelier-gpu.lock` protocol. It provides fail-fast and waiting acquisition with timeouts and cancellation, owner-checked idempotent release, signal release, `.reclaim`-serialized stale reclaim that never replaces a newer lease, and opt-in inheritance of an ancestor's lease.
+  - `SharedGPULease.ToolPolicy`, which reads the `AETHER_GPU_LEASE`, `AETHER_GPU_LEASE_TIMEOUT` and `AETHER_GPU_LEASE_PATH` overrides.
+  - `GPUAdmission`, `GPUAdmissionOwner` and `GPUAdmissionGrant`: explicitly shared in-process admission that queues fairly or fails fast, with the lease as an optional backend for unsandboxed hosts.
+  - `FairInferenceQueue`, adopted from an earlier transport-independent admission design.
+- **Sessions:** `KreaGenerationSession`, `H3VideoSession` and `LanguageGenerationSession` accept an optional `gpu: GPUAdmissionOwner`. Sessions without it are unchanged.
+
+### Changed
+
+- **aether-probe:** GPU commands (`inspect`, `smoke`, Krea render, batch and parity, `h3-profile-run`, `h3-profile-decode`, and the `qualify-h3*` and `benchmark-krea` modes other than `--prepare-only`) now take the shared GPU lease themselves and wait while another holder has it. `Scripts/benchmark-krea.sh` relies on this.
+- **Native suites:** the opt-in native test suites now take the lease through a test-local admission and run one GPU test at a time.
+
+See [GPU lease and admission](docs/gpu-lease.md).
 
 ## 0.0.1 — 2026-10-26
 

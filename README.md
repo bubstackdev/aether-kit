@@ -6,7 +6,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
-| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, language model registration. No Core AI dependency. |
+| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, language model registration, the shared GPU lease and opt-in GPU admission. No Core AI dependency. |
 | `AetherAssets` | Preview | Immutable local asset installation: staged SHA-256-verified import, installation IDs, reader leases, abandoned-stage recovery. No Core AI dependency. |
 | `AetherCoreAI` | Preview | Local Core AI model loading and introspection, a stateless typed reference executor, installed-asset model sessions and optional shared resource reservations. |
 | `AetherKrea` | Preview | Krea bundle validation, prompt/conditioning and reference-image contracts, refine schedules, rotary inputs and seeded noise. |
@@ -123,7 +123,7 @@ Real-weight suites are opt-in and skipped by default:
 - `AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION`
 - the H3 profile tests
 
-Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands must run while holding the shared GPU lease (`/tmp/atelier-gpu.lock`). Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.1 checklist](docs/release-0.0.1-checklist.md) and the [SDK roadmap](docs/sdk-roadmap.md).
+Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.1 checklist](docs/release-0.0.1-checklist.md) and the [SDK roadmap](docs/sdk-roadmap.md).
 
 ## Known limitations
 

@@ -1,0 +1,37 @@
+15:41:10 atelier-lease-sim f434450af2889552 kit-helper 9633352f42e59801 aether-probe 95bc43e4d8e3c12a
+15:41:10 lease directory /private/tmp/claude-501/-Users-zakkeown-Code-bubstackdev-aether-aether-kit/71116793-11cf-40b6-9fdc-aa56d272af0e/scratchpad/gpu-lease/interop-run-5/gpu.lock
+15:41:10 --- 1. Atelier holds: Kit fail-fast, timed wait and aether-probe all see it held
+15:41:10 PASS lease names the Atelier holder: 18640
+15:41:10 PASS Kit fail-fast: 2 held 18640
+15:41:11 PASS Kit timed wait: 3 timedOut 18640
+15:41:11 PASS aether-probe inspect times out before touching the model: 1 1
+15:41:11 --- 2. Kit waits; Atelier's default SIGTERM handling releases; Kit acquires
+15:41:11 PASS Kit waiter still waiting: running
+15:41:11 PASS Kit waiter acquired after Atelier released: 0 acquired
+15:41:11 PASS lease free: none
+15:41:11 --- 3. Kit holds: Atelier is reserved; Kit's SIGTERM release lets Atelier in
+15:41:11 PASS lease names the Kit holder: 18670
+15:41:11 PASS Atelier while Kit holds: 2 reserved
+15:41:11 PASS Kit holder terminated by SIGTERM (143): 143
+15:41:11 PASS Kit released on SIGTERM: none
+15:41:11 PASS Atelier after Kit released: 0 acquired
+15:41:11 --- 4. Stale leases: each side reclaims the other's SIGKILLed holder (shared .reclaim flock)
+15:41:11 PASS stale Atelier lease left behind: 18685
+15:41:11 PASS Kit reclaims the dead Atelier lease: 0 owned
+15:41:11 PASS stale Kit lease left behind: 18693
+15:41:11 PASS Atelier reclaims the dead Kit lease: 0 acquired
+15:41:11 PASS reclaim file is private: 600
+15:41:11 --- 5. aether-probe waits for Atelier, then runs and releases on its error path
+15:41:12 PASS aether-probe reports waiting: 1
+15:41:12 PASS aether-probe ran after the lease freed (model missing: exit 1): 1 1
+15:41:12 PASS aether-probe released the lease: none
+15:41:12 --- 6. aether-probe under a wrapper-style parent that holds the lease (with-gpu-lock.sh protocol)
+15:41:12 PASS aether-probe inherited the parent's lease (ran, never waited): 1 0
+15:41:12 PASS lease still the wrapper's after the child: 18721
+15:41:12 PASS wrapper released: none
+15:41:12 --- 7. Kit waits on a wrapper-style holder
+15:41:12 PASS Kit fail-fast vs wrapper holder: 2 held 18743
+15:41:13 PASS wrapper trap exit: 130
+15:41:13 PASS Kit acquired after the wrapper released: 0 acquired
+15:41:13 final directory: gpu.lock.reclaim
+15:41:13 failures=0
