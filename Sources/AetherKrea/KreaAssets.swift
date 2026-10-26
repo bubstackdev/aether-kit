@@ -2,6 +2,7 @@ import AetherKit
 import AetherAssets
 import CryptoKit
 import Foundation
+import Synchronization
 
 /// An external model stream with its declared content identity.
 /// A declaration is not verification of the stream bytes; call `verify()` explicitly.
@@ -10,11 +11,13 @@ public struct KreaModelAsset: Sendable {
     public let declaredSHA256: String
     public let metadataSHA256: String
 
-    public func verify() throws {
+    public func verify() throws { try verify(checkStop: { try Task.checkCancellation() }) }
+
+    func verify(checkStop: () throws -> Void) throws {
         let declaration = try Data(contentsOf: confinedFile("main.hash", root: url))
         guard declaration.hex == declaredSHA256,
-              try hashFile(confinedFile("main.mlirb", root: url)) == declaredSHA256,
-              try hashFile(confinedFile("metadata.json", root: url)) == metadataSHA256 else {
+              try hashFile(confinedFile("main.mlirb", root: url), checkStop: checkStop) == declaredSHA256,
+              try hashFile(confinedFile("metadata.json", root: url), checkStop: checkStop) == metadataSHA256 else {
             throw AetherError.invalidModel("model hash mismatch: \(url.lastPathComponent)")
         }
     }
@@ -185,17 +188,19 @@ public struct KreaAssets: Sendable {
     }
 
     /// Streams all six model assets through SHA-256. This can read tens of GB.
+    /// Streams are hashed concurrently; a failure is reported for the first
+    /// failing asset in encoder, decoder, denoiser order, as a serial pass would.
     /// No native model is loaded and no specialization cache is changed.
     public func verify() throws {
-        for model in [textEncoder, decoder] + denoisers { try model.verify() }
+        try verifyConcurrently([textEncoder, decoder] + denoisers)
         try verifyTokenizer()
     }
 
     /// Streams all seven assets (the six text-only assets and the vision asset) before reference execution.
     public func verifyIncludingReferences() throws {
         guard let vision else { throw AetherError.unsupported("this Krea bundle declares no reference images") }
-        try verify()
-        try vision.verify()
+        try verifyConcurrently([textEncoder, decoder] + denoisers + [vision])
+        try verifyTokenizer()
     }
 
     public func verifyTokenizer() throws {
@@ -220,20 +225,19 @@ public struct KreaAssets: Sendable {
         }
         var models: [KreaModelAsset] = []
         for index in 0..<4 {
-            try denoisers[index].verify()
             let path = registration.segments[index]
             guard !path.isEmpty else { throw AetherError.invalidModel("empty specialized asset path") }
             let url = (path.hasPrefix("/") ? URL(fileURLWithPath: path)
                 : registrationURL.deletingLastPathComponent().appendingPathComponent(path))
                 .standardizedFileURL.resolvingSymlinksInPath()
             let metadataHash = try hashFile(confinedFile("metadata.json", root: url))
-            let model = KreaModelAsset(url: url, declaredSHA256: registration.specialized_sha256[index], metadataSHA256: metadataHash)
-            try model.verify()
-            models.append(model)
+            models.append(KreaModelAsset(url: url, declaredSHA256: registration.specialized_sha256[index], metadataSHA256: metadataHash))
         }
         guard Set(models.map(\.url)).count == 4 else {
             throw AetherError.invalidModel("specialization requires four distinct assets")
         }
+        // Each source stream precedes its specialization in failure order.
+        try verifyConcurrently(zip(denoisers, models).flatMap { [$0, $1] })
         var result = self
         result.specializations.append(KreaDenoiserSelection(
             assets: models, imageTokens: registration.image_tokens, textRows: registration.text_rows, specialized: true
@@ -463,7 +467,7 @@ private func confinedFile(_ relative: String, root: URL, directory: Bool = false
     return url
 }
 
-func hashFile(_ url: URL) throws -> String {
+func hashFile(_ url: URL, checkStop: () throws -> Void = { try Task.checkCancellation() }) throws -> String {
     let file = try FileHandle(forReadingFrom: url)
     defer { try? file.close() }
     var digest = SHA256()
@@ -471,11 +475,37 @@ func hashFile(_ url: URL) throws -> String {
     // every chunk alive until the caller's pool drains: `verify()` then peaks at the sum of all streams.
     while try autoreleasepool(invoking: {
         guard let data = try file.read(upToCount: 4 << 20), !data.isEmpty else { return false }
-        try Task.checkCancellation()
+        try checkStop()
         digest.update(data: data)
         return true
     }) {}
     return Data(digest.finalize()).hex
+}
+
+/// Hashes independent streams on concurrent threads. Workers observe the calling
+/// task's cancellation. A failure stops only later assets, so the reported error
+/// is always the first failing asset in input order, matching a serial pass.
+private func verifyConcurrently(_ models: [KreaModelAsset]) throws {
+    struct Superseded: Error {}
+    // `isCancelled` is one of the UnsafeCurrentTask APIs documented as safe from
+    // other threads, and concurrentPerform returns before the reference expires.
+    struct CallerTask: @unchecked Sendable { let task: UnsafeCurrentTask? }
+    let failures = Mutex<[Int: any Error]>([:])
+    withUnsafeCurrentTask { task in
+        let caller = CallerTask(task: task)
+        DispatchQueue.concurrentPerform(iterations: models.count) { index in
+            do {
+                try models[index].verify {
+                    if caller.task?.isCancelled == true { throw CancellationError() }
+                    if failures.withLock({ $0.keys.contains { $0 < index } }) { throw Superseded() }
+                }
+            } catch {
+                failures.withLock { $0[index] = error }
+            }
+        }
+    }
+    let first = failures.withLock { failures in failures.min { $0.key < $1.key }?.value }
+    if let first { throw first }
 }
 
 extension Data {

@@ -213,3 +213,37 @@ struct BundleFixture {
     let aliased = try KreaAssets.open(at: fixture.root)
     #expect(throws: AetherError.self) { try aliased.installationManifest() }
 }
+
+@Test func streamVerificationSpansChunksAndReportsFirstFailureInSerialOrder() throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    // Two complete 4 MiB chunks and a partial tail.
+    var raw = Data(repeating: 0x5a, count: 8 << 20)
+    raw.append(contentsOf: 0..<17)
+    let stream = fixture.root.appendingPathComponent("denoiser2.aimodel")
+    try raw.write(to: stream.appendingPathComponent("main.mlirb"))
+    try Data(SHA256.hash(data: raw)).write(to: stream.appendingPathComponent("main.hash"))
+    let assets = try KreaAssets.open(at: fixture.root)
+    try assets.verify()
+    raw[(4 << 20) + 3] ^= 1
+    try raw.write(to: stream.appendingPathComponent("main.mlirb"))
+    #expect(throws: AetherError.invalidModel("model hash mismatch: denoiser2.aimodel")) { try assets.verify() }
+    // A later failure must not displace an earlier asset's error, however threads interleave.
+    for name in ["denoiser3", "denoiser1"] {
+        try Data("corrupt".utf8).write(to: fixture.root.appendingPathComponent("\(name).aimodel/main.mlirb"))
+    }
+    for _ in 0..<20 {
+        #expect(throws: AetherError.invalidModel("model hash mismatch: denoiser1.aimodel")) { try assets.verify() }
+    }
+}
+
+@Test func streamVerificationObservesCallerCancellation() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let task = Task {
+        withUnsafeCurrentTask { $0?.cancel() }
+        try assets.verify()
+    }
+    await #expect(throws: CancellationError.self) { try await task.value }
+}
