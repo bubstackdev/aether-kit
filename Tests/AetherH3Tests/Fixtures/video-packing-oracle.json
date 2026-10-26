@@ -1,0 +1,11 @@
+{
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "sourceShape": [
+    24,
+    7,
+    4,
+    4
+  ],
+  "sourceValues": "Float32(i) for row-major element index i",
+  "patchify_sha256": "a8cb97f6e24b82b2eafb80fef151b89f7422f16f2a2f9fb166b4989ab918769c"
+}
