@@ -118,6 +118,7 @@ private final class Signal: Sendable {
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_KOKORO_QUALIFICATION"] == "1"), .timeLimit(.minutes(30)))
 func kokoroNativeParityTimingAndLifecycle() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_KOKORO_OUTPUT")
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
     var report = KokoroQualificationReport()

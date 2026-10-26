@@ -83,6 +83,7 @@ do {
   - A decorator around the model factory, the same pattern Krea uses, reserves each model's residency before opening it. Failed opens roll back, and the residency is held until joined unload.
   - It also reserves per-call scratch around each native call. Operation bytes are held for the whole request and must cover the retained segment audio.
   - These are caller estimates, not measured memory. Qualified estimates for the real models are not yet published.
+- **Shared GPU admission.** `gpu: GPUAdmissionOwner` opts a session into a host-shared `GPUAdmission`, following the Krea and FLUX pattern. Each request is granted before any model work or reservation, and `unload()` withdraws a request still waiting. The opt-in native suites take the shared lease through `nativeGPUGrant()`.
 - **Segment results** are retained in the returned array, at 2.4 KB per frame. A request is limited to `maximumSegments` (256).
 
 ## Compute placement

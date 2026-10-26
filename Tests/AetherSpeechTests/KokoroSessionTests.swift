@@ -256,6 +256,80 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     await reversed.unload()
 }
 
+@Test(.timeLimit(.minutes(1))) func sharedGPUAdmissionGatesRequestsBeforeAnyModelOpens() async throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let assets = try KokoroAssets.open(at: bundle.root)
+    let log = EventLog()
+    let admission = try GPUAdmission()
+    let speech = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: log), gpu: admission.owner("kokoro"))
+    let other = try await admission.admit(owner: "another session")
+    let request = Task { try await speech.synthesize(try speech.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(log.snapshot.isEmpty)
+    #expect(await speech.state == .running)
+    other.release()
+    _ = try await request.value
+    #expect(log.snapshot.contains("open:decode"))
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    // Fail-fast admission refuses while another grant runs, before any model work, and the session stays usable.
+    let failFast = try GPUAdmission(waiting: .failFast)
+    let quick = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog()), gpu: failFast.owner("kokoro"))
+    let busy = try await failFast.admit(owner: "another session")
+    await #expect(throws: GPUAdmissionError.busy) { try await quick.synthesize(try quick.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    #expect(await quick.state == .ready)
+    busy.release()
+    _ = try await quick.synthesize(try quick.phonemes("ðə"), configuration: try KokoroSpeechConfiguration())
+    await quick.unload()
+    await speech.unload()
+}
+
+@Test(.timeLimit(.minutes(1))) func aKokoroRequestWaitingForTheGPUHoldsNoReservation() async throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let assets = try KokoroAssets.open(at: bundle.root)
+    let budget = try ResourceCoordinator(capacityBytes: 200)
+    func profile() throws -> KokoroResourceAdmission {
+        try KokoroResourceAdmission(assets: assets, coordinator: budget, operationBytes: 30, maximumFrames: 100,
+                                    durations: .init(asset: assets.durations, residentBytes: 10, runScratchBytes: 1),
+                                    decoder: .init(asset: assets.decoder, residentBytes: 10, runScratchBytes: 1))
+    }
+    let admission = try GPUAdmission()
+    let gate = Gate()
+    let running = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog(), decoderGate: gate), resources: try profile(),
+                                      gpu: admission.owner("a"))
+    let waiting = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog()), resources: try profile(), gpu: admission.owner("b"))
+    let first = Task { try await running.synthesize(try running.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 51)  // operation 30 + residencies 20 + decoder scratch 1
+    let second = Task { try await waiting.synthesize(try waiting.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(budget.snapshot.reservedBytes == 51)
+    await gate.release()
+    _ = try await first.value
+    _ = try await second.value
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    await running.unload(); await waiting.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test(.timeLimit(.minutes(1))) func unloadWithdrawsARequestStillWaitingForTheGPU() async throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let log = EventLog()
+    let admission = try GPUAdmission()
+    let speech = KokoroSpeechSession(assets: try KokoroAssets.open(at: bundle.root), factory: FakeFactory(log: log), gpu: admission.owner("kokoro"))
+    let other = try await admission.admit(owner: "another session")
+    let request = Task { try await speech.prewarm() }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    await speech.unload()
+    await #expect(throws: AetherError.sessionClosed) { try await request.value }
+    #expect(await speech.state == .closed)
+    #expect(log.snapshot.filter { $0.hasPrefix("open:") }.isEmpty)
+    #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
+    other.release()
+}
+
 private struct ListPhonemizer: SpeechPhonemizer {
     func phonemize(_ text: String, language: KokoroVoice.Language) async throws -> [String] {
         #expect(language == .britishEnglish)

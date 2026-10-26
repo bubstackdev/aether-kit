@@ -195,25 +195,35 @@ public actor KokoroSpeechSession {
     private let runner: KokoroRunner
     private let resources: KokoroResourceAdmission?
     private var active: Task<Void, Never>?
+    private let gpu: GPUAdmissionOwner?
+    private var pendingGPU: GPUAdmissionAttempt?
 
-    public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil) {
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
+    /// grant before any model work and holds it until its native work has joined. With admission, the request's
+    /// operation reservation is taken after the grant, and `unload()` withdraws a request still waiting.
+    public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil,
+                gpu: GPUAdmissionOwner? = nil) {
         self.assets = assets
         self.resources = resources
+        self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(compute: compute, installation: nil), resources: resources))
     }
 
     /// Holds installation protection until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: KokoroComputePlacement = .recommended,
-                resources: KokoroResourceAdmission? = nil) throws {
+                resources: KokoroResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) throws {
         assets = try KokoroAssets.open(in: installation)
         self.resources = resources
+        self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(
             compute: compute, installation: KokoroInstallationAccess(installation)), resources: resources))
     }
 
-    init(assets: KokoroAssets, factory: any KokoroModelFactory, resources: KokoroResourceAdmission? = nil) {
+    init(assets: KokoroAssets, factory: any KokoroModelFactory, resources: KokoroResourceAdmission? = nil,
+         gpu: GPUAdmissionOwner? = nil) {
         self.assets = assets
         self.resources = resources
+        self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(factory, resources: resources))
     }
 
@@ -282,11 +292,20 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         guard state != .closing, state != .closed else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        let task = Task { try await operation() }
+        // Operations reserve their storage inside `operation`, so with GPU admission nothing is reserved
+        // until the grant arrives.
+        let attempt = gpu.map(GPUAdmissionAttempt.init)
+        let task = Task {
+            let grant = try await attempt?.admit(orThrow: { AetherError.sessionClosed })
+            defer { grant?.release() }
+            return try await operation()
+        }
         active = Task { _ = await task.result }
+        pendingGPU = attempt
         state = .running
         defer {
             active = nil
+            pendingGPU = nil
             if state == .running { state = .ready }
         }
         return try await withTaskCancellationHandler {
@@ -315,6 +334,8 @@ public actor KokoroSpeechSession {
     public func unload() async {
         guard state != .closed else { return }
         state = .closing
+        // A request still waiting for GPU admission is withdrawn instead of waited for.
+        pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
         state = .closed

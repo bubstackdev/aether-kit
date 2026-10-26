@@ -33,6 +33,7 @@ private struct SweepPoint: Encodable {
 /// each count padded to its bucket, so the shape set is bounded.
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_KOKORO_SWEEP"] == "1"), .timeLimit(.minutes(60)))
 func kokoroNativeDecoderShapeSweep() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_KOKORO_OUTPUT")
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
     let assets = try KokoroAssets.open(at: nativePath("AETHER_KOKORO_BUNDLE"))
