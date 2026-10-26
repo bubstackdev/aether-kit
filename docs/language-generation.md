@@ -37,8 +37,13 @@ rendering remain explicit consumer responsibilities in this first product.
 Each actor admits one request; overlap fails. Submitted work is joined before
 reading or changing buffers, including cancellation. Starting a new request resets
 its own cache. Prefill uses the full running position range, and registered EOS IDs
-stop decoding. A cancelled generation throws after the native join; explicit
-close/unload is not exposed by this initial API.
+stop decoding. A cancelled generation throws after the native join.
+
+`unload()` closes the session permanently. New requests fail with `closed`. An
+active request finishes and joins its native work first (cancel its task to end a
+long generation sooner), and then the model, function, compute stream and KV caches
+are released. Concurrent calls return once the release completes; open a new
+session to load the model again.
 
 `generate(onToken:)` streams each emitted token while the next decode step runs on
 the GPU, so consumer work (for example a main-actor UI update) no longer idles the
@@ -74,5 +79,5 @@ candidates and completed the larger-budget reasoning evaluation. Phone context a
 memory qualification is tracked separately. Earlier bounded Shilo fixtures cover
 cancellation/recovery and numerical chunking through 2K; larger contexts and larger
 budgets do not automatically inherit all lifecycle guarantees. General model quality,
-optimized generation performance, streaming, prefix reuse and explicit unload remain
+optimized generation performance, streaming and prefix reuse remain
 follow-up work driven by the chat consumer.

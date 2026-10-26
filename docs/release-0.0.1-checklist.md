@@ -64,7 +64,7 @@ Status: proposed, 2026-10-26. Unchecked items are open; checked items cite their
 
 - [x] **Streaming overlap.** `generate(onToken:)` delivers tokens while the next step runs, with ordered delivery and joined errors (`LanguageDecodeLoop`, four CPU tests).
 - [x] **Verification memory.** The manifest hash loop drains each chunk, keeping memory bounded on multi-GB models.
-- [ ] **Explicit close/unload.** The [language guide](language-generation.md) still says this isn't exposed.
+- [x] **Explicit close/unload.** `unload()` rejects new requests with `closed`, waits for an active request, then releases the model, function, stream and KV caches (`LanguageSessionLifecycle`, three CPU tests).
 - [ ] **Export contract.** Document the full running `position_ids`, the five-dimensional fp16 KV cache and the model reload every 128 submissions, including its cost. Record the planned fixed-shape decode export as follow-up work.
 - [ ] **`supportsReasoning`.** Keep the field and document it as consumer-facing metadata that Kit doesn't act on.
 - [ ] **Open cost.** `open(bundle:)` re-hashes the whole model on every open. Document the cost, or cache verification by file identity.

@@ -22,12 +22,13 @@ public actor LanguageGenerationSession {
         case completed(position: Int, count: Int)
     }
     public typealias Observer = @Sendable (NativeEvent) -> Void
+    public enum State: String, Sendable { case ready, running, closing, closed }
 
     private var model: AIModel?
     private var function: InferenceFunction?
     private var stream: ComputeStream?
-    private var keys: any MTLBuffer
-    private var values: any MTLBuffer
+    private var keys: (any MTLBuffer)?
+    private var values: (any MTLBuffer)?
     private let keyTemplate: NDArrayDescriptor
     private let valueTemplate: NDArrayDescriptor
     private var keyDescriptor: NDArrayDescriptor
@@ -49,7 +50,8 @@ public actor LanguageGenerationSession {
     private var materializedTokens = 0
     private var growthCount = 0
     private let capacity: Int
-    private var busy = false
+    private let lifecycle = LanguageSessionLifecycle()
+    public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform) async throws -> LanguageGenerationSession {
@@ -137,7 +139,7 @@ public actor LanguageGenerationSession {
                   observer: Observer? = nil) async throws -> Reply {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
-        defer { busy = false }
+        defer { lifecycle.finish() }
         let start = ContinuousClock.now
         let next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
         let first = elapsed(start)
@@ -153,14 +155,14 @@ public actor LanguageGenerationSession {
     /// cache continuity without conflating near-tied logits with answer quality.
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
-        defer { busy = false }
+        defer { lifecycle.finish() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
     }
 
     public func teacherForcedLogits(prompt: [Int], continuation: [Int]) async throws -> [[Float]] {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
-        defer { busy = false }
+        defer { lifecycle.finish() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]
         for (index, token) in continuation.enumerated() {
             rows.append(try await step(tokens: [Int32(token)], position: prompt.count + index, observer: nil))
@@ -170,17 +172,21 @@ public actor LanguageGenerationSession {
 
     private func begin(prompt: [Int], reserve: Int, chunkSize: Int?) throws {
         try Task.checkCancellation()
-        guard !busy else { throw LanguageGenerationError.busy }
+        try lifecycle.admit()
         guard !prompt.isEmpty, prompt.allSatisfy({ $0 >= 0 && $0 < vocabularySize }),
-              chunkSize == nil || chunkSize! > 0 else { throw LanguageGenerationError.invalid("Invalid prompt or chunk size") }
+              chunkSize == nil || chunkSize! > 0 else {
+            lifecycle.finish()
+            throw LanguageGenerationError.invalid("Invalid prompt or chunk size")
+        }
         // Subtraction avoids overflow for hostile Int.max output limits.
         guard prompt.count <= capacity, reserve <= capacity - prompt.count else {
+            lifecycle.finish()
             throw LanguageGenerationError.contextLimit(limit: capacity)
         }
-        busy = true
         materializedTokens = 0
-        keys.contents().initializeMemory(as: UInt8.self, repeating: 0, count: keys.length)
-        values.contents().initializeMemory(as: UInt8.self, repeating: 0, count: values.length)
+        for buffer in [keys, values].compactMap({ $0 }) {
+            buffer.contents().initializeMemory(as: UInt8.self, repeating: 0, count: buffer.length)
+        }
     }
 
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
@@ -200,6 +206,7 @@ public actor LanguageGenerationSession {
         try Task.checkCancellation()
         guard let function, let stream else { throw LanguageGenerationError.invalid("Missing native model handle") }
         try growCache(to: position + tokens.count)
+        guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
         // This export uses the full running index to address and attend its KV cache.
         let inputs = [
             "input_ids": InferenceFunction.AsyncValue(NDArray(scalars: tokens, shape: [1, tokens.count])),
@@ -255,10 +262,26 @@ public actor LanguageGenerationSession {
     }
     public func cacheStatistics() -> CacheStatistics {
         CacheStatistics(maximumContext: capacity, allocatedCapacity: allocatedCapacity,
-            materializedTokens: materializedTokens, allocatedBytes: keys.length + values.length, growthCount: growthCount, modelReloadCount: modelReloadCount)
+            materializedTokens: materializedTokens, allocatedBytes: (keys?.length ?? 0) + (values?.length ?? 0), growthCount: growthCount, modelReloadCount: modelReloadCount)
     }
 
     private func configureReopening(_ configuration: ReopenConfiguration) { reopenConfiguration = configuration }
+
+    /// Terminal close. New requests fail with `closed`; an active request finishes and
+    /// joins its native work first, so cancel its task to end a long generation sooner.
+    /// Then the model, function, stream and KV caches are released. Concurrent calls
+    /// return once the release completes. Open a new session to load the model again.
+    public func unload() async {
+        guard await lifecycle.beginClose() else { return }
+        function = nil
+        stream = nil
+        model = nil
+        reopenConfiguration = nil
+        keys = nil
+        values = nil
+        materializedTokens = 0
+        lifecycle.didClose()
+    }
 
     /// Previous submissions have all joined. State remains in Kit-owned buffers;
     /// releasing the function, stream, and model bounds native shape-cache residency.
@@ -291,6 +314,7 @@ public actor LanguageGenerationSession {
     private func growCache(to needed: Int) throws {
         guard needed <= capacity else { throw LanguageGenerationError.contextLimit(limit: capacity) }
         guard needed > allocatedCapacity else { return }
+        guard let oldKeys = keys, let oldValues = values else { throw LanguageGenerationError.invalid("Missing KV caches") }
         let next = try LanguageCachePlan.nextCapacity(current: allocatedCapacity, needed: needed, maximum: capacity)
         var shape = keyDescriptor.shape
         shape[3] = next
@@ -314,9 +338,9 @@ public actor LanguageGenerationSession {
         newValues.contents().initializeMemory(as: UInt8.self, repeating: 0, count: newValues.length)
         let rows = shape[0] * shape[1] * shape[2]
         let rowBytesPerToken = shape[4] * MemoryLayout<Float16>.size
-        LanguageCachePlan.copyPrefix(from: keys.contents(), to: newKeys.contents(), rows: rows,
+        LanguageCachePlan.copyPrefix(from: oldKeys.contents(), to: newKeys.contents(), rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
-        LanguageCachePlan.copyPrefix(from: values.contents(), to: newValues.contents(), rows: rows,
+        LanguageCachePlan.copyPrefix(from: oldValues.contents(), to: newValues.contents(), rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
         keys = newKeys; values = newValues; keyDescriptor = kd; valueDescriptor = vd
         allocatedCapacity = next
@@ -330,6 +354,6 @@ public actor LanguageGenerationSession {
 }
 
 public enum LanguageGenerationError: Error, Sendable, Equatable {
-    case invalid(String), busy, contextLimit(limit: Int)
+    case invalid(String), busy, closed, contextLimit(limit: Int)
     case memoryBudget(requiredBytes: UInt64, availableBytes: UInt64)
 }
