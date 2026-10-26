@@ -30,10 +30,11 @@ public enum GPUAdmissionError: Error, Sendable, Equatable, CustomStringConvertib
 /// unsandboxed hosts: a sandboxed app's temporary directory is private, so the lease would exclude nothing outside it.
 ///
 /// The lease is polled, so under steady in-process load another process could starve. The admission therefore keeps
-/// an owned lease across consecutive grants for at most `crossProcessTurn`, then releases it and waits
+/// an owned lease across consecutive (or overlapping) grants for at most `crossProcessTurn`. After that it starts no
+/// new grant on that lease: running grants drain, the lease is released, and the admission waits
 /// `crossProcessHandOffGap` before re-acquiring, so a process polling at least that often can take a turn. Pollers
-/// with longer intervals (the development wrapper polls every 5 s) can still miss the gap. Before each grant an
-/// inherited lease is re-checked: its holder must still be named by the lease and alive.
+/// with longer intervals (the development wrapper polls every 5 s) can still miss the gap. Before each grant the held
+/// lease is re-checked: an inherited lease's holder must still be named by the lease and alive.
 public final class GPUAdmission: Sendable {
     public enum Waiting: Sendable, Equatable {
         /// Wait for a slot, up to `timeout` when given.
@@ -59,6 +60,8 @@ public final class GPUAdmission: Sendable {
         var handOffUntil: ContinuousClock.Instant?
         /// One task at a time acquires or releases the lease; no other request starts meanwhile.
         var leaseBusy = false
+        /// The turn expired: no grant joins the held lease; running grants drain and then the lease is handed off.
+        var draining = false
     }
     private let state: Mutex<State>
 
@@ -106,30 +109,55 @@ public final class GPUAdmission: Sendable {
         }
     }
 
-    /// Joins the held lease if it is still valid; drops it otherwise. Reads only the pid file.
-    private static func joinLease(_ state: inout State, _ id: UUID) -> Bool {
+    /// The held lease and whether it is still valid, checked outside the state lock (it reads the pid file and signals
+    /// the holder).
+    private struct LeaseCheck { let lease: SharedGPULease; let valid: Bool }
+
+    private func checkLease() -> LeaseCheck? {
+        guard let lease = state.withLock({ $0.lease }) else { return nil }
+        return LeaseCheck(lease: lease, valid: lease.isStillValid)
+    }
+
+    /// Joins the held lease if it is still valid; drops it otherwise. A lease installed after `check` was taken has just
+    /// been acquired and counts as valid.
+    private static func joinLease(_ state: inout State, _ id: UUID, _ check: LeaseCheck?) -> Bool {
         guard let lease = state.lease else { return false }
-        guard lease.isStillValid else {
+        guard check.map({ $0.lease !== lease || $0.valid }) ?? true else {
             state.lease = nil
             state.leaseGrants = []
             state.leaseSince = nil
+            state.draining = false
             return false
         }
         state.leaseGrants.insert(id)
         return true
     }
 
+    /// True once an owned lease has been held for its whole turn.
+    private func turnExpired(_ state: State, at now: ContinuousClock.Instant) -> Bool {
+        guard let lease = state.lease, lease.holding == .owned, let since = state.leaseSince else { return false }
+        return since.duration(to: now) >= crossProcessTurn
+    }
+
     private func admitImmediately(owner: String) throws -> GPUAdmissionGrant {
         try Task.checkCancellation()
         let id = UUID()
+        let check = crossProcessLease == nil ? nil : checkLease()
         let mustAcquire = try state.withLock { state -> Bool in
-            guard state.queue.queuedCount == 0, state.queue.runningCount < maximumConcurrent, !state.leaseBusy else {
+            guard state.queue.queuedCount == 0, state.queue.runningCount < maximumConcurrent, !state.leaseBusy,
+                  !state.draining else {
+                throw GPUAdmissionError.busy
+            }
+            if crossProcessLease != nil, turnExpired(state, at: .now) {
+                // The turn is over: running grants drain, then the lease is handed off. With none running, the pump
+                // that follows every release hands it off now.
+                if !state.leaseGrants.isEmpty { state.draining = true }
                 throw GPUAdmissionError.busy
             }
             do { try state.queue.enqueue(id: id, owner: owner, work: ()) }
             catch let error as InferenceAdmissionError { throw GPUAdmissionError.limit(error) }
             guard state.queue.next()?.id == id else { preconditionFailure("an idle fair queue must start its only ticket") }
-            guard crossProcessLease != nil, !Self.joinLease(&state, id) else { return false }
+            guard crossProcessLease != nil, !Self.joinLease(&state, id, check) else { return false }
             state.leaseBusy = true
             return true
         }
@@ -158,6 +186,7 @@ public final class GPUAdmission: Sendable {
             state.leaseSince = ContinuousClock.now
             state.handOffUntil = nil
             state.leaseBusy = false
+            state.draining = false
         }
     }
 
@@ -228,14 +257,35 @@ public final class GPUAdmission: Sendable {
     /// Starts as many queued requests as slots allow. While one request acquires (or the admission releases) the
     /// cross-process lease, no other starts, so at most one task ever waits on the lease.
     private func pump() {
+        let check = crossProcessLease == nil ? nil : checkLease()
+        var handOff: SharedGPULease?
         let started: [(CheckedContinuation<Step, any Error>, Step)] = state.withLock { state in
             var started: [(CheckedContinuation<Step, any Error>, Step)] = []
-            while !(crossProcessLease != nil && state.leaseBusy), let ticket = state.queue.next() {
+            while true {
+                if crossProcessLease != nil {
+                    if state.leaseBusy || state.draining { break }
+                    let now = ContinuousClock.now
+                    if state.queue.queuedCount > 0, turnExpired(state, at: now) {
+                        if state.leaseGrants.isEmpty {
+                            // Nothing runs on the lease: hand it off now.
+                            handOff = state.lease
+                            state.lease = nil
+                            state.leaseSince = nil
+                            state.handOffUntil = now.advanced(by: crossProcessHandOffGap)
+                            state.leaseBusy = true
+                        } else {
+                            // Start nothing more on this lease; it is handed off once running grants drain.
+                            state.draining = true
+                        }
+                        break
+                    }
+                }
+                guard let ticket = state.queue.next() else { break }
                 guard let waiter = state.waiters.removeValue(forKey: ticket.id) else {
                     try? state.queue.release(id: ticket.id)
                     continue
                 }
-                if crossProcessLease == nil || Self.joinLease(&state, ticket.id) {
+                if crossProcessLease == nil || Self.joinLease(&state, ticket.id, check) {
                     started.append((waiter, .granted))
                 } else {
                     state.leaseBusy = true
@@ -246,6 +296,11 @@ public final class GPUAdmission: Sendable {
             return started
         }
         for (waiter, step) in started { waiter.resume(returning: step) }
+        if let handOff {
+            handOff.release()
+            state.withLock { $0.leaseBusy = false }
+            pump()
+        }
     }
 
     fileprivate func release(_ id: UUID) {
@@ -254,13 +309,14 @@ public final class GPUAdmission: Sendable {
             guard state.leaseGrants.remove(id) != nil, state.leaseGrants.isEmpty, let lease = state.lease else { return nil }
             let now = ContinuousClock.now
             let othersWaiting = state.queue.queuedCount > 0
-            if othersWaiting, lease.holding == .owned, let since = state.leaseSince,
-               since.duration(to: now) < crossProcessTurn {
+            if othersWaiting, !state.draining, lease.holding == .owned, !turnExpired(state, at: now) {
                 return nil // Hand the lease straight to the next in-process request.
             }
+            let handOff = (othersWaiting || state.draining) && lease.holding == .owned
             state.lease = nil
             state.leaseSince = nil
-            if othersWaiting, lease.holding == .owned { state.handOffUntil = now.advanced(by: crossProcessHandOffGap) }
+            state.draining = false
+            if handOff { state.handOffUntil = now.advanced(by: crossProcessHandOffGap) }
             state.leaseBusy = true
             return lease
         }

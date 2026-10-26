@@ -253,9 +253,21 @@ public final class SharedGPULease: Sendable {
         try? FileManager.default.removeItem(at: aside)
     }
 
+    /// Removes the lease this process just created but could not name. Only a lease that is still unnamed or names
+    /// this process is moved; a moved copy that names anyone else is restored without replacing a newer lease.
     private static func removeAside(_ directory: URL) {
+        let pid = getpid()
+        func ours(_ url: URL) -> Bool { readHolder(url).map { $0 == pid } ?? true }
+        guard ours(directory) else { return }
         let aside = asideURL(directory, "abandoned")
-        if rename(directory.path, aside.path) == 0 { try? FileManager.default.removeItem(at: aside) }
+        guard rename(directory.path, aside.path) == 0 else { return }
+        guard ours(aside) else {
+            if renamex_np(aside.path, directory.path, UInt32(RENAME_EXCL)) != 0 {
+                FileHandle.standardError.write(Data("aetherkit: could not restore a GPU lease; left \(aside.path)\n".utf8))
+            }
+            return
+        }
+        try? FileManager.default.removeItem(at: aside)
     }
 
     private static func asideURL(_ directory: URL, _ reason: String) -> URL {

@@ -243,15 +243,21 @@ private final class LeaseWatcher: @unchecked Sendable {
     private let missing = Mutex(0)
     private let running = Mutex(true)
     private let finished = DispatchSemaphore(value: 0)
+    private let firstMissingAt = Mutex<ContinuousClock.Instant?>(nil)
     init(_ directory: URL) {
         Thread.detachNewThread { [self] in
             while running.withLock({ $0 }) {
-                if !FileManager.default.fileExists(atPath: directory.path) { missing.withLock { $0 += 1 } }
+                if !FileManager.default.fileExists(atPath: directory.path) {
+                    missing.withLock { $0 += 1 }
+                    firstMissingAt.withLock { if $0 == nil { $0 = .now } }
+                }
                 usleep(200)
             }
             finished.signal()
         }
     }
+    /// When the directory was first seen missing.
+    var firstMissing: ContinuousClock.Instant? { firstMissingAt.withLock { $0 } }
     func stop() -> Int {
         running.withLock { $0 = false }
         finished.wait()
@@ -281,4 +287,33 @@ private final class LeaseWatcher: @unchecked Sendable {
     #expect(admission.snapshot.running == 1)
     grant.release()
     #expect(admission.snapshot.running == 0)
+}
+
+@Test(.timeLimit(.minutes(1))) func overlappingGrantsStillHandTheLeaseOffAfterTheTurn() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let turn = Duration.milliseconds(300), hold = Duration.milliseconds(120)
+    let admission = try GPUAdmission(maximumConcurrent: 2, crossProcessLease: leaseConfiguration(directory),
+                                     crossProcessTurn: turn, crossProcessHandOffGap: .milliseconds(400))
+    let first = try await admission.admit(owner: "a")
+    let start = ContinuousClock.now
+    let watcher = LeaseWatcher(directory)
+    // Two slots and a steady stream of overlapping grants: some grant is always running, so without draining the
+    // lease would never be released.
+    let workers = (0..<16).map { index in
+        Task {
+            try await Task.sleep(for: .milliseconds(40 * index))
+            let grant = try await admission.admit(owner: "w\(index % 2)")
+            try await Task.sleep(for: hold)
+            grant.release()
+        }
+    }
+    try await Task.sleep(for: hold)
+    first.release()
+    for worker in workers { try await worker.value }
+    let released = try #require(watcher.firstMissing)
+    _ = watcher.stop()
+    // Released within the turn plus one grant's duration (with scheduling slack), while grants were still queued.
+    #expect(start.duration(to: released) <= turn + hold + .milliseconds(250))
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
 }
