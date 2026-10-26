@@ -25,6 +25,10 @@ struct AetherProbe {
               aether-probe smoke MODEL.aimodel [automatic|cpuOnly|preferGPU]
               aether-probe prepare-krea BUNDLE PROMPT [WIDTH HEIGHT]
               aether-probe verify-krea BUNDLE
+              aether-probe render-krea BUNDLE OUTPUT.png PROMPT WIDTH HEIGHT SEED [SHAPE.json]
+              aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json]
+              aether-probe parity-krea BUNDLE LAB FIXTURES SHAPE.json OUTPUT_DIRECTORY provided|encoded
+              aether-probe benchmark-krea BUNDLE PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
 
             smoke expects Forge's float32 affine fixture: y = x * 2 + 1, shape [1, 4].
             inspect specializes/loads the model; it is not a static file inspection.
@@ -33,6 +37,9 @@ struct AetherProbe {
             """)
             return
         }
+        if try await KreaBenchmarkCommand.run(arguments) { return }
+        if try await KreaBatchCommand.run(arguments) { return }
+        if try await KreaCommands.run(arguments) { return }
         if command == "doctor", arguments.count == 1 {
             let report = [
                 "os": ProcessInfo.processInfo.operatingSystemVersionString,
