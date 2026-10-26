@@ -16,6 +16,9 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
            its Turbo LoRA exactly as PEFT loads it), both schedulers' `step`, then the pipeline's video decode
            (`vae.decode`, ImageNet revert, clamp, RGB8 round-half-even) and audio decode. Uses this oracle's own tap.
   compare  Cosine / relative L2 / max |diff| for every tensor both directories hold; PSNR for frames.
+  trajectory  References at a native trajectory's captured contexts (`h3-profile-run --render --capture`): per step,
+           packing, blocks 0 and 49 on their captured inputs, heads on the captured block-49 output and both scheduler
+           updates, compared in-process on full tensors (no reference tensors written); float32 blocks as a diagnostic.
 Usage: python -I -B prepare-h3-profile-oracle.py --part PART --dump DUMP --output NEW_DIR [--run RUN] [--text TEXT_DIR]
 """
 import argparse, json, math, os, sys, time
@@ -336,6 +339,91 @@ def render_part(dump, out, text, tap_source=None):
     out.save()
 
 
+def trajectory_part(dump, out, run, steps, float32_diagnostic=True):
+    """CPU references at a native trajectory's captured contexts (`h3-profile-run --render --capture`), per step:
+    the original packing of the captured input latents and refined text; blocks 0 and 49 on their captured inputs
+    (packed / native block-48 output) with live AdaLN from the live time embedding; both heads on the captured block-49
+    output; both schedulers' `step` on the captured heads and input latents. Original precision (bf16 blocks), full
+    tensors. With `float32_diagnostic`, each block is also run with the same module upcast to float32 (diagnostic only)."""
+    import copy
+    report = out.manifest["report"]
+    capture = Raw(Path(run.path) / "capture")
+    hashes = capture.manifest["report"]["hashes"]
+    checkpoint = h.Checkpoint(SNAPSHOT_ROOT, converter())
+    adapter = h.adapter_path()
+    model = denoiser_model(checkpoint, adapter)
+    shape, checks = layout(dump, model.config)
+    report["layout"] = checks
+    assert all(checks.values()), checks
+    rotary = model.rope(shape["position_ids"])
+    refined = capture.get("refined")
+    assert h.sha256_bytes(refined.contiguous().view(torch.uint8).numpy().tobytes()) == hashes["refined"]
+    blocks = {b: real_block(checkpoint, adapter, b) for b in (0, 49)}
+    blocks32 = {b: copy.deepcopy(m).float() for b, m in blocks.items()} if float32_diagnostic else {}
+    rotary32 = tuple(r.float() for r in rotary)
+    comparisons, diagnostics = report.setdefault("comparisons", {}), report.setdefault("float32_diagnostics", {})
+    sha = lambda t: h.sha256_bytes(t.contiguous().view(torch.uint8).numpy().tobytes())
+
+    def check(name, reference, native_name):
+        native = capture.get(native_name)
+        assert sha(native) == hashes[native_name], f"{native_name} differs from the capture hash"
+        assert native.shape == reference.shape and native.dtype == reference.dtype, (native_name, native.shape, reference.shape, native.dtype, reference.dtype)
+        row = compare(native.float(), reference.float())
+        row.update(byte_identical=bool(torch.equal(native, reference)), reference_sha256=sha(reference), native_sha256=hashes[native_name])
+        comparisons[name] = row
+        return native
+
+    with torch.inference_mode():
+        for s in steps:
+            started = time.monotonic()
+            unique, inverse = shape["plan"][s]
+            temb = model.time_embedder(model.time_proj(unique).to(torch.float32))
+            adaln = inverse * 3 + shape["token_tags"]
+            video_in, audio_in = capture.get(f"step{s}_latents_in_video"), capture.get(f"step{s}_latents_in_audio")
+            for n, t in ((f"step{s}_latents_in_video", video_in), (f"step{s}_latents_in_audio", audio_in)):
+                assert sha(t) == hashes[n], f"{n} differs from the capture hash"
+            hidden = refined.new_zeros((1, len(shape["position_ids"]), refined.shape[-1]))
+            hidden = hidden.index_copy(1, shape["text_indices"], refined)
+            hidden = hidden.index_copy(1, shape["video_indices"], model.proj_in(video_in.to(model.proj_in.weight.dtype)).to(refined.dtype))
+            hidden = hidden.index_copy(1, shape["audio_indices"], model.audio_proj_in(audio_in.to(model.audio_proj_in.weight.dtype)).to(refined.dtype))
+            check(f"step{s}/packed", hidden, f"step{s}_packed")
+            del hidden
+            for b, context in ((0, f"step{s}_packed"), (49, f"step{s}_context49")):
+                x = capture.get(context)
+                t = time.monotonic()
+                reference = blocks[b](x, temb, adaln, rotary)
+                report[f"step{s}_block{b:02d}_seconds"] = round(time.monotonic() - t, 1)
+                native = check(f"step{s}/block{b:02d}", reference, f"step{s}_block{b:02d}")
+                if float32_diagnostic:
+                    # Diagnostic only: where native and the original bf16 module each sit relative to float32 arithmetic.
+                    ref32 = blocks32[b](x.float(), temb.float(), adaln, rotary32).double()
+                    rel = lambda a: float((a.double() - ref32).norm() / ref32.norm())
+                    diagnostics[f"step{s}/block{b:02d}"] = dict(native_vs_float32=rel(native), cpu_bf16_vs_float32=rel(reference))
+                    del ref32
+                del x, native, reference
+            final = capture.get(f"step{s}_block49")
+            states = model.norm_out(final, temb, inverse).to(model.proj_out.weight.dtype)
+            heads_video = check(f"step{s}/heads_video", model.proj_out(states).index_select(1, shape["video_indices"]), f"step{s}_heads_video")
+            heads_audio = check(f"step{s}/heads_audio", model.audio_proj_out(states).index_select(1, shape["audio_indices"]), f"step{s}_heads_audio")
+            del states, final
+            schedulers = []
+            for shift in (12.0, 3.0):
+                scheduler = type(shape["schedulers"][0])(shift=shift)
+                scheduler.set_timesteps(dict(turbo8=9, turbo4=5)[dump.field("recipe")])
+                schedulers.append(scheduler)
+            ncv = shape["ncv"]
+            video = video_in[0].clone()
+            video[ncv:] = schedulers[0].step(heads_video[0, ncv:].float(), schedulers[0].timesteps[s], video[ncv:], return_dict=False)[0]
+            audio = schedulers[1].step(heads_audio[0].float(), schedulers[1].timesteps[s], audio_in[0].clone(), return_dict=False)[0]
+            assert schedulers[0].step_index == s + 1 and schedulers[1].step_index == s + 1
+            check(f"step{s}/latents_out_video", video[None].contiguous(), f"step{s}_latents_out_video")
+            check(f"step{s}/latents_out_audio", audio[None].contiguous(), f"step{s}_latents_out_audio")
+            report[f"step{s}_seconds"] = round(time.monotonic() - started, 1)
+            out.save()
+            print(f"step {s} references done {report[f'step{s}_seconds']} s", flush=True)
+    out.save()
+
+
 def video_latent_frames(shape):
     from diffusers.modular_pipelines.minimax_h3.modular_pipeline import video_latent_num_frames
     return video_latent_num_frames(shape["frames"], 17, 5)
@@ -362,7 +450,7 @@ def compare_part(reference, run, out):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--part", required=True, choices=["text", "graphs", "render", "compare"])
+    ap.add_argument("--part", required=True, choices=["text", "graphs", "render", "compare", "trajectory"])
     ap.add_argument("--dump", type=Path)
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--run", type=Path)
@@ -371,6 +459,8 @@ def main():
     ap.add_argument("--tap", type=Path, help="render: take the conditioner tap from this directory instead (e.g. a native run)")
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--blocks", default="0,49", help="graphs: blocks to check ('' for none; CPU attention at 960x544 takes hours)")
+    ap.add_argument("--steps", default="all", help="trajectory: captured steps to reference ('all' or S,S,...)")
+    ap.add_argument("--no-float32-diagnostic", action="store_true", help="trajectory: skip the float32 block diagnostic")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
     torch.set_grad_enabled(False)
@@ -385,6 +475,10 @@ def main():
         text_part(dump, out, args.prompt)
     elif args.part == "graphs":
         graphs_part(dump, out, Raw(args.run), Raw(args.text), [int(b) for b in args.blocks.split(",") if b])
+    elif args.part == "trajectory":
+        steps = list(range(int(dump.field("steps")))) if args.steps == "all" else [int(s) for s in args.steps.split(",")]
+        out.manifest["fields"].update(run=str(args.run.resolve()), steps=",".join(map(str, steps)))
+        trajectory_part(dump, out, Raw(args.run), steps, float32_diagnostic=not args.no_float32_diagnostic)
     else:
         render_part(dump, out, Raw(args.text), Raw(args.tap) if args.tap else None)
     print(out.path)

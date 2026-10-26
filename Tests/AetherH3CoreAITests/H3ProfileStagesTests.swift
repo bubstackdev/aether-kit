@@ -158,6 +158,63 @@ private struct TrajectoryKernels: H3DenoiserKernels {
     #expect(await calls.log.count == before)
 }
 
+private actor Observations {
+    private(set) var events: [String] = []
+    private(set) var first: H3Latents?, last: H3Latents?
+    func add(_ event: H3DenoiserObservation) {
+        switch event {
+        case .refined: events.append("refined")
+        case .stepStarted(let step, let latents): events.append("start \(step)"); if step == 0 { first = latents }
+        case .packed(let step, _): events.append("packed \(step)")
+        case .block(let step, let index, _): events.append("block \(step).\(index)")
+        case .heads(let step, let video, _): events.append("heads \(step) \(Int(try! video.floatValues()[0]))")
+        case .advanced(let step, let latents): events.append("advanced \(step)"); last = latents
+        }
+    }
+}
+private struct ObserverFailure: Error {}
+
+@Test func h3ProfileDenoiserObserverIsOptInAndLeavesTheTrajectoryUnchanged() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: 4))
+    let schedule = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    var steps: [H3Profile.Step] = []
+    for step in schedule.steps {
+        let k = layout.timesteps(for: step).values.count
+        let table = try file(root, "table-\(step.index)", bf16([Float](repeating: Float(step.index), count: 6 * 3 * k * 5376)), .bfloat16, [6, 3 * k, 5376])
+        let temb = try file(root, "temb-\(step.index)", [Float](repeating: Float(step.index), count: k * 2688).withUnsafeBytes { Data($0) }, .float32, [k, 2688])
+        steps.append(H3Profile.Step(timesteps: layout.timesteps(for: step).values, embedding: temb, tables: Array(repeating: table, count: 3)))
+    }
+    let frozen = steps
+    let initial = try geometry.initialLatents(seed: 9)
+    let conditioning = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 2))
+    func run(_ observer: H3DenoiserObserver?) async throws -> (log: [String], result: H3Latents) {
+        let calls = Calls()
+        let denoiser = H3ProfileDenoiser(schedule: schedule, blocks: 3, tables: { _ in frozen }, kernels: TrajectoryKernels(calls: calls, layout: layout),
+                                         observer: observer)
+        let result = try await denoiser.denoise(initial, conditioning: conditioning, geometry: geometry) { _, _ in }
+        return (await calls.log, result)
+    }
+    // The default path (no observer) and an observed run issue exactly the same kernel calls, so observing adds no
+    // native call or readback, and they produce identical latents.
+    let plain = try await run(nil)
+    let seen = Observations()
+    let observed = try await run { event in await seen.add(event) }
+    #expect(observed.log == plain.log)
+    #expect(observed.result.video.bytes == plain.result.video.bytes && observed.result.audio.bytes == plain.result.audio.bytes)
+    var expected = ["refined"]
+    for s in 0..<4 { expected += ["start \(s)", "packed \(s)"] + (0..<3).map { "block \(s).\($0)" } + ["heads \(s) \(s + 1)", "advanced \(s)"] }
+    #expect(await seen.events == expected)
+    #expect(await seen.first?.video.bytes == initial.video.bytes)
+    let last = await seen.last
+    #expect(last?.video.bytes == plain.result.video.bytes && last?.audio.bytes == plain.result.audio.bytes)
+    // An observer error fails the trajectory at that boundary.
+    await #expect(throws: ObserverFailure.self) {
+        _ = try await run { event in if case .block(1, 2, _) = event { throw ObserverFailure() } }
+    }
+}
+
 // MARK: Decoders
 
 private struct TileKernel: H3TileKernel {

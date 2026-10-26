@@ -107,11 +107,18 @@ enum H3ProfileCommand {
             return true
         case "h3-profile-run":
             guard arguments.count >= 6, ["--graphs", "--render"].contains(arguments[5]) else {
-                throw AetherError.invalidRequest("use h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio]")
+                throw AetherError.invalidRequest("use h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio] [--capture=all|S,S,...|--replay=CAPTURE_RUN]")
+            }
+            // --render only: --capture saves the trajectory boundaries of the listed steps and hashes every boundary;
+            // --replay hashes every boundary and requires each to equal that capture's.
+            let capture = arguments.first { $0.hasPrefix("--capture=") }.map { String($0.dropFirst("--capture=".count)) }
+            let replay = arguments.first { $0.hasPrefix("--replay=") }.map { URL(fileURLWithPath: String($0.dropFirst("--replay=".count))) }
+            guard arguments[5] == "--render" || (capture == nil && replay == nil), capture == nil || replay == nil else {
+                throw AetherError.invalidRequest("--capture and --replay apply to --render, one at a time")
             }
             try await execute(profile: URL(fileURLWithPath: arguments[1]), dump: URL(fileURLWithPath: arguments[2]),
                               references: arguments[3] == "-" ? nil : URL(fileURLWithPath: arguments[3]), output: URL(fileURLWithPath: arguments[4]),
-                              render: arguments[5] == "--render", audio: !arguments.contains("--no-audio"))
+                              render: arguments[5] == "--render", audio: !arguments.contains("--no-audio"), capture: capture, replay: replay)
             return true
         case "h3-weights-bench":
             // CPU only: how long one denoising step's per-block weight reads take (what NativeH3Graph does per block call).
@@ -210,7 +217,8 @@ enum H3ProfileCommand {
         print(output.path)
     }
 
-    private static func execute(profile url: URL, dump: URL, references: URL?, output: URL, render: Bool, audio: Bool) async throws {
+    private static func execute(profile url: URL, dump: URL, references: URL?, output: URL, render: Bool, audio: Bool,
+                                capture: String? = nil, replay: URL? = nil) async throws {
         let profile = try H3Profile(url: url)
         guard try H3RawDirectory.field(dump, "profile_sha256") == profile.manifestSHA256 else { throw AetherError.invalidModel("dump was made for another profile") }
         let geometry = try H3Geometry(width: Int(H3RawDirectory.field(dump, "width"))!, height: Int(H3RawDirectory.field(dump, "height"))!,
@@ -243,7 +251,14 @@ enum H3ProfileCommand {
                 let ids = try H3RawDirectory.read(dump, "ids")
                 let tokens = ids.bytes.withUnsafeBytes { Array($0.bindMemory(to: Int32.self)) }
                 let tape = H3RenderTape()
-                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens })
+                var recorder: H3TrajectoryRecorder? = nil
+                var observer: H3DenoiserObserver? = nil
+                if capture != nil || replay != nil {
+                    let made = try H3TrajectoryRecorder(directory: output.appendingPathComponent("capture"), steps: capture, reference: replay)
+                    recorder = made
+                    observer = { @Sendable (event: H3DenoiserObservation) async throws -> Void in try await made.record(event) }
+                }
+                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens }, observer: observer)
                 let session = H3VideoSession(stages: H3VideoStages(conditioner: TapeConditioner(inner: stages.conditioner, tape: tape),
                                                                    keyframes: stages.keyframes,
                                                                    denoiser: TapeDenoiser(inner: stages.denoiser, tape: tape),
@@ -267,6 +282,16 @@ enum H3ProfileCommand {
                 if let latents = await tape.latents { try out.put("final_video", latents.video); try out.put("final_audio", latents.audio) }
                 try out.putBytes("frames", await tape.frames, dtype: "uint8", shape: [result.frames, geometry.height, geometry.width, 3])
                 if let pcm = await tape.pcm { try out.put("pcm", floats(pcm.channels[0] + pcm.channels[1], [2, pcm.sampleCount])) }
+                if let recorder {
+                    let summary = try await recorder.finish()
+                    out.fields["trajectory_hashes"] = String(summary.hashes)
+                    if let mismatches = summary.mismatches {
+                        out.fields["replay_mismatches"] = String(mismatches.count)
+                        guard mismatches.isEmpty else {
+                            throw AetherError.invalidModel("replay differs from the capture at \(mismatches.count) boundaries, first \(mismatches.prefix(5))")
+                        }
+                    }
+                }
             } else {
                 let qualifier = try H3ProfileQualifier(profile: profile)
                 if let first = try firstFrame(dump, geometry: geometry) {
@@ -426,5 +451,71 @@ private actor H3StageClock {
             if let start = firstStep { timings.append(H3Timing(name: "step.\(step)/\(total)", seconds: seconds(now - start), memory: memory)); firstStep = now }
         default: break
         }
+    }
+}
+
+/// Records the profile denoiser's trajectory for the CPU trajectory oracle (`--capture`), or checks a fresh run
+/// against one (`--replay`). Every boundary (refined text, each step's input latents, packed sequence, all 50 block
+/// outputs, heads, updated latents) is hashed; `--capture` also saves the tensors the CPU references read for the
+/// selected steps: input latents, packed (block 0's input), blocks 0 and 49, block 48's output (`context49`, block
+/// 49's input), heads and updated latents.
+private actor H3TrajectoryRecorder {
+    struct Summary { let hashes: Int; let mismatches: [String]? }
+    private let out: H3RawDirectory?
+    private let steps: Set<Int>?
+    private let reference: [String: String]?
+    private var hashes: [String: String] = [:]
+
+    init(directory: URL, steps: String?, reference: URL?) throws {
+        if let reference {
+            struct Manifest: Decodable { struct Report: Decodable { let hashes: [String: String] }; let report: Report }
+            let manifest = reference.appendingPathComponent("capture/manifest.json")
+            self.reference = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifest)).report.hashes
+            self.out = nil; self.steps = nil
+        } else {
+            self.reference = nil
+            self.steps = try steps.flatMap { spec in
+                spec == "all" ? nil : Set(try spec.split(separator: ",").map { guard let s = Int($0) else { throw AetherError.invalidRequest("bad --capture step \($0)") }; return s })
+            }
+            self.out = try H3RawDirectory(new: directory)
+        }
+    }
+
+    private func note(_ name: String, _ tensor: H3TensorData, step: Int?) throws {
+        hashes[name] = tensor.sha256
+        if let out, step.map({ steps?.contains($0) ?? true }) ?? true { try out.put(name, tensor) }
+    }
+
+    func record(_ event: H3DenoiserObservation) throws {
+        switch event {
+        case .refined(let refined): try note("refined", refined, step: nil)
+        case .stepStarted(let s, let latents):
+            try note("step\(s)_latents_in_video", latents.video, step: s); try note("step\(s)_latents_in_audio", latents.audio, step: s)
+        case .packed(let s, let hidden): try note("step\(s)_packed", hidden, step: s)
+        case .block(let s, let index, let output):
+            let name = String(format: "step%d_block%02d", s, index)
+            switch index {
+            case 0, 49: try note(name, output, step: s)
+            case 48:
+                hashes[name] = output.sha256
+                if let out, steps?.contains(s) ?? true { try out.put("step\(s)_context49", output) }
+            default: hashes[name] = output.sha256
+            }
+        case .heads(let s, let video, let audio): try note("step\(s)_heads_video", video, step: s); try note("step\(s)_heads_audio", audio, step: s)
+        case .advanced(let s, let latents):
+            try note("step\(s)_latents_out_video", latents.video, step: s); try note("step\(s)_latents_out_audio", latents.audio, step: s)
+        }
+    }
+
+    func finish() throws -> Summary {
+        struct Report: Encodable { let hashes: [String: String]; let steps: [Int]? }
+        if let out {
+            out.fields = ["mode": "capture"]
+            try out.save(Report(hashes: hashes, steps: steps?.sorted()))
+            return Summary(hashes: hashes.count, mismatches: nil)
+        }
+        let reference = reference ?? [:]
+        let names = Set(reference.keys).union(hashes.keys).sorted()
+        return Summary(hashes: hashes.count, mismatches: names.filter { reference[$0] != hashes[$0] })
     }
 }
