@@ -1,6 +1,6 @@
 # v0.0.1 release checklist
 
-Status: in progress, 2026-10-26. Unchecked items are open; checked items cite their evidence. This release is cut from `main`'s line (branch `release/0.0.1`, based on `c62ac37`). A parallel local line developed from the same scaffold is preserved as `local-line-2026-10-26`; its language runtime, concurrent stream verification and benchmark residency option were ported here.
+Status: released 2026-10-26 (`0.0.1` → `d3da985`). Unchecked items are open; checked items cite their evidence. This release is cut from `main`'s line (branch `release/0.0.1`, based on `c62ac37`). A parallel local line developed from the same scaffold is preserved as `local-line-2026-10-26`; its language runtime, concurrent stream verification and benchmark residency option were ported here.
 
 ## Scope and decisions
 
@@ -52,6 +52,6 @@ Status: in progress, 2026-10-26. Unchecked items are open; checked items cite th
 
 ## Tag and verify
 
-- [ ] Annotated tag `0.0.1` on the release commit.
-- [ ] Push `release/0.0.1` and the tag; land the branch on `main` by pull request or fast-forward.
-- [ ] Install check: a fresh consumer resolves `.package(url:…, exact: "0.0.1")` and builds.
+- [x] Annotated tag `0.0.1` on `d3da985`.
+- [x] Pushed `release/0.0.1`, fast-forwarded `main` from `c62ac37` to `d3da985`, and pushed the tag.
+- [x] Install check: a fresh consumer resolved `.package(url: "https://github.com/atelier-private-dev/aether-kit", exact: "0.0.1")` to `d3da985`, then built and ran against Kit, Assets, Krea, language and H3. Consumers resolve their own transitive tokenizer dependency versions (swift-collections 1.7.4 and swift-jinja 2.5.2 in that check); `NOTICE` cites this repository's lockfile versions.
