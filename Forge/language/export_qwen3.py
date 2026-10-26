@@ -3,7 +3,7 @@
 
 Requires torch, safetensors, coreai-torch and coreai (runtime) — e.g. the aether-engine forge venv, used read-only:
 
-    <venv>/bin/python -I Forge/language/export_qwen3.py --checkpoint <hf snapshot> --contract bucketed --output <dir>
+    <venv>/bin/python -I Forge/language/export_qwen3.py --checkpoint <hf snapshot> [--contract running] --output <dir>
     <venv>/bin/python -I Forge/language/export_qwen3.py --tiny --contract bucketed --output <dir>
 
 Writes only under the new `--output` directory: `model.aimodel/`, `tokenizer/` (checkpoint exports), and
@@ -188,7 +188,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--tiny", action="store_true", help="random-weight two-layer model (contract spike)")
-    parser.add_argument("--contract", choices=CONTRACTS, required=True)
+    parser.add_argument("--contract", choices=CONTRACTS, default="bucketed",
+                        help="bucketed (default): bounded shapes, no recycling; running: 0.0.1 contract")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-prefill-chunk", type=int, default=MAX_PREFILL_CHUNK)
     parser.add_argument("--max-capacity", type=int, default=16384)
