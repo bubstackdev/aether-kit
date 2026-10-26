@@ -746,3 +746,81 @@ private struct DelayedKreaOpen: KreaModelFactory {
     #expect(budget.snapshot.reservedBytes == 0)
     #expect(log.snapshot == ["open:denoiser0.aimodel", "close0"])
 }
+
+@Test(.timeLimit(.minutes(1))) func sharedGPUAdmissionGatesOperationsBeforeAnyModelOpens() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let log = EventLog()
+    let admission = try GPUAdmission()
+    let session = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: log),
+                                            gpu: admission.owner("krea"))
+    let other = try await admission.admit(owner: "another session")
+    let generation = Task {
+        try await session.generate(configuration: KreaConfiguration(width: 16, height: 16),
+            prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)),
+            noise: FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64)))
+    }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(log.snapshot.isEmpty)
+    #expect(await session.state == .running)
+    other.release()
+    _ = try await generation.value
+    #expect(log.snapshot.contains("open:denoiser0.aimodel"))
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    // Fail-fast admission refuses while another grant runs, before opening anything, and the session stays usable.
+    let failFast = try GPUAdmission(waiting: .failFast)
+    let quick = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: EventLog()),
+                                          gpu: failFast.owner("krea"))
+    let busy = try await failFast.admit(owner: "another session")
+    await #expect(throws: GPUAdmissionError.busy) {
+        try await quick.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    }
+    #expect(await quick.state == .ready)
+    busy.release()
+    _ = try await quick.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    await quick.unload()
+    await session.unload()
+}
+
+@Test(.timeLimit(.minutes(1))) func aSessionWaitingForTheGPUHoldsNoOperationReservation() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), gate = PipelineGate()
+    let budget = try ResourceCoordinator(capacityBytes: 200)
+    let admission = try GPUAdmission()
+    let running = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: EventLog(), gate: gate),
+                                        resources: try resourceProfile(assets, budget: budget), gpu: admission.owner("a"))
+    let waiting = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: EventLog()),
+                                        resources: try resourceProfile(assets, budget: budget), gpu: admission.owner("b"))
+    let config = try KreaConfiguration(width: 16, height: 16)
+    let noise = try FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64))
+    let first = Task { try await running.generate(configuration: config, conditioning: oneRow(), noise: noise) }
+    await gate.waitUntilEntered()
+    #expect(budget.snapshot.reservedBytes == 55)
+    let second = Task { try await waiting.generate(configuration: config, conditioning: oneRow(), noise: noise) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    // The queued session reserved nothing: the running one keeps all the capacity it needs.
+    #expect(budget.snapshot.reservedBytes == 55)
+    await gate.release()
+    _ = try await first.value
+    _ = try await second.value
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    await running.unload(); await waiting.unload()
+    #expect(budget.snapshot.reservedBytes == 0)
+}
+
+@Test(.timeLimit(.minutes(1))) func unloadWithdrawsAnOperationStillWaitingForTheGPU() async throws {
+    let fixture = try BundleFixture(); defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root), log = EventLog()
+    let admission = try GPUAdmission()
+    let session = KreaGenerationSession(assets: assets, factory: try FakeFactory(log: log), gpu: admission.owner("krea"))
+    let other = try await admission.admit(owner: "another session")
+    let generation = Task { try await session.generate(configuration: KreaConfiguration(width: 16, height: 16), conditioning: oneRow()) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    // Unload returns although the GPU stays busy; the waiting operation ends as closed without opening a model.
+    await session.unload()
+    await #expect(throws: AetherError.sessionClosed) { try await generation.value }
+    #expect(await session.state == .closed)
+    #expect(log.snapshot.filter { $0.hasPrefix("open:") }.isEmpty)
+    #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
+    other.release()
+}

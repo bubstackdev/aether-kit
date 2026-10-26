@@ -1,0 +1,17 @@
+16:34:41 wrapper 495ab1b97c0d82c4 lease /private/tmp/claude-501/-Users-zakkeown-Code-bubstackdev-aether-aether-kit/71116793-11cf-40b6-9fdc-aa56d272af0e/scratchpad/gpu-lease/wrapper-run-4/gpu.lock lock /private/tmp/claude-501/-Users-zakkeown-Code-bubstackdev-aether-aether-kit/71116793-11cf-40b6-9fdc-aa56d272af0e/scratchpad/gpu-lease/wrapper-run-4/wrapdir/gpu.lock
+16:34:41 --- 1. The wrapper hands its lease to Kit tools explicitly
+16:34:41 PASS Kit helper inherits the wrapper's lease: 0 inherited
+16:34:41 PASS aether-probe runs at once under the wrapper (missing model: exit 1, no wait): 1 1 0
+16:34:41 PASS lease released after the command: none
+16:34:41 --- 2. A wrapper interrupted by SIGTERM stops its command tree before releasing
+16:34:41 PASS the command runs with the wrapper's pid in the lease: 70714
+16:34:42 PASS wrapper exit status: 130
+16:34:42 PASS command stopped: gone
+16:34:42 PASS command's own child stopped: gone
+16:34:42 PASS lease released after the command stopped: none
+16:34:42 PASS interruption logged: 1
+16:34:42 --- 3. A pid-less lease is logged explicitly and never removed by a waiting wrapper
+16:34:42 PASS pid-less lease logged: 1
+16:34:47 PASS the waiting wrapper left the pid-less lease alone: dir
+16:34:47 final directory: (no lease or leftovers)
+16:34:47 failures=0

@@ -40,6 +40,7 @@ private struct DecoderReport: Encodable {
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION"] == "1"), .timeLimit(.minutes(20)))
 func nativePipelineDecoderCancellationAndRecovery() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_DECODER_PIPELINE_OUTPUT")
     guard !FileManager.default.fileExists(atPath: output.path) else { throw NativeFailure(description: "decoder pipeline output exists") }
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -198,6 +199,7 @@ func nativePipelineDecoderCancellationAndRecovery() async throws {
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_DECODER_QUALIFICATION"] == "1"), .timeLimit(.minutes(15)))
 func nativeDecoderCancellationAndRecovery() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_DECODER_OUTPUT")
     guard !FileManager.default.fileExists(atPath: output.path) else { throw NativeFailure(description: "decoder output exists") }
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)

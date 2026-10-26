@@ -229,6 +229,7 @@ private func nativeFloats(_ url: URL) throws -> [Float] {
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_QUALIFICATION"] == "1"), .timeLimit(.minutes(60)))
 func nativeKreaSessionQualification() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_OUTPUT")
     guard !FileManager.default.fileExists(atPath: output.path) else {
         throw NativeFailure(description: "native output directory already exists; choose a new directory")

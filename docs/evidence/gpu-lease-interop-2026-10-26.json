@@ -1,0 +1,80 @@
+{
+  "recordedAt": "2026-10-26",
+  "branch": "v0.0.2/gpu-lease",
+  "codeRevision": "5087ddc97f5b2aa7c4ce23b67495bd580fb95fbc",
+  "codeRevisionScope": "Sources, tests and Package.swift at codeRevision (the second review-round commit, on origin/main 32555a7); this record is committed on top of it without code changes.",
+  "scope": "Kit SharedGPULease and aether-probe against Atelier's SharedGPULock (verbatim source, compiled into a private-directory simulator) and against the with-gpu-lock.sh lease protocol. The recorded runs used a private lease directory only (see notes); Atelier's app was not run; no GPU or model work ran (the probe targeted a missing model, which fails before any Core AI call).",
+  "environment": {
+    "macOS": "27.0.1",
+    "chip": "Apple M5 Max",
+    "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0"
+  },
+  "atelierSource": {
+    "path": "atelier/app/Native/Sources/AtelierNativeRuntime/Resources.swift",
+    "sha256": "b1221de70019451362eab84468e0c149e3618b185c65c28e17b3b706487f1049",
+    "sharedGPULockLines": [
+      135,
+      231
+    ],
+    "sharedGPULockSHA256": "64f4b5135e8841ac8803f16a37d835ed00af4cf88b9beff2568a6769c5aae97b",
+    "simulator": "The SharedGPULock class copied verbatim (package access removed), a one-case NativeHostError, and a main with modes hold DIR and try DIR; built with swiftc -O -swift-version 6.",
+    "simulatorSourceSHA256": "b7dc89fb009c6c989504c0c47533a2916bbe2b11a0cb1c85849d57ebab7e7812",
+    "simulatorBinarySHA256": "f434450af2889552438ece7f46dbd155ff4a3e32ba0ed0cc08ae3eb83d221a9a"
+  },
+  "kitBinaries": {
+    "AetherGPULeaseHelper": "b74538bca4d8140002d5c0c2af2411395405fc5752008948fb83519903e25a6f",
+    "aether-probe": "72e4aa17f22589b7007adb2dbfd1ee24739e031ea45920f3f2092d620aab3a34",
+    "configuration": "release, built by Scripts/check-cpu.sh at codeRevision"
+  },
+  "driver": {
+    "script": "gpu-lease-interop-check.zsh",
+    "sha256": "1fa42080a4adbd2b1c39f72d990c73d00d6d8e3060cde13852b1f22c0fe9ea26"
+  },
+  "interop": {
+    "log": "gpu-lease-interop-2026-10-26.log",
+    "logSHA256": "b58cb26e39f2088a3128fd067a72e8241fac883b6b6c4f4cc8b92dc88fbb479f",
+    "checks": 27,
+    "passed": 27,
+    "failed": 0,
+    "scenarios": [
+      "Atelier holds: Kit fail-fast reports held by the Atelier pid, Kit timed wait times out, aether-probe inspect times out before touching the model",
+      "Kit waits; Atelier default SIGTERM handling releases; Kit acquires",
+      "Kit holds: Atelier is reserved; Kit SIGTERM release lets Atelier acquire",
+      "Each side reclaims the other's SIGKILLed lease through the shared 0600 .reclaim flock file",
+      "aether-probe waits for an Atelier holder, then runs and releases on its error path",
+      "aether-probe under a wrapper-style parent waits (naming the ancestor) without a hand-off, and inherits the parent's lease, leaving it in place, only with AETHER_GPU_LEASE_HOLDER",
+      "Kit fail-fast and waiting acquisition against a wrapper-style holder"
+    ],
+    "repeatRuns": 3,
+    "notes": "An earlier draft of the driver did not pin aether-probe to the private lease in scenario 6, so that scenario exercised the shared /tmp/atelier-gpu.lock instead of inheritance (the probe took and released the free shared lease for milliseconds, then timed out once while another agent held it). Those runs are superseded. The driver now exports AETHER_GPU_LEASE_PATH for every probe, and these runs passed while the shared lease was held by an unrelated process, so the probe cannot have used it. After review, inheritance requires an explicit hand-off; scenario 6 now checks both the refusal and the hand-off."
+  },
+  "proposedWrapper": {
+    "file": "gpu-lease-with-gpu-lock-proposed.zsh",
+    "sha256": "495ab1b97c0d82c418fdde20f47e4e05ca19d976e991fab79016913f54dc6b7c",
+    "installedCopyUnchanged": "The running ~/.cache/aether-kit/with-gpu-lock.sh was not modified; the coordinator installs the proposal.",
+    "check": "gpu-lease-wrapper-check.zsh",
+    "checkSHA256": "655a43eb2daa22c328318148be5db00ee36191297b8c6fd2168e8808174d7994",
+    "log": "gpu-lease-wrapper-check-2026-10-26.log",
+    "logSHA256": "a7da375cc50bfdd3a63baedf873a226a2fcfc8366b8f1aa57804ce0b84c7bb34",
+    "checks": 11,
+    "failed": 0,
+    "scope": "Private lease and lockf paths via AETHER_GPU_LEASE_PATH and AETHER_GPU_WRAPPER_DIR: hand-off to the Kit helper and aether-probe, SIGTERM stopping the command tree before release, pid-less lease logged and left alone."
+  },
+  "sourceSHA256": {
+    "Sources/AetherKit/SharedGPULease.swift": "a4be3232fe0650915d28cf73a31999c92c907b638b47b7376bcdbf33764f599a",
+    "Sources/AetherKit/GPUAdmission.swift": "d43d70d3e530139890a578ff70cd33654c0364a94a6709321ee764811fdd1077",
+    "Sources/AetherKit/FairInferenceQueue.swift": "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
+    "Sources/AetherProbe/ProbeGPULease.swift": "68301c685ddff22ec321ed34d6cf4eb6fe3900c0bc73f4a6e18312045d519994",
+    "Sources/AetherProbe/AetherProbe.swift": "c8e3a070c3a221eeb1b7cace11a717b1d375dce0424ad40806790054b8f471cb",
+    "Tests/AetherGPULeaseHelper/main.swift": "bbc7425f056f38ee044fb2973aba2cdd3469863877006f023cb484c649a7bdb4"
+  },
+  "cpuSuite": {
+    "command": "sh Scripts/check-cpu.sh",
+    "registered": 334,
+    "passed": 316,
+    "skipped": 18,
+    "failed": 0,
+    "log": "gpu-lease-cpu-tests-2026-10-26.log",
+    "logSHA256": "45a9ed1b3bc847b22ac1d744de23420d392ed14a3fd64b07c2ffcad532eb1072"
+  }
+}

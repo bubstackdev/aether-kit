@@ -37,11 +37,17 @@ public actor KreaGenerationSession {
     private let bundleFingerprint: String
     private var active: Task<Void, Never>?
     private let resources: KreaResourceAdmission?
+    private let gpu: GPUAdmissionOwner?
+    private var pendingGPU: GPUAdmissionAttempt?
 
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each operation waits for (or, in fail-fast mode, requires) a
+    /// grant before any model work and holds it until the operation's native work has joined. With admission, the
+    /// operation's resource reservation is taken after the grant, and `unload()` withdraws an operation still waiting.
     public init(assets: KreaAssets, compute: ModelComputePolicy = .preferGPU, residency: KreaResidency = .balanced,
-                resources: KreaResourceAdmission? = nil) {
+                resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         let factory = NativeKreaFactory(compute: compute, installation: nil)
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
@@ -49,18 +55,21 @@ public actor KreaGenerationSession {
     /// Holds installation protection through every stage and releases it after terminal joined unload.
     /// External specialization/refine models are not imported; undeclared paths refuse.
     public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
-                residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil) throws {
+                residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil,
+                gpu: GPUAdmissionOwner? = nil) throws {
         let assets = try KreaAssets.open(in: installation)
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         let factory = NativeKreaFactory(compute: compute, installation: KreaInstallationAccess(installation))
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
 
     init(assets: KreaAssets, factory: any KreaModelFactory, residency: KreaResidency = .balanced,
-         resources: KreaResourceAdmission? = nil) {
+         resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
 
@@ -184,15 +193,27 @@ public actor KreaGenerationSession {
         try Task.checkCancellation()
         guard state != .closing, state != .closed else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
-        let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        let resources = resources
+        let reserve: @Sendable () throws -> ResourceReservation? = {
+            try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        }
+        // Without GPU admission, reserve before starting, as before. With it, reserve only once granted, so a request
+        // waiting for the GPU never holds capacity the running one needs.
+        let early = gpu == nil ? try reserve() : nil
+        let attempt = gpu.map(GPUAdmissionAttempt.init)
         let task = Task {
+            let grant = try await attempt?.admit(orThrow: { AetherError.sessionClosed })
+            defer { grant?.release() }
+            let reservation = try attempt == nil ? early : reserve()
             defer { reservation?.release() }
             return try await operation()
         }
         active = Task { _ = await task.result }
+        pendingGPU = attempt
         state = .running
         defer {
             active = nil
+            pendingGPU = nil
             if state == .running { state = .ready }
         }
         return try await withTaskCancellationHandler {
@@ -206,6 +227,8 @@ public actor KreaGenerationSession {
     public func unload() async {
         guard state != .closed else { return }
         state = .closing
+        // An operation still waiting for GPU admission is withdrawn instead of waited for.
+        pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
         state = .closed

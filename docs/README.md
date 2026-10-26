@@ -58,3 +58,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 
 [FLUX.2 klein](flux2-klein.md) covers the text-to-image and multi-reference products, the locally exported int8 bundle, independent float32 Diffusers references and the opt-in native parity gate. Both native runs pass every check: 12 cases from 512² to 1344×768, including one- and two-reference editing ([qualification record](evidence/flux2-klein-qualification-2026-10-26.json)). After the rebase onto 0.0.1, parity passed again with identical values, and the native lifecycle suite passed 44/44 checks ([lifecycle record](evidence/flux2-klein-lifecycle-qualification-2026-10-26.json)).
 
+## Shared GPU lease and admission (0.0.2)
+
+[Shared GPU lease and admission](gpu-lease.md) covers the Kit-owned, Atelier-compatible `/tmp/atelier-gpu.lock` lease, which Kit tools take by default. It also covers opt-in in-process GPU admission for sessions, built on the adopted `FairInferenceQueue`, and the [recorded Kit–Atelier interop check](evidence/gpu-lease-interop-2026-10-26.json).
+

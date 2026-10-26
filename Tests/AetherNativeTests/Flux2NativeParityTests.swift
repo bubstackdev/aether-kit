@@ -23,6 +23,7 @@ import Testing
                && nativeEnvironment["AETHER_FLUX2_OUTPUT"] != nil),
       .timeLimit(.minutes(90)))
 func flux2NativeParityAgainstIndependentReferences() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let env = nativeEnvironment
     let output = URL(fileURLWithPath: try #require(env["AETHER_FLUX2_OUTPUT"]))
     #expect(!FileManager.default.fileExists(atPath: output.path), "output directory must be new")

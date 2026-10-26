@@ -14,6 +14,7 @@ import Testing
                && nativeEnvironment["AETHER_KREA_BUNDLE"] != nil && nativeEnvironment["AETHER_KREA_REFERENCE_FIXTURES"] != nil),
       .timeLimit(.minutes(30)))
 func referenceConditioningMatchesTheOracleRows() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let root = URL(fileURLWithPath: try #require(nativeEnvironment["AETHER_KREA_BUNDLE"]))
     let fixtures = URL(fileURLWithPath: try #require(nativeEnvironment["AETHER_KREA_REFERENCE_FIXTURES"]))
     let assets = try KreaAssets.open(at: root)

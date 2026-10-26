@@ -52,6 +52,8 @@ let package = Package(
         .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI"]),
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit", "AetherAssets"], resources: [.copy("Fixtures")]),
+        // Test-only child process for the GPU lease contention and signal tests. Not a product; never shipped.
+        .executableTarget(name: "AetherGPULeaseHelper", dependencies: ["AetherKit"], path: "Tests/AetherGPULeaseHelper"),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
         .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI"]),
         .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),

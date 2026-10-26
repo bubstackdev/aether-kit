@@ -110,6 +110,7 @@ private func runIndependentReference(binary: URL, bundle: URL, inputs: URL, id: 
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_DYNAMIC_QUALIFICATION"] == "1"), .timeLimit(.minutes(60)))
 func nativeKreaDynamicParityAndStageCancellation() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
     let output = try nativePath("AETHER_NATIVE_DYNAMIC_OUTPUT")
     guard !FileManager.default.fileExists(atPath: output.path) else {
         throw NativeFailure(description: "dynamic output already exists; choose a new directory")

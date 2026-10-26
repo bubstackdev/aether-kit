@@ -22,5 +22,8 @@ benchmark_build() {
 }
 benchmark_build --product aether-probe
 benchmark_bin_dir=$(benchmark_build --show-bin-path)
+# The run mode takes the shared GPU lease (/tmp/atelier-gpu.lock) inside aether-probe and waits while another holder
+# has it; building above needs no lease. AETHER_GPU_LEASE=off or AETHER_GPU_LEASE_TIMEOUT=SECONDS override it
+# (docs/gpu-lease.md).
 exec "$benchmark_bin_dir/aether-probe" benchmark-krea "$AETHER_KREA_BUNDLE" \
     "$benchmark_plan" "$PWD" "$benchmark_output" "$benchmark_mode"

@@ -150,11 +150,13 @@ struct Flux2Harness {
     let session: Flux2GenerationSession
 
     init(references: Bool = true, residency: Flux2Residency = .balanced, gates: [String: Flux2Gate] = [:],
-         failures: Set<String> = [], resources: ((Flux2Assets) throws -> Flux2ResourceAdmission)? = nil) throws {
+         failures: Set<String> = [], resources: ((Flux2Assets) throws -> Flux2ResourceAdmission)? = nil,
+         gpu: GPUAdmissionOwner? = nil) throws {
         fixture = try Flux2BundleFixture(references: references)
         assets = try Flux2Assets.open(at: fixture.root)
         factory = Flux2ScriptedFactory(log: log, gates: gates, failures: failures)
-        session = Flux2GenerationSession(assets: assets, factory: factory, residency: residency, resources: try resources?(assets))
+        session = Flux2GenerationSession(assets: assets, factory: factory, residency: residency, resources: try resources?(assets),
+                                         gpu: gpu)
     }
 }
 
@@ -466,4 +468,55 @@ private func reference(rows: Int, columns: Int, fill: Float) throws -> Flux2Refe
         try Flux2Contracts.value(.float16(Float16Tensor(shape: [2, 128], values: Array(repeating: 0, count: 256))),
                                  type: "float16", shape: [3, 128])
     }
+}
+
+private func estimates(_ coordinator: ResourceCoordinator) -> (Flux2Assets) throws -> Flux2ResourceAdmission {
+    { assets in
+        let models = try ([assets.textEncoder, assets.decoder] + assets.denoisers).map {
+            try Flux2ModelResourceEstimate(asset: $0, residentBytes: 100, runScratchBytes: 10)
+        }
+        return try Flux2ResourceAdmission(coordinator: coordinator, operationBytes: 50, maximumImageTokens: 64, models: models)
+    }
+}
+
+@Test(.timeLimit(.minutes(1))) func sharedGPUAdmissionGatesFluxBeforeAnyModelOpensAndBeforeReserving() async throws {
+    let coordinator = try ResourceCoordinator(capacityBytes: 2_000)
+    let admission = try GPUAdmission()
+    let gate = Flux2Gate()
+    let running = try Flux2Harness(gates: ["denoiser0": gate], resources: estimates(coordinator), gpu: admission.owner("a"))
+    let waiting = try Flux2Harness(resources: estimates(coordinator), gpu: admission.owner("b"))
+    defer { running.fixture.cleanup(); waiting.fixture.cleanup() }
+    let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)
+    let first = Task { try await running.session.generate(configuration: configuration, prompt: prompt()) }
+    await gate.waitUntilEntered()
+    #expect(coordinator.snapshot.reservedBytes == 50 + 300 + 10)
+    let second = Task { try await waiting.session.generate(configuration: configuration, prompt: prompt()) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    // Queued behind the running session: nothing opened and nothing reserved.
+    #expect(waiting.log.snapshot.isEmpty)
+    #expect(coordinator.snapshot.reservedBytes == 50 + 300 + 10)
+    #expect(await waiting.session.state == .running)
+    await gate.release()
+    _ = try await first.value
+    _ = try await second.value
+    #expect(waiting.log.snapshot.contains("open:denoiser0:true"))
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    await running.session.unload(); await waiting.session.unload()
+    #expect(coordinator.snapshot.reservedBytes == 0)
+}
+
+@Test(.timeLimit(.minutes(1))) func fluxUnloadWithdrawsAnOperationStillWaitingForTheGPU() async throws {
+    let admission = try GPUAdmission()
+    let h = try Flux2Harness(gpu: admission.owner("flux"))
+    defer { h.fixture.cleanup() }
+    let other = try await admission.admit(owner: "another session")
+    let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)
+    let task = Task { try await h.session.generate(configuration: configuration, prompt: prompt()) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    await h.session.unload()
+    await #expect(throws: AetherError.sessionClosed) { try await task.value }
+    #expect(await h.session.state == .closed)
+    #expect(h.log.snapshot.filter { $0.hasPrefix("open:") }.isEmpty)
+    #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
+    other.release()
 }

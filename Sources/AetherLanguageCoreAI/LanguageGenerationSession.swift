@@ -51,20 +51,26 @@ public actor LanguageGenerationSession {
     private var growthCount = 0
     private let capacity: Int
     private let lifecycle = LanguageSessionLifecycle()
+    private let gpu: GPUAdmissionOwner?
+    private var pendingGPU: GPUAdmissionAttempt?
     public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
-    public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform) async throws -> LanguageGenerationSession {
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
+    /// grant after validation and holds it until its native submissions have joined. Loading is not admitted.
+    public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
+                            gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
         let modelURL = try manifest.verify(in: directory, platform: platform)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
-            stopTokenIDs: Set(manifest.stopTokenIDs))
+            stopTokenIDs: Set(manifest.stopTokenIDs), gpu: gpu)
     }
 
     /// Explicit raw-asset entry point for qualification before bundle registration.
     public static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
                             stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
-                            expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int = 128) async throws -> LanguageGenerationSession {
+                            expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int = 128,
+                            gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
         guard maximumSubmissionsPerModel > 0 else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
         var options: SpecializationOptions
@@ -77,14 +83,15 @@ public actor LanguageGenerationSession {
         let model = try await AIModel(contentsOf: modelURL, options: options)
         try Task.checkCancellation()
         let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
-            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs)
+            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, gpu: gpu)
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
             expectFrequentReshapes: expectFrequentReshapes, maximumSubmissions: maximumSubmissionsPerModel))
         return session
     }
     public static var deviceArchitectureName: String { AIModel.deviceArchitectureName }
 
-    public init(model: AIModel, capacity: Int = 512, initialCacheCapacity: Int = 256, stopTokenIDs: Set<Int> = [151645]) throws {
+    public init(model: AIModel, capacity: Int = 512, initialCacheCapacity: Int = 256, stopTokenIDs: Set<Int> = [151645],
+                gpu: GPUAdmissionOwner? = nil) throws {
         guard capacity > 0, capacity <= 16384, initialCacheCapacity > 0,
               let d = model.functionDescriptor(for: "main"),
               Set(d.inputNames) == ["input_ids", "position_ids"],
@@ -132,6 +139,7 @@ public actor LanguageGenerationSession {
         self.device = device
         self.allocatedCapacity = initial
         self.capacity = capacity
+        self.gpu = gpu
     }
 
     public func generate(prompt: [Int], maximumTokens: Int = 48, prefillChunkSize: Int? = nil,
@@ -140,6 +148,8 @@ public actor LanguageGenerationSession {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
+        let grant = try await admitGPU()
+        defer { grant?.release() }
         let start = ContinuousClock.now
         let next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
         let first = elapsed(start)
@@ -156,6 +166,8 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
+        let grant = try await admitGPU()
+        defer { grant?.release() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
     }
 
@@ -163,11 +175,22 @@ public actor LanguageGenerationSession {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
         defer { lifecycle.finish() }
+        let grant = try await admitGPU()
+        defer { grant?.release() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]
         for (index, token) in continuation.enumerated() {
             rows.append(try await step(tokens: [Int32(token)], position: prompt.count + index, observer: nil))
         }
         return rows
+    }
+
+    /// Waits for GPU admission when the session has one. `unload()` withdraws a request still waiting.
+    private func admitGPU() async throws -> GPUAdmissionGrant? {
+        guard let gpu else { return nil }
+        let attempt = GPUAdmissionAttempt(gpu)
+        pendingGPU = attempt
+        defer { pendingGPU = nil }
+        return try await attempt.admit(orThrow: { LanguageGenerationError.closed })
     }
 
     private func begin(prompt: [Int], reserve: Int, chunkSize: Int?) throws {
@@ -272,6 +295,8 @@ public actor LanguageGenerationSession {
     /// Then the model, function, stream and KV caches are released. Concurrent calls
     /// return once the release completes. Open a new session to load the model again.
     public func unload() async {
+        // A request still waiting for GPU admission is withdrawn, so close never waits behind the GPU queue.
+        pendingGPU?.withdraw()
         guard await lifecycle.beginClose() else { return }
         function = nil
         stream = nil
