@@ -215,6 +215,65 @@ private struct ObserverFailure: Error {}
     }
 }
 
+// MARK: First-frame encoder
+
+private struct KeyframeKernels: H3KeyframeKernels {
+    let calls: Calls
+    func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        await calls.add("whole \(model.url.lastPathComponent) \(pixels.spec.shape)")
+        return try h3Tensor(condition.shape, [Float](repeating: 7, count: condition.byteCount / 4))
+    }
+    func tile(_ model: H3ModelAsset, pixels: H3TensorData) async throws -> H3TensorData {
+        // Each tile's moments carry its first (channel 0, top-left) pixel, so the tail can check order and crop.
+        let origin = try pixels.floatValues()[0]
+        await calls.add("tile \(model.url.lastPathComponent) \(pixels.spec.shape) \(Int(origin))")
+        return try h3Tensor([1, 48, 1, 16, 16], [Float](repeating: origin, count: 48 * 256))
+    }
+    func tail(_ model: H3ModelAsset, tiles: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        let values = try tiles.floatValues()
+        let firsts = stride(from: 0, to: values.count, by: 48 * 256).map { Int(values[$0]) }
+        await calls.add("tail \(model.url.lastPathComponent) \(tiles.spec.shape) \(firsts)")
+        return try h3Tensor(condition.shape, [Float](repeating: 9, count: condition.byteCount / 4))
+    }
+    func release() async { await calls.release() }
+}
+
+private func asset(_ name: String) throws -> H3ModelAsset {
+    try H3ModelAsset(url: URL(fileURLWithPath: "/nonexistent/\(name).aimodel"), function: "main", sha256: zeroHash)
+}
+
+@Test func h3KeyframeEncoderRunsTheWholeFrameGraphWithoutTiledEntries() async throws {
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 22, diagnostic: true)
+    let whole = try asset("whole")
+    let calls = Calls()
+    let encoder = H3ProfileKeyframeEncoder(encoding: { w, h in w == 288 && h == 288 ? .whole(whole) : nil }, kernels: KeyframeKernels(calls: calls))
+    #expect(encoder.supports(geometry))
+    #expect(!encoder.supports(try H3Geometry(width: 320, height: 288, requestedFrames: 22, diagnostic: true)))
+    let rgb = (0..<(288 * 288 * 3)).map { UInt8($0 % 251) }
+    let condition = try await encoder.encode(try H3Keyframe(width: 288, height: 288, rgb: rgb), geometry: geometry)
+    #expect(try condition.spec.shape == [1, 24, 1, 18, 18] && condition.floatValues()[0] == 7)
+    #expect(await calls.log == ["whole whole.aimodel [1, 3, 1, 288, 288]"])
+    await encoder.release()
+    #expect(await calls.released == 1)
+}
+
+@Test func h3KeyframeEncoderRunsEverySourceTileThenTheTailWhenTheManifestDeclaresThem() async throws {
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 22, diagnostic: true)
+    let tiling = try H3SpatialTiling.source(width: 288, height: 288)
+    #expect(tiling.yStarts == [0, 32] && tiling.xStarts == [0, 32])
+    let tile = try asset("tile256"), tail = try asset("tail-288x288")
+    let calls = Calls()
+    let encoder = H3ProfileKeyframeEncoder(encoding: { _, _ in .tiled(tile: tile, tail: tail, tiling: tiling) }, kernels: KeyframeKernels(calls: calls))
+    // Channel 0 at (y, x) is (7y + 3x) mod 251; channels 1 and 2 differ, so a channel mix-up would show.
+    var rgb = [UInt8](repeating: 0, count: 288 * 288 * 3)
+    for y in 0..<288 { for x in 0..<288 { for c in 0..<3 { rgb[(y * 288 + x) * 3 + c] = UInt8((7 * y + 3 * x + 50 * c) % 251) } } }
+    let condition = try await encoder.encode(try H3Keyframe(width: 288, height: 288, rgb: rgb), geometry: geometry)
+    #expect(try condition.spec.shape == [1, 24, 1, 18, 18] && condition.floatValues()[0] == 9)
+    // Row-major over the source split; each tile is the 256 px crop at its start.
+    let origins = tiling.yStarts.flatMap { y in tiling.xStarts.map { x in (7 * y + 3 * x) % 251 } }
+    #expect(await calls.log == origins.map { "tile tile256.aimodel [1, 3, 1, 256, 256] \($0)" } + ["tail tail-288x288.aimodel [4, 48, 1, 16, 16] \(origins)"])
+}
+
 // MARK: Decoders
 
 private struct TileKernel: H3TileKernel {

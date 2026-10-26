@@ -339,13 +339,12 @@ def render_part(dump, out, text, tap_source=None):
     out.save()
 
 
-def trajectory_part(dump, out, run, steps, float32_diagnostic=True):
+def trajectory_part(dump, out, run, steps, float32_diagnostic=False):
     """CPU references at a native trajectory's captured contexts (`h3-profile-run --render --capture`), per step:
     the original packing of the captured input latents and refined text; blocks 0 and 49 on their captured inputs
     (packed / native block-48 output) with live AdaLN from the live time embedding; both heads on the captured block-49
     output; both schedulers' `step` on the captured heads and input latents. Original precision (bf16 blocks), full
-    tensors. With `float32_diagnostic`, each block is also run with the same module upcast to float32 (diagnostic only)."""
-    import copy
+    tensors. With `float32_diagnostic`, a separate pass instead runs each block upcast to float32 (diagnostic only)."""
     report = out.manifest["report"]
     capture = Raw(Path(run.path) / "capture")
     hashes = capture.manifest["report"]["hashes"]
@@ -358,8 +357,8 @@ def trajectory_part(dump, out, run, steps, float32_diagnostic=True):
     rotary = model.rope(shape["position_ids"])
     refined = capture.get("refined")
     assert h.sha256_bytes(refined.contiguous().view(torch.uint8).numpy().tobytes()) == hashes["refined"]
-    blocks = {b: real_block(checkpoint, adapter, b) for b in (0, 49)}
-    blocks32 = {b: copy.deepcopy(m).float() for b, m in blocks.items()} if float32_diagnostic else {}
+    # One block resident at a time, rebuilt per use (bounded resident memory). The float32 diagnostic is a separate
+    # pass (`float32_diagnostic=True`): it upcasts the same module in place and records only native-vs-float32.
     rotary32 = tuple(r.float() for r in rotary)
     comparisons, diagnostics = report.setdefault("comparisons", {}), report.setdefault("float32_diagnostics", {})
     sha = lambda t: h.sha256_bytes(t.contiguous().view(torch.uint8).numpy().tobytes())
@@ -379,6 +378,21 @@ def trajectory_part(dump, out, run, steps, float32_diagnostic=True):
             unique, inverse = shape["plan"][s]
             temb = model.time_embedder(model.time_proj(unique).to(torch.float32))
             adaln = inverse * 3 + shape["token_tags"]
+            if float32_diagnostic:
+                for b, context in ((0, f"step{s}_packed"), (49, f"step{s}_context49")):
+                    x, native = capture.get(context), capture.get(f"step{s}_block{b:02d}")
+                    assert sha(x) == hashes[context if context != f"step{s}_context49" else f"step{s}_block48"]
+                    assert sha(native) == hashes[f"step{s}_block{b:02d}"]
+                    block = real_block(checkpoint, adapter, b).float()
+                    t = time.monotonic()
+                    ref32 = block(x.float(), temb.float(), adaln, rotary32)
+                    del block
+                    diagnostics[f"step{s}/block{b:02d}"] = dict(
+                        native_vs_float32=float((native.float() - ref32).double().norm() / ref32.double().norm()), seconds=round(time.monotonic() - t, 1))
+                    del x, native, ref32
+                out.save()
+                print(f"step {s} float32 diagnostic done", flush=True)
+                continue
             video_in, audio_in = capture.get(f"step{s}_latents_in_video"), capture.get(f"step{s}_latents_in_audio")
             for n, t in ((f"step{s}_latents_in_video", video_in), (f"step{s}_latents_in_audio", audio_in)):
                 assert sha(t) == hashes[n], f"{n} differs from the capture hash"
@@ -390,17 +404,14 @@ def trajectory_part(dump, out, run, steps, float32_diagnostic=True):
             del hidden
             for b, context in ((0, f"step{s}_packed"), (49, f"step{s}_context49")):
                 x = capture.get(context)
+                assert sha(x) == hashes[context if context != f"step{s}_context49" else f"step{s}_block48"], f"{context} differs from the capture hash"
+                block = real_block(checkpoint, adapter, b)
                 t = time.monotonic()
-                reference = blocks[b](x, temb, adaln, rotary)
+                reference = block(x, temb, adaln, rotary)
                 report[f"step{s}_block{b:02d}_seconds"] = round(time.monotonic() - t, 1)
-                native = check(f"step{s}/block{b:02d}", reference, f"step{s}_block{b:02d}")
-                if float32_diagnostic:
-                    # Diagnostic only: where native and the original bf16 module each sit relative to float32 arithmetic.
-                    ref32 = blocks32[b](x.float(), temb.float(), adaln, rotary32).double()
-                    rel = lambda a: float((a.double() - ref32).norm() / ref32.norm())
-                    diagnostics[f"step{s}/block{b:02d}"] = dict(native_vs_float32=rel(native), cpu_bf16_vs_float32=rel(reference))
-                    del ref32
-                del x, native, reference
+                del block
+                check(f"step{s}/block{b:02d}", reference, f"step{s}_block{b:02d}")
+                del x, reference
             final = capture.get(f"step{s}_block49")
             states = model.norm_out(final, temb, inverse).to(model.proj_out.weight.dtype)
             heads_video = check(f"step{s}/heads_video", model.proj_out(states).index_select(1, shape["video_indices"]), f"step{s}_heads_video")
@@ -460,7 +471,7 @@ def main():
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--blocks", default="0,49", help="graphs: blocks to check ('' for none; CPU attention at 960x544 takes hours)")
     ap.add_argument("--steps", default="all", help="trajectory: captured steps to reference ('all' or S,S,...)")
-    ap.add_argument("--no-float32-diagnostic", action="store_true", help="trajectory: skip the float32 block diagnostic")
+    ap.add_argument("--float32-diagnostic", action="store_true", help="trajectory: instead of references, the float32 block diagnostic only")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
     torch.set_grad_enabled(False)
@@ -478,7 +489,7 @@ def main():
     elif args.part == "trajectory":
         steps = list(range(int(dump.field("steps")))) if args.steps == "all" else [int(s) for s in args.steps.split(",")]
         out.manifest["fields"].update(run=str(args.run.resolve()), steps=",".join(map(str, steps)))
-        trajectory_part(dump, out, Raw(args.run), steps, float32_diagnostic=not args.no_float32_diagnostic)
+        trajectory_part(dump, out, Raw(args.run), steps, float32_diagnostic=args.float32_diagnostic)
     else:
         render_part(dump, out, Raw(args.text), Raw(args.tap) if args.tap else None)
     print(out.path)

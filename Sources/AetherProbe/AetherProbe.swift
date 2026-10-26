@@ -62,6 +62,7 @@ struct AetherProbe {
             return
         }
         if try await H3ProfileCommand.run(arguments) { return }
+        if try await H3MemoryDiagnosis.run(arguments) { return }
         if try await H3DenoisingCommand.run(arguments) { return }
         if try await H3PhaseCommand.run(arguments) { return }
         if try await H3QualificationCommand.run(arguments) { return }

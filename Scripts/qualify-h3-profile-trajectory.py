@@ -113,7 +113,11 @@ def main():
         (f"replay-{t}", "gpu", 7200, [str(probe), "h3-profile-run", str(args.profile), d(f"dump-{t}"), "-", d(f"replay-{t}"), "--render", f"--replay={d(f'capture-{t}')}"]),
         (f"oracle-{t}", "cpu", 6 * 3600, [str(args.python), "-I", "-B", str(oracle), "--part", "trajectory", "--dump", d(f"dump-{t}"), "--run", d(f"capture-{t}"),
                                           "--steps", args.steps, "--output", d(f"oracle-{t}"), "--threads", str(args.threads)]),
+        # Diagnostic only, never an acceptance criterion: native blocks against the same modules in float32.
+        (f"float32-{t}", "cpu", 3600, [str(args.python), "-I", "-B", str(oracle), "--part", "trajectory", "--float32-diagnostic", "--dump", d(f"dump-{t}"),
+                                       "--run", d(f"capture-{t}"), "--steps", args.steps, "--output", d(f"float32-{t}"), "--threads", str(args.threads)]),
     ]
+    optional = {f"float32-{t}"}
     records = {}
     for name, kind, budget, command in stages:
         record_path = work / "controllers" / f"{name}.json"
@@ -191,7 +195,7 @@ def main():
         record_path.write_text(json.dumps(record, indent=2) + "\n")
         print(f"{name}: passed={record['passed']} exit={proc.returncode} {record['elapsedSeconds']} s", flush=True)
         records[name] = record
-        if not record["passed"]:
+        if not record["passed"] and name not in optional:
             return 1
 
     def manifest(path):
@@ -237,7 +241,8 @@ def main():
                                     captureHashesSHA256=hashlib.sha256(json.dumps(capture_hashes, sort_keys=True).encode()).hexdigest(),
                                     finalLatents={k: capture_hashes.get(f"step{steps_total - 1}_latents_out_{k}") for k in ("video", "audio")}),
                 comparisons={k: comparisons[k] for k in required if k in comparisons},
-                float32Diagnostics=oracle_report.get("float32_diagnostics"),
+                float32Diagnostics=(manifest(f"float32-{t}")["report"].get("float32_diagnostics")
+                                    if records.get(f"float32-{t}", {}).get("passed") else dict(unavailable=records.get(f"float32-{t}", {}).get("outputError") or "stage failed")),
                 oracleTimings={k: v for k, v in oracle_report.items() if k.endswith("_seconds")}, layoutChecks=layout,
                 oracleFields=manifest(f"oracle-{t}")["fields"],
                 nativeReports={"capture": capture.get("report"), "replay": replay.get("report")}, controllers=records,
