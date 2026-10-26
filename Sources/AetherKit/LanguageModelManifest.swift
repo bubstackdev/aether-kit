@@ -17,6 +17,9 @@ public struct LanguageModelManifest: Codable, Sendable {
     public let platform: Platform
     public let quantization: String
     public let supportsReasoning: Bool?
+    /// The shape bounds the asset was exported with. Required to open a bucketed-contract asset,
+    /// whose submissions must stay inside them; optional for running-contract assets.
+    public let exportBounds: LanguageExportBounds?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
@@ -26,7 +29,9 @@ public struct LanguageModelManifest: Codable, Sendable {
               maximumContextLength > 0, maximumContextLength <= 16384, !stopTokenIDs.isEmpty,
               stopTokenIDs.allSatisfy({ $0 >= 0 }), Self.hex(sourceRevision, count: 40),
               Self.hex(modelSHA256, count: 64), Self.hex(tokenizerSHA256, count: 64),
-              !sourceRepository.isEmpty else { throw AetherError.invalidModel("invalid language model registration or platform") }
+              !sourceRepository.isEmpty, exportBounds?.isValid ?? true,
+              maximumContextLength <= exportBounds?.maximumCacheCapacity ?? .max
+        else { throw AetherError.invalidModel("invalid language model registration or platform") }
         let model = try Self.child(modelDirectory, of: directory)
         let tokenizer = try Self.child(tokenizerDirectory, of: directory)
         guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
@@ -60,4 +65,20 @@ public struct LanguageModelManifest: Codable, Sendable {
         guard url.path.hasPrefix(base.path + "/") else { throw AetherError.invalidModel("language model path escapes bundle") }
         return url
     }
+}
+
+/// Shape bounds a language asset was exported with (its dynamic-dimension maxima). Kit keeps every
+/// submission inside them: prefill chunks no longer than `maximumPrefillChunk` tokens and caches
+/// no larger than `maximumCacheCapacity` tokens. Submissions outside the exported bounds would fail
+/// inside Core AI rather than at admission.
+public struct LanguageExportBounds: Codable, Sendable, Equatable {
+    public let maximumPrefillChunk: Int
+    public let maximumCacheCapacity: Int
+
+    public init(maximumPrefillChunk: Int, maximumCacheCapacity: Int) {
+        self.maximumPrefillChunk = maximumPrefillChunk
+        self.maximumCacheCapacity = maximumCacheCapacity
+    }
+
+    public var isValid: Bool { maximumPrefillChunk > 0 && maximumCacheCapacity >= 2 }
 }

@@ -14,11 +14,15 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
   - `GPUAdmission`, `GPUAdmissionOwner` and `GPUAdmissionGrant`: explicitly shared in-process admission that queues fairly or fails fast. The lease is an optional backend for unsandboxed hosts, with bounded turns between processes.
   - `FairInferenceQueue`, adopted from an earlier transport-independent admission design.
 - **Sessions:** `KreaGenerationSession`, `Flux2GenerationSession`, `H3VideoSession` and `LanguageGenerationSession` accept an optional `gpu: GPUAdmissionOwner`. With it, operation reservations are taken after the grant and `unload()` withdraws an operation still waiting for the GPU. Sessions without it are unchanged.
+- **AetherLanguageCoreAI:** `LanguageStepContract`, detected from the asset's function signature. The new `bucketedPositions` contract (`cache_positions`, host-written cache rows, last-row logits, power-of-two prefill chunks, caches grown in 256-row steps) keeps input shapes in a bounded set, so it needs no native model recycling and its native shape cache stays bounded (one capacity per 256 tokens of context). It trades step cost for that: on Qwen3-0.6B fp16 a bucketed decode step measured 0.88× an unrecycled running step (0.84× at 8K), and time to first token is 2–3× longer, while against default recycling it decodes 1.37–1.43× faster because no reloads occur ([evidence](docs/evidence/language-bucketed-decode-2026-10-26.json)). `runningPositions` (0.0.1) assets keep working unchanged. `CacheStatistics.distinctStepShapes` reports the submitted (q, capacity) pairs.
+- **AetherKit:** `LanguageExportBounds` and the optional `LanguageModelManifest.exportBounds` (exported prefill chunk and cache capacity). Bucketed assets must declare them; Kit refuses contexts beyond the exported capacity and keeps prefill chunks within the bound.
+- **Forge/language:** development-only Qwen3 exporter for both contracts (bucketed by default; `--contract running` for the 0.0.1 contract), an upstream-Transformers CPU reference, and an evidence recorder.
 
 ### Changed
 
 - **aether-probe:** GPU commands (`inspect`, `smoke`, Krea render, batch and parity, `h3-profile-run`, `h3-profile-decode`, and the `qualify-h3*` and `benchmark-krea` modes other than `--prepare-only`) now take the shared GPU lease themselves when well formed, and wait while another holder has it. Malformed commands print their usage error without waiting. `Scripts/benchmark-krea.sh` relies on this.
 - **Native suites:** the opt-in native test suites, FLUX.2 included, now take the lease through a test-local admission and run one GPU test at a time.
+- `LanguageGenerationSession.open(at:...)`'s `maximumSubmissionsPerModel` is optional; nil selects the contract default (128 for running, none for bucketed). `open(at:)` and `init(model:)` take `exportBounds`.
 
 See [GPU lease and admission](docs/gpu-lease.md).
 

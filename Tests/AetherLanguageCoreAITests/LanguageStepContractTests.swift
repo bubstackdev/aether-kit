@@ -1,0 +1,199 @@
+import AetherKit
+@testable import AetherLanguageCoreAI
+import Testing
+
+struct LanguageStepContractTests {
+    private let running = (inputs: Set(["input_ids", "position_ids"]), outputs: Set(["logits"]), states: Set(["keyCache", "valueCache"]))
+    private let bucketed = (inputs: Set(["input_ids", "cache_positions", "keyCache", "valueCache"]),
+                            outputs: Set(["logits", "keyUpdate", "valueUpdate"]), states: Set<String>())
+
+    @Test func signatureIdentifiesContract() {
+        let detect = LanguageStepContract.detect
+        #expect(detect(running.inputs, running.outputs, running.states, [1, -1, 151936]) == .runningPositions)
+        #expect(detect(bucketed.inputs, bucketed.outputs, bucketed.states, [1, 1, 151936]) == .bucketedPositions)
+        // Last-row logits with running positions (an engine `prefill` function), or all-row logits with
+        // cache positions, are neither contract.
+        #expect(detect(running.inputs, running.outputs, running.states, [1, 1, 151936]) == nil)
+        #expect(detect(bucketed.inputs, bucketed.outputs, bucketed.states, [1, -1, 151936]) == nil)
+        // Mixed signatures: cache positions over in-place states, or running positions without states.
+        #expect(detect(["input_ids", "cache_positions"], ["logits"], running.states, [1, 1, 8]) == nil)
+        #expect(detect(bucketed.inputs, ["logits"], bucketed.states, [1, 1, 8]) == nil)
+        #expect(detect(bucketed.inputs, bucketed.outputs, running.states, [1, 1, 8]) == nil)
+        #expect(detect(bucketed.inputs, bucketed.outputs, bucketed.states, [1, 1]) == nil)
+        #expect(LanguageStepContract.runningPositions.cachesAreStates)
+        #expect(!LanguageStepContract.bucketedPositions.cachesAreStates)
+    }
+
+    @Test func updateRowsLandAtTheirPositionsInEveryRow() {
+        // Two rows (layer/head), capacity 5, width 2. Rows 3 and 4 of each are written from a
+        // [rows, count = 2, width] update; everything else keeps its value.
+        var cache = (0..<20).map { Float16($0) }
+        let update: [Float16] = [100, 101, 102, 103, 200, 201, 202, 203]
+        update.withUnsafeBufferPointer { source in
+            cache.withUnsafeMutableBufferPointer { target in
+                LanguageCachePlan.writeUpdate(source.baseAddress!, rowStride: 4, tokenStride: 2, elementStride: 1,
+                    into: target.baseAddress!, rows: 2, capacity: 5, width: 2, start: 3, count: 2)
+            }
+        }
+        #expect(cache == ([0, 1, 2, 3, 4, 5, 100, 101, 102, 103, 10, 11, 12, 13, 14, 15, 200, 201, 202, 203] as [Float16]))
+        // A transposed update layout ([width, count] per row) gives the same cache.
+        var strided = (0..<20).map { Float16($0) }
+        let transposed: [Float16] = [100, 102, 101, 103, 200, 202, 201, 203]
+        transposed.withUnsafeBufferPointer { source in
+            strided.withUnsafeMutableBufferPointer { target in
+                LanguageCachePlan.writeUpdate(source.baseAddress!, rowStride: 4, tokenStride: 1, elementStride: 2,
+                    into: target.baseAddress!, rows: 2, capacity: 5, width: 2, start: 3, count: 2)
+            }
+        }
+        #expect(strided == cache)
+    }
+
+    @Test func updateTensorPlacementHandlesNestedAndPerRowStrides() {
+        // Update [layers 2, batch 1, heads 2, count 2, width 3] into a [4 rows, capacity 4, width 3] cache at start 1.
+        let shape = [2, 1, 2, 2, 3]
+        func value(_ l: Int, _ h: Int, _ t: Int, _ e: Int) -> Float { Float(1000 * l + 100 * h + 10 * t + e) }
+        var expected = [Float](repeating: -1, count: 4 * 4 * 3)
+        for l in 0..<2 { for h in 0..<2 { for t in 0..<2 { for e in 0..<3 {
+            expected[((l * 2 + h) * 4 + 1 + t) * 3 + e] = value(l, h, t, e)
+        } } } }
+        func place(strides: [Int]) -> [Float] {
+            var update = [Float](repeating: .nan, count: 24)
+            for l in 0..<2 { for h in 0..<2 { for t in 0..<2 { for e in 0..<3 {
+                update[l * strides[0] + h * strides[2] + t * strides[3] + e * strides[4]] = value(l, h, t, e)
+            } } } }
+            var cache = [Float](repeating: -1, count: 4 * 4 * 3)
+            update.withUnsafeBufferPointer { u in
+                cache.withUnsafeMutableBufferPointer { c in
+                    LanguageCachePlan.writeUpdateTensor(u.baseAddress!, shape: shape, strides: strides, into: c.baseAddress!,
+                                                        capacity: 4, start: 1)
+                }
+            }
+            return cache
+        }
+        #expect(place(strides: [12, 12, 6, 3, 1]) == expected)     // contiguous: rows nest, one run of rows
+        #expect(place(strides: [12, 12, 1, 6, 2]) == expected)     // heads innermost: rows don't nest, per-row path
+        #expect(place(strides: [12, 12, 6, 1, 2]) == expected)     // transposed token/element layout
+    }
+
+    @Test func positionsAndLogitRowsFollowContract() {
+        #expect(LanguageStepContract.runningPositions.positions(at: 3, count: 2) == [0, 1, 2, 3, 4])
+        #expect(LanguageStepContract.bucketedPositions.positions(at: 3, count: 2) == [3, 4])
+        #expect(LanguageStepContract.bucketedPositions.positions(at: 1000, count: 1) == [1000])
+        #expect(LanguageStepContract.runningPositions.logitsRows(count: 7) == 7)
+        #expect(LanguageStepContract.bucketedPositions.logitsRows(count: 7) == 1)
+        #expect(LanguageStepContract.runningPositions.positionInputName == "position_ids")
+        #expect(LanguageStepContract.bucketedPositions.positionInputName == "cache_positions")
+    }
+
+    @Test func runningPrefillKeepsUniformChunksWithinTheBound() {
+        let running = LanguageStepContract.runningPositions
+        #expect(running.prefillChunks(promptCount: 10, requestedChunk: nil, maximumChunk: nil) == [10])
+        #expect(running.prefillChunks(promptCount: 10, requestedChunk: 4, maximumChunk: nil) == [4, 4, 2])
+        #expect(running.prefillChunks(promptCount: 3, requestedChunk: 64, maximumChunk: nil) == [3])
+        // A declared export bound caps the whole-prompt default and larger requests.
+        #expect(running.prefillChunks(promptCount: 1000, requestedChunk: nil, maximumChunk: 512) == [512, 488])
+    }
+
+    @Test func bucketedPrefillUsesBoundedPowerOfTwoSizes() {
+        let bucketed = LanguageStepContract.bucketedPositions
+        #expect(bucketed.prefillChunks(promptCount: 1, requestedChunk: nil, maximumChunk: 512) == [1])
+        #expect(bucketed.prefillChunks(promptCount: 19, requestedChunk: nil, maximumChunk: 512) == [16, 2, 1])
+        #expect(bucketed.prefillChunks(promptCount: 1300, requestedChunk: nil, maximumChunk: 512) == [512, 512, 256, 16, 4])
+        #expect(bucketed.prefillChunks(promptCount: 130, requestedChunk: 64, maximumChunk: 512) == [64, 64, 2])
+        // Non-power-of-two requests and bounds round down; requests above the bound are capped.
+        #expect(bucketed.prefillChunks(promptCount: 200, requestedChunk: 100, maximumChunk: 512) == [64, 64, 64, 8])
+        #expect(bucketed.prefillChunks(promptCount: 2048, requestedChunk: 4096, maximumChunk: 512) == [512, 512, 512, 512])
+        #expect(bucketed.prefillChunks(promptCount: 300, requestedChunk: nil, maximumChunk: 100) == [64, 64, 64, 64, 32, 8, 4])
+        // Every prompt length up to 2,048 is covered exactly, by sizes within the bound.
+        for bound in [512, 128, 48] {
+            let limit = LanguageStepContract.floorPowerOfTwo(bound)
+            let allowed = Set((0...9).map { 1 << $0 }.filter { $0 <= limit })
+            var sizes = Set<Int>()
+            for count in 1...2048 {
+                for request in [nil, 1, 7, 64, 512] as [Int?] {
+                    let chunks = bucketed.prefillChunks(promptCount: count, requestedChunk: request, maximumChunk: bound)
+                    #expect(chunks.reduce(0, +) == count)
+                    #expect(chunks.allSatisfy { allowed.contains($0) && $0 <= min(request ?? bound, bound) })
+                    sizes.formUnion(chunks)
+                }
+            }
+            #expect(sizes == allowed)
+        }
+    }
+
+    @Test func exportBoundsAreRequiredForBucketedAndEnforced() throws {
+        let bounds = LanguageExportBounds(maximumPrefillChunk: 128, maximumCacheCapacity: 4096)
+        #expect(try LanguageStepContract.bucketedPositions.admit(bounds: bounds, maximumContextLength: 4096) == 128)
+        #expect(throws: LanguageGenerationError.contextLimit(limit: 4096)) {
+            try LanguageStepContract.bucketedPositions.admit(bounds: bounds, maximumContextLength: 4097)
+        }
+        #expect(throws: LanguageGenerationError.invalid("A bucketed asset must declare its export bounds")) {
+            try LanguageStepContract.bucketedPositions.admit(bounds: nil, maximumContextLength: 2048)
+        }
+        #expect(throws: LanguageGenerationError.invalid("Invalid export bounds")) {
+            try LanguageStepContract.bucketedPositions.admit(bounds: LanguageExportBounds(maximumPrefillChunk: 0, maximumCacheCapacity: 4096),
+                                                             maximumContextLength: 2048)
+        }
+        // Running assets keep working without bounds, and honour them when declared.
+        #expect(try LanguageStepContract.runningPositions.admit(bounds: nil, maximumContextLength: 16384) == nil)
+        #expect(throws: LanguageGenerationError.contextLimit(limit: 4096)) {
+            try LanguageStepContract.runningPositions.admit(bounds: bounds, maximumContextLength: 8192)
+        }
+    }
+
+    @Test func recyclingDefaultsFollowShapeGrowth() {
+        #expect(LanguageStepContract.runningPositions.defaultMaximumSubmissionsPerModel == 128)
+        #expect(LanguageStepContract.bucketedPositions.defaultMaximumSubmissionsPerModel == nil)
+    }
+
+    @Test func bucketedCapacityTracksTheRealLength() throws {
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 1, maximum: 2048) == 256)
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 256, maximum: 2048) == 256)
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 257, maximum: 2048) == 512)
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 1001, maximum: 2048) == 1024)
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 1025, maximum: 2048) == 1280)
+        #expect(try LanguageCachePlan.bucketedCapacity(needed: 2000, maximum: 2000) == 2000)   // the maximum caps the last step
+        #expect(throws: LanguageGenerationError.contextLimit(limit: 2048)) { try LanguageCachePlan.bucketedCapacity(needed: 2049, maximum: 2048) }
+    }
+
+    /// Over a full 16K context, the bucketed shapes are bounded by the prefill sizes times the
+    /// capacity steps, however many tokens are decoded; decoding adds exactly one shape per
+    /// 256 tokens it crosses (the running ladder would instead attend up to twice the length).
+    @Test func bucketedShapeVocabularyIsBoundedAndGrowsWithLength() throws {
+        let prompt = LanguageStepContract.bucketedPositions.prefillChunks(promptCount: 1000, requestedChunk: nil, maximumChunk: 512)
+        var shapes = Set<[Int]>()
+        var position = 0
+        var decodeShapes = 0
+        var worstSlack = 0
+        for (index, count) in (prompt + Array(repeating: 1, count: 16384 - 1000)).enumerated() {
+            let capacity = try LanguageCachePlan.bucketedCapacity(needed: position + count, maximum: 16384)
+            worstSlack = max(worstSlack, capacity - (position + count))
+            if shapes.insert([count, capacity]).inserted && index >= prompt.count { decodeShapes += 1 }
+            position += count
+        }
+        #expect(position == 16384)
+        #expect(decodeShapes == (16384 - 1024) / LanguageCachePlan.bucketedGranularity + 1)
+        #expect(shapes.count == decodeShapes + prompt.count)
+        #expect(worstSlack < LanguageCachePlan.bucketedGranularity)
+    }
+
+    @Test func requestsRestartAtTheInitialCapacityOnlyForBucketed() {
+        #expect(LanguageCachePlan.requestCapacity(allocated: 2048, initial: 256, resets: true) == 256)
+        #expect(LanguageCachePlan.requestCapacity(allocated: 256, initial: 256, resets: true) == 256)
+        #expect(LanguageCachePlan.requestCapacity(allocated: 2048, initial: 256, resets: false) == 2048)
+    }
+
+    @Test func commitAdvancesOnlyAfterTheCacheWrite() async throws {
+        actor Order { var events: [String] = []; func add(_ e: String) { events.append(e) } }
+        let order = Order()
+        let next = try await LanguageCachePlan.commit(position: 10, count: 4) { await order.add("write") }
+        #expect(next == 14)
+        #expect(await order.events == ["write"])
+        struct WriteFailure: Error {}
+        var materialized = 14
+        await #expect(throws: WriteFailure.self) {
+            materialized = try await LanguageCachePlan.commit(position: 14, count: 1) { throw WriteFailure() }
+        }
+        #expect(materialized == 14)
+    }
+}

@@ -90,7 +90,7 @@ let reply = try await session.generate(prompt: renderedTokenIDs, maximumTokens: 
 await session.unload()
 ```
 
-Bundles are registered with a `language-model.json` manifest that Kit verifies before loading. Tokens stream while the next decode step runs on the GPU. The current export contract reloads the native model every 128 submissions. See [language generation](docs/language-generation.md).
+Bundles are registered with a `language-model.json` manifest that Kit verifies before loading. Tokens stream while the next decode step runs on the GPU. Assets with the 0.0.2 bucketed step contract keep a fixed set of input shapes and need no model reloads; 0.0.1-contract assets still reload the native model every 128 submissions. See [language generation](docs/language-generation.md).
 
 ## H3 video with audio (experimental)
 
@@ -132,7 +132,7 @@ Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. 
 - **Slow first image:** model first-load dominates the first image in a process.
 - **Krea progress callbacks are synchronous:** a slow observer stalls sampling.
 - **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped.
-- **Language:** the export contract reloads the native model every 128 submissions.
+- **Language:** 0.0.1-contract (running-position) assets reload the native model every 128 submissions. The bucketed contract avoids reloads at a per-step cost (about 0.88× an unrecycled running step on Qwen3-0.6B fp16, with a longer time to first token) and is qualified on that model on one Mac only.
 - **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
 - **CI** needs an equipped macOS 27 runner; until then, checks run locally.
 
