@@ -54,3 +54,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 
 [Release notes](release-notes/0.0.1.md), [release checklist](release-0.0.1-checklist.md) and the [changelog](../CHANGELOG.md). The [0.0.2 roadmap](roadmap-0.0.2.md) records the agreed next scope. [Experimental language generation](language-generation.md) covers the dense-language runtime ported from the parallel local line (`local-line-2026-10-26`).
 
+## FLUX.2 [klein] 4B (0.0.2, 2026-10-26)
+
+[FLUX.2 klein](flux2-klein.md) covers the text-to-image and multi-reference products, the locally exported int8 bundle, independent float32 Diffusers references and the opt-in native parity gate. Both native runs pass every check: 12 cases from 512² to 1344×768, including one- and two-reference editing ([qualification record](evidence/flux2-klein-qualification-2026-10-26.json)). After the rebase onto 0.0.1, parity passed again with identical values, and the native lifecycle suite passed 44/44 checks ([lifecycle record](evidence/flux2-klein-lifecycle-qualification-2026-10-26.json)).
+

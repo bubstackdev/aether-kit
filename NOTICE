@@ -20,7 +20,8 @@ original pipeline/oracle values, not model weights. Their source hashes and
 scope are recorded in docs/evidence/h3-cpu-readiness-2026-10-18.json.
 
 Third-party Swift packages, resolved by SwiftPM and not vendored here, are used
-only by the optional AetherKreaTokenizers and AetherH3Tokenizers products:
+only by the optional AetherKreaTokenizers, AetherH3Tokenizers and
+AetherFlux2Tokenizers products:
 
 - swift-transformers 1.1.0 (https://github.com/huggingface/swift-transformers),
   Apache License 2.0, copyright Hugging Face.
@@ -29,3 +30,11 @@ only by the optional AetherKreaTokenizers and AetherH3Tokenizers products:
 - swift-collections 1.7.3 (https://github.com/apple/swift-collections), Apache
   License 2.0 with Runtime Library Exception, copyright Apple Inc. and the Swift
   project authors.
+
+FLUX.2 [klein] schedule, rotary layout, prompt rendering, reference-image
+positions and bundle recipe are derived from the Apache-2.0 Aether prototype
+(spec 11 Part B, recipes/flux2-klein-4b*.toml) and observed behavior of the
+pinned black-forest-labs/FLUX.2-klein-4B checkpoint at revision
+e7b7dc27f91deacad38e78976d1f2b499d76a294 (Apache-2.0) through unmodified
+Diffusers 0.37.1. No weights or fixtures are distributed; local exports keep
+the checkpoint's LICENSE.md beside the assets.

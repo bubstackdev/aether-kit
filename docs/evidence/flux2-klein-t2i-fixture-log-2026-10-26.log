@@ -1,0 +1,39 @@
+[forge:oracle-text-text] start
+[forge:oracle-text-text] done
+[forge:oracle-text-textBF16] start
+[forge:oracle-text-textBF16] done
+[forge:oracle-generate-fp32] start
+[forge:oracle-generate-fp32] lighthouse-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-fp32] red-circle-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-fp32] fox-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-fp32] ramen-576x448: 576x448, 4 denoiser calls
+[forge:oracle-generate-fp32] cafe-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-fp32] cat-1024: 1024x1024, 4 denoiser calls
+[forge:oracle-generate-fp32] harbor-768: 768x768, 4 denoiser calls
+[forge:oracle-generate-fp32] street-1024x576: 1024x576, 4 denoiser calls
+[forge:oracle-generate-fp32] desk-1024x768: 1024x768, 4 denoiser calls
+[forge:oracle-generate-fp32] canyon-1344x768: 1344x768, 4 denoiser calls
+[forge:oracle-generate-fp32] done
+[forge:oracle-generate-bf16] start
+[forge:oracle-generate-bf16] lighthouse-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-bf16] red-circle-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-bf16] fox-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-bf16] ramen-576x448: 576x448, 4 denoiser calls
+[forge:oracle-generate-bf16] cafe-512: 512x512, 4 denoiser calls
+[forge:oracle-generate-bf16] cat-1024: 1024x1024, 4 denoiser calls
+[forge:oracle-generate-bf16] harbor-768: 768x768, 4 denoiser calls
+[forge:oracle-generate-bf16] street-1024x576: 1024x576, 4 denoiser calls
+[forge:oracle-generate-bf16] desk-1024x768: 1024x768, 4 denoiser calls
+[forge:oracle-generate-bf16] canyon-1344x768: 1344x768, 4 denoiser calls
+[forge:oracle-generate-bf16] done
+[forge:fixtures] lighthouse-512: ssimBF16 0.940365
+[forge:fixtures] red-circle-512: ssimBF16 0.998976
+[forge:fixtures] fox-512: ssimBF16 0.948158
+[forge:fixtures] ramen-576x448: ssimBF16 0.96924
+[forge:fixtures] cafe-512: ssimBF16 0.90628
+[forge:fixtures] cat-1024: ssimBF16 0.92693
+[forge:fixtures] harbor-768: ssimBF16 0.957818
+[forge:fixtures] street-1024x576: ssimBF16 0.865007
+[forge:fixtures] desk-1024x768: ssimBF16 0.922638
+[forge:fixtures] canyon-1344x768: ssimBF16 0.958795
+AETHER_FORGE_RESULT {"durations": {"oracle-generate-bf16": 66.901, "oracle-generate-fp32": 182.211, "oracle-text-text": 64.39, "oracle-text-textBF16": 328.592}, "fixtures": [{"cases": 10, "dir": "fixtures/6a8a53d8f3b30817", "id": "6a8a53d8f3b30817", "rejected": 0}], "stage": "fixtures", "status": "ok", "warnings": []}

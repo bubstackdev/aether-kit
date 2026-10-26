@@ -1,0 +1,84 @@
+Building for production...
+[Computing dependencies]
+[1 / 4]
+Build complete! (0.81 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test flux2NativeLifecycleQualification() started.
+native qualification: baseline
+flux2 check baselineSSIM baseline: 0.9902225006226685 (bar 0.94) pass
+flux2 check baselineOpensDenoisersThenDecoder baseline: 1.0 (bar 1.0) pass
+native qualification: repeat
+flux2 check repeatIsExact repeat: 1.0 (bar 1.0) pass
+flux2 check repeatReusesModels repeat: 1.0 (bar 1.0) pass
+flux2 check repeatReusesNativeFunctions repeat: 1.0 (bar 1.0) pass
+flux2 check repeatNativeCallCount repeat: 1.0 (bar 1.0) pass
+native qualification: denoiserCancellation
+flux2 check overlapRejected denoiserCancellation: 1.0 (bar 1.0) pass
+flux2 check cancellationThrows denoiserCancellation: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation denoiserCancellation: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation denoiserCancellation: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady denoiserCancellation: 1.0 (bar 1.0) pass
+native qualification: denoiserCancellationRecovery
+flux2 check recoveryIsExact denoiserCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check recoveryReusesModels denoiserCancellationRecovery: 1.0 (bar 1.0) pass
+native qualification: decoderCancellation
+flux2 check overlapRejected decoderCancellation: 1.0 (bar 1.0) pass
+flux2 check cancellationThrows decoderCancellation: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation decoderCancellation: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation decoderCancellation: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady decoderCancellation: 1.0 (bar 1.0) pass
+native qualification: decoderCancellationRecovery
+flux2 check recoveryIsExact decoderCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check recoveryReusesModels decoderCancellationRecovery: 1.0 (bar 1.0) pass
+native qualification: balancedPrompt
+flux2 check balancedCloseBeforeAcquire balancedPrompt: 1.0 (bar 1.0) pass
+flux2 record balancedPromptSSIM balancedPrompt: 0.9016496752543341
+native qualification: references
+flux2 check referenceSSIM references: 0.9984422902807756 (bar 0.94) pass
+flux2 check referenceEncoderReleased references: 1.0 (bar 1.0) pass
+flux2 check denoisersRecycledForTokenCount references: 1.0 (bar 1.0) pass
+native qualification: activeUnload
+flux2 check closingRejectsWork activeUnload: 1.0 (bar 1.0) pass
+flux2 check activeGenerationCompletesExactly activeUnload: 1.0 (bar 1.0) pass
+flux2 check unloadCloses activeUnload: 1.0 (bar 1.0) pass
+flux2 check nativeReturnsPrecedeModelRelease activeUnload: 0.0 (bar 1.0) FAIL
+flux2 check closedRejectsWork activeUnload: 1.0 (bar 1.0) pass
+flux2 check ownedOutputValidAfterUnload activeUnload: 1.0 (bar 1.0) pass
+native qualification: resident
+native qualification: residentSecondPrompt
+flux2 check residentReusesEncoderAndDenoisers residentSecondPrompt: 1.0 (bar 1.0) pass
+native qualification: residentNewSize
+flux2 check residentKeepsEncoderAcrossSizes residentNewSize: 1.0 (bar 1.0) pass
+flux2 check residentRecyclesShapeDependentModels residentNewSize: 1.0 (bar 1.0) pass
+native qualification: residentReturn
+flux2 check residentReturnIsExact residentReturn: 1.0 (bar 1.0) pass
+native qualification: admission
+flux2 check chargesOperationResidencyAndScratch admission: 1.0 (bar 1.0) pass
+flux2 check retainsOnlyResidencyAfterCompletion admission: 1.0 (bar 1.0) pass
+flux2 check admittedGenerationIsExact admission: 1.0 (bar 1.0) pass
+flux2 check oversizedRefusedBeforeLoad admission: 1.0 (bar 1.0) pass
+flux2 check unknownEstimateRefusedBeforeRelease admission: 1.0 (bar 1.0) pass
+flux2 check unloadReleasesAllReservations admission: 1.0 (bar 1.0) pass
+flux2 check insufficientCapacityRollsBack admission: 1.0 (bar 1.0) pass
+flux2 check thirdSegmentNeverOpenedWithoutCapacity admission: 1.0 (bar 1.0) pass
+native qualification: summary
+flux2 check everyInstanceClosedOnce summary: 1.0 (bar 1.0) pass
+flux2 check everyNativeCallReturned summary: 1.0 (bar 1.0) pass
+✘ Test flux2NativeLifecycleQualification() recorded an issue at Flux2NativeLifecycleTests.swift:232:5: Expectation failed: failures.isEmpty
+↳ ["nativeReturnsPrecedeModelRelease activeUnload"]
+↳ failures.isEmpty → false
+↳   failures → ["nativeReturnsPrecedeModelRelease activeUnload"]
+↳   isEmpty → false
+✘ Test flux2NativeLifecycleQualification() failed after 28.795 seconds with 1 issue.
+↳ /// Opt-in native lifecycle qualification of `Flux2GenerationSession` on the real klein bundle, modeled on Krea's
+↳ /// `AETHER_NATIVE_QUALIFICATION` suite. A tracked factory opens real Core AI sessions whose backend observers bracket
+↳ /// the awaited native `function.run`; nothing gates or delays native work. Phases:
+↳ /// baseline and exact repeat with model/function reuse; cancellation observed during a native denoiser call and during
+↳ /// the native decoder call, each with overlap rejection and exact recovery; balanced prompt ordering; references;
+↳ /// resident reuse across prompts and sizes; unload during active work; admission charge/release, refusal and rollback.
+↳ /// Run alone under the shared GPU lock.
+✘ Test run with 1 test in 0 suites failed after 28.795 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - AetherNativeTests (Swift Testing)

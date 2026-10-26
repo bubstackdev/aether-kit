@@ -1,0 +1,425 @@
+{
+  "bars": {
+    "decoderPSNR": 35,
+    "imagePathSSIM": 0.94,
+    "referenceLatentCosine": 0.999,
+    "textRealRowCosine": 0.999,
+    "tokenIDs": "exact",
+    "velocityCosine": 0.999,
+    "wholePipelineSSIM": "recorded, not gated"
+  },
+  "checkpoint": {
+    "files": {
+      "LICENSE.md": {
+        "bytes": 9584,
+        "sha256": "ca02bc51900ab07789d1b70283329e7137f5af98f5161c23a1c81fc38a4af1fe"
+      },
+      "README.md": {
+        "bytes": 9991,
+        "sha256": "bd447051cf2db4bf67b992e563d89c35ebf1123f009c063361a222ab14e1c4f7"
+      },
+      "model_index.json": {
+        "bytes": 446,
+        "sha256": "51a76cb1cf3ed37423a1128c79c22faee8e6fbe7f5aaeb737f0a258930dbaac0"
+      },
+      "scheduler/scheduler_config.json": {
+        "bytes": 486,
+        "sha256": "067afb012cef64553a763447d1efd93daeffcc0123ca7e25b09f8de20b90762e"
+      },
+      "text_encoder/config.json": {
+        "bytes": 1536,
+        "sha256": "214b4c29a0d975e9fddf9994a5673f22cb2c4c5750352f9227c2c3251ebeab40"
+      },
+      "text_encoder/generation_config.json": {
+        "bytes": 214,
+        "sha256": "4347b1aeed2b2b78bc059920a0b7f5fec71482e1344952b76d7665d638d71f13"
+      },
+      "text_encoder/model-00001-of-00002.safetensors": {
+        "bytes": 4967215360,
+        "sha256": "8c0506e7f4936fa7e26183a4fd8da4e2bdbc5990ba64ae441f965d51228f36ea"
+      },
+      "text_encoder/model-00002-of-00002.safetensors": {
+        "bytes": 3077766632,
+        "sha256": "82f2bd839378541b0557bfabaf37c7d3d637071fdcb73302dedd7cf61162ce07"
+      },
+      "text_encoder/model.safetensors.index.json": {
+        "bytes": 32855,
+        "sha256": "06b3d5319b6d76d1a4a2433419180016cfd54ed62d086a5e6567a809f8c82634"
+      },
+      "tokenizer/added_tokens.json": {
+        "bytes": 707,
+        "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"
+      },
+      "tokenizer/chat_template.jinja": {
+        "bytes": 4168,
+        "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+      },
+      "tokenizer/merges.txt": {
+        "bytes": 1671853,
+        "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      "tokenizer/special_tokens_map.json": {
+        "bytes": 613,
+        "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+      },
+      "tokenizer/tokenizer.json": {
+        "bytes": 11422654,
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      },
+      "tokenizer/tokenizer_config.json": {
+        "bytes": 5404,
+        "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"
+      },
+      "tokenizer/vocab.json": {
+        "bytes": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      "transformer/config.json": {
+        "bytes": 541,
+        "sha256": "09733c74a3da6d17dd0a0472a091a8950c7c6935889c32c16cc800ede05029de"
+      },
+      "transformer/diffusion_pytorch_model.safetensors": {
+        "bytes": 7751109744,
+        "sha256": "9f29f9edcfdae452a653ffb51a534ca4decd389952c225724ff3b94042612a6e"
+      },
+      "vae/config.json": {
+        "bytes": 821,
+        "sha256": "0d6dfb69ae95a5e2ac9836284bbb63d8b38ce67b25ba2dff380752b2a10ab948"
+      },
+      "vae/diffusion_pytorch_model.safetensors": {
+        "bytes": 168120878,
+        "sha256": "ca70d2202afe6415bdbcb8793ba8cd99fd159cfe6192381504d6c4d3036e0f04"
+      }
+    },
+    "gated": false,
+    "hfRepo": "black-forest-labs/FLUX.2-klein-4B",
+    "license": "apache-2.0 (model card front matter; LICENSE.md is the Apache-2.0 text)",
+    "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"
+  },
+  "cpuFixtureChecks": {
+    "eulerReplay": "every following step input and the final latent bit-exact for all 12 cases",
+    "noise": "fixture noise equals the first transformer input",
+    "referencePositions": "exact for both reference cases",
+    "timesteps": "exact for all 12 cases",
+    "tokenizerIdsAndMask": "exact for all 10 text-to-image cases (incl. French/Japanese)"
+  },
+  "date": "2026-10-26",
+  "export": {
+    "bundle": "~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu",
+    "bundleBytes": 7937597873,
+    "command": "python -m aether_forge export --recipe recipes/flux2-klein-4b-reference.toml --out ~/.cache/huggingface/aether-kit/flux2-klein-4b/export-2026-10-26 --cache ~/Library/Caches/aether/forge-checkpoints",
+    "files": "flux2-klein-bundle-finalize-2026-10-26.json",
+    "finalizer": "Scripts/finalize-flux2-bundle.py",
+    "fingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+    "manifestFragment": "flux2-klein-forge-manifest-fragment-2026-10-26.json",
+    "recipe": "recipes/flux2-klein-4b-reference.toml@1",
+    "referenceFingerprint": "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79",
+    "segmentChainCosineVsWholeModule": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "textEncoderCpuOnlyRealRowCosineVsEager": [
+      0.999998,
+      0.999998
+    ],
+    "tool": "aether-engine forge, unmodified (engine venv: torch 2.11.0, diffusers 0.37.1, coreai-torch 0.4.2)"
+  },
+  "fixtures": {
+    "reference": {
+      "cases": 2,
+      "dir": "~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-2026-10-26/fixtures/079a8fba9d596a3b",
+      "document": "flux2-klein-reference-fixture-079a8fba9d596a3b.json",
+      "id": "079a8fba9d596a3b",
+      "producer": "Scripts/prepare-flux2-reference-fixtures.py: same pipeline with image=[...], hooks only"
+    },
+    "t2i": {
+      "cases": 10,
+      "dir": "~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817",
+      "document": "flux2-klein-t2i-fixture-6a8a53d8f3b30817.json",
+      "id": "6a8a53d8f3b30817",
+      "producer": "forge fixtures stage: Diffusers Flux2KleinPipeline float32 on MPS, float32 text encoder on CPU"
+    }
+  },
+  "gpuLock": [
+    {
+      "acquired": "14:25:11",
+      "label": "forge export",
+      "released": "14:26:42"
+    },
+    {
+      "acquired": "14:30:03",
+      "label": "forge t2i fixtures",
+      "released": "14:40:56"
+    },
+    {
+      "acquired": "14:56:42",
+      "label": "reference fixtures",
+      "released": "14:57:10"
+    },
+    {
+      "acquired": "15:01:31",
+      "label": "native parity",
+      "released": "15:02:35"
+    },
+    {
+      "acquired": "15:07:48",
+      "label": "native parity large",
+      "released": "15:09:20"
+    }
+  ],
+  "host": {
+    "machine": "Mac17,6 Apple M5 Max",
+    "note": "shared host; GPU work serialized by ~/.cache/aether-kit/with-gpu-lock.sh",
+    "os": "macOS 27.0.1",
+    "ramGiB": 64
+  },
+  "kind": "flux2-klein-qualification",
+  "limits": [
+    "Correctness runs on a shared host; timings have no warm-up protocol and are not benchmarks.",
+    "Memory is the test process's lifetime ledger peak. The large run's 14.6 GB peak occurred in the component VAE phase, which decodes five sizes in one decoder session without the generation session's size recycling.",
+    "Native lifecycle (cancellation, unload during work, admission) is covered by scripted CPU tests, not by native runs.",
+    "iOS execution, prompt-adherence (T3) review and CGImage-prepared references are not qualified."
+  ],
+  "native": {
+    "compute": "preferGPU",
+    "large": {
+      "cases": "harbor-768,street-1024x576,desk-1024x768,cat-1024,canyon-1344x768",
+      "checks": 45,
+      "elapsedSeconds": 87.6,
+      "minimum": {
+        "decoderPSNR": 87.69024469309596,
+        "imagePathSSIM": 0.9617665021911698,
+        "textRealRowCosine": 0.9999723492511845,
+        "timesteps": 1,
+        "tokenIDs": 1,
+        "velocityCosine": 0.9992415300461289
+      },
+      "passed": true,
+      "phases": [
+        {
+          "footprintBytesAfter": 508691776,
+          "lifetimePeakFootprintBytes": 861163216,
+          "name": "textEncoder",
+          "seconds": 3.7698800563812256
+        },
+        {
+          "footprintBytesAfter": 2258339424,
+          "lifetimePeakFootprintBytes": 5512861960,
+          "name": "denoiser",
+          "seconds": 21.54546892642975
+        },
+        {
+          "footprintBytesAfter": 3820144800,
+          "lifetimePeakFootprintBytes": 14617201328,
+          "name": "vae",
+          "seconds": 4.043586015701294
+        },
+        {
+          "footprintBytesAfter": 5690018144,
+          "lifetimePeakFootprintBytes": 14617201328,
+          "name": "session",
+          "seconds": 54.456571102142334
+        }
+      ],
+      "records": [
+        {
+          "case": "cat-1024",
+          "name": "imagePathPSNR",
+          "value": 27.869664325213407
+        },
+        {
+          "case": "cat-1024",
+          "name": "wholePipelineSSIM",
+          "value": 0.8678270185403729
+        },
+        {
+          "case": "harbor-768",
+          "name": "imagePathPSNR",
+          "value": 36.13009872357502
+        },
+        {
+          "case": "harbor-768",
+          "name": "wholePipelineSSIM",
+          "value": 0.9277018759015847
+        },
+        {
+          "case": "street-1024x576",
+          "name": "imagePathPSNR",
+          "value": 29.585823546004267
+        },
+        {
+          "case": "street-1024x576",
+          "name": "wholePipelineSSIM",
+          "value": 0.8393929471419006
+        },
+        {
+          "case": "desk-1024x768",
+          "name": "imagePathPSNR",
+          "value": 34.37074331277033
+        },
+        {
+          "case": "desk-1024x768",
+          "name": "wholePipelineSSIM",
+          "value": 0.8779570265839126
+        },
+        {
+          "case": "canyon-1344x768",
+          "name": "imagePathPSNR",
+          "value": 33.6483518310127
+        },
+        {
+          "case": "canyon-1344x768",
+          "name": "wholePipelineSSIM",
+          "value": 0.927426360757347
+        }
+      ],
+      "report": "flux2-klein-native-parity-large-2026-10-26.json"
+    },
+    "outputs": {
+      "native-parity-2026-10-26/cafe-512-prompt.png": "sha256:18bf2d334f4208ccece2f2a4f15f8a6c734818251adcd7ac6058cda4486a7495",
+      "native-parity-2026-10-26/cafe-512-provided.png": "sha256:1f50fb98ddf6834fc78f5c7f634381fd85095e817bb58e126db4ccc1d1c4021f",
+      "native-parity-2026-10-26/fox-512-prompt.png": "sha256:7270eec96556da3a5cfd03f82c5fc9939e8dfb42eb712139ace57100eeefb52d",
+      "native-parity-2026-10-26/fox-512-provided.png": "sha256:d910fd1782bfdabe1775ba4ae4e8dcf779fbb8525606f9b3b0cf2ea7e0fba588",
+      "native-parity-2026-10-26/fox-lighthouse-ref2-prompt.png": "sha256:f90ab83a2e67ec4922988ee195d31df102f72f883e18733ae517fb235b66ee59",
+      "native-parity-2026-10-26/fox-lighthouse-ref2-provided.png": "sha256:b204c63a9049a1572c05f09210957e5c46528afba72b102d535680072850bb36",
+      "native-parity-2026-10-26/fox-watercolor-ref1-prompt.png": "sha256:52a50b48d1a15ac30926520057b1fb1860ed44d837dbea1aadcf8289259d5580",
+      "native-parity-2026-10-26/fox-watercolor-ref1-provided.png": "sha256:5adf711a35efdfdbde3c33e4252c78b246b18b24da79d895b71e43dc48db3faf",
+      "native-parity-2026-10-26/lighthouse-512-prompt.png": "sha256:873ad0dea2787097f6d9c0dc413d3dad76ede45013184fc4d5bed718437848cb",
+      "native-parity-2026-10-26/lighthouse-512-provided.png": "sha256:d54938c4778f0126d621fc5fde2afeac1d45fb696c087a050204f823d038b283",
+      "native-parity-2026-10-26/ramen-576x448-prompt.png": "sha256:f8bc3568274fc85c042ad806be69fbad61c0605abcca4d48592f0c82e4c2ebcf",
+      "native-parity-2026-10-26/ramen-576x448-provided.png": "sha256:bdb22a533973fc09cda6fce0d4724bc75c69cb3332c44752d2a81c4a625a35cf",
+      "native-parity-2026-10-26/red-circle-512-prompt.png": "sha256:ef893b2b70ba89fc6bc879b1edbf17ea2fff2110e696c80feb8b2525dab29034",
+      "native-parity-2026-10-26/red-circle-512-provided.png": "sha256:46f683c879d5bdb1ae838c73c9fb8c2c6d5f17ff6e5c7c97af1f06e044b14324",
+      "native-parity-large-2026-10-26/canyon-1344x768-prompt.png": "sha256:a31cbe0f6ba38f71a16b4d9ecf3e40e691acf22b55c0b2bfbc0693ff6ae19294",
+      "native-parity-large-2026-10-26/canyon-1344x768-provided.png": "sha256:9820e81df8f63d6bc0da6f87ed05d972e4a102875e66555cfcde2320a7c394f6",
+      "native-parity-large-2026-10-26/cat-1024-prompt.png": "sha256:f4191f32fe2509600ea882f47da91abe209f68db990ae37032e99b56b6d4f7bd",
+      "native-parity-large-2026-10-26/cat-1024-provided.png": "sha256:57d2b90a906c0a31b5030f8333578a589755a4901f2a9304b42681e3720007e0",
+      "native-parity-large-2026-10-26/desk-1024x768-prompt.png": "sha256:729fddfe62363aa39187b80d59907c6e07e121d9f8d0ae46d8fc71d0232b3cff",
+      "native-parity-large-2026-10-26/desk-1024x768-provided.png": "sha256:ba73a99378478d9c444dc0e91dbecd9a450f50f0c91f4d1bc48323c545a97a8d",
+      "native-parity-large-2026-10-26/harbor-768-prompt.png": "sha256:12ab1c5ab7daee8068816adde4115a431797121679ec52781bd5bb46c134455a",
+      "native-parity-large-2026-10-26/harbor-768-provided.png": "sha256:a0cbd8383b12c18580c47d5ae81e6071a387d8876756f03e72eadf6e6be792ab",
+      "native-parity-large-2026-10-26/street-1024x576-prompt.png": "sha256:ed3c52052410e9054b1db9761ff48853c092b4108502d8f6d8b8bae11109bdab",
+      "native-parity-large-2026-10-26/street-1024x576-provided.png": "sha256:a91badf15869688f61ee3f9f71a05de897d49983a7550c189a9d1e76c53d18bd"
+    },
+    "small": {
+      "cases": "lighthouse-512,red-circle-512,fox-512,ramen-576x448,cafe-512,fox-watercolor-ref1,fox-lighthouse-ref2",
+      "checks": 68,
+      "elapsedSeconds": 60.3,
+      "minimum": {
+        "decoderPSNR": 87.96620309157412,
+        "imagePathSSIM": 0.9601581967627534,
+        "referenceLatentCosine": 0.9999999999996574,
+        "referencePositions": 1,
+        "textRealRowCosine": 0.9999723691343326,
+        "timesteps": 1,
+        "tokenIDs": 1,
+        "velocityCosine": 0.9994457775463002
+      },
+      "passed": true,
+      "phases": [
+        {
+          "footprintBytesAfter": 483230992,
+          "lifetimePeakFootprintBytes": 836079288,
+          "name": "textEncoder",
+          "seconds": 3.132119059562683
+        },
+        {
+          "footprintBytesAfter": 770426368,
+          "lifetimePeakFootprintBytes": 3701364736,
+          "name": "denoiser",
+          "seconds": 9.962514996528625
+        },
+        {
+          "footprintBytesAfter": 1316800768,
+          "lifetimePeakFootprintBytes": 3701364736,
+          "name": "vae",
+          "seconds": 2.587859034538269
+        },
+        {
+          "footprintBytesAfter": 2100513048,
+          "lifetimePeakFootprintBytes": 4040252376,
+          "name": "session",
+          "seconds": 40.701858043670654
+        }
+      ],
+      "records": [
+        {
+          "case": "lighthouse-512",
+          "name": "imagePathPSNR",
+          "value": 34.44816881474992
+        },
+        {
+          "case": "lighthouse-512",
+          "name": "wholePipelineSSIM",
+          "value": 0.8961989006818546
+        },
+        {
+          "case": "red-circle-512",
+          "name": "imagePathPSNR",
+          "value": 52.24274856254447
+        },
+        {
+          "case": "red-circle-512",
+          "name": "wholePipelineSSIM",
+          "value": 0.998643031164415
+        },
+        {
+          "case": "fox-512",
+          "name": "imagePathPSNR",
+          "value": 35.17713770959022
+        },
+        {
+          "case": "fox-512",
+          "name": "wholePipelineSSIM",
+          "value": 0.9016496752543341
+        },
+        {
+          "case": "ramen-576x448",
+          "name": "imagePathPSNR",
+          "value": 33.462048911488516
+        },
+        {
+          "case": "ramen-576x448",
+          "name": "wholePipelineSSIM",
+          "value": 0.9492605131695866
+        },
+        {
+          "case": "cafe-512",
+          "name": "imagePathPSNR",
+          "value": 29.42374668725888
+        },
+        {
+          "case": "cafe-512",
+          "name": "wholePipelineSSIM",
+          "value": 0.9177448123541853
+        },
+        {
+          "case": "fox-watercolor-ref1",
+          "name": "imagePathPSNR",
+          "value": 45.11235375024786
+        },
+        {
+          "case": "fox-watercolor-ref1",
+          "name": "wholePipelineSSIM",
+          "value": 0.9671672393475402
+        },
+        {
+          "case": "fox-lighthouse-ref2",
+          "name": "imagePathPSNR",
+          "value": 33.07660463536534
+        },
+        {
+          "case": "fox-lighthouse-ref2",
+          "name": "wholePipelineSSIM",
+          "value": 0.8120775806210735
+        }
+      ],
+      "report": "flux2-klein-native-parity-2026-10-26.json"
+    }
+  },
+  "schema": 1
+}
