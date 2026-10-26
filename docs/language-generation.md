@@ -104,7 +104,10 @@ The registered context is an admission maximum. Allocation starts at 256 tokens
 and grows with actual materialization. KV prefixes are copied row by row across
 layer/head strides. Growth doubles small caches; above 4K it uses 1K increments to
 bound transient allocation size. Bucketed caches instead grow in 256-row steps,
-because bucketed attention reads every allocated row. This reduces eager allocation
+because bucketed attention reads every allocated row. Each step copies the whole
+cache into the larger one, so growth copies add up over a long generation (estimated, not measured: about
+1 GB by 2K tokens and tens of GB over a full 16K generation for Qwen3-0.6B);
+larger steps would trade per-step attention cost for fewer copies. This reduces eager allocation
 but does not promise that every registered context fits every device’s current memory
 budget. A bucketed session starts every request again at the initial capacity rather
 than keeping a previous long request's caches; running-contract sessions keep their
