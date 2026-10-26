@@ -124,10 +124,14 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     await #expect(throws: AetherError.self) {
         try await speech.synthesize(segments: [], configuration: try KokoroSpeechConfiguration())
     }
+    await #expect(throws: AetherError.self) {
+        try await speech.synthesize(segments: Array(repeating: try speech.phonemes("ðə"), count: KokoroSpeechSession.maximumSegments + 1),
+                                    configuration: try KokoroSpeechConfiguration())
+    }
     await speech.unload()
 }
 
-@Test func admissionReservesOperationStorageAndRefusesOversizedRequests() async throws {
+@Test func admissionReservesModelResidencyScratchAndOperationStorage() async throws {
     let bundle = try FakeBundle.make()
     defer { bundle.remove() }
     let assets = try KokoroAssets.open(at: bundle.root)
@@ -135,29 +139,74 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     let durations = try KokoroResourceAdmission.ModelEstimate(asset: assets.durations, residentBytes: 10, runScratchBytes: 1)
     let decoder = try KokoroResourceAdmission.ModelEstimate(asset: assets.decoder, residentBytes: 10, runScratchBytes: 1)
     #expect(throws: AetherError.self) {
-        try KokoroResourceAdmission(coordinator: coordinator, operationBytes: 10, maximumFrames: 100, durations: durations, decoder: durations)
+        try KokoroResourceAdmission(assets: assets, coordinator: coordinator, operationBytes: 10, maximumFrames: 100,
+                                    durations: durations, decoder: durations)
     }
     let gate = Gate()
-    let admission = try KokoroResourceAdmission(coordinator: coordinator, operationBytes: 60, maximumFrames: 10,
+    let admission = try KokoroResourceAdmission(assets: assets, coordinator: coordinator, operationBytes: 60, maximumFrames: 10,
                                                 durations: durations, decoder: decoder)
-    let speech = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog(), decoderGate: gate), resources: admission)
+    let log = EventLog()
+    let speech = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: log, decoderGate: gate), resources: admission)
     let phonemes = try speech.phonemes("ðə")  // 4 tokens x 2 frames = 8 <= 10
     let task = Task { try await speech.synthesize(phonemes, configuration: try KokoroSpeechConfiguration()) }
     await gate.waitUntilEntered()
-    #expect(coordinator.snapshot.reservedBytes == 60)
-    let competitor = try coordinator.reserve(bytes: 30)
+    // Operation 60 + both residencies 10 + 10 + the decoder call's scratch 1.
+    #expect(coordinator.snapshot.reservedBytes == 81)
+    let competitor = try coordinator.reserve(bytes: 15)
     await gate.release()
     _ = try await task.value
-    #expect(coordinator.snapshot.reservedBytes == 30)
+    // Models stay loaded, so their residency stays reserved between requests.
+    #expect(coordinator.snapshot.reservedBytes == 35)
     competitor.release()
-    let hog = try coordinator.reserve(bytes: 50)
+    let hog = try coordinator.reserve(bytes: 30)  // 20 resident + 30 + 60 operation > 100
     await #expect(throws: ResourceAdmissionError.self) { try await speech.synthesize(phonemes, configuration: try KokoroSpeechConfiguration()) }
     hog.release()
     // 5 tokens x 2 frames = 10 is admitted; 6 tokens x 2 = 12 exceeds the profile's maximumFrames.
     _ = try await speech.synthesize(try speech.phonemes("ðəə"), configuration: try KokoroSpeechConfiguration())
     await #expect(throws: AetherError.self) { try await speech.synthesize(try speech.phonemes("ðəəə"), configuration: try KokoroSpeechConfiguration()) }
-    #expect(coordinator.snapshot.reservedBytes == 0)
+    #expect(coordinator.snapshot.reservedBytes == 20)
     await speech.unload()
+    #expect(coordinator.snapshot.reservedBytes == 0)
+    #expect(log.snapshot.filter { $0.hasPrefix("open") } == ["open:durations", "open:decode"])
+}
+
+@Test func admissionRefusesModelOpenWithoutCapacityAndRollsBack() async throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let assets = try KokoroAssets.open(at: bundle.root)
+    let coordinator = try ResourceCoordinator(capacityBytes: 100)
+    let admission = try KokoroResourceAdmission(
+        assets: assets, coordinator: coordinator, operationBytes: 10, maximumFrames: 100,
+        durations: .init(asset: assets.durations, residentBytes: 20, runScratchBytes: 1),
+        decoder: .init(asset: assets.decoder, residentBytes: 80, runScratchBytes: 1))
+    let log = EventLog()
+    let speech = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: log), resources: admission)
+    // 10 operation + 20 durations leaves 70 < the decoder's 80: the decoder is refused before opening.
+    await #expect(throws: ResourceAdmissionError.self) { try await speech.synthesize(try speech.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    #expect(!log.snapshot.contains("open:decode"))
+    #expect(coordinator.snapshot.reservedBytes == 20)  // durations stays resident; nothing leaked
+    await speech.unload()
+    #expect(coordinator.snapshot.reservedBytes == 0)
+}
+
+@Test func admissionEstimatesMustDescribeThisBundle() throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let other = try FakeBundle.make(decoderPayload: "a different decoder export")
+    defer { other.remove() }
+    let assets = try KokoroAssets.open(at: bundle.root)
+    let otherAssets = try KokoroAssets.open(at: other.root)
+    #expect(assets.durations.declaredSHA256 == otherAssets.durations.declaredSHA256)
+    let coordinator = try ResourceCoordinator(capacityBytes: 100)
+    // Same durations bytes but an older decoder: refused at init, before any request can run durations.
+    #expect(throws: AetherError.self) {
+        try KokoroResourceAdmission(assets: assets, coordinator: coordinator, operationBytes: 1, maximumFrames: 10,
+                                    durations: .init(asset: otherAssets.durations, residentBytes: 1, runScratchBytes: 1),
+                                    decoder: .init(asset: otherAssets.decoder, residentBytes: 1, runScratchBytes: 1))
+    }
+    _ = try KokoroResourceAdmission(assets: otherAssets, coordinator: coordinator, operationBytes: 1, maximumFrames: 10,
+                                    durations: .init(asset: otherAssets.durations, residentBytes: 1, runScratchBytes: 1),
+                                    decoder: .init(asset: otherAssets.decoder, residentBytes: 1, runScratchBytes: 1))
 }
 
 private struct ListPhonemizer: SpeechPhonemizer {

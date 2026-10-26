@@ -23,7 +23,7 @@ The upstream pipeline turns text into phonemes with `misaki`, which is Apache-2.
 
 - `KokoroPhonemes` validates a string against the bundle's vocabulary: 114 single Unicode scalars, token IDs up to 177. Upstream silently drops unknown symbols; AetherSpeech refuses them so that a G2P mismatch shows up immediately. The string is not normalized: Kokoro uses `a` + U+0303 for nasal vowels, but precomposed `ç` (U+00E7).
 - The app supplies G2P through the `SpeechPhonemizer` protocol (`phonemize(_:language:) -> [String]`). It returns one or more utterances of at most 510 scalars each, ideally split at sentence or clause boundaries. `session.synthesize(text:phonemizer:configuration:)` wires it in.
-- The export and reference harness import only `kokoro.model`, `kokoro.istftnet` and `kokoro.modules`. They do not run kokoro's package `__init__` (which imports misaki), and no espeak code is imported or installed.
+- The export and reference harness import only `kokoro.model`, `kokoro.istftnet` and `kokoro.modules`. They do not run kokoro's package `__init__`, which imports misaki, and they refuse to run if a real kokoro package has already been imported. No code in this repository imports or links misaki, phonemizer or espeak-ng. Whether those packages happen to be installed in a given Forge environment is outside the repository's control.
 
 License-clean G2P routes for apps:
 
@@ -79,7 +79,11 @@ do {
 - **`GeneratedAudio`** (AetherKit) is planar float32 at any sample rate, with WAV writing (`pcm16` clips and rounds ties to even; `float32` keeps samples unclipped). It is generic, so other audio producers can use the same delivery type.
 - **Lifecycle** follows Krea. Models load on first use and stay resident. One request runs at a time; overlap fails with `sessionBusy`. Cancelling the caller task stops between native calls after awaiting the submitted call, and the session returns to `ready` with models retained. `unload()` rejects new work, waits for the active request, then closes permanently.
 - **Installation.** `assets.installationManifest()` describes `kokoro.json`, both model directories and every voice for `LocalAssetStore`. `KokoroSpeechSession(installed:)` holds the read lease until joined unload.
-- **Admission.** `KokoroResourceAdmission` (opt-in) uses per-model estimates keyed by stream and metadata hash, plus operation bytes and a frame limit. As with Krea, these are caller-supplied estimates, not measured memory.
+- **Admission.** `KokoroResourceAdmission` is opt-in. Its two model estimates are keyed by stream and metadata hash and are checked against the bundle when you construct it, so estimates from another export are refused before any request runs.
+  - A decorator around the model factory, the same pattern Krea uses, reserves each model's residency before opening it. Failed opens roll back, and the residency is held until joined unload.
+  - It also reserves per-call scratch around each native call. Operation bytes are held for the whole request and must cover the retained segment audio.
+  - These are caller estimates, not measured memory. Qualified estimates for the real models are not yet published.
+- **Segment results** are retained in the returned array, at 2.4 KB per frame. A request is limited to `maximumSegments` (256).
 
 ## Compute placement
 
@@ -128,7 +132,7 @@ All checks passed: [native report](evidence/kokoro-native-2026-10-26.json), [tes
 
 **Recheck after rebasing onto 0.0.1 (`128573d`).** The four parity cases and lifecycle checks passed again with bit-identical audio and identical metrics; see the [recheck report](evidence/kokoro-native-recheck-0.0.1-base-2026-10-26.json). The CPU suite with the default `swiftbuild` engine registers 263 tests and passes, with 15 opt-in native suites skipped ([log](evidence/kokoro-cpu-tests-0.0.1-base-2026-10-26.log)).
 
-The pre-rebase [CPU suite](evidence/kokoro-cpu-tests-2026-10-26.log) passed 249 tests. Weight-free coverage includes: tokenization against upstream fixtures, noise parity with the Python harness, torch-round frame parity, alignment, WAV encoding, bundle validation (corruption, traversal, symlink escape, duplicate voices, contract drift), `LocalAssetStore` round trip, chunk ordering and seeds, busy rejection, cancellation recovery, unload ordering, contract violations, frame limits, admission, and the phonemizer path.
+The pre-rebase [CPU suite](evidence/kokoro-cpu-tests-2026-10-26.log) passed 249 tests. Weight-free coverage includes: tokenization against upstream fixtures, noise parity with the Python harness, torch-round frame parity, alignment, WAV encoding, bundle validation (corruption, traversal, symlink escape, duplicate voices, contract drift), `LocalAssetStore` round trip, chunk ordering and seeds, busy rejection, cancellation recovery, unload ordering, contract violations, frame limits, and the phonemizer path. The pre-rebase run covered only operation-byte admission; model residency and scratch admission, rollback, and bundle-matched estimates are covered from the review fixes onward.
 
 ## Reproduce
 

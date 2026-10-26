@@ -33,7 +33,7 @@ struct FakeBundle {
     let root: URL
     let voices: [String]
 
-    static func make(voices: [String] = ["af_heart", "bm_george"], maximumFrames: Int = 4096,
+    static func make(voices: [String] = ["af_heart", "bm_george"], maximumFrames: Int = 4096, decoderPayload: String = "decoder",
                      mutate: (inout [String: Any]) -> Void = { _ in }) throws -> FakeBundle {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("kokoro-fake-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root.appendingPathComponent("voices"), withIntermediateDirectories: true)
@@ -70,7 +70,7 @@ struct FakeBundle {
             "maximumFrames": maximumFrames, "styleDimension": 256, "boundaryToken": 0,
             "vocabulary": try CPUFixture.load().vocabulary,
             "models": ["durations": try model("durations.aimodel", payload: "durations"),
-                       "decoder": try model("decoder.aimodel", payload: "decoder")],
+                       "decoder": try model("decoder.aimodel", payload: decoderPayload)],
             "voices": voiceEntries,
         ]
         mutate(&contract)

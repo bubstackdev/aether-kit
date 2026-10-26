@@ -95,8 +95,21 @@ import Testing
     #expect(u32(pcm, 4) == 48 && u32(pcm, 24) == 24_000 && u32(pcm, 28) == 48_000 && u32(pcm, 40) == 12)
     #expect((0..<6).map { i16(pcm, 44 + 2 * $0) } == [0, 16384, -16384, 32767, -32767, 0])
     let float = try audio.wavData(encoding: .float32)
-    #expect(float.count == 44 + 24 && float[20] == 3 && float[34] == 32)
-    #expect(Float(bitPattern: u32(float, 44 + 12)) == 1.5)
+    // IEEE float: 18-byte fmt (cbSize 0) and a fact chunk carrying the frame count.
+    #expect(float.count == 58 + 24 && u32(float, 4) == 50 + 24 && u32(float, 16) == 18 && float[20] == 3 && float[34] == 32)
+    #expect(float[36] == 0 && float[37] == 0 && String(decoding: float[38..<42], as: UTF8.self) == "fact" && u32(float, 46) == 6)
+    #expect(String(decoding: float[50..<54], as: UTF8.self) == "data" && u32(float, 54) == 24)
+    #expect(Float(bitPattern: u32(float, 58 + 12)) == 1.5)
+
+    // More than two channels: WAVE_FORMAT_EXTENSIBLE with the PCM/float subformat GUID, interleaved frames.
+    let surround = try GeneratedAudio(channels: [[0.5, 1], [-0.5, -1], [0, 0.25]], sampleRate: 48_000)
+    let extensible = try surround.wavData()
+    #expect(u32(extensible, 16) == 40 && extensible[20] == 0xFE && extensible[21] == 0xFF && extensible[22] == 3)
+    #expect(extensible[36] == 22 && extensible[44] == 1 && String(decoding: extensible[60..<64], as: UTF8.self) == "fact")
+    #expect(String(decoding: extensible[72..<76], as: UTF8.self) == "data" && extensible.count == 80 + 12)
+    #expect((0..<6).map { i16(extensible, 80 + 2 * $0) } == [16384, -16384, 0, 32767, -32767, 8192])
+    let extensibleFloat = try surround.wavData(encoding: .float32)
+    #expect(extensibleFloat[44] == 3 && Float(bitPattern: u32(extensibleFloat, 80 + 4 * 5)) == 0.25)
 
     let stereo = try GeneratedAudio(channels: [[0.1, 0.2], [0.3, 0.4]], sampleRate: 48_000)
     let joined = try GeneratedAudio.concatenating([stereo, stereo])

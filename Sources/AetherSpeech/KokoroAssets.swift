@@ -13,12 +13,21 @@ public struct KokoroModelAsset: Sendable, Equatable {
     public let metadataSHA256: String
     let declarationSHA256: String
 
+    /// Streams `main.mlirb` and rehashes `metadata.json` and `main.hash`, each resolved inside the
+    /// model directory (symlinks may not escape it).
     public func verify() throws {
-        guard try hashFile(url.appendingPathComponent("main.mlirb")) == declaredSHA256,
-              try hashFile(url.appendingPathComponent("metadata.json")) == metadataSHA256,
-              try hashFile(url.appendingPathComponent("main.hash")) == declarationSHA256 else {
+        do {
+            try declared.verify()
+            guard try BundleFiles.sha256(of: BundleFiles.confined("main.hash", in: url)) == declarationSHA256 else {
+                throw AetherError.invalidModel("Kokoro model hash mismatch: \(relativePath)")
+            }
+        } catch is AssetStoreError {
             throw AetherError.invalidModel("Kokoro model hash mismatch: \(relativePath)")
         }
+    }
+
+    var declared: DeclaredModelAsset {
+        DeclaredModelAsset(url: url, declaredSHA256: declaredSHA256, metadataSHA256: metadataSHA256)
     }
 }
 
@@ -150,8 +159,17 @@ public struct KokoroAssets: Sendable {
 
     /// Streams both model directories through SHA-256 (about 0.3 GB) and every voice file.
     public func verify() throws {
-        try durations.verify()
-        try decoder.verify()
+        do {
+            // Both streams hash concurrently; the first failure in durations, decoder order is reported.
+            try DeclaredModelAsset.verifyConcurrently([durations.declared, decoder.declared])
+        } catch let error as AssetStoreError {
+            throw AetherError.invalidModel("Kokoro model verification failed: \(error)")
+        }
+        for model in [durations, decoder] {
+            guard (try? BundleFiles.sha256(of: BundleFiles.confined("main.hash", in: model.url))) == model.declarationSHA256 else {
+                throw AetherError.invalidModel("Kokoro model hash mismatch: \(model.relativePath)")
+            }
+        }
         for asset in voices.values.sorted(by: { $0.relativePath < $1.relativePath }) {
             guard try hashFile(asset.url) == asset.sha256 else {
                 throw AetherError.invalidModel("Kokoro voice hash mismatch: \(asset.voice)")

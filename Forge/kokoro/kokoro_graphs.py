@@ -51,7 +51,12 @@ MAX_PHONEMES = 510  # 512 ALBERT positions minus the two boundary tokens
 
 def load_upstream(upstream_root: Path):
     """Imports kokoro.model/istftnet/modules without running kokoro/__init__.py."""
+    expected = str(upstream_root / "kokoro")
     if "kokoro" in sys.modules:
+        existing = sys.modules["kokoro"]
+        # Refuse a real kokoro install: its package __init__ imports the misaki G2P pipeline.
+        if getattr(existing, "__file__", None) is not None or list(getattr(existing, "__path__", [])) != [expected]:
+            raise RuntimeError("a different 'kokoro' package is already imported; run the harness in a fresh interpreter")
         return sys.modules["kokoro.model"], sys.modules["kokoro.istftnet"], sys.modules["kokoro.modules"]
     if "loguru" not in sys.modules:  # upstream only uses logger.debug; avoid an extra install
         stub = types.ModuleType("loguru")
@@ -63,7 +68,7 @@ def load_upstream(upstream_root: Path):
         stub.logger = _Logger()
         sys.modules["loguru"] = stub
     package = types.ModuleType("kokoro")
-    package.__path__ = [str(upstream_root / "kokoro")]
+    package.__path__ = [expected]
     sys.modules["kokoro"] = package
     model = importlib.import_module("kokoro.model")
     istftnet = importlib.import_module("kokoro.istftnet")

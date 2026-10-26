@@ -44,35 +44,62 @@ public struct GeneratedAudio: Sendable, Equatable {
     }
 
     /// RIFF/WAVE bytes with interleaved frames.
+    ///
+    /// Mono and stereo use `WAVE_FORMAT_PCM` (16-byte `fmt `) or `WAVE_FORMAT_IEEE_FLOAT` (18-byte `fmt `
+    /// with `cbSize` 0, plus the `fact` chunk that non-PCM formats require). More than two channels use
+    /// `WAVE_FORMAT_EXTENSIBLE` with an unspecified speaker mask, plus `fact` for float.
     public func wavData(encoding: WAVEncoding = .pcm16) throws -> Data {
         let bytesPerSample = encoding == .pcm16 ? 2 : 4
+        let extensible = channelCount > 2
+        let float = encoding == .float32
+        let formatBytes = extensible ? 40 : (float ? 18 : 16)
+        let factBytes = (float || extensible) ? 12 : 0
+        let header = 12 + 8 + formatBytes + factBytes + 8
         let (payload, overflow) = frameCount.multipliedReportingOverflow(by: channelCount * bytesPerSample)
-        guard !overflow, payload <= Int(UInt32.max) - 36 else {
+        guard !overflow, payload <= Int(UInt32.max) - header else {
             throw AetherError.invalidRequest("audio is too long for a WAV file")
         }
-        var data = Data(capacity: 44 + payload)
-        func u32(_ value: Int) { withUnsafeBytes(of: UInt32(value).littleEndian) { data.append(contentsOf: $0) } }
-        func u16(_ value: Int) { withUnsafeBytes(of: UInt16(value).littleEndian) { data.append(contentsOf: $0) } }
-        data.append(contentsOf: Array("RIFF".utf8)); u32(36 + payload)
-        data.append(contentsOf: Array("WAVEfmt ".utf8)); u32(16)
-        u16(encoding == .pcm16 ? 1 : 3); u16(channelCount); u32(sampleRate)
-        u32(sampleRate * channelCount * bytesPerSample); u16(channelCount * bytesPerSample); u16(bytesPerSample * 8)
-        data.append(contentsOf: Array("data".utf8)); u32(payload)
-        var interleaved = [UInt8]()
-        interleaved.reserveCapacity(payload)
-        for frame in 0..<frameCount {
+        var data = Data(count: header + payload)
+        data.withUnsafeMutableBytes { raw in
+            var offset = 0
+            func bytes(_ text: String) { for byte in text.utf8 { raw[offset] = byte; offset += 1 } }
+            func u16(_ value: Int) { raw.storeBytes(of: UInt16(value).littleEndian, toByteOffset: offset, as: UInt16.self); offset += 2 }
+            func u32(_ value: Int) { raw.storeBytes(of: UInt32(value).littleEndian, toByteOffset: offset, as: UInt32.self); offset += 4 }
+            bytes("RIFF"); u32(header - 8 + payload); bytes("WAVE")
+            bytes("fmt "); u32(formatBytes)
+            u16(extensible ? 0xFFFE : (float ? 3 : 1)); u16(channelCount); u32(sampleRate)
+            u32(sampleRate * channelCount * bytesPerSample); u16(channelCount * bytesPerSample); u16(bytesPerSample * 8)
+            if extensible {
+                u16(22); u16(bytesPerSample * 8); u32(0)
+                // KSDATAFORMAT_SUBTYPE_PCM / _IEEE_FLOAT: {0000000X-0000-0010-8000-00AA00389B71}
+                u32(float ? 3 : 1); u16(0); u16(0x10)
+                for byte: UInt8 in [0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71] { raw[offset] = byte; offset += 1 }
+            } else if float {
+                u16(0)
+            }
+            if factBytes > 0 { bytes("fact"); u32(4); u32(frameCount) }
+            bytes("data"); u32(payload)
+            let channelCount = channelCount
             for channel in 0..<channelCount {
-                let value = channels[channel][frame]
-                switch encoding {
-                case .pcm16:
-                    let scaled = (min(max(value, -1), 1) * 32767).rounded(.toNearestOrEven)
-                    withUnsafeBytes(of: Int16(scaled).littleEndian) { interleaved.append(contentsOf: $0) }
-                case .float32:
-                    withUnsafeBytes(of: value.bitPattern.littleEndian) { interleaved.append(contentsOf: $0) }
+                channels[channel].withUnsafeBufferPointer { source in
+                    var position = offset + channel * bytesPerSample
+                    let stride = channelCount * bytesPerSample
+                    switch encoding {
+                    case .pcm16:
+                        for value in source {
+                            let scaled = Int16((min(max(value, -1), 1) * 32767).rounded(.toNearestOrEven))
+                            raw.storeBytes(of: scaled.littleEndian, toByteOffset: position, as: Int16.self)
+                            position += stride
+                        }
+                    case .float32:
+                        for value in source {
+                            raw.storeBytes(of: value.bitPattern.littleEndian, toByteOffset: position, as: UInt32.self)
+                            position += stride
+                        }
+                    }
                 }
             }
         }
-        data.append(contentsOf: interleaved)
         return data
     }
 
