@@ -6,6 +6,7 @@ Research date: 2026-10-17. These records distinguish observed behavior, proposed
 2. [Prototype evidence](prototype-evidence.md) — what is already demonstrated and what needs requalification.
 3. [Research](research.md) — pinned upstream sources, findings, implications, and limitations.
 4. [Qualification and release](qualification-and-release.md) — experiments, acceptance gates, and publishing sequence.
+   - [v0.0.1 release checklist](release-0.0.1-checklist.md) — scope, requalification, per-product readiness, documentation and tagging steps for the experimental preview.
 5. [Implementation status](implementation-status.md) — scaffold, executed checks, limitations and next work.
 6. [Krea conditioning slice](krea-conditioning.md) — bundle identity, tokenizer integration, conditioning and retained fixture checks.
 7. [Krea generation slice](krea-generation.md) — complete reference orchestration, shape registration, decoding, PNG delivery and parity gate.
