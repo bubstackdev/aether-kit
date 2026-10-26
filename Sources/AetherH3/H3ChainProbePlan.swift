@@ -23,12 +23,13 @@ public struct H3ChainProbePlan: Sendable {
                 + (streamsWeights ? (steps.map { $0.weights.reduce(0) { $0 + $1.spec.byteCount } }.max() ?? 0)
                     : steps.reduce(0) { $0 + $1.weights.reduce(0) { $0 + $1.spec.byteCount } })
         }
-        public func verify() throws {
+        public func verify() throws { var verified: Set<String> = []; try verify(skipping: &verified) }
+        /// Reads each file identity once per pass; immutable files give identical results.
+        func verify(skipping verified: inout Set<String>) throws {
             try base.model.verify(); try base.verifyInputs()
             for step in steps {
-                _ = try step.table.read()
-                for weight in step.weights { _ = try weight.read() }
-                if let reference = step.reference { _ = try reference.read() }
+                for file in [step.table] + step.weights + (step.reference.map { [$0] } ?? [])
+                    where verified.insert(file.url.path + "#" + file.sha256).inserted { _ = try file.read() }
             }
         }
     }
@@ -94,7 +95,11 @@ public struct H3ChainProbePlan: Sendable {
         }
         self.cases = cases
     }
-    public func verify() throws { for item in cases { try item.verify() } }
+    /// Both cardinality cases bind the same fifty blocks of weights; each is verified once.
+    public func verify() throws {
+        var verified: Set<String> = []
+        for item in cases { try item.verify(skipping: &verified) }
+    }
 }
 
 private struct Weights: Decodable { let parameters: [[ChainTensor]] }

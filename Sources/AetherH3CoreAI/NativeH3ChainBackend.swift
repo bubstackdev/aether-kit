@@ -26,12 +26,14 @@ actor NativeH3ChainBackend: H3ChainBackend {
     private let outputs: [any MTLBuffer]
     private let observer: (@Sendable (H3ChainEvent) -> Void)?
 
-    static func open(_ probe: H3ChainProbePlan.Case,
+    /// `preverified` skips the full-file pass when the owning session has already
+    /// verified this exact case. Every file is still hash-checked as it is bound.
+    static func open(_ probe: H3ChainProbePlan.Case, preverified: Bool = false,
                      observer: (@Sendable (H3ChainEvent) -> Void)?) async throws -> NativeH3ChainBackend {
-        try await NativeH3ChainBackend(probe: probe, observer: observer)
+        try await NativeH3ChainBackend(probe: probe, preverified: preverified, observer: observer)
     }
-    private init(probe: H3ChainProbePlan.Case, observer: (@Sendable (H3ChainEvent) -> Void)?) async throws {
-        try probe.verify()
+    private init(probe: H3ChainProbePlan.Case, preverified: Bool, observer: (@Sendable (H3ChainEvent) -> Void)?) async throws {
+        if !preverified { try probe.verify() }
         try Task.checkCancellation()
         guard let device = MTLCreateSystemDefaultDevice(), probe.boundBytes <= 4 << 30,
               probe.base.output.byteCount <= device.maxBufferLength else {
@@ -139,13 +141,12 @@ actor NativeH3ChainBackend: H3ChainBackend {
             try Task.checkCancellation()
             // Every previous encode is joined before shared weight slots change.
             // A failed/cancelled reload submits nothing; the next run reloads 0.
+            // Files stream straight into their slots and are hashed there once;
+            // opening verified their finite values for these same identities.
             if !weightFiles.isEmpty {
                 for (file, slot) in zip(weightFiles[block], weightSlots) {
                     guard file.name == slot.name, file.spec == slot.spec else { throw AetherError.invalidModel("H3 weight slot layout changed") }
-                    let value = try file.read()
-                    value.bytes.withUnsafeBytes { slot.buffer.contents().copyMemory(from: $0.baseAddress!, byteCount: $0.count) }
-                    let copy = Data(bytesNoCopy: slot.buffer.contents(), count: slot.spec.byteCount, deallocator: .none)
-                    guard h3SHA256(copy) == file.sha256 else { throw AetherError.invalidTensor("H3 streamed weight copy changed bytes") }
+                    try file.read(into: UnsafeMutableRawBufferPointer(start: slot.buffer.contents(), count: slot.spec.byteCount))
                 }
             }
             try Task.checkCancellation()

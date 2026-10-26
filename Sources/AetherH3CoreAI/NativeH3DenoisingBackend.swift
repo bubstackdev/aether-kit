@@ -2,6 +2,8 @@ import AetherKit
 import AetherH3
 import Foundation
 
+/// Created only by `H3DenoisingSession.open` after `plan.verify()`. Native opens
+/// therefore skip repeated full-stream passes; bound tensors are still hash-checked.
 actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
     private let plan: H3DenoisingPlan
     private let observer: (@Sendable (H3DenoisingExecutionEvent) -> Void)?
@@ -24,7 +26,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
               conditioning.spec == plan.conditioning.spec else { throw AetherError.invalidTensor("H3 trajectory request geometry or conditioning differs") }
         // These functions retain their stream across runs. A cancelled run leaves
         // no committed latent state; the next run restarts its supplied input.
-        if time == nil { time = try await NativeH3Function.open(plan.timeModel) }
+        if time == nil { time = try await NativeH3Function.open(plan.timeModel, preverified: true) }
         var embeddings: [H3TensorData] = []
         let rows = plan.schedule.steps.map { plan.layout.timesteps(for: $0) }
         for (step, row) in rows.enumerated() {
@@ -38,7 +40,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
         // retained across all eight steps, never fifty native model/workspaces.
         var tables = Array(repeating: [H3TensorData](), count: 50)
         for block in 0..<50 {
-            let modulation = try await NativeH3Function.open(plan.modulations[block])
+            let modulation = try await NativeH3Function.open(plan.modulations[block], preverified: true)
             for step in 0..<8 {
                 let output = try await modulation.run(inputs: ["temb": embeddings[step]],
                     outputs: ["modulations": H3TensorSpec(scalarType: .bfloat16, shape: [6,rows[step].values.count * 3,5376])],
@@ -52,7 +54,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
             kernels: self, onOutput: onOutput)
     }
     func prepare(step: Int, latents: H3Latents, conditioning: H3TensorData) async throws -> H3TensorData {
-        if prepare == nil { prepare = try await NativeH3Function.open(plan.prepareModel) }
+        if prepare == nil { prepare = try await NativeH3Function.open(plan.prepareModel, preverified: true) }
         let output = try await prepare!.run(inputs: ["video": latents.video,"audio": latents.audio,"text": conditioning],
             outputs: ["hidden": plan.backbone.cases[0].base.output], observer: observe("prepare", step: step))
         return output["hidden"]!
@@ -61,7 +63,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
         let rows = plan.layout.timesteps(for: plan.schedule.steps[step]), cardinality = rows.values.count
         if bodyCardinality != cardinality {
             body = nil; bodyCardinality = nil // Previous work is already joined.
-            body = try await NativeH3ChainBackend.open(plan.backbone.cases[cardinality - 1], observer: nil)
+            body = try await NativeH3ChainBackend.open(plan.backbone.cases[cardinality - 1], preverified: true, observer: nil)
             bodyCardinality = cardinality
         }
         let tags = try H3TensorData(spec: H3TensorSpec(scalarType: .int32, shape: [plan.layout.rows]), bytes: rows.adalnIndices.withUnsafeBytes { Data($0) })
@@ -75,7 +77,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
         return value
     }
     func heads(step: Int, hidden: H3TensorData, latents: H3Latents) async throws -> H3Latents {
-        if heads == nil { heads = try await NativeH3Function.open(plan.headsModel) }
+        if heads == nil { heads = try await NativeH3Function.open(plan.headsModel, preverified: true) }
         let rows = plan.layout.timesteps(for: plan.schedule.steps[step])
         let indices = try H3TensorData(spec: H3TensorSpec(scalarType: .int32, shape: [plan.layout.rows]), bytes: rows.indices.withUnsafeBytes { Data($0) })
         let output = try await heads!.run(inputs: ["hidden": hidden,"temb": embeddings[step],"indices": indices],
