@@ -101,38 +101,46 @@ Bundles exported since the bucket work (`export_kokoro.py --decoder bucketed`, t
 
 **Exactness.** The padded decoder confines everything that depends on sequence length to the valid prefix:
 
-- InstanceNorm statistics;
-- every conv input, masked to look like zero padding;
+- InstanceNorm statistics: one pass of masked sums, with the affine terms folded into a per-channel gain and shift, and the output masked to exact zeros;
 - the reverse LSTM direction;
 - the F0 phase interpolation edge, with the last valid value held over the padding;
 - the harmonic STFT's end reflection, with ten samples written at the valid end;
 - the iSTFT frames and window envelope.
 
-In float64, padded and unpadded valid prefixes agree to 1e-12. The masking is therefore exact; the only difference is reduction order. In float32 that rounding is amplified exactly as the model's own float32-vs-float64 difference is. Padded output is bit-identical when an utterance exactly fills its bucket, and differs by 0.3–1.5% relative L2 otherwise, measured on the four parity cases and on lengths 63/64/65 through 511/512/513 ([eager check](evidence/kokoro-buckets-eager-check-2026-10-26.json)). Against upstream, the bucketed native run stays within the unchanged parity limits: frames exact, rel. L2 0.010–0.031, log-mel mean 0.004–0.014 ([report](evidence/kokoro-buckets-native-2026-10-26.json)).
+LeakyReLU and Snake both map 0 to 0. Conv inputs that follow a masked norm therefore already match zero padding, and only transposed-conv outputs and generator-stage inputs are masked again.
 
-**Measured trade-off** ([summary](evidence/kokoro-buckets-2026-10-26.json)). Both decoders ran over the same 50 distinct lengths, 41–1877 frames:
+In float64, padded and unpadded valid prefixes agree to 1e-12, so the masking is exact. In float32, reduction-order rounding is amplified exactly as the model's own float32-vs-float64 difference is:
+
+- Padded output is bit-identical when an utterance exactly fills its bucket.
+- Otherwise it differs by 0.4–1.8% relative L2, measured on the four parity cases and on lengths 63/64/65 through 511/512/513 ([eager check](evidence/kokoro-buckets-lean-eager-check-2026-10-26.json)).
+- Against upstream, the bucketed native run stays within the unchanged parity limits: frames exact, rel. L2 0.008–0.033, log-mel mean 0.004–0.013 ([report](evidence/kokoro-buckets-lean-native-2026-10-26.json)).
+
+**Warm speed**, paired and interleaved: one process per shape, all three decoders warm, nine rounds, median seconds ([log](evidence/kokoro-buckets-paired-timing-2026-10-26.log)):
+
+| Shape (frames) | Unbucketed | First masking (`f771a0b`) | Lean masking (current) |
+| ---: | ---: | ---: | ---: |
+| 128 | 0.088 | 0.196 (2.2×) | 0.103 (1.17×) |
+| 256 | 0.157 | 0.405 (2.6×) | 0.161 (1.03×) |
+| 1024 | 0.775 | 1.910 (2.5×) | 0.736 (0.95×) |
+
+The first masking's cost came from the decomposed two-pass norm statistics and from extra masking around every norm and conv. Together these multiplied the number of large-tensor kernels. The lean form above runs at parity with the unbucketed decoder at the same shape. Padding then costs at most the ratio of the bucket size to the utterance length: a 913-frame utterance padded to 1024 took a median 0.70 s, against 0.94 s unpadded, in the same rounds. These are paired ratios on a loaded host (load average 26–36); absolute times there are not benchmarks.
+
+**Memory** ([summary](evidence/kokoro-buckets-2026-10-26.json)). Both decoders ran over the same 50 distinct lengths, 41–1877 frames:
 
 | | Unbucketed decoder | Bucketed decoder |
 | --- | --- | --- |
 | First use of a new length | 1.9–5.8 s, every new length | Once per bucket; later lengths in a used bucket need no specialization |
-| Process footprint after 50 lengths | 19.2 GB, growing with every length | about 4.2 GB, flat within each bucket |
-| Footprint after `unload()` | 14.0 GB, not returned | 0.33 GB |
-| Metal allocation after 50 lengths | 33.9 GB | 13.4 GB, with buckets 64–2048 used |
+| Process footprint | 19.2 GB after 50 lengths, growing with each | about 4.2 GB through bucket 1024; 6–12 GB while bucket 2048 is in use |
+| Metal allocation | 33.9 GB, growing with each length | 13.5 GB with buckets 64–2048, flat within each bucket |
+| After `unload()` | 14.0 GB footprint, 17.6 GB Metal | footprint 0.33 GB in one run and 8.5 GB in another; Metal about 8.2 GB in both |
 
-Metal allocation per bucket grows faster than the bucket size: 0.3, 0.7, 1.3, 2.9, 5.1 and 13.4 GB cumulative through buckets 64, 128, 256, 512, 1024 and 2048. Size admission estimates for the largest bucket a session can reach. Prewarm only the buckets your utterances need, and split text so that segments stay at or below 1024 frames (about 25 s) where memory matters.
+Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. Size admission estimates for the largest bucket a session can reach, and prewarm only the buckets your utterances need. Where memory matters, keep segments at or below 1024 frames (about 25 s); on iOS, cap the maximum bucket at what the device fits. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
 
-**Cold first synthesis.** The qualification ran on a bundle that had been exported minutes earlier and never specialized, so each bucket's first use was genuinely cold. No shared cache was cleared; Core AI exposes no per-process cache directory. Results:
+**Cold first synthesis.** The qualification ran on a bundle exported minutes earlier that had never been specialized, so each bucket's first use was genuinely cold. No shared cache was cleared; Core AI exposes no per-process cache directory. Results:
 
-- 2.9 s for the first utterance, which also loads the models;
-- 1.8 s and 5.6 s for the first use of buckets 256 and 1024;
-- 0.3–0.6 s for later unseen lengths (66, 103 and 146 frames) that fell into warmed buckets.
-
-**Cost.** In this run the bucketed decoder was slower when warm, with a real-time factor of 0.12–0.19 on the parity cases. In interleaved runs in one process, at 1024 frames and regardless of padding, it took about 1.4–2.5× the unbucketed decoder's time.
-
-- The cause is the masking itself, not padding: the bucketed graph is just as slow at an exact bucket fit.
-- Every timing run shared the host with load averages of 50–100.
-- The unbucketed figure from a quieter part of the day (0.031) is not directly comparable, and a quiet-window remeasure is pending.
-- Buckets bound compile stalls and memory. They currently cost warm throughput.
+- 1.8 s for the first utterance, which also loads the models;
+- 1.3 s and 2.5 s for the first use of buckets 256 and 1024;
+- 0.12–0.20 s for later unseen lengths (66, 103 and 146 frames) in warmed buckets.
 
 ## Qualification
 
@@ -190,6 +198,6 @@ Core AI exports are not byte-reproducible, so a new export gets new model hashes
 ## Next steps
 
 - fp16 or int8 decoder export, with new tolerances and size/RTF measurements; an iOS build and device run.
-- Remeasure bucketed vs unbucketed warm throughput in a quiet window. If the masking overhead holds, consider fewer masked stages, for example padding only the generator stages, or a fixed-window streaming decoder.
+- Reduce bucket 2048's Metal allocation, or drop that bucket by capping segment length; consider a fixed-window streaming decoder for long utterances.
 - Retest GPU `durations` and the reshape hint on later OS/coreai-torch releases.
 - A recorded listening review, and a license-clean G2P sample adapter (CMUdict-based), kept outside the SDK targets.

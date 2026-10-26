@@ -375,25 +375,37 @@ def _prefix_mask(length, valid, dtype=torch.float32):
 
 
 def _masked_adain(norm_module, x, s, m, n):
-    """AdaIN1d with InstanceNorm statistics over the first n positions only (m is their mask)."""
+    """AdaIN1d with InstanceNorm statistics over the first n positions only (m is their mask).
+
+    One pass of statistics (sum of x and of x*x over the valid prefix), the affine terms folded into a
+    per-channel scale and shift, and the output masked: padding comes out as exact zeros, so the
+    zero-preserving activations and convs that follow need no further masking."""
     h = norm_module.fc(s).view(s.shape[0], -1, 1)
     gamma, beta = torch.chunk(h, chunks=2, dim=1)
     norm = norm_module.norm
-    mean = (x * m).sum(dim=-1, keepdim=True) / n
-    centered = (x - mean) * m
-    var = (centered * centered).sum(dim=-1, keepdim=True) / n
-    x_hat = (x - mean) / torch.sqrt(var + norm.eps)
+    xm = x * m
+    mean = xm.sum(dim=-1, keepdim=True) / n
+    var = torch.clamp((xm * x).sum(dim=-1, keepdim=True) / n - mean * mean, min=0.0)
+    gain = (1 + gamma) * torch.rsqrt(var + norm.eps)
     if norm.affine:
-        x_hat = x_hat * norm.weight.view(1, -1, 1) + norm.bias.view(1, -1, 1)
-    return (1 + gamma) * x_hat + beta
+        gain = gain * norm.weight.view(1, -1, 1)
+        shift = (1 + gamma) * norm.bias.view(1, -1, 1) + beta - mean * gain
+    else:
+        shift = beta - mean * gain
+    return (x * gain + shift) * m
 
 
 def _masked_adain_block(block, x, s, m_in, n_in, m_out, n_out):
-    """Upstream AdainResBlk1d with every conv input masked like the unpadded run's zero padding."""
-    r = block.actv(_masked_adain(block.norm1, x, s, m_in, n_in)) * m_in
+    """Upstream AdainResBlk1d with conv inputs equal to the unpadded run's zero padding.
+
+    LeakyReLU preserves the masked norm's zeros; only an upsampling block's transposed-conv output
+    needs masking again before conv1."""
+    r = block.actv(_masked_adain(block.norm1, x, s, m_in, n_in))
     r = block.pool(r)
-    r = block.conv1(r * m_out)
-    r = block.actv(_masked_adain(block.norm2, r, s, m_out, n_out)) * m_out
+    if block.upsample_type != "none":
+        r = r * m_out
+    r = block.conv1(r)
+    r = block.actv(_masked_adain(block.norm2, r, s, m_out, n_out))
     r = block.conv2(r)
     shortcut = block.upsample(x)
     if block.learned_sc:
@@ -402,14 +414,12 @@ def _masked_adain_block(block, x, s, m_in, n_in, m_out, n_out):
 
 
 def _masked_resblock(block, x, s, m, n):
-    """Upstream AdaINResBlock1 (Snake1D) with masked statistics and conv inputs."""
+    """Upstream AdaINResBlock1 (Snake1D); Snake maps 0 to 0, so the masked norms keep conv inputs exact."""
     for c1, c2, n1, n2, a1, a2 in zip(block.convs1, block.convs2, block.adain1, block.adain2, block.alpha1, block.alpha2):
         xt = _masked_adain(n1, x, s, m, n)
-        xt = xt + (1 / a1) * (torch.sin(a1 * xt) ** 2)
-        xt = c1(xt * m)
+        xt = c1(xt + (1 / a1) * (torch.sin(a1 * xt) ** 2))
         xt = _masked_adain(n2, xt, s, m, n)
-        xt = xt + (1 / a2) * (torch.sin(a2 * xt) ** 2)
-        xt = c2(xt * m)
+        xt = c2(xt + (1 / a2) * (torch.sin(a2 * xt) ** 2))
         x = xt + x
     return x
 

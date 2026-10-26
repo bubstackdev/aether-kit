@@ -1,52 +1,61 @@
 {
   "schema": 1,
-  "subject": "Kokoro decoder length buckets",
+  "subject": "Kokoro decoder length buckets (lean masking)",
   "date": "2026-10-26",
   "bundle": {
     "location": "~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp32-buckets-2026-10-26",
-    "kokoro_json_sha256": "f3914b4539739b7859ad6be20579c0e3cd7fd031f70b7b2bbd058d16215a59d2",
-    "decoder_main_sha256": "abc6eb1d53168671bbd9a068c8bfda675e97a63e0621eac8e249e9a16d67dab2",
-    "durations_main_sha256": "a6349da08ce90b5dd26328f2a9c8a602f37eb3e0edf017562072e31bee112042",
+    "kokoro_json_sha256": "82331b58b1b6231cb9961f61a69eb3178178c16dcaf0bf8ea4982e127da051f9",
+    "decoder_main_sha256": "6702769d47221e35df1e7371842253c3321f663019f1475b8fc5e123ded0e432",
+    "durations_main_sha256": "3ce8654b16658c235ffb01b6406dc77a9266449ca69d4bd20bbe82b49eefc807",
     "decoder_buckets": [64, 128, 256, 512, 1024, 2048, 4096],
     "export": "Forge/kokoro/export_kokoro.py --decoder bucketed (default); BucketedDecoderGraph takes `frames` int32 [1]"
   },
-  "method": "Inputs are zero-padded to the smallest bucket >= frames and noise extends the same seeded sequence. Every time-global or edge-sensitive op is restricted to the valid prefix at its resolution: InstanceNorm statistics, conv inputs (masked like zero padding), the reverse LSTM direction, the F0 phase interpolation edge (last valid value held over the padding), the harmonic STFT end reflection (10 samples written at the valid end) and the iSTFT frames and window envelope. The padded tail of the output is discarded.",
+  "method": "Inputs are zero-padded to the smallest bucket >= frames and noise extends the same seeded sequence. Length-dependent work is confined to the valid prefix: InstanceNorm statistics (one pass of sum x and sum x*x over valid positions, affine folded into a per-channel gain and shift, output masked to exact zeros), the reverse LSTM direction, the F0 phase interpolation edge (last valid value held), the harmonic STFT end reflection (10 samples written at the valid end), and the iSTFT frames and envelope. Because LeakyReLU and Snake map 0 to 0, conv inputs after a masked norm already equal zero padding; only transposed-conv outputs and the generator stage inputs are masked again.",
   "exactness": {
-    "float64_padded_vs_unpadded_rel_l2": {"247->256": 1.5e-12, "127->128": 4.0e-12, "129->192": 1.1e-12, "200->384": 5.9e-15},
-    "float64_note": "The masking is exact: in float64 the padded and unpadded valid prefixes agree to 1e-12.",
-    "float32_record": "kokoro-buckets-eager-check-2026-10-26.json",
-    "float32_padded_vs_unpadded_rel_l2": "0 at exact bucket fits; 0.0027-0.0145 otherwise (same rounding amplification as the model's float32-vs-float64 floor of 0.007-0.025)",
-    "bit_identical": "only when frames equals the bucket"
+    "float64_padded_vs_unpadded_rel_l2": {"247->256": 1.2e-12, "127->128": 4.0e-12, "129->192": 1.3e-12, "200->384": 1.3e-14},
+    "float32_record": "kokoro-buckets-lean-eager-check-2026-10-26.json",
+    "float32_padded_vs_unpadded_rel_l2": "0 at exact bucket fits; 0.004-0.018 otherwise",
+    "float32_padded_vs_upstream_rel_l2": [0.0084, 0.0242, 0.0253, 0.0200],
+    "float32_original_graph_vs_upstream_rel_l2": [0.0068, 0.0248, 0.0222, 0.0198]
   },
   "native": {
-    "report": "kokoro-buckets-native-2026-10-26.json",
-    "log": "kokoro-buckets-native-2026-10-26.log",
+    "report": "kokoro-buckets-lean-native-2026-10-26.json",
+    "log": "kokoro-buckets-lean-native-2026-10-26.log",
     "passed": true,
     "cases": [
-      {"name": "short-af_heart", "frames": 98, "bucket": 128, "rel_l2": 0.01032, "log_mel_mean": 0.00397, "cold_first_s": 2.88},
-      {"name": "sentence-am_michael", "frames": 247, "bucket": 256, "rel_l2": 0.02436, "log_mel_mean": 0.01052, "cold_first_s": 1.79},
-      {"name": "speed-bf_emma", "frames": 180, "bucket": 256, "rel_l2": 0.03089, "log_mel_mean": 0.00707, "cold_first_s": 0.91, "note": "bucket already specialized by the previous case"},
-      {"name": "long-af_bella", "frames": 913, "bucket": 1024, "rel_l2": 0.02457, "log_mel_mean": 0.01407, "cold_first_s": 5.60}
+      {"name": "short-af_heart", "frames": 98, "bucket": 128, "rel_l2": 0.0079, "log_mel_mean": 0.00364, "cold_first_s": 1.83},
+      {"name": "sentence-am_michael", "frames": 247, "bucket": 256, "rel_l2": 0.02372, "log_mel_mean": 0.01054, "cold_first_s": 1.26},
+      {"name": "speed-bf_emma", "frames": 180, "bucket": 256, "rel_l2": 0.03301, "log_mel_mean": 0.00683, "cold_first_s": 0.39, "note": "bucket already specialized by the previous case"},
+      {"name": "long-af_bella", "frames": 913, "bucket": 1024, "rel_l2": 0.02200, "log_mel_mean": 0.01344, "cold_first_s": 2.48}
     ],
-    "unseen_lengths_after_buckets_warm": [{"frames": 66, "first_s": 0.31}, {"frames": 103, "first_s": 0.49}, {"frames": 146, "first_s": 0.63}],
-    "cold_cache_isolation": "The bundle was exported immediately before this run and had never been specialized, so each bucket's first use is a genuine cold specialization. No shared cache was cleared or redirected (Core AI exposes no per-process cache directory; the MPSGraph cache lives in the shared per-user cache).",
+    "unseen_lengths_after_buckets_warm": [{"frames": 66, "first_s": 0.118}, {"frames": 103, "first_s": 0.116}, {"frames": 146, "first_s": 0.204}],
+    "cold_cache_isolation": "Exported minutes before the run and never specialized, so each bucket's first use is a genuine cold specialization. No shared cache was cleared or redirected; Core AI exposes no per-process cache directory.",
     "lifecycle": "cancellation recovery and active unload bit-identical; frames exact; repeats identical"
+  },
+  "paired_timing": {
+    "log": "kokoro-buckets-paired-timing-2026-10-26.log",
+    "protocol": "one process per shape, all three decoders loaded and warmed, 9 interleaved rounds; median seconds per warm decode on the GPU (load averages 26-36)",
+    "shape_128": {"unbucketed": 0.088, "first_masking": 0.196, "lean": 0.103},
+    "shape_256": {"unbucketed": 0.157, "first_masking": 0.405, "lean": 0.161},
+    "shape_1024": {"unbucketed": 0.775, "first_masking": 1.910, "lean": 0.736},
+    "padded_1024_valid_913_vs_unbucketed_913": {"unbucketed_913": 0.936, "lean_1024_valid_913": 0.704, "note": "minimums 0.51 vs 0.65; padding to the bucket costs at most the bucket ratio"},
+    "ratios_vs_unbucketed": {"first_masking": [2.23, 2.58, 2.46], "lean": [1.17, 1.03, 0.95]},
+    "finding": "The first masking's cost was in the decomposed two-pass norm statistics and the extra masking around every norm and conv, which multiplied large-tensor kernel count. Single-pass masked statistics with folded affine and masked norm output, plus relying on zero-preserving activations, bring the bucketed decoder to parity with the unbucketed one at the same shape while staying exact."
   },
   "memory": {
     "unbucketed_sweep": {"record": "kokoro-buckets-sweep-unbucketed-2026-10-26.json", "lengths": 50, "frames": "41-1877",
                          "footprint_mib_after_50": 19197, "metal_mib_after_50": 33909,
                          "footprint_mib_after_unload": 14023, "metal_mib_after_unload": 17552,
                          "first_call_s": "1.9-5.8 per new length"},
-    "bucketed_sweep": {"record": "kokoro-buckets-sweep-bucketed-2026-10-26.json", "lengths": 50, "frames": "41-1877", "buckets_used": [64, 128, 256, 512, 1024, 2048],
-                       "metal_mib_after_bucket": {"64": 312, "128": 700, "256": 1310, "512": 2889, "1024": 5145, "2048": 13447},
-                       "footprint_mib_plateau": 4200, "footprint_mib_after_unload": 333, "metal_mib_after_unload": 8236,
-                       "growth_within_a_bucket": "none: footprint and Metal allocation stay flat across further lengths in an already used bucket"},
-    "scope": "phys_footprint from task_info(TASK_VM_INFO) and MTLDevice.currentAllocatedSize of the default device, sampled after each call; MPSGraph's allocator caches may count toward the Metal figure after unload"
+    "lean_bucketed_sweep": {"record": "kokoro-buckets-lean-sweep-2026-10-26.json", "lengths": 50, "frames": "41-1877", "buckets_used": [64, 128, 256, 512, 1024, 2048],
+                            "metal_mib_cumulative_after_bucket": {"64": 314, "128": 700, "256": 1310, "512": 2889, "1024": 5149, "2048": 13499},
+                            "metal_mib_increment_per_bucket": {"64": 314, "128": 386, "256": 610, "512": 1579, "1024": 2260, "2048": 8350},
+                            "footprint_mib": "flat within buckets up to 1024 (about 4.2 GB); 6.2-12.4 GB fluctuating within bucket 2048",
+                            "footprint_mib_after_unload": 8469, "metal_mib_after_unload": 8290},
+    "first_masking_sweep": {"record": "kokoro-buckets-sweep-bucketed-2026-10-26.json", "footprint_mib_after_unload": 333, "metal_mib_after_unload": 8236},
+    "unload_note": "Footprint sampled immediately after unload was 0.33 GB in one bucketed run and 8.5 GB in the other: the framework's allocator caches are not returned deterministically at that instant. Metal allocation after unload stayed about 8.2 GB in both, so MPSGraph keeps some per-process caches past model release.",
+    "scope": "phys_footprint from task_info(TASK_VM_INFO) and MTLDevice.currentAllocatedSize of the default device, sampled after each call",
+    "guidance": "Bucket 2048 alone adds about 8.3 GB of Metal allocation. Cap segments at 1024 frames (about 25 s) where memory matters; on iOS cap the maximum bucket at what the device fits and refuse longer segments."
   },
-  "timing": {
-    "host_load": "load averages 50-100 during every timing run on this shared host; GPU exclusive under the lock but CPU heavily contended",
-    "interleaved_same_process_1024_frames": {"unbucketed_1024": "median 1.29-2.52 s", "bucketed_1024_valid_913": "median 2.29-3.61 s", "bucketed_1024_valid_1024": "median 3.45 s"},
-    "conclusion": "The bucketed graph's masking costs roughly 1.4-2.5x warm decode time at the same shape in these loaded runs, independent of padding; warm RTF on the parity cases was 0.12-0.19 here versus 0.031 for the unbucketed graph on a quieter host earlier the same day. A quiet-window interleaved remeasure is required before quoting a speed ratio."
-  },
-  "gpu_lock_seconds": 1027
+  "gpu_lock_seconds": {"first_bucket_work": 1027, "lean_investigation": 371}
 }
