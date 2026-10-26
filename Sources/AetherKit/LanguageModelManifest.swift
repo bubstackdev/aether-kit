@@ -39,7 +39,13 @@ public struct LanguageModelManifest: Codable, Sendable {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
         var hash = SHA256()
-        while let data = try file.read(upToCount: 4 * 1024 * 1024), !data.isEmpty { hash.update(data: data) }
+        // Drain each autoreleased chunk; otherwise a multi-GB model stays resident
+        // until the synchronous verification returns.
+        while try autoreleasepool(invoking: { () throws -> Bool in
+            guard let data = try file.read(upToCount: 4 * 1024 * 1024), !data.isEmpty else { return false }
+            hash.update(data: data)
+            return true
+        }) {}
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
     private static func hex(_ string: String, count: Int) -> Bool {

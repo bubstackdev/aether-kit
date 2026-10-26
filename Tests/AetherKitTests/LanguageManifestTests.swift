@@ -1,4 +1,5 @@
 import AetherKit
+import CryptoKit
 import Foundation
 import Testing
 
@@ -21,6 +22,14 @@ struct LanguageManifestTests {
         #expect(throws: AetherError.self) { try manifest.verify(in: directory, platform: .ios) }
         try Data("changed".utf8).write(to: model)
         #expect(throws: AetherError.self) { try manifest.verify(in: directory, platform: .macos) }
+    }
+    @Test func fileHashSpansChunksAndPartialTail() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        var raw = Data(repeating: 0x5a, count: 8 << 20)
+        raw.append(contentsOf: 0..<17)
+        try raw.write(to: url)
+        #expect(try LanguageModelManifest.fileHash(url) == SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined())
     }
     @Test func rejectsTraversalBeforeReadingAssets() throws {
         let values: [String: Any] = ["schemaVersion": 1, "modelDirectory": "../escape", "tokenizerDirectory": "tokenizer",
