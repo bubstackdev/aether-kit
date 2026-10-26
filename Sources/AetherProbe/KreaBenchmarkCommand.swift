@@ -48,7 +48,7 @@ struct KreaBenchmarkReport: Encodable {
     var iterations: [BenchmarkIteration] = []
     var statistics: [String: [String: BenchmarkStatistics]] = [:]
     let computePolicy = "preferGPU"
-    let residency = "balanced"
+    var residency = BenchmarkResidency.balanced
     let memorySampleIntervalMilliseconds = 50
     let cachePolicy = "No OS cache eviction; same generation session across each case's warmups and measurements, new session for the next case"
     var timingScope = "Application-stage wall clock, not GPU kernel timing. Conditioning includes balanced cleanup and encoder model/function loading; denoiserSetup includes model acquisition/validation. step0 includes rotary/schedule setup and lazy denoiser function loading. Steps include native calls, host copies and Euler updates. Decode includes decoder model/function loading, copying and image validation. Stage timings exclude progress observers; total includes observers. Preflight, final pixel hashing, report IO and unload are outside timed generation."
@@ -86,6 +86,10 @@ enum KreaBenchmarkCommand {
             try plan.validate()
             report.plan = plan
             report.profile = plan.effectiveProfile
+            report.residency = plan.effectiveResidency
+            if plan.effectiveResidency == .resident {
+                report.timingScope += " Resident plans keep the encoder and denoisers loaded across requests, so later conditioning and step0 omit model reacquisition."
+            }
             if plan.effectiveProfile == .provided {
                 report.timingScope = "Provided conditioning is encoded, hash-validated and its encoder unloaded once per case, recorded separately outside iteration timing. Iterations reuse one denoiser/decoder session; conditioning measures only the provided-tensor handoff. Warmup step0 includes denoiser function loading; measured steps reuse retained functions. Steps include native calls, host copies and Euler updates. Decode includes loading when needed, copies and image validation. Stage timings exclude progress observers; total includes them. Preflight, one-time conditioning setup, final pixel hashing, report IO and unload are excluded. This profile does not measure fresh-prompt end-to-end latency."
             }
@@ -178,7 +182,8 @@ enum KreaBenchmarkCommand {
                     report.conditioningSetups.append(setup.record)
                     try write()
                 } else { provided = nil }
-                let pipeline = KreaGenerationSession(assets: assets, compute: .preferGPU, residency: .balanced)
+                let pipeline = KreaGenerationSession(assets: assets, compute: .preferGPU,
+                    residency: plan.effectiveResidency == .resident ? .resident : .balanced)
                 let operation = BenchmarkOperation(generate: { progress in
                     if let provided {
                         return try await pipeline.generate(configuration: configuration, conditioning: provided,

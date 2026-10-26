@@ -122,3 +122,12 @@ All measured samples remain included. Encoded totals ranged from 35.47–40.45 s
 The [analysis and artifact hashes](evidence/krea-benchmark-comparison-2026-10-18.json), [encoded report](evidence/krea-benchmark-comparison-encoded-2026-10-18.json), [encoded journal](evidence/krea-benchmark-comparison-encoded-2026-10-18.jsonl), [provided report](evidence/krea-benchmark-comparison-provided-2026-10-18.json) and [provided journal](evidence/krea-benchmark-comparison-provided-2026-10-18.jsonl) preserve the full results. The earlier readiness record remains a historical preparation checkpoint.
 
 The library now exposes this repeated-generation pattern through the [prepared-prompt workflow](krea-generation.md#prepare-once-render-multiple-seeds): prepare once, then vary image configuration while retaining the generation session. Its CPU and native qualification status is recorded separately from these historical benchmark reports.
+
+## Residency and load path: 2026-10-26
+
+Plans may now set `"residency": "resident"`. When it's omitted, earlier plans keep their balanced sessions, and reports record the residency used. The [summary record](evidence/krea-residency-load-path-2026-10-26.json) covers small 512×512 runs (one warm-up, three to five measurements) on the same M5 Max and OS build. Every iteration matched the independent references. These are exploratory measurements, not release benchmarks.
+
+- **Steady sampling is about 0.535 s per step**, against 2.08 s in the October 18 comparison, with identical latent and pixel hashes. A standalone Core AI harness matches it: four segments take 0.52 s with or without fresh host copies, so boundary copies are not the bottleneck. The October 18 figures should be treated as superseded.
+- **Fresh prompts (encoded profile):** the median is 14.1 s balanced and 5.0 s resident. Resident mode keeps the encoder (0.17 s per encode) and denoisers loaded, peaking at 22.9 GiB Metal allocation against 15.3 GiB. Balanced mode spends about 4–6 s reacquiring the encoder and 5–7 s reloading denoiser functions per request.
+- **The first image in a process stays slow:** 55–79 s encoded and about 23 s provided, mostly first model opens and function loading.
+- **Concurrent function loading was tried and reverted.** Loading the four denoiser functions concurrently cut the first image to 10–12 s. However, three of five concurrent runs settled into slower steady steps (0.8–1.0 s), while all five lazy runs stayed at 0.52–0.64 s. Repeated generation is the common case, so lazy loading remains.

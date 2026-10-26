@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "scope": "Krea 512x512 load-path and residency experiments on one Apple M5 Max, macOS 27.0.1 (26A434), preferGPU. Application-stage wall clock from benchmark-krea; every iteration matched the independent dynamic512 references. Small samples (one warm-up, three to five measurements); not a release benchmark.",
+  "device": {
+    "architecture": "h17c",
+    "computeUnits": "cpu, gpu, neuralEngine",
+    "logicalProcessors": "18",
+    "lowPowerModeAfterRun": "false",
+    "lowPowerModeAtPreparation": "false",
+    "metalDevice": "Apple M5 Max",
+    "metalRegistryID": "4294968808",
+    "os": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes": "68719476736",
+    "recommendedMaxWorkingSetBytes": "55662788608",
+    "thermalStateAfterRun": "0",
+    "thermalStateAtPreparation": "0"
+  },
+  "runs": [
+    {
+      "run": "step2-provided-512-a",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "lazy",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 23.21,
+      "measuredMedianSeconds": 4.78,
+      "measuredStepSecondsRange": [
+        0.573,
+        0.601
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "6700c519f016d95c3e1cce3454692ddaa29ea8b1e71df3a38110f418520fb043"
+    },
+    {
+      "run": "step2-encoded-512-balanced-a",
+      "profile": "encoded",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "lazy",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 78.93,
+      "measuredMedianSeconds": 14.1,
+      "measuredStepSecondsRange": [
+        0.516,
+        0.574
+      ],
+      "peakMetalAllocatedGiB": 15.3,
+      "reportSHA256": "f6a0080c5f45d013bfcb7c70a381f5137d441dc12c38cb7d4cb6ab3bdc24cb54"
+    },
+    {
+      "run": "step2-encoded-512-resident-a",
+      "profile": "encoded",
+      "residency": "resident",
+      "denoiserFunctionLoading": "lazy",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 60.25,
+      "measuredMedianSeconds": 5.04,
+      "measuredStepSecondsRange": [
+        0.55,
+        0.639
+      ],
+      "peakMetalAllocatedGiB": 22.9,
+      "reportSHA256": "0a16de4732edc00673a4395b592445f2de7a2fdd42deb929583e170f7bb2529b"
+    },
+    {
+      "run": "step2-encoded-512-balanced-b",
+      "profile": "encoded",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "concurrent",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 55.15,
+      "measuredMedianSeconds": 13.47,
+      "measuredStepSecondsRange": [
+        0.518,
+        0.593
+      ],
+      "peakMetalAllocatedGiB": 15.3,
+      "reportSHA256": "6032cc9f5d768533f5523607feb536dddfa97d5f49b66ee6100e20d24ef6b372"
+    },
+    {
+      "run": "step2-provided-512-b",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "concurrent",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 13.6,
+      "measuredMedianSeconds": 8.28,
+      "measuredStepSecondsRange": [
+        1.007,
+        1.04
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "8e6c99fed0aea4ef37055e51869a69e70179efb6e6b3e8ac6be7530546af9aee"
+    },
+    {
+      "run": "step2-provided-512-c",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "concurrent",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 16.96,
+      "measuredMedianSeconds": 5.87,
+      "measuredStepSecondsRange": [
+        0.665,
+        0.99
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "057f7b2cec8365af95ef88dabfe5b1195c4303181cead289d6c97c1b91ac1e0c"
+    },
+    {
+      "run": "step2-ab2-1-lazy",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "lazy",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 23.39,
+      "measuredMedianSeconds": 4.57,
+      "measuredStepSecondsRange": [
+        0.518,
+        0.607
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "740e220270e5dfd1a7f545ac347239894ab3029bc1271cd466d0cf82ed4b33b1"
+    },
+    {
+      "run": "step2-ab2-2-parallel",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "concurrent",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 10.01,
+      "measuredMedianSeconds": 5.11,
+      "measuredStepSecondsRange": [
+        0.529,
+        0.676
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "8e436f3df7b3893de5d8c65f16df695099ef3d73bc7ec498b3556436c53745e4"
+    },
+    {
+      "run": "step2-ab2-3-lazy",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "lazy",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 22.97,
+      "measuredMedianSeconds": 4.62,
+      "measuredStepSecondsRange": [
+        0.521,
+        0.626
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "a9ecd49fefc167dc760cf2836eab06089c36ae20658837b8032c193cf01262c8"
+    },
+    {
+      "run": "step2-ab2-4-parallel",
+      "profile": "provided",
+      "residency": "balanced",
+      "denoiserFunctionLoading": "concurrent",
+      "passed": true,
+      "allIterationsMatchedReferences": true,
+      "firstImageSeconds": 12.08,
+      "measuredMedianSeconds": 6.56,
+      "measuredStepSecondsRange": [
+        0.802,
+        0.817
+      ],
+      "peakMetalAllocatedGiB": 15.5,
+      "reportSHA256": "88418b8892c45ade49679065d8d25b0760070d03fc63e267673480ded4159de4"
+    }
+  ],
+  "findings": [
+    "Steady-state sampling is ~0.535 s per step at 512x512, about 4x faster than the 2026-10-18 comparison (2.08 s); outputs remain hash-identical. Host copies are not the bottleneck.",
+    "Fresh-prompt (encoded) median: 14.1 s balanced versus 5.0 s resident, at 15.3 versus 22.9 GiB peak Metal allocation.",
+    "Concurrent denoiser function loading cut the first image from ~23 s to 10-12 s, but 3 of 5 concurrent runs settled into slower steady steps (up to ~1.0 s); all 5 lazy runs stayed at 0.52-0.64 s. The change was reverted."
+  ],
+  "rawReportsLocation": ".local/step2-* (untracked local outputs)"
+}

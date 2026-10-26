@@ -10,6 +10,7 @@ import Metal
 import Synchronization
 
 enum BenchmarkProfile: String, Codable, Sendable { case encoded, provided }
+enum BenchmarkResidency: String, Codable, Sendable { case balanced, resident }
 
 struct KreaBenchmarkPlan: Codable, Sendable {
     let schema: Int
@@ -20,6 +21,9 @@ struct KreaBenchmarkPlan: Codable, Sendable {
     // Missing in the original plan; preserve its encoded protocol.
     var profile: BenchmarkProfile? = nil
     var effectiveProfile: BenchmarkProfile { profile ?? .encoded }
+    // Missing in earlier plans; preserve their balanced generation sessions.
+    var residency: BenchmarkResidency? = nil
+    var effectiveResidency: BenchmarkResidency { residency ?? .balanced }
 
     func validate() throws {
         guard schema == 1, benchmarkIsHash(bundleFingerprint), (1...10).contains(warmupIterations),
