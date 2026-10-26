@@ -17,6 +17,9 @@ let package = Package(
             .product(name: "AetherH3", package: "AetherKit"),
             .product(name: "AetherH3Tokenizers", package: "AetherKit"),
             .product(name: "AetherH3CoreAI", package: "AetherKit"),
+            .product(name: "AetherFlux2", package: "AetherKit"),
+            .product(name: "AetherFlux2Tokenizers", package: "AetherKit"),
+            .product(name: "AetherFlux2CoreAI", package: "AetherKit"),
         ])
     ]
 )
