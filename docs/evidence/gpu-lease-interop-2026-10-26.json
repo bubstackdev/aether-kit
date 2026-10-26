@@ -1,8 +1,8 @@
 {
   "recordedAt": "2026-10-26",
   "branch": "v0.0.2/gpu-lease",
-  "codeRevision": "f7bc0806ad7346dc8f4fc5ef0ff6fff0f6557399",
-  "codeRevisionScope": "Sources, tests and Package.swift at codeRevision (the review-fix commit, rebased onto origin/main 32555a7); this record is committed on top of it without code changes.",
+  "codeRevision": "5087ddc97f5b2aa7c4ce23b67495bd580fb95fbc",
+  "codeRevisionScope": "Sources, tests and Package.swift at codeRevision (the second review-round commit, on origin/main 32555a7); this record is committed on top of it without code changes.",
   "scope": "Kit SharedGPULease and aether-probe against Atelier's SharedGPULock (verbatim source, compiled into a private-directory simulator) and against the with-gpu-lock.sh lease protocol. The recorded runs used a private lease directory only (see notes); Atelier's app was not run; no GPU or model work ran (the probe targeted a missing model, which fails before any Core AI call).",
   "environment": {
     "macOS": "27.0.1",
@@ -22,8 +22,8 @@
     "simulatorBinarySHA256": "f434450af2889552438ece7f46dbd155ff4a3e32ba0ed0cc08ae3eb83d221a9a"
   },
   "kitBinaries": {
-    "AetherGPULeaseHelper": "191b96cafc1368c8c16aa70a2083ebc7c295dd9b806ecf2bcbf97900c2fa9edc",
-    "aether-probe": "6c3f464a5706f69babe8cb9b6db9b41ac679d2ca289ffd3bc44f0da081656076",
+    "AetherGPULeaseHelper": "b74538bca4d8140002d5c0c2af2411395405fc5752008948fb83519903e25a6f",
+    "aether-probe": "72e4aa17f22589b7007adb2dbfd1ee24739e031ea45920f3f2092d620aab3a34",
     "configuration": "release, built by Scripts/check-cpu.sh at codeRevision"
   },
   "driver": {
@@ -32,7 +32,7 @@
   },
   "interop": {
     "log": "gpu-lease-interop-2026-10-26.log",
-    "logSHA256": "9e82f537fdccc4ab1dc6a45f1ad880b78e012b5f0aa60fb383ca6e940ff33ba8",
+    "logSHA256": "b58cb26e39f2088a3128fd067a72e8241fac883b6b6c4f4cc8b92dc88fbb479f",
     "checks": 27,
     "passed": 27,
     "failed": 0,
@@ -55,14 +55,14 @@
     "check": "gpu-lease-wrapper-check.zsh",
     "checkSHA256": "655a43eb2daa22c328318148be5db00ee36191297b8c6fd2168e8808174d7994",
     "log": "gpu-lease-wrapper-check-2026-10-26.log",
-    "logSHA256": "410459d24afc5aad64f69e6092ebd2a2012ffa3d856c8d6ec7e48df89e9ed000",
+    "logSHA256": "a7da375cc50bfdd3a63baedf873a226a2fcfc8366b8f1aa57804ce0b84c7bb34",
     "checks": 11,
     "failed": 0,
     "scope": "Private lease and lockf paths via AETHER_GPU_LEASE_PATH and AETHER_GPU_WRAPPER_DIR: hand-off to the Kit helper and aether-probe, SIGTERM stopping the command tree before release, pid-less lease logged and left alone."
   },
   "sourceSHA256": {
-    "Sources/AetherKit/SharedGPULease.swift": "0a1886b0bf40c2be60a84b5998cd73fda4879c29c510f71b42d86339035fba8b",
-    "Sources/AetherKit/GPUAdmission.swift": "7689f6d1335e826620ea12cfd8549f6faab4c4a22e9fbcb331dfd11b75cba80a",
+    "Sources/AetherKit/SharedGPULease.swift": "a4be3232fe0650915d28cf73a31999c92c907b638b47b7376bcdbf33764f599a",
+    "Sources/AetherKit/GPUAdmission.swift": "d43d70d3e530139890a578ff70cd33654c0364a94a6709321ee764811fdd1077",
     "Sources/AetherKit/FairInferenceQueue.swift": "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
     "Sources/AetherProbe/ProbeGPULease.swift": "68301c685ddff22ec321ed34d6cf4eb6fe3900c0bc73f4a6e18312045d519994",
     "Sources/AetherProbe/AetherProbe.swift": "c8e3a070c3a221eeb1b7cace11a717b1d375dce0424ad40806790054b8f471cb",
@@ -70,11 +70,11 @@
   },
   "cpuSuite": {
     "command": "sh Scripts/check-cpu.sh",
-    "registered": 331,
-    "passed": 313,
+    "registered": 334,
+    "passed": 316,
     "skipped": 18,
     "failed": 0,
     "log": "gpu-lease-cpu-tests-2026-10-26.log",
-    "logSHA256": "018243ae79fc5ea71489c5ffcdabb1ee2b61588da0cc41852d5edc1c3ecfeb5d"
+    "logSHA256": "45a9ed1b3bc847b22ac1d744de23420d392ed14a3fd64b07c2ffcad532eb1072"
   }
 }

@@ -1,38 +1,38 @@
-16:18:57 atelier-lease-sim f434450af2889552 kit-helper 191b96cafc1368c8 aether-probe 6c3f464a5706f69b
-16:18:57 lease directory /private/tmp/claude-501/-Users-zakkeown-Code-bubstackdev-aether-aether-kit/71116793-11cf-40b6-9fdc-aa56d272af0e/scratchpad/gpu-lease/interop-run-7/gpu.lock
-16:18:57 --- 1. Atelier holds: Kit fail-fast, timed wait and aether-probe all see it held
-16:18:57 PASS lease names the Atelier holder: 58120
-16:18:57 PASS Kit fail-fast: 2 held 58120
-16:18:58 PASS Kit timed wait: 3 timedOut 58120
-16:18:58 PASS aether-probe inspect times out before touching the model: 1 1
-16:18:58 --- 2. Kit waits; Atelier's default SIGTERM handling releases; Kit acquires
-16:18:59 PASS Kit waiter still waiting: running
-16:18:59 PASS Kit waiter acquired after Atelier released: 0 acquired
-16:18:59 PASS lease free: none
-16:18:59 --- 3. Kit holds: Atelier is reserved; Kit's SIGTERM release lets Atelier in
-16:18:59 PASS lease names the Kit holder: 58146
-16:18:59 PASS Atelier while Kit holds: 2 reserved
-16:18:59 PASS Kit holder terminated by SIGTERM (143): 143
-16:18:59 PASS Kit released on SIGTERM: none
-16:18:59 PASS Atelier after Kit released: 0 acquired
-16:18:59 --- 4. Stale leases: each side reclaims the other's SIGKILLed holder (shared .reclaim flock)
-16:18:59 PASS stale Atelier lease left behind: 58161
-16:18:59 PASS Kit reclaims the dead Atelier lease: 0 owned
-16:18:59 PASS stale Kit lease left behind: 58169
-16:18:59 PASS Atelier reclaims the dead Kit lease: 0 acquired
-16:18:59 PASS reclaim file is private: 600
-16:18:59 --- 5. aether-probe waits for Atelier, then runs and releases on its error path
-16:18:59 PASS aether-probe reports waiting: 1
-16:18:59 PASS aether-probe ran after the lease freed (model missing: exit 1): 1 1
-16:18:59 PASS aether-probe released the lease: none
-16:18:59 --- 6. aether-probe under a wrapper-style parent that holds the lease: inherited only on explicit hand-off
-16:19:00 PASS without a hand-off, aether-probe waits for its ancestor (and says why): 0 1
-16:19:00 PASS with AETHER_GPU_LEASE_HOLDER, aether-probe inherits (ran, never waited): 1 0
-16:19:00 PASS lease still the wrapper's after the child: 58192
-16:19:00 PASS wrapper released: none
-16:19:00 --- 7. Kit waits on a wrapper-style holder
-16:19:00 PASS Kit fail-fast vs wrapper holder: 2 held 58222
-16:19:00 PASS wrapper trap exit: 130
-16:19:00 PASS Kit acquired after the wrapper released: 0 acquired
-16:19:00 final directory: gpu.lock.reclaim
-16:19:00 failures=0
+16:34:37 atelier-lease-sim f434450af2889552 kit-helper b74538bca4d81400 aether-probe 72e4aa17f22589b7
+16:34:37 lease directory /private/tmp/claude-501/-Users-zakkeown-Code-bubstackdev-aether-aether-kit/71116793-11cf-40b6-9fdc-aa56d272af0e/scratchpad/gpu-lease/interop-run-8/gpu.lock
+16:34:37 --- 1. Atelier holds: Kit fail-fast, timed wait and aether-probe all see it held
+16:34:37 PASS lease names the Atelier holder: 70524
+16:34:37 PASS Kit fail-fast: 2 held 70524
+16:34:37 PASS Kit timed wait: 3 timedOut 70524
+16:34:38 PASS aether-probe inspect times out before touching the model: 1 1
+16:34:38 --- 2. Kit waits; Atelier's default SIGTERM handling releases; Kit acquires
+16:34:38 PASS Kit waiter still waiting: running
+16:34:38 PASS Kit waiter acquired after Atelier released: 0 acquired
+16:34:38 PASS lease free: none
+16:34:38 --- 3. Kit holds: Atelier is reserved; Kit's SIGTERM release lets Atelier in
+16:34:38 PASS lease names the Kit holder: 70561
+16:34:38 PASS Atelier while Kit holds: 2 reserved
+16:34:38 PASS Kit holder terminated by SIGTERM (143): 143
+16:34:38 PASS Kit released on SIGTERM: none
+16:34:38 PASS Atelier after Kit released: 0 acquired
+16:34:38 --- 4. Stale leases: each side reclaims the other's SIGKILLed holder (shared .reclaim flock)
+16:34:39 PASS stale Atelier lease left behind: 70576
+16:34:39 PASS Kit reclaims the dead Atelier lease: 0 owned
+16:34:39 PASS stale Kit lease left behind: 70584
+16:34:39 PASS Atelier reclaims the dead Kit lease: 0 acquired
+16:34:39 PASS reclaim file is private: 600
+16:34:39 --- 5. aether-probe waits for Atelier, then runs and releases on its error path
+16:34:39 PASS aether-probe reports waiting: 1
+16:34:39 PASS aether-probe ran after the lease freed (model missing: exit 1): 1 1
+16:34:39 PASS aether-probe released the lease: none
+16:34:39 --- 6. aether-probe under a wrapper-style parent that holds the lease: inherited only on explicit hand-off
+16:34:40 PASS without a hand-off, aether-probe waits for its ancestor (and says why): 0 1
+16:34:40 PASS with AETHER_GPU_LEASE_HOLDER, aether-probe inherits (ran, never waited): 1 0
+16:34:40 PASS lease still the wrapper's after the child: 70607
+16:34:40 PASS wrapper released: none
+16:34:40 --- 7. Kit waits on a wrapper-style holder
+16:34:40 PASS Kit fail-fast vs wrapper holder: 2 held 70634
+16:34:40 PASS wrapper trap exit: 130
+16:34:41 PASS Kit acquired after the wrapper released: 0 acquired
+16:34:41 final directory: gpu.lock.reclaim
+16:34:41 failures=0
