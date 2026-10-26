@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "status": "historical_assets_lost",
+  "summary": "The 2026-10-18 H3 native qualification records (block 0, lifecycle, three-block chain, fifty-block backbone, outer phases, eight-step provided-conditioning denoising) remain accurate records of what ran against their exact pinned assets. Those assets lived under /private/tmp and were removed by macOS temporary-file cleanup; only empty directory skeletons remain. The records can no longer be reproduced or re-run as written. They are superseded for 0.0.2 by the schema-3 profile path (H3VideoSession / H3ProfileEngine), which uses none of these assets.",
+  "lostAssetRoots": {
+    "/private/tmp/aether-h3-preparation-cache": {
+      "exists": false,
+      "regularFiles": 0,
+      "citedBy": 1
+    },
+    "/private/tmp/aether-h3-qkv-base": {
+      "exists": true,
+      "regularFiles": 0,
+      "citedBy": 2
+    },
+    "/private/tmp/aether-h3-qkv-binding-oracles": {
+      "exists": false,
+      "regularFiles": 0,
+      "citedBy": 1
+    },
+    "/private/tmp/aether-h3-qkv-phase-oracles": {
+      "exists": true,
+      "regularFiles": 0,
+      "citedBy": 39
+    },
+    "/private/tmp/aether-h3-qkv-ready": {
+      "exists": false,
+      "regularFiles": 0,
+      "citedBy": 59
+    },
+    "/private/tmp/aether-h3-turbo8-qkv": {
+      "exists": true,
+      "regularFiles": 0,
+      "citedBy": 2
+    }
+  },
+  "pinnedIdentities": {
+    "renderBundleSHA256": "2f6ec999b1ea5cfaf6cf906c9347b91177f9b9eebbfbde618759e279de611c3e",
+    "phaseBundleSHA256": "6fae69b0052af70851fff92a285b6f1f8947ee9bbcef062bd0e6c01737ca995e",
+    "canonicalLayout": "raw_per_head_qkv_to_contiguous_qkv_v1",
+    "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "adapterSHA256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "modulationDirectory": "/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/.local/h3-diagnostic/models (still present)"
+  },
+  "qualificationRecords": {
+    "h3-block-qualification-2026-10-18.json": {
+      "sha256": "ddde2d99cbdfe455a77c7d5e88bb4f0d07a6996347a7411de428e00c358bcba2",
+      "passed": true
+    },
+    "h3-lifecycle-qualification-2026-10-18.json": {
+      "sha256": "f189656e6cec747593551bc7c757f15969af370c7626ec09ad6a918993cc1044",
+      "passed": true
+    },
+    "h3-chain-qualification-2026-10-18.json": {
+      "sha256": "502cf14d96e7b9d1cea91a40008c2655b3020ef1e6f1f42fd82536afbf35b4cf",
+      "passed": true
+    },
+    "h3-backbone-qualification-2026-10-18.json": {
+      "sha256": "4009068fb9ea012b664392f935b8a1aa443b213ba7494b920ff3f71ef15b2aac",
+      "passed": true
+    },
+    "h3-phases-qualification-2026-10-18.json": {
+      "sha256": "6cd375ed9ba764e86d76d7cc74ff9ce68084346d877d4b1a18621c0165cad189",
+      "passed": true
+    },
+    "h3-denoising-qualification-2026-10-18.json": {
+      "sha256": "165bc831c79f23ea5ee513da5d8b80c893f5a1728e32c912b34abf6295678ec7",
+      "passed": true
+    }
+  },
+  "recordsCitingLostAssets": [
+    "h3-backbone-capture-controller-2026-10-18.json",
+    "h3-backbone-capture-plan-2026-10-18.json",
+    "h3-backbone-capture-provenance-2026-10-18.json",
+    "h3-backbone-controller-2026-10-18.json",
+    "h3-backbone-controller-2026-10-18.py",
+    "h3-backbone-cpu-controller-2026-10-18.py",
+    "h3-backbone-cpu-preparation-2026-10-18.json",
+    "h3-backbone-cpu-reference-controller-2026-10-18.json",
+    "h3-backbone-cpu-references-2026-10-18.json",
+    "h3-backbone-provenance-2026-10-18.json",
+    "h3-backbone-qualification-2026-10-18.json",
+    "h3-backbone-reference-plan-2026-10-18.json",
+    "h3-binding-readiness-2026-10-18.json",
+    "h3-block-controller-2026-10-18.json",
+    "h3-block-qualification-2026-10-18.json",
+    "h3-chain-capture-controller-2026-10-18.json",
+    "h3-chain-capture-plan-2026-10-18.json",
+    "h3-chain-capture-provenance-2026-10-18.json",
+    "h3-chain-controller-2026-10-18.json",
+    "h3-chain-controller-2026-10-18.py",
+    "h3-chain-cpu-controller-2026-10-18.py",
+    "h3-chain-cpu-preparation-2026-10-18.json",
+    "h3-chain-cpu-reference-controller-2026-10-18.json",
+    "h3-chain-cpu-references-2026-10-18.json",
+    "h3-chain-provenance-2026-10-18.json",
+    "h3-chain-qualification-2026-10-18.json",
+    "h3-cpu-readiness-2026-10-18.json",
+    "h3-denoising-capture-controller-2026-10-18.json",
+    "h3-denoising-capture-provenance-2026-10-18.json",
+    "h3-denoising-capture-summary-2026-10-18.json",
+    "h3-denoising-cpu-controller-script-2026-10-18.py",
+    "h3-denoising-cpu-reference-controller-2026-10-18.json",
+    "h3-denoising-cpu-reference-summary-2026-10-18.json",
+    "h3-denoising-cpu-references-2026-10-18.json",
+    "h3-denoising-lifecycle-interrupted-native-controller-2026-10-18.json",
+    "h3-denoising-lifecycle-interrupted-native-provenance-2026-10-18.json",
+    "h3-denoising-lifecycle-interrupted-prepared-controller-2026-10-18.json",
+    "h3-denoising-lifecycle-interrupted-prepared-provenance-2026-10-18.json",
+    "h3-denoising-memory-control-controller-2026-10-18.json",
+    "h3-denoising-memory-control-provenance-2026-10-18.json",
+    "h3-denoising-memory-fixed-controller-2026-10-18.json",
+    "h3-denoising-memory-fixed-provenance-2026-10-18.json",
+    "h3-denoising-native-controller-2026-10-18.json",
+    "h3-denoising-native-provenance-2026-10-18.json",
+    "h3-denoising-preparation-controller-2026-10-18.json",
+    "h3-denoising-preparation-provenance-2026-10-18.json",
+    "h3-denoising-qualification-2026-10-18.json",
+    "h3-denoising-readiness-2026-10-18.json",
+    "h3-denoising-reference-preparation-controller-2026-10-18.json",
+    "h3-denoising-reference-preparation-provenance-2026-10-18.json",
+    "h3-lifecycle-controller-2026-10-18.json",
+    "h3-lifecycle-controller-2026-10-18.py",
+    "h3-lifecycle-fresh-stream-controller-2026-10-18.json",
+    "h3-lifecycle-fresh-stream-provenance-2026-10-18.json",
+    "h3-lifecycle-provenance-2026-10-18.json",
+    "h3-lifecycle-qualification-2026-10-18.json",
+    "h3-phases-controller-2026-10-18.json",
+    "h3-phases-cpu-record-2026-10-18.json",
+    "h3-phases-manifest-2026-10-18.json",
+    "h3-phases-native-controller-2026-10-18.json",
+    "h3-phases-native-provenance-2026-10-18.json",
+    "h3-phases-provenance-2026-10-18.json",
+    "h3-phases-qualification-2026-10-18.json",
+    "h3-phases-readiness-2026-10-18.json"
+  ],
+  "regeneration": {
+    "decision": "not regenerated",
+    "reason": "Core AI exports are not byte-reproducible, so regenerated bundles would carry new model/bundle hashes and every pinned capture would have to be redone; the 0.0.2 plan qualifies the schema-3 profile instead.",
+    "route": "If ever needed: the prototype forge chain (h3_export.py front, h3_turbo.py, h3_video_functional.py --spatial-tiles, h3_weight_audit.py, h3_diagnose.py, h3_binding_oracle.py; commands in the 2026-10-15 Codex transcript, lines ~3824 and ~5121-5251). The prototype prebuilt target/release/examples/h3_generate and h3_phase_probe match the frozen qualified binaries byte for byte (21beca81..., ccb080ce...), so the native preparation cache needs no Rust rebuild. The prototype production bundle cites /Users/zakkeown/Code/aether/... paths that must be rewritten to /Volumes/Scratch/aether/aether-prototype/.local/... first."
+  }
+}

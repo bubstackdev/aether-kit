@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "gpuWork": false,
+  "decision": "Reference the staging profile in place; no copy. A durable home for H3 assets is a later decision.",
+  "location": {
+    "staging": "/Users/zakkeown/Code/atelier/.local/team/staging/h3",
+    "note": "Atelier team staging folder (git-ignored .local of ~/Code/atelier); durable disk, not a temporary directory. aether-kit does not own it: moving or deleting it invalidates these pins."
+  },
+  "profiles": {
+    "h3-fl2va": {
+      "bundle": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/bundle.json",
+      "bundleSHA256": "00669ed7b7db93a7ec9b939bd58a5f49ebe37c87f69b69530a5ba1a17c46ce96",
+      "schema": 3,
+      "complete": true,
+      "missing": [],
+      "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+      "diffusersCommit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+      "transformerWeightLayout": "raw_per_head_qkv_to_contiguous_qkv_v1",
+      "tasks": [
+        "t2va",
+        "fl2va"
+      ],
+      "recipes": [
+        "turbo4",
+        "turbo8"
+      ],
+      "limits": {
+        "rows": [
+          64,
+          40960
+        ],
+        "cardinality": [
+          1,
+          3
+        ],
+        "text_tokens": [
+          2,
+          4096
+        ]
+      },
+      "modelSHA256": {
+        "body": "1add93f9dfc47821607957106426d2c82df14a7acee2f7ad4c17321f8e823663",
+        "heads": "0f7f41e03c7cf25cadb754a9b4a9d73c96976f53d9eb9f10f93389a83d48b1bd",
+        "prepare.text": "9aca6f7a95a31b21cf0c21f813c59f46dfbc8e3dde1dddd85fd69047f5973940",
+        "prepare.pack": "fb0c7a5f67fd28f7498d2e8b9fac5596618cec23eb6d7f73d744693fe3e486cd",
+        "conditioner.layer": "dc2ccecc79cc34ebc7b18cd8517e6d021de605c50151775321030ed7a5e90ada",
+        "video_decoder.bf16": "651d9816e2ee3e93595c72d3473a12d5ac89623e48193c464cdd0bb049913776",
+        "video_decoder.float32": "f9de3b4871816fd6923debd807a8a793c28f349eeae3ef074233f4feb818dff1",
+        "audio_decoder.dynamic": "53153888d71e8251947dea9a3f5243dc3ddd4aacc8e86e02df431ab2ab8a4f8c",
+        "audio_decoder.na207": "41b760daa6e0385d7938ea35447a4b841d85ba96e9a016ed7b6aefebe69d0712",
+        "audio_decoder.na37": "2d9a5cd40b5fe4adf7a6970bd385b5095ffd15446aab8e48c76a8b8f9d3a2101",
+        "video_encoder_first.288x288": "2e0dbe0777c28951936bc589df171d415c615584f2e0f04bc72877dcd3856901",
+        "video_encoder_first.544x960": "d1b378feac9cf4066f9b92138e9b602b71013cb7ba98a71c650e79146e3faafd",
+        "video_encoder_first.960x544": "31b0704aa7cb391c3cb3ac1f5459ea82054e0d710acce9e7619f1a53a814852b"
+      },
+      "referencedPaths": 1265,
+      "referencedPathsMissing": [],
+      "referencedPathsUnderTmp": [],
+      "checkpointFilesReadInPlace": 26,
+      "exportDirectoryBytes": 29904105472,
+      "optInTest": {
+        "command": "AETHER_H3_PROFILE=<bundle> AETHER_H3_PROFILE_PARAMETERS=1 swift test -c release --build-system native --filter h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu",
+        "passed": true,
+        "output": [
+          "◇ Test run started.",
+          "↳ Testing Library Version: 2084",
+          "↳ Target Platform: arm64e-apple-macos14.0",
+          "◇ Test h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() started.",
+          "✔ Test h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() passed after 65.815 seconds.",
+          "✔ Test run with 1 test in 0 suites passed after 65.815 seconds."
+        ],
+        "coverage": "opens the profile; checks turbo8/turbo4 step timesteps against the layout for 960x544 and 544x960, T2VA and FL2VA; hashes every table (verifyTables), every model stream, the embedding table and conditioner RoPE tables (verifyModels), and every in-place weight binding: 50x22 block, 50x11 conditioner-layer and 47 text-refiner bindings read from the checkpoint and adapter (verifyParameters)"
+      }
+    },
+    "h3-fl2va-na405": {
+      "bundle": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va-na405/bundle.json",
+      "bundleSHA256": "5ecbfa68d09336e54c3b69ada6e8a5803bdaf6ba04e522d4be38325560f42cbf",
+      "schema": 3,
+      "complete": true,
+      "missing": [],
+      "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+      "diffusersCommit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+      "transformerWeightLayout": "raw_per_head_qkv_to_contiguous_qkv_v1",
+      "tasks": [
+        "t2va",
+        "fl2va"
+      ],
+      "recipes": [
+        "turbo4",
+        "turbo8"
+      ],
+      "limits": {
+        "rows": [
+          64,
+          40960
+        ],
+        "cardinality": [
+          1,
+          3
+        ],
+        "text_tokens": [
+          2,
+          4096
+        ]
+      },
+      "modelSHA256": {
+        "body": "1add93f9dfc47821607957106426d2c82df14a7acee2f7ad4c17321f8e823663",
+        "heads": "0f7f41e03c7cf25cadb754a9b4a9d73c96976f53d9eb9f10f93389a83d48b1bd",
+        "prepare.text": "9aca6f7a95a31b21cf0c21f813c59f46dfbc8e3dde1dddd85fd69047f5973940",
+        "prepare.pack": "fb0c7a5f67fd28f7498d2e8b9fac5596618cec23eb6d7f73d744693fe3e486cd",
+        "conditioner.layer": "dc2ccecc79cc34ebc7b18cd8517e6d021de605c50151775321030ed7a5e90ada",
+        "video_decoder.bf16": "651d9816e2ee3e93595c72d3473a12d5ac89623e48193c464cdd0bb049913776",
+        "video_decoder.float32": "f9de3b4871816fd6923debd807a8a793c28f349eeae3ef074233f4feb818dff1",
+        "audio_decoder.dynamic": "53153888d71e8251947dea9a3f5243dc3ddd4aacc8e86e02df431ab2ab8a4f8c",
+        "audio_decoder.na207": "41b760daa6e0385d7938ea35447a4b841d85ba96e9a016ed7b6aefebe69d0712",
+        "audio_decoder.na37": "2d9a5cd40b5fe4adf7a6970bd385b5095ffd15446aab8e48c76a8b8f9d3a2101",
+        "audio_decoder.na405": "b4c52a0cb4c6743610336e5d4b240e36d1d23e2f122c3c30a7ca9e159ef97fd8",
+        "video_encoder_first.288x288": "2e0dbe0777c28951936bc589df171d415c615584f2e0f04bc72877dcd3856901",
+        "video_encoder_first.544x960": "d1b378feac9cf4066f9b92138e9b602b71013cb7ba98a71c650e79146e3faafd",
+        "video_encoder_first.960x544": "31b0704aa7cb391c3cb3ac1f5459ea82054e0d710acce9e7619f1a53a814852b"
+      },
+      "referencedPaths": 1266,
+      "referencedPathsMissing": [],
+      "referencedPathsUnderTmp": [],
+      "checkpointFilesReadInPlace": 26,
+      "exportDirectoryBytes": 30423261184,
+      "optInTest": {
+        "command": "AETHER_H3_PROFILE=<bundle> AETHER_H3_PROFILE_PARAMETERS=1 swift test -c release --build-system native --filter h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu",
+        "passed": true,
+        "output": [
+          "◇ Test run started.",
+          "↳ Testing Library Version: 2084",
+          "↳ Target Platform: arm64e-apple-macos14.0",
+          "◇ Test h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() started.",
+          "✔ Test h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() passed after 64.310 seconds.",
+          "✔ Test run with 1 test in 0 suites passed after 64.310 seconds."
+        ],
+        "coverage": "opens the profile; checks turbo8/turbo4 step timesteps against the layout for 960x544 and 544x960, T2VA and FL2VA; hashes every table (verifyTables), every model stream, the embedding table and conditioner RoPE tables (verifyModels), and every in-place weight binding: 50x22 block, 50x11 conditioner-layer and 47 text-refiner bindings read from the checkpoint and adapter (verifyParameters)"
+      }
+    }
+  },
+  "adapter": {
+    "repository": "lightx2v/Minimax-h3-Turbo",
+    "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "path": "/Users/zakkeown/.cache/huggingface/hub/blobs/a0/a03b3e4027d2bc4e92b6d86f5d01eca7ee4bb2536d2b33c7ab70abd1d1e55f65",
+    "bytes": 1383677768,
+    "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "expectedSHA256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "matches": true
+  },
+  "checkpoint": {
+    "repository": "MiniMaxAI/MiniMax-H3",
+    "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "root": "/Users/zakkeown/.cache/huggingface/hub/models--MiniMaxAI--MiniMax-H3",
+    "note": "Weights are byte ranges of the snapshot blobs, checked by verifyParameters against recorded hashes."
+  },
+  "portablePacks": {
+    "h3-fl2va-pack-1": {
+      "path": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/packs/h3-fl2va-pack-1",
+      "bytes": 8462254080
+    },
+    "h3-fl2va-pack-2": {
+      "path": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/packs/h3-fl2va-pack-2",
+      "bytes": 8981401600
+    }
+  },
+  "oracleEnvironment": {
+    "python": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+    "torch": "2.13.0",
+    "diffusers": "0.41.0.dev0 @ 7ecb1e1b",
+    "transformers": "5.20.1",
+    "coreaiTorch": "0.4.2",
+    "converter": {
+      "path": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle-scripts/vendor/convert_minimax_h3_to_diffusers.py",
+      "sha256": "86f61f62934d1eccf2a76ec57b6d072e2c23767c6e49d96aa1cf24d40422b42c"
+    }
+  }
+}

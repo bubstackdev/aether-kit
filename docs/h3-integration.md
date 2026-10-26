@@ -2,6 +2,20 @@
 
 The experimental `AetherH3` SwiftPM product starts with CPU preparation contracts for the corrected Turbo8 text-to-video/audio path. It depends on `AetherKit`, with no Core AI, Metal, tokenizer or model-weight dependency. This slice performs no native inference, model loading, asset download or checkpoint conversion.
 
+## Status: 2026-10-26
+
+**The 2026-10-18 records below are historical.** They cover block 0, lifecycle, the three-block chain, the fifty-block backbone, the outer phases and the eight-step provided-conditioning trajectory. Each describes exactly what ran against its pinned prototype bundles. Those bundles, oracles and the preparation cache lived under `/private/tmp`, and macOS temporary-file cleanup removed them. Only empty directory skeletons remain. The commands below that cite `/private/tmp/aether-h3-*` can no longer run. The assets were not regenerated: Core AI exports aren't byte-reproducible, so every pinned capture would have to be redone anyway. [The lost-asset record](evidence/h3-legacy-assets-lost-2026-10-26.json) lists the affected roots, the 64 citing records, the original identities and the regeneration route, should it ever be needed.
+
+**H3 work for 0.0.2 qualifies the schema-3 profile path instead.** That path is `Scripts/export-h3-profile.py`, `H3Profile`, `H3ProfileEngine.stages` and `H3VideoSession`. It uses none of the lost assets. Its complete profile is referenced in place under Atelier's team staging folder, `~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va`. Weights are read as byte ranges of the pinned checkpoint snapshot and Turbo adapter. [The profile asset record](evidence/h3-profile-assets-2026-10-26.json) covers several checks:
+
+- both bundle hashes;
+- every model stream hash;
+- the adapter hash, which matches the pinned `e16ac208…`;
+- that no referenced path is missing or under a temporary directory;
+- the passing opt-in `AETHER_H3_PROFILE`/`AETHER_H3_PROFILE_PARAMETERS` test, which hashes every table, model stream and in-place weight binding.
+
+aether-kit does not own that folder: moving or deleting it invalidates the pins. Choosing a durable home is a separate decision.
+
 ## Available contracts
 
 - `H3Geometry` validates positive multiples of 32 within the prototype's 1,032,192-pixel budget, and explicitly snaps requested frames upward to `17n+5` at 24 fps. The default 120-frame request resolves to 124 frames, 37 latent frames, 18,870 target video rows and 207 audio latents per stereo channel at 960×544. Production geometry requires a snapped duration within 5–15 seconds; requests whose next grid point exceeds 360 frames fail. `diagnostic: true` allows shorter geometry without asserting native support.
