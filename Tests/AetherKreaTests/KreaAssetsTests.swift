@@ -4,7 +4,7 @@ import Foundation
 import Testing
 @testable import AetherKrea
 
-private struct BundleFixture {
+struct BundleFixture {
     let root: URL
 
     init() throws {
@@ -125,3 +125,4 @@ private struct BundleFixture {
     try Data([0]).write(to: fixture.root.appendingPathComponent("textEncoder.aimodel/main.hash"))
     #expect(throws: AetherError.self) { try KreaAssets.open(at: fixture.root) }
 }
+

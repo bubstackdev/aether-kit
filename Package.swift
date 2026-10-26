@@ -30,7 +30,10 @@ let package = Package(
         .executableTarget(name: "AetherProbe", dependencies: ["AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers"]),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit"]),
-        .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKreaTokenizersTests", dependencies: ["AetherKreaTokenizers", "AetherKrea"]),
+        .testTarget(name: "AetherNativeTests", dependencies: [
+            "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
+        ]),
     ]
 )
