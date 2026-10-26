@@ -55,7 +55,7 @@ let package = Package(
         // Test-only child process for the GPU lease contention and signal tests. Not a product; never shipped.
         .executableTarget(name: "AetherGPULeaseHelper", dependencies: ["AetherKit"], path: "Tests/AetherGPULeaseHelper"),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
-        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI"]),
+        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit"]),
         .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit", "AetherAssets"]),
         .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI", "AetherAssets"], resources: [.copy("Fixtures")]),
@@ -65,7 +65,7 @@ let package = Package(
         .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI"]),
         .testTarget(name: "AetherNativeTests", dependencies: [
             "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
-            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers",
+            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguageCoreAI",
         ]),
     ]
 )

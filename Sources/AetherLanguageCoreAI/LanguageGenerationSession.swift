@@ -39,17 +39,25 @@ public actor LanguageGenerationSession {
         let url: URL
         let compute: ModelComputePolicy
         let expectFrequentReshapes: Bool
-        let maximumSubmissions: Int
+        /// nil: never recycle (bounded-shape contracts).
+        let maximumSubmissions: Int?
     }
     private var reopenConfiguration: ReopenConfiguration?
     private var submissionsSinceReload = 0
     private var modelReloadCount = 0
+    /// The asset's KV addressing, detected from the `main` function signature.
+    public nonisolated let contract: LanguageStepContract
+    private struct StepShape: Hashable { let count: Int; let capacity: Int }
+    private var stepShapes: Set<StepShape> = []
     private let queue: any MTLCommandQueue
     private let device: any MTLDevice
     private var allocatedCapacity: Int
     private var materializedTokens = 0
     private var growthCount = 0
     private let capacity: Int
+    private let initialCapacity: Int
+    /// Largest prefill submission (the declared export bound), nil when undeclared.
+    private let prefillLimit: Int?
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
@@ -63,16 +71,21 @@ public actor LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
         let modelURL = try manifest.verify(in: directory, platform: platform)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
-            stopTokenIDs: Set(manifest.stopTokenIDs), gpu: gpu)
+            stopTokenIDs: Set(manifest.stopTokenIDs), exportBounds: manifest.exportBounds, gpu: gpu)
     }
 
     /// Explicit raw-asset entry point for qualification before bundle registration.
+    /// `maximumSubmissionsPerModel` nil selects the contract default: recycle every 128
+    /// submissions for `runningPositions`, never for `bucketedPositions`. `exportBounds` are the
+    /// asset's exported shape maxima: required for a bucketed asset, optional for a running one,
+    /// and enforced (context and prefill chunks) when given.
     public static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
                             stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
-                            expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int = 128,
+                            expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
+                            exportBounds: LanguageExportBounds? = nil,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
-        guard maximumSubmissionsPerModel > 0 else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
+        guard (maximumSubmissionsPerModel ?? 1) > 0 else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
         var options: SpecializationOptions
         switch compute {
         case .automatic: options = .default
@@ -83,36 +96,45 @@ public actor LanguageGenerationSession {
         let model = try await AIModel(contentsOf: modelURL, options: options)
         try Task.checkCancellation()
         let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
-            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, gpu: gpu)
+            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
-            expectFrequentReshapes: expectFrequentReshapes, maximumSubmissions: maximumSubmissionsPerModel))
+            expectFrequentReshapes: expectFrequentReshapes,
+            maximumSubmissions: maximumSubmissionsPerModel ?? session.contract.defaultMaximumSubmissionsPerModel))
         return session
     }
     public static var deviceArchitectureName: String { AIModel.deviceArchitectureName }
 
     public init(model: AIModel, capacity: Int = 512, initialCacheCapacity: Int = 256, stopTokenIDs: Set<Int> = [151645],
-                gpu: GPUAdmissionOwner? = nil) throws {
+                exportBounds: LanguageExportBounds? = nil, gpu: GPUAdmissionOwner? = nil) throws {
         guard capacity > 0, capacity <= 16384, initialCacheCapacity > 0,
               let d = model.functionDescriptor(for: "main"),
-              Set(d.inputNames) == ["input_ids", "position_ids"],
-              Set(d.stateNames) == ["keyCache", "valueCache"],
-              d.outputNames == ["logits"],
-              case .ndArray(let key)? = d.stateDescriptor(of: "keyCache"),
-              case .ndArray(let value)? = d.stateDescriptor(of: "valueCache"),
               case .ndArray(let logits)? = d.outputDescriptor(of: "logits"),
+              let contract = LanguageStepContract.detect(inputNames: Set(d.inputNames), outputNames: Set(d.outputNames),
+                                                         stateNames: Set(d.stateNames), logitsShape: logits.shape),
+              case .ndArray(let key)? = contract.cachesAreStates ? d.stateDescriptor(of: "keyCache") : d.inputDescriptor(of: "keyCache"),
+              case .ndArray(let value)? = contract.cachesAreStates ? d.stateDescriptor(of: "valueCache") : d.inputDescriptor(of: "valueCache"),
               key.shape.count == 5, key.shape[3] == -1, value.shape == key.shape,
               key.shape.enumerated().allSatisfy({ $0.offset == 3 || $0.element > 0 }),
               key.scalarType == .float16, value.scalarType == .float16,
-              logits.shape.count == 3, logits.shape[0] == 1, logits.shape[1] == -1, logits.shape[2] > 0,
               logits.scalarType == .float16, !stopTokenIDs.isEmpty,
               stopTokenIDs.allSatisfy({ $0 >= 0 && $0 < logits.shape[2] }),
               let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue()
         else { throw LanguageGenerationError.invalid("Unsupported language probe contract") }
-        for name in d.inputNames {
+        for name in ["input_ids", contract.positionInputName] {
             guard case .ndArray(let input)? = d.inputDescriptor(of: name),
                   input.scalarType == .int32, input.shape == [1, -1]
             else { throw LanguageGenerationError.invalid("Unsupported token/position contract") }
         }
+        if !contract.cachesAreStates {
+            // Update rows: the cache layout with the token axis sized by the submission.
+            for name in ["keyUpdate", "valueUpdate"] {
+                guard case .ndArray(let update)? = d.outputDescriptor(of: name), update.scalarType == .float16,
+                      update.shape.count == 5, update.shape[3] == -1,
+                      update.shape.enumerated().allSatisfy({ $0.offset == 3 || $0.element == key.shape[$0.offset] })
+                else { throw LanguageGenerationError.invalid("Unsupported cache update contract") }
+            }
+        }
+        let prefillLimit = try contract.admit(bounds: exportBounds, maximumContextLength: capacity)
         var shape = key.shape
         let initial = min(initialCacheCapacity, capacity)
         shape[3] = initial
@@ -140,6 +162,9 @@ public actor LanguageGenerationSession {
         self.allocatedCapacity = initial
         self.capacity = capacity
         self.gpu = gpu
+        self.initialCapacity = initial
+        self.contract = contract
+        self.prefillLimit = prefillLimit
     }
 
     public func generate(prompt: [Int], maximumTokens: Int = 48, prefillChunkSize: Int? = nil,
@@ -207,17 +232,36 @@ public actor LanguageGenerationSession {
             throw LanguageGenerationError.contextLimit(limit: capacity)
         }
         materializedTokens = 0
+        // A bucketed request restarts at the initial capacity rather than keeping a previous long
+        // request's caches (memory, and the zeroing below, follow the allocation).
+        let start = LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
+                                                      resets: !contract.cachesAreStates)
+        if start != allocatedCapacity {
+            var shape = keyDescriptor.shape
+            shape[3] = start
+            let kd = keyTemplate.resolvingDynamicDimensions(shape)
+            let vd = valueTemplate.resolvingDynamicDimensions(shape)
+            guard let kb = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
+                  let vb = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared) else {
+                lifecycle.finish()
+                throw LanguageGenerationError.invalid("Could not allocate bounded KV caches")
+            }
+            keys = kb; values = vb; keyDescriptor = kd; valueDescriptor = vd
+            allocatedCapacity = start
+        }
         for buffer in [keys, values].compactMap({ $0 }) {
             buffer.contents().initializeMemory(as: UInt8.self, repeating: 0, count: buffer.length)
         }
     }
 
+    /// The contract chooses the submission sizes: uniform chunks for the running contract,
+    /// power-of-two buckets for the bucketed one (`LanguageStepContract.prefillChunks`).
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
-        let width = min(chunkSize ?? prompt.count, prompt.count)
+        var offset = 0
         var last: [Float] = []
-        for offset in stride(from: 0, to: prompt.count, by: width) {
-            let end = min(prompt.count, offset + width)
-            last = try await step(tokens: prompt[offset..<end].map(Int32.init), position: offset, observer: observer)
+        for count in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+            last = try await step(tokens: prompt[offset..<(offset + count)].map(Int32.init), position: offset, observer: observer)
+            offset += count
         }
         return last
     }
@@ -230,21 +274,35 @@ public actor LanguageGenerationSession {
         guard let function, let stream else { throw LanguageGenerationError.invalid("Missing native model handle") }
         try growCache(to: position + tokens.count)
         guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
-        // This export uses the full running index to address and attend its KV cache.
-        let inputs = [
+        // Running: the full index 0..<position+count. Bucketed: only the new tokens' positions.
+        let positions = contract.positions(at: position, count: tokens.count)
+        var inputs = [
             "input_ids": InferenceFunction.AsyncValue(NDArray(scalars: tokens, shape: [1, tokens.count])),
-            "position_ids": InferenceFunction.AsyncValue(NDArray(scalars: (0..<(position + tokens.count)).map(Int32.init), shape: [1, position + tokens.count]))
+            contract.positionInputName: InferenceFunction.AsyncValue(NDArray(scalars: positions, shape: [1, positions.count]))
         ]
-        var k = InferenceFunction.AsyncMutableValue(unsafeBuffer: keys, scalarType: .float16,
-            shape: keyDescriptor.shape, strides: keyDescriptor.preferredStrides, interleaveLayout: keyDescriptor.interleaveLayout)
-        var v = InferenceFunction.AsyncMutableValue(unsafeBuffer: values, scalarType: .float16,
-            shape: valueDescriptor.shape, strides: valueDescriptor.preferredStrides, interleaveLayout: valueDescriptor.interleaveLayout)
+        if !contract.cachesAreStates {
+            // Read-only, zero-copy contiguous views of the Kit-owned caches (their allocation tracks the
+            // real length in 256-row steps); nothing writes them until the join.
+            inputs["keyCache"] = InferenceFunction.AsyncValue(unsafeBuffer: keys, scalarType: .float16,
+                shape: keyDescriptor.shape, strides: keyDescriptor.preferredStrides, interleaveLayout: keyDescriptor.interleaveLayout)
+            inputs["valueCache"] = InferenceFunction.AsyncValue(unsafeBuffer: values, scalarType: .float16,
+                shape: valueDescriptor.shape, strides: valueDescriptor.preferredStrides, interleaveLayout: valueDescriptor.interleaveLayout)
+        }
+        stepShapes.insert(StepShape(count: tokens.count, capacity: allocatedCapacity))
         let outputs: [String: InferenceFunction.AsyncValue]
         do {
-            var states = InferenceFunction.AsyncMutableViews()
-            states.insert(&k, for: "keyCache")
-            states.insert(&v, for: "valueCache")
-            outputs = try function.encode(inputs: inputs, states: states, to: stream)
+            if contract.cachesAreStates {
+                var k = InferenceFunction.AsyncMutableValue(unsafeBuffer: keys, scalarType: .float16,
+                    shape: keyDescriptor.shape, strides: keyDescriptor.preferredStrides, interleaveLayout: keyDescriptor.interleaveLayout)
+                var v = InferenceFunction.AsyncMutableValue(unsafeBuffer: values, scalarType: .float16,
+                    shape: valueDescriptor.shape, strides: valueDescriptor.preferredStrides, interleaveLayout: valueDescriptor.interleaveLayout)
+                var states = InferenceFunction.AsyncMutableViews()
+                states.insert(&k, for: "keyCache")
+                states.insert(&v, for: "valueCache")
+                outputs = try function.encode(inputs: inputs, states: states, to: stream)
+            } else {
+                outputs = try function.encode(inputs: inputs, states: InferenceFunction.AsyncMutableViews(), to: stream)
+            }
         } catch {
             await stream.currentWorkCompleted()
             throw error
@@ -252,15 +310,43 @@ public actor LanguageGenerationSession {
         observer?(.submitted(position: position, count: tokens.count))
         await stream.currentWorkCompleted()
         observer?(.completed(position: position, count: tokens.count))
-        materializedTokens = position + tokens.count
         submissionsSinceReload += 1
+        materializedTokens = try await LanguageCachePlan.commit(position: position, count: tokens.count) {
+            if !contract.cachesAreStates { try await writeUpdates(outputs, position: position, count: tokens.count) }
+        }
         try Task.checkCancellation()
         guard let result = outputs["logits"], let logits = try await result.ndArray,
-              logits.scalarType == .float16, logits.shape == [1, tokens.count, vocabularySize]
+              logits.scalarType == .float16, logits.shape == [1, contract.logitsRows(count: tokens.count), vocabularySize]
         else { throw LanguageGenerationError.invalid("Unexpected logits") }
         return logits.view(as: Float16.self).withUnsafePointer { pointer, shape, strides in
             let row = (shape[1] - 1) * strides[1]
             return (0..<shape[2]).map { Float(pointer[row + $0 * strides[2]]) }
+        }
+    }
+
+    /// Bucketed contract: copies the joined step's update rows into the caches at
+    /// `position..<position + count`. The caches stay row-major `[layers·1·heads, capacity, dim]`.
+    private func writeUpdates(_ outputs: [String: InferenceFunction.AsyncValue], position: Int, count: Int) async throws {
+        guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
+        let shape = keyDescriptor.shape
+        guard keyDescriptor.preferredStrides == LanguageCachePlan.strides(shape),
+              valueDescriptor.preferredStrides == LanguageCachePlan.strides(valueDescriptor.shape)
+        else { throw LanguageGenerationError.invalid("Cache updates require contiguous row-major caches") }
+        // Validate both outputs before writing either, so a malformed step leaves the caches untouched.
+        var updates: [(NDArray, any MTLBuffer)] = []
+        for (name, buffer) in [("keyUpdate", keys), ("valueUpdate", values)] {
+            guard let value = outputs[name], let update = try await value.ndArray, update.scalarType == .float16,
+                  update.shape == [shape[0], shape[1], shape[2], count, shape[4]]
+            else { throw LanguageGenerationError.invalid("Unexpected cache update") }
+            updates.append((update, buffer))
+        }
+        for (update, buffer) in updates {
+            let cache = buffer.contents().bindMemory(to: Float16.self, capacity: buffer.length / MemoryLayout<Float16>.size)
+            update.view(as: Float16.self).withUnsafePointer { pointer, updateShape, strides in
+                LanguageCachePlan.writeUpdateTensor(pointer, shape: (0..<updateShape.count).map { updateShape[$0] },
+                                                    strides: (0..<strides.count).map { strides[$0] }, into: cache,
+                                                    capacity: shape[3], start: position)
+            }
         }
     }
 
@@ -282,10 +368,15 @@ public actor LanguageGenerationSession {
         public let allocatedBytes: Int
         public let growthCount: Int
         public let modelReloadCount: Int
+        /// Distinct submitted (token count, cache capacity) pairs over the session's life: input
+        /// shapes for the bucketed contract. The running contract adds a position dimension per
+        /// step on top of these, so this undercounts its native shapes.
+        public let distinctStepShapes: Int
     }
     public func cacheStatistics() -> CacheStatistics {
         CacheStatistics(maximumContext: capacity, allocatedCapacity: allocatedCapacity,
-            materializedTokens: materializedTokens, allocatedBytes: (keys?.length ?? 0) + (values?.length ?? 0), growthCount: growthCount, modelReloadCount: modelReloadCount)
+            materializedTokens: materializedTokens, allocatedBytes: (keys?.length ?? 0) + (values?.length ?? 0), growthCount: growthCount,
+            modelReloadCount: modelReloadCount, distinctStepShapes: stepShapes.count)
     }
 
     private func configureReopening(_ configuration: ReopenConfiguration) { reopenConfiguration = configuration }
@@ -310,9 +401,12 @@ public actor LanguageGenerationSession {
 
     /// Previous submissions have all joined. State remains in Kit-owned buffers;
     /// releasing the function, stream, and model bounds native shape-cache residency.
+    /// Bounded-shape contracts have no submission limit; a handle lost to a failed
+    /// reload is still reopened.
     private func recycleModelIfNeeded() async throws {
-        guard let configuration = reopenConfiguration,
-              function == nil || submissionsSinceReload >= configuration.maximumSubmissions else { return }
+        guard let configuration = reopenConfiguration else { return }
+        let exhausted = configuration.maximumSubmissions.map { submissionsSinceReload >= $0 } ?? false
+        guard function == nil || exhausted else { return }
         function = nil
         stream = nil
         model = nil
@@ -340,7 +434,9 @@ public actor LanguageGenerationSession {
         guard needed <= capacity else { throw LanguageGenerationError.contextLimit(limit: capacity) }
         guard needed > allocatedCapacity else { return }
         guard let oldKeys = keys, let oldValues = values else { throw LanguageGenerationError.invalid("Missing KV caches") }
-        let next = try LanguageCachePlan.nextCapacity(current: allocatedCapacity, needed: needed, maximum: capacity)
+        let next = contract.cachesAreStates
+            ? try LanguageCachePlan.nextCapacity(current: allocatedCapacity, needed: needed, maximum: capacity)
+            : try LanguageCachePlan.bucketedCapacity(needed: needed, maximum: capacity)
         var shape = keyDescriptor.shape
         shape[3] = next
         let kd = keyTemplate.resolvingDynamicDimensions(shape)

@@ -1,0 +1,508 @@
+{
+  "schema": 1,
+  "kind": "language-decode-contract-qualification",
+  "passed": true,
+  "device": "h17c",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are paired and interleaved observations, not benchmark records",
+  "model": {
+    "repository": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "license": "apache-2.0",
+    "precision": "float16 weights and caches",
+    "checkpointSHA256": {
+      "model.safetensors": "f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b"
+    }
+  },
+  "reference": {
+    "oracle": "transformers AutoModelForCausalLM, float32, CPU",
+    "versions": {
+      "torch": "2.11.0",
+      "transformers": "4.57.3"
+    },
+    "promptTokens": 33,
+    "forcedRows": 64,
+    "recordSHA256": "8d45deef96831d1cadf62e73f65820477e72cdad4f18c0d20e07f5151d530085",
+    "logitsSHA256": "15a13e901aa2fed6bf30c7d81f0fe665f1dfb196cab11daf89b1993f43bbff76",
+    "eagerPortVsReference": {
+      "running": {
+        "minCosine": 1.0,
+        "maxAbs": 8.9e-05,
+        "argmaxEqualRows": 64,
+        "rows": 64
+      },
+      "bucketed": {
+        "minCosine": 1.0,
+        "maxAbs": 7.9e-05,
+        "argmaxEqualRows": 64,
+        "rows": 64
+      }
+    }
+  },
+  "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+  "stopTokenNote": "Long runs register stop id 151935 (an unused padding row of the 151936-row head) so decoding is not cut short by EOS",
+  "bucketed": {
+    "contract": "bucketed-positions",
+    "export": {
+      "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-0.6b-bucketed-fp16",
+      "reportSHA256": "3d2a6d9a54a6821877f333f59fa87c29231e6a15d0397582af20c0dd200898b4",
+      "modelFiles": {
+        "main.hash": "e1011a8d2f3c9510b4e74077584b488f445d910a05b54b5108ab14d54c0bcefa",
+        "main.mlirb": "d1c7232962eb5a6f1f31b71cfce03f734a43476ec90558deb7aab012504ff734",
+        "metadata.json": "111d8e9e43e915a2705dc53e75615ed1ba4dfc2fb4585d7198e0c2c428691902"
+      },
+      "versions": {
+        "torch": "2.11.0",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2"
+      },
+      "exportBounds": {
+        "maximumPrefillChunk": 512,
+        "maximumCacheCapacity": 16384
+      },
+      "cpuOnlySelfCheck": {
+        "passed": true,
+        "minCosine": 0.994961,
+        "lostCacheRows": 0
+      }
+    },
+    "teacherForced": {
+      "rows": 64,
+      "minimumCosine": 0.9999985,
+      "maximumAbs": 0.04295,
+      "argmaxMismatches": 1,
+      "nearTies": 1
+    },
+    "greedy": {
+      "tokens": 64,
+      "firstDivergence": 58,
+      "divergenceReferenceMargin": 0.0001476034895491756,
+      "divergenceNativeRankInReference": 1
+    },
+    "longRun": {
+      "decodeSteps": 1024,
+      "modelReloads": 0,
+      "distinctStepShapes": 6,
+      "allocatedCapacity": 1280,
+      "physicalFootprintMiB": [
+        [
+          1,
+          366
+        ],
+        [
+          128,
+          365
+        ],
+        [
+          256,
+          412
+        ],
+        [
+          384,
+          412
+        ],
+        [
+          512,
+          446
+        ],
+        [
+          640,
+          447
+        ],
+        [
+          768,
+          530
+        ],
+        [
+          896,
+          516
+        ],
+        [
+          1024,
+          554
+        ]
+      ]
+    }
+  },
+  "running": {
+    "contract": "running-positions",
+    "export": {
+      "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-0.6b-running-fp16",
+      "reportSHA256": "f76a266060e2087db69a10be64d0e677d49434cd3a151a20f80811f367acd137",
+      "modelFiles": {
+        "main.hash": "4fedf74952f4f0e1c8887cb65ff6d6f838725150ec821cf0d6bf8f94e8d06940",
+        "main.mlirb": "3fb9458a3e4472f334db8e5ba6441791f8a052fa2895a9def90a8e84ccbea466",
+        "metadata.json": "5f971e4b59458c80232b6e5b6860bc7ae475b4ccdd3bcb25ac27b67791353500"
+      },
+      "versions": {
+        "torch": "2.11.0",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2"
+      },
+      "exportBounds": {
+        "maximumPrefillChunk": 512,
+        "maximumCacheCapacity": 16384
+      },
+      "cpuOnlySelfCheck": {
+        "passed": true,
+        "minCosine": 0.994916,
+        "lostCacheRows": 0
+      }
+    },
+    "teacherForced": {
+      "rows": 64,
+      "minimumCosine": 0.9999989,
+      "maximumAbs": 0.04407,
+      "argmaxMismatches": 1,
+      "nearTies": 1
+    },
+    "greedy": {
+      "tokens": 64,
+      "firstDivergence": 58,
+      "divergenceReferenceMargin": 0.0001476034895491756,
+      "divergenceNativeRankInReference": 1
+    },
+    "longRun": {
+      "decodeSteps": 1024,
+      "modelReloads": 8,
+      "distinctStepShapes": 5,
+      "allocatedCapacity": 2048,
+      "physicalFootprintMiB": [
+        [
+          1,
+          367
+        ],
+        [
+          128,
+          351
+        ],
+        [
+          256,
+          382
+        ],
+        [
+          384,
+          387
+        ],
+        [
+          512,
+          443
+        ],
+        [
+          640,
+          443
+        ],
+        [
+          768,
+          444
+        ],
+        [
+          896,
+          441
+        ],
+        [
+          1024,
+          564
+        ]
+      ]
+    }
+  },
+  "longRunTokensIdenticalPrefix": 1024,
+  "pairedTiming": {
+    "rounds": 6,
+    "loadAverage1m": [
+      47.013671875,
+      46.47265625,
+      49.0205078125,
+      50.9794921875,
+      53.85986328125,
+      54.64404296875
+    ],
+    "method": "all sessions resident; each round runs every session on every prompt (256 tokens, greedy), rotating which goes first; one warm-up request each beforehand",
+    "short": {
+      "bucketed": {
+        "promptTokens": 33,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.0388,
+        "decodeTokensPerSecondMedian": 66.3,
+        "decodeTokensPerSecond": [
+          60.7,
+          68.4,
+          61.4,
+          72.2,
+          66.9,
+          65.6
+        ]
+      },
+      "running": {
+        "promptTokens": 33,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.0179,
+        "decodeTokensPerSecondMedian": 47.0,
+        "decodeTokensPerSecond": [
+          47.7,
+          47.3,
+          41.0,
+          43.6,
+          53.2,
+          46.7
+        ]
+      },
+      "runningNoRecycle": {
+        "promptTokens": 33,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.0186,
+        "decodeTokensPerSecondMedian": 72.8,
+        "decodeTokensPerSecond": [
+          72.9,
+          74.8,
+          72.7,
+          63.5,
+          81.1,
+          68.4
+        ]
+      },
+      "vsRunning": {
+        "decodeSpeedupPerRound": [
+          1.273,
+          1.448,
+          1.498,
+          1.654,
+          1.257,
+          1.404
+        ],
+        "decodeSpeedupMedian": 1.426,
+        "timeToFirstTokenRatioPerRound": [
+          0.555,
+          1.446,
+          2.588,
+          2.198,
+          2.053,
+          2.686
+        ],
+        "timeToFirstTokenRatioMedian": 2.125
+      },
+      "vsRunningNoRecycle": {
+        "decodeSpeedupPerRound": [
+          0.833,
+          0.915,
+          0.844,
+          1.136,
+          0.825,
+          0.96
+        ],
+        "decodeSpeedupMedian": 0.879,
+        "timeToFirstTokenRatioPerRound": [
+          2.169,
+          1.456,
+          2.355,
+          1.962,
+          2.068,
+          2.811
+        ],
+        "timeToFirstTokenRatioMedian": 2.119
+      }
+    },
+    "long": {
+      "bucketed": {
+        "promptTokens": 1000,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.2994,
+        "decodeTokensPerSecondMedian": 58.7,
+        "decodeTokensPerSecond": [
+          57.6,
+          57.8,
+          60.0,
+          59.7,
+          61.7,
+          57.7
+        ]
+      },
+      "running": {
+        "promptTokens": 1000,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.0982,
+        "decodeTokensPerSecondMedian": 43.1,
+        "decodeTokensPerSecond": [
+          52.0,
+          43.3,
+          42.8,
+          41.5,
+          41.7,
+          45.3
+        ]
+      },
+      "runningNoRecycle": {
+        "promptTokens": 1000,
+        "generatedTokens": 256,
+        "runs": 6,
+        "timeToFirstTokenSecondsMedian": 0.0882,
+        "decodeTokensPerSecondMedian": 66.5,
+        "decodeTokensPerSecond": [
+          83.9,
+          67.3,
+          65.7,
+          64.9,
+          71.6,
+          64.9
+        ]
+      },
+      "vsRunning": {
+        "decodeSpeedupPerRound": [
+          1.107,
+          1.333,
+          1.4,
+          1.44,
+          1.48,
+          1.275
+        ],
+        "decodeSpeedupMedian": 1.366,
+        "timeToFirstTokenRatioPerRound": [
+          3.613,
+          2.65,
+          2.819,
+          3.232,
+          3.14,
+          2.016
+        ],
+        "timeToFirstTokenRatioMedian": 2.979
+      },
+      "vsRunningNoRecycle": {
+        "decodeSpeedupPerRound": [
+          0.686,
+          0.858,
+          0.913,
+          0.92,
+          0.862,
+          0.89
+        ],
+        "decodeSpeedupMedian": 0.876,
+        "timeToFirstTokenRatioPerRound": [
+          3.324,
+          2.53,
+          3.198,
+          3.639,
+          2.818,
+          3.218
+        ],
+        "timeToFirstTokenRatioMedian": 3.208
+      }
+    }
+  },
+  "longContext": {
+    "bucketed": {
+      "promptTokens": 7168,
+      "generatedTokens": 512,
+      "timeToFirstTokenSeconds": 3.15,
+      "decodeTokensPerSecond": 43.8,
+      "allocatedCapacity": 7680,
+      "kvCacheMiB": 840,
+      "modelReloads": 0,
+      "distinctStepShapes": 16,
+      "physicalFootprintMiB": [
+        [
+          1,
+          4148
+        ],
+        [
+          128,
+          3294
+        ],
+        [
+          256,
+          3294
+        ],
+        [
+          384,
+          3370
+        ],
+        [
+          512,
+          3369
+        ]
+      ]
+    },
+    "running": {
+      "promptTokens": 7168,
+      "generatedTokens": 512,
+      "timeToFirstTokenSeconds": 1.128,
+      "decodeTokensPerSecond": 36.0,
+      "allocatedCapacity": 8192,
+      "kvCacheMiB": 896,
+      "modelReloads": 4,
+      "distinctStepShapes": 8,
+      "physicalFootprintMiB": [
+        [
+          1,
+          5072
+        ],
+        [
+          128,
+          4100
+        ],
+        [
+          256,
+          4100
+        ],
+        [
+          384,
+          4094
+        ],
+        [
+          512,
+          4096
+        ]
+      ]
+    },
+    "runningNoRecycle": {
+      "promptTokens": 7168,
+      "generatedTokens": 512,
+      "timeToFirstTokenSeconds": 1.115,
+      "decodeTokensPerSecond": 52.1,
+      "allocatedCapacity": 8192,
+      "kvCacheMiB": 896,
+      "modelReloads": 0,
+      "distinctStepShapes": 8,
+      "physicalFootprintMiB": [
+        [
+          1,
+          5881
+        ],
+        [
+          128,
+          5896
+        ],
+        [
+          256,
+          5900
+        ],
+        [
+          384,
+          5896
+        ],
+        [
+          512,
+          5902
+        ]
+      ]
+    }
+  },
+  "nativeReport": {
+    "file": "language-bucketed-decode-2026-10-26-native.json",
+    "sha256": "f925e5ae39df139cee8bcaef7dd01a6bb22687a35340a74d7664ad4e605921bd"
+  },
+  "scriptSHA256": {
+    "export_qwen3.py": "29122704f0edd68797ee843b55a6467bf083eb28f0cdabe3eff0ca127d5be6e0",
+    "export_qwen3_vl_vision.py": "f34fcb8f73f0c063364860a92f36f4b4547c9ce21b5389ce6b208d4ae457f751",
+    "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
+    "qwen3_vl_vision.py": "dc994c012bfe42aca9547146ad0fdfcb77d912d416a49504fe07d143d4f2e437",
+    "record_evidence.py": "21c17d3b4a7c1ff8ad37c771b28a4186f8f46f6c0efff83dcc4e5e78773a85db",
+    "reference_qwen3.py": "93474743b412e344f94f037e61b219a79327d5997d59675f4ab4999d4f31f1e4",
+    "reference_qwen3_vl_vision.py": "310a02ab6972447c66af5056e8ab3ac459ddef47f751cccdd7977ef4425cb5c6"
+  },
+  "nativeTest": "Tests/AetherNativeTests/LanguageDecodeQualificationTests.swift (AETHER_NATIVE_LANGUAGE_QUALIFICATION=1, release)"
+}
