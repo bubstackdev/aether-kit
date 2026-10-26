@@ -45,7 +45,11 @@ One bundle holds both modes: `textEncoder` (`encode`), `denoiser0…2` (`segment
 `Flux2Assets.open` refuses any other recipe: schema/driver/target, the exact empirical shift constants, rotary axes and
 θ, prompt template/length/padding/pad token, segment list, function roles, tensor bindings, the reference contract
 (`packedLatents`, stride 10, bounded counts) and the source repository and revision. Provenance pins every file by
-SHA-256; opening checks model declarations and metadata against them, and `verify()` streams every model (about 8 GB).
+SHA-256; opening checks model declarations and metadata against them. `verify()` streams every model (about 8 GB) on
+concurrent threads, with each file confined to its asset directory. It reports the first failing asset in serial order
+and stops when the calling task is cancelled.
+Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrides the bundle-wide
+`expectFrequentReshapes`. Undeclared assets are refused.
 `fingerprint` identifies the text-to-image contract; `referenceFingerprint` adds the encoder and reference contract.
 `installationManifest()`/`open(in:)` and `Flux2GenerationSession(installed:)` follow the Krea installation contract.
 
@@ -79,8 +83,17 @@ byte-reproducible, so a re-export changes model hashes and fingerprints.
   the reference noise.
 - **References:** planar `[3,H,W]` on [−1,1], sides multiples of 16. `Flux2ReferenceImage(image:maxSide:)` fits a
   `CGImage` inside `maxSide` without upscaling, floors to multiples of 16 and resamples with Core Graphics' high-quality
-  filter (not PIL Lanczos; exact replay uses `init(pixels:)`). `Flux2ReferencePolicy` refuses more than `maxImages`
-  (2), a side above `maxSide` (512) or more than `maxTotalTokens` (4,096) generated + reference tokens before any load.
+  filter. `Flux2ReferencePolicy` refuses, before any load, more than `maxImages` (2), a side above `maxSide` (512), or
+  more than `maxTotalTokens` (4,096) generated + reference tokens.
+- **Difference from Diffusers' reference preparation:** this package bounds the *longest side* by `maxSide` (512 for
+  the export, so at most 32×32 tokens per reference). Diffusers' `Flux2KleinPipeline` instead bounds the *area*: it
+  resizes only images above 1024² pixels (Lanczos, to that area) and then floors each side to a multiple of 16.
+  - A 1024×768 picture is 512×384 here but passes through Diffusers unchanged.
+  - A tall 400×1200 picture is 160×512 here but 400×1200 in Diffusers.
+  - Diffusers would accept references the export's 512-pixel side bound cannot encode.
+
+  The filters also differ (Core Graphics versus PIL Lanczos). For upstream-identical tensors, prepare the pixels
+  yourself and use `init(pixels:)`, as the parity fixtures do.
 
 ## Session (`AetherFlux2CoreAI`)
 
@@ -122,16 +135,19 @@ do {
 - **Residency:** `balanced` releases denoisers before any encoder loads and the text encoder after encoding;
   `resident` keeps the text encoder and denoisers. Both release the reference encoder after each preparation and
   recycle denoisers when the total token count changes and the decoder when the output size changes, so shape
-  specializations do not accumulate (prototype F-P3-75). Placement per asset: text encoder and denoisers specialize with
-  frequent reshapes, decoder and reference encoder without (prototype F-P3-48/68).
+  specializations do not accumulate (prototype F-P3-75). Placement per asset comes from the manifest. The finalized
+  bundle declares text encoder and denoisers with frequent reshapes, and decoder and reference encoder without
+  (prototype F-P3-48/68).
 - **Lifecycle:** one operation at a time (`sessionBusy` otherwise); cancellation is cooperative between native calls
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
   `unload()` rejects new work, waits for the active operation and closes permanently.
 - **Prepared values:** `Flux2PreparedPrompt` (7.5 MiB fp16 rows + bundle fingerprint) and `Flux2PreparedReferences`
   (float32 packed latents + reference fingerprint) hold no native models; another bundle refuses them before loading.
 - **Admission:** optional `Flux2ResourceAdmission` reserves caller-qualified estimates (operation storage, per-model
-  residency keyed by stream + metadata hash, per-call scratch) on a shared `ResourceCoordinator`; unknown models or
-  larger token counts refuse before any stage is released or loaded. These are estimates, not measured limits.
+  residency keyed by stream + metadata hash, per-call scratch) on a shared `ResourceCoordinator`. Unknown models, or
+  token counts above the profile, are refused before any stage is released or loaded. For `generate` that is the
+  output's tokens plus any references. For `prepare(references:generatedTokens:)` it is the references' tokens plus
+  `generatedTokens`, which must be at least 1. These are estimates, not measured limits.
 
 All tensors copy through host memory between calls; there is no device-resident loop and no performance claim.
 
@@ -139,12 +155,21 @@ All tensors copy through host memory between calls; there is no device-resident 
 
 ### CPU (default suite)
 
-`Tests/AetherFlux2Tests` (20 tests, weight-free): schedule against the reference pipeline's observed sigmas and the μ
-rule, separately rounded Euler, rotary values and reference offsets, prompt padding/truncation, configuration bounds,
-reference policy and CGImage preparation, bundle acceptance/refusal for 11 recipe deviations, provenance and mutation,
-installation round trip, segment-contract refusal, and scripted-session ordering: balanced/resident residency, reference
-appending and slicing, prepared reuse and shape recycling, refusal before load, busy/cancellation/recovery, partial-load
-failure, unload during work, and resource admission accounting.
+`Tests/AetherFlux2Tests` (25 tests, weight-free). They cover:
+
+- **Host math:** schedule against the reference pipeline's observed sigmas and the μ rule, separately rounded Euler,
+  rotary values and reference offsets, prompt padding/truncation, configuration bounds, reference policy and CGImage
+  preparation.
+- **Bundle:** acceptance and refusal for 13 recipe deviations (placement included), manifest-driven placement,
+  provenance and mutation, concurrent verification reporting the first failure in serial order, confinement against a
+  symlinked stream, cancellation of verification, installation round trip, and segment-contract refusal.
+- **Scripted sessions:**
+  - balanced/resident residency, reference appending and slicing, prepared reuse and shape recycling;
+  - refusal before load, busy/cancellation/recovery during a denoiser call, partial denoiser-load failure, unload
+    during work, and resource admission accounting, including the reference-preparation profile check;
+  - encoder discard paths: a failed text-encoder run and a failed VAE-encoder run, and a gated cancellation of each.
+    The encoder closes, and a retry opens a new one (in resident mode, a retained text encoder is discarded and
+    replaced).
 
 Opt-in with local files only (`AETHER_FLUX2_FIXTURES`, `AETHER_FLUX2_REFERENCE_FIXTURES`, `AETHER_FLUX2_BUNDLE`):
 `samplerArithmeticMatchesTheIndependentReference` and `bundleTokenizerMatchesReferenceTokenIDs`.
@@ -284,10 +309,19 @@ only releases after an explicit `unloadRequested` marker, and no library code ch
 
 These additional GPU-lock jobs took about 3.5 minutes: parity 2.3, lifecycle 0.5 + 0.5.
 
+### Review fixes smoke (2026-10-26)
+
+After the review fixes (concurrent confined verification, manifest-driven placement, and the reference-preparation
+admission check), the default parity suite ran again under the shared lock. All 68/68 checks pass, with values
+identical to the post-rebase report. The bundle's concurrent `verify()` took 1.2 s with a warm page cache, against
+2.8 s for the earlier serial pass; this is not a benchmark. Every asset loaded with the placement read from the
+finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-review-2026-10-26.json) and
+[log](evidence/flux2-klein-native-smoke-review-2026-10-26.log).
+
 ### Not yet qualified
 
-- Native cancellation of the text encoder and the reference encoder. Their discard-on-failure paths are covered by CPU
-  tests only.
+- Native cancellation of the text encoder and the reference encoder. Their run-failure and cancellation discard paths
+  are covered by scripted CPU tests only.
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
 - Prompt adherence (T3) and a subjective review across more prompts and seeds.
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.

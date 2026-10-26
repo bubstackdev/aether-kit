@@ -57,7 +57,9 @@ def main(export: Path, checkpoint: Path, output: Path) -> None:
     manifest["text"] = {"tokenizer": "tokenizer/", "chatTemplate": "embedded"}
     diffusion = dict(manifest["diffusion"])
     # Per-asset placement (prototype F-P3-48/68): only the shape-dynamic text encoder and denoiser
-    # specialize with frequent reshapes; the VAE decoder and encoder plan static memory.
+    # specialize with frequent reshapes; the VAE decoder and encoder plan static memory. This is the
+    # single source of placement: AetherFlux2 reads assetReshapes over the Forge fragment's
+    # bundle-wide expectFrequentReshapes default.
     reshapes = {"vaeDecoder": False}
     if "vaeEncoder" in apple["assets"]:
         reshapes["vaeEncoder"] = False

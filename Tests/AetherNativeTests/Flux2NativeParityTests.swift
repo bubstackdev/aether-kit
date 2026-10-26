@@ -172,7 +172,10 @@ private func denoise(_ segments: [ModelSession], latents: Float16Tensor, text: F
     for model in segments {
         guard let function = model.functions.first(where: { $0.name == "segment" }) else { throw AetherError.invalidModel("segment") }
         var inputs: [String: TensorValue] = [:]
-        for name in function.inputs.keys { inputs[name] = try #require(values[name], "missing \(name)") }
+        for name in function.inputs.keys {
+            guard let value = values[name] else { throw AetherError.invalidModel("missing segment input \(name)") }
+            inputs[name] = value
+        }
         for (name, value) in try await model.runTensors(function: "segment", inputs: inputs) { values[name] = value }
     }
     guard case .float16(let velocity) = values["velocity"] else { throw AetherError.invalidTensor("velocity") }

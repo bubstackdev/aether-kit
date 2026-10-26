@@ -127,8 +127,12 @@ extension Flux2Prompt {
     defer { textOnly.cleanup() }
     let plain = try Flux2Assets.open(at: textOnly.root)
     #expect(!plain.supportsReferences && plain.referenceFingerprint == nil)
+    // Placement comes from the manifest: per-asset overrides over the bundle-wide default.
+    #expect(assets.expectsFrequentReshapes("textEncoder") && assets.expectsFrequentReshapes("denoiser2"))
+    #expect(!assets.expectsFrequentReshapes("vaeDecoder") && !assets.expectsFrequentReshapes("vaeEncoder"))
 
-    for change in ["schema", "shift", "rotary", "prompt", "target", "binding", "segments", "role", "references", "source", "revision"] {
+    for change in ["schema", "shift", "rotary", "prompt", "target", "binding", "segments", "role", "references", "source",
+                   "revision", "reshapes", "placement"] {
         let bad = try Flux2BundleFixture()
         defer { bad.cleanup() }
         try bad.edit("aether.json") { json in
@@ -143,6 +147,8 @@ extension Flux2Prompt {
             case "segments": d["denoiserSegments"] = ["denoiser0", "denoiser1"]
             case "role": var f = json["functions"] as! [String: Any]; f["vaeDecoder/decode"] = ["role": "decode"]; json["functions"] = f
             case "references": var r = d["referenceImages"] as! [String: Any]; r["positionStride"] = 1; d["referenceImages"] = r
+            case "reshapes": d["assetReshapes"] = ["denoiser9": false]
+            case "placement": d.removeValue(forKey: "expectFrequentReshapes")
             case "revision": json["provenance"] = ["source": ["hfRepo": "black-forest-labs/FLUX.2-klein-4B", "revision": "x"], "files": [String: String]()]
             default: json["provenance"] = ["source": ["hfRepo": "other/model", "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"], "files": [String: String]()]
             }
@@ -169,6 +175,40 @@ extension Flux2Prompt {
     try Data("{}".utf8).write(to: assets.tokenizerDirectory.appendingPathComponent("tokenizer.json"))
     #expect(throws: AetherError.self) { try assets.verifyTokenizer() }
     #expect(try Flux2Assets.open(at: clean.root).fingerprint != assets.fingerprint)
+}
+
+@Test func concurrentVerificationReportsTheFirstFailureInSerialOrder() throws {
+    let fixture = try Flux2BundleFixture()
+    defer { fixture.cleanup() }
+    let assets = try Flux2Assets.open(at: fixture.root)
+    // Corrupt a later and an earlier asset; the earlier one (denoiser1 precedes vaeEncoder) is reported.
+    try Data("corrupt".utf8).write(to: assets.referenceEncoder!.url.appendingPathComponent("main.mlirb"))
+    try Data("corrupt".utf8).write(to: assets.denoisers[1].url.appendingPathComponent("main.mlirb"))
+    do { try assets.verify(); Issue.record("verification passed") } catch let error as AetherError {
+        #expect(error.description.contains("denoiser1.aimodel") && !error.description.contains("vaeEncoder"))
+    }
+}
+
+@Test func verificationStaysInsideTheAssetAndObservesCancellation() async throws {
+    let fixture = try Flux2BundleFixture()
+    defer { fixture.cleanup() }
+    let assets = try Flux2Assets.open(at: fixture.root)
+    // A stream replaced by a symlink to identical bytes outside the asset directory is refused.
+    let stream = assets.decoder.url.appendingPathComponent("main.mlirb")
+    let outside = fixture.root.appendingPathComponent("outside.mlirb")
+    try FileManager.default.copyItem(at: stream, to: outside)
+    try FileManager.default.removeItem(at: stream)
+    try FileManager.default.createSymbolicLink(at: stream, withDestinationURL: outside)
+    #expect(throws: (any Error).self) { try assets.decoder.verify() }
+
+    let clean = try Flux2BundleFixture()
+    defer { clean.cleanup() }
+    let verified = try Flux2Assets.open(at: clean.root)
+    let task = Task {
+        withUnsafeCurrentTask { $0?.cancel() }
+        try verified.verify()
+    }
+    await #expect(throws: CancellationError.self) { try await task.value }
 }
 
 @Test func installationRoundTripPreservesIdentities() async throws {

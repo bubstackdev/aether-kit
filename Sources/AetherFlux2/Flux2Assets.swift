@@ -27,14 +27,21 @@ public struct Flux2Assets: Sendable {
     public let sourceRevision: String
     public var supportsReferences: Bool { referenceEncoder != nil }
     private let tokenizerFiles: [String: String]
+    private let defaultReshapes: Bool
+    private let assetReshapes: [String: Bool]
 
     public static func open(at root: URL) throws -> Self {
         guard root.isFileURL else { throw AetherError.invalidModel("bundle must be local") }
         let root = root.standardizedFileURL.resolvingSymlinksInPath()
         let metadataData = try Data(contentsOf: BundleFiles.confined("metadata.json", in: root))
         let manifestData = try Data(contentsOf: BundleFiles.confined("aether.json", in: root))
-        let metadata = try JSONDecoder().decode(Flux2Metadata.self, from: metadataData)
-        let manifest = try JSONDecoder().decode(Flux2Manifest.self, from: manifestData)
+        let metadata: Flux2Metadata, manifest: Flux2Manifest
+        do {
+            metadata = try JSONDecoder().decode(Flux2Metadata.self, from: metadataData)
+            manifest = try JSONDecoder().decode(Flux2Manifest.self, from: manifestData)
+        } catch let error as DecodingError {
+            throw AetherError.unsupported("FLUX.2 bundle declarations are incomplete or malformed: \(error)")
+        }
         let limits = try manifest.validate(name: metadata.name)
         let pinned = manifest.provenance.files
 
@@ -81,19 +88,28 @@ public struct Flux2Assets: Sendable {
                     tokenizerDirectory: root.appendingPathComponent("tokenizer", isDirectory: true),
                     fingerprint: fingerprint, referenceFingerprint: referenceFingerprint,
                     sourceRepository: manifest.provenance.source.hfRepo, sourceRevision: manifest.provenance.source.revision,
-                    tokenizerFiles: tokenizer)
+                    tokenizerFiles: tokenizer, defaultReshapes: manifest.diffusion.expectFrequentReshapes,
+                    assetReshapes: manifest.diffusion.assetReshapes ?? [:])
     }
 
     static let tokenizerNames = ["tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json"]
 
-    /// Streams every declared model through SHA-256 (about 8 GB for the int8 export) and rechecks
-    /// the tokenizer. No native model is loaded.
+    /// Streams every declared model through SHA-256 (about 8 GB for the int8 export) on concurrent
+    /// threads, then rechecks the tokenizer. A failure is reported for the first failing asset in
+    /// text encoder, decoder, denoiser, reference encoder order, as a serial pass would; the calling
+    /// task's cancellation stops every worker. No native model is loaded.
     public func verify() throws {
-        for model in [textEncoder, decoder] + denoisers + (referenceEncoder.map { [$0] } ?? []) {
-            do { try model.verify() } catch let error as AssetStoreError { throw AetherError.invalidModel("\(error)") }
+        do {
+            try DeclaredModelAsset.verifyConcurrently([textEncoder, decoder] + denoisers + (referenceEncoder.map { [$0] } ?? []))
+        } catch let error as AssetStoreError {
+            throw AetherError.invalidModel("\(error)")
         }
         try verifyTokenizer()
     }
+
+    /// Whether `role`'s asset specializes with frequent reshapes: the manifest's per-asset
+    /// `diffusion.assetReshapes` entry, else its bundle-wide `expectFrequentReshapes`.
+    public func expectsFrequentReshapes(_ role: String) -> Bool { assetReshapes[role] ?? defaultReshapes }
 
     public func verifyTokenizer() throws {
         for (name, expected) in tokenizerFiles {
@@ -209,6 +225,9 @@ struct Flux2Manifest: Decodable {
         let rotary: Rotary
         let prompt: Prompt
         let referenceImages: References?
+        /// Per-asset placement: `assetReshapes[role]` overrides the bundle-wide default.
+        let expectFrequentReshapes: Bool
+        let assetReshapes: [String: Bool]?
     }
 
     func validate(name: String) throws -> Flux2ReferenceLimits? {
@@ -236,6 +255,10 @@ struct Flux2Manifest: Decodable {
         if d.referenceImages != nil { roles["vaeEncoder/encode"] = "encodeLatents" }
         guard functions.mapValues(\.role) == roles else {
             throw AetherError.unsupported("FLUX.2 function roles differ from the supported recipe")
+        }
+        let assetRoles = Set(roles.keys.map { String($0.split(separator: "/")[0]) })
+        guard Set((d.assetReshapes ?? [:]).keys).isSubset(of: assetRoles) else {
+            throw AetherError.unsupported("FLUX.2 assetReshapes names an undeclared asset")
         }
         let bindings: [String: (String, String)] = [
             "input_ids": ("int32", "tokens"), "attention_mask": ("int32", "tokenMask"), "position_ids": ("int32", "positions"),

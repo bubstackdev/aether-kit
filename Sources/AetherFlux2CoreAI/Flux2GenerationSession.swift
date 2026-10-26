@@ -100,10 +100,13 @@ public actor Flux2GenerationSession {
     }
 
     /// Encodes reference images once (one encoder call per image) and releases the encoder.
-    /// Bounds are checked before any model loads; `generatedTokens` reserves room for the output.
+    /// Bundle bounds and the admission profile (references plus `generatedTokens`, the output's tokens
+    /// reserved for the later generation) are checked before any model is released or loaded.
     public func prepare(references: [Flux2ReferenceImage], generatedTokens: Int = 1) async throws -> Flux2PreparedReferences {
         guard !references.isEmpty else { throw AetherError.invalidRequest("no reference images") }
+        guard generatedTokens >= 1 else { throw AetherError.invalidRequest("generatedTokens must be at least 1") }
         try Flux2ReferencePolicy.check(references.map { ($0.rows, $0.columns) }, generatedTokens: generatedTokens, limits: limits)
+        try resources?.check(imageTokens: references.reduce(generatedTokens) { $0 + $1.tokens })
         try requireEstimates(text: false, references: true, generation: false)
         return try await perform { [runner] in try await runner.encode(references) }
     }
@@ -248,13 +251,6 @@ enum ReferenceSource: Sendable {
     }
 }
 
-/// Per-asset placement measured by the prototype: dynamic text encoder and denoisers specialize with
-/// frequent reshapes (F-P3-48); the VAE decoder plans static memory without it (F-P3-68). The
-/// reference encoder follows the decoder's static placement.
-enum Flux2Placement {
-    static let textEncoder = true, denoiser = true, decoder = false, referenceEncoder = false
-}
-
 actor Flux2Runner {
     let assets: Flux2Assets
     let factory: any Flux2ModelFactory
@@ -351,7 +347,7 @@ actor Flux2Runner {
         let grid = [configuration.rows, configuration.columns]
         if decoderGrid != grid, let old = decoder { await old.unload(); decoder = nil; decoderGrid = nil }
         if decoder == nil {
-            decoder = try await factory.open(assets.decoder, frequentReshapes: Flux2Placement.decoder)
+            decoder = try await factory.open(assets.decoder, frequentReshapes: assets.expectsFrequentReshapes("vaeDecoder"))
             decoderGrid = grid
         }
         guard let decoder else { throw AetherError.invalidModel("decoder did not load") }
@@ -373,7 +369,7 @@ actor Flux2Runner {
         try Task.checkCancellation()
         if !retaining { await releaseDenoisers() }
         try Task.checkCancellation()
-        if textEncoder == nil { textEncoder = try await factory.open(assets.textEncoder, frequentReshapes: Flux2Placement.textEncoder) }
+        if textEncoder == nil { textEncoder = try await factory.open(assets.textEncoder, frequentReshapes: assets.expectsFrequentReshapes("textEncoder")) }
         guard let model = textEncoder else { throw AetherError.invalidModel("text encoder did not load") }
         do {
             try Flux2Contracts.textEncoder(signature(model, named: "encode"))
@@ -400,7 +396,7 @@ actor Flux2Runner {
         try Task.checkCancellation()
         if residency == .balanced { await releaseDenoisers() }
         try Task.checkCancellation()
-        let model = try await factory.open(asset, frequentReshapes: Flux2Placement.referenceEncoder)
+        let model = try await factory.open(asset, frequentReshapes: assets.expectsFrequentReshapes("vaeEncoder"))
         do {
             var encoded: [Flux2EncodedReference] = []
             for image in images {
@@ -433,9 +429,9 @@ actor Flux2Runner {
         if denoiserTokens == tokens, denoisers.count == Flux2Assets.segmentCount { return }
         await releaseDenoisers()
         do {
-            for asset in assets.denoisers {
+            for (index, asset) in assets.denoisers.enumerated() {
                 try Task.checkCancellation()
-                denoisers.append(try await factory.open(asset, frequentReshapes: Flux2Placement.denoiser))
+                denoisers.append(try await factory.open(asset, frequentReshapes: assets.expectsFrequentReshapes("denoiser\(index)")))
             }
             try Flux2Contracts.segments(denoisers.map { try signature($0, named: "segment") }, tokens: tokens)
             denoiserTokens = tokens

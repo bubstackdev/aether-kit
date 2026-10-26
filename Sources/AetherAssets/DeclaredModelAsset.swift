@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Synchronization
 
 /// A Core AI asset directory inside a local bundle, with its declared content identity.
 /// `main.hash` declares the SHA-256 of `main.mlirb`; `metadata.json` is hashed on opening.
@@ -37,13 +38,42 @@ public struct DeclaredModelAsset: Sendable, Equatable {
     }
 
     /// Streams the model through SHA-256 against its declaration. This can read several GB.
-    public func verify() throws {
-        let declaration = try Data(contentsOf: url.appendingPathComponent("main.hash"))
+    public func verify() throws { try verify(checkStop: { try Task.checkCancellation() }) }
+
+    /// `checkStop` runs between chunks; throw from it to stop hashing (cancellation or a superseded pass).
+    /// Every file is resolved inside the asset directory; symlinks may not escape it.
+    public func verify(checkStop: () throws -> Void) throws {
+        let declaration = try Data(contentsOf: BundleFiles.confined("main.hash", in: url))
         guard declaration.map({ String(format: "%02x", $0) }).joined() == declaredSHA256,
-              try BundleFiles.sha256(of: url.appendingPathComponent("main.mlirb")) == declaredSHA256,
-              try BundleFiles.sha256(of: url.appendingPathComponent("metadata.json")) == metadataSHA256 else {
+              try BundleFiles.sha256(of: BundleFiles.confined("main.mlirb", in: url), checkStop: checkStop) == declaredSHA256,
+              try BundleFiles.sha256(of: BundleFiles.confined("metadata.json", in: url), checkStop: checkStop) == metadataSHA256 else {
             throw AssetStoreError.integrityMismatch("model hash mismatch: \(url.lastPathComponent)")
         }
+    }
+
+    /// Verifies independent assets on concurrent threads. Workers observe the calling task's
+    /// cancellation, and a failure stops only later assets, so the reported error is always the
+    /// first failing asset in input order, as a serial pass would report it.
+    public static func verifyConcurrently(_ assets: [DeclaredModelAsset]) throws {
+        struct Superseded: Error {}
+        // `isCancelled` is documented as safe from other threads, and concurrentPerform returns
+        // before the task reference expires.
+        struct CallerTask: @unchecked Sendable { let task: UnsafeCurrentTask? }
+        let failures = Mutex<[Int: any Error]>([:])
+        withUnsafeCurrentTask { task in
+            let caller = CallerTask(task: task)
+            DispatchQueue.concurrentPerform(iterations: assets.count) { index in
+                do {
+                    try assets[index].verify {
+                        if caller.task?.isCancelled == true { throw CancellationError() }
+                        if failures.withLock({ $0.keys.contains { $0 < index } }) { throw Superseded() }
+                    }
+                } catch {
+                    failures.withLock { $0[index] = error }
+                }
+            }
+        }
+        if let first = failures.withLock({ $0.min { $0.key < $1.key }?.value }) { throw first }
     }
 
     /// The three portable files of this asset, relative to `root`, for an installation manifest.
@@ -76,14 +106,15 @@ public enum BundleFiles {
         return url
     }
 
-    /// Streams a file through SHA-256 in autoreleased chunks; observes task cancellation.
-    public static func sha256(of url: URL) throws -> String {
+    /// Streams a file through SHA-256 in autoreleased chunks. `checkStop` runs between chunks
+    /// (by default, the current task's cancellation).
+    public static func sha256(of url: URL, checkStop: () throws -> Void = { try Task.checkCancellation() }) throws -> String {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
         var digest = SHA256()
         while try autoreleasepool(invoking: { () throws -> Bool in
             guard let data = try file.read(upToCount: 4 << 20), !data.isEmpty else { return false }
-            try Task.checkCancellation()
+            try checkStop()
             digest.update(data: data)
             return true
         }) {}

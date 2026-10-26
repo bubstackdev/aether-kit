@@ -69,10 +69,13 @@ final class Flux2ScriptedFactory: Flux2ModelFactory, Sendable {
     let gates: Mutex<[String: Flux2Gate]>
     let failures: Mutex<Set<String>>
     let observed = Mutex<[String: [String: TensorValue]]>([:])
+    let runFailures = Mutex<Set<String>>([])
 
     init(log: Flux2EventLog, gates: [String: Flux2Gate] = [:], failures: Set<String> = []) {
         self.log = log; self.gates = Mutex(gates); self.failures = Mutex(failures)
     }
+
+    func failNextRun(of role: String) { runFailures.withLock { _ = $0.insert(role) } }
 
     func gate(_ role: String) -> Flux2Gate? { gates.withLock { $0[role] } }
 
@@ -81,14 +84,18 @@ final class Flux2ScriptedFactory: Flux2ModelFactory, Sendable {
         log.append("open:\(role):\(frequentReshapes)")
         if failures.withLock({ $0.remove(role) != nil }) { throw AetherError.invalidModel("injected load failure: \(role)") }
         let gate = self.gate(role)
-        let record: @Sendable ([String: TensorValue]) -> Void = { [self] inputs in self.observed.withLock { $0[role] = inputs } }
+        // Records inputs, then fails the call once if a run failure was injected for this role.
+        let record: @Sendable ([String: TensorValue]) throws -> Void = { [self] inputs in
+            self.observed.withLock { $0[role] = inputs }
+            if self.runFailures.withLock({ $0.remove(role) != nil }) { throw AetherError.invalidTensor("injected run failure: \(role)") }
+        }
         switch role {
         case "textEncoder":
             let signature = try describe("encode", [
                 "input_ids": value("int32", [1, -1]), "position_ids": value("int32", [1, -1]),
                 "attention_mask": value("int32", [1, -1])], ["text_embeds": value("float16", [-1, 7680])])
             return ScriptedModel(name: role, functions: [signature], log: log) { inputs in
-                record(inputs)
+                try record(inputs)
                 if let gate { await gate.enter() }
                 return ["text_embeds": .float16(try Float16Tensor(shape: [512, 7680], values: Array(repeating: 0.5, count: 512 * 7680)))]
             }
@@ -96,7 +103,7 @@ final class Flux2ScriptedFactory: Flux2ModelFactory, Sendable {
             let signature = try describe("encode", ["reference_pixels": value("float32", [3, -1, -1])],
                                          ["reference_latents": value("float32", [-1, -1, 128])])
             return ScriptedModel(name: role, functions: [signature], log: log) { inputs in
-                record(inputs)
+                try record(inputs)
                 if let gate { await gate.enter() }
                 guard case .float32(let pixels) = inputs["reference_pixels"] else { throw AetherError.invalidTensor("pixels") }
                 let rows = pixels.shape[1] / 16, columns = pixels.shape[2] / 16
@@ -106,7 +113,7 @@ final class Flux2ScriptedFactory: Flux2ModelFactory, Sendable {
         case "vaeDecoder":
             let signature = try describe("decode", ["latents": value("float16", [-1, -1, 128])], ["image": value("float32", [3, -1, -1])])
             return ScriptedModel(name: role, functions: [signature], log: log) { inputs in
-                record(inputs)
+                try record(inputs)
                 if let gate { await gate.enter() }
                 guard case .float16(let latents) = inputs["latents"] else { throw AetherError.invalidTensor("latents") }
                 let h = latents.shape[0] * 16, w = latents.shape[1] * 16
@@ -116,7 +123,7 @@ final class Flux2ScriptedFactory: Flux2ModelFactory, Sendable {
             let index = Int(role.dropFirst("denoiser".count))!
             let signature = try segmentSignatures()[index]
             return ScriptedModel(name: role, functions: [signature], log: log) { inputs in
-                record(inputs)
+                try record(inputs)
                 if let gate { await gate.enter() }
                 guard let tokens = inputs[index == 0 ? "latents" : "image_\(index)"]?.shape.first else { throw AetherError.invalidTensor("tokens") }
                 var result: [String: TensorValue] = [:]
@@ -317,7 +324,83 @@ private func reference(rows: Int, columns: Int, fill: Float) throws -> Flux2Refe
     await h.session.unload()
 }
 
-@Test func encoderFailuresDiscardTheEncoderAndUnloadWaitsForActiveWork() async throws {
+@Test func encoderRunFailuresDiscardTheEncoderAndRetryReopensIt() async throws {
+    let h = try Flux2Harness(residency: .resident)
+    defer { h.fixture.cleanup() }
+    let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)
+    h.factory.failNextRun(of: "textEncoder")
+    await #expect(throws: AetherError.self) { try await h.session.generate(configuration: configuration, prompt: prompt()) }
+    #expect(h.log.snapshot == ["open:textEncoder:true", "run:textEncoder", "close:textEncoder"])
+    #expect(await h.session.state == .ready)
+    // The failed encoder was discarded: the retry opens a new one, which resident mode then keeps.
+    h.log.clear()
+    _ = try await h.session.generate(configuration: configuration, prompt: prompt())
+    #expect(h.log.snapshot.prefix(2) == ["open:textEncoder:true", "run:textEncoder"])
+    #expect(!h.log.snapshot.contains("close:textEncoder"))
+
+    h.log.clear()
+    h.factory.failNextRun(of: "vaeEncoder")
+    let refs = try [reference(rows: 1, columns: 1, fill: 0), reference(rows: 1, columns: 2, fill: 0)]
+    await #expect(throws: AetherError.self) { try await h.session.prepare(references: refs, generatedTokens: 4) }
+    #expect(h.log.snapshot == ["open:vaeEncoder:false", "run:vaeEncoder", "close:vaeEncoder"])
+    h.log.clear()
+    let prepared = try await h.session.prepare(references: refs, generatedTokens: 4)
+    #expect(prepared.tokens == 3)
+    #expect(h.log.snapshot == ["open:vaeEncoder:false", "run:vaeEncoder", "run:vaeEncoder", "close:vaeEncoder"])
+    await h.session.unload()
+}
+
+@Test func cancellingAnEncoderCallDiscardsTheEncoderAndRecovers() async throws {
+    let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)
+    let refs = try [reference(rows: 1, columns: 1, fill: 0)]
+    for role in ["textEncoder", "vaeEncoder"] {
+        let gate = Flux2Gate()
+        let h = try Flux2Harness(residency: .resident, gates: [role: gate])
+        defer { h.fixture.cleanup() }
+        @Sendable func request() async throws {
+            if role == "textEncoder" { _ = try await h.session.generate(configuration: configuration, prompt: prompt()) }
+            else { _ = try await h.session.prepare(references: refs, generatedTokens: 4) }
+        }
+        let task = Task { try await request() }
+        await gate.waitUntilEntered()
+        await #expect(throws: AetherError.sessionBusy, "\(role)") { try await h.session.prepare(prompt: prompt()) }
+        task.cancel()
+        #expect(await h.session.state == .running, "\(role)")  // the submitted call has not returned
+        await gate.release()
+        await #expect(throws: CancellationError.self, "\(role)") { try await task.value }
+        #expect(h.log.snapshot == ["open:\(role):\(role == "textEncoder")", "run:\(role)", "close:\(role)"], "\(role)")
+        #expect(await h.session.state == .ready, "\(role)")
+        // Recovery opens a fresh encoder and completes.
+        h.log.clear()
+        try await request()
+        #expect(h.log.snapshot.prefix(2) == ["open:\(role):\(role == "textEncoder")", "run:\(role)"], "\(role)")
+        await h.session.unload()
+    }
+}
+
+@Test func referencePreparationChecksTheAdmissionProfileBeforeLoading() async throws {
+    let coordinator = try ResourceCoordinator(capacityBytes: 1_000)
+    let h = try Flux2Harness { assets in
+        let models = try ([assets.textEncoder, assets.decoder, assets.referenceEncoder!] + assets.denoisers).map {
+            try Flux2ModelResourceEstimate(asset: $0, residentBytes: 100, runScratchBytes: 10)
+        }
+        return try Flux2ResourceAdmission(coordinator: coordinator, operationBytes: 50, maximumImageTokens: 6, models: models)
+    }
+    defer { h.fixture.cleanup() }
+    // 4 reference tokens + 4 generated exceed the profile's 6 even though the bundle allows 4,096.
+    await #expect(throws: AetherError.self) {
+        try await h.session.prepare(references: [reference(rows: 2, columns: 2, fill: 0)], generatedTokens: 4)
+    }
+    await #expect(throws: AetherError.self) {
+        try await h.session.prepare(references: [reference(rows: 1, columns: 1, fill: 0)], generatedTokens: 0)
+    }
+    #expect(h.log.snapshot.isEmpty && coordinator.snapshot.reservedBytes == 0)
+    let prepared = try await h.session.prepare(references: [reference(rows: 1, columns: 2, fill: 0)], generatedTokens: 4)
+    #expect(prepared.tokens == 2 && coordinator.snapshot.reservedBytes == 0)
+    await h.session.unload()
+}
+
+@Test func denoiserLoadFailureClosesThePartialSetAndUnloadWaitsForActiveWork() async throws {
     let h = try Flux2Harness(failures: ["denoiser1"])
     defer { h.fixture.cleanup() }
     let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)

@@ -56,6 +56,8 @@ struct Flux2BundleFixture {
                            "highSteps": 200, "highSlope": 0.00016927, "highIntercept": 0.45666666, "tokenThreshold": 4300],
             "rotary": ["axes": [32, 32, 32, 32], "theta": 2000.0],
             "prompt": ["template": "chat", "thinking": "off", "maxLength": 512, "padding": "right", "padToken": 151643],
+            "expectFrequentReshapes": true,
+            "assetReshapes": references ? ["vaeDecoder": false, "vaeEncoder": false] : ["vaeDecoder": false],
         ]
         if references {
             functions["vaeEncoder/encode"] = ["role": "encodeLatents"]
