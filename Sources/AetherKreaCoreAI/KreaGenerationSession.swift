@@ -37,11 +37,15 @@ public actor KreaGenerationSession {
     private let bundleFingerprint: String
     private var active: Task<Void, Never>?
     private let resources: KreaResourceAdmission?
+    private let gpu: GPUAdmissionOwner?
 
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each operation waits for (or, in fail-fast mode, requires) a
+    /// grant before any model work and holds it until the operation's native work has joined.
     public init(assets: KreaAssets, compute: ModelComputePolicy = .preferGPU, residency: KreaResidency = .balanced,
-                resources: KreaResourceAdmission? = nil) {
+                resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         let factory = NativeKreaFactory(compute: compute, installation: nil)
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
@@ -49,18 +53,21 @@ public actor KreaGenerationSession {
     /// Holds installation protection through every stage and releases it after terminal joined unload.
     /// External specialization/refine models are not imported; undeclared paths refuse.
     public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
-                residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil) throws {
+                residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil,
+                gpu: GPUAdmissionOwner? = nil) throws {
         let assets = try KreaAssets.open(in: installation)
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         let factory = NativeKreaFactory(compute: compute, installation: KreaInstallationAccess(installation))
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
 
     init(assets: KreaAssets, factory: any KreaModelFactory, residency: KreaResidency = .balanced,
-         resources: KreaResourceAdmission? = nil) {
+         resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
+        self.gpu = gpu
         runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
     }
 
@@ -185,8 +192,11 @@ public actor KreaGenerationSession {
         guard state != .closing, state != .closed else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
         let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+        let gpu = gpu
         let task = Task {
             defer { reservation?.release() }
+            let grant = try await gpu?.admit()
+            defer { grant?.release() }
             return try await operation()
         }
         active = Task { _ = await task.result }

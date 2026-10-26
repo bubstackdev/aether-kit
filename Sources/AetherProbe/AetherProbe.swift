@@ -8,9 +8,15 @@ import Foundation
 @main
 struct AetherProbe {
     static func main() async {
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        // exit() skips deinit, so the lease is released explicitly on both paths.
+        var lease: SharedGPULease?
         do {
-            try await run(Array(CommandLine.arguments.dropFirst()))
+            lease = try await ProbeGPULease.acquire(for: arguments)
+            try await run(arguments)
+            lease?.release()
         } catch {
+            lease?.release()
             FileHandle.standardError.write(Data("aether-probe: \(error)\n".utf8))
             exit(1)
         }
@@ -23,8 +29,6 @@ struct AetherProbe {
               aether-probe h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png]
               aether-probe h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio]
               aether-probe h3-profile-decode PROFILE.json DUMP RENDER NEW_DIRECTORY [DECODER.aimodel SHA256]
-                (h3-profile-run and h3-profile-decode use the GPU and do NOT take /tmp/atelier-gpu.lock themselves:
-                 run them only while holding it, e.g. under the lab-discipline wrapper)
               aether-probe qualify-h3-denoising BUNDLE PHASES CPU_RECORD CHAIN MODULATION_DIRECTORY REFERENCES|- NEW_OUTPUT_DIRECTORY --prepare-only|--capture|--run
               aether-probe qualify-h3-phases BUNDLE.json PHASES.json CPU_CHECKS.json NEW_OUTPUT_DIRECTORY --prepare-only|--run
               aether-probe qualify-h3 BUNDLE.json PHASES.json NEW_OUTPUT_DIRECTORY --prepare-only|--run
@@ -44,6 +48,14 @@ struct AetherProbe {
             inspect specializes/loads the model; it is not a static file inspection.
             prepare-krea reads local assets/tokenizer and prepares inputs without native inference.
             verify-krea hashes all six model streams and can read tens of GB.
+
+            GPU commands (inspect, smoke, render-krea, render-krea-batch, parity-krea, h3-profile-run,
+            h3-profile-decode, and the qualify-h3* and benchmark-krea modes other than --prepare-only) take the
+            shared GPU lease /tmp/atelier-gpu.lock themselves, waiting while Atelier or another tool holds it.
+            A lease held by a parent process (such as a wrapper) counts as held for this command.
+              AETHER_GPU_LEASE=off            do not take the lease (special cases only)
+              AETHER_GPU_LEASE_TIMEOUT=SECONDS  stop waiting after SECONDS; 0 fails fast
+              AETHER_GPU_LEASE_PATH=/abs/dir    use another lease directory
             """)
             return
         }

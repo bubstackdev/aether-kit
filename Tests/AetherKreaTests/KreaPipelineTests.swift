@@ -746,3 +746,38 @@ private struct DelayedKreaOpen: KreaModelFactory {
     #expect(budget.snapshot.reservedBytes == 0)
     #expect(log.snapshot == ["open:denoiser0.aimodel", "close0"])
 }
+
+@Test(.timeLimit(.minutes(1))) func sharedGPUAdmissionGatesOperationsBeforeAnyModelOpens() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let log = EventLog()
+    let admission = try GPUAdmission()
+    let session = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: log),
+                                            gpu: admission.owner("krea"))
+    let other = try await admission.admit(owner: "another session")
+    let generation = Task {
+        try await session.generate(configuration: KreaConfiguration(width: 16, height: 16),
+            prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)),
+            noise: FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64)))
+    }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(log.snapshot.isEmpty)
+    #expect(await session.state == .running)
+    other.release()
+    _ = try await generation.value
+    #expect(log.snapshot.contains("open:denoiser0.aimodel"))
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+    // Fail-fast admission refuses while another grant runs, before opening anything, and the session stays usable.
+    let failFast = try GPUAdmission(waiting: .failFast)
+    let quick = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: EventLog()),
+                                          gpu: failFast.owner("krea"))
+    let busy = try await failFast.admit(owner: "another session")
+    await #expect(throws: GPUAdmissionError.busy) {
+        try await quick.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    }
+    #expect(await quick.state == .ready)
+    busy.release()
+    _ = try await quick.prepare(prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)))
+    await quick.unload()
+    await session.unload()
+}

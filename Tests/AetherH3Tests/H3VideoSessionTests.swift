@@ -454,3 +454,28 @@ private struct HeldStageRelease: H3PromptConditioner {
     #expect(budget.snapshot.reservedBytes == 0)
     await session.unload()
 }
+
+@Test func h3VideoSessionWaitsForSharedGPUAdmissionBeforeItsFirstStage() async throws {
+    let log = StageLog()
+    let admission = try GPUAdmission()
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)),
+                                 gpu: admission.owner("h3"))
+    let other = try await admission.admit(owner: "krea")
+    let run = Task { try await session.generate(try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1, audio: false)) }
+    while admission.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(await log.entries.isEmpty)
+    other.release()
+    #expect(try await run.value.frames == 39)
+    #expect(admission.snapshot.running == 0)
+    let failFast = try GPUAdmission(waiting: .failFast)
+    let quick = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                     video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)),
+                               gpu: failFast.owner("h3"))
+    let busy = try await failFast.admit(owner: "krea")
+    await #expect(throws: GPUAdmissionError.busy) {
+        try await quick.generate(try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1, audio: false))
+    }
+    #expect(await quick.state == .ready)
+    busy.release()
+}

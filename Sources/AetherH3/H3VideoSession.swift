@@ -136,15 +136,18 @@ public actor H3VideoSession {
     private var stages: H3VideoStages?
     private var active: Task<H3VideoResult, any Error>?
     private let resources: H3ResourceAdmission?
+    private let gpu: GPUAdmissionOwner?
     private var closingTask: Task<Void, Never>?
 
-    public init(stages: H3VideoStages) { self.stages = stages; resources = nil }
+    /// `gpu` opts into a host-shared ``GPUAdmission``: each generation waits for (or, in fail-fast mode, requires) a
+    /// grant before its first stage and holds it until every stage has been released.
+    public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) { self.stages = stages; resources = nil; self.gpu = gpu }
 
-    public init(stages: H3VideoStages, resources: H3ResourceAdmission) throws {
+    public init(stages: H3VideoStages, resources: H3ResourceAdmission, gpu: GPUAdmissionOwner? = nil) throws {
         guard stages.resourceIdentity == resources.executionIdentity else {
             throw AetherError.invalidRequest("H3 resource profile belongs to different execution stages")
         }
-        self.stages = stages; self.resources = resources
+        self.stages = stages; self.resources = resources; self.gpu = gpu
     }
 
     public func generate(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler = { _ in }) async throws -> H3VideoResult {
@@ -168,9 +171,11 @@ public actor H3VideoSession {
         }
         try resources?.check(request)
         let reservation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
-        let resources = resources
+        let resources = resources, gpu = gpu
         return Task {
             defer { reservation?.release() }
+            let grant = try await gpu?.admit()
+            defer { grant?.release() }
             return try await Self.run(request, stages: stages, resources: resources, onEvent: onEvent)
         }
     }
