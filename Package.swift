@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
+        .library(name: "AetherLanguageCoreAI", targets: ["AetherLanguageCoreAI"]),
         .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
         .library(name: "AetherH3", targets: ["AetherH3"]),
         .library(name: "AetherKrea", targets: ["AetherKrea"]),
@@ -19,6 +20,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "AetherKit"),
+        .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI"],
+                swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
         .target(
             name: "AetherCoreAI", dependencies: ["AetherKit"],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
@@ -36,6 +39,7 @@ let package = Package(
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
+        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit"]),
         .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKreaTokenizersTests", dependencies: ["AetherKreaTokenizers", "AetherKrea"]),
