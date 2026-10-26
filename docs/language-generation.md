@@ -71,15 +71,17 @@ before registration. Registration itself is not evidence of correctness.
 
 ## Evidence and limits
 
-CPU tests cover cache-growth admission, per-row prefix preservation, platform checks,
+CPU tests cover ordered streaming delivery, cancellation/error cleanup, cache-growth
+admission, per-row prefix preservation, platform checks,
 path boundaries and asset integrity. Shilo holds device reports and original-checkpoint
 reference fixtures under its `.local/` directory. Its independent oracle uses upstream
 Transformers on CPU; Python is development tooling and is absent from shipping targets.
 
 As of 2026-10-26, the Mac consumer has exercised 16K context with the 1.7B and 4B
-candidates and completed the larger-budget reasoning evaluation. Phone context and
-memory qualification is tracked separately. Earlier bounded Shilo fixtures cover
+candidates and completed the larger-budget reasoning evaluation. Shilo separately
+qualified 12K on its physical iPhone with the 1.7B model and the full 8,192-token
+reasoning output budget. Phone 16K remains unqualified. Earlier bounded Shilo fixtures cover
 cancellation/recovery and numerical chunking through 2K; larger contexts and larger
 budgets do not automatically inherit all lifecycle guarantees. General model quality,
-optimized generation performance, streaming and prefix reuse remain
+optimized generation performance and prefix reuse remain
 follow-up work driven by the chat consumer.

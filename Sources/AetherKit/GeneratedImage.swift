@@ -30,20 +30,27 @@ public struct GeneratedImage: Sendable {
         return bytes
     }
 
-    public func savePNG(to url: URL) throws {
-        guard url.isFileURL else { throw AetherError.invalidRequest("PNG destination must be local") }
+    public func pngData() throws -> Data {
         let data = Data(rgb8())
+        let encoded = NSMutableData()
         guard let provider = CGDataProvider(data: data as CFData),
               let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 24,
                   bytesPerRow: width * 3, space: CGColorSpaceCreateDeviceRGB(),
                   bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue), provider: provider,
                   decode: nil, shouldInterpolate: false, intent: .defaultIntent),
-              let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) else {
+              let destination = CGImageDestinationCreateWithData(encoded, UTType.png.identifier as CFString, 1, nil) else {
             throw AetherError.invalidRequest("could not create PNG destination")
         }
         CGImageDestinationAddImage(destination, image, nil)
         guard CGImageDestinationFinalize(destination) else {
             throw AetherError.invalidRequest("could not write PNG")
         }
+        return encoded as Data
+    }
+
+    /// Encode through the same in-memory path and publish the PNG atomically.
+    public func savePNG(to url: URL) throws {
+        guard url.isFileURL else { throw AetherError.invalidRequest("PNG destination must be local") }
+        try pngData().write(to: url, options: .atomic)
     }
 }

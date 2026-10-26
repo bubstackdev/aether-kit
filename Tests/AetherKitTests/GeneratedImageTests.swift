@@ -8,7 +8,10 @@ import Testing
     #expect(image.rgb8() == [0, 128, 0, 255, 255, 128])
     let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
     defer { try? FileManager.default.removeItem(at: url) }
+    let png = try image.pngData()
+    #expect(CGImageSourceCreateWithData(png as CFData, nil) != nil)
     try image.savePNG(to: url)
+    #expect(try Data(contentsOf: url) == png)
     let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
     let decoded = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
     #expect(decoded.width == 2)
