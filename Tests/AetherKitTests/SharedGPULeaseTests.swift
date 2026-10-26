@@ -55,6 +55,18 @@ func deadPID() throws -> pid_t {
 
 private let ownPID = String(getpid())
 
+/// A reclaim lock this process just released can stay held for an instant: a child that another test is spawning
+/// shares the open descriptor between fork and exec. Reclaim fails safe (reports the lease held) in that window, so
+/// assertions that expect success after a release retry briefly.
+private func clearsStaleSoon(_ directory: URL) -> Bool {
+    let deadline = Date().addingTimeInterval(5)
+    repeat {
+        if SharedGPULease.clearStale(directory) { return true }
+        usleep(10_000)
+    } while Date() < deadline
+    return false
+}
+
 @Test func leaseNamesThisProcessAndReleaseRemovesIt() throws {
     let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
     let first = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
@@ -148,13 +160,14 @@ private let ownPID = String(getpid())
     let dead = String(try deadPID())
     try externalLease(directory, holder: dead)
     let reclaim = directory.deletingLastPathComponent().appendingPathComponent("gpu.lock.reclaim").path
-    let other = open(reclaim, O_RDONLY | O_CREAT, 0o600)
+    // Close-on-exec, so a child process another test spawns meanwhile cannot inherit and keep holding this flock.
+    let other = open(reclaim, O_RDONLY | O_CREAT | O_CLOEXEC, 0o600)
     try #require(other >= 0 && flock(other, LOCK_EX) == 0)
     #expect(!SharedGPULease.clearStale(directory))
     #expect { try SharedGPULease.tryAcquire(leaseConfiguration(directory)) } throws: { isHeld($0) }
     #expect(pidText(directory) == dead)
     close(other)
-    #expect(SharedGPULease.clearStale(directory))
+    #expect(clearsStaleSoon(directory))
     #expect(try leaseSiblings(directory).isEmpty)
 }
 
@@ -199,14 +212,14 @@ private let ownPID = String(getpid())
     try Data().write(to: reclaim)
     try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: reclaim.path)
     // Repair never bypasses serialization: a reclaimer holding the old file still holds off this one.
-    let other = open(reclaim.path, O_RDONLY)
+    let other = open(reclaim.path, O_RDONLY | O_CLOEXEC)
     try #require(other >= 0 && flock(other, LOCK_EX) == 0)
     #expect(!SharedGPULease.clearStale(directory))
     #expect(pidText(directory) == dead)
     #expect(try mode() & 0o777 == 0o600)
     close(other)
     try FileManager.default.setAttributes([.posixPermissions: 0o666], ofItemAtPath: reclaim.path)
-    #expect(SharedGPULease.clearStale(directory))
+    #expect(clearsStaleSoon(directory))
     #expect(try leaseSiblings(directory).isEmpty)
     #expect(try mode() & 0o777 == 0o600)
 }
@@ -317,16 +330,19 @@ private func start(_ executable: URL, _ arguments: [String], until marker: Strin
     process.standardOutput = output
     process.standardError = FileHandle.nullDevice
     try process.run()
-    if let marker {
-        var text = Data()
-        while !text.contains(Data(marker.utf8)) {
-            let chunk = output.fileHandleForReading.availableData
-            if chunk.isEmpty { break }
-            text.append(chunk)
-        }
-        try #require(text.contains(Data(marker.utf8)), "the child did not report \(marker)")
-    }
+    if let marker { try waitFor(marker: marker, on: output) }
     return (process, output)
+}
+
+/// Blocks until `marker` appears on a child's standard output.
+private func waitFor(marker: String, on output: Pipe) throws {
+    var text = Data()
+    while !text.contains(Data(marker.utf8)) {
+        let chunk = output.fileHandleForReading.availableData
+        if chunk.isEmpty { break }
+        text.append(chunk)
+    }
+    try #require(text.contains(Data(marker.utf8)), "the child did not report \(marker)")
 }
 
 private func startHelper(_ mode: String, _ directory: URL, holding: Bool = true) throws -> Process {
@@ -423,15 +439,15 @@ while true; do sleep 0.05; done
     let lease = try await waiting.value
     #expect(pidText(directory) == ownPID)
     // While the Kit holds it, the wrapper's mkdir fails, and it gets the lease after release.
-    let (second, _) = try start(zsh, ["-c", wrapperHolder, "_", directory.path], until: nil)
+    let (second, output) = try start(zsh, ["-c", wrapperHolder, "_", directory.path], until: nil)
     try await Task.sleep(for: .milliseconds(200))
     #expect(pidText(directory) == ownPID)
     lease.release()
-    let deadline = Date().addingTimeInterval(10)
-    while pidText(directory) != String(second.processIdentifier), Date() < deadline { usleep(10_000) }
+    // "ready" follows the wrapper's trap installation; signalling earlier would kill it before it can release.
+    try waitFor(marker: "ready", on: output)
     #expect(pidText(directory) == String(second.processIdentifier))
     kill(second.processIdentifier, SIGTERM)
-    #expect(exited(second))
+    #expect(exited(second) && second.terminationStatus == 130)
     #expect(try leaseSiblings(directory).isEmpty)
 }
 

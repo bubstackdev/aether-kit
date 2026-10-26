@@ -141,5 +141,6 @@ A recorded interop check ran Kit against Atelier's own `SharedGPULock` source, c
 
 - **Cooperative only.** Processes that ignore the lease aren't excluded. The lease is also polled, so there's no fairness between processes; a busy in-process queue that keeps re-acquiring can delay a polling outsider.
 - **Pid reuse.** A stale lease whose pid has been reused by a live process looks live until that process exits. An inheriting tool could, in principle, mistake a reused pid that happens to be its ancestor for its holder.
+- **Transient refusals.** A stale lease can briefly read as held. This happens when this process released the reclaim lock an instant earlier, and a child it is spawning still shares that descriptor between fork and exec. Waiting acquisition retries; the tests allow for it.
 - **Shared `/tmp`.** Another user's live lease blocks everyone. Another user's dead lease can't be reclaimed across the sticky `/tmp` and is reported as held, as in Atelier.
 - **Atelier hasn't adopted it.** Atelier still uses its own `SharedGPULock`. Adopting `AetherKit`'s lease there is Atelier's change to make.

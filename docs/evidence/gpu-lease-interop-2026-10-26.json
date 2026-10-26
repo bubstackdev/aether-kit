@@ -2,6 +2,7 @@
   "recordedAt": "2026-10-26",
   "branch": "v0.0.2/gpu-lease",
   "codeRevision": "21ffbe4bd784fda706ffa064703972b8ea804ae5",
+  "codeRevisionScope": "Sources and Package.swift (unchanged since); the CPU suite ran with the tests as committed alongside this record, after hardening two lease tests against fork-window and wrapper-trap races. The Kit binaries rebuilt byte-identical.",
   "scope": "Kit SharedGPULease and aether-probe against Atelier's SharedGPULock (verbatim source, compiled into a private-directory simulator) and against the with-gpu-lock.sh lease protocol. The recorded runs used a private lease directory only (see notes); Atelier's app was not run; no GPU or model work ran (the probe targeted a missing model, which fails before any Core AI call).",
   "environment": {
     "macOS": "27.0.1",
@@ -62,6 +63,6 @@
     "skipped": 14,
     "failed": 0,
     "log": "gpu-lease-cpu-tests-2026-10-26.log",
-    "logSHA256": "6df7e1caa091f1d8eba0d9148e4a004433185ae74f3367aaddb2e9d94552926b"
+    "logSHA256": "ca6800e2c6d45b24e2a8693d4452722cc383570056ce91212100f718d2931f09"
   }
 }
