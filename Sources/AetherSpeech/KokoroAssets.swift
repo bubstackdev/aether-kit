@@ -78,6 +78,10 @@ public struct KokoroAssets: Sendable {
     public let vocabulary: KokoroVocabulary
     public let voices: [KokoroVoice: KokoroVoiceAsset]
     public let maximumFrames: Int
+    /// Fixed decoder frame counts, ascending and ending at `maximumFrames`. When present the decoder
+    /// takes a `frames` input and each utterance is zero-padded to the smallest bucket that fits, so
+    /// the GPU specializes at most once per bucket. Empty for bundles exported without buckets.
+    public let decoderBuckets: [Int]
     public let source: Source
     /// SHA-256 of `kokoro.json`, which pins every other file.
     public let fingerprint: String
@@ -92,6 +96,11 @@ public struct KokoroAssets: Sendable {
             case repository, revision, license
             case checkpointSHA256 = "checkpoint_sha256"
         }
+    }
+
+    /// The decoder shape used for an utterance of `frames` frames.
+    public func decoderFrames(for frames: Int) -> Int {
+        decoderBuckets.first { $0 >= frames } ?? frames
     }
 
     public var availableVoices: [KokoroVoice] { voices.keys.sorted { $0.identifier < $1.identifier } }
@@ -144,7 +153,8 @@ public struct KokoroAssets: Sendable {
             throw AetherError.invalidModel("Kokoro bundle declares no distinct voices")
         }
         return Self(root: root, durations: durations, decoder: decoder, vocabulary: try KokoroVocabulary(contract.vocabulary),
-                    voices: voices, maximumFrames: contract.maximumFrames, source: contract.source,
+                    voices: voices, maximumFrames: contract.maximumFrames, decoderBuckets: contract.decoderBuckets ?? [],
+                    source: contract.source,
                     fingerprint: digest(data), contractByteCount: UInt64(data.count))
     }
 
@@ -227,6 +237,7 @@ private struct Contract: Decodable {
     let harmonics: Int
     let maximumPhonemes: Int
     let maximumFrames: Int
+    let decoderBuckets: [Int]?
     let styleDimension: Int
     let boundaryToken: Int
     let vocabulary: [String: Int]
@@ -248,6 +259,8 @@ private struct Contract: Decodable {
               sampleRate == KokoroAssets.sampleRate, samplesPerFrame == KokoroAssets.samplesPerFrame,
               harmonics == KokoroAssets.harmonics, maximumPhonemes == KokoroPhonemes.maximumCount,
               (2...65_536).contains(maximumFrames), styleDimension == KokoroVoiceStyles.dimension,
+              decoderBuckets.map({ b in !b.isEmpty && b.count <= 32 && b.first! >= 2 && b.last == maximumFrames
+                  && zip(b, b.dropFirst()).allSatisfy { $0 < $1 } }) ?? true,
               boundaryToken == Int(KokoroVocabulary.boundaryToken), source.repository == "hexgrad/Kokoro-82M",
               source.revision.utf8.count == 40, isSHA256(source.checkpointSHA256), source.license == "Apache-2.0",
               !voices.isEmpty, voices.count <= 256,

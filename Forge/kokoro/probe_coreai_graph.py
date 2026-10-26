@@ -34,6 +34,8 @@ async def main(args):
                 "text": rng.standard_normal((1, 512, f)).astype(np.float32),
                 "style": rng.standard_normal((1, 256)).astype(np.float32) * 0.1,
                 "noise": rng.standard_normal((1, f, 600, 9)).astype(np.float32)}
+        if args.bucketed:
+            feed["frames"] = np.array([args.valid or f], np.int32)
     for i in range(2):
         t1 = time.monotonic()
         out = await fn({k: rt.NDArray(v) for k, v in feed.items()})
@@ -47,5 +49,7 @@ if __name__ == "__main__":
     ap.add_argument("function", choices=["durations", "decode"])
     ap.add_argument("--compute", choices=["cpu", "gpu", "default"], default="gpu")
     ap.add_argument("--length", type=int, default=31)
+    ap.add_argument("--bucketed", action="store_true", help="decoder takes a `frames` input")
+    ap.add_argument("--valid", type=int, default=0, help="valid frames for a bucketed decoder (default: length)")
     asyncio.run(main(ap.parse_args()))
     sys.exit(0)

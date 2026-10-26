@@ -26,13 +26,17 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from kokoro_graphs import (HARMONICS, MAX_PHONEMES, SAMPLE_RATE, SAMPLES_PER_FRAME, DecoderGraph, DurationsGraph,
+from kokoro_graphs import (HARMONICS, MAX_PHONEMES, SAMPLE_RATE, SAMPLES_PER_FRAME, BucketedDecoderGraph, DecoderGraph, DurationsGraph,
                            align, build_kmodel, round_durations, splitmix_normal, tokenize)
 
 REPO = "hexgrad/Kokoro-82M"
 REVISION = "f3ff3571791e39611d31c381e3a41a3af07b4987"
 CHECKPOINT_SHA256 = "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4"
 MAX_FRAMES = 4096  # ~102 s of audio per utterance; longer text must be chunked by the caller
+# Decoder frame buckets: each specializes once on the GPU; utterances pad to the next bucket.
+# Powers of two bound padding to < 2x decode time and keep the specialization set small (see
+# docs/kokoro-speech.md#length-buckets for the measured compile, latency and memory trade-off).
+DECODER_BUCKETS = [64, 128, 256, 512, 1024, 2048, 4096]
 LANGUAGES = {"a": "en-US", "b": "en-GB", "e": "es", "f": "fr", "h": "hi", "i": "it", "j": "ja", "p": "pt-BR", "z": "zh"}
 
 
@@ -68,6 +72,8 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--upstream", type=Path, required=True, help="unpacked kokoro-0.9.4 wheel")
     ap.add_argument("--only", choices=["durations", "decoder"], default=None, help="probe a single graph")
+    ap.add_argument("--decoder", choices=["bucketed", "plain"], default="bucketed",
+                    help="bucketed adds a `frames` input so inputs can be padded to fixed frame buckets")
     args = ap.parse_args()
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
@@ -79,7 +85,8 @@ def main():
     kmodel = build_kmodel(args.upstream, args.snapshot)
     config = json.loads((args.snapshot / "config.json").read_text())
     durations = DurationsGraph(kmodel).eval()
-    decoder = DecoderGraph(kmodel).eval()
+    bucketed = args.decoder == "bucketed"
+    decoder = (BucketedDecoderGraph(kmodel) if bucketed else DecoderGraph(kmodel)).eval()
 
     # Example shapes for tracing (dynamic dimensions are declared below).
     phonemes = "həlˈO wˈɜɹld, ðɪs ɪz kˈOkəɹO."
@@ -108,9 +115,15 @@ def main():
             ["input_ids", "style"], ["duration", "prosody", "text"], "durations",
             args.output / "durations.aimodel", ct)
     if args.only in (None, "decoder"):
-        report["conversion"]["decoder"] = convert(
-            decoder, (en, asr, style, noise), ({2: frame_dim}, {2: frame_dim}, None, {1: frame_dim}),
-            ["prosody", "text", "style", "noise"], ["audio"], "decode", args.output / "decoder.aimodel", ct)
+        if bucketed:
+            valid = torch.tensor([frames], dtype=torch.int32)
+            report["conversion"]["decoder"] = convert(
+                decoder, (en, asr, style, noise, valid), ({2: frame_dim}, {2: frame_dim}, None, {1: frame_dim}, None),
+                ["prosody", "text", "style", "noise", "frames"], ["audio"], "decode", args.output / "decoder.aimodel", ct)
+        else:
+            report["conversion"]["decoder"] = convert(
+                decoder, (en, asr, style, noise), ({2: frame_dim}, {2: frame_dim}, None, {1: frame_dim}),
+                ["prosody", "text", "style", "noise"], ["audio"], "decode", args.output / "decoder.aimodel", ct)
     if args.only is None:
         (args.output / "voices").mkdir()
         voices = []
@@ -128,6 +141,7 @@ def main():
             "source": report["source"],
             "sampleRate": SAMPLE_RATE, "samplesPerFrame": SAMPLES_PER_FRAME, "harmonics": HARMONICS,
             "maximumPhonemes": MAX_PHONEMES, "maximumFrames": MAX_FRAMES, "styleDimension": 256,
+            **({"decoderBuckets": DECODER_BUCKETS} if bucketed else {}),
             "boundaryToken": 0, "vocabulary": config["vocab"],
             "models": {
                 "durations": {"path": "durations.aimodel", "function": "durations",

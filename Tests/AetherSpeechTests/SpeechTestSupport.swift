@@ -34,6 +34,7 @@ struct FakeBundle {
     let voices: [String]
 
     static func make(voices: [String] = ["af_heart", "bm_george"], maximumFrames: Int = 4096, decoderPayload: String = "decoder",
+                     decoderBuckets: [Int]? = nil,
                      mutate: (inout [String: Any]) -> Void = { _ in }) throws -> FakeBundle {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("kokoro-fake-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root.appendingPathComponent("voices"), withIntermediateDirectories: true)
@@ -68,6 +69,7 @@ struct FakeBundle {
                        "checkpoint_sha256": "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4", "license": "Apache-2.0"],
             "sampleRate": 24000, "samplesPerFrame": 600, "harmonics": 9, "maximumPhonemes": 510,
             "maximumFrames": maximumFrames, "styleDimension": 256, "boundaryToken": 0,
+            "decoderBuckets": decoderBuckets as Any,
             "vocabulary": try CPUFixture.load().vocabulary,
             "models": ["durations": try model("durations.aimodel", payload: "durations"),
                        "decoder": try model("decoder.aimodel", payload: decoderPayload)],
@@ -128,10 +130,18 @@ func durationsSignature(textChannels: Int = 512) throws -> ModelFunctionDescript
                            "text": tensor("float32", [1, textChannels, -1])])
 }
 
-func decoderSignature() throws -> ModelFunctionDescription {
-    try describe("decode", inputs: ["prosody": tensor("float32", [1, 640, -1]), "text": tensor("float32", [1, 512, -1]),
-                                    "style": tensor("float32", [1, 256]), "noise": tensor("float32", [1, -1, 600, 9])],
-                 outputs: ["audio": tensor("float32", [1, -1])])
+func decoderSignature(bucketed: Bool = false) throws -> ModelFunctionDescription {
+    var inputs = ["prosody": tensor("float32", [1, 640, -1]), "text": tensor("float32", [1, 512, -1]),
+                  "style": tensor("float32", [1, 256]), "noise": tensor("float32", [1, -1, 600, 9])]
+    if bucketed { inputs["frames"] = tensor("int32", [1]) }
+    return try describe("decode", inputs: inputs, outputs: ["audio": tensor("float32", [1, -1])])
+}
+
+struct DecoderCall: Sendable {
+    let shape: Int
+    let validFrames: Int?
+    let noiseCount: Int
+    let paddingIsZero: Bool
 }
 
 struct FakeModel: KokoroExecutable {
@@ -151,10 +161,13 @@ final class FakeFactory: KokoroModelFactory, Sendable {
     let decoderGate: Gate?
     let framesPerToken: Float
     let badDurationsSignature: Bool
+    let bucketedDecoder: Bool
     let observed = Locked<[(noise: Float, style: Float, prosody: [Float])]>([])
+    let decoderCalls = Locked<[DecoderCall]>([])
 
     init(log: EventLog, durationsGate: Gate? = nil, decoderGate: Gate? = nil, framesPerToken: Float = 2,
-         badDurationsSignature: Bool = false) {
+         badDurationsSignature: Bool = false, bucketedDecoder: Bool = false) {
+        self.bucketedDecoder = bucketedDecoder
         self.log = log
         self.durationsGate = durationsGate
         self.decoderGate = decoderGate
@@ -182,8 +195,8 @@ final class FakeFactory: KokoroModelFactory, Sendable {
                 ]
             }, close: { log.append("close:durations") })
         }
-        let gate = decoderGate, observed = observed
-        return FakeModel(functions: [try decoderSignature()], run: { inputs in
+        let gate = decoderGate, observed = observed, calls = decoderCalls
+        return FakeModel(functions: [try decoderSignature(bucketed: bucketedDecoder)], run: { inputs in
             log.append("run:decode")
             if let gate { await gate.enter() }
             guard case .float32(let prosody) = inputs["prosody"], case .float32(let text) = inputs["text"],
@@ -195,6 +208,11 @@ final class FakeFactory: KokoroModelFactory, Sendable {
                 throw AetherError.invalidTensor("misaligned decoder inputs")
             }
             observed.withLock { $0.append((noise.values[0], style.values[0], Array(prosody.values[0..<frames]))) }
+            var valid: Int?
+            if case .int32(let count) = inputs["frames"] { valid = Int(count.values[0]) }
+            let used = valid ?? frames
+            let zeroTail = (0..<640).allSatisfy { c in (used..<frames).allSatisfy { prosody.values[c * frames + $0] == 0 } }
+            calls.withLock { $0.append(DecoderCall(shape: frames, validFrames: valid, noiseCount: noise.values.count, paddingIsZero: zeroTail)) }
             return ["audio": .float32(try FloatTensor(shape: [1, frames * 600], values: (0..<(frames * 600)).map { Float($0 / 600) / 1000 }))]
         }, close: { log.append("close:decode") })
     }

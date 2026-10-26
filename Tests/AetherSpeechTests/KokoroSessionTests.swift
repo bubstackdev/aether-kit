@@ -209,6 +209,53 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
                                     decoder: .init(asset: otherAssets.decoder, residentBytes: 1, runScratchBytes: 1))
 }
 
+@Test func bucketedDecoderPadsToTheBucketAndTrimsTheOutput() async throws {
+    let bundle = try FakeBundle.make(maximumFrames: 64, decoderBuckets: [8, 16, 64])
+    defer { bundle.remove() }
+    let factory = FakeFactory(log: EventLog(), bucketedDecoder: true)
+    let speech = try session(factory, bundle: bundle)
+    #expect(speech.assets.decoderBuckets == [8, 16, 64] && speech.assets.decoderFrames(for: 9) == 16)
+    let phonemes = try speech.phonemes("ðəə")  // 5 tokens x 2 frames = 10 -> bucket 16
+    let result = try await speech.synthesize(phonemes, configuration: try KokoroSpeechConfiguration(seed: 3))
+    #expect(result.audio.frameCount == 10 * 600)
+    // The fake writes frame index / 1000 into each sample, so trimming keeps frames 0..<10 only.
+    #expect(result.audio.samples.last == 9 / 1000 && result.audio.samples.first == 0)
+    let call = try #require(factory.decoderCalls.withLock { $0.last })
+    #expect(call.shape == 16 && call.validFrames == 10 && call.paddingIsZero && call.noiseCount == 16 * 5400)
+    // The padded noise extends the same seeded sequence: its prefix equals an unpadded draw.
+    #expect(factory.observed.withLock { $0.last?.noise } == (try KokoroNoise.generate(seed: 3, count: 1))[0])
+    // Exactly at a bucket: no padding.
+    _ = try await speech.synthesize(try speech.phonemes("ðəəəəə"), configuration: try KokoroSpeechConfiguration())  // 8 tokens -> 16
+    #expect(factory.decoderCalls.withLock { $0.last?.shape } == 16 && factory.decoderCalls.withLock { $0.last?.validFrames } == 16)
+
+    let warmed = try await speech.prewarm(maximumFrames: 12)
+    #expect(warmed == [8, 16])
+    #expect(factory.decoderCalls.withLock { $0.suffix(2).map(\.shape) } == [8, 16])
+    #expect(try await speech.prewarm() == [8, 16, 64])
+    await speech.unload()
+    await #expect(throws: AetherError.sessionClosed) { try await speech.prewarm() }
+}
+
+@Test func bucketContractsMustAgree() async throws {
+    for bad in [[16, 8, 64], [8, 16], [1, 64], [Int]()] {
+        let bundle = try FakeBundle.make(maximumFrames: 64, decoderBuckets: bad)
+        defer { bundle.remove() }
+        #expect(throws: (any Error).self) { try KokoroAssets.open(at: bundle.root) }
+    }
+    // A bucketed bundle refuses a decoder without the `frames` input, and vice versa.
+    let bucketed = try FakeBundle.make(maximumFrames: 64, decoderBuckets: [16, 64])
+    defer { bucketed.remove() }
+    let mismatched = try session(FakeFactory(log: EventLog(), bucketedDecoder: false), bundle: bucketed)
+    await #expect(throws: AetherError.self) { try await mismatched.synthesize(try mismatched.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    await mismatched.unload()
+    let plain = try FakeBundle.make()
+    defer { plain.remove() }
+    let reversed = try session(FakeFactory(log: EventLog(), bucketedDecoder: true), bundle: plain)
+    await #expect(throws: AetherError.self) { try await reversed.synthesize(try reversed.phonemes("ðə"), configuration: try KokoroSpeechConfiguration()) }
+    #expect(try await reversed.prewarm() == [])
+    await reversed.unload()
+}
+
 private struct ListPhonemizer: SpeechPhonemizer {
     func phonemize(_ text: String, language: KokoroVoice.Language) async throws -> [String] {
         #expect(language == .britishEnglish)

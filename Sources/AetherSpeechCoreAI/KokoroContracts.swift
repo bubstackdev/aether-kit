@@ -20,12 +20,15 @@ enum KokoroContracts {
         try declaration(function.outputs["text"], "float32", [1, textChannels, -1])
     }
 
-    static func decoder(_ function: ModelFunctionDescription) throws {
+    /// A bucketed decoder also takes `frames` (int32 [1]), the valid prefix of padded inputs.
+    static func decoder(_ function: ModelFunctionDescription, bucketed: Bool) throws {
+        let inputs: Set<String> = bucketed ? ["prosody", "text", "style", "noise", "frames"] : ["prosody", "text", "style", "noise"]
         guard function.name == "decode", function.states.isEmpty,
-              Set(function.inputs.keys) == ["prosody", "text", "style", "noise"],
+              Set(function.inputs.keys) == inputs,
               Set(function.outputs.keys) == ["audio"] else {
-            throw AetherError.invalidModel("invalid Kokoro decode signature")
+            throw AetherError.invalidModel("invalid Kokoro decode signature for this bundle's bucket contract")
         }
+        if bucketed { try declaration(function.inputs["frames"], "int32", [1]) }
         try declaration(function.inputs["prosody"], "float32", [1, prosodyChannels, -1])
         try declaration(function.inputs["text"], "float32", [1, textChannels, -1])
         try declaration(function.inputs["style"], "float32", [1, KokoroVoiceStyles.dimension])

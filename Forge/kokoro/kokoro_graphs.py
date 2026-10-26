@@ -103,9 +103,18 @@ class LoopLSTM(nn.Module):
         self.register_buffer("w_hh_t", w_hh.transpose(1, 2).contiguous())  # [2,H,4H]
         self.register_buffer("bias", (b_ih + b_hh).unsqueeze(1))  # [2,1,4H]
 
-    def forward(self, x):  # x [1,T,I] -> [1,T,2H]
+    def forward(self, x, valid=None):  # x [1,T,I] -> [1,T,2H]
+        """`valid` (int tensor [1]) reverses only the first `valid` steps for the backward direction,
+        so outputs at valid steps equal an unpadded run; padded steps follow and are discarded."""
         seq = x[0]
-        both = torch.stack([seq, seq.flip(0)])  # [2,T,I]
+        if valid is None:
+            backward = seq.flip(0)
+            restore = None
+        else:
+            t = torch.arange(seq.shape[0])
+            restore = torch.where(t < valid, valid - 1 - t, t)  # an involution on [0, T)
+            backward = torch.index_select(seq, 0, restore)
+        both = torch.stack([seq, backward])  # [2,T,I]
         gates_in = torch.bmm(both, self.w_ih_t) + self.bias  # [2,T,4H]
         h0 = torch.zeros(2, 1, self.hidden, dtype=x.dtype)
         c0 = torch.zeros(2, 1, self.hidden, dtype=x.dtype)
@@ -125,7 +134,8 @@ class LoopLSTM(nn.Module):
 
         _, _, _, out = torch.ops.higher_order.while_loop(
             cond_fn, body_fn, (torch.tensor(0), h0, c0, out0), (gates_in, self.w_hh_t))
-        return torch.cat([out[0], out[1].flip(0)], dim=-1).unsqueeze(0)
+        back = out[1].flip(0) if restore is None else torch.index_select(out[1], 0, restore)
+        return torch.cat([out[0], back], dim=-1).unsqueeze(0)
 
 
 def upsample_nearest(x, factor: int):  # [B,C,N] -> [B,C,N*factor]
@@ -356,6 +366,171 @@ class DecoderGraph(nn.Module):
         bins = g.post_n_fft // 2 + 1
         audio = self.stft.inverse(torch.exp(h[:, :bins, :]), torch.sin(h[:, bins:, :]))
         return audio.squeeze(1)  # [1,600F]
+
+
+def _prefix_mask(length, valid, dtype=torch.float32):
+    """[1,1,length] float mask, 1 for positions < valid (int tensor [1])."""
+    # unsqueeze, not view(1, 1, length): the reshape form fails MPS type inference on the GPU.
+    return (torch.arange(length) < valid).to(dtype).unsqueeze(0).unsqueeze(0)
+
+
+def _masked_adain(norm_module, x, s, m, n):
+    """AdaIN1d with InstanceNorm statistics over the first n positions only (m is their mask)."""
+    h = norm_module.fc(s).view(s.shape[0], -1, 1)
+    gamma, beta = torch.chunk(h, chunks=2, dim=1)
+    norm = norm_module.norm
+    mean = (x * m).sum(dim=-1, keepdim=True) / n
+    centered = (x - mean) * m
+    var = (centered * centered).sum(dim=-1, keepdim=True) / n
+    x_hat = (x - mean) / torch.sqrt(var + norm.eps)
+    if norm.affine:
+        x_hat = x_hat * norm.weight.view(1, -1, 1) + norm.bias.view(1, -1, 1)
+    return (1 + gamma) * x_hat + beta
+
+
+def _masked_adain_block(block, x, s, m_in, n_in, m_out, n_out):
+    """Upstream AdainResBlk1d with every conv input masked like the unpadded run's zero padding."""
+    r = block.actv(_masked_adain(block.norm1, x, s, m_in, n_in)) * m_in
+    r = block.pool(r)
+    r = block.conv1(r * m_out)
+    r = block.actv(_masked_adain(block.norm2, r, s, m_out, n_out)) * m_out
+    r = block.conv2(r)
+    shortcut = block.upsample(x)
+    if block.learned_sc:
+        shortcut = block.conv1x1(shortcut)
+    return (r + shortcut) * _RSQRT2
+
+
+def _masked_resblock(block, x, s, m, n):
+    """Upstream AdaINResBlock1 (Snake1D) with masked statistics and conv inputs."""
+    for c1, c2, n1, n2, a1, a2 in zip(block.convs1, block.convs2, block.adain1, block.adain2, block.alpha1, block.alpha2):
+        xt = _masked_adain(n1, x, s, m, n)
+        xt = xt + (1 / a1) * (torch.sin(a1 * xt) ** 2)
+        xt = c1(xt * m)
+        xt = _masked_adain(n2, xt, s, m, n)
+        xt = xt + (1 / a2) * (torch.sin(a2 * xt) ** 2)
+        xt = c2(xt * m)
+        x = xt + x
+    return x
+
+
+class BucketedDecoderGraph(DecoderGraph):
+    """The decoder with an extra `frames` input (int32 [1]): inputs may be zero-padded to a fixed
+    frame bucket F_b >= frames, and the first 600*frames output samples equal an unpadded run.
+
+    Every time-global or edge-sensitive operation is restricted to the valid prefix at its own
+    resolution (F, 2F, 20F, 120F+1 frames; 600F samples): InstanceNorm statistics, conv inputs
+    (masked like zero padding), the reverse LSTM direction, the F0 phase interpolation edge, the
+    harmonic STFT's end reflection and the iSTFT frames and window envelope.
+    """
+
+    def source(self, f0_curve, noise, valid_f0=None):
+        if valid_f0 is None:
+            return super().source(f0_curve, noise)
+        sine = self.generator.m_source.l_sin_gen
+        scale = sine.upsample_scale
+        f0 = f0_curve.unsqueeze(-1)
+        cycles = f0 * self.harmonics / sine.sampling_rate
+        rad = cycles - torch.floor(cycles)
+        phase = torch.cumsum(rad, dim=1) * 2 * math.pi
+        x = phase.transpose(1, 2) * scale  # [1,9,2F]
+        # The unpadded interpolation repeats the last valid frame at its upper edge. Hold that value
+        # over the padding (x*1 + last*0 keeps valid frames bit-exact) so the interpolation indices
+        # stay static per shape; only a [1,9,1] gather depends on the runtime frame count.
+        hold = _prefix_mask(x.shape[-1], valid_f0, x.dtype)
+        last = torch.index_select(x, 2, (valid_f0 - 1).view(1))
+        phase = upsample_linear(x * hold + last * (1 - hold), scale).transpose(1, 2)
+        sines = torch.sin(phase) * sine.sine_amp
+        uv = (f0 > sine.voiced_threshold).to(torch.float32)
+        uv = upsample_nearest(uv.transpose(1, 2), scale).transpose(1, 2)
+        noise_amp = uv * sine.noise_std + (1 - uv) * sine.sine_amp / 3
+        waves = sines * uv + noise_amp * noise
+        m = self.generator.m_source
+        return m.l_tanh(m.l_linear(waves)).transpose(1, 2).squeeze(1)
+
+    def forward(self, en, asr, style, noise, frames):
+        fb = en.shape[-1]
+        valid = frames.to(torch.int64).view(1)
+        dt = en.dtype
+        m1, m2 = _prefix_mask(fb, valid, dt), _prefix_mask(2 * fb, 2 * valid, dt)
+        m20, m120 = _prefix_mask(20 * fb, 20 * valid, dt), _prefix_mask(120 * fb + 1, 120 * valid + 1, dt)
+        n1, n2, n20, n120 = (valid.to(dt) * k for k in (1, 2, 20, 120))
+        n120 = n120 + 1
+        en, asr = en * m1, asr * m1
+        s = style[:, 128:]
+        x = self.shared(en.transpose(-1, -2), valid)
+        f0 = x.transpose(-1, -2)
+        n = f0
+        for blocks, curve in ((self.F0, "f0"), (self.N, "n")):
+            h = x.transpose(-1, -2)
+            level = 1
+            for block in blocks:
+                up = block.upsample_type != "none"
+                (mi, ni), (mo, no) = ((m1, n1) if level == 1 else (m2, n2)), ((m2, n2) if up or level == 2 else (m1, n1))
+                h = _masked_adain_block(block, h, s, mi, ni, mo, no)
+                level = 2 if up else level
+            if curve == "f0":
+                f0 = self.F0_proj(h * m2).squeeze(1)
+            else:
+                n = self.N_proj(h * m2).squeeze(1)
+        f0_curve, n_curve = f0 * m2[:, 0], n * m2[:, 0]
+
+        dec = self.decoder
+        ref = style[:, :128]
+        f0d = dec.F0_conv(f0_curve.unsqueeze(1)) * m1
+        nd = dec.N_conv(n_curve.unsqueeze(1)) * m1
+        h = _masked_adain_block(dec.encode, torch.cat([asr, f0d, nd], dim=1), ref, m1, n1, m1, n1)
+        asr_res = dec.asr_res(asr)
+        res, level = True, 1
+        for block in dec.decode:
+            if res:
+                h = torch.cat([h, asr_res, f0d, nd], dim=1)
+            up = block.upsample_type != "none"
+            (mi, ni), (mo, no) = ((m1, n1) if level == 1 else (m2, n2)), ((m2, n2) if up or level == 2 else (m1, n1))
+            h = _masked_adain_block(block, h, ref, mi, ni, mo, no)
+            if up:
+                res, level = False, 2
+
+        g = self.generator
+        har_source = self.source(f0_curve, noise.reshape(1, -1, HARMONICS), 2 * valid)
+        # Reflect the harmonic source at the valid end, as the unpadded STFT's reflect padding does:
+        # write har[Lv-2-j] to position Lv+j for j < 10. Only these ten samples use runtime indices;
+        # the 10-sample extension absorbs the writes when the input exactly fills its bucket.
+        length = har_source.shape[-1]
+        pad = self.stft.n_fft // 2
+        valid_samples = valid * SAMPLES_PER_FRAME
+        offsets = torch.arange(pad)
+        tail = torch.index_select(har_source, 1, valid_samples - 2 - offsets)
+        extended = torch.cat([har_source, torch.zeros(1, pad, dtype=har_source.dtype)], dim=1)
+        har_source = extended.scatter(1, (valid_samples + offsets).view(1, pad), tail.view(1, pad))[:, :length]
+        har_spec, har_phase = self.stft.transform(har_source)
+        har = torch.cat([har_spec, har_phase], dim=1) * m120
+        masks = [(m20, n20), (m120, n120)]
+        for i in range(g.num_upsamples):
+            h = F.leaky_relu(h, negative_slope=0.1) * (m2 if i == 0 else m20)
+            mi, ni = masks[i]
+            x_source = _masked_resblock(g.noise_res[i], g.noise_convs[i](har) * mi, ref, mi, ni)
+            h = g.ups[i](h)
+            if i == g.num_upsamples - 1:
+                h = g.reflection_pad(h)
+            h = h + x_source
+            xs = None
+            for j in range(g.num_kernels):
+                r = _masked_resblock(g.resblocks[i * g.num_kernels + j], h, ref, mi, ni)
+                xs = r if xs is None else xs + r
+            h = xs / g.num_kernels
+        h = F.leaky_relu(h) * m120
+        h = g.conv_post(h)
+        bins = g.post_n_fft // 2 + 1
+        magnitude = torch.exp(h[:, :bins, :]) * m120
+        phase = torch.sin(h[:, bins:, :])
+        st = self.stft
+        re, im = magnitude * torch.cos(phase), magnitude * torch.sin(phase)
+        y = F.conv_transpose1d(re, st.inv_re, stride=st.hop) + F.conv_transpose1d(im, st.inv_im, stride=st.hop)
+        envelope = F.conv_transpose1d(m120, st.window_sq, stride=st.hop)
+        y = y / torch.clamp(envelope, min=1e-11)  # beyond the valid frames the envelope is zero
+        pad = st.n_fft // 2
+        return y[..., pad:y.shape[-1] - pad].squeeze(1)  # [1,600F_b]; samples >= 600*frames are padding
 
 
 # ---------------------------------------------------------------------------

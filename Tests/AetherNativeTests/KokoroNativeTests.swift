@@ -47,6 +47,9 @@ private struct CaseReport: Encodable {
     let warmRealTimeFactor: Double
     let repeatIdentical: Bool
     let audioSHA256: String
+    let decoderFrames: Int
+    let footprintMiBAfter: Double
+    let metalMiBAfter: Double
     let passed: Bool
 }
 
@@ -55,6 +58,7 @@ private struct ShapeTiming: Encodable {
     let frames: Int
     let firstSeconds: Double
     let repeatSeconds: Double
+    let decoderFrames: Int
 }
 
 private struct LifecycleReport: Encodable {
@@ -80,6 +84,8 @@ private struct KokoroQualificationReport: Encodable {
     var cases: [CaseReport] = []
     var novelShapes: [ShapeTiming] = []
     var lifecycle = LifecycleReport()
+    var decoderBuckets: [Int] = []
+    var memoryMiB: [String: Double] = [:]
     var failures: [String] = []
 }
 
@@ -141,6 +147,7 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
     try assets.verify()
     report.bundleVerified = true
     report.bundleFingerprint = assets.fingerprint
+    report.decoderBuckets = assets.decoderBuckets
     let referenceRoot = try nativePath("AETHER_KOKORO_REFERENCE")
     report.references = sha256Hex(try Data(contentsOf: referenceRoot.appendingPathComponent("references.json")))
     let index = try JSONSerialization.jsonObject(with: Data(contentsOf: referenceRoot.appendingPathComponent("references.json"))) as! [String: Any]
@@ -196,7 +203,9 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
             firstSynthesisSeconds: firstSeconds, warmSynthesisSeconds: warmSeconds,
             warmRealTimeFactor: warmSeconds / speech.audio.durationSeconds,
             repeatIdentical: repeated.audio.samples == speech.audio.samples,
-            audioSHA256: sha(speech.audio.samples), passed: passed))
+            audioSHA256: sha(speech.audio.samples), decoderFrames: assets.decoderFrames(for: speech.frames.reduce(0, +)),
+            footprintMiBAfter: Double(kokoroMemorySnapshot().footprint) / 1_048_576,
+            metalMiBAfter: Double(kokoroMemorySnapshot().metal) / 1_048_576, passed: passed))
         try save()
     }
 
@@ -210,7 +219,8 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
         let again = ContinuousClock.now
         _ = try await session.synthesize(phonemes, configuration: configuration)
         report.novelShapes.append(ShapeTiming(phonemes: phonemes.count, frames: speech.frames.reduce(0, +),
-                                              firstSeconds: firstSeconds, repeatSeconds: (ContinuousClock.now - again).seconds))
+                                              firstSeconds: firstSeconds, repeatSeconds: (ContinuousClock.now - again).seconds,
+                                              decoderFrames: assets.decoderFrames(for: speech.frames.reduce(0, +))))
     }
     try save()
 
@@ -238,7 +248,13 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
     let predictedAgain = Signal()
     let active = Task { try await session.synthesize(phonemes, configuration: configuration) { if case .framesPredicted = $0 { predictedAgain.fire() } } }
     while !predictedAgain.isFired { try await Task.sleep(for: .milliseconds(1)) }
+    let beforeUnload = kokoroMemorySnapshot()
     await session.unload()
+    let afterUnload = kokoroMemorySnapshot()
+    report.memoryMiB = ["footprintBeforeUnload": Double(beforeUnload.footprint) / 1_048_576,
+                        "metalBeforeUnload": Double(beforeUnload.metal) / 1_048_576,
+                        "footprintAfterUnload": Double(afterUnload.footprint) / 1_048_576,
+                        "metalAfterUnload": Double(afterUnload.metal) / 1_048_576]
     report.lifecycle.unloadClosedWhileActive = await session.state == .closed
     let finished = try? await active.value
     report.lifecycle.activeCompletedAfterUnload = finished != nil

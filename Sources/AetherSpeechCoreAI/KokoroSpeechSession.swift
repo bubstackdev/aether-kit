@@ -31,8 +31,10 @@ public enum KokoroSpeechEvent: Sendable {
 ///
 /// Each model's residency is reserved before it opens and held until joined unload; its scratch is
 /// reserved per native call. `operationBytes` is held for a whole request and must cover the host tensors
-/// of one segment up to `maximumFrames` (noise is 21.6 KB per frame) plus the returned audio of every
-/// segment in the request (2.4 KB per frame). These are reservations of estimates, not measured memory.
+/// of one segment at the decoder bucket that holds `maximumFrames` (noise is 21.6 KB per padded frame)
+/// plus the returned audio of every segment in the request (2.4 KB per frame). With buckets, the decoder
+/// estimate must cover the specializations of every bucket the session may use, which stay resident until
+/// unload. These are reservations of estimates, not measured memory.
 public struct KokoroResourceAdmission: Sendable {
     public struct ModelEstimate: Sendable {
         let identity: String
@@ -294,6 +296,21 @@ public actor KokoroSpeechSession {
         } onCancel: { task.cancel() }
     }
 
+    /// Loads the decoder and specializes it at every bucket up to `maximumFrames` (default: all), so
+    /// that later utterances never wait for GPU specialization. Each bucket costs roughly 2-4 s once and
+    /// keeps its specialization resident until `unload()`; see docs/kokoro-speech.md#length-buckets.
+    /// Returns the buckets warmed (empty for an unbucketed bundle). Shares the request slot.
+    @discardableResult
+    public func prewarm(maximumFrames: Int? = nil) async throws -> [Int] {
+        let limit = min(maximumFrames ?? assets.maximumFrames, assets.maximumFrames, resources?.maximumFrames ?? .max)
+        guard limit > 0 else { throw AetherError.invalidRequest("prewarm frame limit must be positive") }
+        return try await perform { [runner, resources] in
+            let operation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
+            defer { operation?.release() }
+            return try await runner.prewarm(maximumFrames: limit)
+        }
+    }
+
     /// Terminal close; waits for the active request before releasing models and installation protection.
     public func unload() async {
         guard state != .closed else { return }
@@ -384,20 +401,60 @@ private actor KokoroRunner {
         try Task.checkCancellation()
         let total = frames.reduce(0, +)
         let aligned = try KokoroAlignment.align(prosody: prosody, text: text, frames: frames)
-        let noise = try FloatTensor(shape: [1, total, KokoroAssets.samplesPerFrame, KokoroAssets.harmonics],
-                                    values: KokoroNoise.generate(seed: configuration.seed,
-                                                                 count: total * KokoroAssets.samplesPerFrame * KokoroAssets.harmonics))
-        let decoderModel = try await model(isDecoder: true, assets.decoder, contract: KokoroContracts.decoder)
+        let samples = try await decode(prosody: aligned.prosody, text: aligned.text, style: style, frames: total,
+                                       seed: configuration.seed)
         try Task.checkCancellation()
-        let rendered = try await decoderModel.runTensors(function: "decode", inputs: [
-            "prosody": .float32(aligned.prosody), "text": .float32(aligned.text),
-            "style": .float32(style), "noise": .float32(noise),
-        ])
-        guard rendered.count == 1 else { throw AetherError.invalidTensor("unexpected Kokoro decoder outputs") }
-        let audio = try KokoroContracts.float(rendered, "audio", shape: [1, total * KokoroAssets.samplesPerFrame])
-        try Task.checkCancellation()
-        return KokoroSpeech(audio: try GeneratedAudio(mono: audio.values, sampleRate: KokoroAssets.sampleRate),
+        return KokoroSpeech(audio: try GeneratedAudio(mono: samples, sampleRate: KokoroAssets.sampleRate),
                             frames: frames, phonemes: phonemes, configuration: configuration)
+    }
+
+    /// Runs the decoder for `frames` aligned frames. With buckets, inputs are zero-padded to the
+    /// bucket and noise extends the same seeded sequence, so the valid prefix matches an unpadded run;
+    /// the padded tail of the output is discarded.
+    func decode(prosody: FloatTensor, text: FloatTensor, style: FloatTensor, frames: Int, seed: UInt64) async throws -> [Float] {
+        let bucketed = !assets.decoderBuckets.isEmpty
+        let shape = assets.decoderFrames(for: frames)
+        guard shape >= frames else { throw AetherError.invalidRequest("no Kokoro decoder bucket fits \(frames) frames") }
+        let noise = try FloatTensor(shape: [1, shape, KokoroAssets.samplesPerFrame, KokoroAssets.harmonics],
+                                    values: KokoroNoise.generate(seed: seed, count: shape * KokoroAssets.samplesPerFrame * KokoroAssets.harmonics))
+        var inputs: [String: TensorValue] = [
+            "prosody": .float32(try padFrames(prosody, to: shape)), "text": .float32(try padFrames(text, to: shape)),
+            "style": .float32(style), "noise": .float32(noise),
+        ]
+        if bucketed { inputs["frames"] = .int32(try Int32Tensor(shape: [1], values: [Int32(frames)])) }
+        let decoderModel = try await model(isDecoder: true, assets.decoder) { try KokoroContracts.decoder($0, bucketed: bucketed) }
+        try Task.checkCancellation()
+        let rendered = try await decoderModel.runTensors(function: "decode", inputs: inputs)
+        guard rendered.count == 1 else { throw AetherError.invalidTensor("unexpected Kokoro decoder outputs") }
+        let audio = try KokoroContracts.float(rendered, "audio", shape: [1, shape * KokoroAssets.samplesPerFrame])
+        return shape == frames ? audio.values : Array(audio.values.prefix(frames * KokoroAssets.samplesPerFrame))
+    }
+
+    /// Specializes the decoder once at each bucket up to `maximumFrames`, with silent inputs.
+    func prewarm(maximumFrames: Int) async throws -> [Int] {
+        let buckets = assets.decoderBuckets.filter { $0 <= assets.decoderFrames(for: maximumFrames) }
+        let style = try FloatTensor(shape: [1, KokoroVoiceStyles.dimension], values: Array(repeating: 0, count: KokoroVoiceStyles.dimension))
+        for bucket in buckets {
+            try Task.checkCancellation()
+            let prosody = try FloatTensor(shape: [1, KokoroContracts.prosodyChannels, bucket], values: Array(repeating: 0, count: KokoroContracts.prosodyChannels * bucket))
+            let text = try FloatTensor(shape: [1, KokoroContracts.textChannels, bucket], values: Array(repeating: 0, count: KokoroContracts.textChannels * bucket))
+            _ = try await decode(prosody: prosody, text: text, style: style, frames: bucket, seed: 0)
+        }
+        return buckets
+    }
+
+    private func padFrames(_ tensor: FloatTensor, to frames: Int) throws -> FloatTensor {
+        let channels = tensor.shape[1], current = tensor.shape[2]
+        if current == frames { return tensor }
+        var values = [Float](repeating: 0, count: channels * frames)
+        tensor.values.withUnsafeBufferPointer { source in
+            values.withUnsafeMutableBufferPointer { destination in
+                for c in 0..<channels {
+                    for f in 0..<current { destination[c * frames + f] = source[c * current + f] }
+                }
+            }
+        }
+        return try FloatTensor(shape: [1, channels, frames], values: values)
     }
 
     private func voiceStyles(_ voice: KokoroVoice) throws -> KokoroVoiceStyles {
