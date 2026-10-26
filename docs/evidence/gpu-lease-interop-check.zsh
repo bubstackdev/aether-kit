@@ -8,6 +8,7 @@ lease=$work/gpu.lock
 [[ $lease == /tmp/atelier-gpu.lock* || $lease == /private/tmp/atelier-gpu.lock* ]] && { echo "refusing the shared path"; exit 64 }
 # Every aether-probe below, including one started by a nested shell, uses the private lease.
 export AETHER_GPU_LEASE_PATH=$lease
+unset AETHER_GPU_LEASE_HOLDER
 mkdir -p $work
 failures=0
 log() { print -r -- "$(date '+%H:%M:%S') $*" }
@@ -74,21 +75,24 @@ wait $p; st=$?
 check "aether-probe ran after the lease freed (model missing: exit 1)" "1 1" "$st $(grep -c "Invalid model" $work/probe.err)"
 check "aether-probe released the lease" "none" "$(holder)"
 
-log "--- 6. aether-probe under a wrapper-style parent that holds the lease (with-gpu-lock.sh protocol)"
+log "--- 6. aether-probe under a wrapper-style parent that holds the lease: inherited only on explicit hand-off"
 /bin/zsh -c '
   lease=$1 probe=$2 model=$3
   until mkdir $lease 2>/dev/null; do sleep 0.05; done
   print -n $$ > $lease/pid.tmp.$$ && mv -f $lease/pid.tmp.$$ $lease/pid
   release() { [[ "$(cat $lease/pid 2>/dev/null)" == "$$" ]] && rm -rf $lease }
   trap "release; exit 130" INT TERM HUP
-  AETHER_GPU_LEASE_PATH=$lease AETHER_GPU_LEASE_TIMEOUT=2 $probe inspect $model 2> $lease.child.err >/dev/null
+  AETHER_GPU_LEASE_PATH=$lease AETHER_GPU_LEASE_TIMEOUT=0.5 $probe inspect $model 2> $lease.plain.err >/dev/null
+  print "$(grep -c "Invalid model" $lease.plain.err) $(grep -c "held by ancestor process $$, which did not hand it" $lease.plain.err)"
+  AETHER_GPU_LEASE_HOLDER=$$ AETHER_GPU_LEASE_PATH=$lease AETHER_GPU_LEASE_TIMEOUT=2 $probe inspect $model 2> $lease.child.err >/dev/null
   print "$(grep -c "Invalid model" $lease.child.err) $(grep -c waiting $lease.child.err)"
   print "holder-after-child $(cat $lease/pid)"
   print "wrapper $$"
   release
 ' _ $lease $probe $work/missing.aimodel > $work/wrapper.out
-check "aether-probe inherited the parent's lease (ran, never waited)" "1 0" "$(sed -n 1p $work/wrapper.out)"
-check "lease still the wrapper's after the child" "$(sed -n 3p $work/wrapper.out | cut -d' ' -f2)" "$(sed -n 2p $work/wrapper.out | cut -d' ' -f2)"
+check "without a hand-off, aether-probe waits for its ancestor (and says why)" "0 1" "$(sed -n 1p $work/wrapper.out)"
+check "with AETHER_GPU_LEASE_HOLDER, aether-probe inherits (ran, never waited)" "1 0" "$(sed -n 2p $work/wrapper.out)"
+check "lease still the wrapper's after the child" "$(sed -n 4p $work/wrapper.out | cut -d' ' -f2)" "$(sed -n 3p $work/wrapper.out | cut -d' ' -f2)"
 check "wrapper released" "none" "$(holder)"
 
 log "--- 7. Kit waits on a wrapper-style holder"
