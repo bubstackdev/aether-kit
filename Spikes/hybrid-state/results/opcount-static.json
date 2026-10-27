@@ -1,0 +1,420 @@
+{
+ "nomamba": {
+  "functions": [
+   "main"
+  ],
+  "total": 4946,
+  "compute": [
+   "Bool",
+   "Float16",
+   "Float32",
+   "Int32",
+   "UInt32",
+   "UInt64"
+  ],
+  "storage": [
+   [
+    "Float16",
+    234385159
+   ],
+   [
+    "Int32",
+    58
+   ],
+   [
+    "UInt32",
+    24
+   ],
+   [
+    "Float32",
+    2
+   ],
+   [
+    "UInt64",
+    1
+   ]
+  ],
+  "ops": {
+   "constant": 956,
+   "broadcast_to": 929,
+   "get_shape": 688,
+   "broadcast_shapes": 312,
+   "mul": 216,
+   "broadcasting_mul": 177,
+   "slice": 175,
+   "cast": 152,
+   "add": 144,
+   "broadcasting_add": 106,
+   "transpose": 98,
+   "concat": 97,
+   "batch_matmul": 83,
+   "broadcasting_batch_matmul": 83,
+   "reduce": 75,
+   "broadcasting_divide": 71,
+   "divide": 71,
+   "reshape": 58,
+   "gather_nd": 38,
+   "reduce_sum": 38,
+   "broadcasting_pow": 37,
+   "pow": 37,
+   "reduce_mean": 37,
+   "reduce_product": 37,
+   "rsqrt": 37,
+   "broadcasting_sub": 33,
+   "exp": 33,
+   "sub": 33,
+   "silu": 32,
+   "expand_dims": 14,
+   "read_handle": 10,
+   "shrink_dims": 9,
+   "slice_update": 8,
+   "write_handle": 8,
+   "invoke": 4,
+   "broadcast_in_dims": 2,
+   "not": 2,
+   "tile": 2,
+   "broadcasting_greater": 1,
+   "create_token": 1,
+   "greater": 1,
+   "softmax": 1
+  }
+ },
+ "ref": {
+  "functions": [
+   "main",
+   "decode"
+  ],
+  "total": 38961,
+  "compute": [
+   "Bool",
+   "Float16",
+   "Float32",
+   "Int32",
+   "UInt32",
+   "UInt64"
+  ],
+  "storage": [
+   [
+    "Float16",
+    340285191
+   ],
+   [
+    "Float32",
+    47045
+   ],
+   [
+    "Int32",
+    579
+   ],
+   [
+    "UInt32",
+    131
+   ],
+   [
+    "Bool",
+    1
+   ],
+   [
+    "UInt64",
+    1
+   ]
+  ],
+  "ops": {
+   "broadcast_to": 6944,
+   "constant": 6791,
+   "get_shape": 5088,
+   "broadcast_shapes": 2721,
+   "slice": 1820,
+   "reshape": 1741,
+   "mul": 1632,
+   "broadcasting_mul": 1444,
+   "add": 1328,
+   "broadcasting_add": 1085,
+   "cast": 974,
+   "transpose": 867,
+   "concat": 607,
+   "expand_dims": 447,
+   "reduce": 429,
+   "batch_matmul": 416,
+   "broadcasting_batch_matmul": 416,
+   "exp": 373,
+   "broadcasting_divide": 365,
+   "divide": 365,
+   "broadcast_in_dims": 310,
+   "reduce_sum": 243,
+   "broadcasting_sub": 234,
+   "sub": 234,
+   "gather_nd": 188,
+   "broadcasting_pow": 186,
+   "pow": 186,
+   "reduce_mean": 186,
+   "reduce_product": 186,
+   "rsqrt": 186,
+   "silu": 176,
+   "read_handle": 132,
+   "slice_update": 128,
+   "write_handle": 128,
+   "broadcasting_where": 84,
+   "where": 84,
+   "broadcasting_greater": 59,
+   "greater": 59,
+   "log": 56,
+   "scan": 28,
+   "shrink_dims": 18,
+   "invoke": 8,
+   "not": 4,
+   "create_token": 2,
+   "tile": 2,
+   "softmax": 1
+  }
+ },
+ "static-full": {
+  "functions": [
+   "main"
+  ],
+  "total": 14157,
+  "compute": [
+   "Bool",
+   "Float16",
+   "Float32",
+   "Int32",
+   "UInt32",
+   "UInt64"
+  ],
+  "storage": [
+   [
+    "Float16",
+    340285191
+   ],
+   [
+    "Float32",
+    47044
+   ],
+   [
+    "Int32",
+    1626
+   ],
+   [
+    "UInt32",
+    141
+   ],
+   [
+    "UInt64",
+    1
+   ]
+  ],
+  "ops": {
+   "constant": 4745,
+   "reshape": 1632,
+   "broadcast_in_dims": 856,
+   "mul": 792,
+   "broadcasting_mul": 697,
+   "add": 656,
+   "slice": 569,
+   "broadcasting_add": 534,
+   "cast": 487,
+   "broadcast_to": 319,
+   "reduce": 215,
+   "broadcasting_divide": 183,
+   "divide": 183,
+   "batch_matmul": 167,
+   "broadcasting_batch_matmul": 167,
+   "transpose": 166,
+   "concat": 163,
+   "exp": 145,
+   "reduce_sum": 122,
+   "gather_nd": 94,
+   "broadcast_shapes": 93,
+   "broadcasting_pow": 93,
+   "get_shape": 93,
+   "pow": 93,
+   "reduce_mean": 93,
+   "reduce_product": 93,
+   "rsqrt": 93,
+   "broadcasting_sub": 89,
+   "sub": 89,
+   "silu": 88,
+   "read_handle": 64,
+   "slice_update": 64,
+   "write_handle": 64,
+   "broadcasting_greater": 29,
+   "greater": 29,
+   "broadcasting_where": 28,
+   "log": 28,
+   "where": 28,
+   "invoke": 4,
+   "expand_dims": 2,
+   "not": 2,
+   "tile": 2,
+   "broadcasting_equal": 1,
+   "create_token": 1,
+   "equal": 1,
+   "softmax": 1
+  }
+ },
+ "static-lean": {
+  "functions": [
+   "main"
+  ],
+  "total": 12966,
+  "compute": [
+   "Bool",
+   "Float16",
+   "Float32",
+   "Int32",
+   "UInt32",
+   "UInt64"
+  ],
+  "storage": [
+   [
+    "Float16",
+    340034311
+   ],
+   [
+    "Float32",
+    297924
+   ],
+   [
+    "Int32",
+    1590
+   ],
+   [
+    "UInt32",
+    98
+   ],
+   [
+    "UInt64",
+    1
+   ]
+  ],
+  "ops": {
+   "constant": 4478,
+   "reshape": 1184,
+   "broadcast_in_dims": 800,
+   "mul": 736,
+   "broadcasting_mul": 641,
+   "add": 600,
+   "slice": 457,
+   "cast": 431,
+   "broadcasting_add": 422,
+   "broadcast_to": 319,
+   "reduce": 271,
+   "broadcasting_divide": 183,
+   "divide": 183,
+   "reduce_sum": 178,
+   "concat": 163,
+   "exp": 145,
+   "batch_matmul": 139,
+   "broadcasting_batch_matmul": 139,
+   "transpose": 138,
+   "gather_nd": 94,
+   "broadcast_shapes": 93,
+   "broadcasting_pow": 93,
+   "get_shape": 93,
+   "pow": 93,
+   "reduce_mean": 93,
+   "reduce_product": 93,
+   "rsqrt": 93,
+   "broadcasting_sub": 89,
+   "sub": 89,
+   "silu": 88,
+   "read_handle": 64,
+   "slice_update": 64,
+   "write_handle": 64,
+   "broadcasting_greater": 29,
+   "greater": 29,
+   "broadcasting_where": 28,
+   "log": 28,
+   "where": 28,
+   "invoke": 4,
+   "expand_dims": 2,
+   "not": 2,
+   "tile": 2,
+   "broadcasting_equal": 1,
+   "create_token": 1,
+   "equal": 1,
+   "softmax": 1
+  }
+ },
+ "static-nomamba": {
+  "functions": [
+   "main"
+  ],
+  "total": 4437,
+  "compute": [
+   "Bool",
+   "Float16",
+   "Float32",
+   "Int32",
+   "UInt32",
+   "UInt64"
+  ],
+  "storage": [
+   [
+    "Float16",
+    234385159
+   ],
+   [
+    "Int32",
+    1098
+   ],
+   [
+    "UInt32",
+    63
+   ],
+   [
+    "Float32",
+    2
+   ],
+   [
+    "UInt64",
+    1
+   ]
+  ],
+  "ops": {
+   "constant": 1661,
+   "reshape": 344,
+   "broadcast_in_dims": 240,
+   "mul": 232,
+   "broadcasting_mul": 193,
+   "add": 152,
+   "broadcast_to": 151,
+   "cast": 151,
+   "slice": 149,
+   "broadcasting_add": 114,
+   "batch_matmul": 83,
+   "broadcasting_batch_matmul": 83,
+   "transpose": 82,
+   "concat": 79,
+   "reduce": 75,
+   "broadcasting_divide": 71,
+   "divide": 71,
+   "gather_nd": 38,
+   "reduce_sum": 38,
+   "broadcast_shapes": 37,
+   "broadcasting_pow": 37,
+   "get_shape": 37,
+   "pow": 37,
+   "reduce_mean": 37,
+   "reduce_product": 37,
+   "rsqrt": 37,
+   "broadcasting_sub": 33,
+   "exp": 33,
+   "sub": 33,
+   "silu": 32,
+   "read_handle": 8,
+   "slice_update": 8,
+   "write_handle": 8,
+   "invoke": 4,
+   "expand_dims": 2,
+   "not": 2,
+   "tile": 2,
+   "broadcasting_equal": 1,
+   "broadcasting_greater": 1,
+   "create_token": 1,
+   "equal": 1,
+   "greater": 1,
+   "softmax": 1
+  }
+ }
+}

@@ -1,0 +1,15 @@
+170 events
+120 events
+120 events
+r1 load=14.46 16.66 13.76 ref.aimodel decode: load 0.85s prefill 2.180s decode median 11.077 ms (90.3 tok/s) mean 91.0 tok/s p90 11.531 ms
+r1 load=14.11 16.55 13.74 nomamba.aimodel main: load 0.53s prefill 0.689s decode median 3.543 ms (282.3 tok/s) mean 280.6 tok/s p90 3.837 ms
+r1 load=13.78 16.44 13.71 static-full.aimodel main: load 1.68s prefill 0.445s decode median 8.546 ms (117.0 tok/s) mean 116.6 tok/s p90 8.906 ms
+r1 load=13.78 16.44 13.71 static-nomamba.aimodel main: load 0.80s prefill 0.204s decode median 3.004 ms (332.9 tok/s) mean 332.7 tok/s p90 3.190 ms
+r2 load=13.39 16.32 13.69 static-nomamba.aimodel main: load 0.13s prefill 0.174s decode median 2.941 ms (340.1 tok/s) mean 328.6 tok/s p90 3.325 ms
+r2 load=13.39 16.32 13.69 static-full.aimodel main: load 0.19s prefill 0.446s decode median 8.776 ms (114.0 tok/s) mean 113.5 tok/s p90 9.436 ms
+r2 load=13.39 16.32 13.69 nomamba.aimodel main: load 0.11s prefill 0.314s decode median 3.702 ms (270.1 tok/s) mean 258.0 tok/s p90 4.433 ms
+r2 load=13.39 16.32 13.69 ref.aimodel decode: load 0.17s prefill 0.926s decode median 11.219 ms (89.1 tok/s) mean 88.5 tok/s p90 12.136 ms
+r3 load=13.44 16.28 13.69 ref.aimodel decode: load 0.17s prefill 0.885s decode median 11.049 ms (90.5 tok/s) mean 91.7 tok/s p90 11.414 ms
+r3 load=13.44 16.28 13.69 nomamba.aimodel main: load 0.10s prefill 0.260s decode median 2.927 ms (341.6 tok/s) mean 336.6 tok/s p90 3.200 ms
+r3 load=13.25 16.19 13.67 static-full.aimodel main: load 0.20s prefill 0.443s decode median 8.399 ms (119.1 tok/s) mean 119.4 tok/s p90 8.808 ms
+r3 load=13.25 16.19 13.67 static-nomamba.aimodel main: load 0.13s prefill 0.166s decode median 2.819 ms (354.8 tok/s) mean 352.1 tok/s p90 3.008 ms

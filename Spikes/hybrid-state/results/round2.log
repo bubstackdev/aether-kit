@@ -1,0 +1,34 @@
+)}}}
+92 events
+error: loc(fused[#aicode.debuginfo.location_v1<src = <file = <filename = "-", directory = "", sha256Sum = "">, startLine = 0, startColumn = 0, endLine = 0, endColumn = 0>, scope = #aicode.unit_v1, metadata = <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"coreai">]>, <"value" = [#aicode.serialization.integer<(64bit unsigned) 421>]>}>>>, <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"MPSGraph">]>, <"value" = [#aicode.serialization.integer<(32bit unsigned) 319>]>}>>>>, "ane_validation_message"("Error: unknown fused op type for dynamic match and rewrite.":0:0)]): operand #0 does not dominate this use
+'
+)}}}
+92 events
+r1 load=6.11 6.75 6.46 ref.aimodel decode: load 0.83s prefill 2.127s decode median 9.355 ms (106.9 tok/s) mean 103.3 tok/s p90 11.618 ms
+r1 load=6.03 6.72 6.45 ref.aimodel main: load 0.18s prefill 0.908s decode median 11.087 ms (90.2 tok/s) mean 87.1 tok/s p90 13.490 ms
+r1 load=6.03 6.72 6.45 nomamba.aimodel main: load 0.53s prefill 0.646s decode median 3.068 ms (325.9 tok/s) mean 316.6 tok/s p90 3.925 ms
+r1 load=6.03 6.72 6.45 split.aimodel main: load 0.73s prefill 1.258s decode median 9.644 ms (103.7 tok/s) mean 99.7 tok/s p90 12.079 ms
+r1 load=5.86 6.68 6.44 nobarrier.aimodel main: load 0.74s prefill 1.541s decode median 8.998 ms (111.1 tok/s) mean 107.0 tok/s p90 10.929 ms
+r1 load=5.79 6.65 6.43 fp16state.aimodel main: load 0.76s prefill 1.996s decode median 9.024 ms (110.8 tok/s) mean 106.2 tok/s p90 11.488 ms
+r1 load=5.73 6.62 6.42 staticq.aimodel main: load 0.80s prefill 2.071s decode median 8.894 ms (112.4 tok/s) mean 110.3 tok/s p90 10.545 ms
+r2 load=5.73 6.62 6.42 staticq.aimodel main: load 0.17s prefill 0.646s decode median 9.086 ms (110.1 tok/s) mean 107.7 tok/s p90 10.948 ms
+r2 load=5.75 6.61 6.42 fp16state.aimodel main: load 0.19s prefill 1.000s decode median 10.829 ms (92.3 tok/s) mean 83.7 tok/s p90 17.937 ms
+r2 load=5.75 6.61 6.42 nobarrier.aimodel main: load 0.13s prefill 0.577s decode median 8.962 ms (111.6 tok/s) mean 106.8 tok/s p90 11.228 ms
+r2 load=5.61 6.57 6.40 split.aimodel main: load 0.15s prefill 0.663s decode median 9.863 ms (101.4 tok/s) mean 98.1 tok/s p90 12.070 ms
+r2 load=5.61 6.57 6.40 nomamba.aimodel main: load 0.11s prefill 0.271s decode median 3.089 ms (323.7 tok/s) mean 296.1 tok/s p90 4.274 ms
+r2 load=5.61 6.57 6.40 ref.aimodel main: load 0.19s prefill 3.324s decode median 11.410 ms (87.6 tok/s) mean 84.2 tok/s p90 14.127 ms
+r2 load=5.64 6.56 6.40 ref.aimodel decode: load 0.18s prefill 0.825s decode median 9.386 ms (106.5 tok/s) mean 102.4 tok/s p90 11.815 ms
+r3 load=5.43 6.50 6.38 ref.aimodel decode: load 0.17s prefill 0.835s decode median 9.463 ms (105.7 tok/s) mean 101.0 tok/s p90 12.033 ms
+r3 load=5.43 6.50 6.38 ref.aimodel main: load 0.17s prefill 0.972s decode median 13.336 ms (75.0 tok/s) mean 65.3 tok/s p90 25.490 ms
+r3 load=5.31 6.46 6.37 nomamba.aimodel main: load 0.12s prefill 0.373s decode median 4.659 ms (214.6 tok/s) mean 179.5 tok/s p90 8.510 ms
+r3 load=5.31 6.46 6.37 split.aimodel main: load 0.17s prefill 0.997s decode median 14.613 ms (68.4 tok/s) mean 60.1 tok/s p90 24.606 ms
+r3 load=5.29 6.43 6.36 nobarrier.aimodel main: load 0.18s prefill 0.897s decode median 12.841 ms (77.9 tok/s) mean 66.1 tok/s p90 24.108 ms
+r3 load=5.29 6.43 6.36 fp16state.aimodel main: load 0.18s prefill 0.968s decode median 13.179 ms (75.9 tok/s) mean 65.0 tok/s p90 23.526 ms
+r3 load=5.19 6.39 6.34 staticq.aimodel main: load 0.18s prefill 0.874s decode median 12.534 ms (79.8 tok/s) mean 69.0 tok/s p90 21.219 ms
+r4 load=4.77 6.28 6.31 staticq.aimodel main: load 0.18s prefill 0.868s decode median 12.830 ms (77.9 tok/s) mean 69.8 tok/s p90 20.968 ms
+r4 load=4.77 6.28 6.31 fp16state.aimodel main: load 0.19s prefill 1.212s decode median 13.832 ms (72.3 tok/s) mean 63.4 tok/s p90 23.250 ms
+r4 load=5.03 6.31 6.32 nobarrier.aimodel main: load 0.18s prefill 0.978s decode median 13.033 ms (76.7 tok/s) mean 65.3 tok/s p90 23.366 ms
+r4 load=4.87 6.26 6.30 split.aimodel main: load 0.18s prefill 1.558s decode median 18.137 ms (55.1 tok/s) mean 47.6 tok/s p90 29.915 ms
+r4 load=4.87 6.26 6.30 nomamba.aimodel main: load 0.15s prefill 0.335s decode median 3.908 ms (255.9 tok/s) mean 268.6 tok/s p90 4.556 ms
+r4 load=4.96 6.25 6.29 ref.aimodel main: load 0.21s prefill 1.497s decode median 17.938 ms (55.7 tok/s) mean 51.1 tok/s p90 28.620 ms
+r4 load=4.72 6.18 6.27 ref.aimodel decode: load 0.20s prefill 0.900s decode median 11.977 ms (83.5 tok/s) mean 72.8 tok/s p90 21.290 ms

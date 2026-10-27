@@ -69,3 +69,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 ## 0.0.2 release (2026-10-27)
 
 [Release notes](release-notes/0.0.2.md), the [0.0.2 roadmap](roadmap-0.0.2.md) with its release decisions, and the [changelog](../CHANGELOG.md). Next: the [0.0.3 roadmap](roadmap-0.0.3.md). New guides: [Qwen3-VL image input](qwen3-vl.md), [language generation](language-generation.md) (bucketed contract, tokenizers and the memory budget), [FLUX.2 klein](flux2-klein.md), [Kokoro speech](kokoro-speech.md), [GPU lease and admission](gpu-lease.md), the H3 schema-3 sections of [H3 integration](h3-integration.md), and [GitHub CI](ci.md). Python tooling runs in Forge's locked environments ([record](evidence/forge-environment-2026-10-27.json)).
+
+## 0.0.3 spikes (2026-10-27)
+
+The 0.0.2 feasibility reports that open the 0.0.3 [spikes](roadmap-0.0.3.md#spikes): [hybrid recurrent state (Granite 4.0-H)](spikes/hybrid-state-2026-10.md), [ACE-Step music generation](spikes/ace-step-2026-10.md) and [TripoSR image-to-3D](spikes/triposr-2026-10.md). Each ends with what it leaves open before a go/no-go; their scripts and compact results are under `Spikes/`.

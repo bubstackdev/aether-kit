@@ -1,0 +1,22 @@
+warning: #aicode.debuginfo.location_v1<src = <file = <filename = "-", directory = "", sha256Sum = "">, startLine = 0, startColumn = 0, endLine = 0, endColumn = 0>, scope = #aicode.unit_v1, metadata = <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"coreai">]>, <"value" = [#aicode.serialization.integer<(64bit unsigned) 1917>]>}>>>, <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"MPSGraph">]>, <"value" = [#aicode.serialization.integer<(32bit unsigned) 2161>]>}>>>>: Reached maxReorderingDistance 50
+warning: #aicode.debuginfo.location_v1<src = <file = <filename = "-", directory = "", sha256Sum = "">, startLine = 0, startColumn = 0, endLine = 0, endColumn = 0>, scope = #aicode.unit_v1, metadata = <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"coreai">]>, <"value" = [#aicode.serialization.integer<(64bit unsigned) 1917>]>}>>>, <"op_id": <value = #aicode.serialization.dictionary<{<"type" = [#aicode.serialization.string<"MPSGraph">]>, <"value" = [#aicode.serialization.integer<(32bit unsigned) 2161>]>}>>>>: Reached maxReorderingDistance 50
+dit-6000x512-fp16 {"loadSeconds": 10.749047624995, "firstSeconds": 0.625705707934685, "warmMedianSeconds": 0.3613615420181304, "audioSeconds": 240.0, "outputShape": [1, 6000, 64], "relL2": 0.060447355687652644, "maxAbs": 2.8153222799301147, "refMaxAbs": 7.688479423522949, "cosine": 0.9981741862808059, "finite": true, "maxRSSBytes": 15013920768}
+dit-1500x512-fp16 {"loadSeconds": 8.958067042054608, "firstSeconds": 0.09796375001315027, "warmMedianSeconds": 0.06801187503151596, "audioSeconds": 60.0, "outputShape": [1, 1500, 64], "relL2": 0.05086419960056401, "maxAbs": 1.511525571346283, "refMaxAbs": 7.614570617675781, "cosine": 0.9987072430233402, "finite": true, "maxRSSBytes": 17928028160}
+       21.94 real         7.02 user         6.36 sys
+         17928028160  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              456129  page reclaims
+             2155130  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                  10  messages sent
+                  10  messages received
+                   0  signals received
+                 462  voluntary context switches
+              159333  involuntary context switches
+        129740401354  instructions retired
+         44613044908  cycles elapsed
+           898469896  peak memory footprint
