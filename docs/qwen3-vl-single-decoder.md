@@ -1,8 +1,31 @@
 # Qwen3-VL: one decoder function (0.0.3 design)
 
-Status: design, 2026-10-27. Nothing is exported or changed in Kit yet. This covers two 0.0.3 memory items from the
-[roadmap](roadmap-0.0.3.md): the decoder's weights resident twice, and the 4B text export's memory. The measurements
-below come from a toy model (small CPU exports and short GPU probes); the real decoders have not been re-exported.
+Status: implemented and qualified, 2026-10-27. This covers two 0.0.3 memory items from the
+[roadmap](roadmap-0.0.3.md): the decoder's weights resident twice, and the 4B text export's memory. The design
+sections below were written before the re-export, from a toy model (small CPU exports and short GPU probes);
+the outcome comes first.
+
+## Outcome
+
+Both Qwen3-VL bundles were re-exported with the contract proposed below and qualified on the real models
+([Qwen3-VL guide](qwen3-vl.md#one-decoder-function-003);
+[evidence](evidence/qwen3-vl-one-function-2026-10-27.json)):
+- **Wired memory.** The 4B decoder wires 8,414 MiB of mapped-file pages at its first request and nothing more
+  at the first image request (two functions: 16,086 MiB). Its compiled cache is 15.0 GiB (22.5 GiB), and the
+  budget test's warm level is 10,847 MiB (19,566 MiB). The 2B: 6,065 MiB warm (10,113 MiB).
+- **Parity.** Every 0.0.2 gate passes again on the same references, and the 64-token replies of the old and new
+  bundles are identical, token for token, for a text and an image prompt on both models.
+- **Prefill: one change to the design.** Sending each image as one submission (as proposed below) made the
+  function change to the image's width on every image request, and Core AI retained about 360 MiB for it on the
+  4B: five budget reloads in 60 alternating requests, against one for the two-function bundle, and the 2B
+  missed its bound by 2 MiB. Aligned rows do not need that: Kit now prefills the whole prompt in the fixed
+  64-token chunks, each carrying its own image tokens' rows. An image request then retains about 103 MiB and the
+  4B reloads twice in 60 requests (the first after request 20, against 34). The `n`-gather fallback would not
+  have helped: it needs the same image-width submissions.
+- **Timing.** Text time to first token and decode rate are unchanged within host noise. The 4B's image time to
+  first token rises from 0.35 s to 0.45 s, the cost of the chunked image prefill.
+- **Export.** The bounded pipeline below exported the 4B text tower in 109 s at a peak of 16.3 GB RSS (0.0.2:
+  31.7 GB, 75 s) and the 2B in 46 s at 7.1 GB, self-checks included.
 
 ## Today: two functions over one copy of the weights on disk
 
