@@ -7,8 +7,8 @@ import Darwin
 import Foundation
 import Testing
 
-/// Opt-in native parity of the FLUX.2 [klein] 4B bundle against independent float32 Diffusers references
-/// (Forge's `diffusion` fixture for text-to-image, `Scripts/prepare-flux2-reference-fixtures.py` for
+/// Opt-in native parity of the FLUX.2 [klein] 4B bundle against independent float32 Diffusers references on CPU
+/// (`Scripts/prepare-flux2-reference-fixtures.py`: `--text-to-image` for the `diffusion` fixture, the default mode for
 /// reference images). Loads every stage on the GPU: run only under the shared GPU lock, one native suite at
 /// a time. Bars are the prototype's T2 continuous-output bars for the int8 export (11 §B6):
 /// - tokenizer ids and mask: exact;

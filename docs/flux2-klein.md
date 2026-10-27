@@ -1,6 +1,6 @@
 # FLUX.2 [klein] 4B: text-to-image and multi-reference generation
 
-Status: experimental, 2026-10-26 (0.0.2). The products, local bundle, independent references and opt-in native
+Status: experimental, 2026-10-27 (0.0.2). The products, local bundle, independent float32 Diffusers references on CPU and opt-in native
 parity and lifecycle gates are in place. Results and their scope are in [Verification](#verification). There is no iOS execution,
 benchmark protocol or published bundle yet.
 
@@ -181,16 +181,53 @@ fixed render, because the bundle's `chat_template.jinja` is not among the hashed
 
 ### Independent references
 
-| Fixture | Producer | Cases |
+Independent float32 Diffusers references on CPU, like every other model's references. Both fixtures come from
+`Scripts/prepare-flux2-reference-fixtures.py`: the unmodified Diffusers 0.37.1 `Flux2KleinPipeline` call plus module
+hooks, float32 on the CPU (the default; `--device mps` exists only for comparison), with the text encoder in float32 on
+the CPU.
+
+| Fixture | Mode | Cases |
 | --- | --- | --- |
-| `6a8a53d8f3b30817` (text to image) | Forge `fixtures` stage: unmodified Diffusers 0.37.1 `Flux2KleinPipeline`, float32 on MPS, float32 text encoder on CPU | 10 prompts, 512² to 1344×768, incl. French/Japanese text |
-| `079a8fba9d596a3b` (reference images) | `Scripts/prepare-flux2-reference-fixtures.py`: the same pipeline with `image=[…]` plus hooks; references are Lanczos-resized oracle outputs | 2 cases, one and two references |
+| `ffc4b1365159e40c` (text to image) | `--text-to-image` | 10 prompts, 512² to 1344×768, incl. French/Japanese text |
+| `caf92bb7d83d685c` (reference images) | default; the pipeline with `image=[…]`, references are the Lanczos-resized `fox-512` and `lighthouse-512` outputs of the 2026-10-26 text-to-image fixture, unchanged | 2 cases, one and two references |
 
 Both record token ids/mask, float32 text rows, packed initial noise, per-step latents/timestep/velocity, final latent
 and float32 image; the reference fixture also records encoder input pixels, the appended reference tokens and the
 transformer position ids. Neither uses the Core AI bundle or AetherKit code.
 
-### CPU checks against the references (2026-10-26)
+They replace the 2026-10-26 fixtures `6a8a53d8f3b30817` and `079a8fba9d596a3b`, which ran the pipeline on MPS (text
+encoder on CPU). The CPU-computed inputs are byte-identical to those fixtures for all 12 cases: token ids, mask, text
+rows, noise and timesteps, plus reference pixels, PNGs and position ids. The MPS-computed outputs move by at most
+1.1·10⁻⁴ relative L2 per tensor (velocity cosine ≥ 0.999999994). A second CPU run reproduces every file byte for byte.
+Generation took 14 minutes on 6 threads at a 30.1 GiB peak RSS for the ten text-to-image cases, and 2 minutes at 22 GiB
+for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27.json)). The weight-free fixture tests
+(`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
+`paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
+
+### Native parity against the CPU references (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-27)
+
+All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on the same int8 bundle (fingerprint `f28ef0e8…`) pass
+**113/113 checks** at the unchanged bars. Against the run on the MPS references, no minimum moves by more than
+3·10⁻⁶ in cosine or SSIM, or 0.006 dB in PSNR:
+
+| Check (bar) | MPS references (2026-10-26, rebased run) | CPU references (2026-10-27) |
+| --- | --- | --- |
+| Token ids and mask (exact) | 12/12 | 12/12 |
+| Text real-row cosine (≥ 0.999) | min 0.999972 | min 0.999972 |
+| Timesteps (exact) | 12/12 | 12/12 |
+| Teacher-forced velocity cosine per step (≥ 0.999) | min 0.999242 (1024×768) | min 0.999239 (1024×768) |
+| VAE decoder PSNR on the reference final latent (≥ 35 dB) | min 87.690 dB | min 87.684 dB |
+| Reference-encoder latent cosine (≥ 0.999) | 3/3 ≥ 0.9999999 | 3/3 ≥ 0.9999999 |
+| Image path SSIM through the public session (≥ 0.94) | min 0.960158 (`cafe-512`) | min 0.960160 (`cafe-512`) |
+| Whole pipeline SSIM (recorded) | 0.812–0.999 | 0.812–0.999 |
+
+The test process's lifetime peak footprint was 16.1 GiB (the component VAE phase, as before) and the GPU-lock hold
+3.7 minutes. See the [report](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.json) and
+[log](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.log). The 2026-10-26 sections below compared with
+the MPS fixtures and are kept as history. The lifecycle suite was re-run against the CPU fixtures too (see
+[Native lifecycle qualification](#native-lifecycle-qualification-2026-10-26)).
+
+### CPU checks against the MPS references (2026-10-26)
 
 With the fixture paths set, the weight-free tests pass. The bundle tokenizer reproduces all 10 reference token-id and
 mask rows exactly, including the French/Japanese prompt. Timesteps are exact for all 12 cases, μ included (the
@@ -198,7 +235,7 @@ reference cases confirm μ uses generated tokens only). CPU Euler replay of the 
 every following step input and the final latent bit for bit. Reference position ids match the transformer's recorded
 `img_ids` exactly.
 
-### Native parity (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-26)
+### Native parity against the MPS references (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-26)
 
 Both runs passed every check. They used the finalized int8 bundle (fingerprint `f28ef0e8…`, reference fingerprint
 `8fb2df90…`) after a full stream verification.
@@ -243,13 +280,24 @@ identity, fixtures, minima, phases, output PNG hashes and lock windows), the
 [Forge manifest fragment](evidence/flux2-klein-forge-manifest-fragment-2026-10-26.json) and
 [export log](evidence/flux2-klein-forge-export-log-2026-10-26.jsonl), and both fixture documents with their case lists.
 
+Regenerate the references (CPU only, no GPU lock; about 30 GiB peak RSS):
+
+```sh
+CKPT=~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294
+uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py --text-to-image $CKPT NEW_T2I_DIR
+uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py $CKPT \
+  .../oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 NEW_REFERENCE_DIR
+```
+
+Reference mode reads the fox-512 and lighthouse-512 source pictures from the 2026-10-26 text-to-image fixture directory, so keep that directory: it is an input of regeneration, not only a superseded record. Its two PNGs are hashed in [its fixture document](evidence/flux2-klein-t2i-fixture-6a8a53d8f3b30817.json). Moving them to the CPU text-to-image fixture would change the reference fixture's inputs and ID, so it waits for the next intentional regeneration.
+
 Run the native gate (one suite at a time, under the shared lock):
 
 ```sh
 AETHER_NATIVE_FLUX2_QUALIFICATION=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu \
-AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 \
-AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-2026-10-26/fixtures/079a8fba9d596a3b \
+AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
+AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test -c release --filter flux2NativeParity
 ```
@@ -269,7 +317,27 @@ in one decoder session (see the memory note above). See the
 ### Native lifecycle qualification (2026-10-26)
 
 `flux2NativeLifecycleQualification` (`AETHER_NATIVE_FLUX2_LIFECYCLE=1`, `AETHER_FLUX2_LIFECYCLE_OUTPUT` set to a new
-directory, plus the bundle and fixture paths) is modeled on Krea's native session suite. A tracked factory opens real
+directory, plus the bundle and fixture paths) is modeled on Krea's native session suite.
+
+```sh
+AETHER_NATIVE_FLUX2_LIFECYCLE=1 \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu \
+AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
+AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
+```
+
+**Re-run against the CPU references (2026-10-27).** The suite was re-run with no code change against the CPU fixtures
+(`fox-512` from `ffc4b136…`, the first reference case from `caf92bb7…`). Its inputs from them (size, seed, text rows,
+noise, prompt and reference pixels) are byte-identical to the MPS fixtures'; only the images it compares with
+changed. It passed **44/44 checks** with the same 176 native calls, 34 model instances, 32 function loads and 144
+reuses. The gated SSIM checks moved in the sixth decimal: baseline 0.990223 → 0.990221 and reference 0.998442 →
+0.998442 (bar 0.94 for both). The recorded balanced-prompt SSIM moved from 0.901650 to 0.901649. It took 51.3 s, the
+rebased build's first run. See the [report](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.json),
+[event journal](evidence/flux2-klein-native-lifecycle-events-cpu-references-2026-10-27.jsonl) and
+[log](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.log). The 2026-10-26 results below compared
+with the MPS fixtures. A tracked factory opens real
 Core AI sessions. Backend observers bracket the awaited native `function.run`, and an event journal is written as each
 event happens. Nothing gates or delays native work. It uses the `fox-512` reference conditioning and noise as a
 baseline, and passed **44/44 checks** in 27.6 s: 176 native calls, 34 model instances (each closed exactly once), 32
