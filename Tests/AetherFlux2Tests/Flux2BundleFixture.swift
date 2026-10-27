@@ -27,6 +27,7 @@ struct Flux2BundleFixture {
         for name in ["tokenizer.json", "tokenizer_config.json"] {
             try Data("{\"name\":\"\(name)\"}".utf8).write(to: tokenizer.appendingPathComponent(name))
         }
+        try Data("{{- 'fixture template' }}\n".utf8).write(to: tokenizer.appendingPathComponent("chat_template.jinja"))
         try JSONSerialization.data(withJSONObject: Self.manifest(references: references), options: [.sortedKeys])
             .write(to: root.appendingPathComponent("aether.json"))
     }

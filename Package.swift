@@ -53,9 +53,7 @@ let package = Package(
         ]),
         .target(name: "AetherKreaCoreAI", dependencies: ["AetherKrea", "AetherCoreAI", "AetherKit", "AetherAssets"]),
         .target(name: "AetherFlux2", dependencies: ["AetherKit", "AetherAssets"]),
-        .target(name: "AetherFlux2Tokenizers", dependencies: [
-            "AetherFlux2", .product(name: "Tokenizers", package: "swift-transformers"),
-        ]),
+        .target(name: "AetherFlux2Tokenizers", dependencies: ["AetherFlux2", "AetherKit", "AetherLanguageTokenizers"]),
         .target(name: "AetherFlux2CoreAI", dependencies: ["AetherFlux2", "AetherCoreAI", "AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeech", dependencies: ["AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeechCoreAI", dependencies: ["AetherSpeech", "AetherCoreAI", "AetherKit", "AetherAssets"]),
