@@ -33,9 +33,9 @@ gh run view <run-id> --log-failed
 
 ## Merge enforcement
 
-Use **CI passed** as the single required status check for `main`, with the branch required to be up to date (or a merge queue). That stable name avoids changing branch rules when individual jobs change. Keep pull requests required, and block force pushes and branch deletion.
+The active **Protect main** repository ruleset requires pull requests and a successful **CI passed** check from the GitHub Actions app. PR branches must be up to date with `main` before merging. That stable check name avoids changing branch rules when individual jobs change.
 
-As of setup on 2026-10-27, GitHub returns HTTP 403 for both rulesets and classic branch protection on this private repository: “Upgrade to GitHub Pro or make this repository public to enable this feature.” CI runs and reports results, but the current plan cannot enforce the merge gate. Once the repository owner enables a plan supporting private-repository branch protection, configure the rule above. Check results must be reviewed before merging in the meantime.
+Force pushes and deletion of `main` are blocked, and review conversations must be resolved before merging. Human approvals are optional (zero required); administrators have no bypass exemption. These rules became available when the repository moved to the public [`bubstackdev/aether-kit`](https://github.com/bubstackdev/aether-kit) repository on 2026-10-27. Inspect the active configuration in [repository rules](https://github.com/bubstackdev/aether-kit/settings/rules).
 
 ## Hardware qualification
 
