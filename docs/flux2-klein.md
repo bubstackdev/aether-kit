@@ -254,6 +254,40 @@ for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
 
+### Memory after unload (0.0.3)
+
+`flux2UnloadCycling` (opt-in, in `AetherNativeTests`) runs five cycles in one process. Each cycle opens a session,
+generates one 256² image in four steps from a prompt, calls `unload()` and drops the session. After each unload it
+records the footprint, Metal allocation, live malloc bytes and system wired memory. Readings are taken at once, after
+2 s and after `malloc_zone_pressure_relief`. Footprint 2 s after each unload, against a 48 MiB baseline:
+
+| Cycle | 1 | 2 | 3 | 4 | 5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Footprint (MiB) | 368 | 531 | 683 | 679 | 677 |
+| Metal allocation (MiB) | 242 | 262 | 262 | 262 | 262 |
+
+The residue grows for three cycles and then stops. Live malloc memory stays within 12 MiB of the baseline. A memory
+graph after the fifth cycle holds 54 MB of live heap (41 MB at the baseline) against a 751 MB footprint. The rest is
+freed large allocations that the macOS allocator keeps dirty in its large-block cache ("Malloc Large (empty)" in
+`vmmap`), and `malloc_zone_pressure_relief` does not return them. This is macOS allocator behaviour, bounded and
+reused by the next load, not a Kit or Core AI leak. As a diagnostic only, the same run with that cache disabled
+(`MallocLargeCache=0` in the test process's environment) settles 27 MiB above the baseline from the first cycle.
+
+Allocation histories of those regions (`MallocStackLogging=full`, `malloc_history` on each one) attribute most of the
+identified bytes to the ANE compiler. It validates graph regions while MPSGraph specializes each model inside Core AI,
+on every load, even with `preferGPU`. Kit's own allocations (output tensor copies and array growth) account for about
+13 of the 365 MiB after two cycles. Reusing those buffers would not change the picture, so Kit makes no change. See the
+[summary](evidence/unload-cycling-2026-10-27.json).
+
+```sh
+AETHER_NATIVE_UNLOAD_CYCLING=flux2 AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 unload cycling" swift test -c release --filter flux2UnloadCycling
+```
+
+`AETHER_NATIVE_UNLOAD_CYCLES` changes the cycle count (default 5). `AETHER_NATIVE_UNLOAD_MEMGRAPH=1` adds memory graphs
+of the baseline and the last cycle, and `full` adds the whole allocation history for a run with `MallocStackLogging=full`.
+
 ### Chat template in the fingerprint (0.0.3)
 
 Until 0.0.2 the fingerprint hashed `tokenizer.json` and `tokenizer_config.json` but not `chat_template.jinja`, and
