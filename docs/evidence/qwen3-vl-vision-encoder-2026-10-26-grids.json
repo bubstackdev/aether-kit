@@ -1,0 +1,614 @@
+{
+  "schema": 2,
+  "kind": "qwen3-vl-vision-encoder-qualification",
+  "passed": true,
+  "device": "h17c",
+  "hostLoad": "Shared host; encode timings are single observations, not benchmark records",
+  "supersedes": "qwen3-vl-vision-encoder-2026-10-26.json (one dynamic-shape `encode` function; see dynamicControl)",
+  "model": {
+    "repository": "Qwen/Qwen3-VL-2B-Instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "license": "apache-2.0",
+    "gated": false,
+    "checkpointSHA256": {
+      "model.safetensors": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0"
+    }
+  },
+  "asset": {
+    "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-vl-2b-bundle-macos/vision.aimodel",
+    "functions": [
+      "encode_44x44",
+      "encode_36x48",
+      "encode_48x36",
+      "encode_32x56",
+      "encode_56x32"
+    ],
+    "imageGrids": [
+      {
+        "height": 44,
+        "width": 44,
+        "function": "encode_44x44",
+        "tokens": 484
+      },
+      {
+        "height": 36,
+        "width": 48,
+        "function": "encode_36x48",
+        "tokens": 432
+      },
+      {
+        "height": 48,
+        "width": 36,
+        "function": "encode_48x36",
+        "tokens": 432
+      },
+      {
+        "height": 32,
+        "width": 56,
+        "function": "encode_32x56",
+        "tokens": 448
+      },
+      {
+        "height": 56,
+        "width": 32,
+        "function": "encode_56x32",
+        "tokens": 448
+      }
+    ],
+    "shapes": "static: no dynamic dimension in any function",
+    "precision": "fp16 weights, float32 compute",
+    "reportSHA256": "8428e3eda4ff68fb3a27cb6b632bd6a0aab08c3afa91d7176bc0b988340641cc",
+    "modelFiles": {
+      "main.hash": "db6a230aee84ebbbff9ba52aedd772aa18b9c5acefc6ac6cedec9df414a14c14",
+      "main.mlirb": "fc7394526bdb5c5f7cff89657a3b210bc96761746c7ce821c198786a389ef8ab",
+      "metadata.json": "abab586fc2b9fb2bc816ffc030b4a4a5e551f51f0e66e91f03c5b7c9ac39299b"
+    },
+    "versions": {
+      "torch": "2.11.0",
+      "coreai-torch": "0.4.2",
+      "coreai-core": "1.0.0b2"
+    },
+    "cpuOnlySelfCheck": {
+      "passed": true,
+      "worstCosine": 1.0,
+      "bar": 0.999,
+      "cases": [
+        {
+          "function": "encode_44x44",
+          "grid": [
+            44,
+            44
+          ],
+          "patches": 1936,
+          "imageEmbedsShape": [
+            484,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "function": "encode_36x48",
+          "grid": [
+            36,
+            48
+          ],
+          "patches": 1728,
+          "imageEmbedsShape": [
+            432,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "function": "encode_48x36",
+          "grid": [
+            48,
+            36
+          ],
+          "patches": 1728,
+          "imageEmbedsShape": [
+            432,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "function": "encode_32x56",
+          "grid": [
+            32,
+            56
+          ],
+          "patches": 1792,
+          "imageEmbedsShape": [
+            448,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "function": "encode_56x32",
+          "grid": [
+            56,
+            32
+          ],
+          "patches": 1792,
+          "imageEmbedsShape": [
+            448,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "reference": "eager fp16-storage fp32-compute tower on random normalized pixels"
+    }
+  },
+  "reference": {
+    "oracle": "transformers Qwen3VLVisionModel, float32, CPU, weights model.visual.*",
+    "versions": {
+      "torch": "2.11.0",
+      "transformers": "4.57.3",
+      "pillow": "12.3.0"
+    },
+    "recordSHA256": "63afbdc58b93da9149b8dbe58327f7688a45c19e9d70a607cf65acf9242469db",
+    "preprocessing": "numpy patchify of an image at a fixed grid's exact pixel size: (x/255 - 0.5)/0.5, frame repeated twice, rows in merge-window order (no resize)",
+    "images": [
+      {
+        "name": "scene-704x704",
+        "size": [
+          704,
+          704
+        ],
+        "grid": [
+          1,
+          44,
+          44
+        ],
+        "patches": 1936,
+        "tokens": 484,
+        "fileSHA256": {
+          "pixels": "9d69c5c2122d2c3fdd39e020a4bcc74e4597f2cdb38f4592edfe62fc663a9d34",
+          "embeds": "06da5fa2cb0ac61d789ea696957c6e65f6820759a0fbd4e636be24c3653f86d5",
+          "deepstack": "3a228f0c9acaa816671b45ad5bc102779dcf60ddd41f3f74688e36c585c617f4",
+          "png": "a2e0ecb2baed0f8d8e1d9100f49a4a0b1800a0f7c02572701781e62d85a64d7c"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 0.9999999,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-768x576",
+        "size": [
+          768,
+          576
+        ],
+        "grid": [
+          1,
+          36,
+          48
+        ],
+        "patches": 1728,
+        "tokens": 432,
+        "fileSHA256": {
+          "pixels": "0aebc26f82b5e4796d5961c43aa3331683be8a5a46a1f81a7991cb5d21d4a7b8",
+          "embeds": "f29cd99742d9d2adbda0175f85d4336d89333b84f0a0800fde25dad70cb1640a",
+          "deepstack": "6f59af4d8c7b123df64f889d4cf4ee87bd5651b4b197ac889dd0ac33529e2f75",
+          "png": "28cb27eca5ce9820ddd2b4e50c9708a14b3843d7a7db00fe1d1f0ae4e40c1185"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-576x768",
+        "size": [
+          576,
+          768
+        ],
+        "grid": [
+          1,
+          48,
+          36
+        ],
+        "patches": 1728,
+        "tokens": 432,
+        "fileSHA256": {
+          "pixels": "60e1563f1a8cf72f79c7c130510a33c77306fa0a1f2add962760d5b08a098e6c",
+          "embeds": "05164305e3fb384bda096fb47b22622b96de4a3756880daaf7b7e34243c61917",
+          "deepstack": "938ca879645bbf005a145fd2c384770696ff3e2722d9be33eb77ae756bf61ba1",
+          "png": "cfd3066f426ac1348e51c44bba8e8bf35548ed86a919f0a20346c326a7ec6245"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-896x512",
+        "size": [
+          896,
+          512
+        ],
+        "grid": [
+          1,
+          32,
+          56
+        ],
+        "patches": 1792,
+        "tokens": 448,
+        "fileSHA256": {
+          "pixels": "940ed15a1e4b69f1c50d94d2169fc98dcfba9c1717bcfc377fdf7c4d0b3a9447",
+          "embeds": "e3ca7cb4943c10f35b6f9ee7d9ca8e3f384ee958c3e6fed8386fdcadc16c0874",
+          "deepstack": "bfe65abc4cec8c1c20891f4c9911452190215c416863a2920c7fb5e535769f59",
+          "png": "4acb226a756046c84cf8a259f8189b384cf100dfeb3d3f765648579824934f17"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 0.9999999,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-512x896",
+        "size": [
+          512,
+          896
+        ],
+        "grid": [
+          1,
+          56,
+          32
+        ],
+        "patches": 1792,
+        "tokens": 448,
+        "fileSHA256": {
+          "pixels": "b28092df5aeddd4057601ef452038432b4ced6875196440dacdfc078fbbb5c38",
+          "embeds": "32d06da8762aa866b8bf6bcabcd759b6cffa847e2a21184c6ead78f1d6d3c71a",
+          "deepstack": "6d37d3fc2fb8e4f92062b4912062410d3cc0d186d998effebde05af8beafb095",
+          "png": "cf8f7e075231ef4536d71ae8d644c110c03f854b757cca91aa56366f21682f1b"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "hostTables": "AetherVision.Qwen3VLVisionTables (bit-exact with Forge host_inputs, CPU-tested)",
+  "parity": {
+    "gate": "per fixed grid: imageEmbeds and every DeepStack level cosine >= 0.999 vs the float32 upstream reference on the same pixels; every registered grid covered",
+    "results": [
+      {
+        "deepstackCosine": [
+          0.9999999783686907,
+          0.9999999770335882,
+          0.9999999666140799
+        ],
+        "firstEncodeSeconds": 0.292283542,
+        "function": "encode_44x44",
+        "grid": [
+          1,
+          44,
+          44
+        ],
+        "image": "scene-704x704",
+        "imageEmbedsCosine": 0.9999999460639045,
+        "repeatEncodeSeconds": 0.263517875
+      },
+      {
+        "deepstackCosine": [
+          0.999999978241565,
+          0.9999999774751079,
+          0.9999999707748594
+        ],
+        "firstEncodeSeconds": 0.228731375,
+        "function": "encode_36x48",
+        "grid": [
+          1,
+          36,
+          48
+        ],
+        "image": "scene-768x576",
+        "imageEmbedsCosine": 0.9999999584544458,
+        "repeatEncodeSeconds": 0.233929333
+      },
+      {
+        "deepstackCosine": [
+          0.9999999783611743,
+          0.9999999775181249,
+          0.9999999721592118
+        ],
+        "firstEncodeSeconds": 0.237407458,
+        "function": "encode_48x36",
+        "grid": [
+          1,
+          48,
+          36
+        ],
+        "image": "scene-576x768",
+        "imageEmbedsCosine": 0.999999964848442,
+        "repeatEncodeSeconds": 0.233663875
+      },
+      {
+        "deepstackCosine": [
+          0.9999999783280786,
+          0.9999999779835838,
+          0.999999971618003
+        ],
+        "firstEncodeSeconds": 0.246315709,
+        "function": "encode_32x56",
+        "grid": [
+          1,
+          32,
+          56
+        ],
+        "image": "scene-896x512",
+        "imageEmbedsCosine": 0.9999999465332647,
+        "repeatEncodeSeconds": 0.246111625
+      },
+      {
+        "deepstackCosine": [
+          0.9999999784530548,
+          0.9999999778513241,
+          0.9999999702796883
+        ],
+        "firstEncodeSeconds": 0.249009,
+        "function": "encode_56x32",
+        "grid": [
+          1,
+          56,
+          32
+        ],
+        "image": "scene-512x896",
+        "imageEmbedsCosine": 0.9999999614321348,
+        "repeatEncodeSeconds": 0.244495625
+      }
+    ],
+    "worstCosine": 0.9999999460639045,
+    "footprintMiB": {
+      "before open": 14,
+      "after open": 959,
+      "all grids warmed": 1652,
+      "after unload": 743
+    },
+    "report": {
+      "file": "qwen3-vl-vision-encoder-2026-10-26-grids-native.json",
+      "sha256": "757f505800d12102d839ce1502069cbb58f6740c9f61b79a6707b1c1a1330f21"
+    }
+  },
+  "stability": {
+    "gate": "every encode of every grid bit-identical to that grid's first encode; same first output in every process",
+    "byFunction": {
+      "encode_44x44": {
+        "encodes": 600,
+        "processes": 3,
+        "differingFromFirst": 0,
+        "sameFirstOutputAcrossProcesses": true,
+        "meanEncodeSeconds": 0.2777
+      },
+      "encode_36x48": {
+        "encodes": 600,
+        "processes": 3,
+        "differingFromFirst": 0,
+        "sameFirstOutputAcrossProcesses": true,
+        "meanEncodeSeconds": 0.2457
+      },
+      "encode_48x36": {
+        "encodes": 600,
+        "processes": 3,
+        "differingFromFirst": 0,
+        "sameFirstOutputAcrossProcesses": true,
+        "meanEncodeSeconds": 0.2472
+      },
+      "encode_32x56": {
+        "encodes": 600,
+        "processes": 3,
+        "differingFromFirst": 0,
+        "sameFirstOutputAcrossProcesses": true,
+        "meanEncodeSeconds": 0.257
+      },
+      "encode_56x32": {
+        "encodes": 600,
+        "processes": 3,
+        "differingFromFirst": 0,
+        "sameFirstOutputAcrossProcesses": true,
+        "meanEncodeSeconds": 0.2552
+      }
+    },
+    "reports": [
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-stability-1.json",
+        "sha256": "e1b7293bddfaaf9437bc898137b56b97bfbc97fb89faae91f2d5daa6665aa1ba",
+        "passed": true,
+        "footprintMiB": {
+          "before open": 60,
+          "after open": 1017,
+          "all grids warmed": 1615,
+          "after all encodes": 1669
+        }
+      },
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-stability-2.json",
+        "sha256": "0179ea6c4305df487ed08fcddef9bb9112732697ab6598efd7500aebce00ed95",
+        "passed": true,
+        "footprintMiB": {
+          "before open": 62,
+          "after open": 992,
+          "all grids warmed": 1615,
+          "after all encodes": 1660
+        }
+      },
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-stability-3.json",
+        "sha256": "e2b3480fdfa29f533019b84fccc928d4943e186ee247711827653628bc2a48cf",
+        "passed": true,
+        "footprintMiB": {
+          "before open": 62,
+          "after open": 993,
+          "all grids warmed": 1595,
+          "after all encodes": 1665
+        }
+      }
+    ]
+  },
+  "dynamicControl": {
+    "what": "the superseded dynamic-shape `encode` asset, same photo and Kit preprocessing (grid 1x48x40), LanguageVisionEncoder at f63aa76, specialized without expectFrequentReshapes, GPU-preferred",
+    "encodes": 360,
+    "processes": 3,
+    "differingFromFirst": 9,
+    "rate": 0.025,
+    "distinctOutputs": 2,
+    "badOutputCosines": [
+      [
+        0.526054,
+        0.651187
+      ]
+    ],
+    "reports": [
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-dynamic-control-1.json",
+        "sha256": "2cf56b04203257884f0ec6f16bf1dc6576bf450d16199d9fd15fe48092a0daa6",
+        "grid": [
+          1,
+          48,
+          40
+        ],
+        "encodes": 120,
+        "differingFromFirst": 6
+      },
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-dynamic-control-2.json",
+        "sha256": "d9a4fad27ac810a79ac9e0e6824568d19955f639d2b679638cf089e293b530fb",
+        "grid": [
+          1,
+          48,
+          40
+        ],
+        "encodes": 120,
+        "differingFromFirst": 3
+      },
+      {
+        "file": "qwen3-vl-vision-encoder-2026-10-26-grids-dynamic-control-3.json",
+        "sha256": "17f2308205f7bc52d442d2b1cb1f9e1dd0169427c568656cf5ae37ee80203792",
+        "grid": [
+          1,
+          48,
+          40
+        ],
+        "encodes": 120,
+        "differingFromFirst": 0
+      }
+    ]
+  },
+  "scriptSHA256": {
+    "export_qwen3.py": "cf09a8ab62d30849b3fafb1300b0f6445c649b95735074e5a72fcc9d936c9bf3",
+    "export_qwen3_vl_text.py": "dbe1ada8349495346f6809c61ace9d4a7342dd7b3dad5bb081eee26198058407",
+    "export_qwen3_vl_vision.py": "f85d0e88646b8202c0d7f1c80b6b9534986d8691fad106f09e3eca19cbb15905",
+    "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
+    "qwen3_vl_text.py": "d941e12f101c4c5a7c79ff9282062fb56245033f33e1656589370bbe13b9db02",
+    "qwen3_vl_vision.py": "e76d3f7de9ac24f93ab9dd9b2cf4f40bc0d4168a1704b664bb5bd86d1cd5d86c",
+    "record_evidence.py": "21c17d3b4a7c1ff8ad37c771b28a4186f8f46f6c0efff83dcc4e5e78773a85db",
+    "record_vision_evidence.py": "81455dc3bc79e0a24bdc7efab09490d7ffe7963c2e32c85e34275b2877235a70",
+    "record_vl_evidence.py": "f1cda94a72374fd10d4c582db391a10ce43140d422d3da592ed351a6b7d8345e",
+    "reference_qwen3.py": "93474743b412e344f94f037e61b219a79327d5997d59675f4ab4999d4f31f1e4",
+    "reference_qwen3_vl.py": "4bdd13fd2096721bf9cc7e44b3ceb173de202caf1f1bc2c5024d1318d26fa995",
+    "reference_qwen3_vl_vision.py": "fac0652f549bc9d08341840c2187cd8fe7aca27adc0b74673555837992d0c7ea",
+    "register_qwen3_vl_bundle.py": "5dcd5b82e7edec9b004747cb3a7aab5a4ca17649b538094f5081bde2d12f7e0b"
+  },
+  "nativeTests": "Tests/AetherNativeTests/Qwen3VLVisionQualificationTests.swift (AETHER_NATIVE_QWEN3VL_VISION=1 parity, AETHER_NATIVE_QWEN3VL_STABILITY=1 stability; release)"
+}

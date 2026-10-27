@@ -1,4 +1,5 @@
 {
+  "supersededBy": "qwen3-vl-vision-encoder-2026-10-26-grids.json: this dynamic-shape encode asset intermittently computed wrong outputs on the GPU without expectFrequentReshapes (9 of 360 encodes), so it is superseded by static per-grid functions",
   "schema": 1,
   "kind": "qwen3-vl-vision-encoder-qualification",
   "passed": true,

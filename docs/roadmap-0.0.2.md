@@ -8,7 +8,7 @@ Status: scope agreed, 2026-10-26. This replaces the draft on `local-line-2026-10
 | --- | --- | --- | --- |
 | FLUX.2 [klein] 4B | Image editing and multi-reference conditioning | Apache-2.0 (card checked) | Export plan approved; engine prototype verified on Mac and iPhone |
 | Fixed-shape language decode export | Removes per-token shape growth and the 128-submission model reload | n/a | Implemented on `v0.0.2/language`; Qwen3-0.6B fp16 qualified natively on M5 Max (docs/evidence/language-bucketed-decode-2026-10-26.json) |
-| Qwen3-VL-2B | Image input to the language runtime | Apache-2.0 (confirmed, not gated) | Implemented on `v0.0.2/qwen3-vl`; fp16, Mac-qualified against upstream on synthetic scenes and three photographs (docs/qwen3-vl.md) |
+| Qwen3-VL-2B | Image input to the language runtime | Apache-2.0 (confirmed, not gated) | Implemented on `v0.0.2/qwen3-vl`; fp16, fixed-shape image grids, Mac-qualified against upstream on synthetic scenes and three photographs (docs/qwen3-vl.md) |
 | Kokoro 82M | Speech synthesis (first audio-generation product) | Apache-2.0 (card checked) | Phoneme-input v1 approved: G2P behind a protocol, no GPL dependency |
 | **H3 schema-3 qualification** | Promote `H3VideoSession` from experimental, with committed evidence | Apache-2.0 pipeline; confirm checkpoint/adapter terms | Assets present (complete schema-3 profile); evidence missing |
 | **Shared GPU lease and admission** | One Kit-owned implementation of GPU coordination, default-on in Kit tools, opt-in for app sessions | n/a | Added 2026-10-26 |

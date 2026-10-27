@@ -1,0 +1,89 @@
+{
+  "device" : "h17c",
+  "footprint" : [
+    {
+      "bytes" : 64521008,
+      "phase" : "before open"
+    },
+    {
+      "bytes" : 1040041496,
+      "phase" : "after open"
+    },
+    {
+      "bytes" : 1692993384,
+      "phase" : "all grids warmed"
+    },
+    {
+      "bytes" : 1740294064,
+      "phase" : "after all encodes"
+    }
+  ],
+  "gate" : "every encode of every fixed grid bit-identical to that grid's first encode (FNV-1a 64 over the fp16 bits, then full comparison)",
+  "grids" : [
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "f8c6c137facbbb9b",
+      "firstEmbedsHash" : "2adebf5ded5dab57",
+      "function" : "encode_44x44",
+      "meanEncodeSeconds" : 0.2807127900099999
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "6854d818a0d66bf6",
+      "firstEmbedsHash" : "2a81250fb9064a80",
+      "function" : "encode_36x48",
+      "meanEncodeSeconds" : 0.24852357351500004
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "2f4283afda74e3f6",
+      "firstEmbedsHash" : "6c4cb6096919d540",
+      "function" : "encode_48x36",
+      "meanEncodeSeconds" : 0.24992694330999998
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "25db09208f9db6c",
+      "firstEmbedsHash" : "b4b0f50a7decdb6a",
+      "function" : "encode_32x56",
+      "meanEncodeSeconds" : 0.25811035457
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "2e45de11679033a",
+      "firstEmbedsHash" : "193579455e1ded6",
+      "function" : "encode_56x32",
+      "meanEncodeSeconds" : 0.2588320946050001
+    }
+  ],
+  "modelFileSHA256" : "fc7394526bdb5c5f7cff89657a3b210bc96761746c7ce821c198786a389ef8ab",
+  "order" : "round-robin across the grids, one process",
+  "passed" : true,
+  "photoSHA256" : "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd",
+  "stage" : "complete"
+}

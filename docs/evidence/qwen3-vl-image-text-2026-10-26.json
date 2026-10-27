@@ -1,4 +1,5 @@
 {
+  "supersededBy": "qwen3-vl-image-text-2026-10-26-grids.json: re-qualified with the fixed-grid encoder (images snapped to fixed patch grids); this record used the superseded dynamic-shape encoder",
   "schema": 1,
   "kind": "qwen3-vl-image-text-qualification",
   "passed": true,
