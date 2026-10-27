@@ -83,7 +83,9 @@ do {
   - A decorator around the model factory, the same pattern Krea uses, reserves each model's residency before opening it. Failed opens roll back, and the residency is held until joined unload.
   - It also reserves per-call scratch around each native call. Operation bytes are held for the whole request and must cover the retained segment audio.
   - These are caller estimates, not measured memory. Qualified estimates for the real models are not yet published.
-- **Frame cap.** `frameCap: KokoroFrameCap` limits utterance length. The default is `.platformDefault`: `.standard` (1024 frames, about 25.6 s) on macOS and `.compact` (512 frames, about 12.8 s) on iOS. `.extended` (2048 frames) is an explicit opt-in that costs about 8 GB more GPU memory. Lower caps are allowed for devices with less memory. An utterance above the cap is refused before decoding, with an error that gives its frame count and the cap. Split such text into shorter segments. `prewarm()` stops at the cap.
+- **Frame cap.** `frameCap: KokoroFrameCap` limits utterance length. The default is `.platformDefault`: `.standard` (1024 frames, about 25.6 s) on macOS and `.compact` (512 frames, about 12.8 s) on iOS. `.extended` (2048 frames) is an explicit opt-in that costs about 8 GB more GPU memory. Lower caps are allowed for devices with less memory. An utterance above the cap is refused with an error that gives its frame count and the cap; split such text into shorter segments. The check runs after the durations model has predicted frames and before any decoder work. In a multi-segment request, earlier segments may already have been delivered when a later one is refused.
+
+  Memory follows the decoder bucket, not the cap. A cap rounds up to the next bucket (`KokoroFrameCap.decoderFrames(in:)`), so a 600-frame cap runs at bucket 1024, the size the system killed on the qualified iPhone. On iOS, use `.compact` or a cap of 512 or less. Only iOS builds, including Mac Catalyst, default to `.compact`; macOS, visionOS and tvOS default to `.standard`. `prewarm()` stops at the cap's bucket.
 - **Shared GPU admission.** `gpu: GPUAdmissionOwner` opts a session into a host-shared `GPUAdmission`, following the Krea and FLUX pattern. Each request is granted before any model work or reservation, and `unload()` withdraws a request still waiting. The opt-in native suites take the shared lease through `nativeGPUGrant()`.
 - **Segment results** are retained in the returned array, at 2.4 KB per frame. A request is limited to `maximumSegments` (256).
 
@@ -168,7 +170,7 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 
 ## Reduced-precision decoders
 
-**0.0.2 ships the float32 decoder only.** The `--decoder-precision` export flags are experimental, and every reduced-precision decoder fails qualification. `export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision`:
+**0.0.2 ships the float32 decoder only.** The `--decoder-precision` export flags are experimental, and every reduced-precision decoder fails qualification. `export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision` (AetherSpeech refuses to open any bundle whose decoder is not float32):
 
 - `float16`: float16 weights and float16 conv/linear compute;
 - `float16-storage`: float16 weights, widened to float32 for compute;

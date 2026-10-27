@@ -76,7 +76,8 @@ def main():
     ap.add_argument("--decoder", choices=["bucketed", "plain"], default="bucketed",
                     help="bucketed adds a `frames` input so inputs can be padded to fixed frame buckets")
     ap.add_argument("--decoder-precision", choices=["float32", "float16", "float16-storage", "int8"], default="float32",
-                    help="decoder conv/linear weights: float16 (with float16 compute) or weight-only int8")
+                    help="EXPERIMENTAL decoder weights: float16 (with float16 compute), float16-storage or weight-only "
+                         "int8. These fail qualification, and AetherSpeech refuses to open such bundles")
     args = ap.parse_args()
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
@@ -142,7 +143,7 @@ def main():
                            "gender": {"f": "female", "m": "male"}[path.stem[1]],
                            "file": f"voices/{out.name}", "sha256": sha256(out), "source_sha256": sha256(path)})
         contract = {
-            "schema": 1, "family": "kokoro-82m", "precision": "float32",
+            "schema": 1, "family": "kokoro-82m", "precision": args.decoder_precision,
             "source": report["source"],
             "sampleRate": SAMPLE_RATE, "samplesPerFrame": SAMPLES_PER_FRAME, "harmonics": HARMONICS,
             "maximumPhonemes": MAX_PHONEMES, "maximumFrames": MAX_FRAMES, "styleDimension": 256,

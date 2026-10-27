@@ -371,6 +371,10 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     }
     await extendedFive.unload()
 
+    // Memory follows the bucket a cap rounds up to.
+    #expect(KokoroFrameCap.standard.decoderFrames(in: assets) == 1024)
+    #expect(try KokoroFrameCap(frames: 600).decoderFrames(in: assets) == 1024)
+    #expect(try KokoroFrameCap(frames: 64).decoderFrames(in: assets) == 64)
     // A lower cap, for example for a device with less memory.
     let small = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog(), framesPerToken: 4, bucketedDecoder: true),
                                     frameCap: try KokoroFrameCap(frames: 256))

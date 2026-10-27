@@ -185,7 +185,12 @@ public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
 
     private init(checked frames: Int) { self.frames = frames }
 
-    /// `compact` on iOS, `standard` elsewhere.
+    /// The decoder bucket the longest admitted utterance runs at in `assets`. Memory follows this
+    /// bucket, not the cap: caps round up to the next bucket, so a 600-frame cap runs at bucket 1024.
+    public func decoderFrames(in assets: KokoroAssets) -> Int { assets.decoderFrames(for: frames) }
+
+    /// `compact` when compiled for iOS, including Mac Catalyst; `standard` everywhere else, including
+    /// macOS, visionOS and tvOS.
     public static var platformDefault: KokoroFrameCap {
         #if os(iOS)
         compact

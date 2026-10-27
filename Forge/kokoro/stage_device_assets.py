@@ -11,6 +11,8 @@ import json
 import shutil
 from pathlib import Path
 
+MARKER = ".kokoro-device-staging"
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -21,9 +23,13 @@ def main():
                     default=Path(__file__).resolve().parents[2] / "Examples/SpeechDevice/Assets")
     args = ap.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    for child in args.output.iterdir():  # keep the tracked .gitkeep
-        if child.name != ".gitkeep":
-            shutil.rmtree(child) if child.is_dir() else child.unlink()
+    marker = args.output / MARKER
+    existing = [c for c in args.output.iterdir() if c.name not in (".gitkeep", MARKER)]
+    if existing and not marker.exists():
+        raise SystemExit(f"{args.output} is not empty and was not staged by this script; refusing to delete its contents")
+    for child in existing:  # only a previous staging of this script; the tracked .gitkeep stays
+        shutil.rmtree(child) if child.is_dir() else child.unlink()
+    marker.write_text("staged by Forge/kokoro/stage_device_assets.py; safe to delete\n")
     (args.output / "bundle" / "voices").mkdir(parents=True)
     contract = json.loads((args.bundle / "kokoro.json").read_text())
     index = json.loads((args.references / "references.json").read_text())

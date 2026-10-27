@@ -198,6 +198,28 @@ import Testing
     #expect(throws: AetherError.self) { try KokoroAssets.open(at: escaping.root) }
 }
 
+@Test func unqualifiedDecoderPrecisionsAreRefusedAtOpen() throws {
+    for precision in ["float16", "float16-storage", "int8"] {
+        // Both the exporter's current form (matching top-level precision) and the earlier mismatched form.
+        for topLevel in [precision, "float32"] {
+            let bundle = try FakeBundle.make { contract in
+                contract["precision"] = topLevel
+                contract["decoderPrecision"] = precision
+            }
+            defer { bundle.remove() }
+            do {
+                _ = try KokoroAssets.open(at: bundle.root)
+                Issue.record("a \(precision) decoder bundle opened")
+            } catch let error as AetherError {
+                #expect(String(describing: error).contains("'\(precision)' is unqualified"))
+            }
+        }
+    }
+    let explicit = try FakeBundle.make { $0["decoderPrecision"] = "float32" }
+    defer { explicit.remove() }
+    #expect(try KokoroAssets.open(at: explicit.root).decoderPrecision == "float32")
+}
+
 @Test func installationRoundTripsThroughTheLocalAssetStore() async throws {
     let bundle = try FakeBundle.make()
     defer { bundle.remove() }
