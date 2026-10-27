@@ -73,3 +73,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 ## 0.0.3 spikes (2026-10-27)
 
 The 0.0.2 feasibility reports that open the 0.0.3 [spikes](roadmap-0.0.3.md#spikes): [hybrid recurrent state (Granite 4.0-H)](spikes/hybrid-state-2026-10.md), [ACE-Step music generation](spikes/ace-step-2026-10.md) and [TripoSR image-to-3D](spikes/triposr-2026-10.md). Each ends with what it leaves open before a go/no-go; their scripts and compact results are under `Spikes/`.
+
+## 0.0.3 language runtime seam (2026-10-27)
+
+The [language runtime seam](language-runtime-seam.md) is the first piece of the app-facing language track: the Core-AI-free `AetherLanguageRuntime` target with the `LanguageBackend` protocol, seeded sampling and a constraint hook for structured output, with its [qualification](evidence/language-runtime-seam-2026-10-27.json). The [language generation guide](language-generation.md#sampling-and-the-backend-protocol) covers using it.

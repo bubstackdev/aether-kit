@@ -375,7 +375,7 @@ These are not in the seam's commits. They're listed so the seam doesn't block th
 - **UTF-8-safe streaming and stop strings** are the facade's. It uses the delivery's `.stop` disposition.
 - **Default sampling, mapped from FoundationModels.** FoundationModels' options (`.greedy`, `.random(top:seed:)`,
   `.random(probabilityThreshold:seed:)`, `temperature`, `maximumResponseTokens`) map onto `LanguageSampling` and
-  `maximumTokens`. The facade chooses its own default.
+  `maximumTokens`. The facade defaults to greedy; apps opt into sampling per request.
 - **Prefix reuse across turns.** A bucketed request resets the cache today, so every chat turn prefills the whole
   transcript again. Prefix reuse is a later backend option on the request and doesn't change the protocol's shape.
 - **Backend selection:** `#available(macOS 27, iOS 27, *)` picks the Core AI backend; otherwise it's an MLX backend if
@@ -477,12 +477,15 @@ All on one M5 Max, release build, shared host, under the GPU lock
 
 ## Decided
 
+The user confirmed the first four on 2026-10-27; the rest are the lead's answers to the design's questions.
+
+- **Facade default:** greedy. Apps opt into sampling per request. The seam's default is greedy too, and the token
+  identity above holds for it.
+- **Floor:** macOS 14 and iOS 17. The strong `CoreAI` link belongs to the deployment-floor work.
+- **Images through the facade:** none in 0.0.3, so commit 6 stays after the decoder rework.
+- **Log-probabilities:** none for now. The per-token callback takes a struct (`LanguageGeneratedToken`), so they can be
+  added without breaking it.
 - **Target:** `AetherLanguageRuntime`, a new library product.
-- **Floor:** macOS 14 and iOS 17 are the working assumption (the iOS number is to be confirmed). The strong `CoreAI`
-  link belongs to the deployment-floor work.
 - **Repetition penalty:** Transformers' semantics, over the whole request including the prompt, off (1) by default,
   with an optional window.
-- **Default sampling:** the seam's default is greedy. The facade's default is the facade's decision.
-- **Images through the facade:** not needed for 0.0.3 as far as is known; commit 6 waits for the decoder rework.
-- **Log-probabilities:** not in scope; the per-token callback takes a struct so they can be added without breaking it.
 - **Teacher-forced logits:** on the SPI `LanguageBackendQualification` protocol, not on `LanguageBackend`.
