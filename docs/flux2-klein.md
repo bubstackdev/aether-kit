@@ -282,7 +282,7 @@ on every load, even with `preferGPU`. Kit's own allocations (output tensor copie
 ```sh
 AETHER_NATIVE_UNLOAD_CYCLING=flux2 AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 unload cycling" swift test -c release --filter flux2UnloadCycling
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 unload cycling" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2UnloadCycling
 ```
 
 `AETHER_NATIVE_UNLOAD_CYCLES` changes the cycle count (default 5). `AETHER_NATIVE_UNLOAD_MEMGRAPH=1` adds memory graphs
