@@ -40,7 +40,7 @@ The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviou
 - **Spikes:** hybrid recurrent state (Granite 4.0-H), ACE-Step and TripoSR.
 - **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization.
 - **Qwen3-VL:** iPhone, multi-image input and a quantized decoder.
-- **Qwen3-VL memory:** each function (`main`/`withImage`) and each encoder grid holds its own weight copy (about 23 GiB for 4B, 13 for 2B). The Core AI SDK has no shared-constants option.
+- **Qwen3-VL memory:** resident Metal is well above the weights (VL-4B 19.6 GiB warm, 21.7 max; VL-2B 10.1 / 12.2). The likely cause is a separate weight copy per function (`main`/`withImage`) and per encoder grid; not yet attributed ([qwen3-vl.md](qwen3-vl.md)). The Core AI SDK has no shared-constants option.
 - **Language memory budget:** remove the reload workaround once Core AI stops retaining memory per shape change.
 - **Kokoro:** bucket-2048 memory (about 8.2 GB of Metal stays allocated after that bucket has been used).
 - **GPU lease:** reclaiming pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
