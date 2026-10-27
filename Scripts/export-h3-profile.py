@@ -47,7 +47,8 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  (latent denormalisation, decoder, source pre-padding removal), then check it on CPU against the
                  original `_decode` of a single-tile, single-window clip.
 No Core AI runtime, specialisation or GPU is used. Inputs are read-only; outputs stay under OUTPUT.
-Usage: python -I -B export-h3-profile.py --snapshot SNAP --converter DIR --output OUT --stage STAGE
+Usage (Forge's H3 oracle environment, `uv sync --frozen --project Forge/h3-oracle`):
+       Forge/h3-oracle/.venv/bin/python -I -B Scripts/export-h3-profile.py --snapshot SNAP --converter DIR --output OUT --stage STAGE
 """
 import argparse, json, sys, time
 from pathlib import Path
