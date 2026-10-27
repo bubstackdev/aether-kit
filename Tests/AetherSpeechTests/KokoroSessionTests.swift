@@ -330,6 +330,54 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     other.release()
 }
 
+@Test func frameCapRefusesLongUtterancesWithLengthAndCapAndAllowsTheOptIn() async throws {
+    let bundle = try FakeBundle.make(maximumFrames: 4096, decoderBuckets: [64, 1024, 2048, 4096])
+    defer { bundle.remove() }
+    let assets = try KokoroAssets.open(at: bundle.root)
+    #expect(KokoroFrameCap.standard.frames == 1024 && KokoroFrameCap.extended.frames == 2048)
+    #expect(throws: AetherError.self) { try KokoroFrameCap(frames: 4096) }
+    #expect(throws: AetherError.self) { try KokoroFrameCap(frames: 1) }
+    let long = String(repeating: "ə", count: 340)  // 342 tokens x 4 frames = 1368 frames
+    let log = EventLog()
+    let standard = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: log, framesPerToken: 4, bucketedDecoder: true))
+    #expect(standard.frameCap == .standard)
+    do {
+        _ = try await standard.synthesize(try standard.phonemes(long), configuration: try KokoroSpeechConfiguration())
+        Issue.record("expected the frame cap to refuse a 1368-frame utterance")
+    } catch let error as AetherError {
+        let text = String(describing: error)
+        #expect(text.contains("1368 frames") && text.contains("1024-frame cap") && text.contains("frameCap: .extended"))
+    }
+    #expect(!log.snapshot.contains("run:decode"))
+    #expect(try await standard.prewarm() == [64, 1024])  // prewarm stops at the cap
+    await standard.unload()
+
+    let extendedLog = EventLog()
+    let extended = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: extendedLog, framesPerToken: 4, bucketedDecoder: true),
+                                       frameCap: .extended)
+    let speech = try await extended.synthesize(try extended.phonemes(long), configuration: try KokoroSpeechConfiguration())
+    #expect(speech.audio.frameCount == 1368 * 600)
+    // Above the extended cap the error names the cap without suggesting a further opt-in.
+    await extended.unload()
+    let extendedFive = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog(), framesPerToken: 5, bucketedDecoder: true),
+                                           frameCap: .extended)
+    do {  // 512 tokens x 5 frames = 2560 frames
+        _ = try await extendedFive.synthesize(try extendedFive.phonemes(String(repeating: "ə", count: 510)), configuration: try KokoroSpeechConfiguration())
+        Issue.record("expected the extended cap to refuse a 2048-plus-frame utterance")
+    } catch let error as AetherError {
+        let text = String(describing: error)
+        #expect(text.contains("2560 frames") && text.contains("2048-frame cap") && !text.contains("frameCap: .extended"))
+    }
+    await extendedFive.unload()
+
+    // A lower cap, for example for a device with less memory.
+    let small = KokoroSpeechSession(assets: assets, factory: FakeFactory(log: EventLog(), framesPerToken: 4, bucketedDecoder: true),
+                                    frameCap: try KokoroFrameCap(frames: 256))
+    await #expect(throws: AetherError.self) { try await small.synthesize(try small.phonemes(String(repeating: "ə", count: 70)), configuration: try KokoroSpeechConfiguration()) }
+    #expect(try await small.prewarm() == [64, 1024])  // 256 frames still needs the 1024 bucket in this bundle
+    await small.unload()
+}
+
 private struct ListPhonemizer: SpeechPhonemizer {
     func phonemize(_ text: String, language: KokoroVoice.Language) async throws -> [String] {
         #expect(language == .britishEnglish)

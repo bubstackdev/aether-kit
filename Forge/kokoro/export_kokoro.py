@@ -27,6 +27,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from kokoro_graphs import (HARMONICS, MAX_PHONEMES, SAMPLE_RATE, SAMPLES_PER_FRAME, BucketedDecoderGraph, DecoderGraph, DurationsGraph,
+                           reduce_decoder_precision,
                            align, build_kmodel, round_durations, splitmix_normal, tokenize)
 
 REPO = "hexgrad/Kokoro-82M"
@@ -74,6 +75,8 @@ def main():
     ap.add_argument("--only", choices=["durations", "decoder"], default=None, help="probe a single graph")
     ap.add_argument("--decoder", choices=["bucketed", "plain"], default="bucketed",
                     help="bucketed adds a `frames` input so inputs can be padded to fixed frame buckets")
+    ap.add_argument("--decoder-precision", choices=["float32", "float16", "int8"], default="float32",
+                    help="decoder conv/linear weights: float16 (with float16 compute) or weight-only int8")
     args = ap.parse_args()
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
@@ -115,6 +118,8 @@ def main():
             ["input_ids", "style"], ["duration", "prosody", "text"], "durations",
             args.output / "durations.aimodel", ct)
     if args.only in (None, "decoder"):
+        example = (en, asr, style, noise) + ((torch.tensor([frames], dtype=torch.int32),) if bucketed else ())
+        decoder = reduce_decoder_precision(decoder, args.decoder_precision, example)
         if bucketed:
             valid = torch.tensor([frames], dtype=torch.int32)
             report["conversion"]["decoder"] = convert(
@@ -142,6 +147,7 @@ def main():
             "sampleRate": SAMPLE_RATE, "samplesPerFrame": SAMPLES_PER_FRAME, "harmonics": HARMONICS,
             "maximumPhonemes": MAX_PHONEMES, "maximumFrames": MAX_FRAMES, "styleDimension": 256,
             **({"decoderBuckets": DECODER_BUCKETS} if bucketed else {}),
+            **({"decoderPrecision": args.decoder_precision} if args.decoder_precision != "float32" else {}),
             "boundaryToken": 0, "vocabulary": config["vocab"],
             "models": {
                 "durations": {"path": "durations.aimodel", "function": "durations",

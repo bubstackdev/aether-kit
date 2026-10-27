@@ -83,6 +83,7 @@ do {
   - A decorator around the model factory, the same pattern Krea uses, reserves each model's residency before opening it. Failed opens roll back, and the residency is held until joined unload.
   - It also reserves per-call scratch around each native call. Operation bytes are held for the whole request and must cover the retained segment audio.
   - These are caller estimates, not measured memory. Qualified estimates for the real models are not yet published.
+- **Frame cap.** `frameCap: KokoroFrameCap` limits utterance length. The default on every platform is `.standard`: 1024 frames, about 25.6 s. `.extended` (2048 frames) is an explicit opt-in that costs about 8 GB more GPU memory. Lower caps are allowed for devices with less memory. An utterance above the cap is refused before decoding, with an error that gives its frame count and the cap. Split such text into shorter segments. `prewarm()` stops at the cap.
 - **Shared GPU admission.** `gpu: GPUAdmissionOwner` opts a session into a host-shared `GPUAdmission`, following the Krea and FLUX pattern. Each request is granted before any model work or reservation, and `unload()` withdraws a request still waiting. The opt-in native suites take the shared lease through `nativeGPUGrant()`.
 - **Segment results** are retained in the returned array, at 2.4 KB per frame. A request is limited to `maximumSegments` (256).
 
@@ -132,9 +133,9 @@ The first masking's cost came from the decomposed two-pass norm statistics and f
 | First use of a new length | 1.9–5.8 s, every new length | Once per bucket; later lengths in a used bucket need no specialization |
 | Process footprint | 19.2 GB after 50 lengths, growing with each | about 4.2 GB through bucket 1024; 6–12 GB while bucket 2048 is in use |
 | Metal allocation | 33.9 GB, growing with each length | 13.5 GB with buckets 64–2048, flat within each bucket |
-| After `unload()` | 14.0 GB footprint, 17.6 GB Metal | footprint 0.33 GB in one run and 8.5 GB in another; Metal about 8.2 GB in both |
+| After `unload()` | 14.0 GB footprint, 17.6 GB Metal | with bucket 2048 used: footprint 0.33 GB or 8.5 GB (two runs), Metal about 8.2 GB; at or under the 1024 cap: 2.2 GB footprint and 2.1 GB Metal in both of two runs |
 
-Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. Size admission estimates for the largest bucket a session can reach, and prewarm only the buckets your utterances need. Where memory matters, keep segments at or below 1024 frames (about 25 s); on iOS, cap the maximum bucket at what the device fits. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
+Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. The session therefore caps utterances at 1024 frames by default (`KokoroFrameCap.standard`), so bucket 2048 is used only with `frameCap: .extended`, and bucket 4096 never. Size admission estimates for the largest bucket the cap allows, and prewarm only the buckets your utterances need. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
 
 **Cold first synthesis.** The qualification ran on a bundle exported minutes earlier that had never been specialized, so each bucket's first use was genuinely cold. No shared cache was cleared; Core AI exposes no per-process cache directory. Results:
 
@@ -158,6 +159,14 @@ These were stated in the test before the first passing native run:
 - token IDs and integer frames per token must equal upstream exactly;
 - waveform relative L2 ≤ 0.05 **and** ≤ 4 × that case's float32-vs-float64 upstream difference;
 - log-mel mean absolute difference ≤ 0.03 nats. The log-mel uses an 80-band HTK mel scale over 0–12 kHz, `n_fft` 1024, hop 256, ln with a 1e-5 floor, and is implemented identically in Python and Swift; the test cross-checks the two on the sensitivity pair.
+
+**Reduced-precision decoders** (float16 and weight-only int8 exports) use the following bounds, stated before their first native run on 2026-10-26:
+
+- frames exact; the duration graph stays float32;
+- waveform relative L2 ≤ min(0.25, 10 × the case's float32-vs-float64 upstream rel. L2);
+- log-mel mean ≤ min(0.08, 5 × that case's float32-vs-float64 log-mel mean).
+
+Both bounds scale with the model's measured float32 sensitivity for that case. The waveform bound is the looser of the two because phase error dominates waveform L2 and is perceptually weak, while the log-mel bound tracks the spectral envelope.
 
 The reason for a relative waveform bound: the vocoder's harmonic source accumulates phase over the utterance, which amplifies float32 rounding. A 1e-6 perturbation of the source moves the output by 1.5e-4 to 7e-4 relative L2. Upstream's own float32 run differs from its float64 run by 0.7–2.5%, the same order as the export.
 

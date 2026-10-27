@@ -16,6 +16,22 @@ private let maximumRelativeL2 = 0.05
 private let maximumLogMelMean = 0.03
 private let precisionFloorMultiple = 4.0
 
+// Reduced-precision decoders (stated 2026-10-26 before their first native run; docs/kokoro-speech.md):
+// frames exact (the duration graph stays float32); waveform relative L2 <= min(0.25, 10x the case's
+// float32-vs-float64 upstream rel L2); log-mel mean <= min(0.08, 5x that case's float32-vs-float64
+// log-mel mean). Phase error dominates waveform L2 and is perceptually weak, so the waveform bound is
+// looser than the spectral one; both scale with the model's own precision sensitivity per case.
+private struct Tolerance {
+    let relativeL2: Double
+    let logMel: Double
+    static func forCase(_ precision: String, floor: KokoroMetrics.Comparison) -> Tolerance {
+        if precision == "float32" {
+            return Tolerance(relativeL2: min(maximumRelativeL2, precisionFloorMultiple * floor.rel_l2), logMel: maximumLogMelMean)
+        }
+        return Tolerance(relativeL2: min(0.25, 10 * floor.rel_l2), logMel: min(0.08, 5 * floor.log_mel_mean_abs))
+    }
+}
+
 private struct ReferenceCase: Decodable {
     let name: String
     let voice: String
@@ -85,6 +101,7 @@ private struct KokoroQualificationReport: Encodable {
     var novelShapes: [ShapeTiming] = []
     var lifecycle = LifecycleReport()
     var decoderBuckets: [Int] = []
+    var decoderPrecision = "float32"
     var memoryMiB: [String: Double] = [:]
     var failures: [String] = []
 }
@@ -149,6 +166,7 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
     report.bundleVerified = true
     report.bundleFingerprint = assets.fingerprint
     report.decoderBuckets = assets.decoderBuckets
+    report.decoderPrecision = assets.decoderPrecision
     let referenceRoot = try nativePath("AETHER_KOKORO_REFERENCE")
     report.references = sha256Hex(try Data(contentsOf: referenceRoot.appendingPathComponent("references.json")))
     let index = try JSONSerialization.jsonObject(with: Data(contentsOf: referenceRoot.appendingPathComponent("references.json"))) as! [String: Any]
@@ -187,10 +205,11 @@ func kokoroNativeParityTimingAndLifecycle() async throws {
         if speech.audio.samples.count == expected.count {
             let value = KokoroMetrics.compare(speech.audio.samples, expected)
             comparison = value
-            let bound = min(maximumRelativeL2, precisionFloorMultiple * reference.float64_upstream.rel_l2)
+            let tolerance = Tolerance.forCase(assets.decoderPrecision, floor: reference.float64_upstream)
+            let bound = tolerance.relativeL2
             check(value.rel_l2 <= bound, "\(name): waveform rel L2 \(value.rel_l2) exceeds \(bound)")
-            check(value.log_mel_mean_abs <= maximumLogMelMean, "\(name): log-mel mean \(value.log_mel_mean_abs) exceeds \(maximumLogMelMean)")
-            passed = passed && value.rel_l2 <= bound && value.log_mel_mean_abs <= maximumLogMelMean
+            check(value.log_mel_mean_abs <= tolerance.logMel, "\(name): log-mel mean \(value.log_mel_mean_abs) exceeds \(tolerance.logMel)")
+            passed = passed && value.rel_l2 <= bound && value.log_mel_mean_abs <= tolerance.logMel
         } else {
             check(false, "\(name): sample count \(speech.audio.samples.count) differs from \(expected.count)")
             passed = false

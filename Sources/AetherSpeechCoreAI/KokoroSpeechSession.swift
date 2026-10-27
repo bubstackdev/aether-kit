@@ -161,6 +161,29 @@ private actor BudgetedKokoroModel: KokoroExecutable {
     deinit { residency.release() }
 }
 
+/// The longest utterance, in frames (600 samples, 25 ms each), a session decodes.
+///
+/// The decoder's GPU memory grows faster than its length: on the qualification Mac, bucket 1024 adds
+/// about 2.3 GB of Metal allocation and bucket 2048 about 8.3 GB more. `standard` (1024 frames, about
+/// 25.6 s) is the default on every platform; `extended` (2048 frames) is an explicit opt-in. Longer
+/// utterances are refused with an error naming their length and the cap; split the phonemes into
+/// shorter segments instead. Lower caps are allowed, for example on devices with less memory.
+public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
+    public static let standard = KokoroFrameCap(checked: 1024)
+    public static let extended = KokoroFrameCap(checked: 2048)
+    public let frames: Int
+    public var description: String { "\(frames) frames" }
+
+    public init(frames: Int) throws {
+        guard (2...Self.extended.frames).contains(frames) else {
+            throw AetherError.invalidRequest("Kokoro frame cap must be 2...\(Self.extended.frames) frames")
+        }
+        self.frames = frames
+    }
+
+    private init(checked frames: Int) { self.frames = frames }
+}
+
 /// Compute preference per graph. `recommended` runs the small duration graph on the CPU and the
 /// vocoder on the GPU: on macOS 27.0.1 GPU specialization of the duration graph fails inside
 /// MPSGraph (ANE region formation), while the decoder specializes and runs on the GPU.
@@ -197,13 +220,16 @@ public actor KokoroSpeechSession {
     private var active: Task<Void, Never>?
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
+    /// Utterances longer than this are refused before decoding.
+    public nonisolated let frameCap: KokoroFrameCap
 
     /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
     /// grant before any model work and holds it until its native work has joined. With admission, the request's
     /// operation reservation is taken after the grant, and `unload()` withdraws a request still waiting.
     public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil,
-                gpu: GPUAdmissionOwner? = nil) {
+                gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .standard) {
         self.assets = assets
+        self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(compute: compute, installation: nil), resources: resources))
@@ -211,8 +237,10 @@ public actor KokoroSpeechSession {
 
     /// Holds installation protection until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: KokoroComputePlacement = .recommended,
-                resources: KokoroResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) throws {
+                resources: KokoroResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
+                frameCap: KokoroFrameCap = .standard) throws {
         assets = try KokoroAssets.open(in: installation)
+        self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(
@@ -220,8 +248,9 @@ public actor KokoroSpeechSession {
     }
 
     init(assets: KokoroAssets, factory: any KokoroModelFactory, resources: KokoroResourceAdmission? = nil,
-         gpu: GPUAdmissionOwner? = nil) {
+         gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .standard) {
         self.assets = assets
+        self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
         runner = KokoroRunner(assets: assets, factory: Self.factory(factory, resources: resources))
@@ -258,7 +287,7 @@ public actor KokoroSpeechSession {
         guard !segments.isEmpty, segments.count <= Self.maximumSegments else {
             throw AetherError.invalidRequest("provide 1...\(Self.maximumSegments) Kokoro segments per request")
         }
-        let maximumFrames = min(assets.maximumFrames, resources?.maximumFrames ?? .max)
+        let limits = FrameLimits(cap: frameCap.frames, bundle: assets.maximumFrames, admission: resources?.maximumFrames)
         return try await perform { [runner, resources] in
             let operation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
             defer { operation?.release() }
@@ -267,7 +296,7 @@ public actor KokoroSpeechSession {
                 try Task.checkCancellation()
                 let segment = try KokoroSpeechConfiguration(voice: configuration.voice, speed: configuration.speed,
                                                             seed: configuration.seed &+ UInt64(index))
-                let speech = try await runner.synthesize(phonemes, configuration: segment, maximumFrames: maximumFrames) {
+                let speech = try await runner.synthesize(phonemes, configuration: segment, limits: limits) {
                     try progress(.framesPredicted(segment: index, frames: $0))
                 }
                 try Task.checkCancellation()
@@ -315,13 +344,13 @@ public actor KokoroSpeechSession {
         } onCancel: { task.cancel() }
     }
 
-    /// Loads the decoder and specializes it at every bucket up to `maximumFrames` (default: all), so
+    /// Loads the decoder and specializes it at every bucket up to `maximumFrames` (default: the frame cap), so
     /// that later utterances never wait for GPU specialization. Each bucket costs roughly 2-4 s once and
     /// keeps its specialization resident until `unload()`; see docs/kokoro-speech.md#length-buckets.
     /// Returns the buckets warmed (empty for an unbucketed bundle). Shares the request slot.
     @discardableResult
     public func prewarm(maximumFrames: Int? = nil) async throws -> [Int] {
-        let limit = min(maximumFrames ?? assets.maximumFrames, assets.maximumFrames, resources?.maximumFrames ?? .max)
+        let limit = min(maximumFrames ?? frameCap.frames, frameCap.frames, assets.maximumFrames, resources?.maximumFrames ?? .max)
         guard limit > 0 else { throw AetherError.invalidRequest("prewarm frame limit must be positive") }
         return try await perform { [runner, resources] in
             let operation = try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
@@ -339,6 +368,27 @@ public actor KokoroSpeechSession {
         if let active { _ = await active.result }
         await runner.unload()
         state = .closed
+    }
+}
+
+/// The frame limits in force for one session; the tightest one refuses with its own explanation.
+struct FrameLimits: Sendable {
+    let cap: Int
+    let bundle: Int
+    let admission: Int?
+
+    func check(_ frames: Int) throws {
+        if frames > bundle {
+            throw AetherError.invalidRequest("utterance needs \(frames) frames; this Kokoro bundle supports at most \(bundle); split the phonemes")
+        }
+        if let admission, frames > admission {
+            throw AetherError.invalidRequest("utterance needs \(frames) frames; the resource profile admits at most \(admission); split the phonemes")
+        }
+        if frames > cap {
+            let hint = cap < KokoroFrameCap.extended.frames
+                ? " or create the session with frameCap: .extended (\(KokoroFrameCap.extended.frames) frames, more GPU memory)" : ""
+            throw AetherError.invalidRequest("utterance needs \(frames) frames, above this session's \(cap)-frame cap; split the phonemes into shorter segments\(hint)")
+        }
     }
 }
 
@@ -401,7 +451,7 @@ private actor KokoroRunner {
     }
 
     func synthesize(
-        _ phonemes: KokoroPhonemes, configuration: KokoroSpeechConfiguration, maximumFrames: Int,
+        _ phonemes: KokoroPhonemes, configuration: KokoroSpeechConfiguration, limits: FrameLimits,
         framesPredicted: @Sendable ([Int]) throws -> Void
     ) async throws -> KokoroSpeech {
         guard phonemes.tokenIDs.allSatisfy(validTokens.contains) else {
@@ -417,7 +467,8 @@ private actor KokoroRunner {
         let sums = try KokoroContracts.float(predicted, "duration", shape: [1, tokens])
         let prosody = try KokoroContracts.float(predicted, "prosody", shape: [1, tokens, KokoroContracts.prosodyChannels])
         let text = try KokoroContracts.float(predicted, "text", shape: [1, KokoroContracts.textChannels, tokens])
-        let frames = try KokoroAlignment.frames(durationSums: sums.values, speed: configuration.speed, maximumFrames: maximumFrames)
+        let frames = try KokoroAlignment.frames(durationSums: sums.values, speed: configuration.speed, maximumFrames: .max)
+        try limits.check(frames.reduce(0, +))
         try framesPredicted(frames)
         try Task.checkCancellation()
         let total = frames.reduce(0, +)

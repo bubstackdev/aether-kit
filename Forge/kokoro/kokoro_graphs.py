@@ -543,6 +543,64 @@ class BucketedDecoderGraph(DecoderGraph):
         return y[..., pad:y.shape[-1] - pad].squeeze(1)  # [1,600F_b]; samples >= 600*frames are padding
 
 
+class HalfCompute(nn.Module):
+    """Runs a conv/linear module with float16 weights and compute behind float32 boundaries."""
+
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.inner = module.half()
+
+    def forward(self, x):
+        return self.inner(x.half()).float()
+
+
+_REDUCIBLE = (nn.Conv1d, nn.ConvTranspose1d, nn.Linear)
+
+
+def _reducible_children(graph: nn.Module):
+    """(parent, name, module, path) for every conv/linear except the harmonic-source merge.
+
+    The source's 9->1 linear runs on the phase-accumulated sine bank, the most precision-sensitive
+    signal in the model, and holds 10 parameters, so it stays float32."""
+    keep = graph.generator.m_source.l_linear
+    found = []
+    for path, parent in graph.named_modules():
+        for name, child in parent.named_children():
+            if isinstance(child, _REDUCIBLE) and child is not keep:
+                found.append((parent, name, child, f"{path}.{name}" if path else name))
+    return found
+
+
+def reduce_decoder_precision(graph: nn.Module, precision: str, example_inputs: tuple):
+    """float16: conv/linear weights and compute in float16; norms, LSTM, source, STFT/iSTFT stay float32.
+    int8: weight-only symmetric per-channel int8 for conv/linear (coreai-opt), compute float32.
+    Graph inputs and outputs stay float32, so the Swift contract is unchanged."""
+    if precision == "float32":
+        return graph
+    targets = _reducible_children(graph)
+    if precision == "float16":
+        for parent, name, child, _ in targets:
+            setattr(parent, name, HalfCompute(child))
+        return graph
+    if precision == "int8":
+        import re
+        from coreai_opt.quantization import Quantizer
+        from coreai_opt.quantization.config import ModuleQuantizerConfig, QuantizerConfig
+        from coreai_opt.quantization.spec.granularity import PerChannelGranularity
+        from coreai_opt.quantization.spec.qscheme import QuantizationScheme
+        from coreai_opt.quantization.spec.spec import QuantizationSpec
+
+        spec = QuantizationSpec(dtype=torch.int8, qscheme=QuantizationScheme.SYMMETRIC,
+                                granularity=PerChannelGranularity(axis=None))
+        module_config = ModuleQuantizerConfig(op_input_spec=None, op_output_spec=None, op_state_spec={"weight": spec})
+        configs = {f"^{re.escape(path)}$": module_config for _, _, _, path in targets}
+        quantizer = Quantizer(graph, QuantizerConfig(global_config=None, module_name_configs=configs, execution_mode="eager"))
+        with torch.no_grad():
+            prepared = quantizer.prepare(tuple(t.clone() for t in example_inputs))
+            return quantizer.finalize(prepared).eval()
+    raise ValueError(f"unknown decoder precision {precision}")
+
+
 # ---------------------------------------------------------------------------
 # Host steps shared with the Swift implementation
 

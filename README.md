@@ -163,7 +163,7 @@ Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. 
 - **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped.
 - **Language:** 0.0.1-contract (running-position) assets reload the native model every 128 submissions. The bucketed contract avoids reloads at a per-step cost (about 0.88× an unrecycled running step on Qwen3-0.6B fp16, with a longer time to first token) and is qualified on that model on one Mac only.
 - **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
-- **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory until unload; bucket 2048 alone adds about 8 GB. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. float32 export only.
+- **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory until unload; bucket 2048 alone adds about 8 GB. Sessions therefore cap utterances at 1024 frames (about 25.6 s) by default; `frameCap: .extended` raises the cap to 2048, and longer segments are refused with their length and the cap. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. float32 export only.
 - **CI** needs an equipped macOS 27 runner; until then, checks run locally.
 
 ## License

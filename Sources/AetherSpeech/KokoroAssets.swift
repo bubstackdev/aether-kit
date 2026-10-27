@@ -82,6 +82,9 @@ public struct KokoroAssets: Sendable {
     /// takes a `frames` input and each utterance is zero-padded to the smallest bucket that fits, so
     /// the GPU specializes at most once per bucket. Empty for bundles exported without buckets.
     public let decoderBuckets: [Int]
+    /// Decoder weight storage: `float32`, `float16` (with float16 conv/linear compute) or weight-only `int8`.
+    /// Graph inputs and outputs are float32 for every precision.
+    public let decoderPrecision: String
     public let source: Source
     /// SHA-256 of `kokoro.json`, which pins every other file.
     public let fingerprint: String
@@ -154,6 +157,7 @@ public struct KokoroAssets: Sendable {
         }
         return Self(root: root, durations: durations, decoder: decoder, vocabulary: try KokoroVocabulary(contract.vocabulary),
                     voices: voices, maximumFrames: contract.maximumFrames, decoderBuckets: contract.decoderBuckets ?? [],
+                    decoderPrecision: contract.decoderPrecision ?? "float32",
                     source: contract.source,
                     fingerprint: digest(data), contractByteCount: UInt64(data.count))
     }
@@ -238,6 +242,7 @@ private struct Contract: Decodable {
     let maximumPhonemes: Int
     let maximumFrames: Int
     let decoderBuckets: [Int]?
+    let decoderPrecision: String?
     let styleDimension: Int
     let boundaryToken: Int
     let vocabulary: [String: Int]
@@ -259,6 +264,7 @@ private struct Contract: Decodable {
               sampleRate == KokoroAssets.sampleRate, samplesPerFrame == KokoroAssets.samplesPerFrame,
               harmonics == KokoroAssets.harmonics, maximumPhonemes == KokoroPhonemes.maximumCount,
               (2...65_536).contains(maximumFrames), styleDimension == KokoroVoiceStyles.dimension,
+              ["float32", "float16", "int8"].contains(decoderPrecision ?? "float32"),
               decoderBuckets.map({ b in !b.isEmpty && b.count <= 32 && b.first! >= 2 && b.last == maximumFrames
                   && zip(b, b.dropFirst()).allSatisfy { $0 < $1 } }) ?? true,
               boundaryToken == Int(KokoroVocabulary.boundaryToken), source.repository == "hexgrad/Kokoro-82M",
