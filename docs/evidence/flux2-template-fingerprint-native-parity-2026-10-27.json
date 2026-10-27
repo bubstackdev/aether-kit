@@ -1,0 +1,1470 @@
+{
+  "bundle" : {
+    "fingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+    "referenceFingerprint" : "d8a98cb04e2a28167a6354443677fa19d9a5ad6b8019cc8bbb3bd184f34d7664",
+    "revision" : "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "root" : "~\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/forge-export-2026-10-27\/bundle"
+  },
+  "checkCount" : 113,
+  "checks" : [
+    {
+      "bar" : 1,
+      "case" : "lighthouse-512",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "lighthouse-512",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997250321465447
+    },
+    {
+      "bar" : 1,
+      "case" : "red-circle-512",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "red-circle-512",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997250689059158
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-512",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-512",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.9999724299016971
+    },
+    {
+      "bar" : 1,
+      "case" : "ramen-576x448",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "ramen-576x448",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997237122091787
+    },
+    {
+      "bar" : 1,
+      "case" : "cafe-512",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cafe-512",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997244451210465
+    },
+    {
+      "bar" : 1,
+      "case" : "cat-1024",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997234970661208
+    },
+    {
+      "bar" : 1,
+      "case" : "harbor-768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997241601666365
+    },
+    {
+      "bar" : 1,
+      "case" : "street-1024x576",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997239742382549
+    },
+    {
+      "bar" : 1,
+      "case" : "desk-1024x768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997237392567351
+    },
+    {
+      "bar" : 1,
+      "case" : "canyon-1344x768",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.9999723543650183
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997246615247337
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997242078523185
+    },
+    {
+      "bar" : 1,
+      "case" : "lighthouse-512",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "lighthouse-512",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99985250027922046
+    },
+    {
+      "bar" : 0.999,
+      "case" : "lighthouse-512",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99970619004239991
+    },
+    {
+      "bar" : 0.999,
+      "case" : "lighthouse-512",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.9998104130683565
+    },
+    {
+      "bar" : 0.999,
+      "case" : "lighthouse-512",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99987944562217379
+    },
+    {
+      "bar" : 1,
+      "case" : "red-circle-512",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "red-circle-512",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99984218999920049
+    },
+    {
+      "bar" : 0.999,
+      "case" : "red-circle-512",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99994974249766766
+    },
+    {
+      "bar" : 0.999,
+      "case" : "red-circle-512",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99995892592401903
+    },
+    {
+      "bar" : 0.999,
+      "case" : "red-circle-512",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99995633292096631
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-512",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-512",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99981332310224214
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-512",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99974772234817677
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-512",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.9997792681916472
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-512",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99986248430748481
+    },
+    {
+      "bar" : 1,
+      "case" : "ramen-576x448",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "ramen-576x448",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99986688254326028
+    },
+    {
+      "bar" : 0.999,
+      "case" : "ramen-576x448",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99967348215420671
+    },
+    {
+      "bar" : 0.999,
+      "case" : "ramen-576x448",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99980305055776386
+    },
+    {
+      "bar" : 0.999,
+      "case" : "ramen-576x448",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99988101475704561
+    },
+    {
+      "bar" : 1,
+      "case" : "cafe-512",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cafe-512",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99987822391673098
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cafe-512",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99961137177948944
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cafe-512",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99976872199725697
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cafe-512",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99984525724469486
+    },
+    {
+      "bar" : 1,
+      "case" : "cat-1024",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99967379667514988
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99942784240836791
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.9996463424823292
+    },
+    {
+      "bar" : 0.999,
+      "case" : "cat-1024",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983619192420825
+    },
+    {
+      "bar" : 1,
+      "case" : "harbor-768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99989099524820546
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99956321414192373
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99963938435633348
+    },
+    {
+      "bar" : 0.999,
+      "case" : "harbor-768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983265344977978
+    },
+    {
+      "bar" : 1,
+      "case" : "street-1024x576",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99976611226781087
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99938625190328689
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99958653533068509
+    },
+    {
+      "bar" : 0.999,
+      "case" : "street-1024x576",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99973677465199051
+    },
+    {
+      "bar" : 1,
+      "case" : "desk-1024x768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99982525493720775
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99924669515568021
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99969897298877108
+    },
+    {
+      "bar" : 0.999,
+      "case" : "desk-1024x768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983234711745117
+    },
+    {
+      "bar" : 1,
+      "case" : "canyon-1344x768",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99985175031663109
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99953639907472869
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99964677650887757
+    },
+    {
+      "bar" : 0.999,
+      "case" : "canyon-1344x768",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983469185408269
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "referencePositions",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99983021764515301
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99979366239877898
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99981466887732851
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983405009259507
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referencePositions",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99945444222466739
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99944250850462424
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99977459605549357
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.9997692648044143
+    },
+    {
+      "bar" : 35,
+      "case" : "lighthouse-512",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 89.940996079628107
+    },
+    {
+      "bar" : 35,
+      "case" : "red-circle-512",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 100.45006067525517
+    },
+    {
+      "bar" : 35,
+      "case" : "fox-512",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 94.133649514165526
+    },
+    {
+      "bar" : 35,
+      "case" : "ramen-576x448",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 91.887066613131509
+    },
+    {
+      "bar" : 35,
+      "case" : "cafe-512",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 93.117231813478242
+    },
+    {
+      "bar" : 35,
+      "case" : "cat-1024",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 94.149802113560085
+    },
+    {
+      "bar" : 35,
+      "case" : "harbor-768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 91.813119262883617
+    },
+    {
+      "bar" : 35,
+      "case" : "street-1024x576",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 87.684222490808438
+    },
+    {
+      "bar" : 35,
+      "case" : "desk-1024x768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 97.440307601733011
+    },
+    {
+      "bar" : 35,
+      "case" : "canyon-1344x768",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 91.225125924038281
+    },
+    {
+      "bar" : 35,
+      "case" : "fox-watercolor-ref1",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 89.623008589181012
+    },
+    {
+      "bar" : 35,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 87.951952448745274
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "referenceLatentCosine[0]",
+      "passed" : true,
+      "value" : 0.99999999999814326
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceLatentCosine[0]",
+      "passed" : true,
+      "value" : 0.99999999999814326
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceLatentCosine[1]",
+      "passed" : true,
+      "value" : 0.99999999999824529
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "lighthouse-512",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99118373193613873
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "red-circle-512",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99986967150853945
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "fox-512",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98967788786021571
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "ramen-576x448",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99143735567949887
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "cafe-512",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.959534200753828
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "cat-1024",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.96377713880590554
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "harbor-768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99380776403017912
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "street-1024x576",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.96097043890413247
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "desk-1024x768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98491366498528488
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "canyon-1344x768",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.9867241244496765
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "fox-watercolor-ref1",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99852034340384532
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98772250944336115
+    }
+  ],
+  "elapsedSeconds" : "125.5",
+  "fixtures" : {
+    "cases" : "lighthouse-512,red-circle-512,fox-512,ramen-576x448,cafe-512,cat-1024,harbor-768,street-1024x576,desk-1024x768,canyon-1344x768,fox-watercolor-ref1,fox-lighthouse-ref2",
+    "reference" : "caf92bb7d83d685c",
+    "t2i" : "ffc4b1365159e40c"
+  },
+  "kind" : "flux2-native-parity",
+  "passed" : true,
+  "phases" : [
+    {
+      "footprintBytesAfter" : 666338744,
+      "lifetimePeakFootprintBytes" : 1022054312,
+      "name" : "textEncoder",
+      "seconds" : 4.0573519468307495
+    },
+    {
+      "footprintBytesAfter" : 1290864512,
+      "lifetimePeakFootprintBytes" : 8193055368,
+      "name" : "denoiser",
+      "seconds" : 28.842898011207581
+    },
+    {
+      "footprintBytesAfter" : 1717717560,
+      "lifetimePeakFootprintBytes" : 17366715560,
+      "name" : "vae",
+      "seconds" : 5.7697010040283203
+    },
+    {
+      "footprintBytesAfter" : 2374371944,
+      "lifetimePeakFootprintBytes" : 17366715560,
+      "name" : "session",
+      "seconds" : 84.327916026115417
+    }
+  ],
+  "records" : [
+    {
+      "case" : "lighthouse-512",
+      "name" : "imagePathPSNR",
+      "value" : 34.400811542241527
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.89783549862618484
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "imagePathPSNR",
+      "value" : 52.165557725566984
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.99845963371221536
+    },
+    {
+      "case" : "fox-512",
+      "name" : "imagePathPSNR",
+      "value" : 34.932701694875313
+    },
+    {
+      "case" : "fox-512",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.90114267850537044
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "imagePathPSNR",
+      "value" : 33.340941551906916
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.94794219590268314
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "imagePathPSNR",
+      "value" : 29.355240528250977
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.91871934878895012
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "imagePathPSNR",
+      "value" : 27.793912674603053
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.86241319442140352
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "imagePathPSNR",
+      "value" : 36.220128202532983
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.92911550972279566
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "imagePathPSNR",
+      "value" : 29.489489511362748
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.83239857784426319
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "imagePathPSNR",
+      "value" : 34.31362334589187
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.86645041664812017
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "imagePathPSNR",
+      "value" : 33.463625245012672
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.92862681996591034
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "imagePathPSNR",
+      "value" : 45.367609171041821
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.96614353735537795
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "imagePathPSNR",
+      "value" : 32.934300569805004
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.87115372466751895
+    }
+  ],
+  "schema" : 1,
+  "timings" : [
+    {
+      "name" : "verifyBundle",
+      "seconds" : 1.2692780494689941
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "textEncode",
+      "seconds" : 0.58738207817077637
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "textEncode",
+      "seconds" : 0.055418014526367188
+    },
+    {
+      "case" : "fox-512",
+      "name" : "textEncode",
+      "seconds" : 0.0560760498046875
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "textEncode",
+      "seconds" : 0.056745052337646484
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "textEncode",
+      "seconds" : 0.055930972099304199
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "textEncode",
+      "seconds" : 0.057201981544494629
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "textEncode",
+      "seconds" : 0.058343052864074707
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "textEncode",
+      "seconds" : 0.066184043884277344
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "textEncode",
+      "seconds" : 0.07155001163482666
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "textEncode",
+      "seconds" : 0.077894926071166992
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "textEncode",
+      "seconds" : 0.085079073905944824
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "textEncode",
+      "seconds" : 0.087994933128356934
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "denoiseStep",
+      "seconds" : 1.3098920583724976
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.22004389762878418
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.21715199947357178
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.22149407863616943
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.23642599582672119
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.23861598968505859
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.2355198860168457
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.24507498741149902
+    },
+    {
+      "case" : "fox-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.24766707420349121
+    },
+    {
+      "case" : "fox-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.25948894023895264
+    },
+    {
+      "case" : "fox-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.25996804237365723
+    },
+    {
+      "case" : "fox-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.26447796821594238
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "denoiseStep",
+      "seconds" : 0.27241301536560059
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "denoiseStep",
+      "seconds" : 0.27861297130584717
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "denoiseStep",
+      "seconds" : 0.28537201881408691
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "denoiseStep",
+      "seconds" : 0.28806805610656738
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.28872799873352051
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.29571402072906494
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.30407500267028809
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "denoiseStep",
+      "seconds" : 0.30113399028778076
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 1.110197901725769
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 1.1052559614181519
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 1.1536809206008911
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "denoiseStep",
+      "seconds" : 1.1464109420776367
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.63439297676086426
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.63531494140625
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.62425398826599121
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "denoiseStep",
+      "seconds" : 0.62977695465087891
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.62019598484039307
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.6201179027557373
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.61197090148925781
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "denoiseStep",
+      "seconds" : 0.62441098690032959
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.78861403465270996
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.81876802444458008
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.82377898693084717
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.81035697460174561
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 1.0197210311889648
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 1.046760082244873
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 1.0225019454956055
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "denoiseStep",
+      "seconds" : 0.9920428991317749
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.39376294612884521
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.34009003639221191
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.33358407020568848
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.33632397651672363
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.32172596454620361
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.31844604015350342
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.32042801380157471
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.31739795207977295
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "decode",
+      "seconds" : 0.37319600582122803
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "decode",
+      "seconds" : 0.13085901737213135
+    },
+    {
+      "case" : "fox-512",
+      "name" : "decode",
+      "seconds" : 0.14312100410461426
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "decode",
+      "seconds" : 0.3112189769744873
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "decode",
+      "seconds" : 0.13383197784423828
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "decode",
+      "seconds" : 0.84459197521209717
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "decode",
+      "seconds" : 0.52711999416351318
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "decode",
+      "seconds" : 0.54082000255584717
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "decode",
+      "seconds" : 0.67189502716064453
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "decode",
+      "seconds" : 0.84364998340606689
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "decode",
+      "seconds" : 0.17687201499938965
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "decode",
+      "seconds" : 0.29077601432800293
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "referenceEncode",
+      "seconds" : 0.17615008354187012
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceEncode",
+      "seconds" : 0.019920945167541504
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceEncode",
+      "seconds" : 0.13163590431213379
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "generateProvided",
+      "seconds" : 2.2936310768127441
+    },
+    {
+      "case" : "lighthouse-512",
+      "name" : "generateFromPrompt",
+      "seconds" : 5.0957520008087158
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "generateProvided",
+      "seconds" : 0.99798095226287842
+    },
+    {
+      "case" : "red-circle-512",
+      "name" : "generateFromPrompt",
+      "seconds" : 2.777230978012085
+    },
+    {
+      "case" : "fox-512",
+      "name" : "generateProvided",
+      "seconds" : 1.0008519887924194
+    },
+    {
+      "case" : "fox-512",
+      "name" : "generateFromPrompt",
+      "seconds" : 2.6588020324707031
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "generateProvided",
+      "seconds" : 2.1936290264129639
+    },
+    {
+      "case" : "ramen-576x448",
+      "name" : "generateFromPrompt",
+      "seconds" : 2.5624070167541504
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "generateProvided",
+      "seconds" : 2.25040602684021
+    },
+    {
+      "case" : "cafe-512",
+      "name" : "generateFromPrompt",
+      "seconds" : 2.5778989791870117
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "generateProvided",
+      "seconds" : 4.9050899744033813
+    },
+    {
+      "case" : "cat-1024",
+      "name" : "generateFromPrompt",
+      "seconds" : 5.7276090383529663
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "generateProvided",
+      "seconds" : 3.3765029907226562
+    },
+    {
+      "case" : "harbor-768",
+      "name" : "generateFromPrompt",
+      "seconds" : 3.8088959455490112
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "generateProvided",
+      "seconds" : 2.6098899841308594
+    },
+    {
+      "case" : "street-1024x576",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.0999770164489746
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "generateProvided",
+      "seconds" : 5.6230210065841675
+    },
+    {
+      "case" : "desk-1024x768",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.9588590860366821
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "generateProvided",
+      "seconds" : 5.4840610027313232
+    },
+    {
+      "case" : "canyon-1344x768",
+      "name" : "generateFromPrompt",
+      "seconds" : 6.3539860248565674
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "prepareReferences",
+      "seconds" : 0.32276296615600586
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "generateProvided",
+      "seconds" : 2.6805100440979004
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "generateFromPrompt",
+      "seconds" : 3.3361209630966187
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "prepareReferences",
+      "seconds" : 0.35324501991271973
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "generateProvided",
+      "seconds" : 2.2619869709014893
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "generateFromPrompt",
+      "seconds" : 2.9967828989028931
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 29] AetherSpeechTests-product
+Build complete! (1.23 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test flux2NativeParityAgainstIndependentReferences() started.
+flux2 check tokenIDs lighthouse-512: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine lighthouse-512: 0.9999725032146545 (bar 0.999) pass
+flux2 check tokenIDs red-circle-512: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine red-circle-512: 0.9999725068905916 (bar 0.999) pass
+flux2 check tokenIDs fox-512: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine fox-512: 0.9999724299016971 (bar 0.999) pass
+flux2 check tokenIDs ramen-576x448: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine ramen-576x448: 0.9999723712209179 (bar 0.999) pass
+flux2 check tokenIDs cafe-512: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine cafe-512: 0.9999724445121047 (bar 0.999) pass
+flux2 check tokenIDs cat-1024: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine cat-1024: 0.9999723497066121 (bar 0.999) pass
+flux2 check tokenIDs harbor-768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine harbor-768: 0.9999724160166636 (bar 0.999) pass
+flux2 check tokenIDs street-1024x576: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine street-1024x576: 0.9999723974238255 (bar 0.999) pass
+flux2 check tokenIDs desk-1024x768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine desk-1024x768: 0.9999723739256735 (bar 0.999) pass
+flux2 check tokenIDs canyon-1344x768: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine canyon-1344x768: 0.9999723543650183 (bar 0.999) pass
+flux2 check tokenIDs fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine fox-watercolor-ref1: 0.9999724661524734 (bar 0.999) pass
+flux2 check tokenIDs fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine fox-lighthouse-ref2: 0.9999724207852319 (bar 0.999) pass
+flux2 check timesteps lighthouse-512: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] lighthouse-512: 0.9998525002792205 (bar 0.999) pass
+flux2 check velocityCosine[1] lighthouse-512: 0.9997061900423999 (bar 0.999) pass
+flux2 check velocityCosine[2] lighthouse-512: 0.9998104130683565 (bar 0.999) pass
+flux2 check velocityCosine[3] lighthouse-512: 0.9998794456221738 (bar 0.999) pass
+flux2 check timesteps red-circle-512: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] red-circle-512: 0.9998421899992005 (bar 0.999) pass
+flux2 check velocityCosine[1] red-circle-512: 0.9999497424976677 (bar 0.999) pass
+flux2 check velocityCosine[2] red-circle-512: 0.999958925924019 (bar 0.999) pass
+flux2 check velocityCosine[3] red-circle-512: 0.9999563329209663 (bar 0.999) pass
+flux2 check timesteps fox-512: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] fox-512: 0.9998133231022421 (bar 0.999) pass
+flux2 check velocityCosine[1] fox-512: 0.9997477223481768 (bar 0.999) pass
+flux2 check velocityCosine[2] fox-512: 0.9997792681916472 (bar 0.999) pass
+flux2 check velocityCosine[3] fox-512: 0.9998624843074848 (bar 0.999) pass
+flux2 check timesteps ramen-576x448: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] ramen-576x448: 0.9998668825432603 (bar 0.999) pass
+flux2 check velocityCosine[1] ramen-576x448: 0.9996734821542067 (bar 0.999) pass
+flux2 check velocityCosine[2] ramen-576x448: 0.9998030505577639 (bar 0.999) pass
+flux2 check velocityCosine[3] ramen-576x448: 0.9998810147570456 (bar 0.999) pass
+flux2 check timesteps cafe-512: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] cafe-512: 0.999878223916731 (bar 0.999) pass
+flux2 check velocityCosine[1] cafe-512: 0.9996113717794894 (bar 0.999) pass
+flux2 check velocityCosine[2] cafe-512: 0.999768721997257 (bar 0.999) pass
+flux2 check velocityCosine[3] cafe-512: 0.9998452572446949 (bar 0.999) pass
+flux2 check timesteps cat-1024: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] cat-1024: 0.9996737966751499 (bar 0.999) pass
+flux2 check velocityCosine[1] cat-1024: 0.9994278424083679 (bar 0.999) pass
+flux2 check velocityCosine[2] cat-1024: 0.9996463424823292 (bar 0.999) pass
+flux2 check velocityCosine[3] cat-1024: 0.9998361919242083 (bar 0.999) pass
+flux2 check timesteps harbor-768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] harbor-768: 0.9998909952482055 (bar 0.999) pass
+flux2 check velocityCosine[1] harbor-768: 0.9995632141419237 (bar 0.999) pass
+flux2 check velocityCosine[2] harbor-768: 0.9996393843563335 (bar 0.999) pass
+flux2 check velocityCosine[3] harbor-768: 0.9998326534497798 (bar 0.999) pass
+flux2 check timesteps street-1024x576: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] street-1024x576: 0.9997661122678109 (bar 0.999) pass
+flux2 check velocityCosine[1] street-1024x576: 0.9993862519032869 (bar 0.999) pass
+flux2 check velocityCosine[2] street-1024x576: 0.9995865353306851 (bar 0.999) pass
+flux2 check velocityCosine[3] street-1024x576: 0.9997367746519905 (bar 0.999) pass
+flux2 check timesteps desk-1024x768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] desk-1024x768: 0.9998252549372078 (bar 0.999) pass
+flux2 check velocityCosine[1] desk-1024x768: 0.9992466951556802 (bar 0.999) pass
+flux2 check velocityCosine[2] desk-1024x768: 0.9996989729887711 (bar 0.999) pass
+flux2 check velocityCosine[3] desk-1024x768: 0.9998323471174512 (bar 0.999) pass
+flux2 check timesteps canyon-1344x768: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] canyon-1344x768: 0.9998517503166311 (bar 0.999) pass
+flux2 check velocityCosine[1] canyon-1344x768: 0.9995363990747287 (bar 0.999) pass
+flux2 check velocityCosine[2] canyon-1344x768: 0.9996467765088776 (bar 0.999) pass
+flux2 check velocityCosine[3] canyon-1344x768: 0.9998346918540827 (bar 0.999) pass
+flux2 check referencePositions fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check timesteps fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] fox-watercolor-ref1: 0.999830217645153 (bar 0.999) pass
+flux2 check velocityCosine[1] fox-watercolor-ref1: 0.999793662398779 (bar 0.999) pass
+flux2 check velocityCosine[2] fox-watercolor-ref1: 0.9998146688773285 (bar 0.999) pass
+flux2 check velocityCosine[3] fox-watercolor-ref1: 0.9998340500925951 (bar 0.999) pass
+flux2 check referencePositions fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check timesteps fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] fox-lighthouse-ref2: 0.9994544422246674 (bar 0.999) pass
+flux2 check velocityCosine[1] fox-lighthouse-ref2: 0.9994425085046242 (bar 0.999) pass
+flux2 check velocityCosine[2] fox-lighthouse-ref2: 0.9997745960554936 (bar 0.999) pass
+flux2 check velocityCosine[3] fox-lighthouse-ref2: 0.9997692648044143 (bar 0.999) pass
+flux2 check decoderPSNR lighthouse-512: 89.9409960796281 (bar 35.0) pass
+flux2 check decoderPSNR red-circle-512: 100.45006067525517 (bar 35.0) pass
+flux2 check decoderPSNR fox-512: 94.13364951416553 (bar 35.0) pass
+flux2 check decoderPSNR ramen-576x448: 91.88706661313151 (bar 35.0) pass
+flux2 check decoderPSNR cafe-512: 93.11723181347824 (bar 35.0) pass
+flux2 check decoderPSNR cat-1024: 94.14980211356009 (bar 35.0) pass
+flux2 check decoderPSNR harbor-768: 91.81311926288362 (bar 35.0) pass
+flux2 check decoderPSNR street-1024x576: 87.68422249080844 (bar 35.0) pass
+flux2 check decoderPSNR desk-1024x768: 97.44030760173301 (bar 35.0) pass
+flux2 check decoderPSNR canyon-1344x768: 91.22512592403828 (bar 35.0) pass
+flux2 check decoderPSNR fox-watercolor-ref1: 89.62300858918101 (bar 35.0) pass
+flux2 check decoderPSNR fox-lighthouse-ref2: 87.95195244874527 (bar 35.0) pass
+flux2 check referenceLatentCosine[0] fox-watercolor-ref1: 0.9999999999981433 (bar 0.999) pass
+flux2 check referenceLatentCosine[0] fox-lighthouse-ref2: 0.9999999999981433 (bar 0.999) pass
+flux2 check referenceLatentCosine[1] fox-lighthouse-ref2: 0.9999999999982453 (bar 0.999) pass
+flux2 check imagePathSSIM lighthouse-512: 0.9911837319361387 (bar 0.94) pass
+flux2 record imagePathPSNR lighthouse-512: 34.40081154224153
+flux2 record wholePipelineSSIM lighthouse-512: 0.8978354986261848
+flux2 check imagePathSSIM red-circle-512: 0.9998696715085394 (bar 0.94) pass
+flux2 record imagePathPSNR red-circle-512: 52.165557725566984
+flux2 record wholePipelineSSIM red-circle-512: 0.9984596337122154
+flux2 check imagePathSSIM fox-512: 0.9896778878602157 (bar 0.94) pass
+flux2 record imagePathPSNR fox-512: 34.93270169487531
+flux2 record wholePipelineSSIM fox-512: 0.9011426785053704
+flux2 check imagePathSSIM ramen-576x448: 0.9914373556794989 (bar 0.94) pass
+flux2 record imagePathPSNR ramen-576x448: 33.340941551906916
+flux2 record wholePipelineSSIM ramen-576x448: 0.9479421959026831
+flux2 check imagePathSSIM cafe-512: 0.959534200753828 (bar 0.94) pass
+flux2 record imagePathPSNR cafe-512: 29.355240528250977
+flux2 record wholePipelineSSIM cafe-512: 0.9187193487889501
+flux2 check imagePathSSIM cat-1024: 0.9637771388059055 (bar 0.94) pass
+flux2 record imagePathPSNR cat-1024: 27.793912674603053
+flux2 record wholePipelineSSIM cat-1024: 0.8624131944214035
+flux2 check imagePathSSIM harbor-768: 0.9938077640301791 (bar 0.94) pass
+flux2 record imagePathPSNR harbor-768: 36.22012820253298
+flux2 record wholePipelineSSIM harbor-768: 0.9291155097227957
+flux2 check imagePathSSIM street-1024x576: 0.9609704389041325 (bar 0.94) pass
+flux2 record imagePathPSNR street-1024x576: 29.48948951136275
+flux2 record wholePipelineSSIM street-1024x576: 0.8323985778442632
+flux2 check imagePathSSIM desk-1024x768: 0.9849136649852849 (bar 0.94) pass
+flux2 record imagePathPSNR desk-1024x768: 34.31362334589187
+flux2 record wholePipelineSSIM desk-1024x768: 0.8664504166481202
+flux2 check imagePathSSIM canyon-1344x768: 0.9867241244496765 (bar 0.94) pass
+flux2 record imagePathPSNR canyon-1344x768: 33.46362524501267
+flux2 record wholePipelineSSIM canyon-1344x768: 0.9286268199659103
+flux2 check imagePathSSIM fox-watercolor-ref1: 0.9985203434038453 (bar 0.94) pass
+flux2 record imagePathPSNR fox-watercolor-ref1: 45.36760917104182
+flux2 record wholePipelineSSIM fox-watercolor-ref1: 0.966143537355378
+flux2 check imagePathSSIM fox-lighthouse-ref2: 0.9877225094433612 (bar 0.94) pass
+flux2 record imagePathPSNR fox-lighthouse-ref2: 32.934300569805
+flux2 record wholePipelineSSIM fox-lighthouse-ref2: 0.871153724667519
+✔ Test flux2NativeParityAgainstIndependentReferences() passed after 125.492 seconds.
+✔ Test run with 1 test in 0 suites passed after 125.493 seconds.

@@ -274,6 +274,14 @@ The token IDs do not change. On CPU, with the bundle and both CPU fixture paths 
 prompts and six edge cases. Rendering with thinking on instead makes both tests fail, so they do detect a render change.
 The evidence records named above keep the 0.0.2 values.
 
+The new identities were recorded natively once (M5 Max, macOS 27.0.1, `preferGPU`, the parity and lifecycle
+commands below with `AETHER_FLUX2_CASES=all`, 2.7 minutes of GPU-lock time). Parity passes **113/113** and lifecycle **44/44**, and every check value equals the 0.0.2
+qualification's exactly, so the qualification carries over to `d27cefc4…`. Both reports name both fixtures
+(`ffc4b136…` and `caf92bb7…`). See the [parity report](evidence/flux2-template-fingerprint-native-parity-2026-10-27.json)
+and [log](evidence/flux2-template-fingerprint-native-parity-2026-10-27.log), and the
+[lifecycle report](evidence/flux2-template-fingerprint-native-lifecycle-2026-10-27.json) and
+[log](evidence/flux2-template-fingerprint-native-lifecycle-2026-10-27.log).
+
 ### Qualified bundle a48aaf07 against the CPU references (2026-10-27)
 
 M5 Max, macOS 27.0.1, `preferGPU`. All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on `a48aaf07…` pass
