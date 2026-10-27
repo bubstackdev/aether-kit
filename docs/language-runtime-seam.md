@@ -1,6 +1,7 @@
 # Language runtime seam
 
-Status: design, 2026-10-27. Nothing here is implemented yet. This is the first piece of the 0.0.3 app-facing language
+Status: design approved and commits 1–5 implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
+commit 7 is next and commit 6 waits for the decoder rework. This is the first piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)): a sampler and logits hook, and a
 `LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -65,8 +66,9 @@ not on the session actor.
 
 1. **A new target, `AetherLanguageRuntime`, holds the protocol, the sampler, the constraint hook and the shared decode
    loop.** It depends only on the Swift standard library and Foundation: no Core AI, Metal, `Synchronization` or
-   AetherKit. `AetherLanguageCoreAI` depends on it. A future MLX backend and the `AetherLanguage` facade depend on it
-   too. It's a library product, so an out-of-package backend can conform.
+   AetherKit. `AetherLanguageCoreAI` depends on it and re-exports it. A future MLX backend and the `AetherLanguage`
+   facade depend on it too. It's a library product, so an out-of-package backend can conform; the shared decode loop
+   and sampler are `package` for now, and become public only if a backend outside the package needs them.
 2. **`LanguageBackend` is token-level.** Token IDs go in, and token IDs come out through a backpressured callback. The
    tokenizer, chat template, reasoning and text belong to the facade.
 3. **Sampling happens on the host, after the join, in backend-independent code.** Every backend gets the same
@@ -90,16 +92,17 @@ the Core AI backend. That's the deployment-floor piece's work. This seam only ha
   launch on macOS 14 to that work.
 - **No Core AI or Metal types in its surface,** and none in its imports. The facade holds an `any LanguageBackend`
   with no availability annotation, and reports "unsupported OS" when no conforming backend is available.
-- **Checked while the floor is still 27:** each implementation commit typechecks the target's sources on their own at
-  macOS 14, with `swiftc -typecheck -target arm64-apple-macos14.0` over `Sources/AetherLanguageRuntime`. The
-  deployment-floor piece then turns that into a real build.
-- **Launch risk, outside this piece:** `AetherCoreAI` links `CoreAI` with `linkedFramework`. If that stays a strong
-  load command, a facade binary won't launch on macOS 14 at all, whatever the protocol does. The deployment-floor spike
-  has to confirm the framework is weak-linked.
+- **Checked while the floor is still 27:** `Scripts/check-language-runtime-floor.sh` typechecks the target's sources on
+  their own at macOS 14.0 and iOS 17.0 (`swiftc -typecheck -target arm64-apple-macos14.0`, and the iOS equivalent when
+  the SDK is installed). CI runs it before the release suite. The deployment-floor piece then turns that into a real
+  build.
+- **Known risk, outside this piece:** `AetherCoreAI` links `CoreAI` with `linkedFramework`. If that stays a strong
+  load command, a facade binary won't launch on macOS 14 at all, whatever the protocol does. The deployment-floor work
+  owns the fix, likely `-weak_framework CoreAI` plus availability gating of the Core AI targets.
 
 ## `LanguageBackend`
 
-A sketch, not frozen:
+As implemented (abridged; not frozen):
 
 ```swift
 // AetherLanguageRuntime
@@ -116,7 +119,7 @@ public protocol LanguageBackend: Sendable {
     /// the overlapping step joins (its result is discarded). Cancelling the calling task stops at the next step;
     /// submitted native work joins before the error is thrown. One request at a time: overlap throws `busy`.
     func generate(_ request: LanguageGenerationRequest,
-                  onToken: (@Sendable (Int) async throws -> LanguageTokenDisposition)?) async throws
+                  onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?) async throws
         -> LanguageGenerationResult
 
     /// Terminal close, as `LanguageGenerationSession.unload()`: later requests throw `closed`.
@@ -126,8 +129,14 @@ public protocol LanguageBackend: Sendable {
 public struct LanguageGenerationRequest: Sendable {
     public var prompt: [Int]
     public var maximumTokens: Int
-    public var sampling: LanguageSampling = .greedy
-    public var constraint: (any LanguageLogitsProcessor)? = nil
+    public var sampling: LanguageSampling             // .greedy by default
+    public var constraint: (any LanguageLogitsProcessor)?
+}
+
+/// A struct, so per-token data such as log-probabilities can be added later without changing the callback's type.
+public struct LanguageGeneratedToken: Sendable, Hashable {
+    public let id: Int
+    public let index: Int                              // its index in the reply
 }
 
 public enum LanguageTokenDisposition: Sendable { case `continue`, stop }
@@ -152,7 +161,9 @@ signature and its `Reply`. It calls the same private body with `.greedy` and no 
 `.continue`. Three things stay Core-AI-specific and outside the protocol, in the Core AI backend's API:
 - `prefillChunkSize`;
 - the `Observer` of native submissions;
-- the qualification entry points (`prefillLogits`, `teacherForcedLogits`).
+- the qualification entry points (`prefillLogits`, `teacherForcedLogits`). Teacher-forced logits are also on
+  `LanguageBackendQualification`, an SPI protocol (`@_spi(Qualification)`) a backend can adopt so a parity harness runs
+  against any backend without them being app-facing.
 
 **Why the delivery callback can stop the request.** The facade needs it for stop strings, which it detects in decoded
 text, and for an app that has seen enough. Without it, the facade would have to throw from the callback and lose the
@@ -167,8 +178,9 @@ buffer only the newest element losslessly, because each snapshot supersedes the 
 cancels the task that runs `generate`.
 
 **Errors.** `LanguageGenerationError` (`invalid`, `busy`, `closed`, `contextLimit`, `memoryBudget`) moves to
-`AetherLanguageRuntime`, so every backend speaks it. `AetherLanguageCoreAI` keeps a public typealias, so Shilo's
-source doesn't change. This is the only existing public type that moves.
+`AetherLanguageRuntime`, so every backend speaks it. `AetherLanguageCoreAI` re-exports the runtime module
+(`@_exported import`), so Shilo's source doesn't change; a typealias would have made the name ambiguous in files that
+import both modules. This is the only existing public type that moves.
 
 **Images are out of the protocol for now.** `VisionLanguageSession` keeps its own API. Once the decoder rework lands, its
 decoder path takes a `LanguageSampling` and a constraint through the same private body (commit 6). An image-capable
@@ -178,13 +190,18 @@ protocol is a later refinement, if the apps need images through the facade.
 
 ```swift
 public struct LanguageSampling: Sendable, Hashable {
+    public enum Mode: Sendable, Hashable {
+        case greedy
+        case random(temperature: Double, topK: Int?, topP: Double?, seed: UInt64?)
+    }
+    public var mode: Mode                              // .greedy by default
+    /// Transformers' rule: positive logits divided, negative multiplied. 1 (the default): off.
+    public var repetitionPenalty: Double
+    /// Most recent tokens (prompt included) the penalty sees. nil (the default): the whole request.
+    public var repetitionWindow: Int?
     public static let greedy: LanguageSampling
     public static func random(temperature: Double = 1, topK: Int? = nil, topP: Double? = nil,
                               seed: UInt64? = nil) -> LanguageSampling
-    /// HF / CTRL rule: positive logits divided, negative multiplied. nil or 1: off.
-    public var repetitionPenalty: Double?
-    /// Most recent tokens (prompt included) the penalty sees. nil: the whole request.
-    public var repetitionWindow: Int?
 }
 ```
 
@@ -199,9 +216,13 @@ invariant path.
 **Semantics:**
 - **Temperature** must be greater than 0 in random mode. Greedy is its own mode, not temperature 0.
 - **Top-k keeps every token tied at the k-th logit,** as Transformers does.
-- **Top-p is exact and keeps at least one token.** It takes the normalizer in one pass over the candidates left after
-  top-k (the whole vocabulary when there's no top-k). It then extracts candidates in descending order (logit, then
-  ascending token ID) in growing batches until their mass reaches p. It never sorts the whole vocabulary.
+- **Top-k finds its threshold with one bounded selection scan** (it keeps at most 2k values), on the logits divided by
+  the temperature, as Transformers truncates them.
+- **Top-p is exact and keeps at least one token:** in descending probability (ties in ascending token ID), every
+  candidate whose preceding mass is below p. Candidates at or below (1 − p)/n are pruned first: together they hold at
+  most 1 − p and rank below the rest, so they can never be kept. The rest are selected by in-place three-way
+  partitioning on value. Nothing sorts the vocabulary.
+- **Probabilities** are float32 weights, as Transformers' softmax, normalized in double precision.
 - **The repetition penalty counts each distinct token once,** over the prompt and the output so far. Transformers
   applies it to `input_ids`, prompt included, and in greedy mode too. A penalty in greedy mode is therefore
   allowed, and it is not the invariant path.
@@ -215,8 +236,16 @@ invariant path.
   never drifts. Greedy consumes none.
 - **When no seed is given,** one is drawn from the system generator and reported in the result, so any reply can be
   replayed.
-- **The draw is an inverse-CDF** over the candidates in their sorted order. Its reductions are scalar, in a fixed order,
-  with Double accumulation, so the token picked doesn't depend on which kernel Accelerate selects.
+- **The draw is an inverse CDF** over the candidates in ascending token-ID order, so the kept set never needs sorting.
+  Its reductions are scalar, in a fixed order, with double-precision accumulation, and the target doesn't use
+  Accelerate, so the token picked doesn't depend on which kernel a library selects.
+
+**Checked against Transformers.** `Forge/language/reference_sampling.py` (run with Forge's environment) records what
+Transformers 4.57.3's own `RepetitionPenaltyLogitsProcessor`, `PrefixConstrainedLogitsProcessor`,
+`TemperatureLogitsWarper`, `TopKLogitsWarper` and `TopPLogitsWarper` make of 18 seeded synthetic rows, including ties at
+the top-k boundary and at the greedy maximum. The CPU suite requires the same greedy token, the same kept set and
+probabilities within a relative 1e-4 on every case. The script also records SplitMix64 and xoshiro256\*\* known answers
+from its own implementation of both algorithms.
 
 **What a seed promises.** The same seed gives the same tokens for the same asset, device class, OS and prefill plan. That
 holds across memory-budget reloads and running-contract recycling, because both leave the logits unchanged: replies are
@@ -353,7 +382,9 @@ These are not in the seam's commits. They're listed so the seam doesn't block th
 
 ## Implementation plan
 
-Each commit builds and passes `Scripts/check.sh` on its own. The GPU checks run under `with-gpu-lock.sh`.
+Each commit builds and passes `Scripts/check.sh` on its own. The GPU checks run under `with-gpu-lock.sh`. Commits 1–5
+landed on `v0.0.3/runtime-seam` as planned, with two changes: `LanguageGenerationError` moved in commit 1 (the sampler
+throws it from commit 2), and a commit between 4 and 5 sped up random sampling after the native run measured it (below).
 
 1. **Add the `AetherLanguageRuntime` target and its test target.** It holds the protocol, request and result types,
    `LanguageSampling`, `LanguageTokenSet`, `LanguageTokenConstraint`, `LanguageLogitsProcessor` and the generator. No
@@ -378,7 +409,8 @@ Each commit builds and passes `Scripts/check.sh` on its own. The GPU checks run 
 5. **Add an opt-in native test, `languageSamplingQualification`** (the 0.6B raw asset, the 4B writer bundle). It records
    evidence and documents sampling in [language-generation.md](language-generation.md). It checks:
    - that the protocol's default equals the old API;
-   - that the same seed repeats exactly, including across a forced model reload, and that different seeds differ;
+   - that the same seed repeats exactly, after other requests and in a freshly loaded session (a model load, as a reload
+     is), and that different seeds differ;
    - that an allowed-set constraint (for example, digits and EOS only) holds on every token;
    - the per-token cost of each sampling mode, and of a deliberately slow processor, against greedy.
 6. **After the decoder rework lands, give the image path the same options.** The image `generate` and
@@ -392,6 +424,38 @@ Each commit builds and passes `Scripts/check.sh` on its own. The GPU checks run 
      - native: the token-identity check again.
    - It's dropped if the identity check or the gain doesn't hold.
 
+### Results of commits 1–5
+
+All on one M5 Max, release build, shared host, under the GPU lock
+([evidence](evidence/language-runtime-seam-2026-10-27.json)).
+
+- **Token identity.** Through the existing API, before (`cd6894b`) and after (the session's conformance, and the branch
+  head): the Qwen3-0.6B bucketed 64-token greedy continuation and its 1,024-step long run (no reloads, six step shapes
+  both times), and the Qwen3-4B writer's three chat replies, are identical. Through the protocol, the default request
+  equals the existing API on two prompts per model (35 and 96 tokens on the 4B, 23 and 96 on the 0.6B).
+- **Seeds.** A seeded top-k 40 / top-p 0.95 request repeats its 64 tokens after other requests and in a freshly loaded
+  session, and another seed differs, on both models.
+- **Constraint.** Digits only for 12 tokens, then only the stop IDs: every token was a digit and the reply ended at end
+  of sequence (`100000000000` on the 4B, `123456789012` on the 0.6B).
+- **Cost per token** (warm, up to 96 tokens; medians of two rounds; the 0.6B's are within the host's noise):
+
+| Mode | Qwen3-4B writer | Qwen3-0.6B |
+| --- | --- | --- |
+| Greedy (the default) | 21.1 ms | 7.3 ms |
+| Greedy, repetition penalty 1.1 | 21.4 ms | 7.3 ms |
+| Random, temperature 0.8 | 22.5 ms | 7.5 ms |
+| Random, top-k 40, top-p 0.95 | 21.5 ms | 6.8 ms |
+| Random, top-p 0.9 | 22.5 ms | 7.6 ms |
+| Greedy, a processor allowing everything | 22.4 ms | 6.8 ms |
+| Greedy, a processor taking 5 ms a token | 21.7 ms | 6.8 ms |
+| Greedy, a processor taking 40 ms a token | 43.6 ms | 44.3 ms |
+
+  A 5 ms processor is hidden behind the step on both models; a 40 ms one sets the pace, as designed.
+- **The sampler alone,** on the 4B's 151,936-row first-step logits (single thread, medians): greedy 0.14 ms; top-k 40
+  with top-p 0.95, 0.15 ms; temperature only, 0.52 ms; top-p 0.9 without top-k, 0.75 ms. The first native run measured
+  random modes 0.7–1.5 ms a token slower than greedy on the 4B (0.97–1.67 ms in the sampler alone, from quickselect over
+  the vocabulary and allocations); the speed-up commit brought them to these numbers with the same results.
+
 ## Rejected alternatives
 
 - **Sampling on the GPU inside the exported graph.** This needs a re-export of every asset and a per-step mask input,
@@ -403,15 +467,14 @@ Each commit builds and passes `Scripts/check.sh` on its own. The GPU checks run 
 - **The protocol in AetherKit.** It would tie the macOS 14 launch to the `Mutex` gating described above.
 - **Top-p by sorting the vocabulary.** This costs 10.4 ms a step.
 
-## Open questions
+## Decided
 
-- **The target's name and product.** `AetherLanguageRuntime` as a new library product, rather than folding it into
-  AetherKit or keeping it package-internal.
-- **The floor pair.** Is it macOS 14 with iOS 17? The seam only needs the target to stay clean. The floor piece decides.
-- **The repetition penalty's default scope:** the whole request including the prompt, as in Transformers, or a recent
-  window by default, as llama.cpp does with 64 tokens.
-- **The facade's default sampling:** greedy (reproducible, Kit's tradition), or random like FoundationModels.
-- **Whether the apps need images through the facade in 0.0.3.** That would bring commit 6 into scope early.
-- **Whether the apps need log-probabilities or alternative tokens.** They aren't designed in.
-- **Whether the protocol should also carry a qualification entry point** (teacher-forced logits), so the MLX spike can
-  run the same parity harness as Core AI.
+- **Target:** `AetherLanguageRuntime`, a new library product.
+- **Floor:** macOS 14 and iOS 17 are the working assumption (the iOS number is to be confirmed). The strong `CoreAI`
+  link belongs to the deployment-floor work.
+- **Repetition penalty:** Transformers' semantics, over the whole request including the prompt, off (1) by default,
+  with an optional window.
+- **Default sampling:** the seam's default is greedy. The facade's default is the facade's decision.
+- **Images through the facade:** not needed for 0.0.3 as far as is known; commit 6 waits for the decoder rework.
+- **Log-probabilities:** not in scope; the per-token callback takes a struct so they can be added without breaking it.
+- **Teacher-forced logits:** on the SPI `LanguageBackendQualification` protocol, not on `LanguageBackend`.

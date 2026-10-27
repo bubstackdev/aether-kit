@@ -102,6 +102,42 @@ every delivery finishes before `generate` returns or throws. If a delivery throw
 the step already submitted alongside it joins first and its result is discarded; if
 that step fails, the in-flight delivery is cancelled and awaited.
 
+## Sampling and the backend protocol
+
+`AetherLanguageRuntime` holds what doesn't depend on Core AI: the `LanguageBackend` protocol, `LanguageSampling`, the
+constraint hook and the decode loop every backend shares ([design](language-runtime-seam.md)). It imports only the
+standard library and Foundation, so it can build below the Core AI floor (`Scripts/check-language-runtime-floor.sh`
+typechecks it at macOS 14 and iOS 17), and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
+AI backend:
+
+```swift
+let request = LanguageGenerationRequest(prompt: prompt.tokenIDs, maximumTokens: 512,
+                                        sampling: .random(temperature: 0.7, topK: 40, topP: 0.95, seed: 7))
+let result = try await session.generate(request) { token in
+    // token.id streams while the next step runs; return .stop to end the request (for example at a stop string).
+    .continue
+}
+// result.seed replays the reply; result.stopReason is .endOfSequence, .outputLimit or .stopped.
+```
+
+- **Greedy stays the default, token for token.** A request with no sampling options, like `generate(prompt:...)`, runs
+  the same argmax on the same logits as before: the Qwen3-0.6B and 4B writer replies are identical before and after the
+  change ([evidence](evidence/language-runtime-seam-2026-10-27.json)).
+- **Sampling follows Transformers' order:** repetition penalty (over the whole request, prompt included; off by
+  default), the request's constraint, then temperature, top-k and top-p, and one seeded draw. The warpers match
+  Transformers 4.57.3's own on recorded fixtures (`Forge/language/reference_sampling.py`).
+- **A seed replays exactly** for the same asset, device class, OS and prefill plan, across memory-budget reloads and
+  in a newly opened session; without one, the session draws a seed and reports it.
+- **Constraints** (`LanguageLogitsProcessor`) return the allowed tokens for the next step and run while the current step
+  runs on the GPU: a 5 ms-per-token processor added nothing measurable on either model, while one slower than the step
+  sets the pace. The loop applies the allowed set after the join; disallowed tokens become −∞ before temperature and
+  truncation.
+- **What it costs:** sampling runs on the host after each join and adds no input, shape or submission, so step shapes,
+  the memory budget and GPU admission are those of greedy decoding. On the 4B writer, random modes added 0.4–1.4 ms to a
+  21 ms token.
+- **Not yet:** image prompts (`VisionLanguageSession` and the image `generate`) stay greedy until the Qwen3-VL decoder
+  rework lands, and the facade's tokenizer, templates and structured output come next.
+
 ## Step contracts
 
 The session detects the contract from the `main` function signature
