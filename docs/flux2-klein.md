@@ -221,7 +221,7 @@ All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on the same int8 bundle (
 | Image path SSIM through the public session (≥ 0.94) | min 0.960158 (`cafe-512`) | min 0.960160 (`cafe-512`) |
 | Whole pipeline SSIM (recorded) | 0.812–0.999 | 0.812–0.999 |
 
-The test process's lifetime peak footprint was 17.3 GB (the component VAE phase, as before) and the GPU-lock hold
+The test process's lifetime peak footprint was 16.1 GiB (the component VAE phase, as before) and the GPU-lock hold
 3.7 minutes. See the [report](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.json) and
 [log](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.log). The 2026-10-26 sections below compared with
 the MPS fixtures and are kept as history. The lifecycle suite was re-run against the CPU fixtures too (see
@@ -288,6 +288,8 @@ uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtur
 uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py $CKPT \
   .../oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 NEW_REFERENCE_DIR
 ```
+
+Reference mode reads the fox-512 and lighthouse-512 source pictures from the 2026-10-26 text-to-image fixture directory, so keep that directory: it is an input of regeneration, not only a superseded record. Its two PNGs are hashed in [its fixture document](evidence/flux2-klein-t2i-fixture-6a8a53d8f3b30817.json). Moving them to the CPU text-to-image fixture would change the reference fixture's inputs and ID, so it waits for the next intentional regeneration.
 
 Run the native gate (one suite at a time, under the shared lock):
 
