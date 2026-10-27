@@ -522,3 +522,29 @@ A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hash
 - **Float32 diagnostic:** native blocks are 0.33–1.03% from float32.
 - **Memory:** both renders peak at 13.80 GiB Metal, under the gate's 18 GiB bar.
 - **Run time:** the CPU oracle took 58 min.
+
+## Denoiser speed: device-chained blocks (2026-10-26)
+
+[A phase profile of one denoising step](evidence/h3-speed-profile-2026-10-26.json) covers 50 block calls at 19,333 rows, in interleaved sessions within one process. It shows the denoiser is GPU-bound at about 680 ms of GPU work per block:
+
+- **Weight streaming is already hidden.** The next block's weights are prefetched into the spare bank while the GPU runs: 150–230 ms warm, about 560 ms on the first pass, which also hashes each file. Keeping more weights resident would therefore buy nothing.
+- **No guidance pass.** Each step runs 50 blocks and one heads call.
+- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render.
+- **`expectFrequentReshapes = false` is rejected.** It gave no speedup, changed the output bytes and added 2.07 GiB of Metal.
+- **The removable cost was the host round trip per block:** about 100 ms copying each 208 MB output to the host, and about 5 ms copying it back.
+
+`H3DenoiserKernels.blocks(...)` now runs a step's blocks as one chain. Block 0 copies the packed sequence in. Every later block binds its predecessor's output on the device, through `NativeH3Graph`'s `.chained` input and two alternating output buffers. Only the last output is read back, or every output when an observer is attached.
+
+Outputs stay byte-identical:
+
+- A chained build replays all 457 boundary hashes of both the T2VA and the FL2VA captures ([replays](evidence/h3-speed-chaining-replays-2026-10-26.json)).
+- Four paired renders without an observer all end on the capture's final latents.
+
+[Paired, interleaved timings](evidence/h3-speed-chaining-paired-t2va-2026-10-26.json) for T2VA at 960×544, ABBA order, n = 2 each, load average 9–20:
+
+| | Current | Chained | Change |
+| --- | ---: | ---: | ---: |
+| Denoising, median | 350.7 s | 326.3 s | −7.0% |
+| Render, median | 406.0 s | 381.6 s | −6.0% |
+
+The two device chain buffers raise the Metal peak by about 0.2 GiB. [The memory gate](evidence/h3-memory-gate-chained-2026-10-26.json), rerun on the chained build, passes: T2VA peaks at 13.69 GiB, FL2VA at 14.00 GiB, and the admission worst case is 15.26 GiB. The bundled measured entry is updated to match.

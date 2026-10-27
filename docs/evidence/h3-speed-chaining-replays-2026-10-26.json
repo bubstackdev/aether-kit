@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "build": "c128cfc (v0.0.2/h3-speed)",
+  "note": "Chained-build replays of the T2VA and FL2VA trajectory captures (observer attached).",
+  "replays": {
+    "t2va": {
+      "fields": {
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-t2va-final/dump-t2va",
+        "mode": "render",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+        "replay_mismatches": "0",
+        "trajectory_hashes": "457"
+      },
+      "sampledPeakMetalGiB": 13.688
+    },
+    "fl2va": {
+      "fields": {
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-fl2va/dump-fl2va",
+        "mode": "render",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+        "replay_mismatches": "0",
+        "trajectory_hashes": "457"
+      },
+      "sampledPeakMetalGiB": 14.0
+    }
+  }
+}
