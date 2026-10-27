@@ -1,0 +1,118 @@
+{
+  "cpuRealVocabulary": {
+    "allowedSetMicroseconds": {
+      "afterArray": 50,
+      "afterKey": 78,
+      "arrayStart": 55,
+      "integer": 36,
+      "numberFraction": 13,
+      "start": 71,
+      "stringBody": 384
+    },
+    "indexBuildSeconds": 0.063,
+    "source": "realVocabularyCostAndWalk (opt-in, AETHER_LANGUAGE_TOKENIZER_HUB), uncached first visits",
+    "vocabulary": "Qwen/Qwen3-0.6B tokenizer (151,669 tokens, 151,936 head rows)"
+  },
+  "date": "2026-10-27",
+  "device": "M5 Max (h17c), shared host",
+  "kind": "language-structured-output-qualification",
+  "note": "Per-token times are wall time per output token including the prefill; structured requests also carry the schema in the system message (a longer prompt), so their per-token figure includes that prefill. The constraint runs beside each decode step; its mean and maximum per call are the visible bound on its cost. 'foundationModelsMatchesFacade' is false because the two requests' system messages name the paired types differently (NativeCharacter vs FMNativeCharacter), so greedy decoding diverges; both decode with every guide satisfied.",
+  "qwen3-0.6b": {
+    "cost": [
+      {
+        "constraintCacheHits": 14,
+        "constraintCalls": 99,
+        "constraintMaximumMicroseconds": 534.042,
+        "constraintMeanMicroseconds": 72.00422222222223,
+        "structuredMillisecondsPerToken": 12.718786142857144,
+        "structuredTokens": 98,
+        "unconstrainedMillisecondsPerToken": 10.43582271,
+        "unconstrainedTokens": 200
+      },
+      {
+        "constraintCacheHits": 14,
+        "constraintCalls": 99,
+        "constraintMaximumMicroseconds": 588.0409999999999,
+        "constraintMeanMicroseconds": 73.12793939393936,
+        "structuredMillisecondsPerToken": 12.983174316326531,
+        "structuredTokens": 98,
+        "unconstrainedMillisecondsPerToken": 10.643757915000002,
+        "unconstrainedTokens": 200
+      }
+    ],
+    "device": "h17c",
+    "facadeGreedy": {
+      "guidesHold": true,
+      "json": "{\"name\": \"Lira\", \"age\": 35, \"mood\": \"calm\", \"features\": [\"lighthouse\", \"starlight\", \"watchtower\"], \"outfit\": {\"colour\": \"green\", \"layers\": [{\"garment\": \"sailcloth\", \"warm\": true}]}, \"accessory\": {\"type\": \"hat\", \"colour\": \"blue\"}, \"confidence\": 0.95, \"nickname\": \"Lighthouse Keeper\"}",
+      "outputTokens": 98
+    },
+    "facadeReasoning": {
+      "guidesHold": true,
+      "json": "{\"name\": \"Lira Voss\", \"age\": 25, \"mood\": \"calm\", \"features\": [\"red light\", \"blue hat\"], \"outfit\": {\"colour\": \"blue\", \"layers\": [{\"garment\": \"hat\", \"warm\": true}]}, \"accessory\": {\"type\": \"cane\", \"length\": 10}, \"confidence\": 0.8, \"nickname\": \"Lighthouse Guardian\"}",
+      "outputTokens": 349
+    },
+    "facadeSampled": {
+      "guidesHold": true,
+      "json": "{\"name\": \"Sir Lawrence of the Lighthouse\", \"age\": 65, \"mood\": \"calm\", \"features\": [\"a lighthouse beacon\", \"a sturdy helm\"], \"outfit\": {\"colour\": \"green\", \"layers\": [{\"garment\": \"sweatshirt\", \"warm\": true}, {\"garment\": \"hat\", \"warm\": false}]}, \"accessory\": {\"type\": \"hat\", \"colour\": \"red\"}, \"confidence\": 0.95, \"nickname\": \"Glen\"}",
+      "outputTokens": 114
+    },
+    "foundationModels": {
+      "guidesHold": true,
+      "json": "{\"confidence\": 0.95, \"mood\": \"calm\", \"nickname\": \"The Starlight Watcher\", \"name\": \"Lighthouse Keeper\", \"outfit\": {\"colour\": \"blue\", \"layers\": [{\"garment\": \"sailcloth\", \"warm\": true}]}, \"features\": [\"lighthouse\", \"starlight\", \"watchtower\"], \"accessory\": {\"length\": 12, \"type\": \"cane\"}, \"age\": 45}",
+      "outputTokens": 0
+    },
+    "foundationModelsMatchesFacade": false,
+    "foundationModelsStreamSnapshots": 41,
+    "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+    "model": "Qwen/Qwen3-0.6B",
+    "reasoningCharacters": 1078,
+    "secondTurnDecodes": true
+  },
+  "qwen3-4b-writer": {
+    "cost": [
+      {
+        "constraintCacheHits": 62,
+        "constraintCalls": 171,
+        "constraintMaximumMicroseconds": 1317.625,
+        "constraintMeanMicroseconds": 89.2751052631579,
+        "structuredMillisecondsPerToken": 29.64475465882353,
+        "structuredTokens": 170,
+        "unconstrainedMillisecondsPerToken": 31.136746249999998,
+        "unconstrainedTokens": 200
+      },
+      {
+        "constraintCacheHits": 62,
+        "constraintCalls": 171,
+        "constraintMaximumMicroseconds": 1079.875,
+        "constraintMeanMicroseconds": 96.03605263157897,
+        "structuredMillisecondsPerToken": 30.900229164705884,
+        "structuredTokens": 170,
+        "unconstrainedMillisecondsPerToken": 31.994158125,
+        "unconstrainedTokens": 200
+      }
+    ],
+    "device": "h17c",
+    "facadeGreedy": {
+      "guidesHold": true,
+      "json": "{\"name\": \"Eleanor Thorne\", \"age\": 62, \"mood\": \"calm\", \"features\": [\"has a deep, weathered voice\", \"wears a permanent smile that seems to glow in the evening\", \"has a habit of humming sea shanties while walking the lantern room\", \"eyes that shift color with the changing light of the horizon\"], \"outfit\": {\"colour\": \"blue\", \"layers\": [{\"garment\": \"navy wool sweater\", \"warm\": true}, {\"garment\": \"light linen shirt\", \"warm\": false}, {\"garment\": \"dark blue trousers\", \"warm\": true}]}, \"accessory\": {\"type\": \"cane\", \"length\": 120}, \"confidence\": 1, \"nickname\": \"Lantern Ellie\"}",
+      "outputTokens": 170
+    },
+    "facadeSampled": {
+      "guidesHold": true,
+      "json": "{\"name\": \"Elara Morn\", \"age\": 58, \"mood\": \"calm\", \"features\": [\"has a deep, steady voice\", \"wears thick wool socks even in summer\", \"always carries a weathered notebook\", \"has a slight tremor in her left hand\"], \"outfit\": {\"colour\": \"blue\", \"layers\": [{\"garment\": \"long-sleeved linen shirt\", \"warm\": true}, {\"garment\": \"navy wool trousers\", \"warm\": false}, {\"garment\": \"knit cardigan\", \"warm\": true}]}, \"accessory\": {\"type\": \"cane\", \"length\": 140}, \"confidence\": 1, \"nickname\": \"The Keeper\"}",
+      "outputTokens": 157
+    },
+    "foundationModels": {
+      "guidesHold": true,
+      "json": "{\"outfit\": {\"layers\": [{\"garment\": \"navy wool sweater\", \"warm\": true}, {\"warm\": false, \"garment\": \"light blue linen shirt\"}, {\"garment\": \"dark blue corduroy trousers\", \"warm\": true}], \"colour\": \"blue\"}, \"mood\": \"calm\", \"features\": [\"has a weathered smile that crinkles at the edges\", \"wears a pair of slightly crooked spectacles\", \"has silver-streaked hair tied in a practical bun\", \"often speaks in a measured, rhythmic tone\"], \"confidence\": 1, \"accessory\": {\"length\": 120, \"type\": \"cane\"}, \"age\": 58, \"name\": \"Eleanor Thorne\", \"nickname\": \"Thorne\"}",
+      "outputTokens": 0
+    },
+    "foundationModelsMatchesFacade": false,
+    "foundationModelsStreamSnapshots": 92,
+    "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+    "model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+    "reasoningCharacters": 0,
+    "secondTurnDecodes": true
+  },
+  "test": "Tests/AetherNativeTests/LanguageStructuredOutputQualificationTests.swift (AETHER_NATIVE_LANGUAGE_STRUCTURED=1, release, under the shared GPU lock)"
+}
