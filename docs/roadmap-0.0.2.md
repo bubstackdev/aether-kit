@@ -1,6 +1,6 @@
 # 0.0.2 roadmap
 
-Status: scope agreed, 2026-10-26; release decisions recorded the same day (below). This replaces the draft on `local-line-2026-10-26`, which planned H3 around prototype bundles; main's schema-3 H3 path makes that unnecessary. Prototype evidence from `aether-engine` lowers porting cost but is not AetherKit support. Every item needs AetherKit's own implementation, independent references and qualification. Confirm licenses against model cards before adoption.
+Status: **released 2026-10-27** ([release notes](release-notes/0.0.2.md)). Scope agreed 2026-10-26; release decisions recorded the same day and extended on 2026-10-27 (below). This replaces the draft on `local-line-2026-10-26`, which planned H3 around prototype bundles; main's schema-3 H3 path makes that unnecessary. Prototype evidence from `aether-engine` lowers porting cost but is not AetherKit support. Every item needs AetherKit's own implementation, independent references and qualification. Confirm licenses against model cards before adoption.
 
 ## Scope
 
@@ -32,13 +32,18 @@ Spikes, with go/no-go reports for 0.0.3: a hybrid recurrent-state language model
 | Qwen3-4B writer (Atelier's engine drop) | Bucketed export of the abliterated Qwen3-4B-Instruct-2507 | On main (#23) |
 | Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | On main (#26) |
 | Language memory budget | Workaround for Core AI retaining memory on every input-shape change: a fixed prefill width (64) and a 2 GiB growth budget that reloads the model at idle | On main (#28) |
+| Forge environments | Two locked Python environments in the repository (`Forge/`, `Forge/h3-oracle`); no tooling depends on the superseded prototype or on Atelier staging | On main (#29) |
+| Qwen3-VL memory attribution | Decoder weights wired twice (text and image functions); encoder grids are views of one copy | On main (#31) |
+| FLUX.2 CPU references | References computed on the CPU in float32, like every other model's; parity 113/113 and lifecycle 44/44 | On main (#34) |
+| FLUX.2 Forge exporter | `Forge/flux2` exports the bundle; its export `a48aaf07` is the qualified 0.0.2 bundle | On main (EXPORTER_PR) |
+| GitHub CI | Weight-free Release suite and consumer packages on every PR; the repository moved to `bubstackdev/aether-kit` | On main (#32, #33) |
 
 The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviour change (see CHANGELOG).
 
 ### Deferred to 0.0.3
 
 - **Spikes:** hybrid recurrent state (Granite 4.0-H), ACE-Step and TripoSR.
-- **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization.
+- **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization. Media audit and per-stage lifecycle qualification before dropping the experimental label, and a durable home for the qualified profile.
 - **Qwen3-VL:** iPhone, multi-image input and a quantized decoder.
 - **Qwen3-VL memory:** attributed (#31): Core AI wires a separate copy of the decoder's weights for `main` and `withImage` (VL-4B: +8.4 and +7.9 GiB wired, file-backed, so outside the process footprint); the per-grid encoder growth in Metal's accounting is views of one copy, not resident memory ([qwen3-vl.md](qwen3-vl.md#limits-and-follow-ups), [evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)). Fix: one decoder function for text and image prefill, or cross-function weight sharing; the Core AI SDK has no shared-constants option.
 - **Language memory budget:** remove the reload workaround once Core AI stops retaining memory per shape change.

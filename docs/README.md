@@ -65,3 +65,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 ## Kokoro-82M speech (0.0.2, 2026-10-26)
 
 [Kokoro speech synthesis](kokoro-speech.md) covers the Kokoro-82M export, the license-clean phonemization decision, the speech session API and its native parity, timing and lifecycle [qualification](evidence/kokoro-qualification-2026-10-26.json).
+
+## 0.0.2 release (2026-10-27)
+
+[Release notes](release-notes/0.0.2.md), the [0.0.2 roadmap](roadmap-0.0.2.md) with its release decisions, and the [changelog](../CHANGELOG.md). New guides: [Qwen3-VL image input](qwen3-vl.md), [language generation](language-generation.md) (bucketed contract, tokenizers and the memory budget), [FLUX.2 klein](flux2-klein.md), [Kokoro speech](kokoro-speech.md), [GPU lease and admission](gpu-lease.md), the H3 schema-3 sections of [H3 integration](h3-integration.md), and [GitHub CI](ci.md). Python tooling runs in Forge's locked environments ([record](evidence/forge-environment-2026-10-27.json)).
