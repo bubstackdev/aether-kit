@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-27",
+  "kind": "language-logits-readback-and-host-sampling-cost",
+  "device": "M5 Max (h17c), one shared host, load average 7.6-13 during the runs",
+  "method": "Scratch probe against Core AI alone (not committed), release build, run under the shared GPU lock. Each bucketed asset's main function is loaded with SpecializationOptions(preferredComputeUnitKind: .gpu) and expectFrequentReshapes = true, then 230 one-token steps are encoded and joined on one ComputeStream (30 warm-up, 200 measured, medians and 90th percentiles in microseconds). Inputs mirror LanguageGenerationSession.step: token and cache position [1, 1], zero-copy zeroed key/value caches at the stated capacity (zeroed caches change no shape or cost). 'convert' is LanguageGenerationSession.step's own conversion of the logits NDArray into a new [Float], verbatim, in a non-inlined function. 'outputView' runs the same step with a Kit-owned shared MTLBuffer passed as the logits output view, then scans it in place; its argmax equalled the NDArray path's on every step. Host costs were measured on one real logits row from each model (the first step's), 300 runs after 20 warm-up runs, single thread.",
+  "vocabularyRows": 151936,
+  "logitsBytesPerStep": 303872,
+  "native": {
+    "qwen3-0.6b-bucketed-fp16": {
+      "capacity256": { "encode": [5970.3, 7675.8], "join": [45.2, 68.7], "logitsNDArray": [14.5, 30.0], "convertToFloatArray": [255.8, 296.2], "greedyArgmax": [144.1, 170.5], "updateNDArrays": [23.3, 49.2], "stepThroughArgmax": [6498.3, 8202.4], "outputViewJoin": [75.8, 111.0], "outputViewInPlaceArgmax": [144.0, 168.3], "outputViewStepThroughArgmax": [6283.7, 7838.3] },
+      "capacity2048": { "encode": [7926.3, 10216.9], "join": [38.9, 76.2], "logitsNDArray": [13.6, 25.8], "convertToFloatArray": [259.5, 293.2], "greedyArgmax": [145.1, 171.9], "updateNDArrays": [23.2, 47.2], "stepThroughArgmax": [8401.7, 10686.0], "outputViewJoin": [69.4, 126.3], "outputViewInPlaceArgmax": [144.4, 176.6], "outputViewStepThroughArgmax": [8232.6, 10646.1] }
+    },
+    "qwen3-4b-instruct-2507-abliterated-bucketed-fp16": {
+      "capacity256": { "encode": [22722.1, 24999.9], "join": [69.5, 105.0], "logitsNDArray": [23.2, 67.9], "convertToFloatArray": [275.5, 344.2], "greedyArgmax": [150.8, 191.0], "updateNDArrays": [40.5, 68.6], "stepThroughArgmax": [23254.5, 25546.6], "outputViewJoin": [121.0, 290.9], "outputViewInPlaceArgmax": [153.7, 208.2], "outputViewStepThroughArgmax": [22816.1, 26684.0] },
+      "capacity2048": { "encode": [24307.0, 25758.4], "join": [64.0, 99.5], "logitsNDArray": [20.9, 40.5], "convertToFloatArray": [283.2, 340.0], "greedyArgmax": [156.1, 187.8], "updateNDArrays": [36.8, 73.1], "stepThroughArgmax": [24837.8, 26336.7], "outputViewJoin": [101.3, 161.0], "outputViewInPlaceArgmax": [155.5, 193.5], "outputViewStepThroughArgmax": [24598.6, 26318.0] }
+    },
+    "units": "microseconds, [median, p90]"
+  },
+  "host": {
+    "row": "qwen3-4b-instruct-2507-abliterated first-step logits (the 0.6B row gave the same costs within 10%)",
+    "fp16ToNewFloatArrayMap": [81.2, 84.4],
+    "fp16ToReusedFloatBufferVImage": [5.8, 6.1],
+    "greedyArgmaxScalarFiniteChecked": [432.2, 453.7],
+    "greedyArgmaxScalarOverFloat16InPlace": [432.8, 478.2],
+    "argmaxVDSPMaxvi": [5.2, 6.8],
+    "temperatureSoftmaxScalar": [296.9, 384.8],
+    "temperatureSoftmaxVDSPVForce": [87.6, 118.4],
+    "topK50SelectionScan": [41.1, 64.3],
+    "topP09FullVocabularySort": [10394.7, 11916.2],
+    "topP09AfterTopK50": [39.2, 42.2],
+    "repetitionPenalty1024Tokens": [7.7, 8.0],
+    "maskByBitset2000Allowed": [26.3, 26.8],
+    "argmaxOverAllowedList2000": [1.8, 1.8],
+    "seededCategoricalDrawFullVocabulary": [75.1, 80.1],
+    "units": "microseconds, [median, p90]",
+    "note": "Inside the probe's native loop the same scalar argmax took about 145 us (no finiteness check); the scalar numbers here are an upper bound for straightforward Swift loops, not tuned code."
+  }
+}
