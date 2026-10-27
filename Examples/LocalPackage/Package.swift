@@ -14,12 +14,16 @@ let package = Package(
             .product(name: "AetherKreaTokenizers", package: "AetherKit"),
             .product(name: "AetherKreaCoreAI", package: "AetherKit"),
             .product(name: "AetherLanguageCoreAI", package: "AetherKit"),
+            .product(name: "AetherLanguageTokenizers", package: "AetherKit"),
+            .product(name: "AetherVision", package: "AetherKit"),
             .product(name: "AetherH3", package: "AetherKit"),
             .product(name: "AetherH3Tokenizers", package: "AetherKit"),
             .product(name: "AetherH3CoreAI", package: "AetherKit"),
             .product(name: "AetherFlux2", package: "AetherKit"),
             .product(name: "AetherFlux2Tokenizers", package: "AetherKit"),
             .product(name: "AetherFlux2CoreAI", package: "AetherKit"),
+            .product(name: "AetherSpeech", package: "AetherKit"),
+            .product(name: "AetherSpeechCoreAI", package: "AetherKit"),
         ])
     ]
 )

@@ -1,30 +1,116 @@
-name: SDK contracts
+name: CI
+
 on:
   pull_request:
+    branches: [main]
   push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Replace stale PR builds, but give every main push its own run.
 concurrency:
-  group: sdk-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  cpu:
-    runs-on: ${{ vars.AETHER_MAC_RUNNER || 'macos-latest' }}
-    timeout-minutes: 30
+  workflows:
+    name: Workflow validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Require the supported SDK and host
-        shell: bash
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Lint GitHub Actions workflows
         run: |
-          swift --version
-          xcodebuild -version
-          sdk=$(xcrun --sdk macosx --show-sdk-version)
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl --fail --location --retry 3 --output "$archive" \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check
+          tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
+          shellcheck Scripts/check.sh Scripts/check-cpu.sh
+
+  sdk:
+    name: Release contracts and consumers
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
+      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Apple silicon and the supported toolchain
+        run: |
+          mkdir -p "$RUNNER_TEMP/aether-ci"
+          {
+            sw_vers
+            uname -m
+            xcodebuild -version
+            swift --version
+            xcrun --sdk macosx --show-sdk-version
+          } | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
           os=$(sw_vers -productVersion)
-          if [ "${sdk%%.*}" -lt 27 ] || [ "${os%%.*}" -lt 27 ]; then
-            echo "::error::AetherKit requires a macOS 27 / Xcode 27.1 / Swift 6.4 runner; configure AETHER_MAC_RUNNER."
+          sdk=$(xcrun --sdk macosx --show-sdk-version)
+          if [[ $(uname -m) != arm64 || ${os%%.*} -lt 27 || ${sdk%%.*} -lt 27 ]]; then
+            echo "::error::AetherKit requires Apple silicon, macOS 27 and the Xcode 27.1 / Swift 6.4 toolchain."
             exit 1
           fi
+      - name: Cache dependency repositories
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build/cache/repositories
+            ~/Library/Caches/org.swift.swiftpm/repositories
+          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
       - name: Weight-free Release contracts
-        run: sh Scripts/check-cpu.sh
+        run: |
+          sh Scripts/check-cpu.sh --force-resolved-versions \
+            --xunit-output "$RUNNER_TEMP/aether-ci/tests.xml" \
+            2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
       - name: Independent foundation consumer
-        working-directory: Examples/Foundations
-        run: swift run -c release
+        run: |
+          swift run --package-path Examples/Foundations --force-resolved-versions -c release \
+            2>&1 | tee "$RUNNER_TEMP/aether-ci/foundations.log"
+      - name: Independent SDK consumer
+        run: |
+          swift run --package-path Examples/LocalPackage --force-resolved-versions -c release \
+            2>&1 | tee "$RUNNER_TEMP/aether-ci/sdk-consumer.log"
+      - name: Preserve diagnostics and test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/aether-ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  required:
+    name: CI passed
+    if: ${{ always() }}
+    needs: [workflows, sdk]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          WORKFLOW_RESULT: ${{ needs.workflows.result }}
+          SDK_RESULT: ${{ needs.sdk.result }}
+        run: |
+          echo "Workflow validation: $WORKFLOW_RESULT"
+          echo "Release contracts and consumers: $SDK_RESULT"
+          [[ "$WORKFLOW_RESULT" == success && "$SDK_RESULT" == success ]]

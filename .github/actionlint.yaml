@@ -1,0 +1,5 @@
+# actionlint 1.7.12 predates this GitHub-hosted image label. This allowlist
+# extends label validation only; the job still runs on GitHub-hosted hardware.
+self-hosted-runner:
+  labels:
+    - xcode-27
