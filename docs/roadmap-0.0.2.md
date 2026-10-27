@@ -42,6 +42,8 @@ The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviou
 
 ### Deferred to 0.0.3
 
+Tracked in the [0.0.3 roadmap](roadmap-0.0.3.md).
+
 - **Spikes:** hybrid recurrent state (Granite 4.0-H), ACE-Step and TripoSR.
 - **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization. Media audit and per-stage lifecycle qualification before dropping the experimental label, and a durable home for the qualified profile.
 - **Qwen3-VL:** iPhone, multi-image input and a quantized decoder.
