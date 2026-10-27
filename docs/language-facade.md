@@ -366,8 +366,9 @@ unconstrained.
 - With `includeSchemaInPrompt`, the default as in FoundationModels, the schema is described in the system message.
 - A reply that reaches the output limit first throws `decodingFailure`, and isn't kept in the transcript. The transcript
   keeps a structured reply's JSON.
-- Streaming structured replies on the native facade is not in this piece. Through the adapter, FoundationModels'
-  `streamResponse(generating:)` streams partially generated values from the constrained JSON.
+- Streaming structured replies on the native facade is a 0.0.4 follow-up (partial values from an incremental JSON parser
+  over the constrained text). Through the adapter, FoundationModels' `streamResponse(generating:)` already streams
+  partially generated values from the constrained JSON.
 
 **`@AetherGenerable` and `@AetherGuide`** are in the separate `AetherLanguageMacros` product, so apps that don't use the
 macro don't build swift-syntax. It's pinned exactly to 604.0.0, the Swift 6.4 toolchain's, and SwiftPM uses its
