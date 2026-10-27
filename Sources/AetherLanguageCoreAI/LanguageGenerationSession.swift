@@ -2,6 +2,9 @@
 import Foundation
 import AetherCoreAI
 import AetherKit
+// The backend-neutral language types (`LanguageBackend`, sampling, `LanguageGenerationError`) live in the
+// Core-AI-free runtime target; importing this module keeps them in scope for existing consumers.
+@_exported import AetherLanguageRuntime
 #if os(iOS)
 import os
 #endif
@@ -713,9 +716,4 @@ public actor LanguageGenerationSession {
         let duration = start.duration(to: .now)
         return Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
     }
-}
-
-public enum LanguageGenerationError: Error, Sendable, Equatable {
-    case invalid(String), busy, closed, contextLimit(limit: Int)
-    case memoryBudget(requiredBytes: UInt64, availableBytes: UInt64)
 }

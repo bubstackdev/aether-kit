@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "AetherAssets", targets: ["AetherAssets"]),
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
         .library(name: "AetherLanguageCoreAI", targets: ["AetherLanguageCoreAI"]),
+        .library(name: "AetherLanguageRuntime", targets: ["AetherLanguageRuntime"]),
         .library(name: "AetherLanguageTokenizers", targets: ["AetherLanguageTokenizers"]),
         .library(name: "AetherVision", targets: ["AetherVision"]),
         .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
@@ -36,7 +37,10 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
-        .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision"],
+        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit, so it can build below the
+        // Core AI floor (Scripts/check-language-runtime-floor.sh typechecks it at macOS 14 and iOS 17).
+        .target(name: "AetherLanguageRuntime"),
+        .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision", "AetherLanguageRuntime"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
         .target(name: "AetherLanguageTokenizers", dependencies: [
             "AetherKit", .product(name: "Tokenizers", package: "swift-transformers"),
@@ -67,6 +71,7 @@ let package = Package(
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
         .testTarget(name: "AetherLanguageTokenizersTests", dependencies: ["AetherLanguageTokenizers", "AetherKit"],
                     resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherLanguageRuntimeTests", dependencies: ["AetherLanguageRuntime"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit", "AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherVisionTests", dependencies: ["AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),
