@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "subject": "Kokoro on-device run (iPhone)",
+  "date": "2026-10-26",
+  "device": {"model": "iPhone19,4", "memory_gib": 11.3, "os": "iOS 27.1 (24A94425)", "app_memory_budget_mib_at_start": 3368},
+  "host": "Examples/SpeechDevice (XcodeGen app KokoroDeviceProbe), Release, signed with the existing development identity and the existing wildcard team provisioning profile through automatic signing without provisioning updates; installed, run with `devicectl device process launch --console`, and uninstalled after each run",
+  "bundle": "trimmed copy of ~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp32-buckets-2026-10-26 (models plus the four reference voices), staged by Forge/kokoro/stage_device_assets.py and removed afterwards",
+  "compute": "durations cpuOnly, decoder preferGPU (KokoroComputePlacement.recommended)",
+  "runs": [
+    {"frame_cap": 1024, "log": "kokoro-iphone-cap1024-jetsam-2026-10-26.log",
+     "result": "short, speed and sentence cases passed (buckets 128/256, footprint 0.66 GB); the 913-frame case at bucket 1024 was killed by the system (signal 9) with 2.7 GB of the app budget available before it started"},
+    {"frame_cap": 512, "report": "kokoro-iphone-cap512-2026-10-26.json", "log": "kokoro-iphone-cap512-2026-10-26.log", "passed": true,
+     "cases": [
+       {"name": "short-af_heart", "frames": 98, "bucket": 128, "rel_l2": 0.0081, "log_mel_mean": 0.0038, "bound": 0.0292, "frames_exact": true, "first_s": 5.53, "warm_s": 0.191, "warm_rtf": 0.078},
+       {"name": "speed-bf_emma", "frames": 180, "bucket": 256, "rel_l2": 0.0233, "log_mel_mean": 0.0065, "bound": 0.05, "frames_exact": true, "first_s": 0.68, "warm_s": 0.380, "warm_rtf": 0.084},
+       {"name": "sentence-am_michael", "frames": 247, "bucket": 256, "rel_l2": 0.0277, "log_mel_mean": 0.0109, "bound": 0.05, "frames_exact": true, "first_s": 0.38, "warm_s": 0.380, "warm_rtf": 0.061},
+       {"name": "long-af_bella", "frames": 913, "result": "refused before decoding: above the 512-frame cap"}
+     ],
+     "bucket_512_memory_probe": {"frames": 463, "bucket": 512, "first_s": 1.09, "warm_s": 0.752, "warm_rtf": 0.065, "footprint_mib": 2072, "available_mib_after": 1304, "note": "a 160-phoneme prefix of the long case; no reference audio"},
+     "footprint_peak_mib": 2137, "footprint_after_unload_mib": 1117}
+  ],
+  "decision": "iOS sessions default to KokoroFrameCap.compact (512 frames, about 12.8 s); macOS keeps standard (1024). Bucket 1024 does not fit this device's app budget; longer text must be segmented.",
+  "first_synthesis_note": "5.5 s for the first utterance includes model load and the first GPU specialization; later bucket first uses took 0.7-1.1 s",
+  "gpu_lock_seconds": 123,
+  "not_verified": ["parity at bucket 512 on the device (memory only)", "other iPhone models and memory budgets", "the increased-memory-limit entitlement"]
+}

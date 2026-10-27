@@ -1,0 +1,14 @@
+App installed:
+KOKORO_DEVICE_PROGRESS verified bundle footprint=17MiB peak=18MiB available=3359MiB
+KOKORO_DEVICE_PROGRESS start short-af_heart frames=98 footprint=17MiB peak=18MiB available=3359MiB
+KOKORO_DEVICE_PROGRESS first short-af_heart 5.98s footprint=211MiB peak=277MiB available=3165MiB
+KOKORO_DEVICE_PROGRESS done short-af_heart passed=true warm=0.190s footprint=257MiB peak=287MiB available=3119MiB
+KOKORO_DEVICE_PROGRESS start speed-bf_emma frames=180 footprint=257MiB peak=287MiB available=3119MiB
+KOKORO_DEVICE_PROGRESS first speed-bf_emma 0.70s footprint=653MiB peak=703MiB available=2723MiB
+KOKORO_DEVICE_PROGRESS done speed-bf_emma passed=true warm=0.373s footprint=658MiB peak=711MiB available=2718MiB
+KOKORO_DEVICE_PROGRESS start sentence-am_michael frames=247 footprint=658MiB peak=711MiB available=2718MiB
+KOKORO_DEVICE_PROGRESS first sentence-am_michael 0.39s footprint=671MiB peak=712MiB available=2705MiB
+KOKORO_DEVICE_PROGRESS done sentence-am_michael passed=true warm=0.384s footprint=655MiB peak=715MiB available=2721MiB
+KOKORO_DEVICE_PROGRESS start long-af_bella frames=913 footprint=655MiB peak=715MiB available=2721MiB
+App terminated due to signal 9.
+App uninstalled.

@@ -1,0 +1,46 @@
+17:36  up 11 days, 20:56, 7 users, load averages: 25.96 40.91 53.79
+qualification rc=0
+== paired shape 128 (old:128, current:128:128, lean:128:128)
+17:36  up 11 days, 20:57, 7 users, load averages: 26.74 39.46 52.75
+  "spec": "kokoro-82m:128",
+  "median_s": 0.088,
+  "min_s": 0.08
+  "spec": "buckets:128:128",
+  "median_s": 0.196,
+  "min_s": 0.158
+  "spec": "kokoro-82m:128:128",
+  "median_s": 0.103,
+  "min_s": 0.08
+== paired shape 256 (old:256, current:256:256, lean:256:256)
+17:36  up 11 days, 20:57, 7 users, load averages: 26.34 38.97 52.42
+  "spec": "kokoro-82m:256",
+  "median_s": 0.157,
+  "min_s": 0.148
+  "spec": "buckets:256:256",
+  "median_s": 0.405,
+  "min_s": 0.325
+  "spec": "kokoro-82m:256:256",
+  "median_s": 0.161,
+  "min_s": 0.148
+== paired shape 1024 (old:1024, current:1024:1024, lean:1024:1024)
+17:37  up 11 days, 20:57, 7 users, load averages: 26.81 38.50 52.02
+  "spec": "kokoro-82m:1024",
+  "median_s": 0.775,
+  "min_s": 0.557
+  "spec": "buckets:1024:1024",
+  "median_s": 1.91,
+  "min_s": 1.72
+  "spec": "kokoro-82m:1024:1024",
+  "median_s": 0.736,
+  "min_s": 0.61
+== padded lean 1024:913 vs old 913
+  "spec": "kokoro-82m:913",
+  "median_s": 0.936,
+  "min_s": 0.51
+  "spec": "kokoro-82m:1024:913",
+  "median_s": 0.704,
+  "min_s": 0.646
+sweep rc=0
+17:41  up 11 days, 21:01, 7 users, load averages: 36.90 36.26 47.34
+
+[exited with code 0]

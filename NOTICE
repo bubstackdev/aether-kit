@@ -38,3 +38,12 @@ pinned black-forest-labs/FLUX.2-klein-4B checkpoint at revision
 e7b7dc27f91deacad38e78976d1f2b499d76a294 (Apache-2.0) through unmodified
 Diffusers 0.37.1. No weights or fixtures are distributed; local exports keep
 the checkpoint's LICENSE.md beside the assets.
+
+Kokoro speech export graphs (Forge/kokoro) reimplement forward passes of the
+kokoro 0.9.4 package (https://github.com/hexgrad/kokoro, Apache-2.0), itself
+adapted from StyleTTS 2 / iSTFTNet (https://github.com/yl4579/StyleTTS2, MIT),
+and are checked against the pinned hexgrad/Kokoro-82M checkpoint at revision
+f3ff3571791e39611d31c381e3a41a3af07b4987 (Apache-2.0). No weights, voices or
+reference audio are distributed; the model card attributes CC BY 3.0 (Koniwa)
+and CC BY 4.0 (SIWIS) training audio. AetherSpeech includes no
+grapheme-to-phoneme code and no espeak-ng (GPL-3.0); see docs/kokoro-speech.md.

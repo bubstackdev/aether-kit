@@ -6,7 +6,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
-| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, language model registration, the shared GPU lease and opt-in GPU admission. No Core AI dependency. |
+| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, PCM audio with WAV output, language model registration, the shared GPU lease and opt-in GPU admission. No Core AI dependency. |
 | `AetherAssets` | Preview | Immutable local asset installation: staged SHA-256-verified import, installation IDs, reader leases, abandoned-stage recovery. No Core AI dependency. |
 | `AetherCoreAI` | Preview | Local Core AI model loading and introspection, a stateless typed reference executor, installed-asset model sessions and optional shared resource reservations. |
 | `AetherKrea` | Preview | Krea bundle validation, prompt/conditioning and reference-image contracts, refine schedules, rotary inputs and seeded noise. |
@@ -18,6 +18,8 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 | `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. End-to-end media qualification is pending. |
 | `AetherFlux2`, `AetherFlux2Tokenizers` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B CPU contracts: bundle validation, padded Qwen3 prompt, empirical-shift schedule, 4-axis rotary, reference-image policy, and a local tokenizer. |
 | `AetherFlux2CoreAI` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B text-to-image and multi-reference editing: Qwen3 encoder → three denoiser segments → Euler → VAE ([guide](docs/flux2-klein.md)). |
+| `AetherSpeech` | **Experimental** (0.0.2) | Kokoro-82M CPU contracts: typed voices, phoneme validation against the bundle vocabulary, an app-supplied `SpeechPhonemizer` protocol (no bundled G2P), bundle pins, duration alignment and seeded noise. |
+| `AetherSpeechCoreAI` | **Experimental** (0.0.2) | Kokoro-82M speech synthesis: phonemes → duration graph → host alignment → iSTFTNet vocoder → 24 kHz float32 PCM, with segment-by-segment delivery ([guide](docs/kokoro-speech.md)). |
 | `aether-probe` | Dev tool | Qualification, rendering and benchmark CLI; not SDK surface. |
 
 ## Requirements
@@ -97,6 +99,31 @@ Bundles are registered with a `language-model.json` manifest that Kit verifies b
 
 `H3VideoSession` takes an `H3VideoRequest` and returns frames and audio. The request carries the prompt, geometry, seed, optional first and last keyframes, and whether to generate audio. It runs over a validated schema-3 H3 profile. The stages are implemented and have been exercised natively, but committed end-to-end qualification records (graphs, trajectory, decoders, lifecycle, media audit) are still pending, so treat outputs and APIs as experimental. See [H3 foundations](docs/h3-foundations.md) and [H3 integration](docs/h3-integration.md).
 
+## Kokoro speech synthesis (experimental)
+
+```swift
+import AetherSpeech
+import AetherSpeechCoreAI
+
+let session = KokoroSpeechSession(assets: try KokoroAssets.open(at: bundleURL))
+let speech = try await session.synthesize(try session.phonemes("həlˈO wˈɜɹld."),
+                                          configuration: try KokoroSpeechConfiguration(voice: .afHeart))
+try speech.audio.saveWAV(to: outputURL)
+await session.unload()
+```
+
+`KokoroSpeechSession` runs a locally exported [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) bundle (Apache-2.0 weights, 54 voices). It takes Kokoro phoneme strings, not text. The SDK contains no grapheme-to-phoneme code; apps supply it through `SpeechPhonemizer`, which keeps espeak-ng (GPL-3.0) out of the dependency graph. `synthesize(segments:)` delivers each utterance as soon as it is decoded. Cancellation and unload follow the Krea session's contract. Optional admission reserves model residency, per-call scratch and per-request operation storage against estimates checked to match the bundle. Native output matches the upstream PyTorch reference at four fixed cases within the model's own float32 precision floor. See the [Kokoro guide](docs/kokoro-speech.md) for the export recipe, licensing decision, compute placement and tolerances, and `Examples/Speech` for a consumer command.
+
+Measured 2026-10-26 on the M5 Max, float32, durations on CPU and decoder on GPU ([record](docs/evidence/kokoro-qualification-2026-10-26.json)). These are shared-host observations, not quiet-window benchmarks.
+
+| Scenario | Result |
+| --- | --- |
+| Warm synthesis, unbucketed decoder (2.5–22.8 s utterances) | about 32× faster than real time (0.08 s for 2.45 s; 0.70 s for 22.8 s) |
+| Warm synthesis, bucketed decoder (default export) | same speed as unbucketed at the same shape (paired ratio 0.95–1.17); padding costs at most the bucket ratio |
+| New utterance length | unbucketed: 2–6 s specialization every time; bucketed: once per bucket, then 0.1–0.2 s |
+| Memory over 50 distinct lengths | unbucketed: 19 GB footprint, growing; bucketed: about 4 GB through bucket 1024 (bucket 2048 adds about 8 GB of Metal) |
+| CPU-only placement | about 1.3× real time |
+
 ## Models and assets
 
 AetherKit loads local Core AI exports that you supply and never downloads weights.
@@ -104,6 +131,7 @@ AetherKit loads local Core AI exports that you supply and never downloads weight
 - **Krea:** a bundle directory containing `aether.json` (the recipe), `metadata.json`, six or seven `.aimodel` assets with `main.hash` declarations, and `tokenizer/`. It can optionally be installed through `AetherAssets`. A full written bundle specification isn't published yet.
 - **Language:** a registered bundle with `language-model.json`.
 - **H3:** a schema-3 profile that references checkpoint ranges in place.
+- **Kokoro:** a bundle exported by `Forge/kokoro/export_kokoro.py`: `kokoro.json` (contract, vocabulary and SHA-256 pins), two `.aimodel` assets and `voices/*.f32`. It can optionally be installed through `AetherAssets`.
 
 Assets keep their own licenses.
 
@@ -123,18 +151,20 @@ Real-weight suites are opt-in and skipped by default:
 - `AETHER_NATIVE_DECODER_QUALIFICATION`
 - `AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION`
 - the H3 profile tests
+- `AETHER_NATIVE_KOKORO_QUALIFICATION` (via `Scripts/qualify-kokoro-native.sh`)
 
 Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.1 checklist](docs/release-0.0.1-checklist.md) and the [SDK roadmap](docs/sdk-roadmap.md).
 
 ## Known limitations
 
-- **Single qualified device:** one M5 Max running macOS 27.0.1. iOS is unqualified here.
+- **Single qualified device:** one M5 Max running macOS 27.0.1. iOS is unqualified here, except Kokoro speech, which passed on one iPhone (iPhone19,4, iOS 27.1).
 - **No Krea bundle specification**, and no hosted assets or download transport.
 - **Slow first image:** model first-load dominates the first image in a process.
 - **Krea progress callbacks are synchronous:** a slow observer stalls sampling.
 - **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped.
 - **Language:** 0.0.1-contract (running-position) assets reload the native model every 128 submissions. The bucketed contract avoids reloads at a per-step cost (about 0.88× an unrecycled running step on Qwen3-0.6B fp16, with a longer time to first token) and is qualified on that model on one Mac only.
 - **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
+- **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory until unload; bucket 2048 alone adds about 8 GB. Sessions therefore cap utterances at 1024 frames (about 25.6 s) by default on macOS and 512 (about 12.8 s) on iOS, where one iPhone was qualified; `frameCap: .extended` raises the cap to 2048, and longer segments are refused with their length and the cap. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. 0.0.2 ships the float32 decoder only; the float16/int8 export flags are experimental and fail qualification.
 - **CI** needs an equipped macOS 27 runner; until then, checks run locally.
 
 ## License

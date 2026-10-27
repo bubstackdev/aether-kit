@@ -1,0 +1,67 @@
+Building for production...
+[Computing dependencies]
+[Provisioning 1 / 61]
+[1 / 2] AetherKitTests-product
+Build complete! (1.27 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test kokoroNativeParityTimingAndLifecycle() started.
+2026-10-26 16:06:41.658 swiftpm-testing-helper[46476:73358210] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x799f035740 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:06:48.929 swiftpm-testing-helper[46476:73358234] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x79a047aa60 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:06:51.931 swiftpm-testing-helper[46476:73358428] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x79a0789770 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:06:55.025 swiftpm-testing-helper[46476:73358239] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x799f95c270 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:07:00.025 swiftpm-testing-helper[46476:73358239] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x79a260c5a0 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:07:02.349 swiftpm-testing-helper[46476:73358239] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x79a05b5800 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+2026-10-26 16:07:04.861 swiftpm-testing-helper[46476:73358239] 
+Error:
+
+ Error Domain=com.apple.appleneuralengine.compiler Code=1 "_ANECompiler : ANECCompile() FAILED" UserInfo={NSLocalizedDescription=_ANECompiler : ANECCompile() FAILED, NSUnderlyingError=0x79a05b4e70 {Error Domain=com.apple.appleneuralengine.compiler Code=22 "ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)" UserInfo={NSLocalizedDescription=ANECCompile(/var/folders/49/8xvghw494cj7xhbdv5jqmk5w0000gn/T/com.apple.MetalPerformanceShadersGraph/mpsgraph-46476-2026-10-26_16_06_40-127234606/) FAILED: err=(
+    "Compiler internal error: Error: MLIR MPS to ANEC conversion failed (default/nonbonded phase)\n"
+)}}}
+✔ Test kokoroNativeParityTimingAndLifecycle() passed after 28.586 seconds.
+✔ Test run with 1 test in 0 suites passed after 28.587 seconds.

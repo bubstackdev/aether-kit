@@ -1,0 +1,14 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4] AetherKit
+Build complete! (0.91 sec)
+error: Process '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper --test-bundle-path /Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a45d58af6a87a4838/.build/out/Products/Release/AetherNativeTests.xctest/Contents/MacOS/AetherNativeTests --build-system swiftbuild --disable-sandbox --cache-path /Users
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test kokoroNativeParityTimingAndLifecycle() started.
+➜ Test kokoroNativeDecoderShapeSweep() skipped.
+/AppleInternal/Library/BuildRoots/4~CV2iugCS017GRPdEjj32gfBJXr8YaxAcCWYlUuw/Library/Caches/com.apple.xbs/TemporaryDirectory.WK6jPd/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShadersGraph/Runtimes/MPSRuntime/Operations/RegionOps/ANERegion.mm:414: failed assertion `ANE inference operation failed. Error Domain=com.apple.metalperformanceshadersgraph Code=-19 "ANE inference operation
+Note: Some test targets reported failures:
+  - AetherNativeTests (Swift Testing)

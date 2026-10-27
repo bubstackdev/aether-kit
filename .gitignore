@@ -4,3 +4,7 @@
 .DS_Store
 *.xcuserstate
 __pycache__/
+*.pyc
+Examples/SpeechDevice/Assets/*
+!Examples/SpeechDevice/Assets/.gitkeep
+Examples/SpeechDevice/KokoroDeviceProbe.xcodeproj/

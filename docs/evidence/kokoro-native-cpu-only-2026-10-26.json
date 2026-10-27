@@ -1,0 +1,201 @@
+{
+  "bundleFingerprint" : "89ab89361eb04dbdcdcb6661d414403545605d894011a508fe864beab1b066dc",
+  "bundleVerified" : true,
+  "cases" : [
+    {
+      "audioSHA256" : "78c0b5b3aafb7dcc7738fd6c0b12c5e3d65db9882715fbe2e200704423a82a8a",
+      "audioSeconds" : 2.45,
+      "firstSynthesisSeconds" : 4.168143125,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24334838505555467,
+        "log_mel_mean_abs" : 0.003512241264556211,
+        "max_abs" : 0.006678957148440492,
+        "rel_l2" : 0.007292234085535701,
+        "snr_db" : 42.74278797306552
+      },
+      "framesMatch" : true,
+      "name" : "short-af_heart",
+      "native" : {
+        "log_mel_max_abs" : 0.18118939589358407,
+        "log_mel_mean_abs" : 0.004228676143788241,
+        "max_abs" : 0.011660359799861908,
+        "rel_l2" : 0.010077024647647537,
+        "snr_db" : 39.933353583711984
+      },
+      "passed" : true,
+      "phonemeCount" : 29,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522321048234,
+        "log_mel_mean_abs" : 6.255074787703969e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.00014539690593281068,
+        "snr_db" : 76.74889670456085
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522320848394,
+        "log_mel_mean_abs" : 6.255074787702922e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.000145396905932807,
+        "snr_db" : 76.74889670456108
+      },
+      "tokensMatch" : true,
+      "voice" : "af_heart",
+      "warmRealTimeFactor" : 1.254456887755102,
+      "warmSynthesisSeconds" : 3.073419375
+    },
+    {
+      "audioSHA256" : "9eceabc1b6b712187b064fc29db9f193a09fb76de6728a3a4620087f2a9c6ed0",
+      "audioSeconds" : 6.175,
+      "firstSynthesisSeconds" : 7.9781478329999995,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24576312898540253,
+        "log_mel_mean_abs" : 0.009674276652978991,
+        "max_abs" : 0.019450740779215894,
+        "rel_l2" : 0.025312769690085935,
+        "snr_db" : 31.933206646174497
+      },
+      "framesMatch" : true,
+      "name" : "sentence-am_michael",
+      "native" : {
+        "log_mel_max_abs" : 0.3431366844988668,
+        "log_mel_mean_abs" : 0.012074947443439362,
+        "max_abs" : 0.03146596159785986,
+        "rel_l2" : 0.03249679973218935,
+        "snr_db" : 29.76318812016701
+      },
+      "passed" : true,
+      "phonemeCount" : 89,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.029485985679192694,
+        "log_mel_mean_abs" : 5.6795730316948254e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564733113,
+        "snr_db" : 74.54028282538422
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.02948598567919314,
+        "log_mel_mean_abs" : 5.6795730316928996e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564732308,
+        "snr_db" : 74.5402828253846
+      },
+      "tokensMatch" : true,
+      "voice" : "am_michael",
+      "warmRealTimeFactor" : 1.2504147570850201,
+      "warmSynthesisSeconds" : 7.721311125
+    },
+    {
+      "audioSHA256" : "4447c8bfec0190b655154b16356f4eb0a9273b74347b6328c169a0d29b82456d",
+      "audioSeconds" : 4.5,
+      "firstSynthesisSeconds" : 5.858408792,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.18049163423601255,
+        "log_mel_mean_abs" : 0.005954439999561048,
+        "max_abs" : 0.04953707827592006,
+        "rel_l2" : 0.0215376501079146,
+        "snr_db" : 33.33603365385049
+      },
+      "framesMatch" : true,
+      "name" : "speed-bf_emma",
+      "native" : {
+        "log_mel_max_abs" : 0.34717006434412034,
+        "log_mel_mean_abs" : 0.007431339610466197,
+        "max_abs" : 0.0418088945443742,
+        "rel_l2" : 0.028507591628522795,
+        "snr_db" : 30.900789422048756
+      },
+      "passed" : true,
+      "phonemeCount" : 78,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478036095,
+        "log_mel_mean_abs" : 8.43060265519897e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.19087982465899e-06,
+        "snr_db" : 102.86435938394794
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478977564,
+        "log_mel_mean_abs" : 8.43060265522708e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.190879824658948e-06,
+        "snr_db" : 102.86435938394797
+      },
+      "tokensMatch" : true,
+      "voice" : "bf_emma",
+      "warmRealTimeFactor" : 1.3390085648888888,
+      "warmSynthesisSeconds" : 6.025538542
+    },
+    {
+      "audioSHA256" : "845768a22d7e00d52e288364bc99af48e7dd6c7e2315aeff238351e986a52f9d",
+      "audioSeconds" : 22.825,
+      "firstSynthesisSeconds" : 50.309819458,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.8828283406266391,
+        "log_mel_mean_abs" : 0.013856211500365754,
+        "max_abs" : 0.04082368257079569,
+        "rel_l2" : 0.022876218044047412,
+        "snr_db" : 32.81231545279292
+      },
+      "framesMatch" : true,
+      "name" : "long-af_bella",
+      "native" : {
+        "log_mel_max_abs" : 0.6750639961969265,
+        "log_mel_mean_abs" : 0.018419339647529464,
+        "max_abs" : 0.07980472221970558,
+        "rel_l2" : 0.03985136232742815,
+        "snr_db" : 27.99113655126874
+      },
+      "passed" : true,
+      "phonemeCount" : 335,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378795409,
+        "log_mel_mean_abs" : 0.00012779412385802201,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.000728168349763995,
+        "snr_db" : 62.75536403678558
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378796297,
+        "log_mel_mean_abs" : 0.00012779412385808533,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.0007281683497638353,
+        "snr_db" : 62.75536403678749
+      },
+      "tokensMatch" : true,
+      "voice" : "af_bella",
+      "warmRealTimeFactor" : 1.2859286345673604,
+      "warmSynthesisSeconds" : 29.351321084
+    }
+  ],
+  "compute" : "cpuOnly",
+  "failures" : [
+
+  ],
+  "host" : {
+    "activeProcessors" : "18",
+    "memoryGiB" : "64",
+    "model" : "Mac17,6",
+    "os" : "Version 27.0.1 (Build 26A434)"
+  },
+  "lifecycle" : {
+    "activeCompletedAfterUnload" : true,
+    "activeMatchesBaseline" : true,
+    "cancellationError" : "CancellationError",
+    "recoveryMatchesBaseline" : true,
+    "rejectedAfterUnload" : true,
+    "stateAfterCancellation" : "ready",
+    "unloadClosedWhileActive" : true
+  },
+  "loadAndVerifySeconds" : 0.130598333,
+  "passed" : true,
+  "references" : "b99c1e45a4a84f892cbe964f325733db039caa894496872a1a0465c56105871a",
+  "tolerances" : {
+    "maximumLogMelMean" : 0.03,
+    "maximumRelativeL2" : 0.05,
+    "precisionFloorMultiple" : 4
+  }
+}

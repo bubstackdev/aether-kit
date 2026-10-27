@@ -1,0 +1,295 @@
+{
+  "buckets": [
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "cases": [
+    {
+      "name": "short-af_heart",
+      "frames": 98,
+      "bucket": 128,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.003705524695532869,
+        "max_abs": 0.0029565095901489258,
+        "snr_db": 48.623005760490976,
+        "log_mel_mean_abs": 0.0013400155211872437,
+        "log_mel_max_abs": 0.09039416368753317
+      },
+      "padded_identical": false,
+      "unpadded_vs_original_graph": {
+        "rel_l2": 0.0013588275098993686,
+        "max_abs": 0.0018139034509658813,
+        "snr_db": 57.33671338563464,
+        "log_mel_mean_abs": 0.0005232276672746934,
+        "log_mel_max_abs": 0.03571310463619437
+      },
+      "padded_vs_upstream": {
+        "rel_l2": 0.006980606931622273,
+        "max_abs": 0.007654234883375466,
+        "snr_db": 43.12213631660476,
+        "log_mel_mean_abs": 0.0030138316139921894,
+        "log_mel_max_abs": 0.09064373130163439
+      },
+      "original_graph_vs_upstream": {
+        "rel_l2": 0.006842951958575891,
+        "max_abs": 0.007754926453344524,
+        "snr_db": 43.29513017975705,
+        "log_mel_mean_abs": 0.0029418198839204334,
+        "log_mel_max_abs": 0.08007676503296524
+      }
+    },
+    {
+      "name": "sentence-am_michael",
+      "frames": 247,
+      "bucket": 256,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.008848433327254091,
+        "max_abs": 0.007046479731798172,
+        "snr_db": 41.06267234323972,
+        "log_mel_mean_abs": 0.0026091075281914258,
+        "log_mel_max_abs": 0.17368455359271007
+      },
+      "padded_identical": false,
+      "unpadded_vs_original_graph": {
+        "rel_l2": 0.013900095097153835,
+        "max_abs": 0.016449838876724243,
+        "snr_db": 37.13964457041755,
+        "log_mel_mean_abs": 0.003975380320439687,
+        "log_mel_max_abs": 0.23487706565122135
+      },
+      "padded_vs_upstream": {
+        "rel_l2": 0.02490156137230465,
+        "max_abs": 0.019215893000364304,
+        "snr_db": 32.07546842024048,
+        "log_mel_mean_abs": 0.010357859204773397,
+        "log_mel_max_abs": 0.3330035893073249
+      },
+      "original_graph_vs_upstream": {
+        "rel_l2": 0.02476258708754158,
+        "max_abs": 0.025619782507419586,
+        "snr_db": 32.124079681609274,
+        "log_mel_mean_abs": 0.01015481396822368,
+        "log_mel_max_abs": 0.3348496606754705
+      }
+    },
+    {
+      "name": "speed-bf_emma",
+      "frames": 180,
+      "bucket": 256,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.014531426020092855,
+        "max_abs": 0.02923218347132206,
+        "snr_db": 36.75383529522505,
+        "log_mel_mean_abs": 0.0037327992887730625,
+        "log_mel_max_abs": 0.14166135068421304
+      },
+      "padded_identical": false,
+      "unpadded_vs_original_graph": {
+        "rel_l2": 0.0066228980617074225,
+        "max_abs": 0.019467780366539955,
+        "snr_db": 43.57903858947041,
+        "log_mel_mean_abs": 0.0012864202309735842,
+        "log_mel_max_abs": 0.08044081268744552
+      },
+      "padded_vs_upstream": {
+        "rel_l2": 0.021702794170680027,
+        "max_abs": 0.0463462695479393,
+        "snr_db": 33.2696869683864,
+        "log_mel_mean_abs": 0.006046230005091751,
+        "log_mel_max_abs": 0.2254462838630893
+      },
+      "original_graph_vs_upstream": {
+        "rel_l2": 0.02217036519660713,
+        "max_abs": 0.04588021710515022,
+        "snr_db": 33.08454306006928,
+        "log_mel_mean_abs": 0.006020752701638033,
+        "log_mel_max_abs": 0.22444568907525309
+      }
+    },
+    {
+      "name": "long-af_bella",
+      "frames": 913,
+      "bucket": 1024,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.01117187652106891,
+        "max_abs": 0.051109664142131805,
+        "snr_db": 39.037477461058245,
+        "log_mel_mean_abs": 0.005582051440089242,
+        "log_mel_max_abs": 0.9616937285025702
+      },
+      "padded_identical": false,
+      "unpadded_vs_original_graph": {
+        "rel_l2": 0.011485467271920386,
+        "max_abs": 0.052481748163700104,
+        "snr_db": 38.797026627596836,
+        "log_mel_mean_abs": 0.005905711418839315,
+        "log_mel_max_abs": 0.9631409643398525
+      },
+      "padded_vs_upstream": {
+        "rel_l2": 0.01940253178071327,
+        "max_abs": 0.03420767933130264,
+        "snr_db": 34.24283193061998,
+        "log_mel_mean_abs": 0.01245706845858878,
+        "log_mel_max_abs": 0.6141355833809721
+      },
+      "original_graph_vs_upstream": {
+        "rel_l2": 0.01975575815623897,
+        "max_abs": 0.03454424440860748,
+        "snr_db": 34.08612597948067,
+        "log_mel_mean_abs": 0.01241446333084819,
+        "log_mel_max_abs": 0.6015024885453002
+      }
+    }
+  ],
+  "edges": [
+    {
+      "frames": 63,
+      "bucket": 64,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0031317642417158435,
+        "max_abs": 0.0034792497754096985,
+        "snr_db": 50.084218778869776,
+        "log_mel_mean_abs": 0.0016004991202426802,
+        "log_mel_max_abs": 0.06417668203655602
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 64,
+      "bucket": 64,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0,
+        "max_abs": 0.0,
+        "snr_db": Infinity,
+        "log_mel_mean_abs": 0.0,
+        "log_mel_max_abs": 0.0
+      },
+      "padded_identical": true
+    },
+    {
+      "frames": 65,
+      "bucket": 128,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.004624178716333327,
+        "max_abs": 0.00745026022195816,
+        "snr_db": 46.69930779098273,
+        "log_mel_mean_abs": 0.002247927384087677,
+        "log_mel_max_abs": 0.08411062688077675
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 127,
+      "bucket": 128,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.004798273377981237,
+        "max_abs": 0.006025694310665131,
+        "snr_db": 46.37830024130089,
+        "log_mel_mean_abs": 0.0036226334987924276,
+        "log_mel_max_abs": 0.15155112031796047
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 128,
+      "bucket": 128,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0,
+        "max_abs": 0.0,
+        "snr_db": Infinity,
+        "log_mel_mean_abs": 0.0,
+        "log_mel_max_abs": 0.0
+      },
+      "padded_identical": true
+    },
+    {
+      "frames": 129,
+      "bucket": 256,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.004946288309402917,
+        "max_abs": 0.012287944555282593,
+        "snr_db": 46.114411461340204,
+        "log_mel_mean_abs": 0.0036729909574703687,
+        "log_mel_max_abs": 0.09600107176650921
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 255,
+      "bucket": 256,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.005450647861659009,
+        "max_abs": 0.009458601474761963,
+        "snr_db": 45.271037492002726,
+        "log_mel_mean_abs": 0.0038143410508294177,
+        "log_mel_max_abs": 0.18161610176578113
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 256,
+      "bucket": 256,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0,
+        "max_abs": 0.0,
+        "snr_db": Infinity,
+        "log_mel_mean_abs": 0.0,
+        "log_mel_max_abs": 0.0
+      },
+      "padded_identical": true
+    },
+    {
+      "frames": 257,
+      "bucket": 512,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0027354073462997107,
+        "max_abs": 0.0074640922248363495,
+        "snr_db": 51.25955982114639,
+        "log_mel_mean_abs": 0.001400881482355407,
+        "log_mel_max_abs": 0.1367018285262498
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 511,
+      "bucket": 512,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.006121026195551463,
+        "max_abs": 0.023165288846939802,
+        "snr_db": 44.263515237792404,
+        "log_mel_mean_abs": 0.002096968517022173,
+        "log_mel_max_abs": 0.22458996444169976
+      },
+      "padded_identical": false
+    },
+    {
+      "frames": 512,
+      "bucket": 512,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.0,
+        "max_abs": 0.0,
+        "snr_db": Infinity,
+        "log_mel_mean_abs": 0.0,
+        "log_mel_max_abs": 0.0
+      },
+      "padded_identical": true
+    },
+    {
+      "frames": 513,
+      "bucket": 1024,
+      "padded_vs_unpadded": {
+        "rel_l2": 0.009754383758190304,
+        "max_abs": 0.015790238976478577,
+        "snr_db": 40.216003246806345,
+        "log_mel_mean_abs": 0.005196919936740336,
+        "log_mel_max_abs": 0.6520953886028726
+      },
+      "padded_identical": false
+    }
+  ]
+}
