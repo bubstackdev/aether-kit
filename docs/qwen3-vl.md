@@ -29,10 +29,12 @@ Decoding is greedy. One request at a time; overlap fails with `busy`. With a `gp
 encode phase and the decoder's request are each admitted. `unload()` first withdraws a request
 still waiting for either admission (it fails with `closed`), so close never waits behind another
 owner's GPU work; an admitted request finishes first, then both models are released. The
-registration's `maximumImageTokens · (patch · merge)²` must cover `minimumPixels`, and the
-decoder's export bounds must declare a `maximumImageChunk` covering the budget (also on the raw
-`open(textModel:…)` path); an image larger than the exported chunk is refused before any native
-work. Image resampling runs off the session actor.
+registration's `maximumImageTokens · (patch · merge)²` must cover `minimumPixels` (an
+overflowing product is refused, not trapped), and the decoder's export bounds must declare a
+`maximumImageChunk` covering the budget (also on the raw `open(textModel:…)` path); an image
+larger than the exported chunk is refused before any native work. A bare
+`LanguageGenerationSession` over an image-capable asset without a declared chunk still opens for
+text; its image prompts are refused while planning. Image resampling runs off the session actor.
 
 ## Pieces
 

@@ -106,6 +106,27 @@ struct LanguageManifestTests {
         #expect(LanguageVisionRegistration.reshapesQualified == false)
     }
 
+    @Test func visionRegistrationRefusesOverflowingImageBudget() throws {
+        func registration(tokens: Int, patch: Int = 16, merge: Int = 2) throws -> LanguageVisionRegistration {
+            let values: [String: Any] = ["modelDirectory": "vision.aimodel", "modelSHA256": String(repeating: "a", count: 64),
+                "imageTokenID": 151655, "visionStartTokenID": 151652, "visionEndTokenID": 151653, "patchSize": patch, "mergeSize": merge,
+                "temporalPatchSize": 2, "minimumPixels": 65536, "maximumPixels": 16777216, "imageMean": [0.5, 0.5, 0.5],
+                "imageStandardDeviation": [0.5, 0.5, 0.5], "positionTableSide": 48, "maximumImageTokens": tokens]
+            return try JSONDecoder().decode(LanguageVisionRegistration.self, from: JSONSerialization.data(withJSONObject: values))
+        }
+        let ok = try registration(tokens: 1024)
+        try ok.validate()
+        #expect(ok.imageTokenPixelBudget == 1024 * 32 * 32)
+        // Each factor of tokens · (patch · merge)² can overflow; validation throws instead of trapping.
+        for hostile in [try registration(tokens: Int.max / 2), try registration(tokens: 1, patch: Int.max / 2),
+                        try registration(tokens: 1, patch: 1 << 32, merge: 1)] {
+            #expect(hostile.imageTokenPixelBudget == nil)
+            #expect(throws: AetherError.self) { try hostile.validate() }
+        }
+        // A budget below the minimum pixels is still refused.
+        #expect(throws: AetherError.self) { try registration(tokens: 1).validate() }
+    }
+
     @Test func rejectsTraversalBeforeReadingAssets() throws {
         let values: [String: Any] = ["schemaVersion": 1, "modelDirectory": "../escape", "tokenizerDirectory": "tokenizer",
             "sourceRepository": "example/model", "sourceRevision": String(repeating: "a", count: 40),

@@ -126,8 +126,13 @@ struct LanguagePromptPlan {
     }
 
     /// Refuses a prompt with an image larger than the exported image chunk, before any native work.
-    func requireImageSpans(within limit: Int) throws {
-        if let largest = spans.map(\.count).max(), largest > limit {
+    /// Without a declared chunk (`nil`), any image is refused; a prompt without images passes.
+    func requireImageSpans(within limit: Int?) throws {
+        guard let largest = spans.map(\.count).max() else { return }
+        guard let limit else {
+            throw LanguageGenerationError.invalid("This asset declares no maximum image chunk, so it accepts text-only prompts")
+        }
+        if largest > limit {
             throw LanguageGenerationError.invalid("An image has \(largest) tokens, more than the exported image chunk (\(limit))")
         }
     }

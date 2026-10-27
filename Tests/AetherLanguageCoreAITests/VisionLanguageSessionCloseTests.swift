@@ -132,12 +132,8 @@ struct VisionLanguageSessionCloseTests {
 
     @Test func imageInputRequiresAnImageChunkAndRefusesOversizedImages() throws {
         let bounds = LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096, maximumImageChunk: 64)
-        #expect(try LanguageStepContract.imageChunkLimit(acceptsImages: true, bounds: bounds) == 64)
-        #expect(try LanguageStepContract.imageChunkLimit(acceptsImages: false, bounds: nil) == nil)
-        #expect(throws: LanguageGenerationError.self) {
-            try LanguageStepContract.imageChunkLimit(acceptsImages: true,
-                                                     bounds: LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096))
-        }
+        #expect(LanguageStepContract.imageChunkLimit(acceptsImages: true, bounds: bounds) == 64)
+        #expect(LanguageStepContract.imageChunkLimit(acceptsImages: false, bounds: nil) == nil)
         // An image of 16x16 merged tokens (256) exceeds a 64-token chunk: refused while planning.
         let features = try LanguageImageFeatures(grid: (1, 32, 32), mergeSize: 2, hiddenSize: 1, deepstackLevels: 0,
                                                  embeddings: Array(repeating: 0, count: 256), deepstack: [])
@@ -154,6 +150,25 @@ struct VisionLanguageSessionCloseTests {
             try VisionLanguageSession.requireImageBudget(registration: registration(),
                                                          bounds: LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096))
         }
+    }
+
+    /// An asset with `withImage` but no declared image chunk opens (the session's init uses this
+    /// rule, so it no longer throws) and serves text; its image prompts are refused while planning.
+    @Test func imageAssetWithoutImageChunkOpensForTextAndRefusesImages() throws {
+        let unbounded = LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096)
+        let limit = LanguageStepContract.imageChunkLimit(acceptsImages: true, bounds: unbounded)
+        #expect(limit == nil)
+        #expect(LanguageStepContract.imageChunkLimit(acceptsImages: true, bounds: nil) == nil)
+        #expect(LanguageStepContract.imageChunkLimit(acceptsImages: true,
+            bounds: LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096, maximumImageChunk: 0)) == nil)
+        let tokens = LanguageImageTokens(visionStart: 151652, imagePad: 151655, visionEnd: 151653)
+        let text = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: [1, 2, 3], images: []), tokens: tokens)
+        try text.requireImageSpans(within: limit)
+        let features = try LanguageImageFeatures(grid: (1, 4, 4), mergeSize: 2, hiddenSize: 1, deepstackLevels: 0,
+                                                 embeddings: Array(repeating: 0, count: 4), deepstack: [])
+        let image = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: prompt, images: [features]), tokens: tokens)
+        #expect(throws: LanguageGenerationError.self) { try image.requireImageSpans(within: limit) }
+        try image.requireImageSpans(within: 4)
     }
 
     /// The token budget must cover the minimum pixel bound, so smart resize never upscales past the cap.

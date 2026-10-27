@@ -108,8 +108,8 @@ public actor VisionLanguageSession {
         configuration.mergeSize = registration.mergeSize
         configuration.temporalPatchSize = registration.temporalPatchSize
         configuration.minimumPixels = registration.minimumPixels
-        let factor = registration.patchSize * registration.mergeSize
-        configuration.maximumPixels = min(registration.maximumPixels, registration.maximumImageTokens * factor * factor)
+        // `validate()` refuses an overflowing budget before a session opens.
+        configuration.maximumPixels = min(registration.maximumPixels, registration.imageTokenPixelBudget ?? registration.maximumPixels)
         configuration.mean = registration.imageMean
         configuration.standardDeviation = registration.imageStandardDeviation
         return configuration

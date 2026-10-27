@@ -198,7 +198,7 @@ public actor LanguageGenerationSession {
         self.initialCapacity = initial
         self.contract = contract
         self.prefillLimit = prefillLimit
-        self.imageLimit = try LanguageStepContract.imageChunkLimit(acceptsImages: imageFunction != nil, bounds: exportBounds)
+        self.imageLimit = LanguageStepContract.imageChunkLimit(acceptsImages: imageFunction != nil, bounds: exportBounds)
         self.takesRopePositions = takesRope
         self.acceptsImages = imageFunction != nil
         self.imageFunction = imageFunction
@@ -249,7 +249,7 @@ public actor LanguageGenerationSession {
     private func imagePlan(_ prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens) throws -> LanguagePromptPlan {
         guard acceptsImages else { throw LanguageGenerationError.invalid("This asset has no image input") }
         let plan = try LanguagePromptPlan.expand(prompt, tokens: imageTokens)
-        try plan.requireImageSpans(within: imageLimit ?? 0)
+        try plan.requireImageSpans(within: imageLimit)
         return plan
     }
 

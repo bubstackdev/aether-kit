@@ -72,13 +72,12 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         return nil
     }
 
-    /// The image submission bound of an asset with image input: required (its `withImage` q bound),
-    /// so an oversized image is refused before Core AI. Nil for assets without image input.
-    static func imageChunkLimit(acceptsImages: Bool, bounds: LanguageExportBounds?) throws -> Int? {
-        guard acceptsImages else { return nil }
-        guard let limit = bounds?.maximumImageChunk, limit > 0 else {
-            throw LanguageGenerationError.invalid("An asset with image input must declare its maximum image chunk")
-        }
+    /// The image submission bound of an asset with image input (its `withImage` q bound), so an
+    /// oversized image is refused before Core AI. Nil for assets without image input, and for an
+    /// image asset that declares no bound: it still opens for text-only use, and its image prompts
+    /// are refused while planning (``LanguagePromptPlan/requireImageSpans(within:)``).
+    static func imageChunkLimit(acceptsImages: Bool, bounds: LanguageExportBounds?) -> Int? {
+        guard acceptsImages, let limit = bounds?.maximumImageChunk, limit > 0 else { return nil }
         return limit
     }
 
