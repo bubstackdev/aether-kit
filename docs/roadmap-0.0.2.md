@@ -35,7 +35,7 @@ Spikes, with go/no-go reports for 0.0.3: a hybrid recurrent-state language model
 | Forge environments | Two locked Python environments in the repository (`Forge/`, `Forge/h3-oracle`); no tooling depends on the superseded prototype or on Atelier staging | On main (#29) |
 | Qwen3-VL memory attribution | Decoder weights wired twice (text and image functions); encoder grids are views of one copy | On main (#31) |
 | FLUX.2 CPU references | References computed on the CPU in float32, like every other model's; parity 113/113 and lifecycle 44/44 | On main (#34) |
-| FLUX.2 Forge exporter | `Forge/flux2` exports the bundle; its export `a48aaf07` is the qualified 0.0.2 bundle | On main (EXPORTER_PR) |
+| FLUX.2 Forge exporter | `Forge/flux2` exports the bundle; its export `a48aaf07` is the qualified 0.0.2 bundle | On main (#35) |
 | GitHub CI | Weight-free Release suite and consumer packages on every PR; the repository moved to `bubstackdev/aether-kit` | On main (#32, #33) |
 
 The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviour change (see CHANGELOG).
