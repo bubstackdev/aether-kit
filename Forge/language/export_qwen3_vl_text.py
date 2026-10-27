@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export the Qwen3-VL text tower with the bucketed step contract (development tooling only).
 
-    <venv>/bin/python -I Forge/language/export_qwen3_vl_text.py --checkpoint <hf snapshot> --output <new dir> \
+    Forge/.venv/bin/python -I Forge/language/export_qwen3_vl_text.py --checkpoint <hf snapshot> --output <new dir> \
         --source-repository Qwen/Qwen3-VL-2B-Instruct --source-revision <sha> --self-check-reference <reference dir>
 
 One asset (`model.aimodel`) with two functions over the same fp16 weights: `main` (text steps) and `withImage`

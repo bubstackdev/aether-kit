@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Export a Qwen3 dense checkpoint as an Aether Kit language model asset (development tooling only).
 
-Runs in Forge's locked environment (`uv sync --frozen --project Forge`; `<venv>` is `Forge/.venv`):
+Runs in Forge's locked environment (`uv sync --frozen --project Forge`):
 
-    <venv>/bin/python -I Forge/language/export_qwen3.py --checkpoint <hf snapshot> [--contract running] --output <dir>
-    <venv>/bin/python -I Forge/language/export_qwen3.py --tiny --contract bucketed --output <dir>
+    Forge/.venv/bin/python -I Forge/language/export_qwen3.py --checkpoint <hf snapshot> [--contract running] --output <dir>
+    Forge/.venv/bin/python -I Forge/language/export_qwen3.py --tiny --contract bucketed --output <dir>
 
 Writes only under the new `--output` directory: `model.aimodel/`, `tokenizer/` (checkpoint exports), and
 `export-report.json` with versions, file hashes and a cpu_only self-check against the eager module (prefill, chunked

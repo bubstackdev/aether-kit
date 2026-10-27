@@ -21,6 +21,10 @@ dependencies = [
     "safetensors",
     "numpy",
     "huggingface_hub",
+    # The unpacked kokoro 0.9.4 wheel (Forge/kokoro, --upstream) imports attrs at load time; loguru is stubbed there but
+    # pinned so the upstream import never depends on the stub.
+    "attrs",
+    "loguru",
 ]
 
 [tool.uv]

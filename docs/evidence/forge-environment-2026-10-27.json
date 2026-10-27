@@ -1,54 +1,115 @@
 {
-  "schema": 1,
+  "schema": 2,
   "kind": "forge-environment-reverification",
   "date": "2026-10-27",
-  "why": "Forge tooling had run in the aether-engine prototype's Python environment; Forge now has its own locked environment",
-  "environment": {
-    "project": "Forge/pyproject.toml",
-    "lockSHA256": "78cb553f09c00406eea792b6eeb5aa6e26ce74cfaa2d8db28cae2d5243480d2c",
-    "python": "3.12.14",
-    "versions": {
-      "torch": "2.11.0",
-      "transformers": "4.57.3",
-      "torchvision": "0.26.0",
-      "pillow": "12.3.0",
-      "diffusers": "0.37.1",
-      "coreai-torch": "0.4.2",
-      "coreai-core": "1.0.0b2",
-      "coreai-opt": "0.3.0",
-      "numpy": "2.5.4",
-      "safetensors": "0.8.0",
-      "tokenizers": "0.22.2"
-    }
-  },
-  "check": "Forge/language/reference_qwen3.py (same script SHA-256) re-run in the Forge environment with the stored Qwen3-0.6B long reference's arguments (Qwen/Qwen3-0.6B c1899de, --prompt-repeat 40, 453 tokens)",
-  "scriptSHA256": {
-    "stored": "003adafbe3984aa87da81cab07199d71e740b2a65266850713185d190abe0164",
-    "rerun": "003adafbe3984aa87da81cab07199d71e740b2a65266850713185d190abe0164"
-  },
-  "forcedLogitsSHA256": {
-    "stored (engine venv)": "eb07a19c300a8d2e41d7402e6ddadbe170430af067423810cbb6fa62a96c273b",
-    "rerun (Forge env)": "eb07a19c300a8d2e41d7402e6ddadbe170430af067423810cbb6fa62a96c273b"
-  },
-  "identical": {
-    "promptTokens": true,
-    "greedyTokens": true,
-    "forcedTokens": true,
-    "forcedLogits": true
-  },
-  "eagerPortVsReference": {
-    "running": {
-      "minCosine": 1.0,
-      "maxAbs": 7.5e-05,
-      "argmaxEqualRows": 32,
-      "rows": 32
+  "why": "Forge tooling ran in the aether-engine prototype's Python venv, and the 2026-10-26 H3 oracle in Atelier staging's venv; Forge now has two locked environments of its own, resolved from public sources",
+  "notCovered": "Kokoro, FLUX.2 and H3 reference re-runs beyond the two checks above are done separately; the FLUX.2 bundle exporter is the prototype's own code and is not part of aether-kit",
+  "environments": {
+    "Forge": {
+      "project": "Forge/pyproject.toml",
+      "lockSHA256": "a253d23ec3e207fdbdb7de9ec4b80dc6be5336f62791fcd7e99649b8f2dad153",
+      "python": "3.12.14",
+      "versions": {
+        "torch": "2.11.0",
+        "transformers": "4.57.3",
+        "torchvision": "0.26.0",
+        "pillow": "12.3.0",
+        "diffusers": "0.37.1",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2",
+        "coreai-opt": "0.3.0",
+        "numpy": "2.5.4",
+        "safetensors": "0.8.0",
+        "tokenizers": "0.22.2",
+        "attrs": "26.1.0",
+        "loguru": "0.7.3"
+      },
+      "note": "attrs and loguru: the unpacked kokoro 0.9.4 wheel imports attrs at load time (custom_stft.py); load_upstream verified in the frozen env"
     },
-    "bucketed": {
-      "minCosine": 1.0,
-      "maxAbs": 8.8e-05,
-      "argmaxEqualRows": 32,
-      "rows": 32
+    "Forge/h3-oracle": {
+      "project": "Forge/h3-oracle/pyproject.toml",
+      "lockSHA256": "8594ed1a15c4cb2491de9e5f9fb0a89b4fb018083f2f1996255e3c20400ef85a",
+      "python": "3.12.14",
+      "pinnedFrom": "~/Code/atelier/.local/team/staging/h3/oracle/.venv (the 2026-10-26 H3 oracle venv, read only): every installed package at its version",
+      "versions": {
+        "torch": "2.13.0",
+        "transformers": "5.20.1",
+        "peft": "0.21.2",
+        "accelerate": "1.15.0",
+        "tokenizers": "0.23.3",
+        "pillow": "13.0.0",
+        "numpy": "2.5.4",
+        "coreai-torch": "0.4.2",
+        "diffusers": "0.41.0.dev0 @ git+https://github.com/huggingface/diffusers@7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941"
+      }
     }
   },
-  "notCovered": "Kokoro, H3 and FLUX.2 reference scripts were not re-run in the new environment; the FLUX.2 bundle exporter is the prototype's own code and is not part of aether-kit"
+  "checks": {
+    "qwen3-0.6b-long-reference": {
+      "check": "Forge/.venv/bin/python -I Forge/language/reference_qwen3.py --checkpoint <Qwen/Qwen3-0.6B snapshot c1899de289a04d12100db370d81485cdf75e47ca> --source-repository Qwen/Qwen3-0.6B --source-revision c1899de289a04d12100db370d81485cdf75e47ca --license apache-2.0 --prompt \"The lighthouse keeper paints the railing a calm teal. \" --prompt-repeat 40 --output <new dir> (the stored reference's arguments; 453 prompt tokens)",
+      "scriptSHA256": {
+        "stored": "003adafbe3984aa87da81cab07199d71e740b2a65266850713185d190abe0164",
+        "rerun": "003adafbe3984aa87da81cab07199d71e740b2a65266850713185d190abe0164"
+      },
+      "forcedLogitsSHA256": {
+        "stored (engine venv)": "eb07a19c300a8d2e41d7402e6ddadbe170430af067423810cbb6fa62a96c273b",
+        "rerun (Forge env)": "eb07a19c300a8d2e41d7402e6ddadbe170430af067423810cbb6fa62a96c273b"
+      },
+      "identical": {
+        "promptTokens": true,
+        "greedyTokens": true,
+        "forcedTokens": true,
+        "forcedLogits": true
+      },
+      "eagerPortVsReference": {
+        "running": {
+          "minCosine": 1.0,
+          "maxAbs": 7.5e-05,
+          "argmaxEqualRows": 32,
+          "rows": 32
+        },
+        "bucketed": {
+          "minCosine": 1.0,
+          "maxAbs": 8.8e-05,
+          "argmaxEqualRows": 32,
+          "rows": 32
+        }
+      }
+    },
+    "h3-fl2va-keyframe-condition": {
+      "case": "oracle-graphs-fl2va (h3-profile-graphs-960-contexts-2026-10-26.json): the FL2VA keyframe condition, prepare-h3-profile-oracle.py --part graphs",
+      "dump": {
+        "command": "aether-probe h3-profile-dump <staging>/exports/h3-fl2va/bundle.json docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt 960 544 120 1043 turbo8 /Volumes/Scratch/aether/forge-h3-oracle-2026-10-27/dump-fl2va /Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png",
+        "why": "only the 2026-10-26 manifests survive; the dump is a CPU stage and was regenerated",
+        "identicalTensors": "38 of 38",
+        "keyframeSHA256": "03484268e8fa3128e8e1e1dfea3b40a1479dd84ed685ab7badac3a0222579cc0"
+      },
+      "oracle": {
+        "command": "H3_STAGING=<staging> Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py --part graphs --dump /Volumes/Scratch/aether/forge-h3-oracle-2026-10-27/dump-fl2va --run /Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-contexts/native-fl2va --text /Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-contexts/oracle-text --output /Volumes/Scratch/aether/forge-h3-oracle-2026-10-27/oracle-graphs-fl2va --threads 8",
+        "peakRSSMiB": 3185
+      },
+      "conditionSHA256": {
+        "recorded": "825842204bc1fb72a7232110203c718053a0e4d47db53ad13c2e89d39b9032dc",
+        "recordedManifest": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-contexts/oracle-graphs-fl2va/manifest.json",
+        "rerun": "825842204bc1fb72a7232110203c718053a0e4d47db53ad13c2e89d39b9032dc",
+        "rerunManifest": "/Volumes/Scratch/aether/forge-h3-oracle-2026-10-27/oracle-graphs-fl2va/manifest.json"
+      },
+      "conditionShape": [
+        1,
+        24,
+        1,
+        34,
+        60
+      ],
+      "identical": true,
+      "stagingRead": "read only: exports/h3-fl2va (bundle.json sha256 00669ed7..., converted VAE)"
+    }
+  },
+  "importSmoke": {
+    "method": "compile every entry point, then resolve every import it makes (top level and inside functions) in its environment",
+    "Forge": "33 of 33 Forge/ and non-H3 Scripts/ entry points",
+    "Forge/h3-oracle": "13 of 13 H3 entry points",
+    "kokoroRuntime": "kokoro_graphs.load_upstream(<kokoro-0.9.4 unpacked wheel>) loads in the frozen Forge env",
+    "legacy": "prepare-h3-chain/backbone/denoising-oracle.py need the prototype's h3_weights and qualify_block: legacy, prototype-only, run in neither environment"
+  }
 }

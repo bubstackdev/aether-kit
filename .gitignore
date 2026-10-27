@@ -10,3 +10,4 @@ Examples/SpeechDevice/Assets/*
 Examples/SpeechDevice/KokoroDeviceProbe.xcodeproj/
 .worktrees/
 Forge/.venv/
+Forge/h3-oracle/.venv/

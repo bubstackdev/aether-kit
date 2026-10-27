@@ -5,6 +5,10 @@ Verify every base/adapter binding one block at a time. Reuse retained original
 CPU modulation tables and the qualified three-block references. Add original
 CPU checks at blocks 24 and 49 using complete captured native input contexts.
 No GPU API, graph export, checkpoint mutation or full CPU trajectory claim.
+
+Legacy, prototype-only (2026-10-18): this script puts the superseded aether-prototype's forge and the lab's vendored
+Diffusers on sys.path, so it runs in neither Forge environment, and its /private/tmp inputs are gone. The 0.0.2 H3
+qualification uses prepare-h3-profile-oracle.py instead.
 """
 import argparse
 import gc

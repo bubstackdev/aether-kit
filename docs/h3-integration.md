@@ -6,7 +6,7 @@ The experimental `AetherH3` SwiftPM product starts with CPU preparation contract
 
 **The 2026-10-18 records below are historical.** They cover block 0, lifecycle, the three-block chain, the fifty-block backbone, the outer phases and the eight-step provided-conditioning trajectory. Each describes exactly what ran against its pinned prototype bundles. Those bundles, oracles and the preparation cache lived under `/private/tmp`, and macOS temporary-file cleanup removed them. Only empty directory skeletons remain. The commands below that cite `/private/tmp/aether-h3-*` can no longer run. The assets were not regenerated: Core AI exports aren't byte-reproducible, so every pinned capture would have to be redone anyway. [The lost-asset record](evidence/h3-legacy-assets-lost-2026-10-26.json) lists the affected roots, the 64 citing records, the original identities and the regeneration route, should it ever be needed.
 
-**H3 work for 0.0.2 qualifies the schema-3 profile path instead.** That path is `Scripts/export-h3-profile.py`, `H3Profile`, `H3ProfileEngine.stages` and `H3VideoSession`. It uses none of the lost assets. Its complete profile is referenced in place under Atelier's team staging folder, `~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va`. Weights are read as byte ranges of the pinned checkpoint snapshot and Turbo adapter. [The profile asset record](evidence/h3-profile-assets-2026-10-26.json) covers several checks:
+**H3 work for 0.0.2 qualifies the schema-3 profile path instead.** Its CPU oracle and export tooling (`prepare-h3-profile-oracle.py`, `export-h3-profile.py`, `h3_export_lib.py`) run in Forge's H3 oracle environment, `uv sync --frozen --project Forge/h3-oracle`, then `Forge/h3-oracle/.venv/bin/python -I -B Scripts/...`. It is pinned to exactly the environment that produced the 2026-10-26 evidence (torch 2.13.0, transformers 5.20.1, peft 0.21.2, diffusers 0.41.0.dev0 at public commit `7ecb1e1b`); re-running the FL2VA keyframe condition in it reproduces the recorded hash ([record](evidence/forge-environment-2026-10-27.json)). That path is `Scripts/export-h3-profile.py`, `H3Profile`, `H3ProfileEngine.stages` and `H3VideoSession`. It uses none of the lost assets. Its complete profile is referenced in place under Atelier's team staging folder, `~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va`. Weights are read as byte ranges of the pinned checkpoint snapshot and Turbo adapter. [The profile asset record](evidence/h3-profile-assets-2026-10-26.json) covers several checks:
 
 - both bundle hashes;
 - every model stream hash;
@@ -161,10 +161,10 @@ aether-probe qualify-h3-chain BUNDLE.json PHASES.json CHAIN.json NEW_OUTPUT_DIRE
 
 Preparation performs no native acquisition. It reports whether all per-block CPU references and captured output hashes are present. `--capture` runs six native submissions, verifies block 0 against its prior CPU gate and exact full-output hash, saves finite intermediate outputs, and ends with `captureComplete: true`, `passed: false`, `stage: capturedAwaitingCPUReferences`. Capture is explicitly unqualified. `--run` rejects missing CPU references or expected output hashes before acquiring native resources.
 
-The local workflow uses the retained source projects and new output directories:
+**Legacy, prototype-only.** The chain, backbone and denoising CPU oracles (`prepare-h3-chain-oracle.py`, `prepare-h3-backbone-oracle.py`, `prepare-h3-denoising-oracle.py`) load the superseded aether-prototype's forge and the lab's vendored Diffusers from `--prototype` and `--lab`. They run in neither Forge environment, and their `/private/tmp` inputs are gone. The commands below are the record of the 2026-10-18 workflow, not a supported one:
 
 ```sh
-H3_PYTHON=$PWD/Forge/.venv/bin/python   # uv sync --frozen --project Forge
+H3_PYTHON=<the 2026-10-18 prototype forge interpreter; not provided>
 H3_LAB=/Users/zakkeown/Code/atelier/lab/minimax-h3-lab
 H3_PROTOTYPE=/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype
 H3_BUNDLE=/private/tmp/aether-h3-qkv-ready/render/bundle.json
