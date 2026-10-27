@@ -503,3 +503,22 @@ Measured admission covers only the profile/device pairs present in `h3-measured-
 - **Run time:** the CPU oracle took 2 h 49 min on a busy machine, about 10–20 min per bf16 block at 19,333 rows.
 
 The first oracle attempt was stopped by its 20 GiB resident guard ([controller record](evidence/h3-profile-trajectory-t2va-oracle-rss-stop-2026-10-26.json)) because it kept both blocks and their float32 copies resident. The oracle now keeps one block resident, and float32 runs as its own stage.
+
+A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hashes ([record](evidence/h3-trajectory-t2va-replay-landed-2026-10-26.json)).
+
+**FL2VA passes ([gate record](evidence/h3-profile-trajectory-fl2va-2026-10-26.json)).** It ran on the tiled first-frame encoder, overlay c49d8dbf, at 960×544 and 124 frames, seed 1043, with the crane keyframe, on the landed code.
+
+- **Replay:** all 457 boundary hashes reproduce exactly.
+- **CPU references:** steps 0, 1 and 7, which cover both timestep cardinalities and the last step, give 21 comparisons. Maximum relative L2 per graph:
+
+  | Graph | Maximum relative L2 |
+  | --- | ---: |
+  | Packing | 0.0015% |
+  | Block 0 | 0.602% |
+  | Block 49 | 1.120% |
+  | Heads, video / audio | 0.169% / 0.203% |
+  | Scheduler updates | 0, byte-identical; keyframe anchor rows never stepped |
+
+- **Float32 diagnostic:** native blocks are 0.33–1.03% from float32.
+- **Memory:** both renders peak at 13.80 GiB Metal, under the gate's 18 GiB bar.
+- **Run time:** the CPU oracle took 58 min.
