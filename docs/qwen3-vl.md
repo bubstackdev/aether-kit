@@ -266,19 +266,39 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 | After all five requests | 3.0–3.3 GiB | 22.3 GiB |
 | After unload | 656 MiB | 495 MiB |
 
-Metal grows with the first image request to about 19 GiB, then by about 1 GiB per newly used grid
-or prompt size, against 8.4 GiB for the dense 4B writer with the same decoder width. See the limits.
+Metal grows with the first image request to about 19 GiB, then by about 0.8 GiB per newly used grid,
+against 8.4 GiB for the dense 4B writer with the same decoder width. That is weight duplication, not
+a leak: Core AI keeps a copy of the weights per loaded function (see the limits).
 Warm requests also keep adding memory (Core AI retains allocations on every shape change; text
 requests about 257 MiB each on the 4B) until the decoder's memory budget reloads it between
 requests: see [Native memory retention](language-generation.md#native-memory-retention).
 
 ## Limits and follow-ups
 
-- **4B decoder memory.** The VL-4B session holds about 19–22 GiB of Metal allocations after
-  image requests, more than twice the dense 4B writer (8.4 GiB). Not yet attributed; the likely
-  cause is the runtime keeping weights per function (`main` and `withImage`) as conversion does
-  (see the text export note below). Measure per phase (encoder only, text-only `main`, first
-  `withImage`) before sharing weights across the two functions in the export.
+- **Weights are duplicated per function (0.0.3).** Core AI keeps a separate copy of the weights for
+  every function it loads, and the VL bundles load many functions over the same weights. Measured by
+  phase (`visionLanguageMemoryByPhase`, opt-in; one M5 Max; Metal allocated;
+  [evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)):
+
+  | | VL-2B | VL-4B |
+  | --- | --- | --- |
+  | Encoder open | 0.9 GiB | 1.0 GiB |
+  | First grid function | +1.1 GiB | +1.1 GiB |
+  | Each further grid function (four) | +0.8 GiB | +0.8 GiB |
+  | Decoder `main`, first use | +3.8 GiB | +8.2 GiB |
+  | Decoder `withImage`, first use (the same weights again) | +4.1 GiB | +8.7 GiB |
+  | A warm image request | about 10 MiB | about 20 MiB |
+  | Peak, all grids and both functions | 12.9 GiB | 22.4 GiB |
+
+  So a 4B request with one image reaches about 19 GiB: the encoder and one grid (2.1 GiB) plus
+  both decoder copies (16.9 GiB), since the text around the image prefills through `main`. Unloading
+  frees both copies. Warm requests add only shape-change retention, which the decoder's memory budget
+  bounds ([native memory retention](language-generation.md#native-memory-retention)). Options for
+  0.0.3, in order of savings on the 4B: one decoder function for text and image prefill (about
+  8.7 GiB), weight sharing across functions if Core AI supports it, and fewer grids or one encoder
+  function for all grids (up to 3.2 GiB; a dynamic-grid encoder is a correctness hazard today, see
+  [dynamic shapes](#dynamic-shapes-are-a-correctness-hazard-for-the-encoder)). The text export's
+  conversion duplicates weights the same way (below).
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
   model says about a photo; the 4B named a different place for the market photo. The model is
