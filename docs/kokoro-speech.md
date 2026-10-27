@@ -136,15 +136,39 @@ The first masking's cost came from the decomposed two-pass norm statistics and f
 | First use of a new length | 1.9–5.8 s, every new length | Once per bucket; later lengths in a used bucket need no specialization |
 | Process footprint | 19.2 GB after 50 lengths, growing with each | about 4.2 GB through bucket 1024; 6–12 GB while bucket 2048 is in use |
 | Metal allocation | 33.9 GB, growing with each length | 13.5 GB with buckets 64–2048, flat within each bucket |
-| After `unload()` | 14.0 GB footprint, 17.6 GB Metal | with bucket 2048 used: footprint 0.33 GB or 8.5 GB (two runs), Metal about 8.2 GB; at or under the 1024 cap: 2.2 GB footprint and 2.1 GB Metal in both of two runs |
+| After `unload()` | 14.0 GB footprint, 17.6 GB Metal | with bucket 2048 used: footprint 0.33 GB or 8.5 GB (two runs; the 8.5 GB reading was taken before the release finished, see [Memory after unload](#memory-after-unload-003)), Metal about 8.2 GB; at or under the 1024 cap: 2.2 GB footprint and 2.1 GB Metal in both of two runs |
 
-Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. The session therefore caps utterances at 1024 frames by default on macOS and at 512 on iOS (`KokoroFrameCap.platformDefault`). Bucket 2048 is used only with `frameCap: .extended`, and bucket 4096 never. Size admission estimates for the largest bucket the cap allows, and prewarm only the buckets your utterances need. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
+Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. The session therefore caps utterances at 1024 frames by default on macOS and at 512 on iOS (`KokoroFrameCap.platformDefault`). Bucket 2048 is used only with `frameCap: .extended`, and bucket 4096 never. Size admission estimates for the largest bucket the cap allows, and prewarm only the buckets your utterances need. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release. The cycling measurement below separates the two.
 
 **Cold first synthesis.** The qualification ran on a bundle exported minutes earlier that had never been specialized, so each bucket's first use was genuinely cold. No shared cache was cleared; Core AI exposes no per-process cache directory. Results:
 
 - 1.8 s for the first utterance, which also loads the models;
 - 1.3 s and 2.5 s for the first use of buckets 256 and 1024;
 - 0.12–0.20 s for later unseen lengths (66, 103 and 146 frames) in warmed buckets.
+
+### Memory after unload (0.0.3)
+
+`kokoroUnloadCycling` (opt-in, in `AetherNativeTests`) runs five cycles in one process. Each cycle opens a session,
+synthesizes a short utterance, calls `unload()` and drops the session. With `AETHER_NATIVE_UNLOAD_KOKORO_CAP=extended`
+the session uses `frameCap: .extended` and also prewarms through bucket 2048. It is the same harness as FLUX.2's
+([FLUX.2 guide](flux2-klein.md#memory-after-unload-003)).
+
+- **Standard cap:** 70 MiB of footprint remains after the first cycle, then within 3 MiB over five cycles; Metal 13 MiB.
+- **Bucket 2048:** at the moment `unload()` returns, the footprint is still 8.3–8.6 GB. 2 s later it is 0.09–0.28 GB,
+  in every cycle. The release completes shortly after `unload()` returns, so the earlier "8.5 GB in one of two runs"
+  was a reading taken too early, not memory that stays. The Metal device's `currentAllocatedSize` stays at 8,312 MiB
+  from the second cycle (10,312 after the first) and does not grow. At the same time `footprint` shows about 2 MiB of
+  IOAccelerator memory and system wired memory is flat. The counter does not mean the memory is held. Kit allocates no
+  Metal memory in this path; the counter belongs to Core AI's MPSGraph execution. The footprint noise of up to
+  0.28 GB is the macOS allocator's large-block cache described in the FLUX.2 guide.
+
+See the [summary](evidence/unload-cycling-2026-10-27.json).
+
+```sh
+AETHER_NATIVE_UNLOAD_CYCLING=kokoro AETHER_NATIVE_UNLOAD_KOKORO_CAP=extended AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
+AETHER_KOKORO_BUNDLE=~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp32-buckets-2026-10-26 \
+~/.cache/aether-kit/with-gpu-lock.sh "kokoro unload cycling" swift test -c release --filter kokoroUnloadCycling
+```
 
 ## iPhone
 

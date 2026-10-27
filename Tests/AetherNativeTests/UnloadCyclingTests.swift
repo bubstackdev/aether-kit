@@ -23,7 +23,8 @@ import Testing
 /// AETHER_NATIVE_UNLOAD_CYCLES=<cycles, default 5>
 /// AETHER_FLUX2_BUNDLE / AETHER_KREA_BUNDLE / AETHER_KOKORO_BUNDLE
 /// AETHER_NATIVE_UNLOAD_KOKORO_CAP=extended (optional: prewarm through bucket 2048 each cycle)
-/// AETHER_NATIVE_UNLOAD_MEMGRAPH=1 (optional: memory graphs of the baseline and the last cycle)
+/// AETHER_NATIVE_UNLOAD_MEMGRAPH=1 (optional: memory graphs of the baseline and the last cycle; `full` adds the whole
+/// allocation history, for a run with MallocStackLogging=1)
 ///
 /// The tokenizer (FLUX.2, Krea) is opened once before the baseline, so it is not part of the cycle. After each unload
 /// the test records memory at once, after a 2 s settle, and after `malloc_zone_pressure_relief`, which returns free
@@ -175,10 +176,11 @@ private func runUnloadCycles(model: String, fingerprint: String, request: String
     // With AETHER_NATIVE_UNLOAD_MEMGRAPH=1, a memory graph of the baseline and of the last cycle (`leaks --outputGraph`),
     // for `heap` and, when the run sets MallocStackLogging, `malloc_history`.
     func memgraph(_ name: String) {
-        guard nativeEnvironment["AETHER_NATIVE_UNLOAD_MEMGRAPH"] == "1" else { return }
+        guard let mode = nativeEnvironment["AETHER_NATIVE_UNLOAD_MEMGRAPH"], ["1", "full"].contains(mode) else { return }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/leaks")
         process.arguments = ["--outputGraph=" + output.appendingPathComponent("\(name).memgraph").path, String(getpid())]
+            + (mode == "full" ? ["--fullStackHistory"] : [])
         process.standardOutput = FileHandle.nullDevice; process.standardError = FileHandle.nullDevice
         if (try? process.run()) != nil { process.waitUntilExit() }
     }

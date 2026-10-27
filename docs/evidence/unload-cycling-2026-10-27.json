@@ -1,0 +1,612 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "device": "M5 Max, macOS 27.0.1, preferGPU, release build",
+  "test": "Tests/AetherNativeTests/UnloadCyclingTests.swift (flux2UnloadCycling, kreaUnloadCycling, kokoroUnloadCycling)",
+  "bundles": {
+    "flux2": "forge-export-2026-10-27 (fingerprint d27cefc4...)",
+    "krea": "krea-2-turbo-realism/macos-any-gpu, no specialization registration (dynamic denoisers)",
+    "kokoro": "kokoro-82m/coreai-fp32-buckets-2026-10-26"
+  },
+  "method": "One process per run: N cycles of open session, one small request, unload(), drop the session. After each unload: counters at once, after a 2 s settle, and after malloc_zone_pressure_relief. footprint(1) snapshots of the baseline, cycle 1 and the last cycle. Footprint, Metal and malloc counters overlap; do not sum them.",
+  "runs": [
+    {
+      "run": "kokoro-standard",
+      "model": "kokoro",
+      "request": "short utterance (frame cap .standard)",
+      "environment": {},
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 9.6,
+        "metal": 0.1,
+        "mallocInUse": 1.1
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 1.9,
+          "loadedFootprint": 307.4,
+          "loadedMetal": 314.0,
+          "footprintAtUnload": 93.0,
+          "footprintAfter2s": 81.0,
+          "footprintAfterPressureRelief": 81.0,
+          "metalAfterUnload": 12.8,
+          "mallocInUse": 12.8,
+          "graphicsFootprint": 0.8,
+          "systemWired": 4116.5
+        },
+        {
+          "cycle": 2,
+          "seconds": 0.4,
+          "loadedFootprint": 305.5,
+          "loadedMetal": 314.3,
+          "footprintAtUnload": 95.0,
+          "footprintAfter2s": 83.0,
+          "footprintAfterPressureRelief": 83.0,
+          "metalAfterUnload": 12.8,
+          "mallocInUse": 12.9,
+          "graphicsFootprint": 0.8,
+          "systemWired": 4118.5
+        },
+        {
+          "cycle": 3,
+          "seconds": 0.4,
+          "loadedFootprint": 306.0,
+          "loadedMetal": 314.0,
+          "footprintAtUnload": 95.4,
+          "footprintAfter2s": 83.4,
+          "footprintAfterPressureRelief": 83.4,
+          "metalAfterUnload": 12.8,
+          "mallocInUse": 12.8,
+          "graphicsFootprint": 0.8,
+          "systemWired": 4133.6
+        },
+        {
+          "cycle": 4,
+          "seconds": 0.4,
+          "loadedFootprint": 301.5,
+          "loadedMetal": 314.3,
+          "footprintAtUnload": 95.7,
+          "footprintAfter2s": 83.7,
+          "footprintAfterPressureRelief": 83.7,
+          "metalAfterUnload": 12.8,
+          "mallocInUse": 12.9,
+          "graphicsFootprint": 0.8,
+          "systemWired": 4152.5
+        },
+        {
+          "cycle": 5,
+          "seconds": 0.5,
+          "loadedFootprint": 308.3,
+          "loadedMetal": 314.0,
+          "footprintAtUnload": 95.8,
+          "footprintAfter2s": 83.8,
+          "footprintAfterPressureRelief": 83.8,
+          "metalAfterUnload": 12.8,
+          "mallocInUse": 13.0,
+          "graphicsFootprint": 0.8,
+          "systemWired": 4113.0
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Small": 2.7
+        },
+        "cycle1": {
+          "Malloc Large": 2.1,
+          "Malloc Small": 68.6
+        },
+        "cycle5": {
+          "Malloc Large": 2.1,
+          "Malloc Small": 71.2
+        }
+      }
+    },
+    {
+      "run": "kokoro-extended",
+      "model": "kokoro-extended",
+      "request": "short utterance, then prewarm through bucket 2048 (frame cap .extended)",
+      "environment": {
+        "AETHER_NATIVE_UNLOAD_KOKORO_CAP": "extended"
+      },
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 9.7,
+        "metal": 0.1,
+        "mallocInUse": 1.1
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 5.3,
+          "loadedFootprint": 12369.1,
+          "loadedMetal": 15520.6,
+          "footprintAtUnload": 8466.8,
+          "footprintAfter2s": 222.8,
+          "footprintAfterPressureRelief": 222.8,
+          "metalAfterUnload": 10311.8,
+          "mallocInUse": 23.5,
+          "graphicsFootprint": 1.8,
+          "systemWired": 4192.9
+        },
+        {
+          "cycle": 2,
+          "seconds": 4.6,
+          "loadedFootprint": 12515.0,
+          "loadedMetal": 13520.6,
+          "footprintAtUnload": 8337.3,
+          "footprintAfter2s": 93.3,
+          "footprintAfterPressureRelief": 93.3,
+          "metalAfterUnload": 8311.8,
+          "mallocInUse": 21.1,
+          "graphicsFootprint": 1.8,
+          "systemWired": 4206.1
+        },
+        {
+          "cycle": 3,
+          "seconds": 4.7,
+          "loadedFootprint": 12443.9,
+          "loadedMetal": 13520.4,
+          "footprintAtUnload": 8608.6,
+          "footprintAfter2s": 254.7,
+          "footprintAfterPressureRelief": 254.7,
+          "metalAfterUnload": 8311.8,
+          "mallocInUse": 21.5,
+          "graphicsFootprint": 1.8,
+          "systemWired": 4190.7
+        },
+        {
+          "cycle": 4,
+          "seconds": 4.7,
+          "loadedFootprint": 12456.5,
+          "loadedMetal": 13520.4,
+          "footprintAtUnload": 8512.2,
+          "footprintAfter2s": 268.2,
+          "footprintAfterPressureRelief": 268.2,
+          "metalAfterUnload": 8311.8,
+          "mallocInUse": 22.0,
+          "graphicsFootprint": 1.8,
+          "systemWired": 4197.8
+        },
+        {
+          "cycle": 5,
+          "seconds": 4.7,
+          "loadedFootprint": 12515.2,
+          "loadedMetal": 13520.4,
+          "footprintAtUnload": 8566.9,
+          "footprintAfter2s": 278.7,
+          "footprintAfterPressureRelief": 278.7,
+          "metalAfterUnload": 8311.8,
+          "mallocInUse": 22.5,
+          "graphicsFootprint": 1.8,
+          "systemWired": 4136.9
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Small": 2.7
+        },
+        "cycle1": {
+          "Malloc Large": 63.0,
+          "Malloc Small": 145.3
+        },
+        "cycle5": {
+          "Malloc Large": 179.9,
+          "Malloc Small": 83.9
+        }
+      }
+    },
+    {
+      "run": "flux2",
+      "model": "flux2",
+      "request": "256x256, 4 steps, prompt through the text encoder, balanced residency",
+      "environment": {},
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 47.7,
+        "metal": 0.1,
+        "mallocInUse": 34.5
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 16.6,
+          "loadedFootprint": 1503.8,
+          "loadedMetal": 5512.7,
+          "footprintAtUnload": 845.8,
+          "footprintAfter2s": 367.5,
+          "footprintAfterPressureRelief": 367.5,
+          "metalAfterUnload": 241.7,
+          "mallocInUse": 47.0,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4170.7
+        },
+        {
+          "cycle": 2,
+          "seconds": 2.2,
+          "loadedFootprint": 1667.2,
+          "loadedMetal": 5532.7,
+          "footprintAtUnload": 963.1,
+          "footprintAfter2s": 530.9,
+          "footprintAfterPressureRelief": 530.9,
+          "metalAfterUnload": 261.7,
+          "mallocInUse": 46.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4171.6
+        },
+        {
+          "cycle": 3,
+          "seconds": 2.2,
+          "loadedFootprint": 1836.0,
+          "loadedMetal": 5532.7,
+          "footprintAtUnload": 1162.8,
+          "footprintAfter2s": 682.5,
+          "footprintAfterPressureRelief": 682.5,
+          "metalAfterUnload": 261.7,
+          "mallocInUse": 46.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4170.2
+        },
+        {
+          "cycle": 4,
+          "seconds": 2.2,
+          "loadedFootprint": 1833.6,
+          "loadedMetal": 5532.7,
+          "footprintAtUnload": 1111.5,
+          "footprintAfter2s": 679.3,
+          "footprintAfterPressureRelief": 679.3,
+          "metalAfterUnload": 261.7,
+          "mallocInUse": 46.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4171.4
+        },
+        {
+          "cycle": 5,
+          "seconds": 2.2,
+          "loadedFootprint": 1831.2,
+          "loadedMetal": 5532.6,
+          "footprintAtUnload": 1109.2,
+          "footprintAfter2s": 677.0,
+          "footprintAfterPressureRelief": 677.0,
+          "metalAfterUnload": 261.7,
+          "mallocInUse": 46.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4187.6
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Large": 27.0,
+          "Malloc Small": 13.0
+        },
+        "cycle1": {
+          "Malloc Small": 110.2,
+          "Malloc Large": 245.3
+        },
+        "cycle5": {
+          "Malloc Small": 111.5,
+          "Malloc Large": 553.1
+        }
+      }
+    },
+    {
+      "run": "krea",
+      "model": "krea",
+      "request": "256x256, 2 steps, prompt through the text encoder, balanced residency, dynamic denoisers",
+      "environment": {},
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 58.4,
+        "metal": 0.1,
+        "mallocInUse": 34.4
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 100.2,
+          "loadedFootprint": 1417.2,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 506.1,
+          "footprintAfter2s": 397.9,
+          "footprintAfterPressureRelief": 397.9,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 46.1,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4765.8
+        },
+        {
+          "cycle": 2,
+          "seconds": 26.8,
+          "loadedFootprint": 1496.2,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 585.1,
+          "footprintAfter2s": 476.8,
+          "footprintAfterPressureRelief": 476.8,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 45.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4857.3
+        },
+        {
+          "cycle": 3,
+          "seconds": 10.0,
+          "loadedFootprint": 1591.9,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 680.7,
+          "footprintAfter2s": 572.5,
+          "footprintAfterPressureRelief": 572.5,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 45.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4871.1
+        },
+        {
+          "cycle": 4,
+          "seconds": 11.0,
+          "loadedFootprint": 1600.8,
+          "loadedMetal": 13150.6,
+          "footprintAtUnload": 673.7,
+          "footprintAfter2s": 565.4,
+          "footprintAfterPressureRelief": 565.4,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 45.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4785.1
+        },
+        {
+          "cycle": 5,
+          "seconds": 11.3,
+          "loadedFootprint": 1586.9,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 670.3,
+          "footprintAfter2s": 562.0,
+          "footprintAfterPressureRelief": 562.0,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 45.8,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4747.1
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Large": 37.9,
+          "Malloc Small": 12.9
+        },
+        "cycle1": {
+          "Malloc Small": 210.4,
+          "Malloc Large": 309.7
+        },
+        "cycle5": {
+          "Malloc Small": 276.0,
+          "Malloc Large": 448.9
+        }
+      }
+    },
+    {
+      "run": "flux2-nolargecache",
+      "model": "flux2",
+      "request": "256x256, 4 steps, prompt through the text encoder, balanced residency",
+      "environment": {
+        "MallocLargeCache": "0",
+        "purpose": "diagnostic only"
+      },
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 32.2,
+        "metal": 0.1,
+        "mallocInUse": 29.7
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 14.1,
+          "loadedFootprint": 1187.0,
+          "loadedMetal": 5472.7,
+          "footprintAtUnload": 260.5,
+          "footprintAfter2s": 60.4,
+          "footprintAfterPressureRelief": 60.4,
+          "metalAfterUnload": 201.7,
+          "mallocInUse": 41.4,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4678.4
+        },
+        {
+          "cycle": 2,
+          "seconds": 2.4,
+          "loadedFootprint": 1166.7,
+          "loadedMetal": 5536.7,
+          "footprintAtUnload": 258.9,
+          "footprintAfter2s": 58.7,
+          "footprintAfterPressureRelief": 58.7,
+          "metalAfterUnload": 265.7,
+          "mallocInUse": 41.5,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4641.1
+        },
+        {
+          "cycle": 3,
+          "seconds": 2.5,
+          "loadedFootprint": 1164.9,
+          "loadedMetal": 5536.7,
+          "footprintAtUnload": 259.0,
+          "footprintAfter2s": 58.8,
+          "footprintAfterPressureRelief": 58.8,
+          "metalAfterUnload": 265.7,
+          "mallocInUse": 41.6,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4665.2
+        },
+        {
+          "cycle": 4,
+          "seconds": 2.7,
+          "loadedFootprint": 1164.7,
+          "loadedMetal": 5536.6,
+          "footprintAtUnload": 450.9,
+          "footprintAfter2s": 58.8,
+          "footprintAfterPressureRelief": 58.8,
+          "metalAfterUnload": 265.7,
+          "mallocInUse": 41.6,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4649.7
+        },
+        {
+          "cycle": 5,
+          "seconds": 2.7,
+          "loadedFootprint": 1165.2,
+          "loadedMetal": 5536.6,
+          "footprintAtUnload": 259.1,
+          "footprintAfter2s": 58.9,
+          "footprintAfterPressureRelief": 58.9,
+          "metalAfterUnload": 265.7,
+          "mallocInUse": 41.6,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4648.5
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Large": 18.1,
+          "Malloc Small": 6.6
+        },
+        "cycle1": {
+          "Malloc Large": 20.2,
+          "Malloc Small": 29.4
+        },
+        "cycle5": {
+          "Malloc Large": 20.2,
+          "Malloc Small": 27.7
+        }
+      }
+    },
+    {
+      "run": "krea-nolargecache",
+      "model": "krea",
+      "request": "256x256, 2 steps, prompt through the text encoder, balanced residency, dynamic denoisers",
+      "environment": {
+        "MallocLargeCache": "0",
+        "purpose": "diagnostic only"
+      },
+      "cycles": 5,
+      "outputsIdenticalAcrossCycles": true,
+      "baselineMiB": {
+        "footprint": 31.8,
+        "metal": 0.1,
+        "mallocInUse": 29.6
+      },
+      "perCycleMiB": [
+        {
+          "cycle": 1,
+          "seconds": 61.3,
+          "loadedFootprint": 1110.9,
+          "loadedMetal": 13150.6,
+          "footprintAtUnload": 173.5,
+          "footprintAfter2s": 61.1,
+          "footprintAfterPressureRelief": 61.1,
+          "metalAfterUnload": 113.7,
+          "mallocInUse": 40.4,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4595.0
+        },
+        {
+          "cycle": 2,
+          "seconds": 11.1,
+          "loadedFootprint": 1086.2,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 167.8,
+          "footprintAfter2s": 59.5,
+          "footprintAfterPressureRelief": 59.5,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 40.5,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4648.8
+        },
+        {
+          "cycle": 3,
+          "seconds": 7.4,
+          "loadedFootprint": 1096.3,
+          "loadedMetal": 13150.6,
+          "footprintAtUnload": 177.2,
+          "footprintAfter2s": 68.9,
+          "footprintAfterPressureRelief": 68.9,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 40.5,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4596.1
+        },
+        {
+          "cycle": 4,
+          "seconds": 16.0,
+          "loadedFootprint": 1093.7,
+          "loadedMetal": 13146.6,
+          "footprintAtUnload": 176.4,
+          "footprintAfter2s": 68.1,
+          "footprintAfterPressureRelief": 68.1,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 40.5,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4591.3
+        },
+        {
+          "cycle": 5,
+          "seconds": 9.4,
+          "loadedFootprint": 1093.9,
+          "loadedMetal": 13150.6,
+          "footprintAtUnload": 176.4,
+          "footprintAfter2s": 68.2,
+          "footprintAfterPressureRelief": 68.2,
+          "metalAfterUnload": 109.7,
+          "mallocInUse": 40.5,
+          "graphicsFootprint": 1.7,
+          "systemWired": 4574.6
+        }
+      ],
+      "footprintToolMallocDirtyMiB": {
+        "baseline": {
+          "Malloc Large": 18.1,
+          "Malloc Small": 6.2
+        },
+        "cycle1": {
+          "Malloc Large": 20.2,
+          "Malloc Small": 30.0
+        },
+        "cycle5": {
+          "Malloc Large": 38.4,
+          "Malloc Small": 46.9
+        }
+      }
+    }
+  ],
+  "attribution": {
+    "method": "Two-cycle runs with MallocStackLogging=full and a full-history memory graph after the last unload; malloc_history on every empty Malloc Large region, charging its dirty size to the stacks of the allocations it held. Regions with no recorded allocation event are listed as unattributed.",
+    "flux2": {
+      "emptyMallocLargeRegions": 118,
+      "dirtyMiB": 364.6,
+      "byCaller": {
+        "ANECompiler (ANE validation during MPSGraph specialization in Core AI)": 207.4,
+        "unattributed": 141.6,
+        "Kit code (copyTensor and Swift array growth)": 12.6,
+        "MetalPerformanceShadersGraph": 3.0
+      }
+    },
+    "krea": {
+      "emptyMallocLargeRegions": 63,
+      "dirtyMiB": 128.2,
+      "byCaller": {
+        "unattributed": 85.7,
+        "ANECompiler (ANE validation during MPSGraph specialization in Core AI)": 34.7,
+        "Kit code (copyTensor, tokenizer config, Swift containers)": 7.7
+      }
+    },
+    "liveHeapAfterUnload": "FLUX.2 memory graph after cycle 5: 54 MB live heap (41 MB at the baseline), against a 751 MB footprint"
+  },
+  "findings": {
+    "flux2AndKrea": "Footprint after unload grows over the first three cycles (FLUX.2 368, 531, 683 MiB; Krea 398, 477, 572 MiB) and is then flat, while live malloc stays within 12 MiB of the baseline. The rest is freed large allocations that the macOS allocator keeps dirty (\"Malloc Large (empty)\"); malloc_zone_pressure_relief does not return them. With the allocator's large cache disabled (MallocLargeCache=0, a diagnostic) the residue is 27 MiB (FLUX.2) and 36 MiB (Krea) above the baseline from cycle 1. Not a Kit or Core AI leak.",
+    "kokoro2048": "Footprint is still 8.3-8.6 GB at the moment unload() returns and falls to 0.09-0.28 GB within 2 s. Metal currentAllocatedSize stays at 8,312 MiB from cycle 2 (10,312 after cycle 1) without growing, while the footprint tool shows about 2 MiB of IOAccelerator memory and system wired memory is flat: the counter does not mean the memory is held. Kit allocates no Metal memory in this path.",
+    "kokoroStandard": "One-time 70 MiB after cycle 1, then within 3 MiB over five cycles; Metal 13 MiB."
+  }
+}
