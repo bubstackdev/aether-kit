@@ -87,29 +87,56 @@ package struct LanguageSampler {
     /// ascending ID order). Selection is linear on average; nothing sorts the vocabulary.
     static func distribution(_ logits: [Float], temperature: Double, topK: Int?, topP: Double?) throws
         -> (ids: [Int], probabilities: [Double]) {
-        var ids: [Int] = []
-        var values: [Double] = []
-        ids.reserveCapacity(logits.count)
-        values.reserveCapacity(logits.count)
-        for (i, score) in logits.enumerated() {
-            guard !score.isNaN else { throw LanguageGenerationError.invalid("NaN logits") }
-            // Transformers divides float32 scores; the quotient is rounded the same way here.
-            if score.isFinite { ids.append(i); values.append(Double(score / Float(temperature))) }
+        // Transformers divides the float32 scores by the temperature before truncating; the quotients round alike here.
+        let divisor = Float(temperature)
+        var threshold = -Float.infinity
+        if let topK {
+            var finite = 0
+            for score in logits {
+                guard !score.isNaN else { throw LanguageGenerationError.invalid("NaN logits") }
+                if score.isFinite { finite += 1 }
+            }
+            if topK < finite { threshold = kthLargest(logits, topK, divisor: divisor) }
+        }
+        var ids: [Int] = [], values: [Float] = []
+        ids.reserveCapacity(threshold == -.infinity ? logits.count : 2 * topK!)
+        values.reserveCapacity(ids.capacity)
+        try logits.withUnsafeBufferPointer { row in
+            for id in row.indices {
+                let score = row[id]
+                guard !score.isNaN else { throw LanguageGenerationError.invalid("NaN logits") }
+                guard score.isFinite else { continue }
+                let value = score / divisor
+                if value >= threshold {
+                    ids.append(id)
+                    values.append(value)
+                }
+            }
         }
         guard !ids.isEmpty else { throw LanguageGenerationError.invalid("No finite logits") }
-        if let topK, topK < values.count {
-            let threshold = kthLargest(values, topK)
-            let kept = values.indices.filter { values[$0] >= threshold }
-            ids = kept.map { ids[$0] }
-            values = kept.map { values[$0] }
+        // Float32 weights, as Transformers' softmax; normalized in double precision.
+        var maximum = -Float.infinity
+        for value in values { maximum = max(maximum, value) }
+        var probabilities = [Double](repeating: 0, count: values.count)
+        var total = 0.0
+        values.withUnsafeBufferPointer { values in
+            probabilities.withUnsafeMutableBufferPointer { probabilities in
+                for i in values.indices {
+                    let weight = Double(exp(values[i] - maximum))
+                    probabilities[i] = weight
+                    total += weight
+                }
+                for i in probabilities.indices { probabilities[i] /= total }
+            }
         }
-        let maximum = values.max()!
-        var probabilities = values.map { exp($0 - maximum) }
-        normalize(&probabilities)
         if let topP, topP < 1 {
-            let kept = nucleus(values: values, probabilities: probabilities, mass: topP)
-            ids = kept.map { ids[$0] }
-            probabilities = kept.map { probabilities[$0] }
+            // Exact pruning: candidates at or below (1 - p) / n hold at most 1 - p together and rank below every other
+            // candidate, so the others' mass reaches p before any of them could be kept.
+            let floor = (1 - topP) / Double(probabilities.count)
+            let pool = probabilities.indices.filter { probabilities[$0] > floor }
+            let kept = nucleus(values: pool.map { values[$0] }, probabilities: pool.map { probabilities[$0] }, mass: topP)
+            ids = kept.map { ids[pool[$0]] }
+            probabilities = kept.map { probabilities[pool[$0]] }
             normalize(&probabilities)
         }
         return (ids, probabilities)
@@ -130,48 +157,66 @@ package struct LanguageSampler {
         for i in probabilities.indices { probabilities[i] /= total }
     }
 
-    /// The k-th largest value (k ≥ 1), by quickselect.
-    static func kthLargest(_ values: [Double], _ k: Int) -> Double {
-        precondition(k >= 1 && k <= values.count)
-        var pool = values
-        var rank = k
-        while true {
-            let pivot = median(pool[0], pool[pool.count / 2], pool[pool.count - 1])
-            let greater = pool.filter { $0 > pivot }
-            if rank <= greater.count { pool = greater; continue }
-            let equal = pool.reduce(0) { $0 + ($1 == pivot ? 1 : 0) }
-            if rank <= greater.count + equal { return pivot }
-            rank -= greater.count + equal
-            pool = pool.filter { $0 < pivot }
+    /// The k-th largest finite logit divided by `divisor` (1 ≤ k ≤ the finite count), by one selection scan that keeps
+    /// at most 2k values: whatever is not above the current k-th largest can't change it.
+    static func kthLargest(_ logits: [Float], _ k: Int, divisor: Float) -> Float {
+        var kept: [Float] = []
+        kept.reserveCapacity(2 * k)
+        var floor = -Float.infinity
+        for score in logits where score.isFinite && score / divisor > floor {
+            kept.append(score / divisor)
+            if kept.count == 2 * k {
+                kept.sort(by: >)
+                kept.removeLast(k)
+                floor = kept[k - 1]
+            }
         }
+        kept.sort(by: >)
+        return kept[k - 1]
     }
 
     /// Positions (ascending) of the nucleus: in descending value order, ties by ascending position, every candidate
-    /// whose preceding mass is below `mass`. Selection by partitioning on value, so expected linear time.
-    static func nucleus(values: [Double], probabilities: [Double], mass: Double) -> [Int] {
-        var kept: [Int] = []
+    /// whose preceding mass is below `mass`. In-place three-way partitioning on value, so expected linear time.
+    static func nucleus(values: [Float], probabilities: [Double], mass: Double) -> [Int] {
+        var order = Array(values.indices)
+        var kept = [Bool](repeating: false, count: values.count)
         var budget = mass  // `mass` minus everything kept so far, all of which ranks above the remaining pool
-        var pool = Array(values.indices)
-        while !pool.isEmpty {
-            let pivot = median(values[pool[0]], values[pool[pool.count / 2]], values[pool[pool.count - 1]])
-            let greater = pool.filter { values[$0] > pivot }
-            let greaterMass = greater.reduce(0.0) { $0 + probabilities[$1] }
-            if greaterMass >= budget { pool = greater; continue }
-            kept += greater
+        var low = 0, high = order.count  // the pool: order[low..<high]
+        while low < high {
+            let pivot = median(values[order[low]], values[order[(low + high) / 2]], values[order[high - 1]])
+            // order[low..<greater] > pivot, order[greater..<less] == pivot, order[less..<high] < pivot.
+            var greater = low, index = low, less = high
+            while index < less {
+                let value = values[order[index]]
+                if value > pivot {
+                    order.swapAt(greater, index)
+                    greater += 1
+                    index += 1
+                } else if value < pivot {
+                    less -= 1
+                    order.swapAt(index, less)
+                } else {
+                    index += 1
+                }
+            }
+            var greaterMass = 0.0
+            for position in order[low..<greater] { greaterMass += probabilities[position] }
+            if greaterMass >= budget { high = greater; continue }
+            for position in order[low..<greater] { kept[position] = true }
             budget -= greaterMass
             // Tied at the pivot: ascending position (= token ID) order, while the preceding mass stays below `mass`.
-            for position in pool where values[position] == pivot {
-                guard budget > 0 else { return kept.sorted() }
-                kept.append(position)
+            for position in order[greater..<less].sorted() {
+                guard budget > 0 else { break }
+                kept[position] = true
                 budget -= probabilities[position]
             }
             guard budget > 0 else { break }
-            pool = pool.filter { values[$0] < pivot }
+            low = less
         }
-        return kept.sorted()
+        return kept.indices.filter { kept[$0] }
     }
 
-    private static func median(_ a: Double, _ b: Double, _ c: Double) -> Double {
+    private static func median(_ a: Float, _ b: Float, _ c: Float) -> Float {
         max(min(a, b), min(max(a, b), c))
     }
 }

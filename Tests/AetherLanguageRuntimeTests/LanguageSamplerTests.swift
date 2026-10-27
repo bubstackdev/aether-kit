@@ -165,11 +165,12 @@ struct LanguageSamplerTests {
     @Test func selectionHelpers() {
         var generator = LanguageRandomGenerator(seed: 11)
         for _ in 0..<300 {
-            let values = (0..<Int(generator.next() % 200 + 1)).map { _ in Double(generator.next() % 20) }
+            let values = (0..<Int(generator.next() % 200 + 1)).map { _ in Float(generator.next() % 20) }
             let k = Int(generator.next() % UInt64(values.count)) + 1
-            #expect(LanguageSampler.kthLargest(values, k) == values.sorted(by: >)[k - 1])
+            #expect(LanguageSampler.kthLargest(values, k, divisor: 1) == values.sorted(by: >)[k - 1])
+            #expect(LanguageSampler.kthLargest(values + [.infinity, -.infinity], k, divisor: 0.5) == values.sorted(by: >)[k - 1] * 2)
             // The nucleus against a sort-based reference with the same tie rule.
-            let weights = values.map { exp($0 / 4) }
+            let weights = values.map { exp(Double($0) / 4) }
             let total = weights.reduce(0, +)
             let probabilities = weights.map { $0 / total }
             let mass = Double(generator.next() % 1000 + 1) / 1000
