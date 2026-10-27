@@ -261,16 +261,40 @@ public actor LanguageGenerationSession {
         self.memoryBudget = LanguageMemoryBudget(limitBytes: nil)
     }
 
-    /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
-    /// placeholder expands to its tokens. A one-function asset prefills the whole prompt in the bucketed
-    /// chunks, image tokens carrying their rows; a 0.0.2 asset sends each image in one `withImage`
-    /// submission and text runs in the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
-    /// Not grid-restricted: any image span up to the exported image chunk is accepted. Only
-    /// ``VisionLanguageSession`` limits images to the registration's fixed grids.
+    /// Greedy generation from a rendered prompt with images (Qwen3-VL assets): the image request below with
+    /// `.greedy` sampling and no constraint, its replies token for token those of 0.0.2.
     public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
                          prefillChunkSize: Int? = nil, onToken: (@Sendable (Int) async throws -> Void)? = nil,
                          observer: Observer? = nil) async throws -> Reply {
+        var delivery: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?
+        if let onToken {
+            delivery = { token in
+                try await onToken(token.id)
+                return .continue
+            }
+        }
+        let result = try await generate(prompt: prompt, imageTokens: imageTokens, maximumTokens: maximumTokens, sampling: .greedy,
+                                        prefillChunkSize: prefillChunkSize, observer: observer, onToken: delivery)
+        return Reply(tokens: result.tokens, timeToFirstTokenSeconds: result.timeToFirstTokenSeconds, totalSeconds: result.totalSeconds,
+                     stopReason: result.stopReason.rawValue)
+    }
+
+    /// Generation from a rendered prompt with images (Qwen3-VL assets), with sampling and a constraint as a text
+    /// request has them (``LanguageGenerationRequest``). Each image's placeholder expands to its tokens. A one-function
+    /// asset prefills the whole prompt in the bucketed chunks, image tokens carrying their rows; a 0.0.2 asset sends each
+    /// image in one `withImage` submission and text runs in the bucketed chunks. Rotary positions follow Qwen3-VL's
+    /// M-RoPE rule. The sampler's repetition penalty and the processor's `begin(prompt:)` see the expanded prompt (each
+    /// image's pad token repeated to its token count), as Transformers' `input_ids` do. Sampling runs on the host after
+    /// each step joins, so it adds no input, shape or submission.
+    /// Not grid-restricted: any image span up to the exported image chunk is accepted. Only
+    /// ``VisionLanguageSession`` limits images to the registration's fixed grids.
+    public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
+                         sampling: LanguageSampling, constraint: (any LanguageLogitsProcessor)? = nil,
+                         prefillChunkSize: Int? = nil, observer: Observer? = nil,
+                         onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)? = nil) async throws
+        -> LanguageGenerationResult {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
+        try sampling.validate()
         let plan = try imagePlan(prompt, imageTokens: imageTokens)
         try begin(prompt: plan.ids, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
@@ -281,14 +305,13 @@ public actor LanguageGenerationSession {
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
-        let start = ContinuousClock.now
-        let next = try Self.greedy(await prefill(plan, images: prompt.images, chunkSize: prefillChunkSize, observer: observer))
-        let first = elapsed(start)
-        let decoded = try await LanguageDecodeLoop.run(first: next, prompt: plan.ids.count, maximumTokens: maximumTokens,
-            stopTokenIDs: stopTokenIDs, step: { token, position in
-                try Self.greedy(await self.step(tokens: [Int32(token)], position: position, observer: observer))
-            }, onToken: onToken)
-        return Reply(tokens: decoded.tokens, timeToFirstTokenSeconds: first, totalSeconds: elapsed(start), stopReason: decoded.reason)
+        let output = try await LanguageDecodeLoop.generate(prompt: plan.ids, maximumTokens: maximumTokens,
+            stopTokenIDs: stopTokenIDs, vocabularySize: vocabularySize, sampling: sampling, processor: constraint,
+            prefill: { try await self.prefill(plan, images: prompt.images, chunkSize: prefillChunkSize, observer: observer) },
+            step: { token, position in try await self.step(tokens: [Int32(token)], position: position, observer: observer) },
+            onToken: onToken)
+        return LanguageGenerationResult(tokens: output.tokens, stopReason: output.stopReason, seed: output.seed,
+                                        timeToFirstTokenSeconds: output.timeToFirstTokenSeconds, totalSeconds: output.totalSeconds)
     }
 
     /// Teacher-forced last-row logits for an image prompt: after the prefill, then after each
