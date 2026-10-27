@@ -79,8 +79,9 @@ let text = tokenizer.decode(reply.tokens)                                     //
   for pinned snapshots of Qwen/Qwen3-0.6B, huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated,
   Qwen/Qwen3-VL-2B-Instruct and huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated (Apache-2.0): text-only, system, multi-turn, Unicode, thinking on and
   image placeholders before and after text. With `AETHER_LANGUAGE_TOKENIZER_HUB` set to a hub cache holding
-  them, all 24 cases match token for token, as does the decode check. Qwen3's thinking-off render equals FLUX.2's
-  `Flux2Prompt.render`, so FLUX can delegate to this product without changing a token.
+  them, all 24 cases match token for token, as does the decode check. Qwen3's thinking-off render equals the fixed
+  render FLUX.2 used until 0.0.2. Since 0.0.3, `Flux2Tokenizer` renders through this product with the same token IDs
+  ([FLUX.2 guide](flux2-klein.md#chat-template-in-the-fingerprint-003)).
 
 ## State and ownership
 

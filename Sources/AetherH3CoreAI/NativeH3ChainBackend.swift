@@ -1,7 +1,7 @@
 import AetherKit
 import AetherH3
 import AetherCoreAI
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import Metal
 
@@ -13,7 +13,7 @@ actor NativeH3ChainBackend: H3ChainBackend {
     }
     private let model: AIModel
     private let function: InferenceFunction
-    private let stream: ComputeStream
+    private let stream: SerialComputeStream
     private let fixed: [Binding]
     private let steps: [[Binding]]
     private let weightFiles: [[H3TensorFile]]
@@ -67,7 +67,7 @@ actor NativeH3ChainBackend: H3ChainBackend {
             }
             outputs.append(buffer)
         }
-        self.model = model; self.function = function; self.stream = ComputeStream()
+        self.model = model; self.function = function; self.stream = SerialComputeStream()
         self.fixed = fixed; self.steps = steps; self.initial = initial
         self.initialFile = hidden
         self.fixedFiles = probe.base.inputs.filter { ["tags", "cos", "sin"].contains($0.name) }
@@ -157,13 +157,12 @@ actor NativeH3ChainBackend: H3ChainBackend {
                     scalarType: $0.spec.scalarType.native, shape: $0.spec.shape))
             }).merging(["hidden": InferenceFunction.AsyncValue(unsafeBuffer: hidden,
                 scalarType: initial.spec.scalarType.native, shape: initial.spec.shape)]) { _, new in new }
-            let stream = self.stream
             var result = InferenceFunction.AsyncMutableValue(unsafeBuffer: output,
                 scalarType: initial.spec.scalarType.native, shape: initial.spec.shape)
             var views = InferenceFunction.AsyncMutableViews()
             views.insert(&result, for: "hidden_out")
             do {
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             } catch {
                 await stream.currentWorkCompleted()
                 observer?(H3ChainEvent(block: block, event: .nativeCompleted))

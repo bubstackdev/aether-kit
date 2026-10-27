@@ -1,7 +1,7 @@
 import AetherKit
 import AetherH3
 import AetherCoreAI
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import Metal
 
@@ -16,7 +16,7 @@ actor NativeH3BlockBackend: H3BlockBackend {
     private let inputs: [Binding]
     private let output: any MTLBuffer
     private let outputSpec: H3TensorSpec
-    private let stream: ComputeStream
+    private let stream: SerialComputeStream
     private let observer: (@Sendable (H3BlockEvent) -> Void)?
 
     static func open(_ probe: H3BlockProbePlan.Case,
@@ -54,7 +54,7 @@ actor NativeH3BlockBackend: H3BlockBackend {
         guard let output = device.makeBuffer(length: probe.output.byteCount, options: .storageModeShared) else { throw AetherError.unsupported("could not allocate H3 shared output") }
         self.model = model; self.function = function; self.inputs = inputs
         self.output = output; self.outputSpec = probe.output
-        self.stream = ComputeStream()
+        self.stream = SerialComputeStream()
         self.observer = observer
     }
 
@@ -62,12 +62,9 @@ actor NativeH3BlockBackend: H3BlockBackend {
         try Task.checkCancellation()
         // Buffers stay owned by this backend across success, cancellation and
         // encode failure. Even a partial submission is joined before release.
-        // Core AI's opaque stream is not Sendable in this SDK. The compatibility
-        // import is confined here; this actor owns buffers, and H3BlockSession
-        // admits one call until stream completion, including cancellation/errors.
-        // The session serializes calls and joins each one before this stream
-        // is reused, including cancellation and partial encode failures.
-        let stream = self.stream
+        // H3BlockSession admits one call until stream completion and joins each
+        // one before this stream is reused, including cancellation and partial
+        // encode failures (the rule `SerialComputeStream` relies on).
         let values = Dictionary(uniqueKeysWithValues: inputs.map { binding in
             (binding.name, InferenceFunction.AsyncValue(unsafeBuffer: binding.buffer,
                 scalarType: binding.spec.scalarType.native, shape: binding.spec.shape))
@@ -76,7 +73,7 @@ actor NativeH3BlockBackend: H3BlockBackend {
         var views = InferenceFunction.AsyncMutableViews()
         views.insert(&result, for: "hidden_out")
         do {
-            _ = try function.encode(inputs: values, outputViews: views, to: stream)
+            _ = try stream.encode(function, inputs: values, outputViews: views)
         } catch {
             await stream.currentWorkCompleted()
             observer?(.nativeCompleted)

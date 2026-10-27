@@ -1,4 +1,4 @@
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import AetherCoreAI
 import AetherKit
@@ -29,7 +29,7 @@ public actor LanguageGenerationSession {
 
     private var model: AIModel?
     private var function: InferenceFunction?
-    private var stream: ComputeStream?
+    private var stream: SerialComputeStream?
     private var keys: (any MTLBuffer)?
     private var values: (any MTLBuffer)?
     private let keyTemplate: NDArrayDescriptor
@@ -213,7 +213,7 @@ public actor LanguageGenerationSession {
             throw LanguageGenerationError.invalid("Missing main inference function")
         }
         self.function = function
-        self.stream = ComputeStream(commandQueue: queue)
+        self.stream = SerialComputeStream(commandQueue: queue)
         self.keys = kb
         self.values = vb
         self.keyTemplate = key
@@ -499,9 +499,9 @@ public actor LanguageGenerationSession {
                 var states = InferenceFunction.AsyncMutableViews()
                 states.insert(&k, for: "keyCache")
                 states.insert(&v, for: "valueCache")
-                outputs = try function.encode(inputs: inputs, states: states, to: stream)
+                outputs = try stream.encode(function, inputs: inputs, states: states)
             } else {
-                outputs = try function.encode(inputs: inputs, states: InferenceFunction.AsyncMutableViews(), to: stream)
+                outputs = try stream.encode(function, inputs: inputs)
             }
         } catch {
             await stream.currentWorkCompleted()
@@ -693,7 +693,7 @@ public actor LanguageGenerationSession {
         }
         model = loaded
         function = loadedFunction
-        stream = ComputeStream(commandQueue: queue)
+        stream = SerialComputeStream(commandQueue: queue)
         submissionsSinceReload = 0
         modelReloadCount += 1
     }

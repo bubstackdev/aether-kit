@@ -53,7 +53,6 @@ import Testing
 }
 
 @Test func promptPadsRightAndTruncatesThePrefix() throws {
-    #expect(Flux2Prompt.render("a fox") == "<|im_start|>user\na fox<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
     let prompt = try Flux2Prompt(renderedTokenIDs: [5, 6, 7])
     #expect(prompt.tokenIDs.count == 512 && Array(prompt.tokenIDs.prefix(4)) == [5, 6, 7, 151643])
     #expect(prompt.realTokens == 3 && !prompt.wasTruncated)
@@ -175,6 +174,23 @@ extension Flux2Prompt {
     try Data("{}".utf8).write(to: assets.tokenizerDirectory.appendingPathComponent("tokenizer.json"))
     #expect(throws: AetherError.self) { try assets.verifyTokenizer() }
     #expect(try Flux2Assets.open(at: clean.root).fingerprint != assets.fingerprint)
+
+    // The chat template decides the prompt's token IDs: it is pinned, hashed into both fingerprints and required.
+    let templated = try Flux2BundleFixture()
+    defer { templated.cleanup() }
+    let original = try Flux2Assets.open(at: templated.root)
+    let template = original.tokenizerDirectory.appendingPathComponent("chat_template.jinja")
+    try Data("{{- 'other template' }}\n".utf8).write(to: template)
+    #expect(throws: AetherError.self) { try original.verifyTokenizer() }
+    let changed = try Flux2Assets.open(at: templated.root)
+    #expect(changed.fingerprint != original.fingerprint && changed.referenceFingerprint != original.referenceFingerprint)
+    try templated.edit("aether.json") { json in
+        json["provenance"] = ["source": ["hfRepo": "black-forest-labs/FLUX.2-klein-4B", "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294"],
+                              "files": ["tokenizer/chat_template.jinja": "sha256:" + String(repeating: "0", count: 64)]]
+    }
+    #expect(throws: AetherError.self) { try Flux2Assets.open(at: templated.root) }
+    try FileManager.default.removeItem(at: template)
+    #expect(throws: (any Error).self) { try Flux2Assets.open(at: templated.root) }
 }
 
 @Test func concurrentVerificationReportsTheFirstFailureInSerialOrder() throws {
@@ -218,7 +234,7 @@ extension Flux2Prompt {
     defer { try? FileManager.default.removeItem(at: store) }
     let assets = try Flux2Assets.open(at: fixture.root)
     let manifest = try assets.installationManifest()
-    #expect(manifest.files.count == 4 + 6 * 3)
+    #expect(manifest.files.count == 5 + 6 * 3)
     let local = try LocalAssetStore(root: store)
     let id = try await local.install(manifest, from: fixture.root)
     let lease = try await local.acquire(id)

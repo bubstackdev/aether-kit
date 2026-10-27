@@ -37,10 +37,12 @@ func flux2NativeParityAgainstIndependentReferences() async throws {
     let t2i = try Flux2Fixture(URL(fileURLWithPath: try #require(env["AETHER_FLUX2_FIXTURES"])))
     let selected = Set((env["AETHER_FLUX2_CASES"] ?? "lighthouse-512,red-circle-512,fox-512,ramen-576x448,cafe-512")
         .split(separator: ",").map(String.init))
-    var cases = t2i.cases.filter { selected.contains("all") || selected.contains($0.id) }
-    if let path = env["AETHER_FLUX2_REFERENCE_FIXTURES"] { cases += try Flux2Fixture(URL(fileURLWithPath: path)).cases }
+    let referenceFixture = try env["AETHER_FLUX2_REFERENCE_FIXTURES"].map { try Flux2Fixture(URL(fileURLWithPath: $0)) }
+    let cases = t2i.cases.filter { selected.contains("all") || selected.contains($0.id) } + (referenceFixture?.cases ?? [])
     #expect(!cases.isEmpty)
-    report.set("fixtures", ["t2i": t2i.id, "cases": cases.map(\.id).joined(separator: ",")])
+    var fixtures = ["t2i": t2i.id, "cases": cases.map(\.id).joined(separator: ",")]
+    fixtures["reference"] = referenceFixture?.id
+    report.set("fixtures", fixtures)
     let compute = ModelComputePolicy.preferGPU
 
     // 1. Tokenizer and text encoder (component).

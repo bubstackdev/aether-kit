@@ -19,7 +19,8 @@ public struct Flux2Assets: Sendable {
     public let referenceEncoder: DeclaredModelAsset?
     public let references: Flux2ReferenceLimits?
     public let tokenizerDirectory: URL
-    /// Identity of the text-to-image execution contract: manifest, metadata, tokenizer and model declarations.
+    /// Identity of the text-to-image execution contract: manifest, metadata, tokenizer files (the chat template
+    /// included) and model declarations.
     public let fingerprint: String
     /// Text-to-image identity plus the reference encoder's declarations and the reference contract.
     public let referenceFingerprint: String?
@@ -92,7 +93,8 @@ public struct Flux2Assets: Sendable {
                     assetReshapes: manifest.diffusion.assetReshapes ?? [:])
     }
 
-    static let tokenizerNames = ["tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json"]
+    /// The files that decide prompt token IDs: the vocabulary and the chat template that renders the prompt.
+    static let tokenizerNames = ["tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json", "tokenizer/chat_template.jinja"]
 
     /// Streams every declared model through SHA-256 (about 8 GB for the int8 export) on concurrent
     /// threads, then rechecks the tokenizer. A failure is reported for the first failing asset in
@@ -130,7 +132,7 @@ public struct Flux2Assets: Sendable {
             var files = try ["metadata.json", "aether.json"].map { try BundleFiles.portable($0, in: root) }
             files += try tokenizerFiles.map { try BundleFiles.portable($0.key, in: root, sha256: $0.value) }
             for name in ["LICENSE.md", "tokenizer/vocab.json", "tokenizer/merges.txt", "tokenizer/added_tokens.json",
-                         "tokenizer/special_tokens_map.json", "tokenizer/chat_template.jinja"]
+                         "tokenizer/special_tokens_map.json"]
                 where FileManager.default.fileExists(atPath: root.appendingPathComponent(name).path) {
                 files.append(try BundleFiles.portable(name, in: root))
             }
