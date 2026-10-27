@@ -68,7 +68,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 | Piece | Scope in 0.0.3 |
 | --- | --- |
 | Runtime seam | A sampler or logits hook, and a `LanguageBackend` protocol. The runtime is greedy-only today. |
-| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is 27 today. |
+| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is macOS 14 / iOS 17, with a CI launch check on macOS 14 ([deployment floor](deployment-floor.md)). |
 | `AetherLanguage` text facade | Owns the tokenizer, template, stop tokens, reasoning, sampling and UTF-8-safe streaming, building on `AetherLanguageTokenizers`. |
 | Structured output | Constrained decoding into `Decodable`, with a `@Generable`-style macro. This adds a swift-syntax dependency. |
 

@@ -1,9 +1,13 @@
 // swift-tools-version: 6.4
 import PackageDescription
 
+// The floor is macOS 14 / iOS 17, so apps can link the language facade there; it reports "unsupported OS" below 27.
+// Every target that uses Core AI is gated at macOS 27 / iOS 27 declaration by declaration (Scripts/annotate-floor.py),
+// and CoreAI links weakly because every reference to it is availability-gated. Tests build with
+// `--triple arm64-apple-macosx27.0` (docs/deployment-floor.md).
 let package = Package(
     name: "AetherKit",
-    platforms: [.macOS("27.0"), .iOS("27.0")],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherAssets", targets: ["AetherAssets"]),
@@ -39,18 +43,17 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
-        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit, so it can build below the
-        // Core AI floor (Scripts/check-floor.sh typechecks it at macOS 14 and iOS 17).
+        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit.
         .target(name: "AetherLanguageRuntime"),
         .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision", "AetherLanguageRuntime"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
-        // The app-facing text facade. It must link on macOS 14 and iOS 17 once the package floor drops; it reaches Core AI
-        // only behind availability checks (docs/language-facade.md).
+        // The app-facing text facade. It links and launches on macOS 14 and iOS 17, and reaches Core AI only behind
+        // availability checks (docs/language-facade.md).
         .target(name: "AetherLanguage", dependencies: [
             "AetherKit", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherLanguageCoreAI",
         ]),
-        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. A separate product, so an
-        // app on an older OS doesn't link FoundationModels' newer API.
+        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. FoundationModels links
+        // weakly, like CoreAI.
         .target(name: "AetherLanguageFoundationModels", dependencies: ["AetherLanguage", "AetherLanguageTokenizers"]),
         .target(name: "AetherLanguageTokenizers", dependencies: [
             "AetherKit", .product(name: "Tokenizers", package: "swift-transformers"),

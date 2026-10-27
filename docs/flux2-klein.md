@@ -411,7 +411,7 @@ AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test -c release --filter flux2NativeParity
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeParity
 ```
 
 `AETHER_FLUX2_CASES` selects text-to-image cases (default: the five 512²-class cases; `all` for all ten).
@@ -441,7 +441,7 @@ AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeLifecycle
 ```
 
 **Qualified bundle (`a48aaf07…`, 2026-10-27):** 44/44 against the CPU fixtures; see

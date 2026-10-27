@@ -107,8 +107,8 @@ that step fails, the in-flight delivery is cancelled and awaited.
 
 `AetherLanguageRuntime` holds what doesn't depend on Core AI: the `LanguageBackend` protocol, `LanguageSampling`, the
 constraint hook and the decode loop every backend shares ([design](language-runtime-seam.md)). It imports only the
-standard library and Foundation, so it can build below the Core AI floor (`Scripts/check-floor.sh`
-typechecks it at macOS 14 and iOS 17), and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
+standard library and Foundation, so it builds at the package floor (macOS 14 and iOS 17) without availability
+annotations, and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
 AI backend:
 
 ```swift

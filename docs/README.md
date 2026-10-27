@@ -77,3 +77,7 @@ The 0.0.2 feasibility reports that open the 0.0.3 [spikes](roadmap-0.0.3.md#spik
 ## 0.0.3 language runtime seam (2026-10-27)
 
 The [language runtime seam](language-runtime-seam.md) is the first piece of the app-facing language track: the Core-AI-free `AetherLanguageRuntime` target with the `LanguageBackend` protocol, seeded sampling and a constraint hook for structured output, with its [qualification](evidence/language-runtime-seam-2026-10-27.json). The [language generation guide](language-generation.md#sampling-and-the-backend-protocol) covers using it. On top of it, the [AetherLanguage facade](language-facade.md) is the app-facing text API, in FoundationModels' shape, with an OS 27 adapter that runs FoundationModels' own `LanguageModelSession` on a Kit model ([qualification](evidence/language-facade-native-2026-10-27.json)).
+
+## 0.0.3 deployment floor (2026-10-27)
+
+[Deployment floor](deployment-floor.md): the package floor is macOS 14 / iOS 17. The Core AI targets are gated at OS 27 by `Scripts/annotate-floor.py`, CoreAI links weakly, tests build with the 27 triple, and CI launches `Examples/FloorConsumer` on macOS 14.

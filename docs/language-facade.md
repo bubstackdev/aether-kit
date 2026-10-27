@@ -67,8 +67,7 @@ backend only runs on OS 27 anyway.
    request, so every turn prefills the whole conversation. Prefix reuse is a later backend option (see the seam's
    [next needs](language-runtime-seam.md#what-the-facade-will-need-next)) and doesn't change this API.
 7. **The Core AI backend is chosen at runtime behind `#available(macOS 27, iOS 27, *)`.** Below that, the model reports
-   `.unavailable(.unsupportedOS)` until another backend exists. This needs the deployment-floor work described in
-   [The floor](#the-floor).
+   `.unavailable(.unsupportedOS)` until another backend exists ([The floor](#the-floor)).
 
 ## Where the facade mirrors FoundationModels, and where it doesn't
 
@@ -222,41 +221,14 @@ One model value is shared by its sessions. It loads the backend and tokenizer on
 
 ## The floor
 
-The facade must link and launch on macOS 14 and iOS 17, and report "unsupported OS" there. Its dependencies, as they
-stand:
-
-| Target | Floor today | What it needs |
-| --- | --- | --- |
-| `AetherLanguageRuntime` | macOS 14 / iOS 17 | Nothing; typechecked there in CI |
-| `AetherKit` | macOS 15 / iOS 18 | `Mutex` from `Synchronization` in `GPUAdmission`, `SharedGPULease` and `ResourceCoordinator` (eight uses). A macOS 14 typecheck of the target fails on `Mutex` and `withLock` and on nothing else |
-| `AetherLanguageTokenizers` | `AetherKit`'s, and swift-transformers 1.1.0 (macOS 13 / iOS 16) | Only `AetherKit` |
-| `AetherLanguageCoreAI`, `AetherCoreAI` | macOS 27 / iOS 27 | Availability annotations, and `CoreAI` weak-linked |
-| FoundationModels (adapter only) | macOS 26 / iOS 26; `LanguageModel` is 27 | A separate target that apps on older OSes don't link, or a weak link |
-
-**What has to move or be gated:**
-1. **`AetherKit`'s locks.** Replace `Mutex` with `OSAllocatedUnfairLock` (macOS 13, iOS 16). It has the same
-   `withLock` shape and needs no availability annotations, which would otherwise spread through every caller.
-   `LanguageModelManifest` (CryptoKit) and `AetherError` are already fine. Nothing needs to move: the tokenizer target
-   keeps depending on `AetherKit`.
-2. **Package `platforms`.** These drop to `.macOS(.v14), .iOS(.v17)`. Every target that touches Core AI or OS 27 APIs then
-   needs `@available(macOS 27, iOS 27, *)` on its public declarations. That covers `AetherCoreAI` and the `*CoreAI`
-   targets, plus the probe and the native test targets, which can stay 27-only by being annotated as a whole.
-3. **`CoreAI` weak-linked.** It's `linkedFramework("CoreAI")` today. The floor work decides how: `-weak_framework` via
-   `linkerSettings: [.unsafeFlags]` is not allowed for a remote dependency, so this needs SwiftPM's own weak linking or a
-   build-setting route. Of everything here, it's the one item the facade can't work around.
-
-**The facade asks this of the floor work** (it doesn't do it itself):
-- package platforms at macOS 14 and iOS 17;
-- availability annotations on the Core AI targets;
-- a weak `CoreAI` link;
-- a launch check: an app linking `AetherLanguage` that runs on a macOS 14 machine or VM and reports `.unsupportedOS`.
-
-The `AetherKit` lock replacement is small and blocks the facade's own macOS 14 typecheck. It could be the facade's first
-commit or part of the floor work (a question for the lead).
+The facade links and launches on macOS 14 and iOS 17, the package floor, and reports "unsupported OS" there. The
+[deployment floor](deployment-floor.md) covers how: the Core AI targets are gated at OS 27 declaration by declaration,
+`CoreAI` and FoundationModels link weakly because every reference to them is gated, and CI launches a floor consumer of
+`AetherLanguage` on a macOS 14 runner, requiring `.unsupportedOS`.
 
 **Choosing the backend at runtime.** `AetherLanguage` depends on `AetherLanguageCoreAI` in SwiftPM, but calls it only
 inside `if #available(macOS 27, iOS 27, *)`. Otherwise `availability` is `.unavailable(.unsupportedOS)`, and requests
-throw the same reason. If the MLX spike goes ahead, its backend slots in at that branch. No `AetherLanguage` declaration
+throw the same reason. The OS is checked before the bundle, so the reason is the same whatever the bundle holds. If the MLX spike goes ahead, its backend slots in at that branch. No `AetherLanguage` declaration
 carries an availability annotation.
 
 ## Model selection and readiness in 0.0.3
@@ -271,7 +243,7 @@ writer, which takes seconds. The reasons:
 
 | Reason | When |
 | --- | --- |
-| `.unsupportedOS` | Below macOS 27 or iOS 27, with no other backend |
+| `.unsupportedOS` | Below macOS 27 or iOS 27, with no other backend (checked first) |
 | `.unsupportedPlatform` | The registration's `platform` isn't this one (a macOS export on iPhone) |
 | `.bundleMissing` | No `language-model.json`, or a listed path is absent |
 | `.bundleInvalid(String)` | The manifest doesn't parse or fails its schema checks (unknown schema version, paths escaping the bundle) |
@@ -437,8 +409,8 @@ On `v0.0.3/facade`, 2026-10-27, each commit passing `Scripts/check-cpu.sh` (503 
    `LanguageModelSession(model:)` returns the facade's replies, streaming included, and with a reasoning level on the
    0.6B.
 
-Not yet covered: a launch on macOS 14 (the floor work, after the decoder rework), iPhone, and the facade's own macOS 14
-typecheck. `AetherLanguage` imports the Core AI targets, which can't typecheck below 27 until they're annotated.
+Not yet covered here: iPhone. The floor work (`v0.0.3/floor`) then lowered the package floor to macOS 14 / iOS 17 and
+added the macOS 14 launch check ([deployment floor](deployment-floor.md)).
 
 ## Decided
 
