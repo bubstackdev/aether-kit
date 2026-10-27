@@ -15,6 +15,7 @@ private func digest(_ values: [Float]) -> String {
     #expect(try H3Noise.generate(seed: 0, count: 3).map(\.bitPattern) == [0xbee7cfdd, 0x3e54c09f, 0x4029a387])
     #expect(try H3Noise.generate(seed: 9, count: 0).isEmpty)
     #expect(throws: AetherError.self) { try H3Noise.generate(seed: 1, count: -1) }
+    #expect(try H3Noise.generate(seed: 1043, count: 9_217) == SeededGaussianNoise.generate(seed: 1043, count: 9_217))
 }
 
 @Test func h3InitialLatentsSplitOneStreamIntoPackedVideoThenChannelMajorAudio() throws {

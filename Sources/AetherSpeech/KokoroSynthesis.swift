@@ -72,33 +72,10 @@ public enum KokoroAlignment {
     }
 }
 
-/// SplitMix64 and double-precision Box-Muller, identical to `KreaNoise` and to the Forge
-/// reference harness. The same seed does not reproduce PyTorch's generator.
+/// SplitMix64 and double-precision Box-Muller (`SeededGaussianNoise`, the stream `KreaNoise` reads),
+/// identical to the Forge reference harness. The same seed does not reproduce PyTorch's generator.
 public enum KokoroNoise {
     public static func generate(seed: UInt64, count: Int) throws -> [Float] {
-        guard count >= 0, count <= Int.max / MemoryLayout<Float>.stride else {
-            throw AetherError.invalidRequest("invalid noise element count")
-        }
-        var state = seed
-        func next() -> UInt64 {
-            state &+= 0x9e3779b97f4a7c15
-            var value = state
-            value = (value ^ (value >> 30)) &* 0xbf58476d1ce4e5b9
-            value = (value ^ (value >> 27)) &* 0x94d049bb133111eb
-            return value ^ (value >> 31)
-        }
-        return [Float](unsafeUninitializedCapacity: count) { out, initialized in
-            var i = 0
-            while i < count {
-                let u1 = (Double(next() >> 11) + 1) / 9007199254740992
-                let u2 = Double(next() >> 11) / 9007199254740992
-                let radius = sqrt(-2 * log(u1))
-                let angle = 2 * Double.pi * u2
-                out[i] = Float(radius * cos(angle))
-                i += 1
-                if i < count { out[i] = Float(radius * sin(angle)); i += 1 }
-            }
-            initialized = count
-        }
+        try SeededGaussianNoise.generate(seed: seed, count: count)
     }
 }
