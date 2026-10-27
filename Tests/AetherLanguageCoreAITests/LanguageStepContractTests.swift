@@ -24,6 +24,22 @@ struct LanguageStepContractTests {
         #expect(!LanguageStepContract.bucketedPositions.cachesAreStates)
     }
 
+    @Test func oneFunctionImageSignatureIsBucketedWithImageRows() {
+        let detect = LanguageStepContract.detect
+        let rope = bucketed.inputs.union(["rope_positions"])
+        let oneFunction = rope.union(["image_embeds", "deepstack"])
+        #expect(detect(rope, bucketed.outputs, bucketed.states, [1, 1, 151936]) == .bucketedPositions)
+        #expect(detect(oneFunction, bucketed.outputs, bucketed.states, [1, 1, 151936]) == .bucketedPositions)
+        #expect(LanguageStepContract.takesImageRows(oneFunction))
+        #expect(!LanguageStepContract.takesImageRows(rope))
+        // Image rows without rotary positions, or only half of them, are no contract.
+        #expect(detect(bucketed.inputs.union(["image_embeds", "deepstack"]), bucketed.outputs, bucketed.states, [1, 1, 8]) == nil)
+        #expect(detect(rope.union(["image_embeds"]), bucketed.outputs, bucketed.states, [1, 1, 8]) == nil)
+        // The 0.0.2 image entry point stays recognised beside a `main` without image inputs.
+        #expect(LanguageStepContract.isImageStep(inputNames: oneFunction, outputNames: bucketed.outputs, stateNames: []))
+        #expect(!LanguageStepContract.isImageStep(inputNames: rope, outputNames: bucketed.outputs, stateNames: []))
+    }
+
     @Test func updateRowsLandAtTheirPositionsInEveryRow() {
         // Two rows (layer/head), capacity 5, width 2. Rows 3 and 4 of each are written from a
         // [rows, count = 2, width] update; everything else keeps its value.

@@ -1,0 +1,1857 @@
+{
+  "budgetMiB" : 2048,
+  "device" : "h17c",
+  "gate" : "Per model: at least 60 identical-shape requests after warming; Metal after every request at most the post-warm baseline plus the budget plus the largest warm request's growth (its kind already ran since the last reload); at least one reload; every reply of a kind identical to the first",
+  "models" : [
+    {
+      "boundMiB" : 12222,
+      "idleReloads" : 1,
+      "maximumMetalMiB" : 12174,
+      "maximumRequestGrowthMiB" : 61,
+      "mismatchedReplies" : 0,
+      "name" : "vl-2b-two-functions",
+      "passed" : true,
+      "promptTokens" : {
+        "image" : 18,
+        "text" : 449
+      },
+      "reloads" : 1,
+      "replies" : {
+        "image" : [
+          785,
+          2168,
+          18689,
+          264,
+          10876,
+          11,
+          12140,
+          20169
+        ],
+        "text" : [
+          785,
+          326,
+          57909,
+          53416,
+          56848,
+          279,
+          91830,
+          264
+        ]
+      },
+      "requestReloads" : 0,
+      "samples" : [
+        {
+          "kind" : "text",
+          "metalMiB" : 10173,
+          "reloads" : 0,
+          "request" : 0,
+          "retainedMiB" : 60
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10191,
+          "reloads" : 0,
+          "request" : 1,
+          "retainedMiB" : 71
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10251,
+          "reloads" : 0,
+          "request" : 2,
+          "retainedMiB" : 131
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10262,
+          "reloads" : 0,
+          "request" : 3,
+          "retainedMiB" : 142
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10322,
+          "reloads" : 0,
+          "request" : 4,
+          "retainedMiB" : 202
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10333,
+          "reloads" : 0,
+          "request" : 5,
+          "retainedMiB" : 213
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10394,
+          "reloads" : 0,
+          "request" : 6,
+          "retainedMiB" : 274
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10404,
+          "reloads" : 0,
+          "request" : 7,
+          "retainedMiB" : 284
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10465,
+          "reloads" : 0,
+          "request" : 8,
+          "retainedMiB" : 345
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10476,
+          "reloads" : 0,
+          "request" : 9,
+          "retainedMiB" : 356
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10536,
+          "reloads" : 0,
+          "request" : 10,
+          "retainedMiB" : 416
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10547,
+          "reloads" : 0,
+          "request" : 11,
+          "retainedMiB" : 427
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10607,
+          "reloads" : 0,
+          "request" : 12,
+          "retainedMiB" : 487
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10618,
+          "reloads" : 0,
+          "request" : 13,
+          "retainedMiB" : 498
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10678,
+          "reloads" : 0,
+          "request" : 14,
+          "retainedMiB" : 558
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10689,
+          "reloads" : 0,
+          "request" : 15,
+          "retainedMiB" : 569
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10750,
+          "reloads" : 0,
+          "request" : 16,
+          "retainedMiB" : 630
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10760,
+          "reloads" : 0,
+          "request" : 17,
+          "retainedMiB" : 640
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10821,
+          "reloads" : 0,
+          "request" : 18,
+          "retainedMiB" : 701
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10832,
+          "reloads" : 0,
+          "request" : 19,
+          "retainedMiB" : 712
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10892,
+          "reloads" : 0,
+          "request" : 20,
+          "retainedMiB" : 772
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10903,
+          "reloads" : 0,
+          "request" : 21,
+          "retainedMiB" : 783
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10963,
+          "reloads" : 0,
+          "request" : 22,
+          "retainedMiB" : 843
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10974,
+          "reloads" : 0,
+          "request" : 23,
+          "retainedMiB" : 854
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11034,
+          "reloads" : 0,
+          "request" : 24,
+          "retainedMiB" : 914
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11045,
+          "reloads" : 0,
+          "request" : 25,
+          "retainedMiB" : 925
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11106,
+          "reloads" : 0,
+          "request" : 26,
+          "retainedMiB" : 986
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11116,
+          "reloads" : 0,
+          "request" : 27,
+          "retainedMiB" : 996
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11177,
+          "reloads" : 0,
+          "request" : 28,
+          "retainedMiB" : 1057
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11188,
+          "reloads" : 0,
+          "request" : 29,
+          "retainedMiB" : 1068
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11248,
+          "reloads" : 0,
+          "request" : 30,
+          "retainedMiB" : 1128
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11259,
+          "reloads" : 0,
+          "request" : 31,
+          "retainedMiB" : 1139
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11319,
+          "reloads" : 0,
+          "request" : 32,
+          "retainedMiB" : 1199
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11330,
+          "reloads" : 0,
+          "request" : 33,
+          "retainedMiB" : 1210
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11390,
+          "reloads" : 0,
+          "request" : 34,
+          "retainedMiB" : 1270
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11401,
+          "reloads" : 0,
+          "request" : 35,
+          "retainedMiB" : 1281
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11462,
+          "reloads" : 0,
+          "request" : 36,
+          "retainedMiB" : 1342
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11472,
+          "reloads" : 0,
+          "request" : 37,
+          "retainedMiB" : 1352
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11533,
+          "reloads" : 0,
+          "request" : 38,
+          "retainedMiB" : 1413
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11544,
+          "reloads" : 0,
+          "request" : 39,
+          "retainedMiB" : 1424
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11604,
+          "reloads" : 0,
+          "request" : 40,
+          "retainedMiB" : 1484
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11615,
+          "reloads" : 0,
+          "request" : 41,
+          "retainedMiB" : 1495
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11675,
+          "reloads" : 0,
+          "request" : 42,
+          "retainedMiB" : 1555
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11686,
+          "reloads" : 0,
+          "request" : 43,
+          "retainedMiB" : 1566
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11747,
+          "reloads" : 0,
+          "request" : 44,
+          "retainedMiB" : 1626
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11757,
+          "reloads" : 0,
+          "request" : 45,
+          "retainedMiB" : 1637
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11818,
+          "reloads" : 0,
+          "request" : 46,
+          "retainedMiB" : 1698
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11828,
+          "reloads" : 0,
+          "request" : 47,
+          "retainedMiB" : 1708
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11889,
+          "reloads" : 0,
+          "request" : 48,
+          "retainedMiB" : 1769
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11900,
+          "reloads" : 0,
+          "request" : 49,
+          "retainedMiB" : 1780
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11960,
+          "reloads" : 0,
+          "request" : 50,
+          "retainedMiB" : 1840
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11971,
+          "reloads" : 0,
+          "request" : 51,
+          "retainedMiB" : 1851
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12031,
+          "reloads" : 0,
+          "request" : 52,
+          "retainedMiB" : 1911
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12042,
+          "reloads" : 0,
+          "request" : 53,
+          "retainedMiB" : 1922
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12103,
+          "reloads" : 0,
+          "request" : 54,
+          "retainedMiB" : 1982
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12113,
+          "reloads" : 0,
+          "request" : 55,
+          "retainedMiB" : 1993
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12174,
+          "reloads" : 0,
+          "request" : 56,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10062,
+          "reloads" : 1,
+          "request" : 57,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10122,
+          "reloads" : 1,
+          "request" : 58,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 10133,
+          "reloads" : 1,
+          "request" : 59,
+          "retainedMiB" : 10
+        }
+      ],
+      "seconds" : 36.530602875,
+      "unloadedMetalMiB" : 359,
+      "warmMetalMiB" : 10113
+    },
+    {
+      "boundMiB" : 8466,
+      "idleReloads" : 3,
+      "maximumMetalMiB" : 8468,
+      "maximumRequestGrowthMiB" : 202,
+      "mismatchedReplies" : 0,
+      "name" : "vl-2b-one-function",
+      "passed" : false,
+      "promptTokens" : {
+        "image" : 18,
+        "text" : 449
+      },
+      "reloads" : 3,
+      "replies" : {
+        "image" : [
+          785,
+          2168,
+          18689,
+          264,
+          10876,
+          11,
+          12140,
+          20169
+        ],
+        "text" : [
+          785,
+          326,
+          57909,
+          53416,
+          56848,
+          279,
+          91830,
+          264
+        ]
+      },
+      "requestReloads" : 0,
+      "samples" : [
+        {
+          "kind" : "text",
+          "metalMiB" : 6277,
+          "reloads" : 0,
+          "request" : 0,
+          "retainedMiB" : 60
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6479,
+          "reloads" : 0,
+          "request" : 1,
+          "retainedMiB" : 255
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6539,
+          "reloads" : 0,
+          "request" : 2,
+          "retainedMiB" : 316
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6735,
+          "reloads" : 0,
+          "request" : 3,
+          "retainedMiB" : 511
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6795,
+          "reloads" : 0,
+          "request" : 4,
+          "retainedMiB" : 572
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6991,
+          "reloads" : 0,
+          "request" : 5,
+          "retainedMiB" : 767
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7051,
+          "reloads" : 0,
+          "request" : 6,
+          "retainedMiB" : 828
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7247,
+          "reloads" : 0,
+          "request" : 7,
+          "retainedMiB" : 1023
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7307,
+          "reloads" : 0,
+          "request" : 8,
+          "retainedMiB" : 1083
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7503,
+          "reloads" : 0,
+          "request" : 9,
+          "retainedMiB" : 1279
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7563,
+          "reloads" : 0,
+          "request" : 10,
+          "retainedMiB" : 1339
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7759,
+          "reloads" : 0,
+          "request" : 11,
+          "retainedMiB" : 1535
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7819,
+          "reloads" : 0,
+          "request" : 12,
+          "retainedMiB" : 1595
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8014,
+          "reloads" : 0,
+          "request" : 13,
+          "retainedMiB" : 1791
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8075,
+          "reloads" : 0,
+          "request" : 14,
+          "retainedMiB" : 1851
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8270,
+          "reloads" : 0,
+          "request" : 15,
+          "retainedMiB" : 2047
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8331,
+          "reloads" : 0,
+          "request" : 16,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6165,
+          "reloads" : 1,
+          "request" : 17,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6226,
+          "reloads" : 1,
+          "request" : 18,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6421,
+          "reloads" : 1,
+          "request" : 19,
+          "retainedMiB" : 195
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6482,
+          "reloads" : 1,
+          "request" : 20,
+          "retainedMiB" : 255
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6677,
+          "reloads" : 1,
+          "request" : 21,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6738,
+          "reloads" : 1,
+          "request" : 22,
+          "retainedMiB" : 511
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6933,
+          "reloads" : 1,
+          "request" : 23,
+          "retainedMiB" : 707
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6994,
+          "reloads" : 1,
+          "request" : 24,
+          "retainedMiB" : 767
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7189,
+          "reloads" : 1,
+          "request" : 25,
+          "retainedMiB" : 963
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7249,
+          "reloads" : 1,
+          "request" : 26,
+          "retainedMiB" : 1023
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7445,
+          "reloads" : 1,
+          "request" : 27,
+          "retainedMiB" : 1219
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7505,
+          "reloads" : 1,
+          "request" : 28,
+          "retainedMiB" : 1279
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7701,
+          "reloads" : 1,
+          "request" : 29,
+          "retainedMiB" : 1474
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7761,
+          "reloads" : 1,
+          "request" : 30,
+          "retainedMiB" : 1535
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7957,
+          "reloads" : 1,
+          "request" : 31,
+          "retainedMiB" : 1730
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8017,
+          "reloads" : 1,
+          "request" : 32,
+          "retainedMiB" : 1791
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8213,
+          "reloads" : 1,
+          "request" : 33,
+          "retainedMiB" : 1986
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8273,
+          "reloads" : 1,
+          "request" : 34,
+          "retainedMiB" : 2047
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8468,
+          "reloads" : 1,
+          "request" : 35,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6028,
+          "reloads" : 2,
+          "request" : 36,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6223,
+          "reloads" : 2,
+          "request" : 37,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6284,
+          "reloads" : 2,
+          "request" : 38,
+          "retainedMiB" : 60
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6479,
+          "reloads" : 2,
+          "request" : 39,
+          "retainedMiB" : 255
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6539,
+          "reloads" : 2,
+          "request" : 40,
+          "retainedMiB" : 316
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6735,
+          "reloads" : 2,
+          "request" : 41,
+          "retainedMiB" : 511
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6795,
+          "reloads" : 2,
+          "request" : 42,
+          "retainedMiB" : 572
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6991,
+          "reloads" : 2,
+          "request" : 43,
+          "retainedMiB" : 767
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7051,
+          "reloads" : 2,
+          "request" : 44,
+          "retainedMiB" : 828
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7247,
+          "reloads" : 2,
+          "request" : 45,
+          "retainedMiB" : 1023
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7307,
+          "reloads" : 2,
+          "request" : 46,
+          "retainedMiB" : 1083
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7503,
+          "reloads" : 2,
+          "request" : 47,
+          "retainedMiB" : 1279
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7563,
+          "reloads" : 2,
+          "request" : 48,
+          "retainedMiB" : 1339
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 7759,
+          "reloads" : 2,
+          "request" : 49,
+          "retainedMiB" : 1535
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 7819,
+          "reloads" : 2,
+          "request" : 50,
+          "retainedMiB" : 1595
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8014,
+          "reloads" : 2,
+          "request" : 51,
+          "retainedMiB" : 1791
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8075,
+          "reloads" : 2,
+          "request" : 52,
+          "retainedMiB" : 1851
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 8270,
+          "reloads" : 2,
+          "request" : 53,
+          "retainedMiB" : 2047
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 8331,
+          "reloads" : 2,
+          "request" : 54,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6165,
+          "reloads" : 3,
+          "request" : 55,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6226,
+          "reloads" : 3,
+          "request" : 56,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6421,
+          "reloads" : 3,
+          "request" : 57,
+          "retainedMiB" : 195
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 6482,
+          "reloads" : 3,
+          "request" : 58,
+          "retainedMiB" : 255
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 6677,
+          "reloads" : 3,
+          "request" : 59,
+          "retainedMiB" : 451
+        }
+      ],
+      "seconds" : 30.718427042,
+      "unloadedMetalMiB" : 359,
+      "warmMetalMiB" : 6216
+    },
+    {
+      "boundMiB" : 21918,
+      "idleReloads" : 1,
+      "maximumMetalMiB" : 21705,
+      "maximumRequestGrowthMiB" : 304,
+      "mismatchedReplies" : 0,
+      "name" : "vl-4b-two-functions",
+      "passed" : true,
+      "promptTokens" : {
+        "image" : 18,
+        "text" : 449
+      },
+      "reloads" : 1,
+      "replies" : {
+        "image" : [
+          1986,
+          2168,
+          18689,
+          264,
+          10876,
+          11,
+          19259,
+          20169
+        ],
+        "text" : [
+          2132,
+          4977,
+          1075,
+          498,
+          3982,
+          11504,
+          279,
+          1852
+        ]
+      },
+      "requestReloads" : 0,
+      "samples" : [
+        {
+          "kind" : "text",
+          "metalMiB" : 19672,
+          "reloads" : 0,
+          "request" : 0,
+          "retainedMiB" : 106
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19701,
+          "reloads" : 0,
+          "request" : 1,
+          "retainedMiB" : 126
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19807,
+          "reloads" : 0,
+          "request" : 2,
+          "retainedMiB" : 233
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19827,
+          "reloads" : 0,
+          "request" : 3,
+          "retainedMiB" : 253
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19934,
+          "reloads" : 0,
+          "request" : 4,
+          "retainedMiB" : 359
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19954,
+          "reloads" : 0,
+          "request" : 5,
+          "retainedMiB" : 379
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20060,
+          "reloads" : 0,
+          "request" : 6,
+          "retainedMiB" : 486
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20080,
+          "reloads" : 0,
+          "request" : 7,
+          "retainedMiB" : 506
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20187,
+          "reloads" : 0,
+          "request" : 8,
+          "retainedMiB" : 612
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20207,
+          "reloads" : 0,
+          "request" : 9,
+          "retainedMiB" : 632
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20313,
+          "reloads" : 0,
+          "request" : 10,
+          "retainedMiB" : 739
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20333,
+          "reloads" : 0,
+          "request" : 11,
+          "retainedMiB" : 759
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20440,
+          "reloads" : 0,
+          "request" : 12,
+          "retainedMiB" : 865
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20460,
+          "reloads" : 0,
+          "request" : 13,
+          "retainedMiB" : 885
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20566,
+          "reloads" : 0,
+          "request" : 14,
+          "retainedMiB" : 992
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20586,
+          "reloads" : 0,
+          "request" : 15,
+          "retainedMiB" : 1012
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20693,
+          "reloads" : 0,
+          "request" : 16,
+          "retainedMiB" : 1118
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20713,
+          "reloads" : 0,
+          "request" : 17,
+          "retainedMiB" : 1138
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20820,
+          "reloads" : 0,
+          "request" : 18,
+          "retainedMiB" : 1245
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20839,
+          "reloads" : 0,
+          "request" : 19,
+          "retainedMiB" : 1265
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20946,
+          "reloads" : 0,
+          "request" : 20,
+          "retainedMiB" : 1371
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20966,
+          "reloads" : 0,
+          "request" : 21,
+          "retainedMiB" : 1391
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21073,
+          "reloads" : 0,
+          "request" : 22,
+          "retainedMiB" : 1498
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21092,
+          "reloads" : 0,
+          "request" : 23,
+          "retainedMiB" : 1518
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21199,
+          "reloads" : 0,
+          "request" : 24,
+          "retainedMiB" : 1624
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21219,
+          "reloads" : 0,
+          "request" : 25,
+          "retainedMiB" : 1644
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21326,
+          "reloads" : 0,
+          "request" : 26,
+          "retainedMiB" : 1751
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21345,
+          "reloads" : 0,
+          "request" : 27,
+          "retainedMiB" : 1771
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21452,
+          "reloads" : 0,
+          "request" : 28,
+          "retainedMiB" : 1877
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21472,
+          "reloads" : 0,
+          "request" : 29,
+          "retainedMiB" : 1897
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21579,
+          "reloads" : 0,
+          "request" : 30,
+          "retainedMiB" : 2004
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21598,
+          "reloads" : 0,
+          "request" : 31,
+          "retainedMiB" : 2024
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21705,
+          "reloads" : 0,
+          "request" : 32,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19179,
+          "reloads" : 1,
+          "request" : 33,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19286,
+          "reloads" : 1,
+          "request" : 34,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19590,
+          "reloads" : 1,
+          "request" : 35,
+          "retainedMiB" : 19
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19697,
+          "reloads" : 1,
+          "request" : 36,
+          "retainedMiB" : 126
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19716,
+          "reloads" : 1,
+          "request" : 37,
+          "retainedMiB" : 146
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19823,
+          "reloads" : 1,
+          "request" : 38,
+          "retainedMiB" : 253
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19843,
+          "reloads" : 1,
+          "request" : 39,
+          "retainedMiB" : 272
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 19950,
+          "reloads" : 1,
+          "request" : 40,
+          "retainedMiB" : 379
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 19969,
+          "reloads" : 1,
+          "request" : 41,
+          "retainedMiB" : 399
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20076,
+          "reloads" : 1,
+          "request" : 42,
+          "retainedMiB" : 506
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20096,
+          "reloads" : 1,
+          "request" : 43,
+          "retainedMiB" : 525
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20203,
+          "reloads" : 1,
+          "request" : 44,
+          "retainedMiB" : 632
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20222,
+          "reloads" : 1,
+          "request" : 45,
+          "retainedMiB" : 652
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20329,
+          "reloads" : 1,
+          "request" : 46,
+          "retainedMiB" : 759
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20349,
+          "reloads" : 1,
+          "request" : 47,
+          "retainedMiB" : 778
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20456,
+          "reloads" : 1,
+          "request" : 48,
+          "retainedMiB" : 885
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20476,
+          "reloads" : 1,
+          "request" : 49,
+          "retainedMiB" : 905
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20582,
+          "reloads" : 1,
+          "request" : 50,
+          "retainedMiB" : 1012
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20602,
+          "reloads" : 1,
+          "request" : 51,
+          "retainedMiB" : 1031
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20709,
+          "reloads" : 1,
+          "request" : 52,
+          "retainedMiB" : 1138
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20729,
+          "reloads" : 1,
+          "request" : 53,
+          "retainedMiB" : 1158
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20835,
+          "reloads" : 1,
+          "request" : 54,
+          "retainedMiB" : 1265
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20855,
+          "reloads" : 1,
+          "request" : 55,
+          "retainedMiB" : 1284
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 20962,
+          "reloads" : 1,
+          "request" : 56,
+          "retainedMiB" : 1391
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 20982,
+          "reloads" : 1,
+          "request" : 57,
+          "retainedMiB" : 1411
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 21088,
+          "reloads" : 1,
+          "request" : 58,
+          "retainedMiB" : 1518
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 21108,
+          "reloads" : 1,
+          "request" : 59,
+          "retainedMiB" : 1537
+        }
+      ],
+      "seconds" : 104.969417041,
+      "unloadedMetalMiB" : 365,
+      "warmMetalMiB" : 19566
+    },
+    {
+      "boundMiB" : 13521,
+      "idleReloads" : 5,
+      "maximumMetalMiB" : 13369,
+      "maximumRequestGrowthMiB" : 357,
+      "mismatchedReplies" : 0,
+      "name" : "vl-4b-one-function",
+      "passed" : true,
+      "promptTokens" : {
+        "image" : 18,
+        "text" : 449
+      },
+      "reloads" : 5,
+      "replies" : {
+        "image" : [
+          1986,
+          2168,
+          18689,
+          264,
+          10876,
+          11,
+          19259,
+          20169
+        ],
+        "text" : [
+          2132,
+          4977,
+          1075,
+          498,
+          3982,
+          11504,
+          279,
+          1852
+        ]
+      },
+      "requestReloads" : 0,
+      "samples" : [
+        {
+          "kind" : "text",
+          "metalMiB" : 11219,
+          "reloads" : 0,
+          "request" : 0,
+          "retainedMiB" : 103
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11576,
+          "reloads" : 0,
+          "request" : 1,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11680,
+          "reloads" : 0,
+          "request" : 2,
+          "retainedMiB" : 555
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12028,
+          "reloads" : 0,
+          "request" : 3,
+          "retainedMiB" : 903
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12131,
+          "reloads" : 0,
+          "request" : 4,
+          "retainedMiB" : 1006
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12480,
+          "reloads" : 0,
+          "request" : 5,
+          "retainedMiB" : 1355
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12583,
+          "reloads" : 0,
+          "request" : 6,
+          "retainedMiB" : 1458
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12931,
+          "reloads" : 0,
+          "request" : 7,
+          "retainedMiB" : 1806
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 13035,
+          "reloads" : 0,
+          "request" : 8,
+          "retainedMiB" : 1910
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 13141,
+          "reloads" : 0,
+          "request" : 9,
+          "retainedMiB" : 2016
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 13245,
+          "reloads" : 0,
+          "request" : 10,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11007,
+          "reloads" : 1,
+          "request" : 11,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11110,
+          "reloads" : 1,
+          "request" : 12,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11459,
+          "reloads" : 1,
+          "request" : 13,
+          "retainedMiB" : 348
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11562,
+          "reloads" : 1,
+          "request" : 14,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11911,
+          "reloads" : 1,
+          "request" : 15,
+          "retainedMiB" : 800
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12014,
+          "reloads" : 1,
+          "request" : 16,
+          "retainedMiB" : 903
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12362,
+          "reloads" : 1,
+          "request" : 17,
+          "retainedMiB" : 1251
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12466,
+          "reloads" : 1,
+          "request" : 18,
+          "retainedMiB" : 1355
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12814,
+          "reloads" : 1,
+          "request" : 19,
+          "retainedMiB" : 1703
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12917,
+          "reloads" : 1,
+          "request" : 20,
+          "retainedMiB" : 1806
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 13266,
+          "reloads" : 1,
+          "request" : 21,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10762,
+          "reloads" : 2,
+          "request" : 22,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11110,
+          "reloads" : 2,
+          "request" : 23,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11214,
+          "reloads" : 2,
+          "request" : 24,
+          "retainedMiB" : 103
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11562,
+          "reloads" : 2,
+          "request" : 25,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11666,
+          "reloads" : 2,
+          "request" : 26,
+          "retainedMiB" : 555
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12014,
+          "reloads" : 2,
+          "request" : 27,
+          "retainedMiB" : 903
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12117,
+          "reloads" : 2,
+          "request" : 28,
+          "retainedMiB" : 1006
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12466,
+          "reloads" : 2,
+          "request" : 29,
+          "retainedMiB" : 1355
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12569,
+          "reloads" : 2,
+          "request" : 30,
+          "retainedMiB" : 1458
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12917,
+          "reloads" : 2,
+          "request" : 31,
+          "retainedMiB" : 1806
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 13021,
+          "reloads" : 2,
+          "request" : 32,
+          "retainedMiB" : 1910
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 13369,
+          "reloads" : 2,
+          "request" : 33,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10762,
+          "reloads" : 3,
+          "request" : 34,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11110,
+          "reloads" : 3,
+          "request" : 35,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11214,
+          "reloads" : 3,
+          "request" : 36,
+          "retainedMiB" : 103
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11562,
+          "reloads" : 3,
+          "request" : 37,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11666,
+          "reloads" : 3,
+          "request" : 38,
+          "retainedMiB" : 555
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12014,
+          "reloads" : 3,
+          "request" : 39,
+          "retainedMiB" : 903
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12117,
+          "reloads" : 3,
+          "request" : 40,
+          "retainedMiB" : 1006
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12466,
+          "reloads" : 3,
+          "request" : 41,
+          "retainedMiB" : 1355
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12569,
+          "reloads" : 3,
+          "request" : 42,
+          "retainedMiB" : 1458
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12917,
+          "reloads" : 3,
+          "request" : 43,
+          "retainedMiB" : 1806
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 13021,
+          "reloads" : 3,
+          "request" : 44,
+          "retainedMiB" : 1910
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 13369,
+          "reloads" : 3,
+          "request" : 45,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10762,
+          "reloads" : 4,
+          "request" : 46,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11110,
+          "reloads" : 4,
+          "request" : 47,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11214,
+          "reloads" : 4,
+          "request" : 48,
+          "retainedMiB" : 103
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11562,
+          "reloads" : 4,
+          "request" : 49,
+          "retainedMiB" : 451
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 11666,
+          "reloads" : 4,
+          "request" : 50,
+          "retainedMiB" : 555
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12014,
+          "reloads" : 4,
+          "request" : 51,
+          "retainedMiB" : 903
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12117,
+          "reloads" : 4,
+          "request" : 52,
+          "retainedMiB" : 1006
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12466,
+          "reloads" : 4,
+          "request" : 53,
+          "retainedMiB" : 1355
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 12569,
+          "reloads" : 4,
+          "request" : 54,
+          "retainedMiB" : 1458
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 12917,
+          "reloads" : 4,
+          "request" : 55,
+          "retainedMiB" : 1806
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 13021,
+          "reloads" : 4,
+          "request" : 56,
+          "retainedMiB" : 1910
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 13369,
+          "reloads" : 4,
+          "request" : 57,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "text",
+          "metalMiB" : 10762,
+          "reloads" : 5,
+          "request" : 58,
+          "retainedMiB" : 0
+        },
+        {
+          "kind" : "image",
+          "metalMiB" : 11110,
+          "reloads" : 5,
+          "request" : 59,
+          "retainedMiB" : 0
+        }
+      ],
+      "seconds" : 71.60905975,
+      "unloadedMetalMiB" : 355,
+      "warmMetalMiB" : 11116
+    }
+  ],
+  "passed" : false,
+  "requests" : 60
+}

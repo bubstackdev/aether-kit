@@ -65,14 +65,25 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         if inputNames == ["input_ids", "position_ids"], outputNames == ["logits"],
            stateNames == ["keyCache", "valueCache"], logitsShape[1] == -1 { return .runningPositions }
         let bucketedInputs: Set<String> = ["input_ids", "cache_positions", "keyCache", "valueCache"]
-        if inputNames == bucketedInputs || inputNames == bucketedInputs.union(["rope_positions"]),
+        if inputNames == bucketedInputs || inputNames == bucketedInputs.union(["rope_positions"])
+            || inputNames == bucketedInputs.union(["rope_positions", "image_embeds", "deepstack"]),
            outputNames == ["logits", "keyUpdate", "valueUpdate"], stateNames.isEmpty, logitsShape[1] == 1 {
             return .bucketedPositions
         }
         return nil
     }
 
-    /// The image submission bound of an asset with image input (its `withImage` q bound), so an
+    /// Whether a bucketed `main` takes image rows itself (Qwen3-VL's one-function decoder, 0.0.3):
+    /// `image_embeds` [q, hidden] and `deepstack` [levels, q, hidden], aligned with the tokens and used
+    /// only where the token is the image token, so text steps send zero rows. One function serves text
+    /// prefill, image prefill and decode steps with one copy of the weights; Core AI wires a separate
+    /// copy for each function, so the 0.0.2 pair (`main` and ``isImageStep(inputNames:outputNames:stateNames:)``'s
+    /// `withImage`) kept two resident.
+    static func takesImageRows(_ inputNames: Set<String>) -> Bool {
+        inputNames.isSuperset(of: ["image_embeds", "deepstack"])
+    }
+
+    /// The image submission bound of an asset with image input (its image submissions' q bound), so an
     /// oversized image is refused before Core AI. Nil for assets without image input, and for an
     /// image asset that declares no bound: it still opens for text-only use, and its image prompts
     /// are refused while planning (``LanguagePromptPlan/requireImageSpans(within:)``).
@@ -85,8 +96,9 @@ public enum LanguageStepContract: String, Sendable, Equatable {
     /// Qwen3-VL's M-RoPE), separate from the cache positions that address rows and the mask.
     static func takesRopePositions(_ inputNames: Set<String>) -> Bool { inputNames.contains("rope_positions") }
 
-    /// The image entry point of a bucketed asset: the step inputs plus image rows and DeepStack
-    /// features, with the same outputs.
+    /// The 0.0.2 image entry point of a bucketed asset (`withImage`, beside a `main` without image
+    /// inputs): the step inputs plus one image's rows and DeepStack features [levels, n, hidden], with
+    /// the same outputs.
     static func isImageStep(inputNames: Set<String>, outputNames: Set<String>, stateNames: Set<String>) -> Bool {
         inputNames == ["input_ids", "cache_positions", "rope_positions", "image_embeds", "deepstack", "keyCache", "valueCache"]
             && outputNames == ["logits", "keyUpdate", "valueUpdate"] && stateNames.isEmpty

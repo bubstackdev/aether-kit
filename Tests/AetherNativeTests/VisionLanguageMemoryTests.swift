@@ -8,7 +8,7 @@ import Metal
 import Testing
 
 /// Opt-in attribution of a Qwen3-VL bundle's memory by phase: the encoder alone (open, one grid, all grids), then the
-/// decoder (open, text-only `main` requests, the first `withImage` request, each new grid), then repeated passes over
+/// decoder (open, text-only requests, the first image request, each new grid), then repeated passes over
 /// every grid to show whether allocations still grow once all shapes are warm, then unload. Each phase records the
 /// process footprint and Metal's allocated size. Images are synthetic gradients at each grid's exact pixel size. The
 /// decoder has no memory budget, so no reload interrupts the phases. It attributes the per-function and per-grid weight
@@ -94,6 +94,8 @@ private struct MemoryReport: Codable {
     var error: String?
     var phases: [MemoryPhase] = []
     var promptTokens: [String: Int] = [:]
+    /// The decoder's image steps go through `main` (the one-function asset) rather than `withImage`.
+    var imagesThroughMain: Bool?
 }
 
 private let memoryDevice = MTLCreateSystemDefaultDevice()
@@ -173,6 +175,7 @@ func visionLanguageMemoryByPhase() async throws {
         let session = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: manifest.maximumContextLength,
                                                                stopTokenIDs: Set(manifest.stopTokenIDs), memoryGrowthBudgetBytes: nil,
                                                                exportBounds: manifest.exportBounds)
+        report.imagesThroughMain = session.imagesThroughMain
         sample("decoder open")
         let short = try tokenizer.render([.user("Name three colours.")]).tokenIDs
         report.promptTokens["main short"] = short.count

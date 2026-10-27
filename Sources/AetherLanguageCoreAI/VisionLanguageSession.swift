@@ -105,7 +105,7 @@ public actor VisionLanguageSession {
     }
 
     /// Planning check: an image's patch grid must be one of the registration's fixed grids, so the
-    /// encoder and the decoder's `withImage` only ever see those shapes.
+    /// encoder and the decoder's image submissions only ever see those shapes.
     static func requireRegisteredGrid(_ grid: (t: Int, h: Int, w: Int), registration: LanguageVisionRegistration) throws {
         guard grid.t == 1, registration.imageGrids?.contains(LanguageImageGrid(height: grid.h, width: grid.w)) == true else {
             throw LanguageGenerationError.invalid("Image grid \(grid.t)x\(grid.h)x\(grid.w) is not one of the registration's fixed grids")

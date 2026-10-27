@@ -48,8 +48,8 @@ text; its image prompts are refused while planning. Image resampling runs off th
 path, where Kit preprocesses, encodes and checks every image. The lower-level entry points are not
 grid-restricted: `LanguageGenerationSession.generate(prompt: LanguageVisionPrompt…)` and the public
 `LanguageImageFeatures` initializer accept features for any grid, so a direct caller can submit an
-image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The decoder's
-`withImage` then sees shapes outside the qualified set; those are the caller's responsibility.
+image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The decoder then sees
+image shapes outside the qualified set; those are the caller's responsibility.
 
 ## Pieces
 
@@ -58,7 +58,7 @@ image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The
 | Vision encoder asset (`encode_<h>x<w>`, one per grid) | `Forge/language/export_qwen3_vl_vision.py`; run by `LanguageVisionEncoder` |
 | Per-patch host tables | `AetherVision.Qwen3VLVisionTables` (bit-exact with the Forge mirror) |
 | Image decoding and preprocessing | `AetherVision.VisionRGBImage`, `Qwen3VLImagePreprocessor` |
-| Text decoder (`main` + `withImage`, bucketed contract) | `Forge/language/export_qwen3_vl_text.py`; run by `LanguageGenerationSession` |
+| Text decoder (one `main`, bucketed contract) | `Forge/language/export_qwen3_vl_text.py`; run by `LanguageGenerationSession` |
 | M-RoPE positions and prompt expansion | `LanguagePromptPlan` (pure, CPU-tested against upstream's rope index) |
 | Public API | `VisionLanguageSession` |
 
@@ -78,17 +78,24 @@ F-P3-21).
 | 32×56 | 896×512 | 7:4 (≈ 16:9) | 448 |
 | 56×32 | 512×896 | 4:7 (≈ 9:16) | 448 |
 
-**Text decoder.** One fp16 asset (3.2 GB) with two bucketed functions over shared weights:
-`main(input_ids, cache_positions, rope_positions [3, q], keyCache, valueCache)` and
-`withImage(..., image_embeds [n, 2048], deepstack [3, n, 2048], ...)`, each returning last-row
-logits and the chunk's cache rows. `withImage` splices image rows at `<|image_pad|>` tokens with
-an embedding gather and adds the DeepStack features after the first three decoder layers. With
-the fixed grids, `withImage` only ever sees three image submission sizes (484, 448, 432). Rotary
-positions are 3-axis M-RoPE (`rope_positions`), separate from the cache positions that address
-rows and the mask (rope positions inside an image are not monotonic, engine F-P3-1). Text runs are
-prefilled in the contract's fixed width (64) through `main`, a run's last chunk stepping back over rows
-already written ([step contracts](language-generation.md#step-contracts)); each image's tokens go in one `withImage` call
-(at most `maximumImageChunk`, 2,048 here).
+**Text decoder.** One fp16 asset (3.2 GB) with one bucketed function (0.0.3):
+`main(input_ids, cache_positions, rope_positions [3, q], image_embeds [q, 2048], deepstack [3, q, 2048],
+keyCache, valueCache)`, returning last-row logits and the chunk's cache rows. Image rows are aligned
+with the tokens and used only where the token is `<|image_pad|>`: there they replace the embedding,
+and the DeepStack features are added after the first three decoder layers. Text submissions and
+decode steps pass zero rows. One function serves every step because Core AI wires a separate copy
+of the weights for each function it runs ([design](qwen3-vl-single-decoder.md)); the 0.0.2 bundles,
+with `main` for text and `withImage` (`image_embeds` [n, 2048]) for image spans, still open and
+keep their two copies. Rotary positions are 3-axis M-RoPE (`rope_positions`), separate from the
+cache positions that address rows and the mask (rope positions inside an image are not monotonic,
+engine F-P3-1). The whole prompt, image tokens included, is prefilled in the contract's fixed width
+(64), the last chunk stepping back over rows already written
+([step contracts](language-generation.md#step-contracts)); each chunk carries the rows of its own
+image tokens, so an image may straddle chunks. Sending each image as one submission instead made the
+function change to the image's width on every image request, and Core AI retains memory on each
+shape change: about 360 MiB per image request on the 4B, against about 100 MiB with uniform chunks
+([below](#one-decoder-function-003)). A 0.0.2 bundle sends each image's tokens in one `withImage`
+call (at most `maximumImageChunk`, 2,048 here), with three sizes on the fixed grids (484, 448, 432).
 
 **Preprocessing.** The image snaps to the grid whose aspect ratio is nearest its own in log
 space (the first listed wins a tie; `Qwen3VLImagePreprocessor.nearestGrid`, mirrored by Forge's
@@ -256,7 +263,8 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 | Public session (`VisionLanguageSession.open(bundle:)`) | yes | token for token with the Kit run, closes on unload; `tokenizerFiles` verified; `LanguageTokenizer.render([.user(question, images: 1)])` equals each reference prompt |
 | Kit end to end, independent decode (JPEG files) | decoder sanity only | grids equal, pixel cosine ≥ 0.99990; reported: portrait, stall and scenes greedy identical, market photo diverges as above |
 
-**Memory** (public session, five cases in one process; footprint / Metal allocated):
+**Memory** (the 0.0.2 two-function bundle, public session, five cases in one process; footprint /
+Metal allocated; the one-function bundle's figures are [below](#one-decoder-function-003)):
 
 | Phase | Footprint | Metal |
 | --- | --- | --- |
@@ -268,21 +276,72 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 
 Metal grows with the first image request to about 19 GiB, then by about 0.8 GiB per newly used grid,
 against 8.4 GiB for the dense 4B writer with the same decoder width. The decoder part is real
-duplication: Core AI wires a separate copy of the text weights for each of its two functions. The
+duplication: Core AI wires a separate copy of the text weights for each of its two functions (one
+function since 0.0.3). The
 per-grid growth is not; those are views of one copy (see the limits).
 Warm requests also keep adding memory (Core AI retains allocations on every shape change; text
 requests about 257 MiB each on the 4B) until the decoder's memory budget reloads it between
 requests: see [Native memory retention](language-generation.md#native-memory-retention).
 
+## One decoder function (0.0.3)
+
+Both bundles were re-exported with one decoder function
+(`qwen3-vl-{2b,4b-abliterated}-one-function-bundle-macos`; the vision assets are unchanged) and
+qualified again: [VL-2B image + text](evidence/qwen3-vl-2b-one-function-image-text-2026-10-27.json),
+[VL-4B image + text](evidence/qwen3-vl-4b-one-function-image-text-2026-10-27.json), and
+[memory, retention, timing and export](evidence/qwen3-vl-one-function-2026-10-27.json); M5 Max
+(`h17c`), release, shared host. The design and its toy measurements are in
+[qwen3-vl-single-decoder.md](qwen3-vl-single-decoder.md).
+
+**Parity.** Every gate of the 0.0.2 qualification passes again on the same references, with the
+whole prompt prefilled in 64-token chunks. VL-2B: model parity on the PIL-decoded reference (forced-row
+cosine ≥ 0.99990, greedy identical on all five) and on a new Kit-decoded reference of the same cases
+(`qwen3-vl-2b-reference-grids-kit-decoded`, made like the 4B's: ≥ 0.99985, greedy identical on all
+five), Kit end to end on the same decode (≥ 0.99992; the market photo flips at a reference near-tie,
+margin 0.012, at token 16), the independent-decode run (the same two near-tie divergences as before)
+and the public session, which 0.0.2 could only run on the long question. VL-4B: model parity on the
+Kit-decoded and the PIL-decoded references (≥ 0.99992 and ≥ 0.99995, greedy identical on all five), Kit
+end to end on the same decode (≥ 0.99989, greedy identical), the independent-decode run (decoder
+sanity; the market photo diverges at token 6 as before) and the public session. The long-question
+runs pass on both models (the 4B's greedy flips at the same reference near-tie as in 0.0.2, margin
+0.0046). The overlapped-prefill check passes with two image prompts whose 432-token image straddles
+chunk boundaries at both edges: after a long question the step-back tail lands in the text, after a
+short one it steps back 54 rows into the image; greedy output is identical across 64-token chunks,
+512-token chunks and 1-token steps. The decoder timing test's 64-token replies are identical, token for
+token, between the two-function and one-function bundles, for a text and an image prompt on both models.
+
+**Memory** (`visionLanguageMemoryByPhase`, no budget; `languageMemoryBudgetBoundsRepeatedRequests`,
+60 alternating text and image requests, 2 GiB budget):
+
+| | VL-4B, two functions | VL-4B, one function | VL-2B, two functions | VL-2B, one function |
+| --- | --- | --- | --- | --- |
+| Wired mapped-file pages after the first image request | 16,086 MiB | 8,414 MiB | not measured | 3,875 MiB |
+| Metal at the first image request (by-phase test) | 22.6 GiB | 13.8 GiB | 12.7 GiB | 8.7 GiB |
+| Compiled cache, read in at open | 22.5 GiB | 15.0 GiB | about 9 GiB | 6.4 GiB |
+| Warm level in the budget test | 19,566 MiB | 10,847 MiB | 10,113 MiB | 6,065 MiB |
+| Budget reloads in 60 requests (first after request) | 1 (34) | 2 (20) | 1 (58) | 1 (34) |
+
+An image request now adds about 100 MiB of retained memory on the 4B (60 MiB on the 2B) where the
+two-function decoder added about 20 MiB, so the budget reloads the 4B about twice as often; each reload
+re-wires one copy of the weights, at idle.
+
+**Timing** (decoder only, 16 requests per kind, 64 tokens; shared host, so medians and minima are
+both given). Chunking makes image requests slower to the first token: a 505-token image prompt is eight
+64-token submissions instead of one image submission and text chunks. On the 4B the image time to first
+token rises from 0.350 to 0.448 s at the median (+28 %) and from 0.293 to 0.374 s at the minimum; on the
+2B the minimum rises from 0.193 to 0.239 s while the median moved within noise (0.297 to 0.274 s). Text
+requests are unchanged within noise (4B: 0.233 to 0.229 s to the first token, 21.9 to 22.9 ms per
+token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
+
+**Export.** The bounded pipeline exported the 4B text tower in 109 s with a peak of 16.3 GB RSS
+(0.0.2: 31.7 GB) and the 2B in 46 s at 7.1 GB, self-check included.
+
 ## Limits and follow-ups
 
-- **The decoder's weights are resident twice (0.0.3).** Core AI compiles the VL-4B decoder (7.5 GiB on
-  disk) into a 22.5 GiB file in its cache, with separate weights for `main` and `withImage`. Opening the
-  decoder pages that file into memory, and each function's first use wires its own part. These pages
-  are file-backed, so the process footprint stays under 3 GiB, but they are RAM: they stay wired while
-  the functions are in use. Under memory pressure an idle model's pages were unwired (the encoder's, when
-  the decoder opened). Measured by phase (`visionLanguageMemoryByPhase`, opt-in; one M5
-  Max; Metal allocated for both bundles, and for the 4B what the host shows as wired;
+- **0.0.2 bundles keep two copies of the decoder's weights.** A two-function bundle (`main` and
+  `withImage`) still opens and wires a copy for each function; the one-function export above wires one
+  ([One decoder function](#one-decoder-function-003)). The measurement that found the duplication, by
+  phase on the 0.0.2 bundles (`visionLanguageMemoryByPhase`, opt-in; one M5 Max;
   [evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)):
 
   | | VL-2B, Metal allocated | VL-4B, Metal allocated | VL-4B, wired on the host |
@@ -296,20 +355,12 @@ requests: see [Native memory retention](language-generation.md#native-memory-ret
   | A warm image request | about 10 MiB | about 20 MiB | about 0 |
   | Decoder unload | −8.1 GiB | −17.4 GiB | −16.6 GiB; host free +21.7 GiB |
 
-  So a 4B request with one image wires about 16 GiB measured (host wired +15.7 GiB at the first image
-  request; the process's own wired pages 16.3 GiB): both decoder copies, since the text around the image
-  prefills through `main`. Up to about 19 GiB if the encoder and its grid (about 2.5 GiB) stay wired; in
-  this run they were unwired when the decoder opened. Opening the decoder also reads the whole 22.5 GiB
-  compiled file into the page cache: host free memory fell to 125 MiB on this 64 GB Mac. Those pages are
-  clean and evictable, but they push out other processes' cache, which matters more on smaller Macs. The Metal figure
-  overstates the encoder: each further grid adds 0.8 GiB to it but nothing resident. Warm requests add
-  only shape-change retention, which the decoder's memory budget bounds
-  ([native memory retention](language-generation.md#native-memory-retention)). The host figures come
-  from a shared Mac, so other processes move them a little; the decoder's agree with the process's own
-  wired mapped-file pages to within 6 %. Options for 0.0.3: one decoder function for text and image
-  prefill (about 8 GiB of wired memory, and part of the compiled cache), or weight sharing across
-  functions if Core AI supports it. Fewer encoder grids would save nothing resident. The text export's
-  conversion duplicates weights the same way (below).
+  The pages are file-backed, so the process footprint stays under 3 GiB, but they are RAM while the
+  functions are in use; under memory pressure an idle model's pages were unwired (the encoder's, when the
+  decoder opened). Opening a decoder still reads its whole compiled file into the page cache (15 GiB for
+  the one-function 4B): clean, evictable pages that push out other processes' cache. Fewer encoder grids
+  would save nothing resident. Cross-function weight sharing in Core AI would make the duplication moot;
+  it is not available in this release.
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
   model says about a photo; the 4B named a different place for the market photo. The model is
@@ -324,8 +375,9 @@ requests: see [Native memory retention](language-generation.md#native-memory-ret
   but only single-image prompts are qualified), iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
 - The encoder stays loaded for the session's lifetime.
-- **Text export memory (0.0.3).** `export_qwen3_vl_text.py` converts `main` and `withImage` as two programs over the
-  same fp16 weights, and conversion holds weights per program on top of the eager module: the 4B text tower passes
-  35 GB of RSS during conversion (it was exported on a 64 GB host with a 45 GB guard). Share the weights across the
-  two functions in conversion, or free the eager module before converting, before exporting larger towers or on
-  smaller hosts.
+- **Text export memory.** The 0.0.2 export of the 4B text tower peaked at 31.7 GB of RSS (it was run on
+  a 64 GB host with a 45 GB guard). The cause was not one copy of the weights per program (the converter
+  keeps one copy however many programs share them) but about five copies at once during the cpu_only
+  self-check, plus a float32 build of the tower. The exporter now builds in fp16, computes the eager
+  reference first and runs the self-check in a fresh process: 16.3 GB for the 4B, 7.1 GB for the 2B
+  ([design](qwen3-vl-single-decoder.md#export-memory)).

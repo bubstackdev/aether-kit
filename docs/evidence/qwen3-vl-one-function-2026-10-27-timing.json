@@ -1,0 +1,1524 @@
+{
+  "bundles" : [
+    {
+      "bundle" : "qwen3-vl-2b-bundle-macos",
+      "imagesThroughMain" : false,
+      "median" : {
+        "image" : {
+          "decodeSecondsPerToken" : 0.014344059523809523,
+          "timeToFirstTokenSeconds" : 0.29747016699999995
+        },
+        "text" : {
+          "decodeSecondsPerToken" : 0.0143549795,
+          "timeToFirstTokenSeconds" : 0.148044354
+        }
+      },
+      "name" : "vl-2b-two-functions",
+      "replies" : {
+        "image" : [
+          [
+            1986,
+            374,
+            264,
+            9334,
+            2168,
+            27940,
+            264,
+            10876,
+            11,
+            19259,
+            20169,
+            429,
+            33592,
+            504,
+            825,
+            1894,
+            311,
+            2441,
+            3941,
+            279,
+            4453,
+            10041,
+            13,
+            576,
+            1894,
+            26308,
+            374,
+            264,
+            20334,
+            315,
+            279,
+            6028,
+            7987,
+            315,
+            279,
+            47613,
+            11,
+            11689,
+            6176,
+            11,
+            2518,
+            11,
+            323,
+            13753,
+            11,
+            448,
+            264,
+            26447,
+            9142,
+            304,
+            279,
+            6149,
+            382,
+            785,
+            20169,
+            374,
+            32930,
+            438,
+            11017,
+            510,
+            12,
+            758,
+            279,
+            8416
+          ]
+        ],
+        "text" : [
+          [
+            785,
+            326,
+            57909,
+            14638,
+            80778,
+            389,
+            279,
+            6821,
+            315,
+            279,
+            13458,
+            1331,
+            6918,
+            1151,
+            13648,
+            11,
+            264,
+            57129,
+            51302,
+            304,
+            279,
+            12767,
+            11,
+            78908,
+            9396,
+            13,
+            1084,
+            572,
+            537,
+            264,
+            6662,
+            5944,
+            11,
+            6329,
+            1521,
+            432,
+            58127,
+            279,
+            39445,
+            349,
+            1803,
+            85,
+            819,
+            315,
+            264,
+            43339,
+            11,
+            714,
+            432,
+            572,
+            264,
+            84287,
+            9362,
+            11,
+            264,
+            21059,
+            46032,
+            315,
+            279,
+            3729,
+            13,
+            11445,
+            21271,
+            11
+          ]
+        ]
+      },
+      "samples" : [
+        {
+          "decodeSecondsPerToken" : 0.024597225539682542,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.158504791,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.023340447746031747,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.426662125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021986849206349208,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.241951083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.019634897476190478,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.391417625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014646505952380953,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.1807335,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013805657412698414,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.2974455,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012704645507936508,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.131007208,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014355744047619046,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.255434833,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016236077380952382,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.153971125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01897224934920635,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.375788625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016168613761904763,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.173456625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01474869907936508,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.333109333,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014525168,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.149201375,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014182853174603176,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.313922791,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014184791,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.152316709,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016760234126984127,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.30127375,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014614517190476193,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.146887333,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014332375,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.297494834,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013636325396825395,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.133497625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.014939175269841272,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.293163833,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013920205031746031,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.158208083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011897755952380953,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.247768417,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012040041666666666,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.1233535,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011808339952380953,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.219039916,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011863965603174603,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.128253083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012751681888888889,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.205164083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013670318126984127,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.138029041,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012492937174603175,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.241365542,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.015616173285714284,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.138104125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01630537566666667,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.328035333,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013097295634920635,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.145055209,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011645051587301588,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.192548458,
+          "tokens" : 64
+        }
+      ]
+    },
+    {
+      "bundle" : "qwen3-vl-2b-one-function-bundle-macos",
+      "imagesThroughMain" : true,
+      "median" : {
+        "image" : {
+          "decodeSecondsPerToken" : 0.01296003538095238,
+          "timeToFirstTokenSeconds" : 0.273725479
+        },
+        "text" : {
+          "decodeSecondsPerToken" : 0.012568011579365079,
+          "timeToFirstTokenSeconds" : 0.134577208
+        }
+      },
+      "name" : "vl-2b-one-function",
+      "replies" : {
+        "image" : [
+          [
+            1986,
+            374,
+            264,
+            9334,
+            2168,
+            27940,
+            264,
+            10876,
+            11,
+            19259,
+            20169,
+            429,
+            33592,
+            504,
+            825,
+            1894,
+            311,
+            2441,
+            3941,
+            279,
+            4453,
+            10041,
+            13,
+            576,
+            1894,
+            26308,
+            374,
+            264,
+            20334,
+            315,
+            279,
+            6028,
+            7987,
+            315,
+            279,
+            47613,
+            11,
+            11689,
+            6176,
+            11,
+            2518,
+            11,
+            323,
+            13753,
+            11,
+            448,
+            264,
+            26447,
+            9142,
+            304,
+            279,
+            6149,
+            382,
+            785,
+            20169,
+            374,
+            32930,
+            438,
+            11017,
+            510,
+            12,
+            758,
+            279,
+            8416
+          ]
+        ],
+        "text" : [
+          [
+            785,
+            326,
+            57909,
+            14638,
+            80778,
+            389,
+            279,
+            6821,
+            315,
+            279,
+            13458,
+            1331,
+            6918,
+            1151,
+            13648,
+            11,
+            264,
+            57129,
+            51302,
+            304,
+            279,
+            12767,
+            11,
+            78908,
+            9396,
+            13,
+            1084,
+            572,
+            537,
+            264,
+            6662,
+            5944,
+            11,
+            6329,
+            1521,
+            432,
+            58127,
+            279,
+            39445,
+            349,
+            1803,
+            85,
+            819,
+            315,
+            264,
+            43339,
+            11,
+            714,
+            432,
+            572,
+            264,
+            84287,
+            9362,
+            11,
+            264,
+            21059,
+            46032,
+            315,
+            279,
+            3729,
+            13,
+            11445,
+            21271,
+            11
+          ]
+        ]
+      },
+      "samples" : [
+        {
+          "decodeSecondsPerToken" : 0.015711975523809523,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.159508959,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.017261055555555554,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.3350155,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01829618715873016,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.192408417,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.015412305555555556,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.474150709,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013669802904761904,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.145977334,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.015455503968253969,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.312423167,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016029990079365078,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.171228167,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025135166666666663,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.53491175,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016252593253968252,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.21134325,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01545003241269841,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.359734333,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016161197095238094,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.160792666,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.015329803571428569,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.368993042,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01247100992063492,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.144312958,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012085796952380953,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.283574625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012665013238095237,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.132411833,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.016585343920634918,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.345504792,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012274857793650793,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.115148,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011956373015873016,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.259596125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011185664015873018,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.125215667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01127756480952381,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.254653417,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011226841936507937,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.115798,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01116893253968254,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.256754792,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01065675265079365,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.117193583,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.01163625992063492,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.238588417,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012055813492063493,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.128057584,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011359376984126984,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.243225875,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011724068126984127,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.125801042,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011450508603174602,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.251006875,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.011441243380952381,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.124929959,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.013491115079365078,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.263876333,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012764718253968256,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.136742583,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.012428955682539683,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.254409583,
+          "tokens" : 64
+        }
+      ]
+    },
+    {
+      "bundle" : "qwen3-vl-4b-abliterated-bundle-macos",
+      "imagesThroughMain" : false,
+      "median" : {
+        "image" : {
+          "decodeSecondsPerToken" : 0.02224074338095238,
+          "timeToFirstTokenSeconds" : 0.350212604
+        },
+        "text" : {
+          "decodeSecondsPerToken" : 0.02192950958730159,
+          "timeToFirstTokenSeconds" : 0.2329023335
+        }
+      },
+      "name" : "vl-4b-two-functions",
+      "replies" : {
+        "image" : [
+          [
+            1986,
+            2168,
+            374,
+            264,
+            10876,
+            11,
+            19259,
+            20169,
+            429,
+            33592,
+            1526,
+            264,
+            19745,
+            315,
+            7987,
+            11,
+            27802,
+            84018,
+            745,
+            504,
+            279,
+            1909,
+            7950,
+            311,
+            279,
+            5622,
+            6701,
+            9131,
+            13,
+            576,
+            20169,
+            374,
+            537,
+            264,
+            4285,
+            13482,
+            9142,
+            714,
+            4751,
+            264,
+            6351,
+            11,
+            7299,
+            50156,
+            1894,
+            20334,
+            429,
+            11450,
+            264,
+            42295,
+            8741,
+            323,
+            32976,
+            2456,
+            382,
+            8420,
+            374,
+            264,
+            11682,
+            29985,
+            315,
+            279,
+            1894,
+            32724
+          ]
+        ],
+        "text" : [
+          [
+            334,
+            785,
+            444,
+            57909,
+            315,
+            3319,
+            76,
+            2655,
+            278,
+            25,
+            362,
+            15106,
+            315,
+            8658,
+            11,
+            15029,
+            11,
+            323,
+            16377,
+            2090,
+            56177,
+            1925,
+            279,
+            6821,
+            315,
+            279,
+            1879,
+            11,
+            1380,
+            279,
+            9396,
+            926,
+            1561,
+            448,
+            13833,
+            63059,
+            323,
+            279,
+            12884,
+            12422,
+            6767,
+            1119,
+            92622,
+            11,
+            14638,
+            264,
+            326,
+            57909,
+            19836,
+            894,
+            1008,
+            13,
+            2806,
+            6662,
+            304,
+            9798,
+            476,
+            9509,
+            11,
+            537,
+            86694,
+            1075,
+            279,
+            45209
+          ]
+        ]
+      },
+      "samples" : [
+        {
+          "decodeSecondsPerToken" : 0.026160741396825397,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.2760225,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.026758437841269838,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.538124791,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02793544774603175,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.280553625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.028568089952380957,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.503971167,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02740240807936508,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.302718625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.028723832015873016,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.485887708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02941030223809524,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.318853334,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025632959,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.509338875,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02677930225396825,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.269854166,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025829620380952385,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.473512208,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02487165607936508,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.264318459,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.022810968253968257,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.420536667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02239314484126984,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.241295667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02396900265079365,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.397246958,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025681656095238096,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.266965708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.026028623015873015,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.466087667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02095415674603175,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.224509,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020956301587301586,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.299715083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020933164015873012,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.21417725,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021186223555555557,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.297801916,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021465874333333336,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.215059792,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020934868380952383,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.300778667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020831110444444446,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.215244125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021195492063492062,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.297150708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021077617730158732,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.221631833,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021670518507936505,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.295130542,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020644515222222225,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.216032541,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021243792333333334,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.30317825,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020564813492063495,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.220662459,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020700165349206347,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.292738791,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020480598539682537,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.214541292,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020778472888888885,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.300014125,
+          "tokens" : 64
+        }
+      ]
+    },
+    {
+      "bundle" : "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+      "imagesThroughMain" : true,
+      "median" : {
+        "image" : {
+          "decodeSecondsPerToken" : 0.022137081357142856,
+          "timeToFirstTokenSeconds" : 0.448039229
+        },
+        "text" : {
+          "decodeSecondsPerToken" : 0.022895460976190475,
+          "timeToFirstTokenSeconds" : 0.228526917
+        }
+      },
+      "name" : "vl-4b-one-function",
+      "replies" : {
+        "image" : [
+          [
+            1986,
+            2168,
+            374,
+            264,
+            10876,
+            11,
+            19259,
+            20169,
+            429,
+            33592,
+            1526,
+            264,
+            19745,
+            315,
+            7987,
+            11,
+            27802,
+            84018,
+            745,
+            504,
+            279,
+            1909,
+            7950,
+            311,
+            279,
+            5622,
+            6701,
+            9131,
+            13,
+            576,
+            20169,
+            374,
+            537,
+            264,
+            4285,
+            13482,
+            9142,
+            714,
+            4751,
+            264,
+            6351,
+            11,
+            7299,
+            50156,
+            1894,
+            20334,
+            429,
+            11450,
+            264,
+            42295,
+            8741,
+            323,
+            32976,
+            2456,
+            382,
+            8420,
+            374,
+            264,
+            11682,
+            29985,
+            315,
+            279,
+            1894,
+            32724
+          ]
+        ],
+        "text" : [
+          [
+            334,
+            785,
+            444,
+            57909,
+            315,
+            3319,
+            76,
+            2655,
+            278,
+            25,
+            362,
+            15106,
+            315,
+            8658,
+            11,
+            15029,
+            11,
+            323,
+            16377,
+            2090,
+            56177,
+            1925,
+            279,
+            6821,
+            315,
+            279,
+            1879,
+            11,
+            1380,
+            279,
+            9396,
+            926,
+            1561,
+            448,
+            13833,
+            63059,
+            323,
+            279,
+            12884,
+            12422,
+            6767,
+            1119,
+            92622,
+            11,
+            14638,
+            264,
+            326,
+            57909,
+            19836,
+            894,
+            1008,
+            13,
+            2806,
+            6662,
+            304,
+            9798,
+            476,
+            9509,
+            11,
+            537,
+            86694,
+            1075,
+            279,
+            45209
+          ]
+        ]
+      },
+      "samples" : [
+        {
+          "decodeSecondsPerToken" : 0.030231080031746033,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.284410667,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.03033008069841269,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.850905125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.027743275126984126,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.30209375,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.022701759269841273,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.508634708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.023956027777777777,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.22944125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02781511507936508,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.53258825,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.03474228041269842,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.328872417,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.030419832015873016,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.669170791,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.026228929888888888,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.315756083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.022398421301587302,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.480370708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.024146765873015872,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.233855458,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02972925926984127,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.551696708,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.028932677904761905,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.323164,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02793064350793651,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.605360167,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025745794317460317,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.277406958,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.025934673936507932,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.569311125,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021239218253968253,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.214660459,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021485311507936505,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.411810833,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021054417317460314,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.219912917,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021601391523809525,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.37398625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.0214226130952381,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.225863209,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021383768523809528,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.390787208,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021509755285714284,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.226254167,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021798511253968252,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.384213625,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021077875000000003,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.215298083,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02187574141269841,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.410640208,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.021834894174603173,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.227612584,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.0212667586031746,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.407525166,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02109191534920635,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.210278583,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02114997353968254,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.41570775,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.02053225331746032,
+          "kind" : "text",
+          "promptTokens" : 458,
+          "timeToFirstTokenSeconds" : 0.21144075,
+          "tokens" : 64
+        },
+        {
+          "decodeSecondsPerToken" : 0.020389953047619046,
+          "kind" : "image",
+          "promptTokens" : 505,
+          "timeToFirstTokenSeconds" : 0.381050292,
+          "tokens" : 64
+        }
+      ]
+    }
+  ],
+  "device" : "h17c",
+  "hostLoad" : "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not",
+  "requests" : 8,
+  "rounds" : 2
+}

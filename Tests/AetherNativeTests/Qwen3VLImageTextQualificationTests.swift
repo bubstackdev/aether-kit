@@ -5,7 +5,7 @@ import Foundation
 import Testing
 
 /// Opt-in native qualification of Qwen3-VL image + text generation through Kit: the vision encoder
-/// session and the bucketed decoder's `withImage` path against upstream Transformers
+/// session and the bucketed decoder's image path (one `main`, or a 0.0.2 asset's `withImage`) against upstream Transformers
 /// (`Forge/language/reference_qwen3_vl.py`) on the reference's own pixel tensors.
 ///
 /// AETHER_NATIVE_QWEN3VL=1
@@ -67,6 +67,8 @@ private struct VLReport: Codable {
     var gate = "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)"
     /// Kit preprocessing only: "same-decode" (the reference saw Kit's decode) or "independent-decode".
     var inputs: String?
+    /// The decoder's image steps go through `main` (the one-function asset) rather than `withImage`.
+    var imagesThroughMain: Bool?
     /// Independent decode only, reported: forced-row cosine >= 0.98 on every case.
     var logitsWithinDecoderBand: Bool?
     var hostLoad = "Shared host; timings are single observations"
@@ -116,6 +118,7 @@ func qwen3VLImageTextQualification() async throws {
         let session = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: 2048,
                                                                stopTokenIDs: [151645, 151643], exportBounds: bounds)
         #expect(session.acceptsImages && session.takesRopePositions && session.contract == .bucketedPositions)
+        report.imagesThroughMain = session.imagesThroughMain
         for c in reference.cases {
             report.stage = "case \(c.name)"
             let referencePixels = try f32(directory.appendingPathComponent(c.pixels.file))

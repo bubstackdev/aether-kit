@@ -82,9 +82,19 @@ public actor LanguageGenerationSession {
     private let imageLimit: Int?
     /// Qwen3-VL decoders take 3-axis rotary positions (`rope_positions`) beside the cache positions.
     public nonisolated let takesRopePositions: Bool
-    /// The asset has a `withImage` entry point, so image prompts are accepted.
+    /// The asset takes images, through `main` itself or a 0.0.2 `withImage` entry point.
     public nonisolated let acceptsImages: Bool
+    /// Image steps go through `main` (Qwen3-VL's one-function decoder, 0.0.3): one copy of the weights is
+    /// wired instead of one per function. False for text-only assets and 0.0.2 two-function assets.
+    public nonisolated let imagesThroughMain: Bool
+    /// The 0.0.2 image entry point, loaded only for two-function assets.
     private var imageFunction: InferenceFunction?
+    /// A one-function asset's image row layout: `image_embeds` [q, hiddenSize] and `deepstack`
+    /// [levels, q, hiddenSize] on every step.
+    private struct ImageRowLayout: Sendable { let hiddenSize: Int; let levels: Int }
+    private let imageRows: ImageRowLayout?
+    /// Zero image rows for text steps of a one-function asset, by token count (read-only, reused).
+    private var zeroImageRows: [Int: (rows: NDArray, deepstack: NDArray)] = [:]
     /// The current request's prompt rotary positions (rows: time, height, width); tokens past the
     /// prompt take `position + ropeDelta` on every axis.
     private var promptRope: [[Int32]] = []
@@ -192,8 +202,19 @@ public actor LanguageGenerationSession {
             guard case .ndArray(let rope)? = d.inputDescriptor(of: "rope_positions"), rope.scalarType == .int32, rope.shape == [3, -1]
             else { throw LanguageGenerationError.invalid("Unsupported rotary position contract") }
         }
+        var imageRows: ImageRowLayout?
+        if LanguageStepContract.takesImageRows(Set(d.inputNames)) {
+            // One function for every step: image rows aligned with the tokens, zero on text steps.
+            guard takesRope, model.functionDescriptor(for: "withImage") == nil,
+                  case .ndArray(let rows)? = d.inputDescriptor(of: "image_embeds"), rows.scalarType == .float16,
+                  rows.shape.count == 2, rows.shape[0] == -1, rows.shape[1] > 0,
+                  case .ndArray(let deep)? = d.inputDescriptor(of: "deepstack"), deep.scalarType == .float16,
+                  deep.shape.count == 3, deep.shape[0] > 0, deep.shape[1] == -1, deep.shape[2] == rows.shape[1]
+            else { throw LanguageGenerationError.invalid("Unsupported image row contract") }
+            imageRows = ImageRowLayout(hiddenSize: rows.shape[1], levels: deep.shape[0])
+        }
         var imageFunction: InferenceFunction?
-        if let image = model.functionDescriptor(for: "withImage") {
+        if imageRows == nil, let image = model.functionDescriptor(for: "withImage") {
             guard takesRope, LanguageStepContract.isImageStep(inputNames: Set(image.inputNames), outputNames: Set(image.outputNames),
                                                               stateNames: Set(image.stateNames)),
                   let loaded = try model.loadFunction(named: "withImage")
@@ -230,16 +251,20 @@ public actor LanguageGenerationSession {
         self.initialCapacity = initial
         self.contract = contract
         self.prefillLimit = prefillLimit
-        self.imageLimit = LanguageStepContract.imageChunkLimit(acceptsImages: imageFunction != nil, bounds: exportBounds)
+        self.imageLimit = LanguageStepContract.imageChunkLimit(acceptsImages: imageFunction != nil || imageRows != nil,
+                                                               bounds: exportBounds)
         self.takesRopePositions = takesRope
-        self.acceptsImages = imageFunction != nil
+        self.acceptsImages = imageFunction != nil || imageRows != nil
+        self.imagesThroughMain = imageRows != nil
+        self.imageRows = imageRows
         self.imageFunction = imageFunction
         self.memoryBudget = LanguageMemoryBudget(limitBytes: nil)
     }
 
     /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
-    /// placeholder expands to its tokens, which go to the decoder in one `withImage` submission;
-    /// text runs use the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
+    /// placeholder expands to its tokens. A one-function asset prefills the whole prompt in the bucketed
+    /// chunks, image tokens carrying their rows; a 0.0.2 asset sends each image in one `withImage`
+    /// submission and text runs in the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
     /// Not grid-restricted: any image span up to the exported image chunk is accepted. Only
     /// ``VisionLanguageSession`` limits images to the registration's fixed grids.
     public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
@@ -297,6 +322,18 @@ public actor LanguageGenerationSession {
     private func prefill(_ plan: LanguagePromptPlan, images: [LanguageImageFeatures], chunkSize: Int?,
                          observer: Observer?) async throws -> [Float] {
         var last: [Float] = []
+        if let imageRows {
+            // One function: uniform chunks over the whole prompt, each carrying its image tokens' rows.
+            guard images.allSatisfy({ $0.hiddenSize == imageRows.hiddenSize && $0.deepstackLevels == imageRows.levels })
+            else { throw LanguageGenerationError.invalid("Image features do not match the decoder") }
+            for chunk in plan.uniformSubmissions(contract: contract, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+                let tokens = plan.ids[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init)
+                let rows = plan.alignedImageRows(offset: chunk.offset, count: chunk.count, images: images,
+                                                 hiddenSize: imageRows.hiddenSize, levels: imageRows.levels)
+                last = try await step(tokens: tokens, position: chunk.offset, observer: observer, rows: rows)
+            }
+            return last
+        }
         for submission in plan.submissions(contract: contract, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
             let tokens = plan.ids[submission.start..<(submission.start + submission.count)].map(Int32.init)
             last = try await step(tokens: tokens, position: submission.start, observer: observer,
@@ -436,6 +473,19 @@ public actor LanguageGenerationSession {
 
     /// [3, count] rotary positions, row-major: the prompt's planned rows, then `position + ropeDelta`
     /// on every axis (text-only requests have no planned rows and a zero delta).
+    /// Zero image rows for a text step of a one-function asset: the graph uses rows only at image tokens. Up to
+    /// four counts are kept (the prefill width and the 1-token step recur every request); others are made per step.
+    private func zeroRows(count: Int, layout: ImageRowLayout) -> (rows: NDArray, deepstack: NDArray) {
+        if let cached = zeroImageRows[count] { return cached }
+        let zeros = (rows: NDArray(scalars: [Float16](repeating: 0, count: count * layout.hiddenSize), shape: [count, layout.hiddenSize]),
+                     deepstack: NDArray(scalars: [Float16](repeating: 0, count: layout.levels * count * layout.hiddenSize),
+                                        shape: [layout.levels, count, layout.hiddenSize]))
+        if zeroImageRows.count < 4 {
+            zeroImageRows[count] = zeros
+        }
+        return zeros
+    }
+
     private func ropeRows(at position: Int, count: Int) -> [Int32] {
         var out = [Int32](repeating: 0, count: 3 * count)
         for axis in 0..<3 {
@@ -447,7 +497,10 @@ public actor LanguageGenerationSession {
         return out
     }
 
-    private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil) async throws -> [Float] {
+    /// `image`: a 0.0.2 `withImage` submission (exactly one image's span). `rows`: a one-function asset's image rows
+    /// aligned with `tokens`; nil sends zero rows.
+    private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil,
+                      rows: (embeddings: [Float16], deepstack: [Float16])? = nil) async throws -> [Float] {
         try Task.checkCancellation()
         // A bucketed prefill's last chunk may step back over rows it rewrites (the graph attends only to rows before
         // the chunk), but must reach the materialized end.
@@ -456,7 +509,7 @@ public actor LanguageGenerationSession {
         else { throw LanguageGenerationError.invalid("Noncontiguous cache position") }
         try await recycleModelIfNeeded()
         try Task.checkCancellation()
-        guard let function = image == nil ? self.function : imageFunction, let stream
+        guard let function = image == nil || imageRows != nil ? self.function : imageFunction, let stream
         else { throw LanguageGenerationError.invalid("Missing native model handle") }
         try growCache(to: position + tokens.count)
         guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
@@ -479,10 +532,22 @@ public actor LanguageGenerationSession {
                                                                              shape: [3, tokens.count]))
         }
         if let image {
-            guard image.tokenCount == tokens.count else { throw LanguageGenerationError.invalid("Image span does not match its features") }
+            guard imageRows == nil, image.tokenCount == tokens.count
+            else { throw LanguageGenerationError.invalid("Image span does not match its features") }
             inputs["image_embeds"] = InferenceFunction.AsyncValue(NDArray(scalars: image.embeddings, shape: [image.tokenCount, image.hiddenSize]))
             inputs["deepstack"] = InferenceFunction.AsyncValue(NDArray(scalars: image.deepstack,
                                                                       shape: [image.deepstackLevels, image.tokenCount, image.hiddenSize]))
+        } else if let imageRows, let rows {
+            guard rows.embeddings.count == tokens.count * imageRows.hiddenSize,
+                  rows.deepstack.count == imageRows.levels * tokens.count * imageRows.hiddenSize
+            else { throw LanguageGenerationError.invalid("Image rows do not match the submission") }
+            inputs["image_embeds"] = InferenceFunction.AsyncValue(NDArray(scalars: rows.embeddings, shape: [tokens.count, imageRows.hiddenSize]))
+            inputs["deepstack"] = InferenceFunction.AsyncValue(NDArray(scalars: rows.deepstack,
+                                                                      shape: [imageRows.levels, tokens.count, imageRows.hiddenSize]))
+        } else if let imageRows {
+            let zeros = zeroRows(count: tokens.count, layout: imageRows)
+            inputs["image_embeds"] = InferenceFunction.AsyncValue(zeros.rows)
+            inputs["deepstack"] = InferenceFunction.AsyncValue(zeros.deepstack)
         }
         stepShapes.insert(StepShape(count: tokens.count, capacity: allocatedCapacity))
         if warmShapes.insert(WarmShape(image: image != nil, count: tokens.count, capacity: allocatedCapacity)).inserted {
@@ -638,6 +703,7 @@ public actor LanguageGenerationSession {
         guard await lifecycle.beginClose() else { return }
         function = nil
         imageFunction = nil
+        zeroImageRows = [:]
         stream = nil
         model = nil
         reopenConfiguration = nil
@@ -684,7 +750,7 @@ public actor LanguageGenerationSession {
         guard let loadedFunction = try loaded.loadFunction(named: "main") else {
             throw LanguageGenerationError.invalid("Missing function after model reload")
         }
-        if acceptsImages {
+        if acceptsImages && imageRows == nil {
             guard let loadedImage = try loaded.loadFunction(named: "withImage") else {
                 throw LanguageGenerationError.invalid("Missing image function after model reload")
             }
