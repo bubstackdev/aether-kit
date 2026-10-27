@@ -696,6 +696,9 @@ def main():
         from diffusers.models.autoencoders.vae import DiagonalGaussianDistribution
         from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
         from diffusers.utils.torch_utils import randn_tensor
+        # The overlay never writes into the base export: its bundle.json, build.json and models stay untouched.
+        if args.base_bundle and out == args.base_bundle.resolve().parent:
+            raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
         converted = (args.converted or out / "converted").resolve()
         vae = AutoencoderKLMiniMaxH3.from_pretrained(converted / "vae", torch_dtype=torch.float32).eval()
         assert vae.use_tiling and vae.tile_sample_min_height == vae.tile_sample_min_width == 256

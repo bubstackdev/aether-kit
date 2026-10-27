@@ -152,7 +152,8 @@ def main():
         timeline = json.loads(path.read_text())
         fields, samples = timeline["fields"], timeline["samples"]
         identities.add(fields["execution_identity"]); architectures.add(fields["device_architecture"])
-        assert fields["task"] == task and f"{fields['width']}x{fields['height']}" == canvas
+        if fields["task"] != task or f"{fields['width']}x{fields['height']}" != canvas:
+            raise RuntimeError(f"{path}: timeline is for {fields['task']} {fields['width']}x{fields['height']}, expected {task} {canvas}")
         per_stage = {}
         for s in samples:
             stage = stage_of(s["phase"])

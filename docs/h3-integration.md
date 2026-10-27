@@ -459,9 +459,13 @@ The gate writes a measured entry: per stage, the largest sample of max(Metal, fo
 
 - Every stage reserves its measured peak plus 256 MiB.
 - The operation reserves the carried state.
-- Pixel and frame limits are those measured: 960×544 or 544×960, at most 124 frames.
+- Pixel and frame limits are those measured, at most 124 frames. Admission is keyed by pixel count, so any canvas up to 522,240 px (960×544) is admitted on the 960×544 numbers. That is conservative: the measured canvas is the largest allowed, and both measured orientations peak identically.
 
-`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The recorded entry's worst case is 15.07 GiB. A coordinator without that capacity refuses the run before any stage loads. Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the host's `GPUAdmission` owner. The operation and every stage reservation are then taken only after the GPU grant, and a generation waiting for the GPU holds no reservation (CPU-tested).
+`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The recorded entry's worst case is 15.07 GiB. Before a run reserves anything, admission checks that the operation plus the largest stage the request needs fits the coordinator's capacity. Once the operation is reserved, it checks that the largest stage fits what is still available. Either check refuses the run before any stage loads. A request needing a stage the entry lacks is also refused up front: the first-frame encoder for FL2VA, the audio decoder when audio is produced. Stages are still reserved one at a time, so if other holders take the budget mid-run, a later stage can still be refused (CPU-tested).
+
+Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the host's `GPUAdmission` owner. The operation and every stage reservation are then taken only after the GPU grant, and a generation waiting for the GPU holds no reservation (CPU-tested).
+
+The bar binds callers that use measured admission. It is opt-in: `H3VideoSession(stages:)` without `resources:` reserves nothing and is not checked against the bar.
 
 Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py` on that device against that profile. It must pass, and its `measuredResources` entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file with its gate record in `docs/evidence`. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
 

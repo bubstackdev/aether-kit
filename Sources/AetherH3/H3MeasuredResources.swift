@@ -5,7 +5,11 @@ import Foundation
 /// recorded by the memory gate (`Scripts/qualify-h3-memory.py`) from 20 ms Metal-allocation timelines of complete
 /// renders. H3 is held to an 18 GiB bar: an entry whose largest stage peak plus its operation overlap and margin
 /// exceeds the bar is refused. `admission(coordinator:)` turns an accepted entry into stage reservations that cover
-/// every measured stage peak, so a coordinator without that capacity refuses the run before any stage loads.
+/// every measured stage peak. Before anything is reserved the admission checks that the operation plus the largest
+/// stage the request needs fits the coordinator's capacity (and, once the operation is reserved, that the largest stage
+/// fits what remains), so a run that cannot fit is refused before any stage loads. Stages are still reserved one at a
+/// time: capacity other holders take mid-run can refuse a later stage. The bar applies only to sessions created with
+/// this admission (`H3VideoSession(stages:resources:)`); a session without resources reserves nothing.
 public struct H3MeasuredResources: Sendable, Codable, Equatable {
     /// The H3 memory bar: the Metal allocation peak over a complete render.
     public static let memoryBarBytes: UInt64 = 18 << 30
