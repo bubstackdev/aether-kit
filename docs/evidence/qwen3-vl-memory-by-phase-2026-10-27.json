@@ -1,8 +1,8 @@
 {
   "date": "2026-10-27",
   "device": "h17c",
-  "finding": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB.",
-  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; memory is Metal's currentAllocatedSize in the test process",
+  "finding": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB. A one-image request's measured peak is about 16 GiB wired (host +15.7 GiB; process 16.3 GiB), the encoder having been unwired under memory pressure; up to about 19 GiB if it stays wired. Opening the decoder reads the 22.5 GiB compiled file into the page cache (host free fell to 125 MiB).",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not. Metal figures are MTLDevice.currentAllocatedSize in the test process; residency figures are task_vm_info, footprint categories and vm_stat host pages, and host deltas include other processes",
   "kind": "qwen3-vl-memory-by-phase",
   "models": {
     "vl-2b": {
@@ -401,7 +401,8 @@
       "note": "Core AI's compiled cache file for the decoder (model.aimodelx/main-this-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/resources.bin)",
       "resourcesBinGiB": 22.48
     },
-    "conclusion": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB.",
+    "conclusion": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB. A one-image request's measured peak is about 16 GiB wired (host +15.7 GiB; process 16.3 GiB), the encoder having been unwired under memory pressure; up to about 19 GiB if it stays wired. Opening the decoder reads the 22.5 GiB compiled file into the page cache (host free fell to 125 MiB).",
+    "encoderUnwiredAtDecoderOpen": "at decoder open, with host free at 125 MiB, the loaded but idle encoder's wired pages were released: mapped-file wired 792 -> 0, IOAccelerator wired 1031 -> 0, host wired -3351 MiB",
     "hostFreeDeltaMiB": {
       "decoder open": -23861,
       "decoder unloaded": 22180
@@ -418,6 +419,16 @@
       "withImage pass 1, grid 44x44": 8132
     },
     "method": "per phase: task_vm_info (resident, internal, external, graphics ledgers), vm_stat host pages (free, wired, file-backed, anonymous, compressed) and footprint -j categories; the host is shared, so host deltas include other processes",
+    "peak": {
+      "hostFreeAtDecoderOpenMiB": 125,
+      "hostWiredAtFirstImageMiB": 25532,
+      "hostWiredBeforeOpenMiB": 9467,
+      "hostWiredDeltaMiB": 16065,
+      "processWiredMiB": {
+        "ioAccelerator": 610,
+        "mappedFile": 16086
+      }
+    },
     "processFootprintMaxMiB": 2810,
     "processMappedFileWiredMiB": {
       "decoder unloaded": 0,
