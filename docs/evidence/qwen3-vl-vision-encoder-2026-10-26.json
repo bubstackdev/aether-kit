@@ -1,0 +1,340 @@
+{
+  "supersededBy": "qwen3-vl-vision-encoder-2026-10-26-grids.json: this dynamic-shape encode asset intermittently computed wrong outputs on the GPU without expectFrequentReshapes (9 of 360 encodes), so it is superseded by static per-grid functions",
+  "schema": 1,
+  "kind": "qwen3-vl-vision-encoder-qualification",
+  "passed": true,
+  "device": "h17c",
+  "hostLoad": "Shared host; encode timings are single observations, not benchmark records",
+  "model": {
+    "repository": "Qwen/Qwen3-VL-2B-Instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "license": "apache-2.0",
+    "gated": false,
+    "checkpointSHA256": {
+      "model.safetensors": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0"
+    }
+  },
+  "asset": {
+    "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-vl-2b-vision-fp16",
+    "function": "encode",
+    "precision": "fp16 weights, float32 compute",
+    "reportSHA256": "cef1e0f9c42c35f2d055561e496366b6b97b009816b5d205dc9aac34b454716f",
+    "modelFiles": {
+      "main.hash": "e0fb7f0557e68454a133d6024b14455814d8602ea5695515756435e5db0b038e",
+      "main.mlirb": "9c7600af53e30058bdfb0bd83ad2f99f4d660006226e1b02fefdc89031a2b86d",
+      "metadata.json": "7392f91e6740d3ebd832aa35c2499e7d2cfe7ac74f9a67c33c5161c7dc162397"
+    },
+    "versions": {
+      "torch": "2.11.0",
+      "coreai-torch": "0.4.2",
+      "coreai-core": "1.0.0b2"
+    },
+    "cpuOnlySelfCheck": {
+      "passed": true,
+      "worstCosine": 1.0,
+      "bar": 0.999,
+      "cases": [
+        {
+          "grid": [
+            14,
+            14
+          ],
+          "patches": 196,
+          "imageEmbedsShape": [
+            49,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "grid": [
+            16,
+            20
+          ],
+          "patches": 320,
+          "imageEmbedsShape": [
+            80,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "grid": [
+            26,
+            16
+          ],
+          "patches": 416,
+          "imageEmbedsShape": [
+            104,
+            2048
+          ],
+          "imageEmbedsCosine": 1.0,
+          "deepstackCosine": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "reference": "eager fp16-storage fp32-compute tower on random normalized pixels"
+    }
+  },
+  "reference": {
+    "oracle": "transformers Qwen3VLVisionModel, float32, CPU, weights model.visual.*",
+    "versions": {
+      "torch": "2.11.0",
+      "transformers": "4.57.3",
+      "pillow": "12.3.0"
+    },
+    "recordSHA256": "43114608b285f82bdcbaeb41d790c0f48249d60628ddb49b3ffc46e75c621c01",
+    "preprocessing": "numpy patchify of an exact-multiple-of-32 image: (x/255 - 0.5)/0.5, frame repeated twice, rows in merge-window order (no resize)",
+    "images": [
+      {
+        "name": "scene-448x448",
+        "size": [
+          448,
+          448
+        ],
+        "grid": [
+          1,
+          28,
+          28
+        ],
+        "patches": 784,
+        "tokens": 196,
+        "fileSHA256": {
+          "pixels": "3d4ad3598e614d9e3536abf932f5fd5b9c0debdc0d9d8157a7fdb7c97d5c6a72",
+          "embeds": "faf9117ab713dc0e5d5a6d74458fa9ca26c7e0aeceb6c6154c457e74e0a5864a",
+          "deepstack": "5c184e2f7c615a5c567ea4f1b010bd192b7ff45614c4a296d1e851fce7e841df",
+          "png": "26436c80216cefd6f9668115eb184730a519acb5e1341c9312210e9edebbfd2d"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 0.9999999,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-320x256",
+        "size": [
+          320,
+          256
+        ],
+        "grid": [
+          1,
+          16,
+          20
+        ],
+        "patches": 320,
+        "tokens": 80,
+        "fileSHA256": {
+          "pixels": "6b602b52bb265cbdd06256f82d88a573bce889a53b7fae6ea9323e581a3fbcf4",
+          "embeds": "a643fb8c7d5eabbfa1b87ebf099186ce465ca2e9263497c02f969a4798682fb4",
+          "deepstack": "f5ce658c4d64c432b983206a0211031f157b41aba1e6ce4039fc7e72b6c99358",
+          "png": "c2bf2637c5d8ed8342e547418fbba3ac961aebe209179b591dcee2eb83fdd299"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      {
+        "name": "scene-256x416",
+        "size": [
+          256,
+          416
+        ],
+        "grid": [
+          1,
+          26,
+          16
+        ],
+        "patches": 416,
+        "tokens": 104,
+        "fileSHA256": {
+          "pixels": "b8cc2c49b2286ebe69843550ab60d07c1b61f736d53d2c9917509f93fa162ffd",
+          "embeds": "75e1bba1e48766c1b97c6a50d9410d3e58694bdc5895d3b6e27686f4715dcd69",
+          "deepstack": "e68ad10665340ddd4ba86dad593522c482c477211acdfe8c618438e526677a9f",
+          "png": "79eac2bfeb94acf260eed675f98cc1a26d491108ff8be979b1ced147a618c06d"
+        },
+        "eagerPortVsReference": {
+          "float32": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "fp16Storage": {
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "hostTables": "AetherVision.Qwen3VLVisionTables (bit-exact with Forge host_inputs, CPU-tested for 8 grids)",
+  "gate": "imageEmbeds and every DeepStack level cosine >= 0.999 vs the float32 upstream reference, GPU-preferred, specialized without expectFrequentReshapes",
+  "native": {
+    "reshapesOff": [
+      {
+        "deepstackCosine": [
+          0.9999999783750051,
+          0.9999999773267608,
+          0.9999999699550808
+        ],
+        "firstEncodeSeconds": 2.324786875,
+        "grid": [
+          1,
+          28,
+          28
+        ],
+        "image": "scene-448x448",
+        "imageEmbedsCosine": 0.9999999434103757,
+        "repeatEncodeSeconds": 0.078892208
+      },
+      {
+        "deepstackCosine": [
+          0.9999999781987938,
+          0.9999999702824138,
+          0.9999999672959455
+        ],
+        "firstEncodeSeconds": 2.613875208,
+        "grid": [
+          1,
+          16,
+          20
+        ],
+        "image": "scene-320x256",
+        "imageEmbedsCosine": 0.999999957504567,
+        "repeatEncodeSeconds": 0.109403292
+      },
+      {
+        "deepstackCosine": [
+          0.9999999784862014,
+          0.9999999777857779,
+          0.9999999717516729
+        ],
+        "firstEncodeSeconds": 2.701766333,
+        "grid": [
+          1,
+          26,
+          16
+        ],
+        "image": "scene-256x416",
+        "imageEmbedsCosine": 0.9999999666131525,
+        "repeatEncodeSeconds": 0.03515175
+      }
+    ],
+    "reshapesOffWorstCosine": 0.9999999434103757,
+    "reshapesOnDiagnostic": [
+      {
+        "deepstackCosine": [
+          0.6746669439823509,
+          0.29528299306467853,
+          0.5282557158692036
+        ],
+        "firstEncodeSeconds": 0.248151208,
+        "grid": [
+          1,
+          28,
+          28
+        ],
+        "image": "scene-448x448",
+        "imageEmbedsCosine": 0.4040961745862302,
+        "repeatEncodeSeconds": 0.087300458
+      },
+      {
+        "deepstackCosine": [
+          0.2513567115797711,
+          0.18672768165756948,
+          0.45659504783817073
+        ],
+        "firstEncodeSeconds": 0.037125125,
+        "grid": [
+          1,
+          16,
+          20
+        ],
+        "image": "scene-320x256",
+        "imageEmbedsCosine": 0.34283427990029713,
+        "repeatEncodeSeconds": 0.051094042
+      },
+      {
+        "deepstackCosine": [
+          0.2561665265436339,
+          0.16440180614342226,
+          0.405433309482152
+        ],
+        "firstEncodeSeconds": 0.062502166,
+        "grid": [
+          1,
+          26,
+          16
+        ],
+        "image": "scene-256x416",
+        "imageEmbedsCosine": 0.37527461648287663,
+        "repeatEncodeSeconds": 0.039923
+      }
+    ],
+    "reshapesOnWorstCosine": 0.16440180614342226,
+    "reshapesOnNote": "Specialized with expectFrequentReshapes the dynamic-shape encoder computes wrong outputs on the GPU (engine F-P3-26 reproduced); the asset must be specialized without it."
+  },
+  "nativeReport": {
+    "file": "qwen3-vl-vision-encoder-2026-10-26-native.json",
+    "sha256": "287d628f55366d37a9f5d3645c60198b05005495aabcdbf145f6cd102fd2021c"
+  },
+  "scriptSHA256": {
+    "export_qwen3.py": "29122704f0edd68797ee843b55a6467bf083eb28f0cdabe3eff0ca127d5be6e0",
+    "export_qwen3_vl_vision.py": "f34fcb8f73f0c063364860a92f36f4b4547c9ce21b5389ce6b208d4ae457f751",
+    "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
+    "qwen3_vl_vision.py": "dc994c012bfe42aca9547146ad0fdfcb77d912d416a49504fe07d143d4f2e437",
+    "record_evidence.py": "21c17d3b4a7c1ff8ad37c771b28a4186f8f46f6c0efff83dcc4e5e78773a85db",
+    "record_vision_evidence.py": "2095e894a891072dbaced4c3fa76a9b836adc78183628de2366c3175f61b2abb",
+    "reference_qwen3.py": "93474743b412e344f94f037e61b219a79327d5997d59675f4ab4999d4f31f1e4",
+    "reference_qwen3_vl_vision.py": "310a02ab6972447c66af5056e8ab3ac459ddef47f751cccdd7977ef4425cb5c6"
+  },
+  "nativeTest": "Tests/AetherNativeTests/Qwen3VLVisionQualificationTests.swift (AETHER_NATIVE_QWEN3VL_VISION=1, release)"
+}

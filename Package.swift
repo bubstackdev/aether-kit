@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
         .library(name: "AetherLanguageCoreAI", targets: ["AetherLanguageCoreAI"]),
         .library(name: "AetherLanguageTokenizers", targets: ["AetherLanguageTokenizers"]),
+        .library(name: "AetherVision", targets: ["AetherVision"]),
         .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
         .library(name: "AetherH3", targets: ["AetherH3"]),
         .library(name: "AetherKrea", targets: ["AetherKrea"]),
@@ -28,13 +29,14 @@ let package = Package(
     ],
     targets: [
         .target(name: "AetherKit"),
+        .target(name: "AetherVision"),
         .target(name: "AetherAssets"),
         .target(
             name: "AetherCoreAI", dependencies: ["AetherKit", "AetherAssets"],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
-        .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI"],
+        .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
         .target(name: "AetherLanguageTokenizers", dependencies: [
             "AetherKit", .product(name: "Tokenizers", package: "swift-transformers"),
@@ -63,9 +65,10 @@ let package = Package(
         // Test-only child process for the GPU lease contention and signal tests. Not a product; never shipped.
         .executableTarget(name: "AetherGPULeaseHelper", dependencies: ["AetherKit"], path: "Tests/AetherGPULeaseHelper"),
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
-        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit"]),
         .testTarget(name: "AetherLanguageTokenizersTests", dependencies: ["AetherLanguageTokenizers", "AetherKit"],
                     resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit", "AetherVision"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherVisionTests", dependencies: ["AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit", "AetherAssets"]),
         .testTarget(name: "AetherKreaTests", dependencies: ["AetherKrea", "AetherKit", "AetherCoreAI", "AetherKreaCoreAI", "AetherAssets"], resources: [.copy("Fixtures")]),
@@ -79,7 +82,7 @@ let package = Package(
         .testTarget(name: "AetherNativeTests", dependencies: [
             "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
             "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguageCoreAI", "AetherLanguageTokenizers",
-            "AetherSpeech", "AetherSpeechCoreAI",
+            "AetherSpeech", "AetherSpeechCoreAI", "AetherVision",
         ]),
     ]
 )

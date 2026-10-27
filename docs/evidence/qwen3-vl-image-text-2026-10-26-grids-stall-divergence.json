@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-greedy-divergence-margin",
+  "case": "photo-fruit-stall-wide",
+  "why": "Kit's end-to-end greedy output diverges from upstream at token 46, past the reference's 32 forced rows, so the Kit report has no greedyDivergenceReferenceMargin for it",
+  "method": "upstream Qwen3VLForConditionalGeneration, float32, CPU, with the processor's smart_resize replaced by the snapped grid's pixel size (32x56 patches, 896x512 px), exactly as Forge/language/reference_qwen3_vl.py --grids; prompt ids asserted equal to the reference's; one forward pass over prompt + the shared 46 greedy tokens; softmax of the last row",
+  "reference": "qwen3-vl-image-text-2026-10-26-grids.json (reference record, case photo-fruit-stall-wide)",
+  "kitReport": "qwen3-vl-image-text-2026-10-26-grids-kit-end-to-end.json",
+  "divergence": 46,
+  "referenceToken": {"id": 304, "text": " in", "probability": 0.45747},
+  "kitToken": {"id": 3931, "text": " cut", "probability": 0.40332, "rankInReference": 1},
+  "top5": [[304, 0.45747, " in"], [3931, 0.40332, " cut"], [47615, 0.05753, " sliced"], [25244, 0.03906, " partially"], [10865, 0.00532, " broken"]],
+  "referenceTop1MinusTop2": 0.05415,
+  "nearTie": true,
+  "nearTieRule": "reference top-1 minus top-2 probability < 0.1 and Kit's token in the reference top-5 (the image + text gate's rule)"
+}
