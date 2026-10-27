@@ -224,8 +224,8 @@ All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on the same int8 bundle (
 The test process's lifetime peak footprint was 17.3 GB (the component VAE phase, as before) and the GPU-lock hold
 3.7 minutes. See the [report](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.json) and
 [log](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.log). The 2026-10-26 sections below compared with
-the MPS fixtures and are kept as history. The lifecycle suite still uses the MPS fixture's `fox-512` case. It
-qualifies lifecycle behavior, not parity, and was not re-run.
+the MPS fixtures and are kept as history. The lifecycle suite was re-run against the CPU fixtures too (see
+[Native lifecycle qualification](#native-lifecycle-qualification-2026-10-26)).
 
 ### CPU checks against the MPS references (2026-10-26)
 
@@ -315,7 +315,27 @@ in one decoder session (see the memory note above). See the
 ### Native lifecycle qualification (2026-10-26)
 
 `flux2NativeLifecycleQualification` (`AETHER_NATIVE_FLUX2_LIFECYCLE=1`, `AETHER_FLUX2_LIFECYCLE_OUTPUT` set to a new
-directory, plus the bundle and fixture paths) is modeled on Krea's native session suite. A tracked factory opens real
+directory, plus the bundle and fixture paths) is modeled on Krea's native session suite.
+
+```sh
+AETHER_NATIVE_FLUX2_LIFECYCLE=1 \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu \
+AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
+AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
+```
+
+**Re-run against the CPU references (2026-10-27).** The suite was re-run with no code change against the CPU fixtures
+(`fox-512` from `ffc4b136…`, the first reference case from `caf92bb7…`). Its inputs from them (size, seed, text rows,
+noise, prompt and reference pixels) are byte-identical to the MPS fixtures'; only the images it compares with
+changed. It passed **44/44 checks** with the same 176 native calls, 34 model instances, 32 function loads and 144
+reuses. The gated SSIM checks moved in the sixth decimal: baseline 0.990223 → 0.990221 and reference 0.998442 →
+0.998442 (bar 0.94 for both). The recorded balanced-prompt SSIM moved from 0.901650 to 0.901649. It took 51.3 s, the
+rebased build's first run. See the [report](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.json),
+[event journal](evidence/flux2-klein-native-lifecycle-events-cpu-references-2026-10-27.jsonl) and
+[log](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.log). The 2026-10-26 results below compared
+with the MPS fixtures. A tracked factory opens real
 Core AI sessions. Backend observers bracket the awaited native `function.run`, and an event journal is written as each
 event happens. Nothing gates or delays native work. It uses the `fox-512` reference conditioning and noise as a
 baseline, and passed **44/44 checks** in 27.6 s: 176 native calls, 34 model instances (each closed exactly once), 32

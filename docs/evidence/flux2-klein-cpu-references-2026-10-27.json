@@ -9,11 +9,14 @@
     "flux2-klein-reference-fixture-079a8fba9d596a3b.json",
     "flux2-klein-native-parity-2026-10-26.json",
     "flux2-klein-native-parity-large-2026-10-26.json",
-    "flux2-klein-native-parity-rebased-2026-10-26.json"
+    "flux2-klein-native-parity-rebased-2026-10-26.json",
+    "flux2-klein-native-lifecycle-2026-10-26.json"
   ],
   "producer": {
     "script": "Scripts/prepare-flux2-reference-fixtures.py",
-    "scriptSHA256": "5051baf752c683e5c2d34707542aa167aaad20d6f1da7367731070bc0c124e21",
+    "scriptSHA256AtRun": "5051baf752c683e5c2d34707542aa167aaad20d6f1da7367731070bc0c124e21",
+    "scriptSHA256Committed": "a60abf7130ef1f70065fc79266a093100e2effeb870abad7c2d9d0c0042309ee",
+    "scriptChangeSinceRun": "usage docstring only (the rebase onto #29's Forge wording)",
     "device": "cpu",
     "dtype": "float32",
     "threads": 6,
@@ -605,7 +608,6 @@
       }
     }
   },
-  "notRerun": "The native lifecycle record (flux2-klein-native-lifecycle-2026-10-26.json) still compares against the MPS fixture's fox-512 image; it qualifies lifecycle behavior, not parity, and was not re-run.",
   "weightFreeFixtureTests": {
     "passed": [
       "samplerArithmeticMatchesTheIndependentReference",
@@ -616,5 +618,46 @@
       "ffc4b1365159e40c",
       "caf92bb7d83d685c"
     ]
+  },
+  "nativeLifecycle": {
+    "report": "flux2-klein-native-lifecycle-cpu-references-2026-10-27.json",
+    "log": "flux2-klein-native-lifecycle-cpu-references-2026-10-27.log",
+    "events": "flux2-klein-native-lifecycle-events-cpu-references-2026-10-27.jsonl",
+    "codeChanged": false,
+    "fixtures": {
+      "textToImage": "ffc4b1365159e40c (fox-512)",
+      "referenceImages": "caf92bb7d83d685c (fox-watercolor-ref1)"
+    },
+    "readsFromFixtures": "inputs: fox-512 size, steps, seed, text rows, noise and prompt; the first reference case's pixels, text, noise and seed. Outputs: fox-512 image for baselineSSIM (gated) and balancedPromptSSIM (recorded); the reference case's image for referenceSSIM (gated). Every other check compares the session with itself.",
+    "checks": 44,
+    "passed": true,
+    "nativeCalls": 176,
+    "modelInstances": 34,
+    "functionLoads": 32,
+    "functionReuses": 144,
+    "elapsedSeconds": "51.3",
+    "gpuLock": [
+      "2026-10-27 11:29:07 waiting  pid=21390 flux2 native lifecycle vs CPU refs",
+      "2026-10-27 11:29:07 acquired pid=21396 flux2 native lifecycle vs CPU refs",
+      "2026-10-27 11:30:03 released pid=21396 flux2 native lifecycle vs CPU refs rc=0"
+    ],
+    "sideBySide": {
+      "baselineSSIM": {
+        "bar": 0.94,
+        "mpsReferences": 0.9902225006226685,
+        "cpuReferences": 0.990221366665805
+      },
+      "referenceSSIM": {
+        "bar": 0.94,
+        "mpsReferences": 0.9984422902807756,
+        "cpuReferences": 0.9984422847919169
+      },
+      "balancedPromptSSIM": {
+        "bar": null,
+        "mpsReferences": 0.9016496752543341,
+        "cpuReferences": 0.90164899043623
+      }
+    },
+    "elapsedNote": "51.3 s against 27.6 s on 2026-10-26: the rebased build's first run; native call, load and reuse counts are identical"
   }
 }

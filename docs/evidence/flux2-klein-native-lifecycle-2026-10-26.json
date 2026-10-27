@@ -1,4 +1,5 @@
 {
+  "supersededBy" : "flux2-klein-native-lifecycle-cpu-references-2026-10-27.json: lifecycle re-run against the CPU float32 reference fixtures (this run compared with MPS-generated references)",
   "bundle" : {
     "fingerprint" : "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
     "referenceFingerprint" : "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79"
