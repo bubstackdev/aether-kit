@@ -3,6 +3,7 @@ import AetherH3
 import AetherAssets
 import Darwin
 import Foundation
+import Synchronization
 import Testing
 
 /// Records stage acquisition and release so tests can prove at most one stage is resident.
@@ -315,15 +316,32 @@ private func budgetStages(_ log: StageLog, conditioner: (any H3PromptConditioner
     #expect(await session.state == .closed)
 }
 
-@Test func h3AdmissionRefusesTheNextStageBeforeAcquiringItsResources() async throws {
+@Test func h3AdmissionRefusesARunThatCannotFitBeforeAnyStage() async throws {
+    // Operation 10 + largest stage 40 = 50 > 35: refused up front, nothing reserved or acquired.
     let budget = try ResourceCoordinator(capacityBytes: 35), log = StageLog()
     let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget))
-    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 40, available: 25)) {
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 50, available: 35)) {
         try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1))
     }
-    #expect(await log.entries == ["acquire conditioner", "release conditioner"])
+    #expect(await log.entries.isEmpty)
     #expect(budget.snapshot.reservedBytes == 0)
     #expect(await session.state == .ready)
+    await session.unload()
+}
+
+@Test func h3AdmissionStillRefusesALaterStageWhenOthersTakeTheBudgetMidRun() async throws {
+    // The run fits when it starts; another holder then takes 55 of 100, leaving 35 for the 40-byte denoiser.
+    let budget = try ResourceCoordinator(capacityBytes: 100), log = StageLog()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget))
+    let other = Mutex<ResourceReservation?>(nil)
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: 40, available: 35)) {
+        try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) { event in
+            if case .stageStarted(.encoding) = event { other.withLock { $0 = try? budget.reserve(bytes: 55) } }
+        }
+    }
+    #expect(await log.entries == ["acquire conditioner", "release conditioner"])
+    other.withLock { $0?.release(); $0 = nil }
+    #expect(budget.snapshot.reservedBytes == 0)
     await session.unload()
 }
 
@@ -509,4 +527,103 @@ private struct HeldStageRelease: H3PromptConditioner {
     #expect(await log.entries.filter { $0.hasPrefix("acquire") }.isEmpty)
     #expect(admission.snapshot.queued == 0)
     other.release()
+}
+
+// MARK: Measured resources and the 18 GiB bar
+
+private let gib: UInt64 = 1 << 30
+private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 = 1 << 30) throws -> H3MeasuredResources {
+    try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544", "544x960"], maximumFrames: 124,
+                            stagePeakBytes: ["encoding": 1_830 * (1 << 20), "encodingKeyframe": 2_050 * (1 << 20), "denoising": denoising,
+                                             "decodingVideo": 5_780 * (1 << 20), "decodingAudio": 1_030 * (1 << 20)],
+                            operationBytes: operation, evidence: "fixture")
+}
+
+@Test func h3MeasuredAdmissionReservesEveryMeasuredStagePeakAndRefusesARunThatWillNotFit() async throws {
+    let entry = try measured()
+    // An 18 GiB host budget admits the run; every stage reservation covers its measured peak plus the margin.
+    let roomy = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes), log = StageLog()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: entry.admission(coordinator: roomy))
+    _ = try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) { event in
+        if case .stageStarted(let stage) = event {
+            #expect(roomy.snapshot.reservedBytes == entry.operationBytes + entry.stagePeakBytes[stage.rawValue]! + H3MeasuredResources.marginBytes)
+        }
+    }
+    #expect(roomy.snapshot.reservedBytes == 0)
+    await session.unload()
+    // A 12 GiB budget cannot hold the measured denoising peak: refused up front, before any stage is acquired.
+    let tight = try ResourceCoordinator(capacityBytes: 12 * gib), tightLog = StageLog()
+    let refused = try H3VideoSession(stages: budgetStages(tightLog), resources: entry.admission(coordinator: tight))
+    await #expect(throws: ResourceAdmissionError.insufficientCapacity(requested: entry.operationBytes + entry.stagePeakBytes["denoising"]! + H3MeasuredResources.marginBytes,
+                                                                    available: 12 * gib)) {
+        try await refused.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1))
+    }
+    #expect(await tightLog.entries.isEmpty)
+    #expect(tight.snapshot.reservedBytes == 0)
+    await refused.unload()
+    #expect(entry.maximumFrames == 124 && entry.maximumPixels == 960 * 544)
+}
+
+@Test func h3MeasuredAdmissionRefusesRequestsNeedingStagesTheEntryLacksBeforeAnyStage() async throws {
+    // A partial entry: no first-frame encoder and no audio decoder measured.
+    let partial = try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124,
+                                          stagePeakBytes: ["encoding": 2 * gib, "denoising": 14 * gib, "decodingVideo": 6 * gib],
+                                          operationBytes: gib / 4, evidence: "fixture")
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes), log = StageLog()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: partial.admission(coordinator: budget))
+    let first = try H3Keyframe(width: 64, height: 32, rgb: [UInt8](repeating: 0, count: 64 * 32 * 3))
+    await #expect(throws: AetherError.self) {
+        try await session.generate(try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1, firstFrame: first, audio: false))
+    }
+    await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1, audio: true)) }
+    #expect(await log.entries.isEmpty)
+    #expect(budget.snapshot.reservedBytes == 0)
+    // What the entry does cover still runs.
+    _ = try await session.generate(try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1, audio: false))
+    #expect(budget.snapshot.reservedBytes == 0)
+    await session.unload()
+}
+
+@Test func h3MeasuredAdmissionReservesOnlyAfterTheSharedGPUGrant() async throws {
+    let entry = try measured()
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes), log = StageLog()
+    let shared = try GPUAdmission()
+    let session = try H3VideoSession(stages: budgetStages(log), resources: entry.admission(coordinator: budget), gpu: shared.owner("h3"))
+    let other = try await shared.admit(owner: "krea")
+    let run = Task {
+        try await session.generate(H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1)) { event in
+            // Every measured stage reservation is taken while this generation holds the grant.
+            if case .stageStarted(let stage) = event {
+                #expect(shared.snapshot.running == 1)
+                #expect(budget.snapshot.reservedBytes == entry.operationBytes + entry.stagePeakBytes[stage.rawValue]! + H3MeasuredResources.marginBytes)
+            }
+        }
+    }
+    while shared.snapshot.queued == 0 { try await Task.sleep(for: .milliseconds(5)) }
+    // Waiting for the GPU holds neither the operation nor any stage reservation.
+    #expect(budget.snapshot.reservedBytes == 0)
+    #expect(await log.entries.isEmpty)
+    other.release()
+    _ = try await run.value
+    #expect(budget.snapshot.reservedBytes == 0 && shared.snapshot.running == 0)
+    await session.unload()
+}
+
+@Test func h3MeasuredResourcesOverTheEighteenGiBBarAreRefused() throws {
+    #expect(throws: AetherError.self) { _ = try measured(denoising: 17 * gib) }               // 17 GiB + margin + 1 GiB > 18 GiB
+    #expect(throws: AetherError.self) { _ = try measured(denoising: 13 * gib, operation: 5 * gib) }
+    _ = try measured(denoising: 16 * gib, operation: gib / 2)                                    // 16.75 GiB fits
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124,
+                                    stagePeakBytes: ["denoising": gib], operationBytes: gib, evidence: "fixture")   // missing required stages
+    }
+    // Every recorded entry decodes and is within the bar; an unmeasured identity has no estimate.
+    for entry in try H3MeasuredResources.bundled() { try entry.validate() }
+    // The recorded entry for the qualified tiled-encoder profile (memory gate, both orientations, T2VA and FL2VA).
+    let recorded = try H3MeasuredResources.bundled(
+        executionIdentity: "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8", deviceArchitecture: "h17c")
+    #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
+    #expect(recorded.stagePeakBytes.values.max()! + H3MeasuredResources.marginBytes + recorded.operationBytes <= H3MeasuredResources.memoryBarBytes)
+    #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"])
+    #expect(throws: AetherError.self) { _ = try H3MeasuredResources.bundled(executionIdentity: "unmeasured", deviceArchitecture: "fixture") }
 }

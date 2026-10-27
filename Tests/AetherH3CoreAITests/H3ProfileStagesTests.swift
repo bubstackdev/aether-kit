@@ -158,6 +158,122 @@ private struct TrajectoryKernels: H3DenoiserKernels {
     #expect(await calls.log.count == before)
 }
 
+private actor Observations {
+    private(set) var events: [String] = []
+    private(set) var first: H3Latents?, last: H3Latents?
+    func add(_ event: H3DenoiserObservation) {
+        switch event {
+        case .refined: events.append("refined")
+        case .stepStarted(let step, let latents): events.append("start \(step)"); if step == 0 { first = latents }
+        case .packed(let step, _): events.append("packed \(step)")
+        case .block(let step, let index, _): events.append("block \(step).\(index)")
+        case .heads(let step, let video, _): events.append("heads \(step) \(Int(try! video.floatValues()[0]))")
+        case .advanced(let step, let latents): events.append("advanced \(step)"); last = latents
+        }
+    }
+}
+private struct ObserverFailure: Error {}
+
+@Test func h3ProfileDenoiserObserverIsOptInAndLeavesTheTrajectoryUnchanged() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: 4))
+    let schedule = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    var steps: [H3Profile.Step] = []
+    for step in schedule.steps {
+        let k = layout.timesteps(for: step).values.count
+        let table = try file(root, "table-\(step.index)", bf16([Float](repeating: Float(step.index), count: 6 * 3 * k * 5376)), .bfloat16, [6, 3 * k, 5376])
+        let temb = try file(root, "temb-\(step.index)", [Float](repeating: Float(step.index), count: k * 2688).withUnsafeBytes { Data($0) }, .float32, [k, 2688])
+        steps.append(H3Profile.Step(timesteps: layout.timesteps(for: step).values, embedding: temb, tables: Array(repeating: table, count: 3)))
+    }
+    let frozen = steps
+    let initial = try geometry.initialLatents(seed: 9)
+    let conditioning = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 2))
+    func run(_ observer: H3DenoiserObserver?) async throws -> (log: [String], result: H3Latents) {
+        let calls = Calls()
+        let denoiser = H3ProfileDenoiser(schedule: schedule, blocks: 3, tables: { _ in frozen }, kernels: TrajectoryKernels(calls: calls, layout: layout),
+                                         observer: observer)
+        let result = try await denoiser.denoise(initial, conditioning: conditioning, geometry: geometry) { _, _ in }
+        return (await calls.log, result)
+    }
+    // The default path (no observer) and an observed run issue exactly the same kernel calls, so observing adds no
+    // native call or readback, and they produce identical latents.
+    let plain = try await run(nil)
+    let seen = Observations()
+    let observed = try await run { event in await seen.add(event) }
+    #expect(observed.log == plain.log)
+    #expect(observed.result.video.bytes == plain.result.video.bytes && observed.result.audio.bytes == plain.result.audio.bytes)
+    var expected = ["refined"]
+    for s in 0..<4 { expected += ["start \(s)", "packed \(s)"] + (0..<3).map { "block \(s).\($0)" } + ["heads \(s) \(s + 1)", "advanced \(s)"] }
+    #expect(await seen.events == expected)
+    #expect(await seen.first?.video.bytes == initial.video.bytes)
+    let last = await seen.last
+    #expect(last?.video.bytes == plain.result.video.bytes && last?.audio.bytes == plain.result.audio.bytes)
+    // An observer error fails the trajectory at that boundary.
+    await #expect(throws: ObserverFailure.self) {
+        _ = try await run { event in if case .block(1, 2, _) = event { throw ObserverFailure() } }
+    }
+}
+
+// MARK: First-frame encoder
+
+private struct KeyframeKernels: H3KeyframeKernels {
+    let calls: Calls
+    func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        await calls.add("whole \(model.url.lastPathComponent) \(pixels.spec.shape)")
+        return try h3Tensor(condition.shape, [Float](repeating: 7, count: condition.byteCount / 4))
+    }
+    func tile(_ model: H3ModelAsset, pixels: H3TensorData) async throws -> H3TensorData {
+        // Each tile's moments carry its first (channel 0, top-left) pixel, so the tail can check order and crop.
+        let origin = try pixels.floatValues()[0]
+        await calls.add("tile \(model.url.lastPathComponent) \(pixels.spec.shape) \(Int(origin))")
+        return try h3Tensor([1, 48, 1, 16, 16], [Float](repeating: origin, count: 48 * 256))
+    }
+    func tail(_ model: H3ModelAsset, tiles: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        let values = try tiles.floatValues()
+        let firsts = stride(from: 0, to: values.count, by: 48 * 256).map { Int(values[$0]) }
+        await calls.add("tail \(model.url.lastPathComponent) \(tiles.spec.shape) \(firsts)")
+        return try h3Tensor(condition.shape, [Float](repeating: 9, count: condition.byteCount / 4))
+    }
+    func release() async { await calls.release() }
+}
+
+private func asset(_ name: String) throws -> H3ModelAsset {
+    try H3ModelAsset(url: URL(fileURLWithPath: "/nonexistent/\(name).aimodel"), function: "main", sha256: zeroHash)
+}
+
+@Test func h3KeyframeEncoderRunsTheWholeFrameGraphWithoutTiledEntries() async throws {
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 22, diagnostic: true)
+    let whole = try asset("whole")
+    let calls = Calls()
+    let encoder = H3ProfileKeyframeEncoder(encoding: { w, h in w == 288 && h == 288 ? .whole(whole) : nil }, kernels: KeyframeKernels(calls: calls))
+    #expect(encoder.supports(geometry))
+    #expect(!encoder.supports(try H3Geometry(width: 320, height: 288, requestedFrames: 22, diagnostic: true)))
+    let rgb = (0..<(288 * 288 * 3)).map { UInt8($0 % 251) }
+    let condition = try await encoder.encode(try H3Keyframe(width: 288, height: 288, rgb: rgb), geometry: geometry)
+    #expect(try condition.spec.shape == [1, 24, 1, 18, 18] && condition.floatValues()[0] == 7)
+    #expect(await calls.log == ["whole whole.aimodel [1, 3, 1, 288, 288]"])
+    await encoder.release()
+    #expect(await calls.released == 1)
+}
+
+@Test func h3KeyframeEncoderRunsEverySourceTileThenTheTailWhenTheManifestDeclaresThem() async throws {
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 22, diagnostic: true)
+    let tiling = try H3SpatialTiling.source(width: 288, height: 288)
+    #expect(tiling.yStarts == [0, 32] && tiling.xStarts == [0, 32])
+    let tile = try asset("tile256"), tail = try asset("tail-288x288")
+    let calls = Calls()
+    let encoder = H3ProfileKeyframeEncoder(encoding: { _, _ in .tiled(tile: tile, tail: tail, tiling: tiling) }, kernels: KeyframeKernels(calls: calls))
+    // Channel 0 at (y, x) is (7y + 3x) mod 251; channels 1 and 2 differ, so a channel mix-up would show.
+    var rgb = [UInt8](repeating: 0, count: 288 * 288 * 3)
+    for y in 0..<288 { for x in 0..<288 { for c in 0..<3 { rgb[(y * 288 + x) * 3 + c] = UInt8((7 * y + 3 * x + 50 * c) % 251) } } }
+    let condition = try await encoder.encode(try H3Keyframe(width: 288, height: 288, rgb: rgb), geometry: geometry)
+    #expect(try condition.spec.shape == [1, 24, 1, 18, 18] && condition.floatValues()[0] == 9)
+    // Row-major over the source split; each tile is the 256 px crop at its start.
+    let origins = tiling.yStarts.flatMap { y in tiling.xStarts.map { x in (7 * y + 3 * x) % 251 } }
+    #expect(await calls.log == origins.map { "tile tile256.aimodel [1, 3, 1, 256, 256] \($0)" } + ["tail tail-288x288.aimodel [4, 48, 1, 16, 16] \(origins)"])
+}
+
 // MARK: Decoders
 
 private struct TileKernel: H3TileKernel {
@@ -205,5 +321,21 @@ private struct AudioKernel: H3AudioKernel {
     #expect(pcm.sampleCount == 800 * na && pcm.channels[0].allSatisfy { $0 == 0.25 } && pcm.channels[1].allSatisfy { $0 == -0.5 })
     await #expect(throws: AetherError.self) {
         _ = try await H3ProfileAudioDecoder(kernel: AudioKernel(calls: calls)).decode(try h3Tensor([1, 2 * na - 2, 32], [Float](repeating: 0, count: (2 * na - 2) * 32)), geometry: geometry)
+    }
+}
+
+/// Opt-in, CPU only: with `AETHER_H3_PROFILE` set to a measured profile on its measured device, the session's
+/// admission comes from the recorded memory measurement and fits the 18 GiB bar; elsewhere it is refused.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"] != nil))
+func h3MeasuredAdmissionForTheExportedProfile() throws {
+    let profile = try H3Profile(url: URL(fileURLWithPath: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"]!))
+    let identity = H3ProfileEngine.resourceIdentity(profile: profile)
+    let measured = try? H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: H3ProfileEngine.deviceArchitecture)
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
+    if measured == nil {
+        #expect(throws: AetherError.self) { _ = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget) }
+    } else {
+        let admission = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget)
+        #expect(admission.executionIdentity == identity)
     }
 }

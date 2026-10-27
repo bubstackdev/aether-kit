@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "overlayBundle": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+  "overlayBundleSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+  "lineage": {
+    "base_bundle": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/bundle.json",
+    "base_bundle_sha256": "00669ed7b7db93a7ec9b939bd58a5f49ebe37c87f69b69530a5ba1a17c46ce96",
+    "change": "added video_encoder_first_tiled (tile graph + per-canvas tails); every other entry is the base bundle's"
+  },
+  "videoEncoderFirstTiled": {
+    "tile": {
+      "path": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/models/video-encoder-first-tile256.aimodel",
+      "function": "main",
+      "sha256": "36e39e1a46b640fa0fbcf86f22fbf3319a6515f2164c21f6ec803e99008fefcf"
+    },
+    "tile_size": 256,
+    "moments_channels": 48,
+    "tails": {
+      "288x288": {
+        "path": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/models/video-encoder-first-tail-288x288.aimodel",
+        "function": "main",
+        "sha256": "4a4238d9c6e489b21fc9cd9bfc720ee75a6e75149aa0967d16496f637b0c2c43"
+      },
+      "544x960": {
+        "path": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/models/video-encoder-first-tail-544x960.aimodel",
+        "function": "main",
+        "sha256": "31e48c408483f69c0199dfa97bfa1cf284d11319e52e921415511527ecc100e4"
+      },
+      "960x544": {
+        "path": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/models/video-encoder-first-tail-960x544.aimodel",
+        "function": "main",
+        "sha256": "a53cf40cc3d83ef9b8138c6f1f1519c0e88a1ae382adceff473d11b8bcfb583e"
+      }
+    }
+  },
+  "cpuChecks": {
+    "288x288": {
+      "byte_identical": true,
+      "canvas": "288x288",
+      "relative_l2": 0.0,
+      "seconds": 8.5,
+      "shape": [
+        1,
+        24,
+        1,
+        18,
+        18
+      ],
+      "tiles": 4,
+      "x_overlaps": [
+        224
+      ],
+      "x_starts": [
+        0,
+        32
+      ],
+      "y_overlaps": [
+        224
+      ],
+      "y_starts": [
+        0,
+        32
+      ]
+    },
+    "544x960": {
+      "byte_identical": true,
+      "canvas": "544x960",
+      "relative_l2": 0.0,
+      "seconds": 30.6,
+      "shape": [
+        1,
+        24,
+        1,
+        60,
+        34
+      ],
+      "tiles": 15,
+      "x_overlaps": [
+        112,
+        112
+      ],
+      "x_starts": [
+        0,
+        144,
+        288
+      ],
+      "y_overlaps": [
+        80,
+        80,
+        80,
+        80
+      ],
+      "y_starts": [
+        0,
+        176,
+        352,
+        528,
+        704
+      ]
+    },
+    "960x544": {
+      "byte_identical": true,
+      "canvas": "960x544",
+      "relative_l2": 0.0,
+      "seconds": 31.7,
+      "shape": [
+        1,
+        24,
+        1,
+        34,
+        60
+      ],
+      "tiles": 15,
+      "x_overlaps": [
+        80,
+        80,
+        80,
+        80
+      ],
+      "x_starts": [
+        0,
+        176,
+        352,
+        528,
+        704
+      ],
+      "y_overlaps": [
+        112,
+        112
+      ],
+      "y_starts": [
+        0,
+        144,
+        288
+      ]
+    }
+  },
+  "exportRecipeSHA256": "35a519adeebcf3cdde977d0b79fb9190e2281df83cd925603603a9433baac853",
+  "convertedVAE": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/vae",
+  "note": "Written only under /Volumes/Scratch; Atelier staging was read, never written. Every entry other than video_encoder_first_tiled and lineage equals the base bundle 00669ed7."
+}

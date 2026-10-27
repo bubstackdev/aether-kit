@@ -186,6 +186,8 @@ public actor H3VideoSession {
             defer { grant?.release() }
             let reservation = try attempt == nil ? early : reserve()
             defer { reservation?.release() }
+            // Refuse before the first stage loads when the largest stage cannot fit what remains.
+            try resources?.checkStageHeadroom(request)
             return try await Self.run(request, stages: stages, resources: resources, onEvent: onEvent)
         }
     }

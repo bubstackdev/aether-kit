@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "boundaryHashes": 457,
+  "beforeEncoderFix": {
+    "profileSHA256": "00669ed7b7db93a7ec9b939bd58a5f49ebe37c87f69b69530a5ba1a17c46ce96",
+    "commit": "72d84a0",
+    "hashesSHA256": "807f3f135b00cc59f21fccb8258abb5da0f270efe9b88edff4035521bf62f9a3"
+  },
+  "afterEncoderFix": {
+    "profileSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "commit": "53a97d7",
+    "hashesSHA256": "807f3f135b00cc59f21fccb8258abb5da0f270efe9b88edff4035521bf62f9a3"
+  },
+  "differingBoundaries": [],
+  "rebasedReplay": {
+    "base": "e53c4fe",
+    "fields": {
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-t2va-final/dump-t2va",
+      "mode": "render",
+      "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+      "replay_mismatches": "0",
+      "trajectory_hashes": "457"
+    },
+    "sampledPeakMetalGiB": 13.494
+  },
+  "conclusion": "All 457 T2VA trajectory boundary hashes are identical before and after the tiled-encoder change (different profile manifest, same T2VA graphs), and a replay built from the rebase onto e53c4fe reproduces every one."
+}

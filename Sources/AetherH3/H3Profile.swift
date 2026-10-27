@@ -94,6 +94,29 @@ public struct H3Profile: Sendable {
         }
         return model
     }
+    /// The first-frame encoder split as the pipeline's own tiled encode: one 256 px tile graph (pixels -> moments
+    /// `[1,48,1,16,16]`), run per source tile, and one tail graph per canvas (the source tile blend, posterior with
+    /// the fixed keyframe draw, float16 rounding and latent normalization). Each call holds one tile's scratch
+    /// instead of the whole canvas's.
+    public struct TiledKeyframeEncoder: Sendable {
+        public let tile: H3ModelAsset
+        public let tileSize: Int
+        public let tails: [String: H3ModelAsset]
+    }
+    public let tiledKeyframeEncoder: TiledKeyframeEncoder?
+    /// How a canvas's first frame is encoded. A profile with tiled entries for the canvas uses them; otherwise the
+    /// single whole-frame graph. Selection follows the manifest alone.
+    public enum KeyframeEncoding: Sendable {
+        case whole(H3ModelAsset)
+        case tiled(tile: H3ModelAsset, tail: H3ModelAsset, tiling: H3SpatialTiling)
+    }
+    public func keyframeEncoding(width: Int, height: Int) throws -> KeyframeEncoding? {
+        let canvas = "\(width)x\(height)"
+        if let tiled = tiledKeyframeEncoder, let tail = tiled.tails[canvas] {
+            return .tiled(tile: tiled.tile, tail: tail, tiling: try H3SpatialTiling.source(width: width, height: height))
+        }
+        return keyframeEncoders[canvas].map { .whole($0) }
+    }
     public let audioDecoder: AudioDecoder?
 
     public init(url: URL) throws {
@@ -170,6 +193,18 @@ public struct H3Profile: Sendable {
         keyframeEncoders = try (m.video_encoder_first ?? [:]).mapValues { try $0.asset(path) }
         guard keyframeEncoders.keys.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }) else {
             throw AetherError.invalidModel("invalid H3 first-frame encoder canvas")
+        }
+        tiledKeyframeEncoder = try m.video_encoder_first_tiled.map { t in
+            guard t.tile_size == 256, t.moments_channels == 48, !t.tails.isEmpty,
+                  t.tails.keys.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }) else {
+                throw AetherError.invalidModel("H3 tiled first-frame encoder lacks the 256 px source tile contract")
+            }
+            for canvas in t.tails.keys {
+                let sides = canvas.split(separator: "x").map { Int($0)! }
+                guard sides[0] % 16 == 0, sides[1] % 16 == 0 else { throw AetherError.invalidModel("invalid H3 tiled encoder canvas \(canvas)") }
+                _ = try H3SpatialTiling.source(width: sides[0], height: sides[1])
+            }
+            return TiledKeyframeEncoder(tile: try t.tile.asset(path), tileSize: t.tile_size, tails: try t.tails.mapValues { try $0.asset(path) })
         }
         videoDecoder = VideoDecoder(model: try m.video_decoder.model.asset(path), tile: 256, precision: m.video_decoder.precision ?? "float32",
                                     float32: try m.video_decoder.float32?.asset(path))
@@ -257,6 +292,7 @@ public struct H3Profile: Sendable {
         var seen = Set<String>()
         let all = [body, heads, videoDecoder.model] + (videoDecoder.float32.map { [$0] } ?? []) + (prepare.map { [$0.text, $0.pack] } ?? []) + (conditioner.map { [$0.layer] } ?? [])
             + keyframeEncoders.keys.sorted().map { keyframeEncoders[$0]! }
+            + (tiledKeyframeEncoder.map { t in [t.tile] + t.tails.keys.sorted().map { t.tails[$0]! } } ?? [])
             + (audioDecoder.map { audio in [audio.model] + audio.fixed.keys.sorted().map { audio.fixed[$0]! } } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
@@ -324,7 +360,9 @@ public struct H3Profile: Sendable {
         let conditioner: ConditionerEntry?; let prepare: PrepareEntry?; let body: Asset; let heads: Asset; let parameters: [[Tensor]]
         let recipes: [String: RecipeEntry]; let video_decoder: Decoder; let audio_decoder: AudioEntry?
         let video_encoder_first: [String: Asset]?
+        let video_encoder_first_tiled: TiledEncoderEntry?
     }
+    private struct TiledEncoderEntry: Decodable { let tile: Asset; let tile_size: Int; let moments_channels: Int; let tails: [String: Asset] }
 }
 
 /// A bf16 `[rows, width]` matrix inside an immutable file, read row by row in place (the conditioner's token

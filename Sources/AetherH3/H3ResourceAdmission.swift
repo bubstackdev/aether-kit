@@ -26,6 +26,10 @@ public struct H3ResourceAdmission: Sendable {
         stages = stageBytes
     }
 
+    /// Before anything is reserved: the request is within the profile's limits, every stage it needs has an estimate
+    /// (the first-frame encoder for FL2VA, the audio decoder when audio is produced), and the operation plus the
+    /// largest of those stages fits the coordinator's capacity, so a run that can never fit is refused before any
+    /// stage loads.
     func check(_ request: H3VideoRequest) throws {
         guard request.geometry.width * request.geometry.height <= maximumPixels,
               request.geometry.frames <= maximumFrames, request.prompt.utf8.count <= maximumPromptUTF8Bytes,
@@ -33,6 +37,26 @@ public struct H3ResourceAdmission: Sendable {
               request.firstFrame == nil || stages[.encodingKeyframe] != nil else {
             throw AetherError.invalidRequest("H3 request exceeds or lacks a stage in its resource profile")
         }
+        let needed = operationBytes + peakStageBytes(request)
+        guard needed <= coordinator.capacityBytes else {
+            throw ResourceAdmissionError.insufficientCapacity(requested: needed, available: coordinator.capacityBytes)
+        }
+    }
+
+    /// Once the operation is reserved (after any GPU grant): the largest stage the request needs must fit what is
+    /// still available, so a run refused for capacity has loaded no stage. Stages are reserved one at a time, so other
+    /// holders taking capacity mid-run can still refuse a later stage.
+    func checkStageHeadroom(_ request: H3VideoRequest) throws {
+        let peak = peakStageBytes(request), available = coordinator.snapshot.availableBytes
+        guard peak <= available else { throw ResourceAdmissionError.insufficientCapacity(requested: peak, available: available) }
+    }
+
+    /// The largest estimate among the stages `request` uses.
+    func peakStageBytes(_ request: H3VideoRequest) -> UInt64 {
+        var used: [H3VideoStage] = [.encoding, .denoising, .decodingVideo]
+        if request.firstFrame != nil { used.append(.encodingKeyframe) }
+        if request.audio { used.append(.decodingAudio) }
+        return used.compactMap { stages[$0] }.max() ?? 0
     }
 
     func reserve(_ stage: H3VideoStage) throws -> ResourceReservation {

@@ -96,6 +96,26 @@ public enum H3Packing {
     }
 }
 
+/// One boundary of the profile denoiser's trajectory, for qualification. Every value is a tensor the trajectory
+/// already holds on the CPU at that point; observing adds no native call or readback.
+public enum H3DenoiserObservation: Sendable {
+    /// The refined text, once per trajectory.
+    case refined(H3TensorData)
+    /// The latents entering step `step` (keyframe anchor rows first for FL2VA).
+    case stepStarted(step: Int, latents: H3Latents)
+    /// The packed sequence entering block 0.
+    case packed(step: Int, hidden: H3TensorData)
+    /// Block `index`'s output, which is block `index + 1`'s input.
+    case block(step: Int, index: Int, output: H3TensorData)
+    /// Both head velocities.
+    case heads(step: Int, video: H3TensorData, audio: H3TensorData)
+    /// The latents after the step's scheduler update.
+    case advanced(step: Int, latents: H3Latents)
+}
+/// Opt-in observer of `H3DenoiserObservation`s (qualification). It is awaited at each boundary, and a thrown error
+/// fails the trajectory like a kernel error. Without an observer the denoiser constructs no observation.
+public typealias H3DenoiserObserver = @Sendable (H3DenoiserObservation) async throws -> Void
+
 /// The Turbo trajectory over the profile: text refined once, then per step pack -> 50 blocks -> heads -> update.
 actor H3ProfileDenoiser: H3Denoiser {
     nonisolated let steps: Int
@@ -103,15 +123,18 @@ actor H3ProfileDenoiser: H3Denoiser {
     private let tables: @Sendable (H3Layout) throws -> [H3Profile.Step]
     private let blocks: Int
     private let kernels: any H3DenoiserKernels
+    private let observer: H3DenoiserObserver?
 
-    init(profile: H3Profile, recipe: String, kernels: any H3DenoiserKernels) throws {
+    init(profile: H3Profile, recipe: String, kernels: any H3DenoiserKernels, observer: H3DenoiserObserver? = nil) throws {
         guard let entry = profile.recipes[recipe] else { throw AetherError.unsupported("H3 profile has no \(recipe) schedule") }
         guard profile.parameters.count == 50, profile.prepare != nil else { throw AetherError.invalidModel("H3 profile lacks block weights or prepare graphs") }
-        self.init(schedule: entry.schedule, blocks: 50, tables: { try profile.steps(recipe: recipe, layout: $0) }, kernels: kernels)
+        self.init(schedule: entry.schedule, blocks: 50, tables: { try profile.steps(recipe: recipe, layout: $0) }, kernels: kernels, observer: observer)
     }
     /// `tables(layout)` returns each step's embedding and per-block AdaLN tables, already matched to the layout.
-    init(schedule: H3Schedule, blocks: Int, tables: @escaping @Sendable (H3Layout) throws -> [H3Profile.Step], kernels: any H3DenoiserKernels) {
+    init(schedule: H3Schedule, blocks: Int, tables: @escaping @Sendable (H3Layout) throws -> [H3Profile.Step], kernels: any H3DenoiserKernels,
+         observer: H3DenoiserObserver? = nil) {
         self.schedule = schedule; self.steps = schedule.count; self.blocks = blocks; self.tables = tables; self.kernels = kernels
+        self.observer = observer
     }
 
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry,
@@ -137,25 +160,31 @@ actor H3ProfileDenoiser: H3Denoiser {
         try Task.checkCancellation()
         let refined = try await kernels.refine(conditioning)
         guard refined.spec == (try H3TensorSpec(scalarType: .bfloat16, shape: [1, t, 5376])) else { throw AetherError.invalidTensor("H3 refined text shape differs") }
+        if let observer { try await observer(.refined(refined)) }
         var latents = initial
         for (step, entry) in zip(schedule.steps, stepTables) {
             try Task.checkCancellation()
             let rows = layout.timesteps(for: step)
             let tags = try h3Tensor(.int32, [layout.rows], rows.adalnIndices)
             let indices = try h3Tensor(.int32, [layout.rows], rows.indices)
+            if let observer { try await observer(.stepStarted(step: step.index, latents: latents)) }
             var hidden = try await kernels.pack(video: latents.video, audio: latents.audio, text: refined, gather: gather)
             let hiddenSpec = try H3TensorSpec(scalarType: .bfloat16, shape: [1, layout.rows, 5376])
             guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 packed sequence shape differs") }
+            if let observer { try await observer(.packed(step: step.index, hidden: hidden)) }
             for block in 0..<blocks {
                 try Task.checkCancellation()
                 hidden = try await kernels.block(block, hidden: hidden, table: try entry.tables[block].read(), tags: tags, cos: cos, sin: sin)
                 guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 block output shape differs") }
+                if let observer { try await observer(.block(step: step.index, index: block, output: hidden)) }
             }
             try Task.checkCancellation()
             let velocity = try await kernels.heads(hidden: hidden, temb: try entry.embedding.read(), indices: indices, videoIndices: videoIndices,
                                                    audioIndices: audioIndices, video: latents.video.spec, audio: latents.audio.spec)
+            if let observer { try await observer(.heads(step: step.index, video: velocity.video, audio: velocity.audio)) }
             latents = try latents.advanced(schedule: schedule, step: step.index, videoVelocity: velocity.video, audioVelocity: velocity.audio,
                                            conditionVideoRows: layout.conditionVideoRows)
+            if let observer { try await observer(.advanced(step: step.index, latents: latents)) }
             onStep(step.index + 1, steps)
         }
         return latents
@@ -203,24 +232,82 @@ actor H3ProfileAudioDecoder: H3AudioDecoder {
     func release() async { await kernel.release() }
 }
 
-/// RGB8 keyframe -> planar `[1,3,1,H,W]` f32 pixels in 0...255 -> the profile's static first-frame encoder for the canvas.
+/// First-frame encoder graph calls. `whole`: pixels `[1,3,1,H,W]` -> condition `[1,24,1,H/16,W/16]`. `tile`: one 256 px
+/// tile `[1,3,1,256,256]` -> moments `[1,48,1,16,16]`. `tail`: the stacked tile moments `[N,48,1,16,16]` (row-major
+/// over the source split) -> condition.
+protocol H3KeyframeKernels: Sendable {
+    func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData
+    func tile(_ model: H3ModelAsset, pixels: H3TensorData) async throws -> H3TensorData
+    func tail(_ model: H3ModelAsset, tiles: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData
+    func release() async
+}
+
+/// RGB8 keyframe -> planar f32 pixels in 0...255 -> the profile's first-frame encoding for the canvas: the tiled
+/// graphs when the manifest declares them for that canvas (one tile's scratch at a time), else the whole-frame graph.
 actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
-    private let profile: H3Profile
-    private var graph: (canvas: String, graph: NativeH3Graph)?
-    init(profile: H3Profile) { self.profile = profile }
-    nonisolated func supports(_ geometry: H3Geometry) -> Bool { profile.keyframeEncoders["\(geometry.width)x\(geometry.height)"] != nil }
+    private let encoding: @Sendable (Int, Int) -> H3Profile.KeyframeEncoding?
+    private let kernels: any H3KeyframeKernels
+    init(profile: H3Profile) {
+        self.init(encoding: { try? profile.keyframeEncoding(width: $0, height: $1) }, kernels: NativeH3KeyframeKernels())
+    }
+    init(encoding: @escaping @Sendable (Int, Int) -> H3Profile.KeyframeEncoding?, kernels: any H3KeyframeKernels) {
+        self.encoding = encoding; self.kernels = kernels
+    }
+    nonisolated func supports(_ geometry: H3Geometry) -> Bool { encoding(geometry.width, geometry.height) != nil }
     func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
         guard keyframe.width == geometry.width, keyframe.height == geometry.height else { throw AetherError.invalidRequest("H3 keyframe must match the clip size") }
-        let canvas = "\(geometry.width)x\(geometry.height)"
-        if graph?.canvas != canvas { graph = nil; graph = (canvas, try await NativeH3Graph.open(try profile.keyframeEncoder(width: geometry.width, height: geometry.height))) }
-        let area = geometry.width * geometry.height
+        guard let encoding = encoding(geometry.width, geometry.height) else {
+            throw AetherError.unsupported("H3 profile has no first-frame encoder for \(geometry.width)x\(geometry.height)")
+        }
+        let width = geometry.width, height = geometry.height, area = width * height
         var planar = [Float](repeating: 0, count: 3 * area)
         for p in 0..<area { for c in 0..<3 { planar[c * area + p] = Float(keyframe.rgb[p * 3 + c]) } }
-        let pixels = try h3Tensor([1, 3, 1, geometry.height, geometry.width], planar)
-        let spec = try H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, geometry.latentHeight, geometry.latentWidth])
-        return try await graph!.graph.run(["pixels": .data(pixels)], outputs: ["condition": spec])["condition"]!
+        let condition = try H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, geometry.latentHeight, geometry.latentWidth])
+        switch encoding {
+        case .whole(let model):
+            return try await kernels.whole(model, pixels: try h3Tensor([1, 3, 1, height, width], planar), condition: condition)
+        case .tiled(let tileModel, let tail, let tiling):
+            let side = tiling.tileHeight
+            var moments = Data(capacity: tiling.tileCount * 48 * (side / 16) * (side / 16) * 4)
+            for y in tiling.yStarts { for x in tiling.xStarts {
+                try Task.checkCancellation()
+                var tile = [Float](repeating: 0, count: 3 * side * side)
+                for c in 0..<3 { for r in 0..<side {
+                    let source = c * area + (y + r) * width + x, target = (c * side + r) * side
+                    tile[target..<(target + side)] = planar[source..<(source + side)]
+                } }
+                let value = try await kernels.tile(tileModel, pixels: try h3Tensor([1, 3, 1, side, side], tile))
+                guard value.spec == (try H3TensorSpec(scalarType: .float32, shape: [1, 48, 1, side / 16, side / 16])) else {
+                    throw AetherError.invalidTensor("H3 first-frame tile moments differ")
+                }
+                moments.append(value.bytes)
+            } }
+            let tiles = try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [tiling.tileCount, 48, 1, side / 16, side / 16]), bytes: moments)
+            return try await kernels.tail(tail, tiles: tiles, condition: condition)
+        }
     }
-    func release() async { graph = nil }
+    func release() async { await kernels.release() }
+}
+
+/// Native first-frame graphs, each opened on first use and kept until `release()`.
+actor NativeH3KeyframeKernels: H3KeyframeKernels {
+    private var graphs: [String: NativeH3Graph] = [:]
+    private func graph(_ model: H3ModelAsset) async throws -> NativeH3Graph {
+        if let graph = graphs[model.url.path] { return graph }
+        let graph = try await NativeH3Graph.open(model); graphs[model.url.path] = graph; return graph
+    }
+    func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        try await graph(model).run(["pixels": .data(pixels)], outputs: ["condition": condition])["condition"]!
+    }
+    func tile(_ model: H3ModelAsset, pixels: H3TensorData) async throws -> H3TensorData {
+        let side = pixels.spec.shape[3]
+        let spec = try H3TensorSpec(scalarType: .float32, shape: [1, 48, 1, side / 16, side / 16])
+        return try await graph(model).run(["pixels": .data(pixels)], outputs: ["moments": spec])["moments"]!
+    }
+    func tail(_ model: H3ModelAsset, tiles: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
+        try await graph(model).run(["tiles": .data(tiles)], outputs: ["condition": condition])["condition"]!
+    }
+    func release() async { graphs = [:] }
 }
 
 // MARK: Native kernels
@@ -320,15 +407,17 @@ public enum H3ProfileEngine {
         "h3.profile/1:" + profile.manifestSHA256 + ":" + recipe
     }
 
+    /// `observer` (qualification only) receives the denoiser's boundary tensors; omit it for generation.
     public static func stages(profile: H3Profile, recipe: String = "turbo8",
-                              tokenize: @escaping @Sendable (String) throws -> [Int32]) throws -> H3VideoStages {
+                              tokenize: @escaping @Sendable (String) throws -> [Int32],
+                              observer: H3DenoiserObserver? = nil) throws -> H3VideoStages {
         guard profile.complete, let conditioner = profile.conditioner, let audio = profile.audioDecoder else {
             throw AetherError.invalidModel("H3 profile is incomplete: \(profile.missing.joined(separator: ", "))")
         }
         return H3VideoStages(
             conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize, kernel: NativeH3ConditionerKernel(conditioner)),
-            keyframes: profile.keyframeEncoders.isEmpty ? nil : H3ProfileKeyframeEncoder(profile: profile),
-            denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile)),
+            keyframes: profile.keyframeEncoders.isEmpty && profile.tiledKeyframeEncoder == nil ? nil : H3ProfileKeyframeEncoder(profile: profile),
+            denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile), observer: observer),
             video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
             audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop),
             resourceIdentity: resourceIdentity(profile: profile, recipe: recipe))

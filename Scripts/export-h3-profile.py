@@ -88,8 +88,10 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "finalize"])
-    ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first: WIDTHxHEIGHT canvases")
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "video-encoder-first-tiled", "finalize"])
+    ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first(-tiled): WIDTHxHEIGHT canvases")
+    ap.add_argument("--converted", type=Path, help="video-encoder-first-tiled: the converted VAE directory (default OUTPUT/converted)")
+    ap.add_argument("--base-bundle", type=Path, help="video-encoder-first-tiled: write OUTPUT/bundle.json = this bundle plus the tiled entries")
     ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
@@ -684,6 +686,100 @@ def main():
             encoders[key] = dict(asset, check=check, encode_seed=seed)
             record(out, video_encoder_first=encoders)
             print(json.dumps(asset), flush=True)
+    elif args.stage == "video-encoder-first-tiled":
+        # The same encode_vae_condition, split where the pipeline already splits it: `_encode_clip` runs the encoder
+        # and quant_conv per 256 px source tile. The whole-frame graph unrolls all tiles into one graph whose native
+        # scratch grows with the tile count (about 1.8 GiB per tile; 27 GiB at 960x544). Here: ONE tile graph
+        # (normalized pixels -> moments, run per tile) and one small TAIL graph per canvas (`_stitch_tiles` in latent
+        # space, the posterior with the fixed seed-42 draw baked in, float16 rounding, latent normalization).
+        from diffusers import AutoencoderKLMiniMaxH3
+        from diffusers.models.autoencoders.vae import DiagonalGaussianDistribution
+        from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
+        from diffusers.utils.torch_utils import randn_tensor
+        # The overlay never writes into the base export: its bundle.json, build.json and models stay untouched.
+        if args.base_bundle and out == args.base_bundle.resolve().parent:
+            raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
+        converted = (args.converted or out / "converted").resolve()
+        vae = AutoencoderKLMiniMaxH3.from_pretrained(converted / "vae", torch_dtype=torch.float32).eval()
+        assert vae.use_tiling and vae.tile_sample_min_height == vae.tile_sample_min_width == 256
+        assert vae.tile_sample_min_overlap_height == vae.tile_sample_min_overlap_width == 64 and vae.spatial_compression_ratio == 16
+        pixel_mean, pixel_std, seed, side = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 42, 256
+
+        class TileEncoder(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vae = vae
+                self.register_buffer("pixel_mean", torch.tensor(pixel_mean).view(1, -1, 1, 1, 1))
+                self.register_buffer("pixel_std", torch.tensor(pixel_std).view(1, -1, 1, 1, 1))
+
+            def forward(self, pixels):   # [1,3,1,256,256] in 0...255 -> moments [1,48,1,16,16]
+                return self.vae.quant_conv(self.vae.encoder((pixels.div(255.0) - self.pixel_mean) / self.pixel_std))
+
+        class TileTail(torch.nn.Module):
+            def __init__(self, eps, rows, columns, y_overlaps, x_overlaps):
+                super().__init__()
+                self.vae, self.rows, self.columns = vae, rows, columns
+                self.y_overlaps = [o // vae.spatial_compression_ratio for o in y_overlaps]
+                self.x_overlaps = [o // vae.spatial_compression_ratio for o in x_overlaps]
+                self.register_buffer("eps", eps)
+                self.register_buffer("mean", torch.tensor(vae.config.latents_mean).view(1, -1, 1, 1, 1))
+                self.register_buffer("std", torch.tensor(vae.config.latents_std).view(1, -1, 1, 1, 1))
+
+            def forward(self, tiles):   # [rows*columns, 48, 1, 16, 16], row-major -> condition [1,24,1,H/16,W/16]
+                grid = [[tiles[i * self.columns + j:i * self.columns + j + 1] for j in range(self.columns)] for i in range(self.rows)]
+                posterior = DiagonalGaussianDistribution(self.vae._stitch_tiles(grid, self.y_overlaps, self.x_overlaps))
+                latents = (posterior.mean + posterior.std * self.eps).to(torch.float16).float()
+                return (latents - self.mean) / self.std
+
+        meta_path = out / "build.json"
+        meta = json.loads(meta_path.read_text()) if meta_path.exists() else dict(schema=1, snapshot=h.SNAPSHOT, diffusers_commit=h.COMMIT)
+        tile_module = TileEncoder().eval()
+        tails, checks = {}, {}
+        for width, height in (tuple(int(v) for v in c.split("x")) for c in args.canvases.split(",")):
+            key = f"{width}x{height}"
+            ys, _, yo = vae._split_tiles(height, side, 64)
+            xs, _, xo = vae._split_tiles(width, side, 64)
+            torch.manual_seed(1043)
+            image = torch.randint(0, 256, (1, 3, 1, height, width), dtype=torch.uint8)
+            started = time.monotonic()
+            with torch.inference_mode():
+                moments = torch.cat([tile_module(image[..., y:y + side, x:x + side].float()) for y in ys for x in xs])
+                eps = randn_tensor((1, vae.config.latent_channels, 1, height // 16, width // 16), generator=torch.Generator().manual_seed(seed),
+                                   device=torch.device("cpu"), dtype=moments.dtype)
+                tail = TileTail(eps, len(ys), len(xs), yo, xo).eval()
+                actual = tail(moments)
+                reference = encode_vae_condition(vae, image, pixel_mean, pixel_std, seed)
+                # The draw must be the one encode_vae_condition takes (posterior.sample on the stitched mean's shape).
+                stitched = vae._encode(((image.float().div(255.0) - torch.tensor(pixel_mean).view(1, -1, 1, 1, 1)) / torch.tensor(pixel_std).view(1, -1, 1, 1, 1)))
+                assert list(DiagonalGaussianDistribution(stitched).mean.shape) == list(eps.shape)
+            check = dict(canvas=key, tiles=len(ys) * len(xs), y_starts=ys, x_starts=xs, y_overlaps=yo, x_overlaps=xo, shape=list(actual.shape),
+                         byte_identical=bool(torch.equal(actual, reference)),
+                         relative_l2=float((actual.double() - reference.double()).norm() / reference.double().norm()),
+                         seconds=round(time.monotonic() - started, 1))
+            print(json.dumps(check), flush=True)
+            assert check["byte_identical"], check
+            started = time.monotonic()
+            asset = h.export_asset(out / f"models/video-encoder-first-tail-{key}.aimodel", tail, (moments,), ["tiles"], ["condition"])
+            asset["seconds"] = round(time.monotonic() - started, 1)
+            tails[key], checks[key] = asset, check
+            print(json.dumps(asset), flush=True)
+        started = time.monotonic()
+        tile_asset = h.export_asset(out / "models/video-encoder-first-tile256.aimodel", tile_module, (torch.zeros(1, 3, 1, side, side),), ["pixels"], ["moments"])
+        tile_asset["seconds"] = round(time.monotonic() - started, 1)
+        tiled = dict(tile=tile_asset, tile_size=side, moments_channels=2 * vae.config.latent_channels, tails=tails, checks=checks, encode_seed=seed,
+                     converted_vae=str(converted / "vae"), recipe_sha256=h.sha256_file(Path(__file__)))
+        record(out, video_encoder_first_tiled=tiled)
+        if args.base_bundle:
+            base_path = args.base_bundle.resolve()
+            bundle = json.loads(base_path.read_text())
+            assert bundle["schema"] == 3 and "video_encoder_first_tiled" not in bundle
+            entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
+            bundle["video_encoder_first_tiled"] = dict(tile=entry(tile_asset), tile_size=side, moments_channels=2 * vae.config.latent_channels,
+                                                       tails={k: entry(v) for k, v in sorted(tails.items())})
+            bundle["lineage"] = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path),
+                                     change="added video_encoder_first_tiled (tile graph + per-canvas tails); every other entry is the base bundle's")
+            (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
+            print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"))), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
