@@ -1,0 +1,450 @@
+{
+  "date": "2026-10-27",
+  "device": "h17c",
+  "finding": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB. A one-image request's measured peak is about 16 GiB wired (host +15.7 GiB; process 16.3 GiB), the encoder having been unwired under memory pressure; up to about 19 GiB if it stays wired. Opening the decoder reads the 22.5 GiB compiled file into the page cache (host free fell to 125 MiB).",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not. Metal figures are MTLDevice.currentAllocatedSize in the test process; residency figures are task_vm_info, footprint categories and vm_stat host pages, and host deltas include other processes",
+  "kind": "qwen3-vl-memory-by-phase",
+  "models": {
+    "vl-2b": {
+      "attribution": {
+        "decoderUnloadFreedMiB": 8331,
+        "encoderEachFurtherGridMiB": [
+          793,
+          794
+        ],
+        "encoderFirstGridMiB": 1116,
+        "encoderOpenMiB": 872,
+        "encoderUnloadFreedMiB": 4841,
+        "mainFirstUseMiB": 3898,
+        "peakMiB": 13249,
+        "warmImageRequestMiB": {
+          "max": 37,
+          "min": -14
+        },
+        "withImageFirstUseMiB": 4162
+      },
+      "bundle": "qwen3-vl-2b-bundle-macos (Qwen/Qwen3-VL-2B-Instruct)",
+      "phases": [
+        {
+          "footprintMiB": 57,
+          "metalDeltaMiB": 0,
+          "metalMiB": 0,
+          "phase": "before open"
+        },
+        {
+          "footprintMiB": 1056,
+          "metalDeltaMiB": 872,
+          "metalMiB": 872,
+          "phase": "encoder open"
+        },
+        {
+          "footprintMiB": 1572,
+          "metalDeltaMiB": 1116,
+          "metalMiB": 1988,
+          "phase": "encoder, grid 44x44"
+        },
+        {
+          "footprintMiB": 1578,
+          "metalDeltaMiB": 793,
+          "metalMiB": 2781,
+          "phase": "encoder, grid 36x48"
+        },
+        {
+          "footprintMiB": 1590,
+          "metalDeltaMiB": 793,
+          "metalMiB": 3574,
+          "phase": "encoder, grid 48x36"
+        },
+        {
+          "footprintMiB": 1645,
+          "metalDeltaMiB": 794,
+          "metalMiB": 4368,
+          "phase": "encoder, grid 32x56"
+        },
+        {
+          "footprintMiB": 1664,
+          "metalDeltaMiB": 794,
+          "metalMiB": 5162,
+          "phase": "encoder, grid 56x32"
+        },
+        {
+          "footprintMiB": 1314,
+          "metalDeltaMiB": -292,
+          "metalMiB": 4870,
+          "phase": "decoder open"
+        },
+        {
+          "footprintMiB": 1504,
+          "metalDeltaMiB": 3898,
+          "metalMiB": 8768,
+          "phase": "main, short prompt"
+        },
+        {
+          "footprintMiB": 1621,
+          "metalDeltaMiB": 106,
+          "metalMiB": 8874,
+          "phase": "main, long prompt"
+        },
+        {
+          "footprintMiB": 1941,
+          "metalDeltaMiB": 4162,
+          "metalMiB": 13036,
+          "phase": "withImage pass 1, grid 44x44"
+        },
+        {
+          "footprintMiB": 1979,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13047,
+          "phase": "withImage pass 1, grid 36x48"
+        },
+        {
+          "footprintMiB": 1992,
+          "metalDeltaMiB": 10,
+          "metalMiB": 13057,
+          "phase": "withImage pass 1, grid 48x36"
+        },
+        {
+          "footprintMiB": 2004,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13068,
+          "phase": "withImage pass 1, grid 32x56"
+        },
+        {
+          "footprintMiB": 2039,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13079,
+          "phase": "withImage pass 1, grid 56x32"
+        },
+        {
+          "footprintMiB": 2077,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13090,
+          "phase": "withImage pass 2, grid 44x44"
+        },
+        {
+          "footprintMiB": 2089,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13101,
+          "phase": "withImage pass 2, grid 36x48"
+        },
+        {
+          "footprintMiB": 2101,
+          "metalDeltaMiB": 10,
+          "metalMiB": 13111,
+          "phase": "withImage pass 2, grid 48x36"
+        },
+        {
+          "footprintMiB": 2112,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13122,
+          "phase": "withImage pass 2, grid 32x56"
+        },
+        {
+          "footprintMiB": 2123,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13133,
+          "phase": "withImage pass 2, grid 56x32"
+        },
+        {
+          "footprintMiB": 2135,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13144,
+          "phase": "withImage pass 3, grid 44x44"
+        },
+        {
+          "footprintMiB": 2119,
+          "metalDeltaMiB": -14,
+          "metalMiB": 13130,
+          "phase": "withImage pass 3, grid 36x48"
+        },
+        {
+          "footprintMiB": 2133,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13141,
+          "phase": "withImage pass 3, grid 48x36"
+        },
+        {
+          "footprintMiB": 2170,
+          "metalDeltaMiB": 37,
+          "metalMiB": 13178,
+          "phase": "withImage pass 3, grid 32x56"
+        },
+        {
+          "footprintMiB": 2181,
+          "metalDeltaMiB": 11,
+          "metalMiB": 13189,
+          "phase": "withImage pass 3, grid 56x32"
+        },
+        {
+          "footprintMiB": 2218,
+          "metalDeltaMiB": 60,
+          "metalMiB": 13249,
+          "phase": "main, long prompt after images"
+        },
+        {
+          "footprintMiB": 1692,
+          "metalDeltaMiB": -8331,
+          "metalMiB": 4918,
+          "phase": "decoder unloaded"
+        },
+        {
+          "footprintMiB": 381,
+          "metalDeltaMiB": -4841,
+          "metalMiB": 77,
+          "phase": "encoder unloaded"
+        }
+      ],
+      "report": {
+        "file": "vl-2b.json",
+        "sha256": "d6139a466f44ebd4f8659394f7c53f28fdf2ff155e3381f538bf6398e41f7f90"
+      }
+    },
+    "vl-4b": {
+      "attribution": {
+        "decoderUnloadFreedMiB": 17832,
+        "encoderEachFurtherGridMiB": [
+          811
+        ],
+        "encoderFirstGridMiB": 1134,
+        "encoderOpenMiB": 992,
+        "encoderUnloadFreedMiB": 5049,
+        "mainFirstUseMiB": 8443,
+        "peakMiB": 22970,
+        "warmImageRequestMiB": {
+          "max": 20,
+          "min": 19
+        },
+        "withImageFirstUseMiB": 8896
+      },
+      "bundle": "qwen3-vl-4b-abliterated-bundle-macos (huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated)",
+      "phases": [
+        {
+          "footprintMiB": 58,
+          "metalDeltaMiB": 0,
+          "metalMiB": 0,
+          "phase": "before open"
+        },
+        {
+          "footprintMiB": 1103,
+          "metalDeltaMiB": 992,
+          "metalMiB": 992,
+          "phase": "encoder open"
+        },
+        {
+          "footprintMiB": 1633,
+          "metalDeltaMiB": 1134,
+          "metalMiB": 2126,
+          "phase": "encoder, grid 44x44"
+        },
+        {
+          "footprintMiB": 1648,
+          "metalDeltaMiB": 811,
+          "metalMiB": 2937,
+          "phase": "encoder, grid 36x48"
+        },
+        {
+          "footprintMiB": 1668,
+          "metalDeltaMiB": 811,
+          "metalMiB": 3748,
+          "phase": "encoder, grid 48x36"
+        },
+        {
+          "footprintMiB": 1738,
+          "metalDeltaMiB": 811,
+          "metalMiB": 4559,
+          "phase": "encoder, grid 32x56"
+        },
+        {
+          "footprintMiB": 1752,
+          "metalDeltaMiB": 811,
+          "metalMiB": 5370,
+          "phase": "encoder, grid 56x32"
+        },
+        {
+          "footprintMiB": 1375,
+          "metalDeltaMiB": -284,
+          "metalMiB": 5086,
+          "phase": "decoder open"
+        },
+        {
+          "footprintMiB": 1588,
+          "metalDeltaMiB": 8443,
+          "metalMiB": 13529,
+          "phase": "main, short prompt"
+        },
+        {
+          "footprintMiB": 1761,
+          "metalDeltaMiB": 162,
+          "metalMiB": 13691,
+          "phase": "main, long prompt"
+        },
+        {
+          "footprintMiB": 2315,
+          "metalDeltaMiB": 8896,
+          "metalMiB": 22587,
+          "phase": "withImage pass 1, grid 44x44"
+        },
+        {
+          "footprintMiB": 2369,
+          "metalDeltaMiB": 19,
+          "metalMiB": 22606,
+          "phase": "withImage pass 1, grid 36x48"
+        },
+        {
+          "footprintMiB": 2391,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22626,
+          "phase": "withImage pass 1, grid 48x36"
+        },
+        {
+          "footprintMiB": 2405,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22646,
+          "phase": "withImage pass 1, grid 32x56"
+        },
+        {
+          "footprintMiB": 2457,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22666,
+          "phase": "withImage pass 1, grid 56x32"
+        },
+        {
+          "footprintMiB": 2517,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22686,
+          "phase": "withImage pass 2, grid 44x44"
+        },
+        {
+          "footprintMiB": 2537,
+          "metalDeltaMiB": 19,
+          "metalMiB": 22705,
+          "phase": "withImage pass 2, grid 36x48"
+        },
+        {
+          "footprintMiB": 2557,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22725,
+          "phase": "withImage pass 2, grid 48x36"
+        },
+        {
+          "footprintMiB": 2572,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22745,
+          "phase": "withImage pass 2, grid 32x56"
+        },
+        {
+          "footprintMiB": 2594,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22765,
+          "phase": "withImage pass 2, grid 56x32"
+        },
+        {
+          "footprintMiB": 2620,
+          "metalDeltaMiB": 19,
+          "metalMiB": 22784,
+          "phase": "withImage pass 3, grid 44x44"
+        },
+        {
+          "footprintMiB": 2640,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22804,
+          "phase": "withImage pass 3, grid 36x48"
+        },
+        {
+          "footprintMiB": 2660,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22824,
+          "phase": "withImage pass 3, grid 48x36"
+        },
+        {
+          "footprintMiB": 2675,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22844,
+          "phase": "withImage pass 3, grid 32x56"
+        },
+        {
+          "footprintMiB": 2695,
+          "metalDeltaMiB": 20,
+          "metalMiB": 22864,
+          "phase": "withImage pass 3, grid 56x32"
+        },
+        {
+          "footprintMiB": 2802,
+          "metalDeltaMiB": 106,
+          "metalMiB": 22970,
+          "phase": "main, long prompt after images"
+        },
+        {
+          "footprintMiB": 2012,
+          "metalDeltaMiB": -17832,
+          "metalMiB": 5138,
+          "phase": "decoder unloaded"
+        },
+        {
+          "footprintMiB": 729,
+          "metalDeltaMiB": -5049,
+          "metalMiB": 89,
+          "phase": "encoder unloaded"
+        }
+      ],
+      "report": {
+        "file": "vl-4b.json",
+        "sha256": "76c29b7e3fb577e78442819df7c6bf92a349f97dfe01be76db0564bb55844f42"
+      }
+    }
+  },
+  "nativeTest": "Tests/AetherNativeTests/VisionLanguageMemoryTests.swift (AETHER_NATIVE_VL_MEMORY=1, release; decoder without a memory budget)",
+  "residency": {
+    "bundle": "qwen3-vl-4b-abliterated-bundle-macos",
+    "compiledCache": {
+      "decoderKey": "ed20cc2f0b1aa94d3eb4f64e84abda2e65ec8b3d8e614f45d8ba4c008b847c78 (the decoder's main.mlirb, 7.5 GiB)",
+      "note": "Core AI's compiled cache file for the decoder (model.aimodelx/main-this-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/resources.bin)",
+      "resourcesBinGiB": 22.48
+    },
+    "conclusion": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB. A one-image request's measured peak is about 16 GiB wired (host +15.7 GiB; process 16.3 GiB), the encoder having been unwired under memory pressure; up to about 19 GiB if it stays wired. Opening the decoder reads the 22.5 GiB compiled file into the page cache (host free fell to 125 MiB).",
+    "encoderUnwiredAtDecoderOpen": "at decoder open, with host free at 125 MiB, the loaded but idle encoder's wired pages were released: mapped-file wired 792 -> 0, IOAccelerator wired 1031 -> 0, host wired -3351 MiB",
+    "hostFreeDeltaMiB": {
+      "decoder open": -23861,
+      "decoder unloaded": 22180
+    },
+    "hostWiredDeltaMiB": {
+      "decoder unloaded": -17011,
+      "encoder open": 1136,
+      "encoder, grid 32x56": -32,
+      "encoder, grid 36x48": 3,
+      "encoder, grid 44x44": 1385,
+      "encoder, grid 48x36": 21,
+      "encoder, grid 56x32": -174,
+      "main, short prompt": 8598,
+      "withImage pass 1, grid 44x44": 8132
+    },
+    "method": "per phase: task_vm_info (resident, internal, external, graphics ledgers), vm_stat host pages (free, wired, file-backed, anonymous, compressed) and footprint -j categories; the host is shared, so host deltas include other processes",
+    "peak": {
+      "hostFreeAtDecoderOpenMiB": 125,
+      "hostWiredAtFirstImageMiB": 25532,
+      "hostWiredBeforeOpenMiB": 9467,
+      "hostWiredDeltaMiB": 16065,
+      "processWiredMiB": {
+        "ioAccelerator": 610,
+        "mappedFile": 16086
+      }
+    },
+    "processFootprintMaxMiB": 2810,
+    "processMappedFileWiredMiB": {
+      "decoder unloaded": 0,
+      "encoder, grid 44x44": 792,
+      "encoder, grid 56x32": 792,
+      "main, short prompt": 8414,
+      "withImage pass 1, grid 44x44": 16086
+    },
+    "report": {
+      "file": "vl-4b-residency-3.json",
+      "sha256": "2d204104932d906110221c4b5e6cf374422d8dffe73111a2febabec8bf8c425a"
+    }
+  },
+  "schema": 2,
+  "testSHA256": {
+    "metal runs (vl-2b.json, vl-4b.json)": "07174412ff4c33c2fbaa09c67feac0c3fd76fc65845abae4922f2d5963ce9f4e",
+    "residency run (vl-4b-residency-3.json)": "8133d303925c14632b7f37ecf2248046ebbd80335b926d91a9aea1c73ff85d0c"
+  }
+}
