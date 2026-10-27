@@ -75,7 +75,7 @@ def main():
     ap.add_argument("--only", choices=["durations", "decoder"], default=None, help="probe a single graph")
     ap.add_argument("--decoder", choices=["bucketed", "plain"], default="bucketed",
                     help="bucketed adds a `frames` input so inputs can be padded to fixed frame buckets")
-    ap.add_argument("--decoder-precision", choices=["float32", "float16", "int8"], default="float32",
+    ap.add_argument("--decoder-precision", choices=["float32", "float16", "float16-storage", "int8"], default="float32",
                     help="decoder conv/linear weights: float16 (with float16 compute) or weight-only int8")
     args = ap.parse_args()
     if args.output.exists():

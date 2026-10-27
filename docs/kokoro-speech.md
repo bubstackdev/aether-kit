@@ -143,6 +143,27 @@ Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.
 - 1.3 s and 2.5 s for the first use of buckets 256 and 1024;
 - 0.12–0.20 s for later unseen lengths (66, 103 and 146 frames) in warmed buckets.
 
+## Reduced-precision decoders
+
+`export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision`:
+
+- `float16`: float16 weights and float16 conv/linear compute;
+- `float16-storage`: float16 weights, widened to float32 for compute;
+- `int8`: weight-only, symmetric, per-channel int8 via coreai-opt.
+
+In all three, the norms, LSTMs, harmonic source and STFT/iSTFT stay float32, and graph inputs and outputs stay float32. **None passes the limits stated before the runs**, so only the float32 decoder ships ([record](evidence/kokoro-precision-2026-10-26.json)).
+
+| Decoder | Size | Accuracy vs upstream (rel. L2 / log-mel mean) | Warm decode, paired (256 / 1024 frames) | Metal after bucket 1024 |
+| --- | ---: | --- | --- | ---: |
+| float32 (shipped) | 236 MiB | 0.008–0.033 / 0.004–0.013, passes | 0.125 / 0.526 s | 5.1 GB |
+| float16-storage | 140 MiB | 0.045–0.415 / 0.017–0.071, fails 2 of 4 cases | 0.131 / 0.531 s | 5.6 GB |
+| int8 | 65 MiB | 0.63–1.37 / 0.076–0.251, fails all cases | 0.125 / 0.527 s | 5.1 GB |
+| float16 compute | 121 MiB | 0.91–1.35 / 0.13–0.24 (CPU-only run), fails all cases | aborts on the GPU | — |
+
+- The float16-compute decoder cannot run on the GPU. MPSGraph places its float16 regions on the Neural Engine, where inference fails with an assertion ([log](evidence/kokoro-precision-fp16-compute-gpu-abort-2026-10-26.log)), and `SpecializationOptions.allowedComputeUnitKinds` is read-only, so the GPU cannot be required. Its accuracy was therefore measured with `cpuOnly`, at about 2.5× real time.
+- Neither weight format changes decode time or run-time memory. Weights are widened to float32 for compute, and activations dominate memory. Per-bucket Metal allocation for each variant is in the record.
+- The cause is the same sensitivity that sets the float32 floor. A 1e-6 relative perturbation of the harmonic source already moves the waveform by 1.5e-4, so weight rounding at about 1e-3 relative error, as in float16, shows up clearly in both metrics.
+
 ## Qualification
 
 Run `Scripts/qualify-kokoro-native.sh BUNDLE REFERENCES NEW_OUTPUT [recommended|preferGPU|automatic|cpuOnly]` under the shared GPU lock. It runs the opt-in `kokoroNativeParityTimingAndLifecycle` test, which is skipped unless `AETHER_NATIVE_KOKORO_QUALIFICATION=1`.
@@ -206,7 +227,7 @@ Core AI exports are not byte-reproducible, so a new export gets new model hashes
 
 ## Next steps
 
-- fp16 or int8 decoder export, with new tolerances and size/RTF measurements; an iOS build and device run.
+- A reduced-precision decoder that passes: for example, float16 storage limited to the large generator convolutions, or quantization-aware calibration against the references.
 - Reduce bucket 2048's Metal allocation, or drop that bucket by capping segment length; consider a fixed-window streaming decoder for long utterances.
 - Retest GPU `durations` and the reshape hint on later OS/coreai-torch releases.
 - A recorded listening review, and a license-clean G2P sample adapter (CMUdict-based), kept outside the SDK targets.

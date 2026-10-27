@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "subject": "Kokoro reduced-precision decoder exports",
+  "date": "2026-10-26",
+  "tolerances_stated_before_runs": "frames exact; waveform rel L2 <= min(0.25, 10x the case's float32-vs-float64 upstream rel L2); log-mel mean <= min(0.08, 5x that case's float32-vs-float64 log-mel mean) (docs/kokoro-speech.md, commit e65544f)",
+  "variants": {
+    "float32": {
+      "decoder_mib": 236.0,
+      "decoder_main_sha256": "6702769d47221e35df1e7371842253c3321f663019f1475b8fc5e123ded0e432",
+      "accuracy": "passes the float32 limits (kokoro-buckets-lean-native-2026-10-26.json)",
+      "memory": {
+        "record": "kokoro-precision-sweep-fp32-2026-10-26.json",
+        "metal_mib_cumulative_after_first_call_in_bucket": {
+          "64": 314,
+          "128": 700,
+          "256": 1310,
+          "512": 2889,
+          "1024": 5149,
+          "2048": 15521
+        },
+        "warm_s_by_bucket": {
+          "64": 0.04,
+          "128": 0.071,
+          "256": 0.13,
+          "512": 0.254,
+          "1024": 0.532,
+          "2048": 1.177
+        }
+      }
+    },
+    "float16 (float16 weights and conv/linear compute)": {
+      "bundle": "~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp16-buckets-2026-10-26 (deleted after recording; re-export with --decoder-precision)",
+      "kokoro_json_sha256": "a34a8655e49f66c30ddd3fa70462e75b5db5758f5e533d01d3609bc82f599228",
+      "decoder_main_sha256": "8b73e2e4257bc6075cf1c760c83bb9b9baec329dd36edfff81fc0a1dbcf42eec",
+      "decoder_mib": 121.5,
+      "gpu": "aborts: MPSGraph places float16 regions on the Neural Engine and ANE inference fails (assertion, Code -19); allowedComputeUnitKinds is read-only, so the GPU cannot be required",
+      "accuracy_cpu_only": {
+        "passed": false,
+        "cases": [
+          {
+            "name": "short-af_heart",
+            "rel_l2": 0.9112,
+            "log_mel_mean": 0.151,
+            "bound_rel_l2": 0.0729,
+            "bound_log_mel": 0.0176,
+            "frames_exact": true,
+            "warm_rtf": 2.545
+          },
+          {
+            "name": "sentence-am_michael",
+            "rel_l2": 1.2111,
+            "log_mel_mean": 0.1696,
+            "bound_rel_l2": 0.25,
+            "bound_log_mel": 0.0484,
+            "frames_exact": true,
+            "warm_rtf": 1.9541
+          },
+          {
+            "name": "speed-bf_emma",
+            "rel_l2": 0.9849,
+            "log_mel_mean": 0.1317,
+            "bound_rel_l2": 0.2154,
+            "bound_log_mel": 0.0298,
+            "frames_exact": true,
+            "warm_rtf": 2.6433
+          },
+          {
+            "name": "long-af_bella",
+            "rel_l2": 1.3478,
+            "log_mel_mean": 0.2385,
+            "bound_rel_l2": 0.2288,
+            "bound_log_mel": 0.0693,
+            "frames_exact": true,
+            "warm_rtf": 2.4375
+          }
+        ],
+        "report": "kokoro-precision-native-fp16-compute-cpu-2026-10-26.json"
+      }
+    },
+    "float16-storage (float16 weights, float32 compute)": {
+      "bundle": "~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp16s-buckets-2026-10-26 (deleted after recording; re-export with --decoder-precision)",
+      "kokoro_json_sha256": "2ef9cb0b4aa6c2c893b74a700fd6905a559ce55d84cdf0606143404e6bfe9ffd",
+      "decoder_main_sha256": "88bf447dd2f0e208145c002b9274968e9dfdb7082869ecc675e41526fb3aa138",
+      "decoder_mib": 140.1,
+      "accuracy": {
+        "passed": false,
+        "cases": [
+          {
+            "name": "short-af_heart",
+            "rel_l2": 0.045,
+            "log_mel_mean": 0.0172,
+            "bound_rel_l2": 0.0729,
+            "bound_log_mel": 0.0176,
+            "frames_exact": true,
+            "warm_rtf": 0.0557
+          },
+          {
+            "name": "sentence-am_michael",
+            "rel_l2": 0.1504,
+            "log_mel_mean": 0.0431,
+            "bound_rel_l2": 0.25,
+            "bound_log_mel": 0.0484,
+            "frames_exact": true,
+            "warm_rtf": 0.0452
+          },
+          {
+            "name": "speed-bf_emma",
+            "rel_l2": 0.2414,
+            "log_mel_mean": 0.0345,
+            "bound_rel_l2": 0.2154,
+            "bound_log_mel": 0.0298,
+            "frames_exact": true,
+            "warm_rtf": 0.0733
+          },
+          {
+            "name": "long-af_bella",
+            "rel_l2": 0.415,
+            "log_mel_mean": 0.0705,
+            "bound_rel_l2": 0.2288,
+            "bound_log_mel": 0.0693,
+            "frames_exact": true,
+            "warm_rtf": 0.0537
+          }
+        ],
+        "report": "kokoro-precision-native-fp16-storage-2026-10-26.json"
+      },
+      "memory": {
+        "record": "kokoro-precision-sweep-fp16-storage-2026-10-26.json",
+        "metal_mib_cumulative_after_first_call_in_bucket": {
+          "64": 415,
+          "128": 892,
+          "256": 1593,
+          "512": 3257,
+          "1024": 5631,
+          "2048": 16113
+        },
+        "warm_s_by_bucket": {
+          "64": 0.046,
+          "128": 0.075,
+          "256": 0.131,
+          "512": 0.265,
+          "1024": 0.544,
+          "2048": 1.191
+        }
+      }
+    },
+    "int8 (weight-only per-channel, float32 compute)": {
+      "bundle": "~/.cache/huggingface/aether-kit/kokoro-82m/coreai-int8-buckets-2026-10-26 (deleted after recording; re-export with --decoder-precision)",
+      "kokoro_json_sha256": "31ceff70b781f97ae99a37c8d2a883422dcf58fedc1f0d0353443b97e57c62a5",
+      "decoder_main_sha256": "e270047347f13e45ea395253ddf18c296cb649b9877aaf3ae84e6ed2e24e33ce",
+      "decoder_mib": 64.9,
+      "accuracy": {
+        "passed": false,
+        "cases": [
+          {
+            "name": "short-af_heart",
+            "rel_l2": 0.6323,
+            "log_mel_mean": 0.076,
+            "bound_rel_l2": 0.0729,
+            "bound_log_mel": 0.0176,
+            "frames_exact": true,
+            "warm_rtf": 0.0442
+          },
+          {
+            "name": "sentence-am_michael",
+            "rel_l2": 1.2276,
+            "log_mel_mean": 0.1166,
+            "bound_rel_l2": 0.25,
+            "bound_log_mel": 0.0484,
+            "frames_exact": true,
+            "warm_rtf": 0.0362
+          },
+          {
+            "name": "speed-bf_emma",
+            "rel_l2": 1.3213,
+            "log_mel_mean": 0.0951,
+            "bound_rel_l2": 0.2154,
+            "bound_log_mel": 0.0298,
+            "frames_exact": true,
+            "warm_rtf": 0.0493
+          },
+          {
+            "name": "long-af_bella",
+            "rel_l2": 1.3749,
+            "log_mel_mean": 0.2511,
+            "bound_rel_l2": 0.2288,
+            "bound_log_mel": 0.0693,
+            "frames_exact": true,
+            "warm_rtf": 0.0402
+          }
+        ],
+        "report": "kokoro-precision-native-int8-2026-10-26.json"
+      },
+      "memory": {
+        "record": "kokoro-precision-sweep-int8-2026-10-26.json",
+        "metal_mib_cumulative_after_first_call_in_bucket": {
+          "64": 314,
+          "128": 700,
+          "256": 1310,
+          "512": 2889,
+          "1024": 5149,
+          "2048": 13498
+        },
+        "warm_s_by_bucket": {
+          "64": 0.04,
+          "128": 0.067,
+          "256": 0.126,
+          "512": 0.244,
+          "1024": 0.506,
+          "2048": 1.141
+        }
+      },
+      "note": "one earlier session run aborted in MPS lowering ('mps.matmul' contracting dimensions 512 vs 1090); the repeat and direct decoder runs completed"
+    }
+  },
+  "paired_timing_median_s": {
+    "shape_256": {
+      "float32": 0.125,
+      "float16-storage": 0.131,
+      "int8": 0.125
+    },
+    "shape_1024": {
+      "float32": 0.526,
+      "float16-storage": 0.531,
+      "int8": 0.527
+    },
+    "note": "weights are widened to float32 for compute, so neither variant changes decode time"
+  },
+  "conclusion": "No reduced-precision decoder passes its stated limits. float16-storage fails 2 of 4 cases (rel L2 up to 0.41, log-mel up to 0.071); int8 and float16 compute fail every case (rel L2 0.6-1.4, log-mel 0.08-0.25). None improves warm speed or run-time memory; the only gain is decoder size (140, 65 and 121 MiB vs 236). float32 stays the only shipped bundle. The model's float32 sensitivity (a 1e-6 source perturbation moves output 1.5e-4) is the reason weight rounding at 1e-3 relative error is audible in waveform metrics.",
+  "gpu_lock_seconds": 513
+}

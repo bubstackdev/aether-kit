@@ -82,7 +82,8 @@ public struct KokoroAssets: Sendable {
     /// takes a `frames` input and each utterance is zero-padded to the smallest bucket that fits, so
     /// the GPU specializes at most once per bucket. Empty for bundles exported without buckets.
     public let decoderBuckets: [Int]
-    /// Decoder weight storage: `float32`, `float16` (with float16 conv/linear compute) or weight-only `int8`.
+    /// Decoder weights: `float32`, `float16` (float16 conv/linear compute), `float16-storage` (float16 weights,
+    /// float32 compute) or weight-only `int8`.
     /// Graph inputs and outputs are float32 for every precision.
     public let decoderPrecision: String
     public let source: Source
@@ -264,7 +265,7 @@ private struct Contract: Decodable {
               sampleRate == KokoroAssets.sampleRate, samplesPerFrame == KokoroAssets.samplesPerFrame,
               harmonics == KokoroAssets.harmonics, maximumPhonemes == KokoroPhonemes.maximumCount,
               (2...65_536).contains(maximumFrames), styleDimension == KokoroVoiceStyles.dimension,
-              ["float32", "float16", "int8"].contains(decoderPrecision ?? "float32"),
+              ["float32", "float16", "float16-storage", "int8"].contains(decoderPrecision ?? "float32"),
               decoderBuckets.map({ b in !b.isEmpty && b.count <= 32 && b.first! >= 2 && b.last == maximumFrames
                   && zip(b, b.dropFirst()).allSatisfy { $0 < $1 } }) ?? true,
               boundaryToken == Int(KokoroVocabulary.boundaryToken), source.repository == "hexgrad/Kokoro-82M",

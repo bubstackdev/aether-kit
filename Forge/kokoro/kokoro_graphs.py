@@ -554,6 +554,27 @@ class HalfCompute(nn.Module):
         return self.inner(x.half()).float()
 
 
+class HalfStorage(nn.Module):
+    """A conv/linear whose weights are stored as float16 and widened to float32 for compute."""
+
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.kind = type(module).__name__
+        self.register_buffer("weight16", module.weight.detach().half())
+        self.register_buffer("bias", None if module.bias is None else module.bias.detach().float())
+        for name in ("stride", "padding", "dilation", "groups", "output_padding"):
+            if hasattr(module, name):
+                setattr(self, name, getattr(module, name))
+
+    def forward(self, x):
+        w = self.weight16.float()
+        if self.kind == "Conv1d":
+            return F.conv1d(x, w, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        if self.kind == "ConvTranspose1d":
+            return F.conv_transpose1d(x, w, self.bias, self.stride, self.padding, self.output_padding, self.groups, self.dilation)
+        return F.linear(x, w, self.bias)
+
+
 _REDUCIBLE = (nn.Conv1d, nn.ConvTranspose1d, nn.Linear)
 
 
@@ -573,6 +594,7 @@ def _reducible_children(graph: nn.Module):
 
 def reduce_decoder_precision(graph: nn.Module, precision: str, example_inputs: tuple):
     """float16: conv/linear weights and compute in float16; norms, LSTM, source, STFT/iSTFT stay float32.
+    float16-storage: conv/linear weights stored as float16 and widened to float32 for compute.
     int8: weight-only symmetric per-channel int8 for conv/linear (coreai-opt), compute float32.
     Graph inputs and outputs stay float32, so the Swift contract is unchanged."""
     if precision == "float32":
@@ -581,6 +603,10 @@ def reduce_decoder_precision(graph: nn.Module, precision: str, example_inputs: t
     if precision == "float16":
         for parent, name, child, _ in targets:
             setattr(parent, name, HalfCompute(child))
+        return graph
+    if precision == "float16-storage":
+        for parent, name, child, _ in targets:
+            setattr(parent, name, HalfStorage(child))
         return graph
     if precision == "int8":
         import re

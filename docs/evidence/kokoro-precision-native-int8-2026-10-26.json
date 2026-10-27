@@ -1,0 +1,259 @@
+{
+  "bundleFingerprint" : "31ceff70b781f97ae99a37c8d2a883422dcf58fedc1f0d0353443b97e57c62a5",
+  "bundleVerified" : true,
+  "cases" : [
+    {
+      "audioSHA256" : "859f1679c936e0d56642011aac470a51e0d707d02f721e62862f9357bbadd6d5",
+      "audioSeconds" : 2.45,
+      "decoderFrames" : 128,
+      "firstSynthesisSeconds" : 3.00955775,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24334838505555467,
+        "log_mel_mean_abs" : 0.003512241264556211,
+        "max_abs" : 0.006678957148440492,
+        "rel_l2" : 0.007292234085535701,
+        "snr_db" : 42.74278797306552
+      },
+      "footprintMiBAfter" : 634.6272430419922,
+      "framesMatch" : true,
+      "metalMiBAfter" : 401.421875,
+      "name" : "short-af_heart",
+      "native" : {
+        "log_mel_max_abs" : 2.6765628148667826,
+        "log_mel_mean_abs" : 0.07599741283438267,
+        "max_abs" : 0.3244868740439415,
+        "rel_l2" : 0.6323197734966761,
+        "snr_db" : 3.9812647399424583
+      },
+      "passed" : false,
+      "phonemeCount" : 29,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522321048234,
+        "log_mel_mean_abs" : 6.255074787703969e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.00014539690593281068,
+        "snr_db" : 76.74889670456085
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522320848394,
+        "log_mel_mean_abs" : 6.255074787702922e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.000145396905932807,
+        "snr_db" : 76.74889670456108
+      },
+      "tokensMatch" : true,
+      "voice" : "af_heart",
+      "warmRealTimeFactor" : 0.04424384367346938,
+      "warmSynthesisSeconds" : 0.108397417
+    },
+    {
+      "audioSHA256" : "1778ea1a7517389bc2b11a5c655cca0cc8c4613a9a7467222c69e8f8f75fe7b3",
+      "audioSeconds" : 6.175,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 2.92907475,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24576312898540253,
+        "log_mel_mean_abs" : 0.009674276652978991,
+        "max_abs" : 0.019450740779215894,
+        "rel_l2" : 0.025312769690085935,
+        "snr_db" : 31.933206646174497
+      },
+      "footprintMiBAfter" : 785.3620986938477,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1011.34375,
+      "name" : "sentence-am_michael",
+      "native" : {
+        "log_mel_max_abs" : 2.177603605499014,
+        "log_mel_mean_abs" : 0.1166255557191006,
+        "max_abs" : 0.4762074500322342,
+        "rel_l2" : 1.227580237462363,
+        "snr_db" : -1.7809977641411254
+      },
+      "passed" : false,
+      "phonemeCount" : 89,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.029485985679192694,
+        "log_mel_mean_abs" : 5.6795730316948254e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564733113,
+        "snr_db" : 74.54028282538422
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.02948598567919314,
+        "log_mel_mean_abs" : 5.6795730316928996e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564732308,
+        "snr_db" : 74.5402828253846
+      },
+      "tokensMatch" : true,
+      "voice" : "am_michael",
+      "warmRealTimeFactor" : 0.036218070283400815,
+      "warmSynthesisSeconds" : 0.223646584
+    },
+    {
+      "audioSHA256" : "d907c75fa4049fcad507bb6ed2a4713b37c6c0712fc0d7fc20be13e67894f26c",
+      "audioSeconds" : 4.5,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 0.227184917,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.18049163423601255,
+        "log_mel_mean_abs" : 0.005954439999561048,
+        "max_abs" : 0.04953707827592006,
+        "rel_l2" : 0.0215376501079146,
+        "snr_db" : 33.33603365385049
+      },
+      "footprintMiBAfter" : 792.8152465820312,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1011.34375,
+      "name" : "speed-bf_emma",
+      "native" : {
+        "log_mel_max_abs" : 2.0809732771675398,
+        "log_mel_mean_abs" : 0.0951130607411284,
+        "max_abs" : 0.8183221817016602,
+        "rel_l2" : 1.3213000343965997,
+        "snr_db" : -2.4200289259072902
+      },
+      "passed" : false,
+      "phonemeCount" : 78,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478036095,
+        "log_mel_mean_abs" : 8.43060265519897e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.19087982465899e-06,
+        "snr_db" : 102.86435938394794
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478977564,
+        "log_mel_mean_abs" : 8.43060265522708e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.190879824658948e-06,
+        "snr_db" : 102.86435938394797
+      },
+      "tokensMatch" : true,
+      "voice" : "bf_emma",
+      "warmRealTimeFactor" : 0.04925168511111111,
+      "warmSynthesisSeconds" : 0.221632583
+    },
+    {
+      "audioSHA256" : "c9dc9bd813e15737128af638022170c8fec293f6c5a6d99919a6f2e5787c72ac",
+      "audioSeconds" : 22.825,
+      "decoderFrames" : 1024,
+      "firstSynthesisSeconds" : 3.848915458,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.8828283406266391,
+        "log_mel_mean_abs" : 0.013856211500365754,
+        "max_abs" : 0.04082368257079569,
+        "rel_l2" : 0.022876218044047412,
+        "snr_db" : 32.81231545279292
+      },
+      "footprintMiBAfter" : 3763.847412109375,
+      "framesMatch" : true,
+      "metalMiBAfter" : 4138.28125,
+      "name" : "long-af_bella",
+      "native" : {
+        "log_mel_max_abs" : 4.000154082695038,
+        "log_mel_mean_abs" : 0.2510944421071075,
+        "max_abs" : 0.6806253641843796,
+        "rel_l2" : 1.3749129052000173,
+        "snr_db" : -2.765503767121581
+      },
+      "passed" : false,
+      "phonemeCount" : 335,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378795409,
+        "log_mel_mean_abs" : 0.00012779412385802201,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.000728168349763995,
+        "snr_db" : 62.75536403678558
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378796297,
+        "log_mel_mean_abs" : 0.00012779412385808533,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.0007281683497638353,
+        "snr_db" : 62.75536403678749
+      },
+      "tokensMatch" : true,
+      "voice" : "af_bella",
+      "warmRealTimeFactor" : 0.040222154085432636,
+      "warmSynthesisSeconds" : 0.918070667
+    }
+  ],
+  "compute" : "durations=cpuOnly decoder=preferGPU",
+  "decoderBuckets" : [
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "decoderPrecision" : "int8",
+  "failures" : [
+    "short-af_heart: waveform rel L2 0.6323197734966761 exceeds 0.07292234085535701",
+    "short-af_heart: log-mel mean 0.07599741283438267 exceeds 0.017561206322781055",
+    "sentence-am_michael: waveform rel L2 1.227580237462363 exceeds 0.25",
+    "sentence-am_michael: log-mel mean 0.1166255557191006 exceeds 0.04837138326489496",
+    "speed-bf_emma: waveform rel L2 1.3213000343965997 exceeds 0.215376501079146",
+    "speed-bf_emma: log-mel mean 0.0951130607411284 exceeds 0.02977219999780524",
+    "long-af_bella: waveform rel L2 1.3749129052000173 exceeds 0.2287621804404741",
+    "long-af_bella: log-mel mean 0.2510944421071075 exceeds 0.06928105750182877"
+  ],
+  "host" : {
+    "activeProcessors" : "18",
+    "memoryGiB" : "64",
+    "model" : "Mac17,6",
+    "os" : "Version 27.0.1 (Build 26A434)"
+  },
+  "lifecycle" : {
+    "activeCompletedAfterUnload" : true,
+    "activeMatchesBaseline" : true,
+    "cancellationError" : "CancellationError",
+    "recoveryMatchesBaseline" : true,
+    "rejectedAfterUnload" : true,
+    "stateAfterCancellation" : "ready",
+    "unloadClosedWhileActive" : true
+  },
+  "loadAndVerifySeconds" : 0.065873292,
+  "memoryMiB" : {
+    "footprintAfterUnload" : 2172.626579284668,
+    "footprintBeforeUnload" : 3767.753662109375,
+    "metalAfterUnload" : 2095.8125,
+    "metalBeforeUnload" : 4138.28125
+  },
+  "novelShapes" : [
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.112518875,
+      "frames" : 66,
+      "phonemes" : 13,
+      "repeatSeconds" : 0.09662775
+    },
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.125623417,
+      "frames" : 103,
+      "phonemes" : 35,
+      "repeatSeconds" : 0.12111125
+    },
+    {
+      "decoderFrames" : 256,
+      "firstSeconds" : 0.199151584,
+      "frames" : 146,
+      "phonemes" : 54,
+      "repeatSeconds" : 0.211000209
+    }
+  ],
+  "passed" : false,
+  "references" : "b99c1e45a4a84f892cbe964f325733db039caa894496872a1a0465c56105871a",
+  "tolerances" : {
+    "maximumLogMelMean" : 0.03,
+    "maximumRelativeL2" : 0.05,
+    "precisionFloorMultiple" : 4
+  }
+}
