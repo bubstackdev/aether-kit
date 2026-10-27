@@ -1,7 +1,8 @@
 # Qwen3-VL image input (experimental)
 
 Image + text prompts to the language runtime with `Qwen/Qwen3-VL-2B-Instruct`
-(Apache-2.0, not gated; pinned revision `89644892e4d85e24eaac8bacfd4f463576704203`). The
+(Apache-2.0, not gated; pinned revision `89644892e4d85e24eaac8bacfd4f463576704203`), and with the
+4B describer `huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated` ([below](#qwen3-vl-4b-describer)). The
 design follows the verified aether-engine prototype (`docs/spec/11-vision.md` Part A);
 every piece is re-implemented here and qualified against upstream Transformers.
 
@@ -9,13 +10,17 @@ every piece is re-implemented here and qualified against upstream Transformers.
 
 ```swift
 import AetherLanguageCoreAI
+import AetherLanguageTokenizers
 import AetherVision
 
 let session = try await VisionLanguageSession.open(bundle: bundleURL, platform: .macos)
 let photo = try VisionRGBImage(contentsOf: photoURL)          // or VisionRGBImage(cgImage:)
-// The consumer renders the chat template, with one <|vision_start|><|image_pad|><|vision_end|>
-// placeholder per image, and tokenizes it (tokenization stays the consumer's).
-let reply = try await session.generate(renderedTokenIDs: promptIDs, images: [photo], maximumTokens: 256)
+// The chat template renders one <|vision_start|><|image_pad|><|vision_end|> placeholder per image;
+// AetherLanguageTokenizers renders and tokenizes it from the bundle's own tokenizer files.
+let tokenizer = try await LanguageTokenizer.open(bundle: bundleURL)
+let prompt = try tokenizer.render([.user("Describe her look in one line.", images: 1)])
+let reply = try await session.generate(renderedTokenIDs: prompt.tokenIDs, images: [photo], maximumTokens: 256)
+let text = tokenizer.decode(reply.tokens)
 await session.unload()
 ```
 
@@ -93,7 +98,11 @@ within the pixel bounds, identical to the reference for 46 sizes). Then antialia
 PIL-style coefficients; within one level of torchvision's uint8 path, ≥ 95 % identical bytes),
 (x/255 − 0.5)/0.5, the frame repeated twice, merge-window patchify. Decoding uses ImageIO,
 applies EXIF orientation, and draws in the image's own RGB colour space (no colour management,
-like the reference's PIL decoding). EXIF orientation is applied **before** grid snapping, so a
+like the reference's PIL decoding); grayscale expands to equal channels. Alpha is composited over
+black, where the reference's `convert("RGB")` drops alpha and keeps the stored colour, so
+transparent regions differ (opaque images are unaffected). `VisionRGBImageTests` checks channel
+order, colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
+EXIF orientation is applied **before** grid snapping, so a
 rotated portrait snaps by its displayed aspect ratio. Parity is not exercised for rotated photos:
 every reference photo carries orientation 1 (or none), and the reference decodes without an EXIF
 transpose.
@@ -186,12 +195,91 @@ prompt and prefix ("in" 0.457, "cut" 0.403, gap 0.054; Kit's token is upstream's
 then diverges at a reference near-tie (top-1/top-2 probability gap 0.066): Kit answers "likely
 taken in **India**, specifically in a bustling **local market**", upstream "likely taken in
 **Mumbai, India**". The pixels differ slightly because a different JPEG decoder and resampler
-produce them, which is expected and recorded rather than hidden.
+produce them, which is expected and recorded rather than hidden. (For the 4B the decoder difference
+is larger than this band, so its end-to-end gate compares against upstream fed Kit's own decode, and
+an independent-decode run like this one gates only decoder sanity (equal grids, pixel cosine ≥ 0.999)
+and reports its logits and tokens; see [below](#qwen3-vl-4b-describer). This 2B record predates that
+change.)
 
 **Public API.** `VisionLanguageSession.open(bundle:)` on the registered bundle reproduces the
 component-level Kit run token for token on all five cases, and closes on `unload()`.
 
+## Qwen3-VL-4B describer
+
+`huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated` (Apache-2.0, not gated; pinned revision
+`ce72a7c22aacb493fb94478de3bfbe834c61844a`; base model `Qwen/Qwen3-VL-4B-Instruct`, recorded as
+`baseModel`), Atelier's character describer. It is the 2B's architecture at a larger width (text:
+2,560 hidden, 36 layers, 32/8 heads; vision: 24 blocks projecting to 2,560, DeepStack at blocks 5,
+11, 17), so the same exporters, preprocessing, five grids and session serve it with no Kit code
+changes. Evidence: [encoder](evidence/qwen3-vl-4b-vision-encoder-2026-10-26.json) and
+[image + text](evidence/qwen3-vl-4b-image-text-2026-10-26.json); M5 Max (`h17c`), release, shared host.
+
+**Bundle.** Vision asset 0.83 GB, five static functions emitting `[n/4, 2560]` (CPU self-check
+cosine 1.0); text decoder 8.05 GB fp16 (self-check: `withImage` 0.99891, `main` ≥ 0.99993, argmax
+equal). The fine-tune keeps its chat template in `chat_template.jinja`, which the text exporter now
+copies with the token maps and licence; the registration lists all of them in `tokenizerFiles`.
+
+**Encoder.** Parity per grid against upstream's vision model: worst cosine 0.99999995 for the image
+embeddings and every DeepStack level. Stability: the portrait resized to every grid, 200 encodes per
+grid in each of three processes (600 per grid), every encode bit-identical to that grid's first and
+the same first output in every process; 0.22–0.27 s per encode. Footprint about 1.1 GB after open,
+1.7–1.8 GB with all grids warmed.
+
+**Why the end-to-end gate uses Kit's decode.** The first end-to-end run, on the JPEG files, failed
+the 0.98 band on the 4:3 market photo (forced-row cosine 0.9706, greedy diverging at token 6 at a
+confident reference row, margin 0.625): upstream answers "likely taken in **Chandni Chowk**", Kit
+"likely taken in a **local market or bazaar in a South Asian country**". The cause is the JPEG
+decoder, not Kit: the upstream processor applied to an ImageIO decode of that photo gives pixel
+cosine 0.9999015 against the reference, Kit's whole path 0.9999019, and a PIL decode 1.0000001.
+ImageIO and PIL's libjpeg-turbo agree on 74–80 % of bytes and differ by up to 46 levels, and the
+4B moves further on that difference than the 2B did: it can name a different place for the same photo. So the gated run gives upstream the decode Kit sees: each photo's
+`VisionRGBImage` decode saved as a lossless PNG without a colour profile
+(`Scripts/write-kit-decoded-photos.swift`, round trip byte-identical; hashes and per-photo byte
+comparison with PIL's decode recorded under `decodedPhotos`), referenced with
+`reference_qwen3_vl.py --grids` as before, and `qwen3VLImageTextQualification` with
+`AETHER_QWEN3VL_PREPROCESS=swift AETHER_QWEN3VL_INPUTS=same-decode`. Only Kit's resampler then
+differs from upstream, and the run must meet the model-parity bar. Upstream fed Kit's decode gives
+exactly Kit's 48 market-photo tokens. The JPEG-file run stays in the evidence
+(`kit-independent-decode`), gated on decoder sanity: equal grids and pixel cosine ≥ 0.999 against
+the reference processor, which a swapped channel or a lost orientation fails. Its logits and tokens
+are reported (`logitsWithinDecoderBand`), not gated.
+
+**Results** (gates as in the 2B qualification above, with the end-to-end gate now: equal grids,
+pixel cosine ≥ 0.9999, then the model-parity rule):
+
+| Run | Gated | Result |
+| --- | --- | --- |
+| Model parity, Kit-decoded reference | yes | forced-row cosine ≥ 0.99993, no argmax differences, greedy identical on all five |
+| Model parity, PIL-decoded reference | yes | forced-row cosine ≥ 0.99995, no argmax differences, greedy identical on all five |
+| Kit end to end, same decode | yes | pixel cosine ≥ 0.9999996 (photos), forced-row ≥ 0.99989, greedy identical on all five |
+| Public session (`VisionLanguageSession.open(bundle:)`) | yes | token for token with the Kit run, closes on unload; `tokenizerFiles` verified; `LanguageTokenizer.render([.user(question, images: 1)])` equals each reference prompt |
+| Kit end to end, independent decode (JPEG files) | decoder sanity only | grids equal, pixel cosine ≥ 0.99990; reported: portrait, stall and scenes greedy identical, market photo diverges as above |
+
+**Memory** (public session, five cases in one process; footprint / Metal allocated):
+
+| Phase | Footprint | Metal |
+| --- | --- | --- |
+| Before open | 57 MiB | 0 |
+| After open | 1.2 GiB | 1.0 GiB |
+| After the first request (portrait) | 2.0 GiB | 19.0 GiB |
+| After all five requests | 3.0–3.3 GiB | 22.3 GiB |
+| After unload | 656 MiB | 495 MiB |
+
+Metal grows with the first image request to about 19 GiB, then by about 1 GiB per newly used grid
+or prompt size, against 8.4 GiB for the dense 4B writer with the same decoder width. See the limits.
+
 ## Limits and follow-ups
+
+- **4B decoder memory.** The VL-4B session holds about 19–22 GiB of Metal allocations after
+  image requests, more than twice the dense 4B writer (8.4 GiB). Not yet attributed; the likely
+  cause is the runtime keeping weights per function (`main` and `withImage`) as conversion does
+  (see the text export note below). Measure per phase (encoder only, text-only `main`, first
+  `withImage`) before sharing weights across the two functions in the export.
+- **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
+  (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
+  model says about a photo; the 4B named a different place for the market photo. The model is
+  qualified on identical decodes; the decoder difference is measured, not removed. Images with
+  transparency also differ: Kit composites alpha over black, PIL drops it.
 
 - **Aspect ratio is stretched to the nearest grid.** No padding: an image between two grids is
   stretched by up to about 15 %, and panoramas or tall strips beyond 16:9 more. More grids (for
@@ -201,3 +289,8 @@ component-level Kit run token for token on all five cases, and closes on `unload
   but only single-image prompts are qualified), iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
 - The encoder stays loaded for the session's lifetime.
+- **Text export memory (0.0.3).** `export_qwen3_vl_text.py` converts `main` and `withImage` as two programs over the
+  same fp16 weights, and conversion holds weights per program on top of the eager module: the 4B text tower passes
+  35 GB of RSS during conversion (it was exported on a 64 GB host with a 45 GB guard). Share the weights across the
+  two functions in conversion, or free the eager module before converting, before exporting larger towers or on
+  smaller hosts.

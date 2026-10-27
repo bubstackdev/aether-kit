@@ -21,6 +21,7 @@ Outputs under the new `--output` directory: `reference.json`, and per case `<nam
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -57,6 +58,8 @@ def main() -> None:
     parser.add_argument("--case", action="append", required=True, metavar="NAME=IMAGE::QUESTION",
                         help="a case: name, image path and question")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--license", required=True, help="the checkpoint's model-card licence, e.g. apache-2.0")
+    parser.add_argument("--base-model", help="the upstream model a fine-tune derives from")
     parser.add_argument("--greedy-tokens", type=int, default=48)
     parser.add_argument("--forced-tokens", type=int, default=32)
     parser.add_argument("--max-pixels", type=int, default=None,
@@ -79,17 +82,11 @@ def main() -> None:
         processor.image_processor.max_pixels = args.max_pixels
     model = Qwen3VLForConditionalGeneration.from_pretrained(args.checkpoint, torch_dtype=torch.float32).eval()
     image_token, merge = int(config["image_token_id"]), int(config["vision_config"]["spatial_merge_size"])
-    vision = Qwen3VLVision(dict(config["vision_config"]))
-    load_vision(vision, args.checkpoint)
-    vision = vision.float().eval()
-    text_cfg = dict(config["text_config"])
-    text_cfg["tie_word_embeddings"] = bool(config.get("tie_word_embeddings", text_cfg.get("tie_word_embeddings")))
-    text = Qwen3VLText(text_cfg, image_token, len(config["vision_config"]["deepstack_visual_indexes"]))
-    load_text(text, args.checkpoint)
-    text = text.float().eval()
 
+    # Two passes, so the float32 upstream model and the float32 eager port are never resident together (at 4B the
+    # pair needs about 36 GB): upstream for every case first, then the port on the same inputs.
     args.output.mkdir(parents=True)
-    cases = []
+    cases, pending = [], []
     for spec in args.case:
         name, rest = spec.split("=", 1)
         image_path, question = rest.split("::", 1)
@@ -123,7 +120,20 @@ def main() -> None:
             logits = model(**full).logits[0].double().numpy()
             reference_rows = logits[len(ids) - 1:len(ids) + len(forced) - 1]
             rope_ref, _ = model.model.get_rope_index(full["input_ids"], inputs["image_grid_thw"])
+        pending.append((name, question, copied, image.size, ids, grid, pixels, greedy, forced, reference_rows, rope_ref))
+    del model
+    gc.collect()
 
+    vision = Qwen3VLVision(dict(config["vision_config"]))
+    load_vision(vision, args.checkpoint)
+    vision = vision.float().eval()
+    text_cfg = dict(config["text_config"])
+    text_cfg["tie_word_embeddings"] = bool(config.get("tie_word_embeddings", text_cfg.get("tie_word_embeddings")))
+    text = Qwen3VLText(text_cfg, image_token, len(config["vision_config"]["deepstack_visual_indexes"]))
+    load_text(text, args.checkpoint)
+    text = text.float().eval()
+    for name, question, copied, image_size, ids, grid, pixels, greedy, forced, reference_rows, rope_ref in pending:
+        with torch.no_grad():
             # Eager port: vision tower, then withImage prefill and main forced decode with host M-RoPE positions.
             rope_host = np.array(mrope_positions(ids + forced, [tuple(grid)], image_token, merge), dtype=np.int64).T
             positions_match = bool(np.array_equal(rope_host, rope_ref[:, 0].numpy()))
@@ -145,7 +155,7 @@ def main() -> None:
         reference_rows.astype("<f4").tofile(logits_path)
         cases.append({
             "name": name, "question": question, "image": {"file": copied.name, "sha256": sha256(copied),
-                                                          "size": list(image.size)},
+                                                          "size": list(image_size)},
             "promptTokens": ids, "grid": grid, "imageTokens": int(np.prod(grid) // merge ** 2),
             "ropePositions": rope_ref[:, 0, :len(ids)].tolist(),
             "greedyTokens": greedy, "greedyText": processor.decode(greedy), "forcedTokens": forced,
@@ -162,7 +172,8 @@ def main() -> None:
     record = {
         "schema": 1, "kind": "qwen3-vl-cpu-reference",
         "oracle": "transformers Qwen3VLForConditionalGeneration + AutoProcessor (fast image processor), float32, CPU",
-        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": "apache-2.0"},
+        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": args.license,
+                   **({"baseModel": args.base_model} if args.base_model else {})},
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "transformers", "torchvision", "pillow")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},

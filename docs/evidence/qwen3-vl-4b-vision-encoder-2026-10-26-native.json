@@ -1,0 +1,121 @@
+{
+  "device" : "h17c",
+  "footprint" : [
+    {
+      "bytes" : 14271184,
+      "phase" : "before open"
+    },
+    {
+      "bytes" : 1163413112,
+      "phase" : "after open"
+    },
+    {
+      "bytes" : 1900922896,
+      "phase" : "all grids warmed"
+    },
+    {
+      "bytes" : 964953432,
+      "phase" : "after unload"
+    }
+  ],
+  "gate" : "per fixed grid: imageEmbeds and every DeepStack level cosine >= 0.999 vs the float32 upstream reference on the same pixels; every registered grid covered",
+  "grids" : [
+    "encode_44x44",
+    "encode_36x48",
+    "encode_48x36",
+    "encode_32x56",
+    "encode_56x32"
+  ],
+  "hostLoad" : "Shared host; encode timings are single observations, not benchmark records",
+  "modelFileSHA256" : "52128c9c75254bb4dea33bd0acd4b4187870fbf6a07098c10cbd1d0bd2c9d4e0",
+  "passed" : true,
+  "referenceSHA256" : "cd2b7d9c7cd06e7be4a9dd90112b1c838381ca97322d3c8e54b6c5c9d813b250",
+  "results" : [
+    {
+      "deepstackCosine" : [
+        0.9999999780867146,
+        0.999999976685998,
+        0.9999999679711357
+      ],
+      "firstEncodeSeconds" : 0.271376375,
+      "function" : "encode_44x44",
+      "grid" : [
+        1,
+        44,
+        44
+      ],
+      "image" : "scene-704x704",
+      "imageEmbedsCosine" : 0.9999999539356472,
+      "repeatEncodeSeconds" : 0.25190775
+    },
+    {
+      "deepstackCosine" : [
+        0.9999999778627415,
+        0.9999999770226239,
+        0.9999999677286708
+      ],
+      "firstEncodeSeconds" : 0.223579209,
+      "function" : "encode_36x48",
+      "grid" : [
+        1,
+        36,
+        48
+      ],
+      "image" : "scene-768x576",
+      "imageEmbedsCosine" : 0.999999955318349,
+      "repeatEncodeSeconds" : 0.220533875
+    },
+    {
+      "deepstackCosine" : [
+        0.9999999783736114,
+        0.9999999774994877,
+        0.9999999716494349
+      ],
+      "firstEncodeSeconds" : 0.228805292,
+      "function" : "encode_48x36",
+      "grid" : [
+        1,
+        48,
+        36
+      ],
+      "image" : "scene-576x768",
+      "imageEmbedsCosine" : 0.9999999662361113,
+      "repeatEncodeSeconds" : 0.218839958
+    },
+    {
+      "deepstackCosine" : [
+        0.9999999779236157,
+        0.9999999770401732,
+        0.9999999671843387
+      ],
+      "firstEncodeSeconds" : 0.227773875,
+      "function" : "encode_32x56",
+      "grid" : [
+        1,
+        32,
+        56
+      ],
+      "image" : "scene-896x512",
+      "imageEmbedsCosine" : 0.9999999575404072,
+      "repeatEncodeSeconds" : 0.226513208
+    },
+    {
+      "deepstackCosine" : [
+        0.9999999781648986,
+        0.9999999775893379,
+        0.9999999678820807
+      ],
+      "firstEncodeSeconds" : 0.230896291,
+      "function" : "encode_56x32",
+      "grid" : [
+        1,
+        56,
+        32
+      ],
+      "image" : "scene-512x896",
+      "imageEmbedsCosine" : 0.9999999630244109,
+      "repeatEncodeSeconds" : 0.228698667
+    }
+  ],
+  "stage" : "complete"
+}

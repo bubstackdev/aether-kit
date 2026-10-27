@@ -165,8 +165,11 @@ def main() -> None:
     check = self_check(asset, text, vision, args.self_check_reference)
     tok = args.output / "tokenizer"
     tok.mkdir()
+    # The chat template travels with the tokenizer whichever file holds it (fine-tunes often ship chat_template.jinja
+    # instead of .json), as in the dense exporter: AetherLanguageTokenizers renders with the model's own template.
     for name in ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "chat_template.json",
-                 "preprocessor_config.json", "generation_config.json", "config.json"):
+                 "chat_template.jinja", "added_tokens.json", "special_tokens_map.json",
+                 "preprocessor_config.json", "generation_config.json", "config.json", "LICENSE"):
         if (args.checkpoint / name).exists():
             shutil.copyfile(args.checkpoint / name, tok / name)
     report = {

@@ -52,6 +52,7 @@ def main() -> None:
     parser.add_argument("--platform", choices=("macos", "ios"), required=True)
     parser.add_argument("--maximum-context-length", type=int, default=4096)
     parser.add_argument("--maximum-image-tokens", type=int, default=512)
+    parser.add_argument("--base-model", help="provenance: the upstream model a fine-tune derives from")
     args = parser.parse_args()
     b = args.bundle
     report = json.loads((b / "export-report.json").read_text())
@@ -101,6 +102,8 @@ def main() -> None:
             "imageGrids": grids,
         },
     }
+    if args.base_model:
+        manifest["baseModel"] = args.base_model
     (b / "language-model.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({k: manifest[k] for k in ("modelSHA256", "stopTokenIDs", "exportBounds")}))
 

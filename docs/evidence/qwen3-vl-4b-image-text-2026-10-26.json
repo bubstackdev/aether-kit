@@ -1,0 +1,1400 @@
+{
+  "schema": 2,
+  "kind": "qwen3-vl-image-text-qualification",
+  "passed": true,
+  "model": {
+    "repository": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+    "revision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+    "license": "apache-2.0",
+    "gated": false,
+    "baseModel": "Qwen/Qwen3-VL-4B-Instruct"
+  },
+  "bundle": {
+    "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-vl-4b-abliterated-bundle-macos",
+    "manifestSHA256": "c73f2a80eae71eb2c958642bc5bdf7af84fe804f7e90461cef6390d40ca3c961",
+    "manifest": {
+      "schemaVersion": 1,
+      "modelDirectory": "model.aimodel",
+      "tokenizerDirectory": "tokenizer",
+      "sourceRepository": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+      "sourceRevision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+      "modelSHA256": "ed20cc2f0b1aa94d3eb4f64e84abda2e65ec8b3d8e614f45d8ba4c008b847c78",
+      "tokenizerSHA256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizerFiles": {
+        "added_tokens.json": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+        "chat_template.jinja": "3636d0f0bd6bef02654cdffdc447b79cb2cef8ab02cc75267345946291a489e4",
+        "config.json": "3d3fd7a91d2399f1ee98d64b142d18d698237fa73f84b97be3f75553e900885c",
+        "generation_config.json": "4d9818c3d27895c0058828a5f68bc7a4de80c3ae1bcdac90936ce24178063f59",
+        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+        "preprocessor_config.json": "93585062a80db5e8ca038efc7726a3e6411d9db948472d81d63c6303993be8c5",
+        "special_tokens_map.json": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "tokenizer_config.json": "81ec7bb9530159b326c0bef1d0b6c33d392090524014ea3f0123a3c1eb9c2af5",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      "maximumContextLength": 4096,
+      "stopTokenIDs": [
+        151643,
+        151645
+      ],
+      "platform": "macos",
+      "quantization": "fp16",
+      "exportBounds": {
+        "maximumPrefillChunk": 512,
+        "maximumCacheCapacity": 16384,
+        "maximumImageChunk": 2048
+      },
+      "vision": {
+        "modelDirectory": "vision.aimodel",
+        "modelSHA256": "52128c9c75254bb4dea33bd0acd4b4187870fbf6a07098c10cbd1d0bd2c9d4e0",
+        "imageTokenID": 151655,
+        "visionStartTokenID": 151652,
+        "visionEndTokenID": 151653,
+        "patchSize": 16,
+        "mergeSize": 2,
+        "temporalPatchSize": 2,
+        "minimumPixels": 65536,
+        "maximumPixels": 16777216,
+        "imageMean": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "imageStandardDeviation": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "positionTableSide": 48,
+        "maximumImageTokens": 512,
+        "imageGrids": [
+          {
+            "height": 44,
+            "width": 44
+          },
+          {
+            "height": 36,
+            "width": 48
+          },
+          {
+            "height": 48,
+            "width": 36
+          },
+          {
+            "height": 32,
+            "width": 56
+          },
+          {
+            "height": 56,
+            "width": 32
+          }
+        ]
+      },
+      "baseModel": "Qwen/Qwen3-VL-4B-Instruct"
+    },
+    "textExport": {
+      "recipe": "qwen3-vl-text-bucketed-mrope-v1",
+      "versions": {
+        "torch": "2.11.0",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2"
+      },
+      "selfCheck": {
+        "passed": true,
+        "case": "photo-dog-portrait",
+        "promptTokens": 449,
+        "imageTokens": 432,
+        "bar": "cosine >= 0.99 (engine fp16 bar), argmax equal, no lost cache rows",
+        "steps": [
+          {
+            "step": 0,
+            "function": "withImage",
+            "tokens": 449,
+            "cosine": 0.998908,
+            "argmaxEqual": true,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 1,
+            "function": "main",
+            "tokens": 1,
+            "cosine": 0.999953,
+            "argmaxEqual": true,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 2,
+            "function": "main",
+            "tokens": 1,
+            "cosine": 0.999959,
+            "argmaxEqual": true,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 3,
+            "function": "main",
+            "tokens": 1,
+            "cosine": 0.999929,
+            "argmaxEqual": true,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 4,
+            "function": "main",
+            "tokens": 1,
+            "cosine": 0.999984,
+            "argmaxEqual": true,
+            "lostCacheRows": 0
+          }
+        ]
+      },
+      "modelFiles": {
+        "main.hash": "93f040afe652886b9e931a8361acd4eac2ceca439ddf95dd0cfc7bf83745f846",
+        "main.mlirb": "ed20cc2f0b1aa94d3eb4f64e84abda2e65ec8b3d8e614f45d8ba4c008b847c78",
+        "metadata.json": "d9c5d4e8065326b0d513afc25381bb22cc17613db5fb8825f7e035ca108f0f02"
+      }
+    },
+    "visionExport": {
+      "recipe": "qwen3-vl-vision-fp16-storage-fp32-compute-static-grids-v2",
+      "imageGrids": [
+        {
+          "height": 44,
+          "width": 44,
+          "function": "encode_44x44",
+          "tokens": 484
+        },
+        {
+          "height": 36,
+          "width": 48,
+          "function": "encode_36x48",
+          "tokens": 432
+        },
+        {
+          "height": 48,
+          "width": 36,
+          "function": "encode_48x36",
+          "tokens": 432
+        },
+        {
+          "height": 32,
+          "width": 56,
+          "function": "encode_32x56",
+          "tokens": 448
+        },
+        {
+          "height": 56,
+          "width": 32,
+          "function": "encode_56x32",
+          "tokens": 448
+        }
+      ],
+      "selfCheck": {
+        "passed": true,
+        "worstCosine": 1.0,
+        "bar": 0.999,
+        "cases": [
+          {
+            "function": "encode_44x44",
+            "grid": [
+              44,
+              44
+            ],
+            "patches": 1936,
+            "imageEmbedsShape": [
+              484,
+              2560
+            ],
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "function": "encode_36x48",
+            "grid": [
+              36,
+              48
+            ],
+            "patches": 1728,
+            "imageEmbedsShape": [
+              432,
+              2560
+            ],
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "function": "encode_48x36",
+            "grid": [
+              48,
+              36
+            ],
+            "patches": 1728,
+            "imageEmbedsShape": [
+              432,
+              2560
+            ],
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "function": "encode_32x56",
+            "grid": [
+              32,
+              56
+            ],
+            "patches": 1792,
+            "imageEmbedsShape": [
+              448,
+              2560
+            ],
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "function": "encode_56x32",
+            "grid": [
+              56,
+              32
+            ],
+            "patches": 1792,
+            "imageEmbedsShape": [
+              448,
+              2560
+            ],
+            "imageEmbedsCosine": 1.0,
+            "deepstackCosine": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "reference": "eager fp16-storage fp32-compute tower on random normalized pixels"
+      },
+      "modelFiles": {
+        "main.hash": "22cc967383c2048942369a9067b4a53d021fb6fc147c1a493825d08c0780d248",
+        "main.mlirb": "52128c9c75254bb4dea33bd0acd4b4187870fbf6a07098c10cbd1d0bd2c9d4e0",
+        "metadata.json": "f3268c6c56352cc1d8828a4ccdb2736012b79fa3be02c7020b856803cf3236e0"
+      }
+    }
+  },
+  "photos": {
+    "source": "Wikimedia Commons",
+    "photos": [
+      {
+        "name": "photo-dog-portrait",
+        "file": "photo-dog-portrait.jpg",
+        "commonsTitle": "File:Bully-dog-2314909-1920.jpg",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:Bully-dog-2314909-1920.jpg",
+        "sourceURL": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Bully-dog-2314909-1920.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "width": 1200,
+        "height": 1412,
+        "licence": "CC0",
+        "licenceURL": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://pixabay.com/pt/users/tonypang-5369492/\">Tonypang</a>",
+        "sha1": "6ec237da24cedede5d325c7f29d5ef00f37ad8e9",
+        "sha256": "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd"
+      },
+      {
+        "name": "photo-fruit-stall-wide",
+        "file": "photo-fruit-stall-wide.jpg",
+        "commonsTitle": "File:Bangkok fruit stall.jpg",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:Bangkok_fruit_stall.jpg",
+        "sourceURL": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Bangkok_fruit_stall.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "width": 4032,
+        "height": 2268,
+        "licence": "Public domain",
+        "licenceURL": "https://commons.wikimedia.org/wiki/Template:PD-self",
+        "artist": "<a href=\"https://en.wikipedia.org/wiki/en:User:Bacon_Noodles\" class=\"extiw\" title=\"w:en:User:Bacon Noodles\"><span style=\"font-family: Courier New; font-size:115%;\"><b>Michael</b></span></a>",
+        "sha1": "ae5c9c12ae8a015bad65bfaa4b23013680b6bfe4",
+        "sha256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203",
+        "licenceNote": "Released into the public domain by its author ({{PD-self}} on the file page, own work)"
+      },
+      {
+        "name": "photo-fruit-market-4x3",
+        "file": "photo-fruit-market-4x3.jpg",
+        "commonsTitle": "File:'Byculla Fruit Market' near Byculla Bridge(east)..JPG",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:%27Byculla_Fruit_Market%27_near_Byculla_Bridge(east)..JPG",
+        "sourceURL": "https://upload.wikimedia.org/wikipedia/commons/3/39/%27Byculla_Fruit_Market%27_near_Byculla_Bridge%28east%29..JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "width": 810,
+        "height": 608,
+        "licence": "CC0",
+        "licenceURL": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Rudolph.A.furtado&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Rudolph.A.furtado (page does not exist)\">Rudolph.A.furtado</a>",
+        "sha1": "2a176946ff600c581c3ed7143b524d379d83a177",
+        "sha256": "b990813053ba77d05f70e5bccb556504927ed54f772ff5ce225ca3ac577c52d1"
+      }
+    ]
+  },
+  "decodedPhotos": {
+    "schema": 1,
+    "what": "Kit's own ImageIO decode of each reference photo, saved as a lossless PNG without a colour profile, so the upstream reference and Kit's file path see identical RGB",
+    "method": "Scripts/write-kit-decoded-photos.swift compiled with Sources/AetherVision/VisionRGBImage.swift (xcrun swiftc -O); each PNG is decoded again by VisionRGBImage and must be byte-identical. Not sips: sips's PNG conversion is not byte-identical to Kit's decode (the portrait's processor pixel cosine against the PIL reference is 0.99989 via sips, 0.99997 via Kit)",
+    "host": "macOS 27.0 (Darwin 27.0.0), Apple ImageIO",
+    "files": [
+      {
+        "file": "photo-dog-portrait.png",
+        "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96",
+        "source": "photo-dog-portrait.jpg",
+        "sourceSHA256": "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd",
+        "size": [
+          1200,
+          1412
+        ],
+        "versusPILDecode": {
+          "identicalBytes": 0.7899,
+          "meanAbsolute": 0.41,
+          "maximum": 25
+        },
+        "licence": "CC0",
+        "licenceURL": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:Bully-dog-2314909-1920.jpg"
+      },
+      {
+        "file": "photo-fruit-market-4x3.png",
+        "sha256": "36d86e264e84042a8300ae1fb6bb72cce8bf440d3e1370bbade678000a8dde45",
+        "source": "photo-fruit-market-4x3.jpg",
+        "sourceSHA256": "b990813053ba77d05f70e5bccb556504927ed54f772ff5ce225ca3ac577c52d1",
+        "size": [
+          810,
+          608
+        ],
+        "versusPILDecode": {
+          "identicalBytes": 0.7432,
+          "meanAbsolute": 0.4061,
+          "maximum": 46
+        },
+        "licence": "CC0",
+        "licenceURL": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:%27Byculla_Fruit_Market%27_near_Byculla_Bridge(east)..JPG"
+      },
+      {
+        "file": "photo-fruit-stall-wide.png",
+        "sha256": "8d799c68a22bfa6134363b35e24e5499b4967566184515c7d85f641174033e41",
+        "source": "photo-fruit-stall-wide.jpg",
+        "sourceSHA256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203",
+        "size": [
+          4032,
+          2268
+        ],
+        "versusPILDecode": {
+          "identicalBytes": 0.8033,
+          "meanAbsolute": 0.362,
+          "maximum": 32
+        },
+        "licence": "Public domain",
+        "licenceURL": "https://commons.wikimedia.org/wiki/Template:PD-self",
+        "descriptionURL": "https://commons.wikimedia.org/wiki/File:Bangkok_fruit_stall.jpg"
+      }
+    ],
+    "sources": "qwen3-vl-photos/provenance.json (Wikimedia Commons; licences repeated per file)",
+    "versusPILDecodeMeaning": "byte comparison of this decode with PIL's (libjpeg-turbo) decode of the same JPEG, full resolution"
+  },
+  "references": [
+    {
+      "recordSHA256": "54b48c0f0008965463a85a8b7e12e33170b36d701d58ed7f4383bbc2b7f012e1",
+      "oracle": "transformers Qwen3VLForConditionalGeneration + AutoProcessor (fast image processor), float32, CPU",
+      "versions": {
+        "torch": "2.11.0",
+        "transformers": "4.57.3",
+        "torchvision": "0.26.0",
+        "pillow": "12.3.0"
+      },
+      "maximumPixels": null,
+      "imageGrids": [
+        [
+          44,
+          44
+        ],
+        [
+          36,
+          48
+        ],
+        [
+          48,
+          36
+        ],
+        [
+          32,
+          56
+        ],
+        [
+          56,
+          32
+        ]
+      ],
+      "gridSnapping": "nearest aspect ratio in log space, first listed wins a tie; the processor's smart_resize replaced by the grid's pixel size",
+      "cases": [
+        {
+          "name": "photo-dog-portrait",
+          "question": "Describe this photo in one sentence.",
+          "image": {
+            "file": "photo-dog-portrait.png",
+            "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96",
+            "size": [
+              1200,
+              1412
+            ]
+          },
+          "grid": [
+            1,
+            48,
+            36
+          ],
+          "imageTokens": 432,
+          "promptTokens": 449,
+          "greedyText": "A black American Bully with a spiked collar sits happily on green grass, tongue out and eyes closed in a relaxed, contented expression.<|im_end|>",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 29,
+            "rows": 29
+          },
+          "pixelsSHA256": "154ca56c6fcbe1fbe6005b7fba7848b523c7b7ee3427eb33aef5b94689623065",
+          "forcedLogitsSHA256": "1ab4e4b226e79845f1cb9effbbfef9034a024ef44ed73e3199a20b5995a7efc3"
+        },
+        {
+          "name": "photo-fruit-stall-wide",
+          "question": "What fruits can you see?",
+          "image": {
+            "file": "photo-fruit-stall-wide.png",
+            "sha256": "8d799c68a22bfa6134363b35e24e5499b4967566184515c7d85f641174033e41",
+            "size": [
+              4032,
+              2268
+            ]
+          },
+          "grid": [
+            1,
+            32,
+            56
+          ],
+          "imageTokens": 448,
+          "promptTokens": 464,
+          "greedyText": "Based on the image provided, here are the fruits that can be identified:\n\n1.  **Durian**: This is the most prominent fruit. You can see several large, spiky, greenish-brown durians in the background",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "e881f5ca26b1de70c74a19bd50fc600961113c12baea7e687954f21fbe9aa7cb",
+          "forcedLogitsSHA256": "b904ff0a4e1850101e395b1632770f02b5ccc4906f6c2e7e3d8278b21aa943dd"
+        },
+        {
+          "name": "photo-fruit-market-4x3",
+          "question": "Where might this picture have been taken?",
+          "image": {
+            "file": "photo-fruit-market-4x3.png",
+            "sha256": "36d86e264e84042a8300ae1fb6bb72cce8bf440d3e1370bbade678000a8dde45",
+            "size": [
+              810,
+              608
+            ]
+          },
+          "grid": [
+            1,
+            36,
+            48
+          ],
+          "imageTokens": 432,
+          "promptTokens": 450,
+          "greedyText": "This picture was likely taken in a **street market or bazaar in a South Asian country**, most probably **India**.\n\nHere’s why:\n\n- **Market Style**: The scene depicts a bustling, narrow alleyway with stalls selling fresh produce",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "f47433e2347d14a8ac1245a643e67bd6b3a3b631da377c7c58379a7440ee5c95",
+          "forcedLogitsSHA256": "0a0c445d8a6a09a8e216dacf666cb3057dad1bc97dca2a87033ab4ea1364848c"
+        },
+        {
+          "name": "scene-448",
+          "question": "What shapes and colors are in this image? Answer in one sentence.",
+          "image": {
+            "file": "scene-448.png",
+            "sha256": "26436c80216cefd6f9668115eb184730a519acb5e1341c9312210e9edebbfd2d",
+            "size": [
+              448,
+              448
+            ]
+          },
+          "grid": [
+            1,
+            44,
+            44
+          ],
+          "imageTokens": 484,
+          "promptTokens": 508,
+          "greedyText": "The image contains a purple triangle, a yellow square, and an orange triangle.<|im_end|>",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 17,
+            "rows": 17
+          },
+          "pixelsSHA256": "098518b089b1a14894c1648300bcbd04e6d467e5253afc99e6579a30ad1bd5e9",
+          "forcedLogitsSHA256": "cb8c52b31cff569583093582ad9d199cfe71ea61ee3777361ad893a6c22987da"
+        },
+        {
+          "name": "scene-320x256",
+          "question": "Which shape is on the left?",
+          "image": {
+            "file": "scene-320x256.png",
+            "sha256": "c2bf2637c5d8ed8342e547418fbba3ac961aebe209179b591dcee2eb83fdd299",
+            "size": [
+              320,
+              256
+            ]
+          },
+          "grid": [
+            1,
+            36,
+            48
+          ],
+          "imageTokens": 432,
+          "promptTokens": 449,
+          "greedyText": "Based on the image provided, there are three shapes:\n\n- A green square in the **top left**.\n- An orange triangle in the **top right**.\n- A purple square in the **bottom center**.\n\nThe question asks,",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "6ef30f513dc734d52726172bd8e804cc185f4b0cc35a8ed227496627e6eb2638",
+          "forcedLogitsSHA256": "b5b2e525fe1febd7ca1fa41c96e1e064702dad38fbf7a99754ff60dbd1076499"
+        }
+      ]
+    },
+    {
+      "recordSHA256": "013d09ac95bce61132ebd1c8715bf428c748bcbcea1b302f4066310e97b0079a",
+      "oracle": "transformers Qwen3VLForConditionalGeneration + AutoProcessor (fast image processor), float32, CPU",
+      "versions": {
+        "torch": "2.11.0",
+        "transformers": "4.57.3",
+        "torchvision": "0.26.0",
+        "pillow": "12.3.0"
+      },
+      "maximumPixels": null,
+      "imageGrids": [
+        [
+          44,
+          44
+        ],
+        [
+          36,
+          48
+        ],
+        [
+          48,
+          36
+        ],
+        [
+          32,
+          56
+        ],
+        [
+          56,
+          32
+        ]
+      ],
+      "gridSnapping": "nearest aspect ratio in log space, first listed wins a tie; the processor's smart_resize replaced by the grid's pixel size",
+      "cases": [
+        {
+          "name": "photo-dog-portrait",
+          "question": "Describe this photo in one sentence.",
+          "image": {
+            "file": "photo-dog-portrait.jpg",
+            "sha256": "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd",
+            "size": [
+              1200,
+              1412
+            ]
+          },
+          "grid": [
+            1,
+            48,
+            36
+          ],
+          "imageTokens": 432,
+          "promptTokens": 449,
+          "greedyText": "A black American Bully with a spiked collar sits happily on green grass, tongue out and eyes closed in a relaxed, contented expression.<|im_end|>",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 29,
+            "rows": 29
+          },
+          "pixelsSHA256": "4a126fca2324c3a684a1666c8769bb2cd4d7222a45057d6eacd5fd8f94889011",
+          "forcedLogitsSHA256": "78d38d641e69aed4f2b4014c97590a434304a801bbca1106d4b25c6c49373574"
+        },
+        {
+          "name": "photo-fruit-stall-wide",
+          "question": "What fruits can you see?",
+          "image": {
+            "file": "photo-fruit-stall-wide.jpg",
+            "sha256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203",
+            "size": [
+              4032,
+              2268
+            ]
+          },
+          "grid": [
+            1,
+            32,
+            56
+          ],
+          "imageTokens": 448,
+          "promptTokens": 464,
+          "greedyText": "Based on the image provided, here are the fruits that can be identified:\n\n1.  **Durian**: This is the most prominent fruit. You can see several large, spiky, greenish-brown durians in the background",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "a2eae5a8ca1618e687b6ee2210cec67298c6e8fe6e8035b6befe7a944ece140f",
+          "forcedLogitsSHA256": "33811671be19064b6d7b99662fd52a25940d0089fed07e6a002414ec22e7df49"
+        },
+        {
+          "name": "photo-fruit-market-4x3",
+          "question": "Where might this picture have been taken?",
+          "image": {
+            "file": "photo-fruit-market-4x3.jpg",
+            "sha256": "b990813053ba77d05f70e5bccb556504927ed54f772ff5ce225ca3ac577c52d1",
+            "size": [
+              810,
+              608
+            ]
+          },
+          "grid": [
+            1,
+            36,
+            48
+          ],
+          "imageTokens": 432,
+          "promptTokens": 450,
+          "greedyText": "This picture was likely taken in **Chandni Chowk**, a bustling and historic market in **New Delhi, India**.\n\n### Why Chandni Chowk?\n- **Location**: Chandni Chowk is one of the oldest and most",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "94dbc5ca10f9fdd0d81b472a74e76fec00aaac9f3aa8c5509925a2df174c2f78",
+          "forcedLogitsSHA256": "35d1d21411954b5d79a7277f7e4fe95b863a67f89bb03afb8b247572da566efb"
+        },
+        {
+          "name": "scene-448",
+          "question": "What shapes and colors are in this image? Answer in one sentence.",
+          "image": {
+            "file": "scene-448.png",
+            "sha256": "26436c80216cefd6f9668115eb184730a519acb5e1341c9312210e9edebbfd2d",
+            "size": [
+              448,
+              448
+            ]
+          },
+          "grid": [
+            1,
+            44,
+            44
+          ],
+          "imageTokens": 484,
+          "promptTokens": 508,
+          "greedyText": "The image contains a purple triangle, a yellow square, and an orange triangle.<|im_end|>",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 17,
+            "rows": 17
+          },
+          "pixelsSHA256": "098518b089b1a14894c1648300bcbd04e6d467e5253afc99e6579a30ad1bd5e9",
+          "forcedLogitsSHA256": "cb8c52b31cff569583093582ad9d199cfe71ea61ee3777361ad893a6c22987da"
+        },
+        {
+          "name": "scene-320x256",
+          "question": "Which shape is on the left?",
+          "image": {
+            "file": "scene-320x256.png",
+            "sha256": "c2bf2637c5d8ed8342e547418fbba3ac961aebe209179b591dcee2eb83fdd299",
+            "size": [
+              320,
+              256
+            ]
+          },
+          "grid": [
+            1,
+            36,
+            48
+          ],
+          "imageTokens": 432,
+          "promptTokens": 449,
+          "greedyText": "Based on the image provided, there are three shapes:\n\n- A green square in the **top left**.\n- An orange triangle in the **top right**.\n- A purple square in the **bottom center**.\n\nThe question asks,",
+          "eagerPortVsReference": {
+            "hostRopePositionsMatch": true,
+            "minCosine": 1.0,
+            "argmaxEqualRows": 32,
+            "rows": 32
+          },
+          "pixelsSHA256": "6ef30f513dc734d52726172bd8e804cc185f4b0cc35a8ed227496627e6eb2638",
+          "forcedLogitsSHA256": "b5b2e525fe1febd7ca1fa41c96e1e064702dad38fbf7a99754ff60dbd1076499"
+        }
+      ]
+    }
+  ],
+  "native": {
+    "model-parity": {
+      "file": "qwen3-vl-4b-image-text-2026-10-26-model-parity.json",
+      "sha256": "0ffb93358cf4053a80bc940b1bb58b4b468205d579a225145ecd0bf798740ac5",
+      "passed": true,
+      "inputs": null,
+      "logitsWithinDecoderBand": null,
+      "gate": "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
+      "cases": [
+        {
+          "encodeSeconds": 0.401092833,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999319486110201,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 29,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-dog-portrait",
+          "preprocessing": "reference",
+          "promptTokens": 449,
+          "timeToFirstTokenSeconds": 0.363994
+        },
+        {
+          "encodeSeconds": 0.2727895,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999925307514865,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 448,
+          "name": "photo-fruit-stall-wide",
+          "preprocessing": "reference",
+          "promptTokens": 464,
+          "timeToFirstTokenSeconds": 0.376874
+        },
+        {
+          "encodeSeconds": 0.297200125,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.999989191105567,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-fruit-market-4x3",
+          "preprocessing": "reference",
+          "promptTokens": 450,
+          "timeToFirstTokenSeconds": 0.392717833
+        },
+        {
+          "encodeSeconds": 0.318188375,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999983671840411,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 17,
+          "greedyAccepted": true,
+          "imageTokens": 484,
+          "name": "scene-448",
+          "preprocessing": "reference",
+          "promptTokens": 508,
+          "timeToFirstTokenSeconds": 0.381194958
+        },
+        {
+          "encodeSeconds": 0.250390084,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999956310892552,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "scene-320x256",
+          "preprocessing": "reference",
+          "promptTokens": 449,
+          "timeToFirstTokenSeconds": 0.371217167
+        }
+      ]
+    },
+    "kit-end-to-end": {
+      "file": "qwen3-vl-4b-image-text-2026-10-26-kit-end-to-end.json",
+      "sha256": "0eb2b3c8d0f8167f9320dca4ddb22b6c786602adcafe26e083c74bcd5438b89b",
+      "passed": true,
+      "inputs": "same-decode",
+      "logitsWithinDecoderBand": null,
+      "gate": "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
+      "cases": [
+        {
+          "encodeSeconds": 0.340979958,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9998914320295624,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 29,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-dog-portrait",
+          "preprocessing": "swift",
+          "promptTokens": 449,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999997977750159,
+          "timeToFirstTokenSeconds": 0.40486625
+        },
+        {
+          "encodeSeconds": 0.315987375,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999913648455513,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 448,
+          "name": "photo-fruit-stall-wide",
+          "preprocessing": "swift",
+          "promptTokens": 464,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999999219294945,
+          "timeToFirstTokenSeconds": 0.400114875
+        },
+        {
+          "encodeSeconds": 0.302985083,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999800336533468,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-fruit-market-4x3",
+          "preprocessing": "swift",
+          "promptTokens": 450,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999996422257512,
+          "timeToFirstTokenSeconds": 0.397338208
+        },
+        {
+          "encodeSeconds": 0.328424833,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999983671840411,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 17,
+          "greedyAccepted": true,
+          "imageTokens": 484,
+          "name": "scene-448",
+          "preprocessing": "swift",
+          "promptTokens": 508,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 1.0000000002334386,
+          "timeToFirstTokenSeconds": 0.433602959
+        },
+        {
+          "encodeSeconds": 0.270951625,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999957532608099,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "scene-320x256",
+          "preprocessing": "swift",
+          "promptTokens": 449,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.999999994796948,
+          "timeToFirstTokenSeconds": 0.412225666
+        }
+      ]
+    },
+    "model-parity-pil-decode": {
+      "file": "qwen3-vl-4b-image-text-2026-10-26-model-parity-pil-decode.json",
+      "sha256": "286eae666266102b49431e4a93ebe581f29bd7817556cc10b8eae061e2aa1ca0",
+      "passed": true,
+      "inputs": null,
+      "logitsWithinDecoderBand": null,
+      "gate": "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing (end to end): grid equal and pixel cosine >= 0.999 against the reference processor, forced rows cosine >= 0.98; generated tokens compared and reported",
+      "cases": [
+        {
+          "encodeSeconds": 0.522643291,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999572852813453,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 29,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-dog-portrait",
+          "preprocessing": "reference",
+          "promptTokens": 449,
+          "timeToFirstTokenSeconds": 0.412173667
+        },
+        {
+          "encodeSeconds": 0.33083675,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999773213377853,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 448,
+          "name": "photo-fruit-stall-wide",
+          "preprocessing": "reference",
+          "promptTokens": 464,
+          "timeToFirstTokenSeconds": 0.402468583
+        },
+        {
+          "encodeSeconds": 0.317271791,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999975398060591,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-fruit-market-4x3",
+          "preprocessing": "reference",
+          "promptTokens": 450,
+          "timeToFirstTokenSeconds": 0.408703708
+        },
+        {
+          "encodeSeconds": 0.354674417,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999983671840411,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 17,
+          "greedyAccepted": true,
+          "imageTokens": 484,
+          "name": "scene-448",
+          "preprocessing": "reference",
+          "promptTokens": 508,
+          "timeToFirstTokenSeconds": 0.431418041
+        },
+        {
+          "encodeSeconds": 0.291646792,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999956310892552,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "scene-320x256",
+          "preprocessing": "reference",
+          "promptTokens": 449,
+          "timeToFirstTokenSeconds": 0.395193875
+        }
+      ]
+    },
+    "kit-independent-decode": {
+      "file": "qwen3-vl-4b-image-text-2026-10-26-kit-independent-decode.json",
+      "sha256": "62c9bb7d8d3b715a29c3ad11ebd7597edefc4aa18549fa7cef6bd10b1ec4602e",
+      "passed": true,
+      "inputs": "independent-decode",
+      "logitsWithinDecoderBand": false,
+      "gate": "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
+      "cases": [
+        {
+          "encodeSeconds": 0.311843,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9992567289674159,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 29,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "photo-dog-portrait",
+          "preprocessing": "swift",
+          "promptTokens": 449,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999724505430729,
+          "timeToFirstTokenSeconds": 0.407108042
+        },
+        {
+          "encodeSeconds": 0.303462209,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9997812487246864,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 448,
+          "name": "photo-fruit-stall-wide",
+          "preprocessing": "swift",
+          "promptTokens": 464,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999897958526027,
+          "timeToFirstTokenSeconds": 0.401152
+        },
+        {
+          "encodeSeconds": 0.319815917,
+          "forcedArgmaxMismatches": 2,
+          "forcedMinimumCosine": 0.9706274961860213,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": false,
+          "greedyDivergenceReferenceMargin": 0.6250797456649271,
+          "greedyFirstDivergence": 6,
+          "imageTokens": 432,
+          "name": "photo-fruit-market-4x3",
+          "preprocessing": "swift",
+          "promptTokens": 450,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.9999018921605755,
+          "timeToFirstTokenSeconds": 0.406118625
+        },
+        {
+          "encodeSeconds": 0.348280792,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999983671840411,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 17,
+          "greedyAccepted": true,
+          "imageTokens": 484,
+          "name": "scene-448",
+          "preprocessing": "swift",
+          "promptTokens": 508,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 1.0000000002334386,
+          "timeToFirstTokenSeconds": 0.420159083
+        },
+        {
+          "encodeSeconds": 0.299061958,
+          "forcedArgmaxMismatches": 0,
+          "forcedMinimumCosine": 0.9999957532608099,
+          "forcedMismatchesAtNearTies": 0,
+          "forcedRows": 32,
+          "greedyAccepted": true,
+          "imageTokens": 432,
+          "name": "scene-320x256",
+          "preprocessing": "swift",
+          "promptTokens": 449,
+          "swiftGridMatches": true,
+          "swiftPixelCosine": 0.999999994796948,
+          "timeToFirstTokenSeconds": 0.428045083
+        }
+      ]
+    },
+    "public-session": {
+      "file": "qwen3-vl-4b-image-text-2026-10-26-public-session.json",
+      "sha256": "d59cae309c99a68437d88c71ed182497facf2a30fae25b009c842be73910b7a6",
+      "passed": true,
+      "inputs": null,
+      "logitsWithinDecoderBand": null,
+      "gate": "VisionLanguageSession.open(bundle:) plus generate(renderedTokenIDs:images:) on the photo files reproduces the gated component-level Kit run token for token; unload closes the session",
+      "cases": [
+        {
+          "matchesComponentRun": true,
+          "name": "photo-dog-portrait",
+          "timeToFirstTokenSeconds": 0.709210958,
+          "tokens": [
+            32,
+            3691,
+            3693,
+            13497,
+            398,
+            448,
+            264,
+            92242,
+            36104,
+            23011,
+            36775,
+            389,
+            6176,
+            16359,
+            11,
+            24459,
+            700,
+            323,
+            6414,
+            7877,
+            304,
+            264,
+            30367,
+            11,
+            2213,
+            291,
+            7493,
+            13
+          ],
+          "totalSeconds": 1.340486541,
+          "upstreamAgreementTokens": 28,
+          "upstreamTokens": 28
+        },
+        {
+          "matchesComponentRun": true,
+          "name": "photo-fruit-stall-wide",
+          "timeToFirstTokenSeconds": 0.414121084,
+          "tokens": [
+            28715,
+            389,
+            279,
+            2168,
+            3897,
+            11,
+            1588,
+            525,
+            279,
+            25322,
+            429,
+            646,
+            387,
+            10820,
+            1447,
+            16,
+            13,
+            220,
+            3070,
+            53033,
+            1103,
+            95518,
+            1096,
+            374,
+            279,
+            1429,
+            20469,
+            13779,
+            13,
+            1446,
+            646,
+            1490,
+            3807,
+            3460,
+            11,
+            978,
+            1579,
+            88,
+            11,
+            6176,
+            812,
+            1455,
+            4830,
+            10651,
+            5380,
+            304,
+            279,
+            4004
+          ],
+          "totalSeconds": 1.481137125,
+          "upstreamAgreementTokens": 48,
+          "upstreamTokens": 48
+        },
+        {
+          "matchesComponentRun": true,
+          "name": "photo-fruit-market-4x3",
+          "timeToFirstTokenSeconds": 0.465771541,
+          "tokens": [
+            1986,
+            6802,
+            572,
+            4363,
+            4429,
+            304,
+            264,
+            3070,
+            27351,
+            3081,
+            476,
+            293,
+            68338,
+            304,
+            264,
+            4882,
+            14533,
+            3146,
+            97219,
+            1429,
+            4658,
+            3070,
+            33548,
+            334,
+            382,
+            8420,
+            748,
+            3170,
+            1447,
+            12,
+            3070,
+            38822,
+            11913,
+            95518,
+            576,
+            6109,
+            61891,
+            264,
+            89156,
+            11,
+            15026,
+            52950,
+            3117,
+            448,
+            73573,
+            11236,
+            7722,
+            8193
+          ],
+          "totalSeconds": 1.543890041,
+          "upstreamAgreementTokens": 48,
+          "upstreamTokens": 48
+        },
+        {
+          "matchesComponentRun": true,
+          "name": "scene-448",
+          "timeToFirstTokenSeconds": 0.505783792,
+          "tokens": [
+            785,
+            2168,
+            5610,
+            264,
+            24932,
+            21495,
+            11,
+            264,
+            13753,
+            9334,
+            11,
+            323,
+            458,
+            18575,
+            21495,
+            13
+          ],
+          "totalSeconds": 0.886418958,
+          "upstreamAgreementTokens": 16,
+          "upstreamTokens": 16
+        },
+        {
+          "matchesComponentRun": true,
+          "name": "scene-320x256",
+          "timeToFirstTokenSeconds": 0.418350875,
+          "tokens": [
+            28715,
+            389,
+            279,
+            2168,
+            3897,
+            11,
+            1052,
+            525,
+            2326,
+            20816,
+            1447,
+            12,
+            362,
+            6176,
+            9334,
+            304,
+            279,
+            3070,
+            3481,
+            2115,
+            334,
+            624,
+            12,
+            1527,
+            18575,
+            21495,
+            304,
+            279,
+            3070,
+            3481,
+            1290,
+            334,
+            624,
+            12,
+            362,
+            24932,
+            9334,
+            304,
+            279,
+            3070,
+            14860,
+            4126,
+            334,
+            382,
+            785,
+            3405,
+            17064,
+            11
+          ],
+          "totalSeconds": 1.478295833,
+          "upstreamAgreementTokens": 48,
+          "upstreamTokens": 48
+        }
+      ],
+      "memory": [
+        {
+          "footprintMiB": 57,
+          "metalMiB": 0,
+          "phase": "before open"
+        },
+        {
+          "footprintMiB": 1204,
+          "metalMiB": 1028,
+          "phase": "after open"
+        },
+        {
+          "footprintMiB": 2032,
+          "metalMiB": 19447,
+          "phase": "after photo-dog-portrait"
+        },
+        {
+          "footprintMiB": 2468,
+          "metalMiB": 20646,
+          "phase": "after photo-fruit-stall-wide"
+        },
+        {
+          "footprintMiB": 2568,
+          "metalMiB": 21473,
+          "phase": "after photo-fruit-market-4x3"
+        },
+        {
+          "footprintMiB": 3426,
+          "metalMiB": 22881,
+          "phase": "after scene-448"
+        },
+        {
+          "footprintMiB": 3015,
+          "metalMiB": 22865,
+          "phase": "after scene-320x256"
+        },
+        {
+          "footprintMiB": 657,
+          "metalMiB": 495,
+          "phase": "after unload"
+        }
+      ],
+      "tokenizerFilesVerified": true,
+      "tokenizerRendersReferencePrompts": true,
+      "closedAfterUnload": true
+    }
+  },
+  "scriptSHA256": {
+    "export_qwen3.py": "71ef2fc8fee39a975cd46c383aa6b87c8074730b0dc1b163a600a292fa0066ea",
+    "export_qwen3_vl_text.py": "527183f6b967fcb7bb97edcecff6a240c06a79d03083213f69b969869a676016",
+    "export_qwen3_vl_vision.py": "f85d0e88646b8202c0d7f1c80b6b9534986d8691fad106f09e3eca19cbb15905",
+    "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
+    "qwen3_vl_text.py": "d941e12f101c4c5a7c79ff9282062fb56245033f33e1656589370bbe13b9db02",
+    "qwen3_vl_vision.py": "dc5c594ff913009990a1dc014ae90f5bdb736c87176275c8eb6b524150908079",
+    "record_evidence.py": "bb1b30030da2ea0e1e4c8115c9b3edf96c9dadc4d74e6941227a2bd7d230299b",
+    "record_vision_evidence.py": "5b18c6c34a6e3de4834aed45a1d46a97f4d92695b28116e909e2b1f8f0ce3aa2",
+    "record_vl_evidence.py": "6c5c4ee70a19b8eac18af752b4b37b732604ff9dcb15c2e70c39f50c01feaae6",
+    "reference_chat_tokens.py": "c9d4f556d2c8afa887b88a147650e717d192edb3eca5046ea181020bdb49c394",
+    "reference_qwen3.py": "8a61ce6d0864662388d8bbd9aea60e784e4e34f16dcec154100e40cc83cf8027",
+    "reference_qwen3_vl.py": "1964884b2cb2c7acd56914fccd1c94be6c42e2c4926483d9d576b4d6589f62ca",
+    "reference_qwen3_vl_vision.py": "ee4d08ea94a6da2f96970a3b18a2cb3635bceb68af05e99d56449147c2783f98",
+    "register_qwen3_bundle.py": "85e9e9cdf2714708c838aa2c470d9e0e2009921ba82096c63b8a6484d7038298",
+    "register_qwen3_vl_bundle.py": "f6a3f21dd1ccaf37b0b7247a3cf048eda24fab40c791da3eed4e240d4d492c95"
+  },
+  "nativeTests": [
+    "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift",
+    "Tests/AetherNativeTests/VisionLanguageSessionTests.swift"
+  ]
+}

@@ -40,6 +40,8 @@ def main() -> None:
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--stability", type=Path, action="append", required=True)
     parser.add_argument("--control", type=Path, action="append", default=[])
+    parser.add_argument("--supersedes", help="an earlier record this one replaces, and why")
+    parser.add_argument("--base-model", help="the upstream model a fine-tune derives from (when the reference lacks it)")
     args = parser.parse_args()
     native = json.loads(args.native.read_text())
     reference = json.loads((args.reference / "reference.json").read_text())
@@ -83,9 +85,10 @@ def main() -> None:
                   and all(v["differingFromFirst"] == 0 and v["sameFirstOutputAcrossProcesses"] for v in stability.values()),
         "device": native["device"],
         "hostLoad": native["hostLoad"],
-        "supersedes": "qwen3-vl-vision-encoder-2026-10-26.json (one dynamic-shape `encode` function; see dynamicControl)",
+        "supersedes": args.supersedes,
         "model": {"repository": reference["source"]["repository"], "revision": reference["source"]["revision"],
                   "license": reference["source"]["license"], "gated": False,
+                  **({"baseModel": base} if (base := reference["source"].get("baseModel") or args.base_model) else {}),
                   "checkpointSHA256": reference["checkpointSHA256"]},
         "asset": {"directory": str(args.model), "functions": [g["function"] for g in export["imageGrids"]],
                   "imageGrids": export["imageGrids"], "shapes": "static: no dynamic dimension in any function",
