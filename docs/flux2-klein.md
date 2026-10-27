@@ -1,8 +1,15 @@
 # FLUX.2 [klein] 4B: text-to-image and multi-reference generation
 
-Status: experimental, 2026-10-27 (0.0.2). The products, local bundle, independent float32 Diffusers references on CPU and opt-in native
-parity and lifecycle gates are in place. Results and their scope are in [Verification](#verification). There is no iOS execution,
-benchmark protocol or published bundle yet.
+Status: experimental, 2026-10-27 (0.0.2). The products, the qualified local bundle, independent float32 Diffusers
+references on CPU and opt-in native parity and lifecycle gates are in place. Results and their scope are in
+[Verification](#verification). There is no iOS execution, benchmark protocol or published bundle yet.
+
+**Qualified bundle:** 0.0.2 qualifies the bundle with fingerprint `a48aaf07…` (reference fingerprint `a69abb8e…`),
+produced from the pinned checkpoint by `Forge/flux2` in this repository ([Producing the bundle](#producing-the-bundle)).
+It replaces `f28ef0e8…` (reference fingerprint `8fb2df90…`), which the superseded prototype exported and which the
+earlier evidence refers to; the two have an identical contract. Core AI exports are not byte-reproducible, so every new
+export gets a new fingerprint and must pass the contract diff, native parity and lifecycle before it becomes the
+default.
 
 ## Model and license
 
@@ -35,17 +42,17 @@ One bundle holds both modes: `textEncoder` (`encode`), `denoiser0…2` (`segment
 
 | Asset | Inputs → outputs | Weights |
 | --- | --- | --- |
-| textEncoder | `input_ids`, `position_ids`, `attention_mask` int32 `[1,512]` → `text_embeds` fp16 `[512,7680]` | int8 per-channel, 3.12 GB |
-| denoiser0 | `latents` fp16 `[N,128]`, `text_embeds`, `sigma` f32 `[1]`, `rope_text` f32 `[512,2,128]`, `rope_image` f32 `[N,2,128]` → `image_1`, `text_1`, `cond` f32 | int8 (fp16 `proj_out`), 1.90 GB |
-| denoiser1 | `image_1`, `text_1`, `cond`, ropes → `image_2`, `text_2` | 1.28 GB |
-| denoiser2 | `image_2`, `text_2`, `cond`, ropes → `velocity` fp16 `[N,128]` | 1.44 GB |
-| vaeDecoder | `latents` fp16 `[h,w,128]` (still batch-normalized) → `image` f32 `[3,16h,16w]` | fp16 weights, f32 compute, 102 MB |
-| vaeEncoder | `reference_pixels` f32 `[3,H,W]` → `reference_latents` f32 `[H/16,W/16,128]` (posterior mode, packed, normalized) | fp16 weights, f32 compute, 71 MB |
+| textEncoder | `input_ids`, `position_ids`, `attention_mask` int32 `[1,512]` → `text_embeds` fp16 `[512,7680]` | int8 per-channel, 2.90 GiB |
+| denoiser0 | `latents` fp16 `[N,128]`, `text_embeds`, `sigma` f32 `[1]`, `rope_text` f32 `[512,2,128]`, `rope_image` f32 `[N,2,128]` → `image_1`, `text_1`, `cond` f32 | int8 (fp16 `proj_out`), 1.77 GiB |
+| denoiser1 | `image_1`, `text_1`, `cond`, ropes → `image_2`, `text_2` | 1.20 GiB |
+| denoiser2 | `image_2`, `text_2`, `cond`, ropes → `velocity` fp16 `[N,128]` | 1.35 GiB |
+| vaeDecoder | `latents` fp16 `[h,w,128]` (still batch-normalized) → `image` f32 `[3,16h,16w]` | fp16 weights, f32 compute, 97 MiB |
+| vaeEncoder | `reference_pixels` f32 `[3,H,W]` → `reference_latents` f32 `[H/16,W/16,128]` (posterior mode, packed, normalized) | fp16 weights, f32 compute, 68 MiB |
 
 `Flux2Assets.open` refuses any other recipe: schema/driver/target, the exact empirical shift constants, rotary axes and
 θ, prompt template/length/padding/pad token, segment list, function roles, tensor bindings, the reference contract
 (`packedLatents`, stride 10, bounded counts) and the source repository and revision. Provenance pins every file by
-SHA-256; opening checks model declarations and metadata against them. `verify()` streams every model (about 8 GB) on
+SHA-256; opening checks model declarations and metadata against them. `verify()` streams every model (about 7.4 GiB) on
 concurrent threads, with each file confined to its asset directory. It reports the first failing asset in serial order
 and stops when the calling task is cancelled.
 Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrides the bundle-wide
@@ -57,16 +64,17 @@ Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrid
 
 `Forge/flux2/` exports the bundle from the pinned snapshot in Forge's locked environment. It is written from upstream
 Diffusers 0.37.1 and Transformers 4.57.3 against this contract and reproduces the 2026-10-26 bundle's recipe; the
-superseded prototype exporter that produced that bundle is no longer used. Export is CPU-only (Python loads assets
-`cpu_only` for its self-check), takes about 1.5 minutes on an M5 Max and peaks at an 18.7 GB footprint:
+superseded prototype exporter that produced `f28ef0e8…` is no longer used. Export is CPU-only (Python loads assets
+`cpu_only` for its self-check), takes about 1.5 minutes on an M5 Max and peaks at a 17.4 GiB footprint:
 
 ```sh
 uv sync --frozen --project Forge
 C=~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294
 O=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27
-Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir $O/graph-check-real --checkpoint $C   # optional, ~28 GB RSS
+Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir $O/graph-check-real --checkpoint $C   # optional, about 26 GiB RSS
 Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint $C --output $O/export
 python3 Scripts/finalize-flux2-bundle.py $O/export $C $O/bundle
+# against the f28ef0e8 export, kept at macos-any-gpu as the historical reference
 Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu $O/bundle
 ```
 
@@ -93,37 +101,17 @@ The finalizer streams every `main.mlirb`, refuses one that differs from its `mai
 fragment + target + per-asset placement + provenance file hashes + license) and `metadata.json`. Core AI exports are not
 byte-reproducible, so a re-export changes model hashes and fingerprints.
 
-**The 2026-10-27 Forge export** (`forge-export-2026-10-27/bundle`, fingerprint `a48aaf07…`) has the shipped bundle's
-contract exactly: every function signature, the segment split, `metadata.json`, all 111 compared `aether.json` fields
-(the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm and GroupNorm lower to
-Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the prototype used conv + pixel
-shuffle, and the q/k norm feeds the rotary product in float32 without an fp16 round trip. `Flux2Assets.open` and
-`verify()` accept it, the `AetherFlux2Tests` suite passes 28/28 with the bundle and CPU fixture paths set, and against
-the CPU float32 references it passes native parity (113/113) and lifecycle (44/44, the same 176 native calls, 34
-model instances, 32 loads and 144 reuses):
-
-| Check (bar), CPU references | Shipped bundle (`f28ef0e8…`) | Forge export (`a48aaf07…`) |
-| --- | --- | --- |
-| Token ids and mask (exact) | 12/12 | 12/12 |
-| Text real-row cosine (≥ 0.999) | min 0.999972 | min 0.999972 |
-| Teacher-forced velocity cosine per step (≥ 0.999) | min 0.999239 (1024×768) | min 0.999247 (1024×768) |
-| VAE decoder PSNR (≥ 35 dB) | min 87.684 dB | min 87.684 dB |
-| Reference-encoder latent cosine (≥ 0.999) | 3/3 ≥ 0.9999999 | 3/3 ≥ 0.9999999 |
-| Image path SSIM (≥ 0.94) | min 0.96016 (`cafe-512`) | min 0.95953 (`cafe-512`) |
-| Whole pipeline SSIM (recorded) | 0.812–0.999 | 0.832–0.999 |
-
-Per check, image-path SSIM is within 0.0008 of the shipped bundle's, velocity cosine within 3·10⁻⁵ and decoder PSNR
-within 0.001 dB. The ungated whole-pipeline SSIM moves by up to 0.06 (`fox-lighthouse-ref2` 0.812 → 0.871): that path
-conditions on the native text encoder's padding rows, which move the image more than conversion error does (see the
-MPS-reference section below). The parity
-process peaked at a 17.3 GB lifetime footprint (component VAE phase, as before). The shipped bundle stays the default
-(`macos-any-gpu`). See the [record](evidence/flux2-forge-export-2026-10-27.json) (commands, versions, file hashes,
-every check side by side), the [contract diff](evidence/flux2-forge-export-contract-diff-2026-10-27.txt), the
+**The 2026-10-27 export** (`forge-export-2026-10-27/bundle`, `a48aaf07…`) is the qualified bundle. Its contract
+equals `f28ef0e8…`'s exactly: every function signature, the segment split, `metadata.json`, all 111 compared
+`aether.json` fields (the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm
+and GroupNorm lower to Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the
+prototype used conv + pixel shuffle, and the q/k norm feeds the rotary product in float32 without an fp16 round trip.
+Its qualification is under [Verification](#qualified-bundle-a48aaf07-against-the-cpu-references-2026-10-27). See the
+[record](evidence/flux2-forge-export-2026-10-27.json) (commands, versions, file hashes, every parity check side by
+side), the [contract diff](evidence/flux2-forge-export-contract-diff-2026-10-27.txt), the
 [graph check](evidence/flux2-forge-export-graph-check-2026-10-27.json), the
-[parity report](evidence/flux2-forge-export-native-parity-2026-10-27.json) and
-[lifecycle report](evidence/flux2-forge-export-native-lifecycle-2026-10-27.json) with their logs, the
 [manifest fragment](evidence/flux2-forge-export-manifest-fragment-2026-10-27.json) and the
-[export log](evidence/flux2-forge-export-log-2026-10-27.jsonl). GPU-lock time: 4.4 minutes (parity 3.6, lifecycle 0.8).
+[export log](evidence/flux2-forge-export-log-2026-10-27.jsonl).
 
 ## Host math (`AetherFlux2`)
 
@@ -257,9 +245,42 @@ for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
 
-### Native parity against the CPU references (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-27)
+### Qualified bundle a48aaf07 against the CPU references (2026-10-27)
 
-All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on the same int8 bundle (fingerprint `f28ef0e8…`) pass
+M5 Max, macOS 27.0.1, `preferGPU`. All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on `a48aaf07…` pass
+**113/113 checks** at the unchanged bars, and the lifecycle suite passes **44/44**. `Flux2Assets.open` and `verify()`
+accept the bundle, and `AetherFlux2Tests` passes 28/28 with the bundle and CPU fixture paths set. The `f28ef0e8…`
+column is the baseline from the same fixtures ([below](#baseline-f28ef0e8-against-the-cpu-references-2026-10-27)):
+
+| Check (bar) | `f28ef0e8…` baseline | `a48aaf07…` qualified |
+| --- | --- | --- |
+| Token ids and mask (exact) | 12/12 | 12/12 |
+| Text real-row cosine (≥ 0.999) | min 0.999972 | min 0.999972 |
+| Timesteps (exact) | 12/12 | 12/12 |
+| Teacher-forced velocity cosine per step (≥ 0.999) | min 0.999239 (1024×768) | min 0.999247 (1024×768) |
+| VAE decoder PSNR on the reference final latent (≥ 35 dB) | min 87.684 dB | min 87.684 dB |
+| Reference-encoder latent cosine (≥ 0.999) | 3/3 ≥ 0.9999999 | 3/3 ≥ 0.9999999 |
+| Image path SSIM through the public session (≥ 0.94) | min 0.96016 (`cafe-512`) | min 0.95953 (`cafe-512`) |
+| Whole pipeline SSIM (recorded) | 0.812–0.999 | 0.832–0.999 |
+
+Per check, image-path SSIM is within 0.0008 of the baseline, velocity cosine within 3·10⁻⁵ and decoder PSNR within
+0.001 dB. The ungated whole-pipeline SSIM moves both ways across cases, from −0.012 (`desk-1024x768`) to +0.059
+(`fox-lighthouse-ref2`, 0.812 → 0.871): that free-running path starts from the native text rows, padding rows
+included, and its trajectory is sensitive to any change in them (see the MPS-reference section below). It is not an
+improvement. The lifecycle suite made the same 176 native calls with 34 model instances, 32 function loads and 144
+reuses as the baseline; its gated SSIMs were 0.989678 (baseline pixels) and 0.998520 (reference), against 0.990221 and
+0.998442 for `f28ef0e8…` (bar 0.94), and the recorded balanced-prompt SSIM 0.901143 (0.901649). The parity process
+peaked at a 16.1 GiB lifetime footprint in the component VAE phase, the same as the baseline. GPU-lock time was 4.4
+minutes (parity 3.6, lifecycle 0.8). See the [parity report](evidence/flux2-forge-export-native-parity-2026-10-27.json)
+and [log](evidence/flux2-forge-export-native-parity-2026-10-27.log), the
+[lifecycle report](evidence/flux2-forge-export-native-lifecycle-2026-10-27.json) and
+[log](evidence/flux2-forge-export-native-lifecycle-2026-10-27.log), and the
+[record](evidence/flux2-forge-export-2026-10-27.json).
+
+### Baseline: f28ef0e8 against the CPU references (2026-10-27)
+
+Measured on `f28ef0e8…`; identical contract. M5 Max, macOS 27.0.1, `preferGPU`. These reports are the baseline the
+qualified bundle is compared with, not superseded by it. All 12 cases in one process (`AETHER_FLUX2_CASES=all`) pass
 **113/113 checks** at the unchanged bars. Against the run on the MPS references, no minimum moves by more than
 3·10⁻⁶ in cosine or SSIM, or 0.006 dB in PSNR:
 
@@ -276,8 +297,8 @@ All 12 cases in one process (`AETHER_FLUX2_CASES=all`) on the same int8 bundle (
 
 The test process's lifetime peak footprint was 16.1 GiB (the component VAE phase, as before) and the GPU-lock hold
 3.7 minutes. See the [report](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.json) and
-[log](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.log). The 2026-10-26 sections below compared with
-the MPS fixtures and are kept as history. The lifecycle suite was re-run against the CPU fixtures too (see
+[log](evidence/flux2-klein-native-parity-cpu-references-2026-10-27.log). The 2026-10-26 sections below were measured on
+`f28ef0e8…` against the MPS fixtures and are kept as history. The lifecycle suite was re-run against the CPU fixtures too (see
 [Native lifecycle qualification](#native-lifecycle-qualification-2026-10-26)).
 
 ### CPU checks against the MPS references (2026-10-26)
@@ -288,9 +309,9 @@ reference cases confirm μ uses generated tokens only). CPU Euler replay of the 
 every following step input and the final latent bit for bit. Reference position ids match the transformer's recorded
 `img_ids` exactly.
 
-### Native parity against the MPS references (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-26)
+### f28ef0e8 against the MPS references (M5 Max, macOS 27.0.1, `preferGPU`, 2026-10-26)
 
-Both runs passed every check. They used the finalized int8 bundle (fingerprint `f28ef0e8…`, reference fingerprint
+Measured on `f28ef0e8…`; identical contract. Both runs passed every check. They used the finalized int8 bundle (fingerprint `f28ef0e8…`, reference fingerprint
 `8fb2df90…`) after a full stream verification.
 
 | Check (bar) | 512² class + references (7 cases, 68 checks) | 768²–1344×768 (5 cases, 45 checks) |
@@ -309,7 +330,8 @@ than conversion error does (prototype F-P3-60). The PNGs for every case, provide
 under `~/.cache/huggingface/aether-kit/flux2-klein-4b/native-parity-*-2026-10-26/`. Both editing cases were visually
 inspected: the fox becomes a watercolor, and the two-reference prompt places that fox in front of the lighthouse.
 
-Timing and memory, with no benchmark protocol, on a shared host, with the Core AI specialization cache warm from the export:
+Timing and memory, measured on `f28ef0e8…` (identical contract), with no benchmark protocol, on a shared host, with the
+Core AI specialization cache warm from the export:
 
 - **Component steps:** about 0.21 s per denoiser step at 512², 0.25 s with 256–448 reference tokens, 0.55–0.62 s at
   768² and 1024×576, about 0.94 s at 1024² and 1344×768. Text encoding takes 0.05 s. Decoding takes 0.13 s at 512²
@@ -318,8 +340,8 @@ Timing and memory, with no benchmark protocol, on a shared host, with the Core A
 - **End to end** (`generate`, including model loads and recycling): 1.0–2.9 s at 512² and 576×448 with provided
   conditioning, 2.5–3.8 s from a prompt (balanced mode reloads denoisers after encoding), 3.4–4.6 s with references,
   and 6.0–6.6 s at 1024² and 1344×768.
-- **Memory:** the test process's lifetime peak footprint was 4.04 GB for the 512² run. For the large run it was 14.6
-  GB, reached in the component VAE phase, which decoded five sizes in one decoder session. That is the accumulation
+- **Memory:** the test process's lifetime peak footprint was 3.76 GiB for the 512² run. For the large run it was
+  13.6 GiB, reached in the component VAE phase, which decoded five sizes in one decoder session. That is the accumulation
   the session avoids by recycling the decoder per size (prototype F-P3-75), so it is not a session peak. Per-stage
   session peaks were not isolated.
 - **GPU-lock time** for all FLUX.2 work: about 16.5 minutes (export 1.5, text-to-image fixtures 11, reference
@@ -348,7 +370,7 @@ Run the native gate (one suite at a time, under the shared lock):
 
 ```sh
 AETHER_NATIVE_FLUX2_QUALIFICATION=1 \
-AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
@@ -359,10 +381,10 @@ AETHER_FLUX2_OUTPUT=/new/output/dir \
 
 ### Post-rebase parity (2026-10-26)
 
-After rebasing onto the 0.0.1 release (origin/main `128573d`), the parity suite ran again with all 12 cases in one
+Measured on `f28ef0e8…`; identical contract. After rebasing onto the 0.0.1 release (origin/main `128573d`), the parity suite ran again with all 12 cases in one
 process (`AETHER_FLUX2_CASES=all`). It passed **113/113 checks**, and every check value for the seven 512²-class
 cases equals the pre-rebase report bit for bit. The minimums are unchanged: velocity 0.99924, image-path SSIM 0.9602,
-decoder 87.7 dB. The process's lifetime peak was 17.3 GB, reached while the component VAE phase decoded twelve sizes
+decoder 87.7 dB. The process's lifetime peak was 16.1 GiB, reached while the component VAE phase decoded twelve sizes
 in one decoder session (see the memory note above). See the
 [report](evidence/flux2-klein-native-parity-rebased-2026-10-26.json) and
 [log](evidence/flux2-klein-native-parity-rebased-2026-10-26.log).
@@ -374,14 +396,18 @@ directory, plus the bundle and fixture paths) is modeled on Krea's native sessio
 
 ```sh
 AETHER_NATIVE_FLUX2_LIFECYCLE=1 \
-AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
 ```
 
-**Re-run against the CPU references (2026-10-27).** The suite was re-run with no code change against the CPU fixtures
+**Qualified bundle (`a48aaf07…`, 2026-10-27):** 44/44 against the CPU fixtures; see
+[above](#qualified-bundle-a48aaf07-against-the-cpu-references-2026-10-27).
+
+**Baseline: `f28ef0e8…` re-run against the CPU references (2026-10-27).** Measured on `f28ef0e8…`; identical contract.
+The suite was re-run with no code change against the CPU fixtures
 (`fox-512` from `ffc4b136…`, the first reference case from `caf92bb7…`). Its inputs from them (size, seed, text rows,
 noise, prompt and reference pixels) are byte-identical to the MPS fixtures'; only the images it compares with
 changed. It passed **44/44 checks** with the same 176 native calls, 34 model instances, 32 function loads and 144
@@ -389,8 +415,8 @@ reuses. The gated SSIM checks moved in the sixth decimal: baseline 0.990223 → 
 0.998442 (bar 0.94 for both). The recorded balanced-prompt SSIM moved from 0.901650 to 0.901649. It took 51.3 s, the
 rebased build's first run. See the [report](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.json),
 [event journal](evidence/flux2-klein-native-lifecycle-events-cpu-references-2026-10-27.jsonl) and
-[log](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.log). The 2026-10-26 results below compared
-with the MPS fixtures. A tracked factory opens real
+[log](evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.log). The 2026-10-26 results below were
+measured on `f28ef0e8…` against the MPS fixtures. A tracked factory opens real
 Core AI sessions. Backend observers bracket the awaited native `function.run`, and an event journal is written as each
 event happens. Nothing gates or delays native work. It uses the `fox-512` reference conditioning and noise as a
 baseline, and passed **44/44 checks** in 27.6 s: 176 native calls, 34 model instances (each closed exactly once), 32
@@ -437,7 +463,7 @@ These additional GPU-lock jobs took about 3.5 minutes: parity 2.3, lifecycle 0.5
 
 ### Review fixes smoke (2026-10-26)
 
-After the review fixes (concurrent confined verification, manifest-driven placement, and the reference-preparation
+Measured on `f28ef0e8…`; identical contract. After the review fixes (concurrent confined verification, manifest-driven placement, and the reference-preparation
 admission check), the default parity suite ran again under the shared lock. All 68/68 checks pass, with values
 identical to the post-rebase report. The bundle's concurrent `verify()` took 1.2 s with a warm page cache, against
 2.8 s for the earlier serial pass; this is not a benchmark. Every asset loaded with the placement read from the

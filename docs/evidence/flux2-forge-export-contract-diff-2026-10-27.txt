@@ -46,5 +46,5 @@ vaeEncoder (flux2_klein_4b_reference-vae-encoder.aimodel): IDENTICAL contract
   storage elements Float16 33,488,896 -> 33,488,896, Float32 937,219 -> 937,219
   bytes 70,793,708 -> 70,771,852
   composites (not gated) ['scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>'] -> ['group_norm (tensor<1x128x?x?xf32>, tensor<128xf32>, tensor<128xf32>) -> tensor<1x128x?x?xf32>', 'group_norm (tensor<1x256x?x?xf32>, tensor<256xf32>, tensor<256xf32>) -> tensor<1x256x?x?xf32>', 'group_norm (tensor<1x512x?x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?x?xf32>', 'group_norm (tensor<1x512x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?xf32>', 'scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>']
-tokenizer + LICENSE.md: 8/8 files identical
+tokenizer + LICENSE.md: 8/8 files identical, no extra files
 RESULT: contract identical

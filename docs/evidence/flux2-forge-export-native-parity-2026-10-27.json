@@ -3,7 +3,7 @@
     "fingerprint" : "a48aaf07eab1fdee106c52b3e16c903c629846bf64dc92b5b35860b8a295fa39",
     "referenceFingerprint" : "a69abb8e68cadcc56f2b6f5d9822f1600c318712914fae0146237ee24152c988",
     "revision" : "e7b7dc27f91deacad38e78976d1f2b499d76a294",
-    "root" : "\/Users\/zakkeown\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/forge-export-2026-10-27\/bundle"
+    "root" : "~\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/forge-export-2026-10-27\/bundle"
   },
   "checkCount" : 113,
   "checks" : [

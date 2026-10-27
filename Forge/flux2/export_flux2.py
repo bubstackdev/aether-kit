@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Export FLUX.2 [klein] 4B (black-forest-labs/FLUX.2-klein-4B, Apache-2.0) for AetherFlux2 (development tooling only).
 
-Runs in Forge's locked environment (`uv sync --frozen --project Forge`; `<venv>` is `Forge/.venv`) on the pinned
+Runs in Forge's locked environment (`uv sync --frozen --project Forge`) on the pinned
 Hugging Face snapshot. Nothing is downloaded. Writes only the new `--output` directory:
 
-    <venv>/bin/python -I Forge/flux2/export_flux2.py --checkpoint <snapshot> --output <export dir>
+    Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint <snapshot> --output <export dir>
     python3 Scripts/finalize-flux2-bundle.py <export dir> <snapshot> <bundle dir>
 
     OUTPUT/

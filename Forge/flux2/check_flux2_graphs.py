@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Check the FLUX.2 export graphs against the unmodified upstream modules in float32 on CPU (development tooling only).
 
-    <venv>/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir <new dir>                 # random weights
-    <venv>/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir <new dir> --checkpoint <snapshot>
+    Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir <new dir>                 # random weights
+    Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir <new dir> --checkpoint <snapshot>
 
 Without `--checkpoint` it first writes a random-weight snapshot into `<workdir>/checkpoint` from the upstream classes
 (real layer counts and widths, except 2 denoiser heads and a 256-wide text encoder; random norm gains and batch-norm

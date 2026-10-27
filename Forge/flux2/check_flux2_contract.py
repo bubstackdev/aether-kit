@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Diff the execution contract of two finalized FLUX.2 bundles (development tooling only).
 
-    <venv>/bin/python -I Forge/flux2/check_flux2_contract.py <reference bundle> <candidate bundle> [--json <path>]
+    Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py <reference bundle> <candidate bundle> [--json <path>]
 
 Reads declarations only (model bytecode signatures, not weights; nothing is loaded or run). Must match exactly:
 - `metadata.json`, and `aether.json` except the fields a re-export legitimately changes (`provenance.files`,
@@ -9,7 +9,7 @@ Reads declarations only (model bytecode signatures, not weights; nothing is load
 - per asset: the public function names and, for each function, the graph type (input/output dtypes, ranks, static
   sizes and dynamic axes), the argument and result attributes (names, enumerated-shape specializations if any), the
   OS compatibility version, and the sets of storage and compute scalar types;
-- the tokenizer and LICENSE files, byte for byte.
+- the tokenizer and LICENSE files, byte for byte, with no extra tokenizer file in the candidate.
 
 Reported, not gated: per-asset bytes, storage element counts by type, private composite graphs (attention,
 pixel shuffle) and the operation histogram, which differ between implementations of the same contract.
@@ -150,12 +150,17 @@ def main() -> None:
             lines.append(f"  composites (not gated) {composites[0]} -> {composites[1]}")
 
     record["files"] = {}
-    for name in sorted(str(p.relative_to(ref)) for p in (ref / "tokenizer").rglob("*") if p.is_file()) + ["LICENSE.md"]:
+    listed = [sorted(str(p.relative_to(b)) for p in (b / "tokenizer").rglob("*") if p.is_file()) for b in (ref, new)]
+    for name in listed[0] + ["LICENSE.md"]:
         same = (new / name).is_file() and sha256(ref / name) == sha256(new / name)
         record["files"][name] = same
         if not same:
             differences.append(f"{name} differs")
-    lines.append(f"tokenizer + LICENSE.md: {sum(record['files'].values())}/{len(record['files'])} files identical")
+    extra = sorted(set(listed[1]) - set(listed[0]))
+    record["extraFiles"] = extra
+    differences += [f"{name} only in the candidate" for name in extra]
+    lines.append(f"tokenizer + LICENSE.md: {sum(record['files'].values())}/{len(record['files'])} files identical"
+                 + (f", {len(extra)} extra in the candidate: {extra}" if extra else ", no extra files"))
 
     record["differences"] = differences
     record["identical"] = not differences
