@@ -27,6 +27,21 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def tokenizer_files(root: Path) -> dict[str, str]:
+    """Every regular tokenizer file by relative path, as `verifyTokenizer` sees them: dotfiles (a Finder .DS_Store)
+    are skipped, and a symbolic link refuses registration."""
+    files = {}
+    for p in sorted(root.rglob("*")):
+        rel = p.relative_to(root)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if p.is_symlink():
+            sys.exit(f"tokenizer entry {rel} is a symbolic link; register real files only")
+        if p.is_file():
+            files[str(rel)] = sha256(p)
+    return files
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle", type=Path, required=True)
@@ -34,6 +49,7 @@ def main() -> None:
     parser.add_argument("--source-revision", required=True)
     parser.add_argument("--platform", choices=("macos", "ios"), required=True)
     parser.add_argument("--maximum-context-length", type=int, default=4096)
+    parser.add_argument("--base-model", help="provenance: the upstream model a fine-tune derives from")
     parser.add_argument("--supports-reasoning", choices=("true", "false"),
                         help="consumer metadata: whether the model has a thinking mode (hybrid Qwen3 yes, 2507 Instruct no)")
     args = parser.parse_args()
@@ -60,9 +76,10 @@ def main() -> None:
         "platform": args.platform,
         "quantization": {"float16": "fp16", "float32": "fp32"}.get(report["dtype"], report["dtype"]),
         "exportBounds": bounds,
-        "tokenizerFiles": {str(p.relative_to(b / "tokenizer")): sha256(p)
-                           for p in sorted((b / "tokenizer").rglob("*")) if p.is_file()},
+        "tokenizerFiles": tokenizer_files(b / "tokenizer"),
     }
+    if args.base_model:
+        manifest["baseModel"] = args.base_model
     if args.supports_reasoning:
         manifest["supportsReasoning"] = args.supports_reasoning == "true"
     (b / "language-model.json").write_text(json.dumps(manifest, indent=2) + "\n")

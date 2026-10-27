@@ -24,6 +24,8 @@ public struct LanguageModelManifest: Codable, Sendable {
     /// (`tree_hashes`). When present, `verifyTokenizer` requires the directory to hold exactly these files with
     /// these hashes, so the chat template and special-token maps are covered, not only `tokenizer.json`.
     public let tokenizerFiles: [String: String]?
+    /// Provenance only: the upstream model a fine-tune derives from (for example `Qwen/Qwen3-4B-Instruct-2507`).
+    public let baseModel: String?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))

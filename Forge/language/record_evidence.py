@@ -112,6 +112,7 @@ def chat(report_path: Path, output: Path) -> dict:
     keys = ("openSeconds", "unloadSeconds", "idleFootprintMiB", "peakFootprintMiB", "afterUnloadFootprintMiB",
             "idleMetalMiB", "peakMetalMiB", "afterUnloadMetalMiB", "greedyRepeatIdentical")
     return {**{k: report.get(k) for k in keys},
+            "memorySampling": "before the model opens and after each request; not a continuous peak",
             "runs": [{k: r[k] for k in ("name", "promptTokens", "replyTokens", "stopReason", "timeToFirstTokenSeconds",
                                         "totalSeconds", "text")} for r in report["runs"]],
             "report": {"file": copied.name, "sha256": sha256(copied)}}
@@ -123,6 +124,7 @@ def main() -> None:
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--running", type=Path)
     parser.add_argument("--chat", type=Path)
+    parser.add_argument("--base-model", help="the upstream model a fine-tune derives from (when the reference lacks it)")
     args = parser.parse_args()
     native = json.loads(args.native.read_text())
     reference = json.loads((args.reference / "reference.json").read_text())
@@ -137,6 +139,8 @@ def main() -> None:
         "hostLoad": native["hostLoad"],
         "model": {"repository": reference["source"]["repository"], "revision": reference["source"]["revision"],
                   "license": reference["source"]["license"], "precision": "float16 weights and caches",
+                  **({"baseModel": args.base_model or reference["source"].get("baseModel")}
+                     if args.base_model or reference["source"].get("baseModel") else {}),
                   "checkpointSHA256": reference["checkpointSHA256"]},
         "reference": {"oracle": reference["oracle"], "versions": reference["versions"],
                       "promptTokens": len(reference["promptTokens"]), "forcedRows": reference["forcedLogits"]["rows"],

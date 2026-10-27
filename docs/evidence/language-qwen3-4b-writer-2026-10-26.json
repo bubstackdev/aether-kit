@@ -9,6 +9,7 @@
     "revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
     "license": "apache-2.0",
     "precision": "float16 weights and caches",
+    "baseModel": "Qwen/Qwen3-4B-Instruct-2507",
     "checkpointSHA256": {
       "model-00001-of-00002.safetensors": "c6bbaf4d73c46bd9c4ef1a32cd65e6524fe9e71aa28ca63865c1eb6a7ad51a98",
       "model-00002-of-00002.safetensors": "b248ed21539e354dedbab9d73f06b0b2f633396664121fd0b3e1c17bc560840f"
@@ -137,6 +138,7 @@
     "peakMetalMiB": 8570,
     "afterUnloadMetalMiB": 16,
     "greedyRepeatIdentical": true,
+    "memorySampling": "before the model opens and after each request; not a continuous peak",
     "runs": [
       {
         "name": "rewrite",
@@ -179,10 +181,10 @@
   "scriptSHA256": {
     "export_qwen3.py": "71ef2fc8fee39a975cd46c383aa6b87c8074730b0dc1b163a600a292fa0066ea",
     "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
-    "record_evidence.py": "cfefa7976de8e2faf3627c2f1dec02d3127e38bb6b49f15cb6ee2f7b99f2a5ee",
+    "record_evidence.py": "bb1b30030da2ea0e1e4c8115c9b3edf96c9dadc4d74e6941227a2bd7d230299b",
     "reference_chat_tokens.py": "c9d4f556d2c8afa887b88a147650e717d192edb3eca5046ea181020bdb49c394",
-    "reference_qwen3.py": "2134879f5d5c1ce589ff8168c523fa6b9f16bb1de250199e76cd2f00f7b90e4b",
-    "register_qwen3_bundle.py": "70368048bcfc8708afd5c468395d4ec8fd91d5540412d604a128500d1ea97473"
+    "reference_qwen3.py": "8a61ce6d0864662388d8bbd9aea60e784e4e34f16dcec154100e40cc83cf8027",
+    "register_qwen3_bundle.py": "d9b504a0922e39d19cb0d552931a02fd904d61ae3622d15ddb049e8cb90f5c69"
   },
   "nativeTest": "Tests/AetherNativeTests/LanguageDecodeQualificationTests.swift (AETHER_NATIVE_LANGUAGE_QUALIFICATION=1, release)"
 }
