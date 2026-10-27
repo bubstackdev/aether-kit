@@ -267,37 +267,43 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 | After unload | 656 MiB | 495 MiB |
 
 Metal grows with the first image request to about 19 GiB, then by about 0.8 GiB per newly used grid,
-against 8.4 GiB for the dense 4B writer with the same decoder width. That is weight duplication, not
-a leak: Core AI keeps a copy of the weights per loaded function (see the limits).
+against 8.4 GiB for the dense 4B writer with the same decoder width. The decoder part is real
+duplication: Core AI wires a separate copy of the text weights for each of its two functions. The
+per-grid growth is not; those are views of one copy (see the limits).
 Warm requests also keep adding memory (Core AI retains allocations on every shape change; text
 requests about 257 MiB each on the 4B) until the decoder's memory budget reloads it between
 requests: see [Native memory retention](language-generation.md#native-memory-retention).
 
 ## Limits and follow-ups
 
-- **Weights are duplicated per function (0.0.3).** Core AI keeps a separate copy of the weights for
-  every function it loads, and the VL bundles load many functions over the same weights. Measured by
-  phase (`visionLanguageMemoryByPhase`, opt-in; one M5 Max; Metal allocated;
+- **The decoder's weights are resident twice (0.0.3).** Core AI compiles the VL-4B decoder (7.5 GiB on
+  disk) into a 22.5 GiB file in its cache, with separate weights for `main` and `withImage`. Opening the
+  decoder pages that file into memory, and each function's first use wires its own part. These pages
+  are file-backed, so the process footprint stays under 3 GiB, but they are RAM: wired pages can't be
+  reclaimed while the model is loaded. Measured by phase (`visionLanguageMemoryByPhase`, opt-in; one M5
+  Max; Metal allocated for both bundles, and for the 4B what the host shows as wired;
   [evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)):
 
-  | | VL-2B | VL-4B |
-  | --- | --- | --- |
-  | Encoder open | 0.9 GiB | 1.0 GiB |
-  | First grid function | +1.1 GiB | +1.1 GiB |
-  | Each further grid function (four) | +0.8 GiB | +0.8 GiB |
-  | Decoder `main`, first use | +3.8 GiB | +8.2 GiB |
-  | Decoder `withImage`, first use (the same weights again) | +4.1 GiB | +8.7 GiB |
-  | A warm image request | about 10 MiB | about 20 MiB |
-  | Peak, all grids and both functions | 12.9 GiB | 22.4 GiB |
+  | | VL-2B, Metal allocated | VL-4B, Metal allocated | VL-4B, wired on the host |
+  | --- | --- | --- | --- |
+  | Encoder open | 0.9 GiB | 1.0 GiB | +1.1 GiB |
+  | First grid function | +1.1 GiB | +1.1 GiB | +1.4 GiB |
+  | Each further grid function (four) | +0.8 GiB | +0.8 GiB | about 0: views of the same weights |
+  | Decoder open | −0.3 GiB | −0.3 GiB | none wired; the compiled file is read in (host free −23.3 GiB) |
+  | Decoder `main`, first use | +3.8 GiB | +8.2 GiB | +8.4 GiB |
+  | Decoder `withImage`, first use | +4.1 GiB | +8.7 GiB | +7.9 GiB, distinct pages from `main`'s |
+  | A warm image request | about 10 MiB | about 20 MiB | about 0 |
+  | Decoder unload | −8.1 GiB | −17.4 GiB | −16.6 GiB; host free +21.7 GiB |
 
-  So a 4B request with one image reaches about 19 GiB: the encoder and one grid (2.1 GiB) plus
-  both decoder copies (16.9 GiB), since the text around the image prefills through `main`. Unloading
-  frees both copies. Warm requests add only shape-change retention, which the decoder's memory budget
-  bounds ([native memory retention](language-generation.md#native-memory-retention)). Options for
-  0.0.3, in order of savings on the 4B: one decoder function for text and image prefill (about
-  8.7 GiB), weight sharing across functions if Core AI supports it, and fewer grids or one encoder
-  function for all grids (up to 3.2 GiB; a dynamic-grid encoder is a correctness hazard today, see
-  [dynamic shapes](#dynamic-shapes-are-a-correctness-hazard-for-the-encoder)). The text export's
+  So a 4B request with one image wires about 19 GiB: the encoder and one grid (about 2.5 GiB) plus both
+  decoder copies (16.3 GiB), since the text around the image prefills through `main`. The Metal figure
+  overstates the encoder: each further grid adds 0.8 GiB to it but nothing resident. Warm requests add
+  only shape-change retention, which the decoder's memory budget bounds
+  ([native memory retention](language-generation.md#native-memory-retention)). The host figures come
+  from a shared Mac, so other processes move them a little; the decoder's agree with the process's own
+  wired mapped-file pages to within 6 %. Options for 0.0.3: one decoder function for text and image
+  prefill (about 8 GiB of wired memory, and part of the compiled cache), or weight sharing across
+  functions if Core AI supports it. Fewer encoder grids would save nothing resident. The text export's
   conversion duplicates weights the same way (below).
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a

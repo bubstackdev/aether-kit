@@ -12,13 +12,79 @@ import Testing
 /// every grid to show whether allocations still grow once all shapes are warm, then unload. Each phase records the
 /// process footprint and Metal's allocated size. Images are synthetic gradients at each grid's exact pixel size. The
 /// decoder has no memory budget, so no reload interrupts the phases. It attributes the per-function and per-grid weight
-/// copies documented in docs/qwen3-vl.md (Limits).
+/// copies documented in docs/qwen3-vl.md (Limits). To tell private copies from shared, file-backed pages, each phase
+/// also records residency: the process's resident, anonymous (internal) and file-backed (external) sizes and its graphics
+/// ledgers (counted in the footprint or not), the host's free, wired, file-backed, anonymous and compressed pages (a
+/// shared host: other processes move these too), and `footprint`'s categories of at least 16 MiB.
 ///
 /// AETHER_NATIVE_VL_MEMORY=1
 /// AETHER_VL_MEMORY_BUNDLE=<bundle with language-model.json and a vision registration>
 /// AETHER_VL_MEMORY_OUTPUT=<report .json>
 private struct MemoryPhase: Codable {
     let phase: String, footprintMiB: Int, metalMiB: Int, metalDeltaMiB: Int
+    var residency: Residency?
+}
+
+/// MiB throughout. `categories`: footprint's dirty, clean and wired bytes per category of at least 16 MiB.
+private struct Residency: Codable {
+    var residentMiB = 0, anonymousMiB = 0, fileBackedMiB = 0, graphicsFootprintMiB = 0, graphicsNoFootprintMiB = 0
+    var hostFreeMiB = 0, hostWiredMiB = 0, hostFileBackedMiB = 0, hostAnonymousMiB = 0, hostCompressedMiB = 0
+    var categories: [String: [String: Int]] = [:]
+}
+
+private func run(_ tool: String, _ arguments: [String]) -> String? {
+    let process = Process(), pipe = Pipe()
+    process.executableURL = URL(filePath: tool); process.arguments = arguments
+    process.standardOutput = pipe; process.standardError = FileHandle.nullDevice
+    guard (try? process.run()) != nil else { return nil }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+    return String(data: data, encoding: .utf8)
+}
+
+private func residencyNow() -> Residency {
+    var r = Residency()
+    var info = task_vm_info_data_t()
+    var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+    if withUnsafeMutablePointer(to: &info, { pointer in
+        pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count) }
+    }) == KERN_SUCCESS {
+        r.residentMiB = Int(info.resident_size >> 20); r.anonymousMiB = Int(info.internal >> 20); r.fileBackedMiB = Int(info.external >> 20)
+        r.graphicsFootprintMiB = Int(info.ledger_tag_graphics_footprint >> 20)
+        r.graphicsNoFootprintMiB = Int(info.ledger_tag_graphics_nofootprint >> 20)
+    }
+    // The host's pages, from vm_stat itself.
+    if let text = run("/usr/bin/vm_stat", []) {
+        let page = Int(text.firstMatch(of: /page size of (\d+) bytes/)?.1 ?? "") ?? 16384
+        func mib(_ label: String) -> Int {
+            for line in text.split(separator: "\n") where line.hasPrefix(label + ":") {
+                return (Int(line.split(separator: " ").last?.trimmingCharacters(in: CharacterSet(charactersIn: "."))
+                    ?? "") ?? 0) * page / (1 << 20)
+            }
+            return 0
+        }
+        r.hostFreeMiB = mib("Pages free"); r.hostWiredMiB = mib("Pages wired down")
+        r.hostFileBackedMiB = mib("File-backed pages"); r.hostAnonymousMiB = mib("Anonymous pages")
+        r.hostCompressedMiB = mib("Pages occupied by compressor")
+    }
+    // footprint's categories (IOAccelerator, IOSurface, mapped file, ...), from the tool itself.
+    let file = FileManager.default.temporaryDirectory.appendingPathComponent("vl-memory-footprint-\(UUID().uuidString).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+    let tool = Process()
+    tool.executableURL = URL(filePath: "/usr/bin/footprint")
+    tool.arguments = ["-p", String(getpid()), "-f", "bytes", "-w", "-j", file.path]
+    tool.standardOutput = FileHandle.nullDevice; tool.standardError = FileHandle.nullDevice
+    if (try? tool.run()) != nil {
+        tool.waitUntilExit()
+        if let data = try? Data(contentsOf: file), let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let process = (json["processes"] as? [[String: Any]])?.first, let categories = process["categories"] as? [String: [String: Any]] {
+            for (name, values) in categories {
+                let sizes = ["dirty", "clean", "wired"].reduce(into: [String: Int]()) { $0[$1] = ((values[$1] as? Int) ?? 0) >> 20 }
+                if sizes.values.contains(where: { $0 >= 16 }) { r.categories[name] = sizes }
+            }
+        }
+    }
+    return r
 }
 
 private struct MemoryReport: Codable {
@@ -68,7 +134,8 @@ func visionLanguageMemoryByPhase() async throws {
     var lastMetal = memoryNow().metal
     func sample(_ phase: String) {
         let now = memoryNow()
-        report.phases.append(MemoryPhase(phase: phase, footprintMiB: now.footprint, metalMiB: now.metal, metalDeltaMiB: now.metal - lastMetal))
+        report.phases.append(MemoryPhase(phase: phase, footprintMiB: now.footprint, metalMiB: now.metal, metalDeltaMiB: now.metal - lastMetal,
+                                         residency: residencyNow()))
         lastMetal = now.metal
     }
     do {

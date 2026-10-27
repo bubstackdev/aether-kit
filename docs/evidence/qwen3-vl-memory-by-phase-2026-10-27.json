@@ -1,7 +1,7 @@
 {
   "date": "2026-10-27",
   "device": "h17c",
-  "finding": "Core AI keeps a weight copy per loaded function: the decoder's `main` and `withImage` each hold the full text weights (the second first use adds as much as the first), and each static per-grid encoder function holds the vision tower's weights (about 0.8 GiB each after the first). Warm requests add only shape-change retention (about 20 MiB per image request on the 4B), which the decoder's memory budget bounds.",
+  "finding": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB.",
   "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; memory is Metal's currentAllocatedSize in the test process",
   "kind": "qwen3-vl-memory-by-phase",
   "models": {
@@ -394,6 +394,46 @@
     }
   },
   "nativeTest": "Tests/AetherNativeTests/VisionLanguageMemoryTests.swift (AETHER_NATIVE_VL_MEMORY=1, release; decoder without a memory budget)",
-  "schema": 1,
-  "testSHA256": "07174412ff4c33c2fbaa09c67feac0c3fd76fc65845abae4922f2d5963ce9f4e"
+  "residency": {
+    "bundle": "qwen3-vl-4b-abliterated-bundle-macos",
+    "compiledCache": {
+      "decoderKey": "ed20cc2f0b1aa94d3eb4f64e84abda2e65ec8b3d8e614f45d8ba4c008b847c78 (the decoder's main.mlirb, 7.5 GiB)",
+      "note": "Core AI's compiled cache file for the decoder (model.aimodelx/main-this-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/resources.bin)",
+      "resourcesBinGiB": 22.48
+    },
+    "conclusion": "Decoder: real duplication. The compiled file is read in at open (host free -23.3 GiB, file-backed) and each function's first use wires its own pages (host wired +8.4 GiB for main, +7.9 GiB for withImage; the process's wired mapped-file pages go 0 -> 8414 -> 16086 MiB). Encoder: grids after the first add 0.8 GiB each to Metal's allocated size but nothing resident (mapped-file wired stays 792 MiB, host wired about 0): views of one copy. The pages are file-backed, so phys_footprint stays under 3 GiB.",
+    "hostFreeDeltaMiB": {
+      "decoder open": -23861,
+      "decoder unloaded": 22180
+    },
+    "hostWiredDeltaMiB": {
+      "decoder unloaded": -17011,
+      "encoder open": 1136,
+      "encoder, grid 32x56": -32,
+      "encoder, grid 36x48": 3,
+      "encoder, grid 44x44": 1385,
+      "encoder, grid 48x36": 21,
+      "encoder, grid 56x32": -174,
+      "main, short prompt": 8598,
+      "withImage pass 1, grid 44x44": 8132
+    },
+    "method": "per phase: task_vm_info (resident, internal, external, graphics ledgers), vm_stat host pages (free, wired, file-backed, anonymous, compressed) and footprint -j categories; the host is shared, so host deltas include other processes",
+    "processFootprintMaxMiB": 2810,
+    "processMappedFileWiredMiB": {
+      "decoder unloaded": 0,
+      "encoder, grid 44x44": 792,
+      "encoder, grid 56x32": 792,
+      "main, short prompt": 8414,
+      "withImage pass 1, grid 44x44": 16086
+    },
+    "report": {
+      "file": "vl-4b-residency-3.json",
+      "sha256": "2d204104932d906110221c4b5e6cf374422d8dffe73111a2febabec8bf8c425a"
+    }
+  },
+  "schema": 2,
+  "testSHA256": {
+    "metal runs (vl-2b.json, vl-4b.json)": "07174412ff4c33c2fbaa09c67feac0c3fd76fc65845abae4922f2d5963ce9f4e",
+    "residency run (vl-4b-residency-3.json)": "8133d303925c14632b7f37ecf2248046ebbd80335b926d91a9aea1c73ff85d0c"
+  }
 }
