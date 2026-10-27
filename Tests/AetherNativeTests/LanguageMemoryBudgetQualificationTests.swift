@@ -18,7 +18,7 @@ import Testing
 /// AETHER_NATIVE_LANGUAGE_MEMORY_BUDGET=1
 /// AETHER_MEMORY_BUDGET_MODELS=<name=path,...: bundles or raw model.aimodel>
 /// AETHER_MEMORY_BUDGET_OUTPUT=<report .json>
-/// AETHER_MEMORY_BUDGET_MIB=<budget, default the Kit default (1024)>
+/// AETHER_MEMORY_BUDGET_MIB=<budget, default the Kit default (2048)>
 /// AETHER_MEMORY_BUDGET_REQUESTS=<requests per model after warming, default 60>
 private struct BudgetSample: Codable { let request: Int, kind: String, metalMiB: Int, retainedMiB: Int, reloads: Int }
 
@@ -31,6 +31,8 @@ private struct BudgetModelReport: Codable {
     var maximumRequestGrowthMiB = 0
     var boundMiB = 0
     var reloads = 0
+    var idleReloads = 0
+    var requestReloads = 0
     var mismatchedReplies = 0
     var unloadedMetalMiB = 0
     var seconds = 0.0
@@ -150,6 +152,10 @@ func languageMemoryBudgetBoundsRepeatedRequests() async throws {
                 model.maximumMetalMiB = max(model.maximumMetalMiB, now)
                 previous = now
             }
+            // Reloads at idle (after a request, under its own grant) and in front of a request (the fallback).
+            let final = await subject.statistics()
+            model.idleReloads = final?.idleMemoryReloads ?? 0
+            model.requestReloads = final?.requestMemoryReloads ?? 0
             await subject.unload()
             model.unloadedMetalMiB = metalMiB()
             let d = start.duration(to: .now)

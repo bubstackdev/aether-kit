@@ -52,9 +52,9 @@ public actor LanguageGenerationSession {
     /// The current request's memory window: Metal's allocated size and the KV cache bytes at admission,
     /// then whether it warmed a function or shape and how many tokens it submitted.
     private var memoryWindow: (allocated: Int, cacheBytes: Int, warming: Bool, tokens: Int)?
-    /// The default memory budget: reload once warm requests have retained 1 GiB of Metal
+    /// The default memory budget: reload once warm requests have retained 2 GiB of Metal
     /// allocations since the model loaded.
-    public static let defaultMemoryGrowthBudgetBytes = 1 << 30
+    public static let defaultMemoryGrowthBudgetBytes = 2 << 30
     /// The smallest budget `open` accepts (256 MiB): a writer request retains about 137 MiB, so a
     /// smaller budget would reload before nearly every request.
     public static let minimumMemoryGrowthBudgetBytes = LanguageMemoryBudget.minimumLimitBytes
@@ -115,10 +115,11 @@ public actor LanguageGenerationSession {
     ///
     /// `memoryGrowthBudgetBytes`: Core AI keeps Metal allocations on every input-shape change until
     /// the model is released (reshape-enabled specialization), so warm requests keep adding memory.
-    /// Once the growth retained since the model loaded passes this budget, the next request first
-    /// releases and reloads the model (KV state is Kit-owned and unaffected); reloads are checked
-    /// only between requests and counted in ``CacheStatistics/modelReloadCount``. nil never reloads
-    /// for memory; a budget below ``minimumMemoryGrowthBudgetBytes`` is refused.
+    /// Once the growth retained since the model loaded passes this budget, the session releases and
+    /// reloads the model between requests: at idle, under a GPU grant, right after the request that
+    /// spent it, or else in front of the next request (KV state is Kit-owned and unaffected).
+    /// Reloads are counted in ``CacheStatistics``. nil never reloads for memory; a budget below
+    /// ``minimumMemoryGrowthBudgetBytes`` is refused.
     public static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
                             stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
                             expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
@@ -243,7 +244,8 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
+        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                              reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -266,7 +268,8 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
+        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                              reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -301,7 +304,8 @@ public actor LanguageGenerationSession {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
+        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                              reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -321,7 +325,8 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
+        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                              reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -332,7 +337,8 @@ public actor LanguageGenerationSession {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
+        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                              reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -382,13 +388,13 @@ public actor LanguageGenerationSession {
     }
 
     /// The contract chooses the submission sizes: uniform chunks for the running contract,
-    /// power-of-two buckets for the bucketed one (`LanguageStepContract.prefillChunks`).
+    /// one fixed width for the bucketed one, its last chunk stepping back over written rows
+    /// (`LanguageStepContract.prefillChunks`).
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
-        var offset = 0
         var last: [Float] = []
-        for count in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
-            last = try await step(tokens: prompt[offset..<(offset + count)].map(Int32.init), position: offset, observer: observer)
-            offset += count
+        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+            last = try await step(tokens: prompt[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init), position: chunk.offset,
+                                  observer: observer)
         }
         return last
     }
@@ -408,7 +414,11 @@ public actor LanguageGenerationSession {
 
     private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil) async throws -> [Float] {
         try Task.checkCancellation()
-        guard position == materializedTokens else { throw LanguageGenerationError.invalid("Noncontiguous cache position") }
+        // A bucketed prefill's last chunk may step back over rows it rewrites (the graph attends only to rows before
+        // the chunk), but must reach the materialized end.
+        guard position == materializedTokens
+              || (!contract.cachesAreStates && position < materializedTokens && position + tokens.count >= materializedTokens)
+        else { throw LanguageGenerationError.invalid("Noncontiguous cache position") }
         try await recycleModelIfNeeded()
         try Task.checkCancellation()
         guard let function = image == nil ? self.function : imageFunction, let stream
@@ -524,6 +534,10 @@ public actor LanguageGenerationSession {
         public let growthCount: Int
         /// Model reloads: submission-count recycling (running contract) and memory-budget reloads.
         public let modelReloadCount: Int
+        /// Memory-budget reloads done at idle, after the request that spent the budget.
+        public let idleMemoryReloads: Int
+        /// Memory-budget reloads done in front of a request (the idle reload was cancelled, failed or overtaken).
+        public let requestMemoryReloads: Int
         /// Metal growth retained by warm requests since the model last loaded (the budget's measure).
         public let retainedMemoryBytes: Int
         public let memoryGrowthBudgetBytes: Int?
@@ -539,7 +553,8 @@ public actor LanguageGenerationSession {
     public func cacheStatistics() -> CacheStatistics {
         CacheStatistics(maximumContext: capacity, allocatedCapacity: allocatedCapacity,
             materializedTokens: materializedTokens, allocatedBytes: (keys?.length ?? 0) + (values?.length ?? 0), growthCount: growthCount,
-            modelReloadCount: modelReloadCount, retainedMemoryBytes: memoryBudget.retainedBytes,
+            modelReloadCount: modelReloadCount, idleMemoryReloads: admission.idleReloads,
+            requestMemoryReloads: admission.requestReloads, retainedMemoryBytes: memoryBudget.retainedBytes,
             memoryGrowthBudgetBytes: memoryBudget.limitBytes, foreignMemoryRequests: memoryBudget.foreignRequests,
             foreignMemoryBytes: memoryBudget.foreignBytes, distinctStepShapes: stepShapes.count)
     }
@@ -563,12 +578,26 @@ public actor LanguageGenerationSession {
         let cacheBytes = (keys?.length ?? 0) + (values?.length ?? 0)
         memoryBudget.record(requestGrowthBytes: device.currentAllocatedSize - window.allocated - (cacheBytes - window.cacheBytes),
                             submittedTokens: window.tokens, warming: window.warming)
+        startIdleReloadIfNeeded()
     }
 
-    /// Between requests only: a model past its memory budget is released and loaded again.
-    private func reloadIfOverMemoryBudget() async throws {
-        guard memoryBudget.exhausted, let configuration = reopenConfiguration else { return }
+    /// The budget is spent and the model can be reloaded.
+    private var memoryReloadNeeded: Bool { memoryBudget.exhausted && reopenConfiguration != nil }
+
+    /// Between requests only (at idle, or in front of a request): the model is released and loaded again.
+    private func reloadForMemory() async throws {
+        guard let configuration = reopenConfiguration else { return }
         try await reloadModel(configuration)
+    }
+
+    /// After a request that left the budget spent: reload now, in the background under a GPU grant,
+    /// rather than in front of the next request (``LanguageRequestAdmission``).
+    private func startIdleReloadIfNeeded() {
+        guard admission.shouldStartIdleReload(reloadNeeded: memoryReloadNeeded) else { return }
+        admission.idleReloadStarted(Task {
+            await self.admission.runIdleReload(gpu: self.gpu, reloadNeeded: { self.memoryReloadNeeded },
+                                               reload: { try await self.reloadForMemory() })
+        })
     }
 
     /// Terminal close. New requests fail with `closed`; an active request finishes and
@@ -576,9 +605,10 @@ public actor LanguageGenerationSession {
     /// Then the model, function, stream and KV caches are released. Concurrent calls
     /// return once the release completes. Open a new session to load the model again.
     public func unload() async {
-        // A request still waiting for GPU admission is withdrawn and later admissions are refused, so close
-        // never waits behind the GPU queue; a request reloading under its grant stops when the reload returns.
-        admission.withdraw()
+        // A request or idle reload still waiting for GPU admission is withdrawn and later admissions are refused, so
+        // close never waits behind the GPU queue; an idle reload is cancelled (a load in progress finishes and is
+        // dropped), and a request reloading under its grant stops when the reload returns.
+        await admission.close()
         guard await lifecycle.beginClose() else { return }
         function = nil
         imageFunction = nil

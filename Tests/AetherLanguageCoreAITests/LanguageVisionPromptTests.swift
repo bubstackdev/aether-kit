@@ -70,11 +70,12 @@ struct LanguageVisionPromptTests {
         let image = try features(grid: [1, 8, 8])          // 16 tokens
         let rendered = Array(1...19) + [tokens.visionStart, tokens.imagePad, tokens.visionEnd] + Array(30...34)
         let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: [image]), tokens: tokens)
-        let submissions = plan.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512)
-        // 20 text tokens (19 + vision start) as 16 + 4, the 16-token image alone, then 6 text tokens as 4 + 2.
-        #expect(submissions.map(\.count) == [16, 4, 16, 4, 2])
-        #expect(submissions.map(\.image) == [nil, nil, 0, nil, nil])
-        #expect(submissions.map(\.start) == [0, 16, 20, 36, 40])
-        #expect(submissions.reduce(0) { $0 + $1.count } == plan.ids.count)
+        let submissions = plan.submissions(contract: .bucketedPositions, requestedChunk: 8, maximumChunk: 512)
+        // 20 text tokens (19 + vision start) as 8, 8 and a last 8 stepping back to 12; the 16-token image alone; then 6
+        // text tokens, shorter than the width, as one chunk. No text chunk reaches back into the image.
+        #expect(submissions.map(\.count) == [8, 8, 8, 16, 6])
+        #expect(submissions.map(\.image) == [nil, nil, nil, 0, nil])
+        #expect(submissions.map(\.start) == [0, 8, 12, 20, 36])
+        #expect(submissions.last.map { $0.start + $0.count } == plan.ids.count)
     }
 }

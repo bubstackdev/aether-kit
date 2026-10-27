@@ -78,6 +78,10 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--greedy-tokens", type=int, default=64)
     parser.add_argument("--forced-tokens", type=int, default=32)
+    parser.add_argument("--prompt", default=PROMPT,
+                        help="the user message (default: the short sky prompt of the earlier references)")
+    parser.add_argument("--prompt-repeat", type=int, default=1,
+                        help="repeat the user message this many times (long prompts reach the bucketed step-back tail)")
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
@@ -85,7 +89,8 @@ def main() -> None:
 
     torch.set_num_threads(max(1, torch.get_num_threads()))
     tokenizer = AutoTokenizer.from_pretrained(args.checkpoint)
-    text = tokenizer.apply_chat_template([{"role": "user", "content": PROMPT}], tokenize=False,
+    message = args.prompt * args.prompt_repeat
+    text = tokenizer.apply_chat_template([{"role": "user", "content": message}], tokenize=False,
                                          add_generation_prompt=True, enable_thinking=False)
     prompt = tokenizer(text, add_special_tokens=False)["input_ids"]
     model = AutoModelForCausalLM.from_pretrained(args.checkpoint, torch_dtype=torch.float32).eval()
@@ -123,7 +128,7 @@ def main() -> None:
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "transformers")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},
-        "prompt": PROMPT,
+        "prompt": message,
         "promptTokens": prompt,
         "greedyTokens": greedy,
         "greedyText": tokenizer.decode(greedy),

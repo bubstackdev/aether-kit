@@ -86,7 +86,8 @@ an embedding gather and adds the DeepStack features after the first three decode
 the fixed grids, `withImage` only ever sees three image submission sizes (484, 448, 432). Rotary
 positions are 3-axis M-RoPE (`rope_positions`), separate from the cache positions that address
 rows and the mask (rope positions inside an image are not monotonic, engine F-P3-1). Text runs are
-prefilled in power-of-two chunks through `main`; each image's tokens go in one `withImage` call
+prefilled in the contract's fixed width (64) through `main`, a run's last chunk stepping back over rows
+already written ([step contracts](language-generation.md#step-contracts)); each image's tokens go in one `withImage` call
 (at most `maximumImageChunk`, 2,048 here).
 
 **Preprocessing.** The image snaps to the grid whose aspect ratio is nearest its own in log
