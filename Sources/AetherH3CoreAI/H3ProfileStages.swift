@@ -19,21 +19,23 @@ protocol H3DenoiserKernels: Sendable {
     func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData)
-    /// One step's blocks 0..<tables.count in order; returns the last block's output. `onBlock`, when given, receives
-    /// every block's output (readback only then).
-    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+    /// One step's blocks 0..<tables.count in order; returns the last block's output. Each table is padded to
+    /// `cardinality` timesteps (`H3ModulationPadding`). `onBlock`, when given, receives every block's output (readback
+    /// only then).
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData
     func release() async
 }
 extension H3DenoiserKernels {
     /// One `block` call per block, each output returned to the host.
-    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
         var hidden = hidden
         let spec = hidden.spec
         for (index, table) in tables.enumerated() {
             try Task.checkCancellation()
-            hidden = try await block(index, hidden: hidden, table: try table.read(), tags: tags, cos: cos, sin: sin)
+            let padded = try H3ModulationPadding.table(try table.read(), cardinality: cardinality)
+            hidden = try await block(index, hidden: hidden, table: padded, tags: tags, cos: cos, sin: sin)
             guard hidden.spec == spec else { throw AetherError.invalidTensor("H3 block output shape differs") }
             try await onBlock?(index, hidden)
         }
@@ -115,6 +117,45 @@ public enum H3Packing {
     }
 }
 
+/// Pads a step's modulation inputs to the trajectory's largest timestep cardinality, so the body and heads graphs see
+/// one shape for the whole render. Their `temb` inputs are dynamic in the cardinality k (the step's distinct row
+/// timesteps: T2VA has k = 1 at step 0 and 2 afterwards, FL2VA 2 and then 3). Core AI specializes a reshape-enabled
+/// function once per input shape and keeps every specialization until the model is released, so a k change mid-render
+/// added a second body specialization: about 2.5 GiB of Metal at 960×544×124. This is a workaround for that retention,
+/// not a fix. Padding is exact: the block reads its table only through `index_select` on the AdaLN indices
+/// (`tags` < 3k) and the heads read `temb` rows only through `indices` (< k), so the appended rows, copies of existing
+/// rows, are never selected, and the qualified boundary hashes replay unchanged.
+public enum H3ModulationPadding {
+    /// A block's AdaLN table `[6, 3k, D]` bf16 -> `[6, 3 cardinality, D]`, each slice's rows followed by copies of them.
+    public static func table(_ table: H3TensorData, cardinality: Int) throws -> H3TensorData {
+        guard table.spec.shape.count == 3, table.spec.shape[0] == 6, table.spec.shape[1] % 3 == 0 else {
+            throw AetherError.invalidTensor("H3 modulation table must be [6, 3k, D]")
+        }
+        return try repeatingRows(table, slices: 6, cardinality: cardinality, rowsPerTimestep: 3)
+    }
+    /// A step's timestep embedding `[k, C]` -> `[cardinality, C]`, its rows followed by copies of them.
+    public static func embedding(_ embedding: H3TensorData, cardinality: Int) throws -> H3TensorData {
+        guard embedding.spec.shape.count == 2 else { throw AetherError.invalidTensor("H3 timestep embedding must be [k, C]") }
+        return try repeatingRows(embedding, slices: 1, cardinality: cardinality, rowsPerTimestep: 1)
+    }
+    private static func repeatingRows(_ tensor: H3TensorData, slices: Int, cardinality: Int, rowsPerTimestep: Int) throws -> H3TensorData {
+        let shape = tensor.spec.shape, axis = shape.count - 2, rows = shape[axis]
+        guard rows <= rowsPerTimestep * cardinality else { throw AetherError.invalidTensor("H3 modulation cardinality exceeds the padding target") }
+        if rows == rowsPerTimestep * cardinality { return tensor }
+        let rowBytes = tensor.spec.byteCount / (slices * rows), target = rowsPerTimestep * cardinality
+        var bytes = Data(capacity: slices * target * rowBytes)
+        for slice in 0..<slices {
+            let base = tensor.bytes.startIndex + slice * rows * rowBytes
+            for row in 0..<target {
+                let source = base + (row % rows) * rowBytes
+                bytes.append(tensor.bytes[source..<(source + rowBytes)])
+            }
+        }
+        var padded = shape; padded[axis] = target
+        return try H3TensorData(spec: H3TensorSpec(scalarType: tensor.spec.scalarType, shape: padded), bytes: bytes)
+    }
+}
+
 /// One boundary of the profile denoiser's trajectory, for qualification. Every value is a tensor the trajectory
 /// already holds on the CPU at that point; observing adds no native call or readback.
 public enum H3DenoiserObservation: Sendable {
@@ -171,6 +212,8 @@ actor H3ProfileDenoiser: H3Denoiser {
         }
         let stepTables = try tables(layout)
         guard stepTables.count == steps, stepTables.allSatisfy({ $0.tables.count == blocks }) else { throw AetherError.invalidModel("H3 step tables differ from the schedule") }
+        // One modulation shape for the whole trajectory (see H3ModulationPadding).
+        let cardinality = schedule.steps.map { layout.timesteps(for: $0).values.count }.max() ?? 1
         let rotary = try layout.rotary()
         let cos = try h3Tensor([layout.rows, 96], rotary.cos.values), sin = try h3Tensor([layout.rows, 96], rotary.sin.values)
         let gather = try h3Tensor(.int32, [layout.rows], H3Packing.gather(layout))
@@ -200,10 +243,12 @@ actor H3ProfileDenoiser: H3Denoiser {
                 }
             }
             try Task.checkCancellation()
-            hidden = try await kernels.blocks(hidden: hidden, tables: Array(entry.tables.prefix(blocks)), tags: tags, cos: cos, sin: sin, onBlock: onBlock)
+            hidden = try await kernels.blocks(hidden: hidden, tables: Array(entry.tables.prefix(blocks)), cardinality: cardinality, tags: tags,
+                                              cos: cos, sin: sin, onBlock: onBlock)
             guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 block output shape differs") }
             try Task.checkCancellation()
-            let velocity = try await kernels.heads(hidden: hidden, temb: try entry.embedding.read(), indices: indices, videoIndices: videoIndices,
+            let temb = try H3ModulationPadding.embedding(try entry.embedding.read(), cardinality: cardinality)
+            let velocity = try await kernels.heads(hidden: hidden, temb: temb, indices: indices, videoIndices: videoIndices,
                                                    audioIndices: audioIndices, video: latents.video.spec, audio: latents.audio.spec)
             if let observer { try await observer(.heads(step: step.index, video: velocity.video, audio: velocity.audio)) }
             latents = try latents.advanced(schedule: schedule, step: step.index, videoVelocity: velocity.video, audioVelocity: velocity.audio,
@@ -389,13 +434,14 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
     }
     /// The step's blocks on one body graph: block 0 copies `hidden` in, every later block binds its predecessor's output
     /// on the device (two alternating buffers), and only the last output (or every output, for `onBlock`) is read back.
-    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
         if body == nil { body = try await NativeH3Graph.open(profile.body) }
         var last: H3TensorData?
         for (index, table) in tables.enumerated() {
             try Task.checkCancellation()
-            var inputs: [String: NativeH3Graph.Input] = ["hidden": index == 0 ? .data(hidden) : .chained(hidden.spec), "temb": .data(try table.read()),
+            let temb = try H3ModulationPadding.table(try table.read(), cardinality: cardinality)
+            var inputs: [String: NativeH3Graph.Input] = ["hidden": index == 0 ? .data(hidden) : .chained(hidden.spec), "temb": .data(temb),
                                                          "tags": .data(tags), "cos": .data(cos), "sin": .data(sin)]
             for file in profile.parameters[index] { inputs[file.name] = .file(file) }
             let readback = onBlock != nil || index == tables.count - 1
