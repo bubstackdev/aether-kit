@@ -72,6 +72,15 @@ public actor LanguageGenerationSession {
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
+    private var admissionWithdrawn = false
+
+    /// For an owning session's close (`VisionLanguageSession.unload()`): withdraws a request
+    /// waiting for GPU admission and refuses later admissions, so the owner never waits behind the
+    /// GPU queue before it unloads this session.
+    package func withdrawPendingAdmission() {
+        admissionWithdrawn = true
+        pendingGPU?.withdraw()
+    }
     public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
@@ -189,7 +198,7 @@ public actor LanguageGenerationSession {
         self.initialCapacity = initial
         self.contract = contract
         self.prefillLimit = prefillLimit
-        self.imageLimit = exportBounds?.maximumImageChunk
+        self.imageLimit = try LanguageStepContract.imageChunkLimit(acceptsImages: imageFunction != nil, bounds: exportBounds)
         self.takesRopePositions = takesRope
         self.acceptsImages = imageFunction != nil
         self.imageFunction = imageFunction
@@ -240,9 +249,7 @@ public actor LanguageGenerationSession {
     private func imagePlan(_ prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens) throws -> LanguagePromptPlan {
         guard acceptsImages else { throw LanguageGenerationError.invalid("This asset has no image input") }
         let plan = try LanguagePromptPlan.expand(prompt, tokens: imageTokens)
-        if let imageLimit, let largest = plan.spans.map(\.count).max(), largest > imageLimit {
-            throw LanguageGenerationError.invalid("An image has more tokens than the exported image chunk (\(imageLimit))")
-        }
+        try plan.requireImageSpans(within: imageLimit ?? 0)
         return plan
     }
 
@@ -302,6 +309,7 @@ public actor LanguageGenerationSession {
     /// Waits for GPU admission when the session has one. `unload()` withdraws a request still waiting.
     private func admitGPU() async throws -> GPUAdmissionGrant? {
         guard let gpu else { return nil }
+        guard !admissionWithdrawn else { throw LanguageGenerationError.closed }
         let attempt = GPUAdmissionAttempt(gpu)
         pendingGPU = attempt
         defer { pendingGPU = nil }

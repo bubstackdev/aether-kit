@@ -212,10 +212,11 @@
         "width": 4032,
         "height": 2268,
         "licence": "Public domain",
-        "licenceURL": null,
+        "licenceURL": "https://commons.wikimedia.org/wiki/Template:PD-self",
         "artist": "<a href=\"https://en.wikipedia.org/wiki/en:User:Bacon_Noodles\" class=\"extiw\" title=\"w:en:User:Bacon Noodles\"><span style=\"font-family: Courier New; font-size:115%;\"><b>Michael</b></span></a>",
         "sha1": "ae5c9c12ae8a015bad65bfaa4b23013680b6bfe4",
-        "sha256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203"
+        "sha256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203",
+        "licenceNote": "Released into the public domain by its author ({{PD-self}} on the file page, own work)"
       },
       {
         "name": "photo-fruit-market-4x3",

@@ -25,8 +25,14 @@ preprocessing parameters and an image-token budget (`maximumImageTokens`), plus
 `exportBounds` with a `maximumImageChunk` covering it. `Forge/language/register_qwen3_vl_bundle.py`
 writes one for an assembled bundle. Each image is preprocessed like the reference processor,
 with its pixels capped to the token budget, encoded once, and spliced into the decoder.
-Decoding is greedy. One request at a time; `unload()` releases both models. With a `gpu:`
-owner, the encode phase and the decoder's request are each admitted.
+Decoding is greedy. One request at a time; overlap fails with `busy`. With a `gpu:` owner, the
+encode phase and the decoder's request are each admitted. `unload()` first withdraws a request
+still waiting for either admission (it fails with `closed`), so close never waits behind another
+owner's GPU work; an admitted request finishes first, then both models are released. The
+registration's `maximumImageTokens · (patch · merge)²` must cover `minimumPixels`, and the
+decoder's export bounds must declare a `maximumImageChunk` covering the budget (also on the raw
+`open(textModel:…)` path); an image larger than the exported chunk is refused before any native
+work. Image resampling runs off the session actor.
 
 ## Pieces
 
@@ -86,9 +92,9 @@ with source and licence recorded in the evidence:
 
 | Photo | Original size | Licence |
 | --- | --- | --- |
-| `File:Bully-dog-2314909-1920.jpg` (portrait) | 1200×1412 | CC0 |
-| `File:Bangkok fruit stall.jpg` (16:9) | 4032×2268 | Public domain |
-| `File:'Byculla Fruit Market' near Byculla Bridge(east)..JPG` (4:3) | 810×608 | CC0 |
+| `File:Bully-dog-2314909-1920.jpg` (portrait) | 1200×1412 | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) |
+| `File:Bangkok fruit stall.jpg` (16:9) | 4032×2268 | Public domain, [`{{PD-self}}`](https://commons.wikimedia.org/wiki/Template:PD-self) |
+| `File:'Byculla Fruit Market' near Byculla Bridge(east)..JPG` (4:3) | 810×608 | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) |
 
 **Reference.** Upstream `Qwen3VLForConditionalGeneration` with its own processor and chat
 template, float32 on the CPU (`Forge/language/reference_qwen3_vl.py`). The Forge eager port
@@ -115,12 +121,18 @@ decoder and resampler produce them, which is expected and recorded rather than h
 **Public API.** `VisionLanguageSession.open(bundle:)` on the registered bundle reproduces the
 component-level Kit run token for token on the three photos, and closes on `unload()`.
 
-## Limits and next steps
+## Limits and follow-ups
 
-- Mac only so far; iPhone memory (vision asset release after use, image-token caps) is not
-  measured. The encoder stays loaded for the session's lifetime.
-- fp16 weights only; no quantized export is qualified.
-- Each new image size specializes the encoder on first use (about 1.5–2.5 s here).
-- One image per prompt was qualified; several images use the same path but are not yet covered.
-- The decoder's prefill submits each image as one `withImage` call whose q equals the image's
-  token count, so each new image size is a new decoder shape too.
+- **Native shapes grow without bound across image sizes — a memory risk.** Every distinct image
+  token count adds a decoder `withImage` shape (its q is the image's token count) and every
+  distinct patch count adds an encoder specialization (about 1.5–2.5 s the first time here; the
+  engine measured roughly 1.5 GB resident per encoder shape, F-P3-29). Neither session recycles
+  its native model, so an app showing many differently sized photos accumulates native shape
+  caches for the session's lifetime. Until this is fixed, reopen the session (or keep image sizes
+  to a few) in long-lived use. Plan for 0.0.3: snap smart resize to a few token buckets so shapes
+  form a small fixed set, or recycle after K new image shapes.
+- **No resource admission** for the encoder and the decoder yet (GPU admission only).
+- **Coverage still missing:** a multi-image M-RoPE fixture (several images use the same path,
+  but only single-image prompts are qualified), iPhone qualification (vision asset release after
+  use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
+- The encoder stays loaded for the session's lifetime.

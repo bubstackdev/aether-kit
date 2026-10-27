@@ -72,6 +72,16 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         return nil
     }
 
+    /// The image submission bound of an asset with image input: required (its `withImage` q bound),
+    /// so an oversized image is refused before Core AI. Nil for assets without image input.
+    static func imageChunkLimit(acceptsImages: Bool, bounds: LanguageExportBounds?) throws -> Int? {
+        guard acceptsImages else { return nil }
+        guard let limit = bounds?.maximumImageChunk, limit > 0 else {
+            throw LanguageGenerationError.invalid("An asset with image input must declare its maximum image chunk")
+        }
+        return limit
+    }
+
     /// Whether a bucketed function also takes 3-axis rotary positions (`rope_positions` [3, q],
     /// Qwen3-VL's M-RoPE), separate from the cache positions that address rows and the mask.
     static func takesRopePositions(_ inputNames: Set<String>) -> Bool { inputNames.contains("rope_positions") }

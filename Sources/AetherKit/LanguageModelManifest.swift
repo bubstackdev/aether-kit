@@ -229,6 +229,9 @@ public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
         guard tokens.count == 3, tokens.allSatisfy({ $0 >= 0 }), patchSize > 0, mergeSize > 0, temporalPatchSize > 0,
               minimumPixels > 0, maximumPixels >= minimumPixels, imageMean.count == 3, imageStandardDeviation.count == 3,
               imageStandardDeviation.allSatisfy({ $0 > 0 }), positionTableSide > 1, maximumImageTokens > 0,
+              // The token budget caps pixels at tokens · (patch · merge)²; it must cover the minimum, or the
+              // smart-resize upscale branch could produce an image past the cap.
+              maximumImageTokens * (patchSize * mergeSize) * (patchSize * mergeSize) >= minimumPixels,
               modelSHA256.utf8.count == 64, modelSHA256.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) })
         else { throw AetherError.invalidModel("invalid vision registration") }
     }

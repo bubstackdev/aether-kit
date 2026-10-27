@@ -125,6 +125,13 @@ struct LanguagePromptPlan {
         return (rows, p - count)
     }
 
+    /// Refuses a prompt with an image larger than the exported image chunk, before any native work.
+    func requireImageSpans(within limit: Int) throws {
+        if let largest = spans.map(\.count).max(), largest > limit {
+            throw LanguageGenerationError.invalid("An image has \(largest) tokens, more than the exported image chunk (\(limit))")
+        }
+    }
+
     /// Prefill submissions: text runs in the contract's power-of-two chunks, each image span as one
     /// `withImage` submission (an image never straddles submissions).
     func submissions(contract: LanguageStepContract, requestedChunk: Int?, maximumChunk: Int?) -> [(start: Int, count: Int, image: Int?)] {

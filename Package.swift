@@ -67,7 +67,7 @@ let package = Package(
         .testTarget(name: "AetherKitTests", dependencies: ["AetherKit"]),
         .testTarget(name: "AetherLanguageTokenizersTests", dependencies: ["AetherLanguageTokenizers", "AetherKit"],
                     resources: [.copy("Fixtures")]),
-        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit", "AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherVisionTests", dependencies: ["AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherAssetsTests", dependencies: ["AetherAssets"]),
         .testTarget(name: "AetherCoreAITests", dependencies: ["AetherCoreAI", "AetherKit", "AetherAssets"]),
