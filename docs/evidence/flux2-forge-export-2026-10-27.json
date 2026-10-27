@@ -648,7 +648,8 @@
     "Fixtures: CPU float32 Diffusers 0.37.1 references t2i ffc4b1365159e40c (10 cases) and reference caf92bb7d83d685c (2 cases); shipped side is the 2026-10-27 re-qualification of the 2026-10-26 bundle on the same fixtures.",
     "Internal graph differences, not contract: layer_norm/group_norm lower to Core AI composites (shipped: decomposed), the VAE decoder upsamples with nearest-neighbour interpolate (shipped: conv + pixel_shuffle); q/k RMS norm feeds the rotary product in float32 without an fp16 round trip.",
     "Core AI cpu_only segfaults running the VAE decoder (shipped asset too), so its export self-check is skipped; native parity qualifies it.",
-    "Bundle size 7,937,283,476 bytes; working directory ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27 7.4 GB (bundle plus 21 MB of reports and PNGs)."
+    "Bundle size 7,937,283,476 bytes; working directory ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27 7.4 GB (bundle plus 21 MB of reports and PNGs).",
+    "Two supporting files were edited after generation rather than regenerated: the raw parity report's bundle.root was shortened to ~ (home path removed, repository is public), and the contract-diff .txt result line was updated to the script's current wording after check_flux2_contract.py gained the candidate-only tokenizer check (re-run result unchanged: contract identical). No recorded hash covers either file."
   ],
   "parity": {
     "gatedChecks": 113,

@@ -47,7 +47,7 @@ One bundle holds both modes: `textEncoder` (`encode`), `denoiser0…2` (`segment
 | denoiser1 | `image_1`, `text_1`, `cond`, ropes → `image_2`, `text_2` | 1.20 GiB |
 | denoiser2 | `image_2`, `text_2`, `cond`, ropes → `velocity` fp16 `[N,128]` | 1.35 GiB |
 | vaeDecoder | `latents` fp16 `[h,w,128]` (still batch-normalized) → `image` f32 `[3,16h,16w]` | fp16 weights, f32 compute, 97 MiB |
-| vaeEncoder | `reference_pixels` f32 `[3,H,W]` → `reference_latents` f32 `[H/16,W/16,128]` (posterior mode, packed, normalized) | fp16 weights, f32 compute, 68 MiB |
+| vaeEncoder | `reference_pixels` f32 `[3,H,W]` → `reference_latents` f32 `[H/16,W/16,128]` (posterior mode, packed, normalized) | fp16 weights, f32 compute, 67 MiB |
 
 `Flux2Assets.open` refuses any other recipe: schema/driver/target, the exact empirical shift constants, rotary axes and
 θ, prompt template/length/padding/pad token, segment list, function roles, tensor bindings, the reference contract
