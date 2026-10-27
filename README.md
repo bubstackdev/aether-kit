@@ -13,6 +13,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 | `AetherKreaTokenizers` | Preview | Optional local tokenizer adapter (Hugging Face `Tokenizers`); never downloads files. |
 | `AetherKreaCoreAI` | Preview | Krea 2 Turbo text-to-image, with reference images and image-to-image refine: Qwen text encoder → four denoiser segments → Euler sampling → VAE decode. |
 | `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload. |
+| `AetherLanguageTokenizers` | **Experimental** (0.0.2) | A language model's local tokenizer and own chat template: chat messages (with image placeholders) to rendered token IDs, and tokens back to text. Never downloads. |
 | `AetherH3`, `AetherH3Tokenizers` | **Experimental** | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |
 | `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. End-to-end media qualification is pending. |
 | `AetherFlux2`, `AetherFlux2Tokenizers` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B CPU contracts: bundle validation, padded Qwen3 prompt, empirical-shift schedule, 4-axis rotary, reference-image policy, and a local tokenizer. |

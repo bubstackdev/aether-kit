@@ -267,8 +267,11 @@ def main() -> None:
     if not args.tiny:
         tok = args.output / "tokenizer"
         tok.mkdir()
+        # The chat template travels with the tokenizer: some checkpoints keep it outside tokenizer_config.json
+        # (chat_template.jinja or .json), and AetherLanguageTokenizers renders with the model's own template.
         for name in ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "generation_config.json",
-                     "config.json", "LICENSE"):
+                     "config.json", "LICENSE", "chat_template.jinja", "chat_template.json", "added_tokens.json",
+                     "special_tokens_map.json"):
             if (args.checkpoint / name).exists():
                 shutil.copyfile(args.checkpoint / name, tok / name)
         report["tokenizerFiles"] = tree_hashes(tok)

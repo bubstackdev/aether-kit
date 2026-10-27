@@ -40,6 +40,17 @@ public struct LanguageModelManifest: Codable, Sendable {
         }
         return model
     }
+    /// Verifies the registration and `tokenizer.json` only, returning the tokenizer directory. For tokenizer-only
+    /// consumers (`AetherLanguageTokenizers`): it neither hashes the model asset nor checks the platform.
+    public func verifyTokenizer(in directory: URL) throws -> URL {
+        guard schemaVersion == 1, Self.hex(sourceRevision, count: 40), Self.hex(tokenizerSHA256, count: 64),
+              !sourceRepository.isEmpty else { throw AetherError.invalidModel("invalid language model registration") }
+        let tokenizer = try Self.child(tokenizerDirectory, of: directory)
+        guard try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
+            throw AetherError.invalidModel("language tokenizer checksum mismatch")
+        }
+        return tokenizer
+    }
     public static func fileHash(_ url: URL) throws -> String {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
