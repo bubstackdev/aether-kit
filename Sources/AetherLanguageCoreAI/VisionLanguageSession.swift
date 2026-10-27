@@ -16,10 +16,18 @@ protocol VisionLanguageDecoding: Sendable {
         -> LanguageGenerationSession.Reply
     func withdrawPendingAdmission() async
     func unload() async
+    /// The decoder's cache and reload statistics; nil for decoders without them.
+    func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics?
+}
+
+extension VisionLanguageDecoding {
+    func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics? { nil }
 }
 
 extension LanguageVisionEncoder: VisionLanguageEncoding {}
-extension LanguageGenerationSession: VisionLanguageDecoding {}
+extension LanguageGenerationSession: VisionLanguageDecoding {
+    func decoderStatistics() async -> CacheStatistics? { cacheStatistics() }
+}
 
 /// Image + text generation over a registered Qwen3-VL bundle (experimental).
 ///
@@ -49,7 +57,9 @@ public actor VisionLanguageSession {
 
     /// Opens a registered bundle whose `language-model.json` has a `vision` registration. No
     /// download or fallback; both assets are verified first.
+    /// `memoryGrowthBudgetBytes` is the decoder's (``LanguageGenerationSession``'s memory budget).
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
+                            memoryGrowthBudgetBytes: Int? = LanguageGenerationSession.defaultMemoryGrowthBudgetBytes,
                             gpu: GPUAdmissionOwner? = nil) async throws -> VisionLanguageSession {
         let manifest = try LanguageModelManifest.load(from: directory)
         let textModel = try manifest.verify(in: directory, platform: platform)
@@ -58,13 +68,14 @@ public actor VisionLanguageSession {
         }
         return try await open(textModel: textModel, visionModel: visionModel, registration: registration,
                               maximumContextLength: manifest.maximumContextLength, stopTokenIDs: Set(manifest.stopTokenIDs),
-                              exportBounds: manifest.exportBounds, gpu: gpu)
+                              exportBounds: manifest.exportBounds, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes, gpu: gpu)
     }
 
     /// Raw-asset entry point for qualification before registration. The export bounds must
     /// declare an image chunk covering the registration's image-token budget.
     public static func open(textModel: URL, visionModel: URL, registration: LanguageVisionRegistration, maximumContextLength: Int,
                             stopTokenIDs: Set<Int>, exportBounds: LanguageExportBounds?,
+                            memoryGrowthBudgetBytes: Int? = LanguageGenerationSession.defaultMemoryGrowthBudgetBytes,
                             gpu: GPUAdmissionOwner? = nil) async throws -> VisionLanguageSession {
         try registration.validate()
         try Self.requireImageBudget(registration: registration, bounds: exportBounds)
@@ -74,7 +85,8 @@ public actor VisionLanguageSession {
             expectFrequentReshapes: try registration.encoderExpectsFrequentReshapes())
         do {
             let language = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: maximumContextLength,
-                                                                    stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
+                                                                    stopTokenIDs: stopTokenIDs, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
+                                                                    exportBounds: exportBounds, gpu: gpu)
             guard language.acceptsImages else {
                 await language.unload()
                 throw LanguageGenerationError.invalid("The text model has no image entry point")
@@ -160,6 +172,12 @@ public actor VisionLanguageSession {
         return try await language.generate(prompt: LanguageVisionPrompt(renderedTokenIDs: renderedTokenIDs, images: features),
                                            imageTokens: tokens, maximumTokens: maximumTokens, prefillChunkSize: prefillChunkSize,
                                            onToken: onToken, observer: nil)
+    }
+
+    /// The decoder's cache statistics, including its model reloads and the memory its requests
+    /// retain against the budget (``LanguageGenerationSession/cacheStatistics()``).
+    public func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics? {
+        await language.decoderStatistics()
     }
 
     /// Terminal close: withdraws a request waiting for GPU admission (encode or decode), waits for

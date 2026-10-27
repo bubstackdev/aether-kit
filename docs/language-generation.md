@@ -116,14 +116,18 @@ change, and bucketed ones declare their `exportBounds`.
 | Prefill submissions | uniform `prefillChunkSize` chunks (within a declared chunk bound) | largest power of two that fits the remainder, `prefillChunkSize` and the chunk bound |
 | Attention reads | the `total` materialized rows | every cache row (the real length rounded up to 256), concatenated with the chunk's |
 | Input shapes | a new `total` every step | (q, cache capacity): at most log2(chunk bound) + 1 q sizes times one capacity per 256 tokens of context |
-| Native recycling | every 128 submissions by default | none by default |
+| Shape recycling | every 128 submissions by default | none by default |
+| Memory-budget reloads | between requests, past the budget | between requests, past the budget |
 
 Because the running contract submits a new input shape on every decode step, Kit
 recycles its native model/function/stream ownership after a bounded number of
 joined submissions (128 by default), preserving the Kit-owned KV state; this bounds
 the lifetime of native shape caches. The bucketed contract's shapes form a bounded
 set (decoding adds one shape per 256 tokens it crosses), so
-`maximumSubmissionsPerModel` defaults to nil (never) for it. Either policy is
+`maximumSubmissionsPerModel` defaults to nil (never) for it. A bounded shape set does
+not bound memory, though: both contracts are also reloaded between requests once
+Core AI's retention on shape changes passes the memory budget (see
+[Native memory retention](#native-memory-retention)). Either policy is
 explicit and can be overridden on raw-asset opening; reload counts and the number of
 distinct submitted (q, capacity) pairs are exposed in cache statistics. A bucketed
 asset's position input has a different name, so a 0.0.1 loader rejects it instead of
@@ -136,8 +140,10 @@ contiguous inputs and grows them in 256-row steps with the real length (a stride
 view into a larger buffer measured 3–8× slower: Core AI copies non-contiguous inputs
 every step). The [cache ‖ chunk] concatenation copies every cache row each step, so a
 bucketed step costs more than a running one and the gap grows with the context; what
-the contract buys is a bounded shape set — no reloads, no shape-cache growth — not
-faster steps. Kit-side export tooling for Qwen3 lives in `Forge/language/` (development only, not a
+the contract buys is a bounded shape set — no shape recycling, no new shapes once warm —
+not faster steps. It does not avoid the memory-budget reloads: those come from Core AI
+retaining memory on every shape change, and a request always changes shape. Kit-side
+export tooling for Qwen3 lives in `Forge/language/` (development only, not a
 shipping dependency); its module documentation records the rejected alternatives and
 their measurements.
 
@@ -158,6 +164,102 @@ grown caches.
 
 Raw-asset opening and teacher-forced logits are available for explicit qualification
 before registration. Registration itself is not evidence of correctness.
+
+## Native memory retention
+
+Core AI keeps Metal allocations every time a function specialized with
+`expectFrequentReshapes` (as every language session's is) changes input shape, until the
+model is released. A request always changes shape (its prefill chunks, then 1-token
+decode steps), so this is not the weights or a new shape's specialization, which are
+one-time, but further memory on every request, even when every shape is already warm.
+The retained amount follows the shape changed to: switching back to a 256-token
+submission retains far more than switching to a 1-token step, which is why smaller
+prefill chunks retain less. Repeating one shape retains nothing. It is not Kit's: new KV buffers, reused inputs, Kit-owned output
+views, autorelease pools and a fresh compute stream per request all left it unchanged.
+Releasing the function, stream and model returns all of it. Measured on one M5 Max
+(warm, repeated identical requests, Metal's allocated size after each request):
+
+| Model | Request | Retained per request |
+| --- | --- | --- |
+| Qwen3-4B writer | 449-token prompt, 8 tokens | 137 MiB |
+| Qwen3-VL-2B decoder, text | 449-token prompt, 8 tokens | 141 MiB |
+| Qwen3-VL-4B decoder, text | 449-token prompt, 8 tokens | 257 MiB |
+| Qwen3-VL-2B / 4B decoder, image | 449 tokens with one 432-token image, 8 tokens | 0 / 16 MiB |
+
+Smaller prefill chunks retain less and cost time to first token (writer: 128-token
+chunks 111 MiB and 0.33 s per request, 64 → 59 MiB and 0.38 s, 32 → 32 MiB and 0.54 s,
+against the default chunks' 137 MiB and 0.28 s). Specializing without
+`expectFrequentReshapes` retains nothing per request but allocated 34 GiB at the
+writer's first request. Neither is a fix: the default chunks are unchanged.
+
+The session therefore reloads between requests on a memory budget
+(`memoryGrowthBudgetBytes` on both `open` entry points and `VisionLanguageSession.open`,
+default `LanguageGenerationSession.defaultMemoryGrowthBudgetBytes`, 1 GiB; nil
+disables it). Each request is measured from its GPU admission to its end: Metal's
+allocated size, net of the session's own KV cache changes. Once the growth counted
+since the model loaded passes the budget, the next request first releases the model,
+function and stream and loads them again; the KV state is Kit-owned and unaffected.
+The check runs only between requests, never inside one. A reload costs the load plus
+the first use of each function again (about 2.6 s for the writer's text function), so
+the default budget reloads the writer about every eighth 449-token request.
+`CacheStatistics` reports `modelReloadCount`, `retainedMemoryBytes` and the budget;
+`VisionLanguageSession.decoderStatistics()` reports its decoder's. A session made with
+`init(model:)` cannot reload and has no budget.
+
+Metal's allocated size is process-wide, so the accounting sets aside what is not this
+model's retention (`LanguageMemoryBudget`):
+- a request that submits a function or (q, capacity) shape for the first time since the
+  load is not counted (the weight copy or specialization);
+- a net decrease is another allocator's (the session frees nothing of its own inside a
+  window) and never offsets the count;
+- growth above half the budget and above four times the request's expected growth (its
+  submitted tokens times the median per-token rate of recent counted requests, once
+  three are known) is another allocator's.
+Set-aside requests are counted in `foreignMemoryRequests` and `foreignMemoryBytes`.
+Sharing a `GPUAdmission` between a host's sessions keeps their admitted GPU work out of
+each other's windows; loading and releasing are not admitted, so another session's load
+inside a window is caught only by the outlier rule. Without `gpu:`, the accounting
+assumes no concurrent Metal work beyond what those rules catch. Before a model's rate is
+known, a foreign load inside a window counts and can cause one unnecessary reload; this
+errs towards reloading, because uncounted retention would grow without bound.
+
+Qualification (`languageMemoryBudgetBoundsRepeatedRequests`, opt-in;
+[evidence](evidence/language-memory-budget-2026-10-27.json)) opens each model as an
+application would and runs 60 requests after warming each request kind:
+at the default 1 GiB budget, every model stayed within its post-warm Metal plus the
+budget plus its largest warm request's growth, reloaded, and repeated every reply of a
+kind token for token across the reloads.
+
+| Model (opened through) | Requests | Warm Metal | Highest after a request (bound) | Reloads |
+| --- | --- | --- | --- | --- |
+| Qwen3-0.6B (raw asset) | 453-token prompt | 1,615 MiB | 2,678 MiB (2,721) | 4 |
+| Qwen3-4B writer (`LanguageGenerationSession` bundle) | 449-token prompt | 8,663 MiB | 9,773 MiB (9,838) | 6 |
+| Qwen3-VL-2B (`VisionLanguageSession` bundle) | 449-token text, then one 512×384 image, alternating | 10,203 MiB | 11,238 MiB (11,369) | 3 |
+| Qwen3-VL-4B (`VisionLanguageSession` bundle) | the same | 19,736 MiB | 20,819 MiB (21,059) | 6 |
+
+Every request generated 8 tokens. Unloading returned Metal to 40–50 MiB for the text
+models and to about 375 MiB for the vision sessions. Without the budget, the writer's 60
+requests would have retained about 8 GiB.
+
+### Minimal reproduction for Apple
+
+`coreAIRetainsMemoryPerReshapeUntilRelease` (opt-in;
+[record](evidence/core-ai-reshape-retention-2026-10-27.json)) uses Core AI alone. It loads
+the bucketed Qwen3-0.6B asset with `SpecializationOptions(preferredComputeUnitKind: .gpu)`
+and `expectFrequentReshapes = true`, loads its `main` function, and encodes submissions
+one at a time on one `ComputeStream`, joining each with `currentWorkCompleted()` and
+reading its logits. Every submission is a fresh set of `NDArray` inputs: token IDs and
+cache positions [1, q] and zeroed [28, 1, 8, 256, 128] key and value caches. Metal's
+`currentAllocatedSize` after each submission (one M5 Max, 40 submissions per phase):
+
+| Specialization | 40 × q = 256 | then 40 alternating q = 256, 1 | after releasing function, stream and model |
+| --- | --- | --- | --- |
+| `expectFrequentReshapes = true` | 1,554 MiB, flat | 1,554 → 2,751 MiB: +61 MiB per change to 256, +2 MiB per change to 1 | 28 MiB |
+| `expectFrequentReshapes = false` | 1,669 MiB, flat | 3,108 MiB after the first q = 1 (its specialization), then flat | 90 MiB |
+
+Expected: once both shapes have run, alternating between them allocates nothing more, as
+without `expectFrequentReshapes`. Observed: every shape change retains memory until the
+model is released. The Feedback is the user's to file.
 
 ## Evidence and limits
 

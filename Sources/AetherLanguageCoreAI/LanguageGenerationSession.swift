@@ -45,6 +45,16 @@ public actor LanguageGenerationSession {
     private var reopenConfiguration: ReopenConfiguration?
     private var submissionsSinceReload = 0
     private var modelReloadCount = 0
+    private var memoryBudget: LanguageMemoryBudget
+    /// Functions and shapes submitted since the model was (re)loaded: a request that adds one is warming.
+    private struct WarmShape: Hashable { let image: Bool; let count: Int; let capacity: Int }
+    private var warmShapes: Set<WarmShape> = []
+    /// The current request's memory window: Metal's allocated size and the KV cache bytes at admission,
+    /// then whether it warmed a function or shape and how many tokens it submitted.
+    private var memoryWindow: (allocated: Int, cacheBytes: Int, warming: Bool, tokens: Int)?
+    /// The default memory budget: reload once warm requests have retained 1 GiB of Metal
+    /// allocations since the model loaded.
+    public static let defaultMemoryGrowthBudgetBytes = 1 << 30
     /// The asset's KV addressing, detected from the `main` function signature.
     public nonisolated let contract: LanguageStepContract
     private struct StepShape: Hashable { let count: Int; let capacity: Int }
@@ -86,12 +96,15 @@ public actor LanguageGenerationSession {
     /// Opens a registered local model through Aether Kit. No download or fallback.
     /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
     /// grant after validation and holds it until its native submissions have joined. Loading is not admitted.
+    /// `memoryGrowthBudgetBytes` bounds the native memory requests retain (see the raw-asset entry point).
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
+                            memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
         let modelURL = try manifest.verify(in: directory, platform: platform)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
-            stopTokenIDs: Set(manifest.stopTokenIDs), exportBounds: manifest.exportBounds, gpu: gpu)
+            stopTokenIDs: Set(manifest.stopTokenIDs), memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
+            exportBounds: manifest.exportBounds, gpu: gpu)
     }
 
     /// Explicit raw-asset entry point for qualification before bundle registration.
@@ -99,13 +112,22 @@ public actor LanguageGenerationSession {
     /// submissions for `runningPositions`, never for `bucketedPositions`. `exportBounds` are the
     /// asset's exported shape maxima: required for a bucketed asset, optional for a running one,
     /// and enforced (context and prefill chunks) when given.
+    ///
+    /// `memoryGrowthBudgetBytes`: Core AI keeps Metal allocations on every input-shape change until
+    /// the model is released (reshape-enabled specialization), so warm requests keep adding memory.
+    /// Once the growth retained since the model loaded passes this budget, the next request first
+    /// releases and reloads the model (KV state is Kit-owned and unaffected); reloads are checked
+    /// only between requests and counted in ``CacheStatistics/modelReloadCount``. nil never reloads
+    /// for memory.
     public static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
                             stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
                             expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
+                            memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
                             exportBounds: LanguageExportBounds? = nil,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
-        guard (maximumSubmissionsPerModel ?? 1) > 0 else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
+        guard (maximumSubmissionsPerModel ?? 1) > 0, (memoryGrowthBudgetBytes ?? 0) >= 0
+        else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
         var options: SpecializationOptions
         switch compute {
         case .automatic: options = .default
@@ -119,11 +141,13 @@ public actor LanguageGenerationSession {
             initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
             expectFrequentReshapes: expectFrequentReshapes,
-            maximumSubmissions: maximumSubmissionsPerModel ?? session.contract.defaultMaximumSubmissionsPerModel))
+            maximumSubmissions: maximumSubmissionsPerModel ?? session.contract.defaultMaximumSubmissionsPerModel),
+            memoryGrowthBudgetBytes: memoryGrowthBudgetBytes)
         return session
     }
     public static var deviceArchitectureName: String { AIModel.deviceArchitectureName }
 
+    /// Wraps an already loaded model. It cannot be reloaded, so it has no memory budget.
     public init(model: AIModel, capacity: Int = 512, initialCacheCapacity: Int = 256, stopTokenIDs: Set<Int> = [151645],
                 exportBounds: LanguageExportBounds? = nil, gpu: GPUAdmissionOwner? = nil) throws {
         guard capacity > 0, capacity <= 16384, initialCacheCapacity > 0,
@@ -202,6 +226,7 @@ public actor LanguageGenerationSession {
         self.takesRopePositions = takesRope
         self.acceptsImages = imageFunction != nil
         self.imageFunction = imageFunction
+        self.memoryBudget = LanguageMemoryBudget(limitBytes: nil)
     }
 
     /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
@@ -218,8 +243,11 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
+        try await reloadIfOverMemoryBudget()
         let grant = try await admitGPU()
         defer { grant?.release() }
+        openMemoryWindow()
+        defer { closeMemoryWindow() }
         let start = ContinuousClock.now
         let next = try Self.greedy(await prefill(plan, images: prompt.images, chunkSize: prefillChunkSize, observer: observer))
         let first = elapsed(start)
@@ -239,8 +267,11 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
+        try await reloadIfOverMemoryBudget()
         let grant = try await admitGPU()
         defer { grant?.release() }
+        openMemoryWindow()
+        defer { closeMemoryWindow() }
         var rows = [try await prefill(plan, images: prompt.images, chunkSize: nil, observer: nil)]
         for (index, token) in continuation.enumerated() {
             rows.append(try await step(tokens: [Int32(token)], position: plan.ids.count + index, observer: nil))
@@ -272,8 +303,11 @@ public actor LanguageGenerationSession {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
+        try await reloadIfOverMemoryBudget()
         let grant = try await admitGPU()
         defer { grant?.release() }
+        openMemoryWindow()
+        defer { closeMemoryWindow() }
         let start = ContinuousClock.now
         let next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
         let first = elapsed(start)
@@ -290,8 +324,11 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
+        try await reloadIfOverMemoryBudget()
         let grant = try await admitGPU()
         defer { grant?.release() }
+        openMemoryWindow()
+        defer { closeMemoryWindow() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
     }
 
@@ -299,8 +336,11 @@ public actor LanguageGenerationSession {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
         defer { lifecycle.finish() }
+        try await reloadIfOverMemoryBudget()
         let grant = try await admitGPU()
         defer { grant?.release() }
+        openMemoryWindow()
+        defer { closeMemoryWindow() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]
         for (index, token) in continuation.enumerated() {
             rows.append(try await step(tokens: [Int32(token)], position: prompt.count + index, observer: nil))
@@ -415,6 +455,10 @@ public actor LanguageGenerationSession {
                                                                       shape: [image.deepstackLevels, image.tokenCount, image.hiddenSize]))
         }
         stepShapes.insert(StepShape(count: tokens.count, capacity: allocatedCapacity))
+        if warmShapes.insert(WarmShape(image: image != nil, count: tokens.count, capacity: allocatedCapacity)).inserted {
+            memoryWindow?.warming = true
+        }
+        memoryWindow?.tokens += tokens.count
         let outputs: [String: InferenceFunction.AsyncValue]
         do {
             if contract.cachesAreStates {
@@ -493,7 +537,15 @@ public actor LanguageGenerationSession {
         public let materializedTokens: Int
         public let allocatedBytes: Int
         public let growthCount: Int
+        /// Model reloads: submission-count recycling (running contract) and memory-budget reloads.
         public let modelReloadCount: Int
+        /// Metal growth retained by warm requests since the model last loaded (the budget's measure).
+        public let retainedMemoryBytes: Int
+        public let memoryGrowthBudgetBytes: Int?
+        /// Requests whose measured change was set aside as another allocator's (a net decrease, or
+        /// growth far above this model's per-token retention), and the size of those changes.
+        public let foreignMemoryRequests: Int
+        public let foreignMemoryBytes: Int
         /// Distinct submitted (token count, cache capacity) pairs over the session's life: input
         /// shapes for the bucketed contract. The running contract adds a position dimension per
         /// step on top of these, so this undercounts its native shapes.
@@ -502,10 +554,37 @@ public actor LanguageGenerationSession {
     public func cacheStatistics() -> CacheStatistics {
         CacheStatistics(maximumContext: capacity, allocatedCapacity: allocatedCapacity,
             materializedTokens: materializedTokens, allocatedBytes: (keys?.length ?? 0) + (values?.length ?? 0), growthCount: growthCount,
-            modelReloadCount: modelReloadCount, distinctStepShapes: stepShapes.count)
+            modelReloadCount: modelReloadCount, retainedMemoryBytes: memoryBudget.retainedBytes,
+            memoryGrowthBudgetBytes: memoryBudget.limitBytes, foreignMemoryRequests: memoryBudget.foreignRequests,
+            foreignMemoryBytes: memoryBudget.foreignBytes, distinctStepShapes: stepShapes.count)
     }
 
-    private func configureReopening(_ configuration: ReopenConfiguration) { reopenConfiguration = configuration }
+    private func configureReopening(_ configuration: ReopenConfiguration, memoryGrowthBudgetBytes: Int?) {
+        reopenConfiguration = configuration
+        memoryBudget = LanguageMemoryBudget(limitBytes: memoryGrowthBudgetBytes)
+    }
+
+    /// Starts a request's measurement once it is admitted. Metal's allocated size is process-wide: a
+    /// shared ``GPUAdmission`` keeps other admitted GPU work out of the window, and
+    /// ``LanguageMemoryBudget`` sets aside changes that are not this model's retention.
+    private func openMemoryWindow() {
+        memoryWindow = (device.currentAllocatedSize, (keys?.length ?? 0) + (values?.length ?? 0), false, 0)
+    }
+
+    /// Ends it, including after a failure: the growth net of the request's own KV cache changes.
+    private func closeMemoryWindow() {
+        guard let window = memoryWindow else { return }
+        memoryWindow = nil
+        let cacheBytes = (keys?.length ?? 0) + (values?.length ?? 0)
+        memoryBudget.record(requestGrowthBytes: device.currentAllocatedSize - window.allocated - (cacheBytes - window.cacheBytes),
+                            submittedTokens: window.tokens, warming: window.warming)
+    }
+
+    /// Between requests only: a model past its memory budget is released and loaded again.
+    private func reloadIfOverMemoryBudget() async throws {
+        guard memoryBudget.exhausted, let configuration = reopenConfiguration else { return }
+        try await reloadModel(configuration)
+    }
 
     /// Terminal close. New requests fail with `closed`; an active request finishes and
     /// joins its native work first, so cancel its task to end a long generation sooner.
@@ -536,10 +615,20 @@ public actor LanguageGenerationSession {
         guard let configuration = reopenConfiguration else { return }
         let exhausted = configuration.maximumSubmissions.map { submissionsSinceReload >= $0 } ?? false
         guard function == nil || exhausted else { return }
+        try await reloadModel(configuration)
+    }
+
+    /// Releases the model, its functions and stream (returning every allocation Core AI retained
+    /// for them), then loads it again. A failed load leaves the handles nil, and the next step retries.
+    private func reloadModel(_ configuration: ReopenConfiguration) async throws {
         function = nil
         imageFunction = nil
         stream = nil
         model = nil
+        warmShapes = []
+        memoryBudget.reset()
+        // The released model's memory left inside the window must not count against the new one.
+        if memoryWindow != nil { openMemoryWindow(); memoryWindow?.warming = true }
         try Task.checkCancellation()
         var options: SpecializationOptions
         switch configuration.compute {

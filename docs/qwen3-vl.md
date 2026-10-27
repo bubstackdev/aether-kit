@@ -267,6 +267,9 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 
 Metal grows with the first image request to about 19 GiB, then by about 1 GiB per newly used grid
 or prompt size, against 8.4 GiB for the dense 4B writer with the same decoder width. See the limits.
+Warm requests also keep adding memory (Core AI retains allocations on every shape change; text
+requests about 257 MiB each on the 4B) until the decoder's memory budget reloads it between
+requests: see [Native memory retention](language-generation.md#native-memory-retention).
 
 ## Limits and follow-ups
 
