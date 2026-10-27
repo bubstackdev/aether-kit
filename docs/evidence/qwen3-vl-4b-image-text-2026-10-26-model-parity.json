@@ -1,7 +1,7 @@
 {
   "cases" : [
     {
-      "encodeSeconds" : 0.322663459,
+      "encodeSeconds" : 0.401092833,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999319486110201,
       "forcedMismatchesAtNearTies" : 0,
@@ -72,10 +72,10 @@
         13,
         151645
       ],
-      "timeToFirstTokenSeconds" : 0.430491958
+      "timeToFirstTokenSeconds" : 0.363994
     },
     {
-      "encodeSeconds" : 0.326145084,
+      "encodeSeconds" : 0.2727895,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999925307514865,
       "forcedMismatchesAtNearTies" : 0,
@@ -185,10 +185,10 @@
         279,
         4004
       ],
-      "timeToFirstTokenSeconds" : 0.4222815
+      "timeToFirstTokenSeconds" : 0.376874
     },
     {
-      "encodeSeconds" : 0.313218666,
+      "encodeSeconds" : 0.297200125,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.999989191105567,
       "forcedMismatchesAtNearTies" : 0,
@@ -298,10 +298,10 @@
         7722,
         8193
       ],
-      "timeToFirstTokenSeconds" : 0.403378375
+      "timeToFirstTokenSeconds" : 0.392717833
     },
     {
-      "encodeSeconds" : 0.361197916,
+      "encodeSeconds" : 0.318188375,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999983671840411,
       "forcedMismatchesAtNearTies" : 0,
@@ -348,10 +348,10 @@
         13,
         151645
       ],
-      "timeToFirstTokenSeconds" : 0.411804875
+      "timeToFirstTokenSeconds" : 0.381194958
     },
     {
-      "encodeSeconds" : 0.306241041,
+      "encodeSeconds" : 0.250390084,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999956310892552,
       "forcedMismatchesAtNearTies" : 0,
@@ -461,12 +461,11 @@
         17064,
         11
       ],
-      "timeToFirstTokenSeconds" : 0.416032541
+      "timeToFirstTokenSeconds" : 0.371217167
     }
   ],
   "device" : "h17c",
-  "gate" : "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode: reported, not gated; passed records grid equal, pixel cosine >= 0.999 and forced rows cosine >= 0.98",
-  "gated" : true,
+  "gate" : "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
   "hostLoad" : "Shared host; timings are single observations",
   "passed" : true,
   "stage" : "complete"

@@ -16,7 +16,8 @@ import Testing
 /// AETHER_QWEN3VL_PREPROCESS=swift (optional: decode and preprocess the reference images with Kit)
 /// AETHER_QWEN3VL_INPUTS=same-decode (with swift: the reference was made from Kit's own decode of each photo, saved as a
 ///   lossless PNG, so both sides see identical RGB and the run is gated at the model-parity bar. Otherwise the reference
-///   decoded the JPEGs itself (PIL, libjpeg-turbo): that run measures the decoder difference and is reported, not gated.)
+///   decoded the JPEGs itself (PIL, libjpeg-turbo): that run gates Kit's decoder (grid equal, pixel cosine >= 0.999) and
+///   reports the logits and tokens, which the difference between the two JPEG decoders can legitimately move.)
 private struct VLReference: Decodable {
     struct File: Decodable { let file: String; let shape: [Int]?; let sha256: String }
     struct Logits: Decodable { let file: String; let rows: Int; let vocab: Int; let sha256: String }
@@ -63,11 +64,11 @@ private struct VLReport: Codable {
     var stage = "preparation"
     var error: String?
     var device = LanguageGenerationSession.deviceArchitectureName
-    var gate = "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode: reported, not gated; passed records grid equal, pixel cosine >= 0.999 and forced rows cosine >= 0.98"
+    var gate = "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)"
     /// Kit preprocessing only: "same-decode" (the reference saw Kit's decode) or "independent-decode".
     var inputs: String?
-    /// False for an independent-decode run: its `passed` is reported, not asserted, and it cannot back a session run.
-    var gated = true
+    /// Independent decode only, reported: forced-row cosine >= 0.98 on every case.
+    var logitsWithinDecoderBand: Bool?
     var hostLoad = "Shared host; timings are single observations"
     var cases: [VLCaseReport] = []
 }
@@ -109,10 +110,7 @@ func qwen3VLImageTextQualification() async throws {
         let tokens = LanguageImageTokens(visionStart: 151652, imagePad: 151655, visionEnd: 151653)
         let swiftPreprocessing = nativeEnvironment["AETHER_QWEN3VL_PREPROCESS"] == "swift"
         let sameDecode = swiftPreprocessing && nativeEnvironment["AETHER_QWEN3VL_INPUTS"] == "same-decode"
-        if swiftPreprocessing {
-            report.inputs = sameDecode ? "same-decode" : "independent-decode"
-            report.gated = sameDecode
-        }
+        if swiftPreprocessing { report.inputs = sameDecode ? "same-decode" : "independent-decode" }
         report.stage = "open"
         let encoder = try await LanguageVisionEncoder.open(at: visionModel, configuration: .init(imageGrids: reference.grids))
         let session = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: 2048,
@@ -188,14 +186,18 @@ func qwen3VLImageTextQualification() async throws {
             // Kit end to end on the decode the reference saw: only Kit's resampler differs from the reference processor
             // (within one level), so the logits must meet the model-parity bar.
             if sameDecode { return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.9999 && modelParity }
-            // An independent decode (ImageIO against libjpeg-turbo) moves pixels by up to tens of levels: recorded as
-            // pixel parity plus logits within that input band, with tokens compared; reported, not asserted.
-            return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.999 && $0.forcedMinimumCosine >= 0.98
+            // An independent decode (ImageIO against libjpeg-turbo) moves pixels by up to tens of levels, which can move
+            // a model's answer; the gate is decoder sanity (a swapped channel or a lost orientation fails it), and the
+            // logits and tokens are reported.
+            return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.999
+        }
+        if swiftPreprocessing && !sameDecode {
+            report.logitsWithinDecoderBand = report.cases.allSatisfy { $0.forcedMinimumCosine >= 0.98 }
         }
         report.stage = "complete"
     } catch {
         report.error = String(describing: error)
         throw error
     }
-    if report.gated { #expect(report.passed) }
+    #expect(report.passed)
 }

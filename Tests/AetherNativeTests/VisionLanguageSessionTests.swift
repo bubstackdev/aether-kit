@@ -16,7 +16,7 @@ import Testing
 /// AETHER_NATIVE_QWEN3VL_SESSION=1
 /// AETHER_QWEN3VL_BUNDLE=<bundle with language-model.json and a vision registration>
 /// AETHER_QWEN3VL_REFERENCE=<photo reference dir with reference.json>
-/// AETHER_QWEN3VL_COMPONENT_REPORT=<qwen3VLImageTextQualification report for the same photos, Kit preprocessing, gated>
+/// AETHER_QWEN3VL_COMPONENT_REPORT=<qwen3VLImageTextQualification report for the same photos, Kit preprocessing, same decode>
 /// AETHER_QWEN3VL_OUTPUT=<report .json>
 private struct PhotoReference: Decodable {
     struct File: Decodable { let file: String }
@@ -28,8 +28,8 @@ private struct PhotoReference: Decodable {
 private struct ComponentReport: Decodable {
     struct Case: Decodable { let name: String; let greedyTokens: [Int]; let preprocessing: String }
     let passed: Bool
-    /// Absent in reports from before independent-decode runs were reported ungated.
-    let gated: Bool?
+    /// "same-decode" when the reference saw Kit's decode; absent in reports from before that run existed.
+    let inputs: String?
     let cases: [Case]
 }
 
@@ -89,8 +89,8 @@ func visionLanguageSessionReproducesQualifiedRun() async throws {
         let reference = try JSONDecoder().decode(PhotoReference.self, from: Data(contentsOf: directory.appendingPathComponent("reference.json")))
         let component = try JSONDecoder().decode(ComponentReport.self, from: Data(contentsOf:
             URL(filePath: try #require(nativeEnvironment["AETHER_QWEN3VL_COMPONENT_REPORT"]))))
-        guard component.passed, component.gated == true, component.cases.allSatisfy({ $0.preprocessing == "swift" }) else {
-            throw NativeFailure(description: "the component report must be a passing, gated Kit-preprocessing run")
+        guard component.passed, component.inputs == "same-decode", component.cases.allSatisfy({ $0.preprocessing == "swift" }) else {
+            throw NativeFailure(description: "the component report must be a passing Kit-preprocessing run on the same decode")
         }
         report.stage = "tokenizer"
         let manifest = try LanguageModelManifest.load(from: bundle)

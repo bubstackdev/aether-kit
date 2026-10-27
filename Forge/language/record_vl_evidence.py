@@ -6,9 +6,8 @@
         --native NAME=<report.json> [...] --output docs/evidence/<name>.json
 
 Copies each native report next to the record (`<name>-<NAME>.json`) and binds the references, the photos (with their
-licences), the bundle registration and the exports' self-checks by SHA-256. A report marked `"gated": false` (Kit
-preprocessing on an independent decode) is recorded and summarized but does not decide `passed`. The model's licence and
-base model come from the reference's `source` when it records them.
+licences), the bundle registration and the exports' self-checks by SHA-256. The model's licence and base model come from
+the reference's `source` when it records them.
 """
 
 from __future__ import annotations
@@ -59,7 +58,7 @@ def main() -> None:
         copied = args.output.with_name(f"{args.output.stem}-{name}.json")
         copied.write_text(Path(path).read_text())
         natives[name] = {"file": copied.name, "sha256": sha256(copied), "passed": report["passed"],
-                         "gated": report.get("gated", True), "inputs": report.get("inputs"),
+                         "inputs": report.get("inputs"), "logitsWithinDecoderBand": report.get("logitsWithinDecoderBand"),
                          "gate": report.get("gate"), "cases": [{k: v for k, v in c.items() if not k.endswith("Tokens")
                                                                or k in ("promptTokens", "imageTokens", "upstreamTokens",
                                                                         "upstreamAgreementTokens")}
@@ -76,7 +75,7 @@ def main() -> None:
     record = {
         "schema": 2,
         "kind": "qwen3-vl-image-text-qualification",
-        "passed": all(n["passed"] for n in natives.values() if n["gated"]),
+        "passed": all(n["passed"] for n in natives.values()),
         "model": model,
         "bundle": {"directory": str(b), "manifestSHA256": sha256(b / "language-model.json"), "manifest": manifest,
                    "textExport": {"recipe": text_export["recipe"], "versions": text_export["versions"],
@@ -92,8 +91,7 @@ def main() -> None:
                         "Tests/AetherNativeTests/VisionLanguageSessionTests.swift"],
     }
     args.output.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
-    print(json.dumps({"passed": record["passed"], "native": {k: {"passed": v["passed"], "gated": v["gated"]}
-                                                              for k, v in natives.items()}}))
+    print(json.dumps({"passed": record["passed"], "native": {k: v["passed"] for k, v in natives.items()}}))
 
 
 if __name__ == "__main__":

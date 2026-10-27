@@ -98,7 +98,11 @@ within the pixel bounds, identical to the reference for 46 sizes). Then antialia
 PIL-style coefficients; within one level of torchvision's uint8 path, ≥ 95 % identical bytes),
 (x/255 − 0.5)/0.5, the frame repeated twice, merge-window patchify. Decoding uses ImageIO,
 applies EXIF orientation, and draws in the image's own RGB colour space (no colour management,
-like the reference's PIL decoding). EXIF orientation is applied **before** grid snapping, so a
+like the reference's PIL decoding); grayscale expands to equal channels. Alpha is composited over
+black, where the reference's `convert("RGB")` drops alpha and keeps the stored colour, so
+transparent regions differ (opaque images are unaffected). `VisionRGBImageTests` checks channel
+order, colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
+EXIF orientation is applied **before** grid snapping, so a
 rotated portrait snaps by its displayed aspect ratio. Parity is not exercised for rotated photos:
 every reference photo carries orientation 1 (or none), and the reference decodes without an EXIF
 transpose.
@@ -193,8 +197,9 @@ taken in **India**, specifically in a bustling **local market**", upstream "like
 **Mumbai, India**". The pixels differ slightly because a different JPEG decoder and resampler
 produce them, which is expected and recorded rather than hidden. (For the 4B the decoder difference
 is larger than this band, so its end-to-end gate compares against upstream fed Kit's own decode, and
-an independent-decode run like this one is reported, not gated; see [below](#qwen3-vl-4b-describer).
-This 2B record predates that change.)
+an independent-decode run like this one gates only decoder sanity (equal grids, pixel cosine ≥ 0.999)
+and reports its logits and tokens; see [below](#qwen3-vl-4b-describer). This 2B record predates that
+change.)
 
 **Public API.** `VisionLanguageSession.open(bundle:)` on the registered bundle reproduces the
 component-level Kit run token for token on all five cases, and closes on `unload()`.
@@ -234,8 +239,10 @@ comparison with PIL's decode recorded under `decodedPhotos`), referenced with
 `reference_qwen3_vl.py --grids` as before, and `qwen3VLImageTextQualification` with
 `AETHER_QWEN3VL_PREPROCESS=swift AETHER_QWEN3VL_INPUTS=same-decode`. Only Kit's resampler then
 differs from upstream, and the run must meet the model-parity bar. Upstream fed Kit's decode gives
-exactly Kit's 48 market-photo tokens. The JPEG run stays in the evidence, ungated
-(`kit-independent-decode`).
+exactly Kit's 48 market-photo tokens. The JPEG-file run stays in the evidence
+(`kit-independent-decode`), gated on decoder sanity: equal grids and pixel cosine ≥ 0.999 against
+the reference processor, which a swapped channel or a lost orientation fails. Its logits and tokens
+are reported (`logitsWithinDecoderBand`), not gated.
 
 **Results** (gates as in the 2B qualification above, with the end-to-end gate now: equal grids,
 pixel cosine ≥ 0.9999, then the model-parity rule):
@@ -246,7 +253,7 @@ pixel cosine ≥ 0.9999, then the model-parity rule):
 | Model parity, PIL-decoded reference | yes | forced-row cosine ≥ 0.99995, no argmax differences, greedy identical on all five |
 | Kit end to end, same decode | yes | pixel cosine ≥ 0.9999996 (photos), forced-row ≥ 0.99989, greedy identical on all five |
 | Public session (`VisionLanguageSession.open(bundle:)`) | yes | token for token with the Kit run, closes on unload; `tokenizerFiles` verified; `LanguageTokenizer.render([.user(question, images: 1)])` equals each reference prompt |
-| Kit end to end, independent decode (JPEG files) | no | portrait, stall and scenes greedy identical; market photo diverges as above |
+| Kit end to end, independent decode (JPEG files) | decoder sanity only | grids equal, pixel cosine ≥ 0.99990; reported: portrait, stall and scenes greedy identical, market photo diverges as above |
 
 **Memory** (public session, five cases in one process; footprint / Metal allocated):
 
@@ -271,7 +278,8 @@ or prompt size, against 8.4 GiB for the dense 4B writer with the same decoder wi
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
   model says about a photo; the 4B named a different place for the market photo. The model is
-  qualified on identical decodes; the decoder difference is measured, not removed.
+  qualified on identical decodes; the decoder difference is measured, not removed. Images with
+  transparency also differ: Kit composites alpha over black, PIL drops it.
 
 - **Aspect ratio is stretched to the nearest grid.** No padding: an image between two grids is
   stretched by up to about 15 %, and panoramas or tall strips beyond 16:9 more. More grids (for

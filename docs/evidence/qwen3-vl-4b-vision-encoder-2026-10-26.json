@@ -558,7 +558,7 @@
     "qwen3_vl_vision.py": "dc5c594ff913009990a1dc014ae90f5bdb736c87176275c8eb6b524150908079",
     "record_evidence.py": "bb1b30030da2ea0e1e4c8115c9b3edf96c9dadc4d74e6941227a2bd7d230299b",
     "record_vision_evidence.py": "5b18c6c34a6e3de4834aed45a1d46a97f4d92695b28116e909e2b1f8f0ce3aa2",
-    "record_vl_evidence.py": "0449f0e5d559c73a33b0443fd127d280134ce593376dfe4557db2c3590b016c1",
+    "record_vl_evidence.py": "6c5c4ee70a19b8eac18af752b4b37b732604ff9dcb15c2e70c39f50c01feaae6",
     "reference_chat_tokens.py": "c9d4f556d2c8afa887b88a147650e717d192edb3eca5046ea181020bdb49c394",
     "reference_qwen3.py": "8a61ce6d0864662388d8bbd9aea60e784e4e34f16dcec154100e40cc83cf8027",
     "reference_qwen3_vl.py": "1964884b2cb2c7acd56914fccd1c94be6c42e2c4926483d9d576b4d6589f62ca",

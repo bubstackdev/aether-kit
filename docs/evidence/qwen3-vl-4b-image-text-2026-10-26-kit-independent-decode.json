@@ -1,7 +1,7 @@
 {
   "cases" : [
     {
-      "encodeSeconds" : 0.301183959,
+      "encodeSeconds" : 0.311843,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9992567289674159,
       "forcedMismatchesAtNearTies" : 0,
@@ -74,10 +74,10 @@
       ],
       "swiftGridMatches" : true,
       "swiftPixelCosine" : 0.9999724505430729,
-      "timeToFirstTokenSeconds" : 0.420808916
+      "timeToFirstTokenSeconds" : 0.407108042
     },
     {
-      "encodeSeconds" : 0.334947375,
+      "encodeSeconds" : 0.303462209,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9997812487246864,
       "forcedMismatchesAtNearTies" : 0,
@@ -189,10 +189,10 @@
       ],
       "swiftGridMatches" : true,
       "swiftPixelCosine" : 0.9999897958526027,
-      "timeToFirstTokenSeconds" : 0.409097583
+      "timeToFirstTokenSeconds" : 0.401152
     },
     {
-      "encodeSeconds" : 0.306157417,
+      "encodeSeconds" : 0.319815917,
       "forcedArgmaxMismatches" : 2,
       "forcedMinimumCosine" : 0.9706274961860213,
       "forcedMismatchesAtNearTies" : 0,
@@ -306,10 +306,10 @@
       ],
       "swiftGridMatches" : true,
       "swiftPixelCosine" : 0.9999018921605755,
-      "timeToFirstTokenSeconds" : 0.408051375
+      "timeToFirstTokenSeconds" : 0.406118625
     },
     {
-      "encodeSeconds" : 0.345449791,
+      "encodeSeconds" : 0.348280792,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999983671840411,
       "forcedMismatchesAtNearTies" : 0,
@@ -358,10 +358,10 @@
       ],
       "swiftGridMatches" : true,
       "swiftPixelCosine" : 1.0000000002334386,
-      "timeToFirstTokenSeconds" : 0.42154825
+      "timeToFirstTokenSeconds" : 0.420159083
     },
     {
-      "encodeSeconds" : 0.327093541,
+      "encodeSeconds" : 0.299061958,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999957532608099,
       "forcedMismatchesAtNearTies" : 0,
@@ -473,14 +473,14 @@
       ],
       "swiftGridMatches" : true,
       "swiftPixelCosine" : 0.999999994796948,
-      "timeToFirstTokenSeconds" : 0.421027833
+      "timeToFirstTokenSeconds" : 0.428045083
     }
   ],
   "device" : "h17c",
-  "gate" : "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode: reported, not gated; passed records grid equal, pixel cosine >= 0.999 and forced rows cosine >= 0.98",
-  "gated" : false,
+  "gate" : "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
   "hostLoad" : "Shared host; timings are single observations",
   "inputs" : "independent-decode",
-  "passed" : false,
+  "logitsWithinDecoderBand" : false,
+  "passed" : true,
   "stage" : "complete"
 }

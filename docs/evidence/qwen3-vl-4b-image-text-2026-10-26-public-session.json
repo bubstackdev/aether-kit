@@ -3,7 +3,7 @@
     {
       "matchesComponentRun" : true,
       "name" : "photo-dog-portrait",
-      "timeToFirstTokenSeconds" : 0.684969625,
+      "timeToFirstTokenSeconds" : 0.709210958,
       "tokens" : [
         32,
         3691,
@@ -34,14 +34,14 @@
         7493,
         13
       ],
-      "totalSeconds" : 1.313208958,
+      "totalSeconds" : 1.340486541,
       "upstreamAgreementTokens" : 28,
       "upstreamTokens" : 28
     },
     {
       "matchesComponentRun" : true,
       "name" : "photo-fruit-stall-wide",
-      "timeToFirstTokenSeconds" : 0.42195075,
+      "timeToFirstTokenSeconds" : 0.414121084,
       "tokens" : [
         28715,
         389,
@@ -92,14 +92,14 @@
         279,
         4004
       ],
-      "totalSeconds" : 1.5014557910000002,
+      "totalSeconds" : 1.481137125,
       "upstreamAgreementTokens" : 48,
       "upstreamTokens" : 48
     },
     {
       "matchesComponentRun" : true,
       "name" : "photo-fruit-market-4x3",
-      "timeToFirstTokenSeconds" : 0.465534042,
+      "timeToFirstTokenSeconds" : 0.465771541,
       "tokens" : [
         1986,
         6802,
@@ -150,14 +150,14 @@
         7722,
         8193
       ],
-      "totalSeconds" : 1.537064,
+      "totalSeconds" : 1.543890041,
       "upstreamAgreementTokens" : 48,
       "upstreamTokens" : 48
     },
     {
       "matchesComponentRun" : true,
       "name" : "scene-448",
-      "timeToFirstTokenSeconds" : 0.48725725,
+      "timeToFirstTokenSeconds" : 0.505783792,
       "tokens" : [
         785,
         2168,
@@ -176,14 +176,14 @@
         21495,
         13
       ],
-      "totalSeconds" : 0.875714667,
+      "totalSeconds" : 0.886418958,
       "upstreamAgreementTokens" : 16,
       "upstreamTokens" : 16
     },
     {
       "matchesComponentRun" : true,
       "name" : "scene-320x256",
-      "timeToFirstTokenSeconds" : 0.412829291,
+      "timeToFirstTokenSeconds" : 0.418350875,
       "tokens" : [
         28715,
         389,
@@ -234,7 +234,7 @@
         17064,
         11
       ],
-      "totalSeconds" : 1.472907208,
+      "totalSeconds" : 1.478295833,
       "upstreamAgreementTokens" : 48,
       "upstreamTokens" : 48
     }
@@ -270,37 +270,37 @@
       "phase" : "before open"
     },
     {
-      "footprintMiB" : 1203,
+      "footprintMiB" : 1204,
       "metalMiB" : 1028,
       "phase" : "after open"
     },
     {
-      "footprintMiB" : 2034,
+      "footprintMiB" : 2032,
       "metalMiB" : 19447,
       "phase" : "after photo-dog-portrait"
     },
     {
-      "footprintMiB" : 2470,
+      "footprintMiB" : 2468,
       "metalMiB" : 20646,
       "phase" : "after photo-fruit-stall-wide"
     },
     {
-      "footprintMiB" : 2567,
+      "footprintMiB" : 2568,
       "metalMiB" : 21473,
       "phase" : "after photo-fruit-market-4x3"
     },
     {
-      "footprintMiB" : 3425,
+      "footprintMiB" : 3426,
       "metalMiB" : 22881,
       "phase" : "after scene-448"
     },
     {
-      "footprintMiB" : 3084,
+      "footprintMiB" : 3015,
       "metalMiB" : 22865,
       "phase" : "after scene-320x256"
     },
     {
-      "footprintMiB" : 656,
+      "footprintMiB" : 657,
       "metalMiB" : 495,
       "phase" : "after unload"
     }
