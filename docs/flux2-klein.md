@@ -172,7 +172,10 @@ All tensors copy through host memory between calls; there is no device-resident 
     replaced).
 
 Opt-in with local files only (`AETHER_FLUX2_FIXTURES`, `AETHER_FLUX2_REFERENCE_FIXTURES`, `AETHER_FLUX2_BUNDLE`):
-`samplerArithmeticMatchesTheIndependentReference` and `bundleTokenizerMatchesReferenceTokenIDs`.
+`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs` and
+`paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`. The last test checks that the padded 512-token prompt equals
+the bundle's Qwen3 template rendered through `AetherLanguageTokenizers` with thinking off. `Flux2Tokenizer` keeps its own
+fixed render, because the bundle's `chat_template.jinja` is not among the hashed tokenizer files.
 
 ### Independent references
 
