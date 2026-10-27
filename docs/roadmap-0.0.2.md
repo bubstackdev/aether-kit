@@ -1,6 +1,6 @@
 # 0.0.2 roadmap
 
-Status: scope agreed, 2026-10-26. This replaces the draft on `local-line-2026-10-26`, which planned H3 around prototype bundles; main's schema-3 H3 path makes that unnecessary. Prototype evidence from `aether-engine` lowers porting cost but is not AetherKit support. Every item needs AetherKit's own implementation, independent references and qualification. Confirm licenses against model cards before adoption.
+Status: scope agreed, 2026-10-26; release decisions recorded the same day (below). This replaces the draft on `local-line-2026-10-26`, which planned H3 around prototype bundles; main's schema-3 H3 path makes that unnecessary. Prototype evidence from `aether-engine` lowers porting cost but is not AetherKit support. Every item needs AetherKit's own implementation, independent references and qualification. Confirm licenses against model cards before adoption.
 
 ## Scope
 
@@ -14,6 +14,34 @@ Status: scope agreed, 2026-10-26. This replaces the draft on `local-line-2026-10
 | **Shared GPU lease and admission** | One Kit-owned implementation of GPU coordination, default-on in Kit tools, opt-in for app sessions | n/a | Added 2026-10-26 |
 
 Spikes, with go/no-go reports for 0.0.3: a hybrid recurrent-state language model (Granite 4.0-H; baseline about 112–117 tok/s), ACE-Step music generation and TripoSR image-to-3D.
+
+## Release decisions (2026-10-26)
+
+### In 0.0.2
+
+| Item | Decision | Where |
+| --- | --- | --- |
+| FLUX.2 [klein] 4B | Text-to-image and multi-reference editing, experimental | On main (#17) |
+| Shared GPU lease and admission | `SharedGPULease`, `GPUAdmission` and the session opt-in; default-on in Kit tools and native suites | On main (#18) |
+| Bucketed language decode | `bucketedPositions` contract; the default for new exports (`--contract running` keeps the 0.0.1 contract) | On main (#19) |
+| Qwen3-VL-2B | Image input on fixed-shape image grids (five patch grids, at most 484 tokens) | On main (#24) |
+| Kokoro 82M | Speech synthesis, float32 decoder only; frame cap 1024 on macOS and 512 on iOS | On main (#21) |
+| H3 schema-3 | Qualification with an 18 GiB hard memory bar, enforced by measured admission | In 0.0.2 (separate PR) |
+| `GeneratedImage.pngData()` | In-memory PNG encoding | On main (#20) |
+| AetherLanguageTokenizers | A model's own chat template to token IDs | On main (#22) |
+| Qwen3-4B writer (Atelier's engine drop) | Bucketed export of the abliterated Qwen3-4B-Instruct-2507 | On main (#23) |
+| Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | In 0.0.2 (separate PR) |
+
+The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviour change (see CHANGELOG).
+
+### Deferred to 0.0.3
+
+- **Spikes:** hybrid recurrent state (Granite 4.0-H), ACE-Step and TripoSR.
+- **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization.
+- **Qwen3-VL:** iPhone, multi-image input and a quantized decoder.
+- **Kokoro:** bucket-2048 memory (about 8.2 GB of Metal stays allocated after that bucket has been used).
+- **GPU lease:** reclaiming pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
+- **FLUX.2 tokenizer:** hash the bundle's `tokenizer/chat_template.jinja`, then render `Flux2Tokenizer` prompts through AetherLanguageTokenizers. Today the template is neither verified nor part of the fingerprint, so FLUX.2 keeps its fixed render. Hashing it changes the bundle fingerprint. An opt-in local-files test already shows that the padded output is identical.
 
 ## H3 schema-3 qualification
 
