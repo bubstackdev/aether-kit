@@ -8,11 +8,11 @@ import AetherLanguageTokenizers
 /// - reasoning (between the registration's thinking delimiters, which are not text) goes to its own channel, without
 ///   the newlines that frame it.
 /// Special tokens contribute no text, as `decode(skipSpecialTokens: true)`.
-struct LanguageTextStream {
-    struct Delta: Sendable, Equatable {
-        var content = ""
-        var reasoning = ""
-        var isEmpty: Bool { content.isEmpty && reasoning.isEmpty }
+package struct LanguageTextStream {
+    package struct Delta: Sendable, Equatable {
+        package var content = ""
+        package var reasoning = ""
+        package var isEmpty: Bool { content.isEmpty && reasoning.isEmpty }
     }
 
     struct ReasoningDelimiters: Sendable, Equatable {
@@ -23,7 +23,7 @@ struct LanguageTextStream {
     private let bytes: LanguageTokenBytes
     private let delimiters: ReasoningDelimiters?
     private let stopSequences: [String]
-    private var inReasoning: Bool
+    private(set) var inReasoning: Bool
     private var pending: [UInt8] = []
     /// Decoded text not yet emitted on the current channel.
     private var tail = ""

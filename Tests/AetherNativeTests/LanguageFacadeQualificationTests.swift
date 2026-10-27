@@ -1,8 +1,10 @@
 import AetherKit
 import AetherLanguage
 import AetherLanguageCoreAI
+import AetherLanguageFoundationModels
 import AetherLanguageTokenizers
 import Foundation
+import FoundationModels
 import Testing
 
 /// Opt-in native qualification of the `AetherLanguage` facade on a registered bundle, against the runtime and tokenizer
@@ -11,7 +13,9 @@ import Testing
 /// - a stream's deltas add up to that reply, with no replacement characters;
 /// - a stop sequence ends the reply before it; a seeded request repeats; a cancelled stream leaves the session usable;
 /// - a three-turn conversation; reasoning on (for models that declare it) separates thinking from the answer;
-/// - per-token time through the facade against the runtime alone.
+/// - per-token time through the facade against the runtime alone;
+/// - FoundationModels' `LanguageModelSession(model:)` on the same model gives the facade's replies (respond, stream,
+///   and with a reasoning level, for models that declare reasoning).
 /// Run under the shared GPU lease (`with-gpu-lock.sh`), release build:
 ///
 /// AETHER_NATIVE_LANGUAGE_FACADE=1
@@ -113,6 +117,24 @@ func languageFacadeQualification() async throws {
         report.reasoning = .init(reasoning: thought.reasoning ?? "", content: thought.content, reason: "\(thought.stopReason)")
         #expect(!(thought.reasoning ?? "").isEmpty && !thought.content.contains("<think>") && !thought.content.contains("</think>"))
     }
+    // The FoundationModels adapter: the same replies through LanguageModelSession.
+    for (index, prompt) in prompts.enumerated() {
+        let facade = try #require(greedy[prompt])
+        let foundation = try await LanguageModelSession(model: model, instructions: instructions)
+            .respond(to: prompt, options: GenerationOptions(maximumResponseTokens: 160))
+        var streamed = ""
+        for try await snapshot in LanguageModelSession(model: model, instructions: instructions)
+            .streamResponse(to: prompt, options: GenerationOptions(maximumResponseTokens: 160)) { streamed = snapshot.content }
+        report.greedy[index].foundationModelsMatches = foundation.content == facade.content && streamed == facade.content
+        #expect(report.greedy[index].foundationModelsMatches, "LanguageModelSession gives the facade's reply")
+    }
+    if let reasoning = report.reasoning {
+        let foundation = try await LanguageModelSession(model: model).respond(to: "What is 17 times 3? Answer with the number.",
+            options: GenerationOptions(maximumResponseTokens: 600), contextOptions: ContextOptions(reasoningLevel: .light))
+        let matches = foundation.content == reasoning.content
+        report.foundationModelsReasoningMatches = matches
+        #expect(matches, "a reasoning level gives the facade's reasoning-on answer")
+    }
     await model.unload()
 
     // The runtime and tokenizer alone, on the same rendered prompts.
@@ -146,6 +168,7 @@ private struct FacadeReport: Encodable {
         let prompt: String, content: String, outputTokens: Int, promptTokens: Int, stopReason: String
         let facadeMillisecondsPerToken: Double, streamSnapshots: Int, streamDeltasEqualContent: Bool
         var runtimeDecoded = "", runtimeOutputTokens = 0, runtimeMillisecondsPerToken = 0.0, matchesRuntime = false
+        var foundationModelsMatches = false
     }
     struct Stop: Encodable { let stop: String, content: String, expected: String, reason: String }
     struct Reasoning: Encodable { let reasoning: String, content: String, reason: String }
@@ -160,4 +183,5 @@ private struct FacadeReport: Encodable {
     var cancelledThenAnswered = false
     var conversation: [String] = []
     var reasoning: Reasoning?
+    var foundationModelsReasoningMatches: Bool?
 }

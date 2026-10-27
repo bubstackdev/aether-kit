@@ -13,21 +13,28 @@ public enum AetherStopReason: Sendable, Equatable {
 }
 
 /// One generated reply, before it becomes a session's `Response` or a FoundationModels channel's events.
-struct LanguageEngineReply: Sendable {
-    let content: String
-    let reasoning: String
-    let promptTokens: Int
-    let outputTokens: Int
-    let stopReason: AetherStopReason
-    let seed: UInt64?
+package struct LanguageEngineReply: Sendable {
+    package let content: String
+    package let reasoning: String
+    package let promptTokens: Int
+    package let outputTokens: Int
+    /// Of `outputTokens`, those inside the thinking block (delimiters included).
+    package let reasoningTokens: Int
+    package let stopReason: AetherStopReason
+    package let seed: UInt64?
 }
 
 /// The `LanguageTextStream` a request's deliveries share. Deliveries run one at a time, but in successive child tasks.
 private final class TextStreamBox: Sendable {
     private let stream: OSAllocatedUnfairLock<LanguageTextStream>
     init(_ stream: LanguageTextStream) { self.stream = OSAllocatedUnfairLock(uncheckedState: stream) }
-    func append(_ token: Int) -> (LanguageTextStream.Delta, stopped: Bool) {
-        stream.withLockUnchecked { stream in (stream.append(token), stream.stopped) }
+    /// The delta, whether a stop sequence matched, and whether the token belongs to the thinking block.
+    func append(_ token: Int) -> (LanguageTextStream.Delta, stopped: Bool, reasoning: Bool) {
+        stream.withLockUnchecked { stream in
+            let before = stream.inReasoning
+            let delta = stream.append(token)
+            return (delta, stream.stopped, before || stream.inReasoning)
+        }
     }
     func finish() -> (LanguageTextStream.Delta, stopped: Bool, content: String, reasoning: String) {
         stream.withLockUnchecked { stream in (stream.finish(), stream.stopped, stream.content, stream.reasoning) }
@@ -37,8 +44,11 @@ private final class TextStreamBox: Sendable {
 extension AetherLanguageModel {
     /// The engine both surfaces share: renders `messages` with the model's template, generates under `options`, and
     /// streams text deltas to `onDelta` (each awaited before the next, while the following decode step runs).
-    func generate(messages: [LanguageChatMessage], options: AetherGenerationOptions,
-                  onDelta: @escaping @Sendable (LanguageTextStream.Delta) async -> Void) async throws -> LanguageEngineReply {
+    /// `onDelta` also gets how many tokens produced the delta (tokens whose text was held back count with the delta
+    /// that releases it).
+    package func generate(messages: [LanguageChatMessage], options: AetherGenerationOptions,
+                          onDelta: @escaping @Sendable (LanguageTextStream.Delta, _ tokens: Int) async -> Void)
+        async throws -> LanguageEngineReply {
         let supportsReasoning = self.supportsReasoning
         if options.reasoning == .on, !supportsReasoning {
             throw AetherLanguageError.invalidRequest("this model has no thinking mode")
@@ -67,22 +77,32 @@ extension AetherLanguageModel {
             let text = TextStreamBox(LanguageTextStream(bytes: model.codec.bytes, delimiters: delimiters,
                                                         startsInReasoning: startsInReasoning, stopSequences: options.stopSequences))
             let request = LanguageGenerationRequest(prompt: prompt, maximumTokens: maximum, sampling: sampling)
+            let counts = OSAllocatedUnfairLock(initialState: (pending: 0, reasoning: 0))
             let result: LanguageGenerationResult
             do {
                 result = try await model.backend.generate(request) { token in
-                    let (delta, stopped) = text.append(token.id)
-                    if !delta.isEmpty { await onDelta(delta) }
+                    let (delta, stopped, reasoning) = text.append(token.id)
+                    let tokens = counts.withLock { counts in
+                        counts.pending += 1
+                        if reasoning { counts.reasoning += 1 }
+                        guard !delta.isEmpty else { return 0 }
+                        defer { counts.pending = 0 }
+                        return counts.pending
+                    }
+                    if !delta.isEmpty { await onDelta(delta, tokens) }
                     return stopped ? .stop : .continue
                 }
             } catch let error as LanguageGenerationError {
                 throw Self.facadeError(error, promptTokens: prompt.count, maximum: maximum, limit: limit)
             }
             let (last, stopped, content, reasoning) = text.finish()
-            if !last.isEmpty { await onDelta(last) }
+            let (pending, reasoningTokens) = counts.withLock { ($0.pending, $0.reasoning) }
+            if !last.isEmpty { await onDelta(last, pending) }
             let stopReason: AetherStopReason = stopped ? .stopSequence
                 : result.stopReason == .endOfSequence ? .endOfTurn : .outputLimit
             return LanguageEngineReply(content: content, reasoning: reasoning, promptTokens: prompt.count,
-                                       outputTokens: result.tokens.count, stopReason: stopReason, seed: result.seed)
+                                       outputTokens: result.tokens.count, reasoningTokens: reasoningTokens, stopReason: stopReason,
+                                       seed: result.seed)
         }
     }
 

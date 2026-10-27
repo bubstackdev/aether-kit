@@ -1,7 +1,7 @@
 {
   "date": "2026-10-27",
   "kind": "language-facade-native-qualification",
-  "note": "Qwen3-0.6B registered in place by Forge/language/register_qwen3_bundle.py (--supports-reasoning true, context 4096); the 4B writer bundle as qualified for 0.0.2. 'facadeMillisecondsPerToken' is wall time of respond() per output token; 'runtimeMillisecondsPerToken' is LanguageGenerationSession's totalSeconds per token on the same rendered prompt; both include the prefill, so a short first reply is dominated by it.",
+  "note": "Qwen3-0.6B registered in place by Forge/language/register_qwen3_bundle.py (--supports-reasoning true, context 4096); the 4B writer bundle as qualified for 0.0.2. 'facadeMillisecondsPerToken' is wall time of respond() per output token; 'runtimeMillisecondsPerToken' is LanguageGenerationSession's totalSeconds per token on the same rendered prompt; both include the prefill, so a short first reply is dominated by it. Recorded again with the FoundationModels adapter checks (foundationModelsMatches, foundationModelsReasoningMatches): LanguageModelSession(model:) over the same model returns the facade's replies.",
   "qwen3-0.6b": {
     "cancelledThenAnswered": true,
     "conversation": [
@@ -10,16 +10,18 @@
       "Elias."
     ],
     "device": "h17c",
+    "foundationModelsReasoningMatches": true,
     "greedy": [
       {
         "content": "- #Violet \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Orange \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Green \ud83c\udf7d\ufe0f *Caf\u00e9*",
-        "facadeMillisecondsPerToken": 10.675919871794873,
+        "facadeMillisecondsPerToken": 12.433864307692307,
+        "foundationModelsMatches": true,
         "matchesRuntime": true,
         "outputTokens": 39,
         "prompt": "Name three colours, each with one emoji, and give the French word for coffee.",
         "promptTokens": 40,
         "runtimeDecoded": "- #Violet \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Orange \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Green \ud83c\udf7d\ufe0f *Caf\u00e9*",
-        "runtimeMillisecondsPerToken": 9.899458333333333,
+        "runtimeMillisecondsPerToken": 16.45605341025641,
         "runtimeOutputTokens": 39,
         "stopReason": "endOfTurn",
         "streamDeltasEqualContent": true,
@@ -27,13 +29,14 @@
       },
       {
         "content": "A lighthouse keeper's cat watches the sea with quiet determination, always ready to help when needed.",
-        "facadeMillisecondsPerToken": 5.9982604,
+        "facadeMillisecondsPerToken": 6.43592085,
+        "foundationModelsMatches": true,
         "matchesRuntime": true,
         "outputTokens": 20,
         "prompt": "Write two sentences about a lighthouse keeper's cat.",
         "promptTokens": 34,
         "runtimeDecoded": "A lighthouse keeper's cat watches the sea with quiet determination, always ready to help when needed.",
-        "runtimeMillisecondsPerToken": 5.612704150000001,
+        "runtimeMillisecondsPerToken": 12.28158955,
         "runtimeOutputTokens": 20,
         "stopReason": "endOfTurn",
         "streamDeltasEqualContent": true,
@@ -43,7 +46,7 @@
     "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
     "model": "Qwen/Qwen3-0.6B",
     "otherSeedDiffers": true,
-    "prewarmSeconds": 1.374279375,
+    "prewarmSeconds": 1.5267397919999999,
     "reasoning": {
       "content": "17 times 3 equals 51. \n\nAnswer: 51",
       "reason": "endOfTurn",
@@ -68,13 +71,14 @@
     "greedy": [
       {
         "content": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
-        "facadeMillisecondsPerToken": 128.53509854545453,
+        "facadeMillisecondsPerToken": 155.97345454545456,
+        "foundationModelsMatches": true,
         "matchesRuntime": true,
         "outputTokens": 11,
         "prompt": "Name three colours, each with one emoji, and give the French word for coffee.",
         "promptTokens": 36,
         "runtimeDecoded": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
-        "runtimeMillisecondsPerToken": 128.44052645454545,
+        "runtimeMillisecondsPerToken": 161.67584845454545,
         "runtimeOutputTokens": 11,
         "stopReason": "endOfTurn",
         "streamDeltasEqualContent": true,
@@ -82,13 +86,14 @@
       },
       {
         "content": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
-        "facadeMillisecondsPerToken": 19.024773014925373,
+        "facadeMillisecondsPerToken": 19.993463313432837,
+        "foundationModelsMatches": true,
         "matchesRuntime": true,
         "outputTokens": 67,
         "prompt": "Write two sentences about a lighthouse keeper's cat.",
         "promptTokens": 30,
         "runtimeDecoded": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
-        "runtimeMillisecondsPerToken": 19.748045402985074,
+        "runtimeMillisecondsPerToken": 21.055784208955224,
         "runtimeOutputTokens": 67,
         "stopReason": "endOfTurn",
         "streamDeltasEqualContent": true,
@@ -98,7 +103,7 @@
     "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
     "model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
     "otherSeedDiffers": true,
-    "prewarmSeconds": 4.513679708,
+    "prewarmSeconds": 7.365318708,
     "seededRepeats": true,
     "stopSequence": {
       "content": "The lighthouse keeper's cat,",

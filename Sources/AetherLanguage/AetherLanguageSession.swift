@@ -73,7 +73,7 @@ public actor AetherLanguageSession {
         defer { isResponding = false }
         let messages = AetherTranscript(entries: transcript.entries + [.prompt(prompt)]).messages
         let cumulative = OSAllocatedUnfairLock(initialState: (content: "", reasoning: ""))
-        let reply = try await model.generate(messages: messages, options: options) { delta in
+        let reply = try await model.generate(messages: messages, options: options) { delta, _ in
             let text = cumulative.withLock { text in
                 text.content += delta.content
                 text.reasoning += delta.reasoning

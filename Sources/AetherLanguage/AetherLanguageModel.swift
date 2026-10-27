@@ -37,6 +37,8 @@ public struct AetherLanguageModel: Sendable {
     /// The registered context: prompt plus output, in tokens. Zero when unavailable.
     public let contextLength: Int
     let resources: LanguageModelResources
+    /// Equal for copies of one model, which share its loaded backend.
+    package var identity: ObjectIdentifier { ObjectIdentifier(resources) }
 
     /// The platform registrations are checked against.
     public static var currentPlatform: LanguageModelManifest.Platform {

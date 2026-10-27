@@ -1,6 +1,7 @@
 # AetherLanguage text facade
 
-Status: design approved, 2026-10-27, with the decisions below ([Decided](#decided)); implementation in progress. This is the third piece of the 0.0.3 app-facing language
+Status: design approved and the seven commits implemented, 2026-10-27 ([Implementation status](#implementation-status));
+the structured-output piece is next. This is the third piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)). It builds on the
 [runtime seam](language-runtime-seam.md) (`AetherLanguageRuntime`) and on `AetherLanguageTokenizers`. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -116,7 +117,9 @@ template.
   `content`. The delimiters themselves appear in neither.
 - In a stream, snapshots carry both fields, so an app can show or hide the reasoning.
 - Asking for reasoning from a model without it is an error at request time.
-- The delimiters come from a small per-template table keyed by the registration, not from string matching on output.
+- The delimiters are the tokenizer's `<think>` and `</think>` tokens, looked up only when the registration declares
+  reasoning, so no output text is ever matched as a delimiter. A reply begins inside a thinking block when the
+  rendered prompt leaves one open.
 
 **Sampling.** `AetherGenerationOptions` maps onto `LanguageSampling` and `LanguageGenerationRequest`:
 
@@ -143,13 +146,11 @@ re-decode:
   the reply ends. So the cumulative `content` only ever grows by whole characters, and its existing characters never
   change.
 - **Special tokens** (for example `<|im_end|>`) contribute no text, as `decode(skipSpecialTokens:)` does today.
-- **Reconciled at the end.** When the reply ends, the engine compares the cumulative text with the tokenizer's own
-  `decode` of the whole reply. CPU and native tests require them to be equal. If they ever differ in the field (a
-  tokenizer whose decoder the byte table doesn't model), `Response.content` is the tokenizer's decode, and the
-  difference is reported in diagnostics.
+- **Checked against the tokenizer, not repaired at run time.** CPU tests and the native qualification require the
+  streamed text to equal the tokenizer's own `decode` of the whole reply (on the 0.6B and the 4B writer it does,
+  emoji and accented text included). The engine doesn't re-decode at the end.
 - **Other tokenizers.** Tokenizers that aren't byte-level BPE (SentencePiece with byte fallback) need their own byte
-  table. Until one is added, the engine falls back to Text Generation Inference's prefix-offset decoding, which is
-  slower and still holds back incomplete characters.
+  table; `LanguageTokenBytes` refuses them today, so such a bundle fails to load rather than stream wrongly.
 
 **Cancellation.**
 - Cancelling the task that called `respond` stops at the next decode step. The backend joins its native work before the
@@ -193,7 +194,7 @@ for try await snapshot in session.streamResponse(to: "And her coat?",
 
 ```swift
 public struct AetherLanguageModel: Sendable {
-    public init(bundle: URL, platform: LanguageModelManifest.Platform = .current)
+    public init(bundle: URL, platform: LanguageModelManifest.Platform = Self.currentPlatform)
     public var availability: Availability { get }          // no hashing, no loading
     public var supportsReasoning: Bool { get }
     public var contextLength: Int { get }
@@ -208,7 +209,7 @@ public actor AetherLanguageSession {
     public var isResponding: Bool { get }
     public func respond(to prompt: String, options: AetherGenerationOptions = .init()) async throws -> Response<String>
     public nonisolated func streamResponse(to prompt: String, options: AetherGenerationOptions = .init())
-        -> ResponseStream<String>
+        -> ResponseStream
     // The structured-output piece adds respond(to:generating:) and streamResponse(to:generating:).
 }
 ```
@@ -277,8 +278,8 @@ writer, which takes seconds. The reasons:
 | `.unsupportedTemplate` | The tokenizer has no chat template |
 
 **Loading (`prewarm()` or the first request) runs the full verification.** That includes the model and tokenizer hashes,
-the export bounds and the contract. Failures throw `AetherLanguageError.unavailable(.bundleInvalid(…))`, with the
-`LanguageGenerationError` or `AetherError` underneath. Other errors:
+the export bounds and the contract. Failures throw `AetherLanguageError.loading(…)` with the `LanguageGenerationError`
+or `AetherError` underneath, and the next request tries again. Other errors:
 - `contextWindowExceeded`;
 - `busy`;
 - `closed` (after `unload()`);
@@ -408,6 +409,36 @@ Each commit builds and passes `Scripts/check-cpu.sh`. GPU checks run under `with
 
 Then the structured-output piece: the JSON automaton and the constraint, `.guidedGeneration` in the adapter, the
 facade's `generating:` API, and the macro if the user wants it.
+
+## Implementation status
+
+On `v0.0.3/facade`, 2026-10-27, each commit passing `Scripts/check-cpu.sh` (503 tests at the session commit):
+1. **`AetherKit`'s `Mutex` → `UnfairLock`** over `OSAllocatedUnfairLock`, a type-name swap with the lease and admission
+   tests unchanged. `Scripts/check-floor.sh` (formerly the runtime's floor script) now typechecks `AetherKit` and
+   `AetherLanguageRuntime` at macOS 14 and iOS 17, in CI.
+2. **`LanguageTokenBytes`** in `AetherLanguageTokenizers`. On the four pinned Qwen3 and Qwen3-VL snapshots, the bytes of
+   all 24 chat-oracle prompts are exactly upstream's rendered text.
+3. **`AetherLanguageModel`**: readiness without hashing (`LanguageModelManifest.locate`), lazy verified loading shared by
+   copies, requests queued across sessions, the Core AI backend behind `#available`.
+4. **`LanguageTextStream`**: UTF-8 and grapheme-safe deltas, stop sequences and the reasoning channel, fuzzed; disabling
+   the grapheme hold-back makes the tests fail.
+5. **`AetherLanguageSession`**, `AetherGenerationOptions`, `AetherTranscript` and `ResponseStream`, on a fake backend
+   that replays scripted replies through the runtime's own decode loop.
+6. **`languageFacadeQualification`** (native, opt-in) on the Qwen3-0.6B (registered in place, reasoning on) and the 4B
+   writer ([evidence](evidence/language-facade-native-2026-10-27.json)).
+   - Greedy replies equal the runtime's, decoded by the tokenizer, with the same token counts.
+   - Stream deltas add up to them.
+   - Stop sequences, seeds, cancellation and a three-turn conversation behave as designed.
+   - Reasoning separates thinking from the answer on the 0.6B.
+   - Warm per-token time is within the host's noise of the runtime alone.
+7. **`AetherLanguageFoundationModels`**. A real `LanguageModelSession` runs over the fake backend in CPU tests, covering
+   rendering, multi-turn context, options and reasoning levels, FoundationModels' refusal of `@Generable` requests, and
+   context overflow as `LanguageModelError.contextSizeExceeded`. On both bundles natively,
+   `LanguageModelSession(model:)` returns the facade's replies, streaming included, and with a reasoning level on the
+   0.6B.
+
+Not yet covered: a launch on macOS 14 (the floor work, after the decoder rework), iPhone, and the facade's own macOS 14
+typecheck. `AetherLanguage` imports the Core AI targets, which can't typecheck below 27 until they're annotated.
 
 ## Decided
 
