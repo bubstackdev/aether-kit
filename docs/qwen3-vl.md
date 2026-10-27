@@ -324,8 +324,9 @@ requests: see [Native memory retention](language-generation.md#native-memory-ret
   but only single-image prompts are qualified), iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
 - The encoder stays loaded for the session's lifetime.
-- **Text export memory (0.0.3).** `export_qwen3_vl_text.py` converts `main` and `withImage` as two programs over the
-  same fp16 weights, and conversion holds weights per program on top of the eager module: the 4B text tower passes
-  35 GB of RSS during conversion (it was exported on a 64 GB host with a 45 GB guard). Share the weights across the
-  two functions in conversion, or free the eager module before converting, before exporting larger towers or on
-  smaller hosts.
+- **Text export memory (0.0.3).** The 4B text tower's export passes 35 GB of RSS (it was exported on a 64 GB host with
+  a 45 GB guard). The cause is not one copy of the weights per program: the converter keeps one copy however many
+  programs share them. It is about five copies at once during the cpu_only self-check (the eager module, the
+  converter's copy, the save buffer that stays allocated, and the self-check load, which holds two while it
+  compiles), plus a float32 build of the tower before `.half()` and the float32 vision tower. Measured on a toy
+  model; the bounded pipeline is in the [single-decoder design](qwen3-vl-single-decoder.md#export-memory).

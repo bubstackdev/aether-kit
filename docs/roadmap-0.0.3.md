@@ -13,6 +13,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 | Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Release it, or keep 2048 opt-in only. |
 | H3 second specialization | Denoising adds about 2.7 GiB from step 1, when the two-timestep body joins the one-timestep one. | Release or avoid it. |
 | Qwen3-VL-4B export | The converter needs about 33 GB. The [design](qwen3-vl-single-decoder.md#export-memory) found the cause is not per-ExportedProgram copies but about five copies at the self-check. | Bound the export's memory. |
+| Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache), so it likely wires two copies of the text weights when reference images are used. | Measure it; if confirmed, one function as in the [Qwen3-VL design](qwen3-vl-single-decoder.md). |
 | FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Add a load/unload cycling test, then fix what it finds. |
 
 ### Speed
