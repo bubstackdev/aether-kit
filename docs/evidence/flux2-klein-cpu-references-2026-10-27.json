@@ -1,0 +1,620 @@
+{
+  "schema": 1,
+  "kind": "flux2-klein-cpu-references",
+  "date": "2026-10-27",
+  "passed": true,
+  "why": "The 2026-10-26 float32 Diffusers references ran the pipeline on MPS (text encoder on CPU). Every other model's references are CPU float32, so FLUX.2's are regenerated on the CPU and native parity is re-run against them at the unchanged bars.",
+  "supersedes": [
+    "flux2-klein-t2i-fixture-6a8a53d8f3b30817.json",
+    "flux2-klein-reference-fixture-079a8fba9d596a3b.json",
+    "flux2-klein-native-parity-2026-10-26.json",
+    "flux2-klein-native-parity-large-2026-10-26.json",
+    "flux2-klein-native-parity-rebased-2026-10-26.json"
+  ],
+  "producer": {
+    "script": "Scripts/prepare-flux2-reference-fixtures.py",
+    "scriptSHA256": "5051baf752c683e5c2d34707542aa167aaad20d6f1da7367731070bc0c124e21",
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 6,
+    "commands": [
+      "uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py --text-to-image CHECKPOINT ~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27",
+      "uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py CHECKPOINT ~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 ~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27"
+    ],
+    "referencePictures": "the reference-image cases resize the 2026-10-26 text-to-image fixture's fox-512 and lighthouse-512 PNGs, unchanged, so their inputs stay byte-identical"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "lock": "Forge/uv.lock at PR #29 head 2eba0c6 (lock SHA-256 78cb553f09c00406eea792b6eeb5aa6e26ce74cfaa2d8db28cae2d5243480d2c); the merged Forge lock (b7787b5, a253d23e…) adds attrs/loguru and the H3 oracle environment and pins the same versions listed here",
+    "versions": {
+      "torch": "2.11.0",
+      "diffusers": "0.37.1",
+      "transformers": "4.57.3",
+      "numpy": "2.5.4",
+      "safetensors": "0.8.0",
+      "tokenizers": "0.22.2",
+      "pillow": "12.3.0"
+    },
+    "blas": "Accelerate (torch build)",
+    "sameVersionsAsMPSFixtures": true
+  },
+  "checkpoint": {
+    "hfRepo": "black-forest-labs/FLUX.2-klein-4B",
+    "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "location": "~/Library/Caches/aether/forge-checkpoints (Hugging Face cache layout)",
+    "download": "anonymous, 2026-10-27",
+    "verified": "all 20 files pinned in flux2-klein-qualification-2026-10-26.json match on size and SHA-256, and the 8 files the bundle provenance pins (LICENSE.md, tokenizer/*)"
+  },
+  "fixtures": {
+    "textToImage": {
+      "id": "ffc4b1365159e40c",
+      "cases": 10,
+      "document": "flux2-klein-t2i-fixture-ffc4b1365159e40c.json",
+      "location": "~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c",
+      "peakRSSGiB": 30.1,
+      "minutes": 14
+    },
+    "referenceImages": {
+      "id": "caf92bb7d83d685c",
+      "cases": 2,
+      "document": "flux2-klein-reference-fixture-caf92bb7d83d685c.json",
+      "location": "~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c",
+      "peakRSSGiB": 22.0,
+      "minutes": 2
+    }
+  },
+  "cpuReproducibility": "a second CPU run of the reference-image fixture produced the same fixture id (caf92bb7d83d685c), so every file is byte-identical (peak RSS 23.4 GiB)",
+  "cpuComputedInputs": "for all 12 cases the token ids, mask, float32 text rows, packed noise (= step-0 latents) and timesteps are byte-identical to the MPS fixtures; for the reference cases so are the Lanczos reference pixels, reference PNGs and position ids. The new text-to-image fixture omits the MPS fixture's bf16 comparison files (textBF16, ssimBF16), which no test reads.",
+  "mpsVersusCPU": {
+    "text-to-image": {
+      "lighthouse-512": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.00029909610748291016,
+          "relativeL2": 9.590842889579468e-06,
+          "minCosine": 0.9999999999540199
+        },
+        "stepLatents": {
+          "maxAbs": 3.039836883544922e-05,
+          "relativeL2": 1.6515262927768788e-06,
+          "minCosine": 0.9999999999986375
+        },
+        "final": {
+          "maxAbs": 0.00022011995315551758,
+          "relativeL2": 7.638836281045919e-06,
+          "minCosine": 0.9999999999708287
+        },
+        "image": {
+          "maxAbs": 0.00010707974433898926,
+          "relativeL2": 2.5758697686351906e-06,
+          "minCosine": 0.9999999999967584
+        }
+      },
+      "red-circle-512": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.00023573637008666992,
+          "relativeL2": 8.48874115078276e-06,
+          "minCosine": 0.9999999999641087
+        },
+        "stepLatents": {
+          "maxAbs": 2.2530555725097656e-05,
+          "relativeL2": 1.6520366384362655e-06,
+          "minCosine": 0.9999999999986388
+        },
+        "final": {
+          "maxAbs": 0.0001704096794128418,
+          "relativeL2": 1.0078824292671423e-05,
+          "minCosine": 0.9999999999492227
+        },
+        "image": {
+          "maxAbs": 2.142786979675293e-05,
+          "relativeL2": 9.765646054799663e-07,
+          "minCosine": 0.9999999999995268
+        }
+      },
+      "fox-512": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0005263239145278931,
+          "relativeL2": 1.8546409513469787e-05,
+          "minCosine": 0.9999999998280283
+        },
+        "stepLatents": {
+          "maxAbs": 8.159875869750977e-05,
+          "relativeL2": 4.272222121773988e-06,
+          "minCosine": 0.9999999999908763
+        },
+        "final": {
+          "maxAbs": 0.0004470348358154297,
+          "relativeL2": 1.8201092839260965e-05,
+          "minCosine": 0.999999999834368
+        },
+        "image": {
+          "maxAbs": 0.0004570484161376953,
+          "relativeL2": 5.4967751548737415e-06,
+          "minCosine": 0.9999999999848896
+        }
+      },
+      "ramen-576x448": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0005525946617126465,
+          "relativeL2": 2.1393480245353444e-05,
+          "minCosine": 0.99999999977127
+        },
+        "stepLatents": {
+          "maxAbs": 6.443262100219727e-05,
+          "relativeL2": 4.1030854109666424e-06,
+          "minCosine": 0.9999999999915891
+        },
+        "final": {
+          "maxAbs": 0.00043970346450805664,
+          "relativeL2": 1.849142107475398e-05,
+          "minCosine": 0.9999999998290366
+        },
+        "image": {
+          "maxAbs": 0.0002741813659667969,
+          "relativeL2": 7.646358245826243e-06,
+          "minCosine": 0.9999999999707944
+        }
+      },
+      "cafe-512": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0012696385383605957,
+          "relativeL2": 4.757845677270062e-05,
+          "minCosine": 0.9999999988682381
+        },
+        "stepLatents": {
+          "maxAbs": 0.0001690387725830078,
+          "relativeL2": 5.812155890381002e-06,
+          "minCosine": 0.9999999999831112
+        },
+        "final": {
+          "maxAbs": 0.0009348392486572266,
+          "relativeL2": 4.2393035298462834e-05,
+          "minCosine": 0.9999999991014734
+        },
+        "image": {
+          "maxAbs": 0.0002263784408569336,
+          "relativeL2": 2.0559217498102937e-05,
+          "minCosine": 0.9999999997887431
+        }
+      },
+      "cat-1024": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.004453301429748535,
+          "relativeL2": 3.9302440467705486e-05,
+          "minCosine": 0.9999999992276969
+        },
+        "stepLatents": {
+          "maxAbs": 0.0002613961696624756,
+          "relativeL2": 5.310396136677479e-06,
+          "minCosine": 0.9999999999859008
+        },
+        "final": {
+          "maxAbs": 0.003421097993850708,
+          "relativeL2": 3.628248969856665e-05,
+          "minCosine": 0.9999999993417914
+        },
+        "image": {
+          "maxAbs": 0.0009756088256835938,
+          "relativeL2": 1.4598325631746343e-05,
+          "minCosine": 0.9999999998934289
+        }
+      },
+      "harbor-768": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.005032539367675781,
+          "relativeL2": 4.386891616985961e-05,
+          "minCosine": 0.9999999990377588
+        },
+        "stepLatents": {
+          "maxAbs": 0.00014543533325195312,
+          "relativeL2": 3.462972915783186e-06,
+          "minCosine": 0.9999999999940057
+        },
+        "final": {
+          "maxAbs": 0.003735661506652832,
+          "relativeL2": 3.885340447468418e-05,
+          "minCosine": 0.9999999992452219
+        },
+        "image": {
+          "maxAbs": 0.00124281644821167,
+          "relativeL2": 2.4067239942843963e-05,
+          "minCosine": 0.999999999710436
+        }
+      },
+      "street-1024x576": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.006958127021789551,
+          "relativeL2": 4.3045649030346155e-05,
+          "minCosine": 0.9999999990735479
+        },
+        "stepLatents": {
+          "maxAbs": 8.046627044677734e-05,
+          "relativeL2": 4.270863761154167e-06,
+          "minCosine": 0.9999999999908821
+        },
+        "final": {
+          "maxAbs": 0.005148768424987793,
+          "relativeL2": 3.5321085409677285e-05,
+          "minCosine": 0.9999999993762123
+        },
+        "image": {
+          "maxAbs": 0.0008310675621032715,
+          "relativeL2": 2.199273133241472e-05,
+          "minCosine": 0.9999999997586873
+        }
+      },
+      "desk-1024x768": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0055162906646728516,
+          "relativeL2": 0.00010854059752638123,
+          "minCosine": 0.9999999941097258
+        },
+        "stepLatents": {
+          "maxAbs": 0.00038345158100128174,
+          "relativeL2": 1.781284679175134e-05,
+          "minCosine": 0.9999999998413728
+        },
+        "final": {
+          "maxAbs": 0.004141807556152344,
+          "relativeL2": 0.00010007897312448021,
+          "minCosine": 0.9999999949921435
+        },
+        "image": {
+          "maxAbs": 0.001484215259552002,
+          "relativeL2": 2.7084018352302436e-05,
+          "minCosine": 0.9999999996333372
+        }
+      },
+      "canyon-1344x768": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0030517578125,
+          "relativeL2": 2.3736922686447206e-05,
+          "minCosine": 0.9999999997182814
+        },
+        "stepLatents": {
+          "maxAbs": 7.483363151550293e-05,
+          "relativeL2": 2.7066868552182238e-06,
+          "minCosine": 0.9999999999963364
+        },
+        "final": {
+          "maxAbs": 0.002354264259338379,
+          "relativeL2": 2.0679442302844215e-05,
+          "minCosine": 0.999999999786181
+        },
+        "image": {
+          "maxAbs": 0.0007070004940032959,
+          "relativeL2": 8.479001148127842e-06,
+          "minCosine": 0.9999999999640491
+        }
+      }
+    },
+    "reference-images": {
+      "fox-watercolor-ref1": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "positions",
+          "referencePNGs[0]",
+          "referencePixels[0]",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.000621795654296875,
+          "relativeL2": 1.3845576062719874e-05,
+          "minCosine": 0.9999999999041534
+        },
+        "stepLatents": {
+          "maxAbs": 9.629875421524048e-05,
+          "relativeL2": 2.146757206191193e-06,
+          "minCosine": 0.9999999999976971
+        },
+        "final": {
+          "maxAbs": 0.0004436969757080078,
+          "relativeL2": 1.0927395380608366e-05,
+          "minCosine": 0.999999999940298
+        },
+        "image": {
+          "maxAbs": 9.170174598693848e-05,
+          "relativeL2": 2.459291156525792e-06,
+          "minCosine": 0.9999999999969729
+        },
+        "referenceLatents": {
+          "maxAbs": 1.2636184692382812e-05,
+          "relativeL2": 1.9041776322437827e-06,
+          "minCosine": 0.9999999999981883
+        }
+      },
+      "fox-lighthouse-ref2": {
+        "byteIdentical": [
+          "ids",
+          "mask",
+          "noise",
+          "positions",
+          "referencePNGs[0]",
+          "referencePNGs[1]",
+          "referencePixels[0]",
+          "referencePixels[1]",
+          "stepLatents[0]",
+          "text"
+        ],
+        "timestepsIdentical": true,
+        "stepVelocities": {
+          "maxAbs": 0.0009711980819702148,
+          "relativeL2": 3.05695305113657e-05,
+          "minCosine": 0.9999999995328808
+        },
+        "stepLatents": {
+          "maxAbs": 9.228289127349854e-05,
+          "relativeL2": 5.588826834166725e-06,
+          "minCosine": 0.9999999999844018
+        },
+        "final": {
+          "maxAbs": 0.0007091760635375977,
+          "relativeL2": 2.356052869885587e-05,
+          "minCosine": 0.999999999722466
+        },
+        "image": {
+          "maxAbs": 0.0007170438766479492,
+          "relativeL2": 1.0576949269376256e-05,
+          "minCosine": 0.9999999999440755
+        },
+        "referenceLatents": {
+          "maxAbs": 1.2636184692382812e-05,
+          "relativeL2": 1.8840829079192023e-06,
+          "minCosine": 0.9999999999982259
+        }
+      }
+    }
+  },
+  "nativeParity": {
+    "report": "flux2-klein-native-parity-cpu-references-2026-10-27.json",
+    "log": "flux2-klein-native-parity-cpu-references-2026-10-27.log",
+    "cases": 12,
+    "checks": 113,
+    "passed": true,
+    "bundleFingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+    "compute": "preferGPU",
+    "host": "M5 Max, macOS 27.0.1",
+    "elapsedSeconds": 217.5,
+    "lifetimePeakFootprintGiB": 16.1,
+    "gpuLock": [
+      "2026-10-27 11:13:19 waiting  pid=80391 flux2 native parity vs CPU refs",
+      "2026-10-27 11:13:19 acquired pid=80400 flux2 native parity vs CPU refs",
+      "2026-10-27 11:17:02 released pid=80400 flux2 native parity vs CPU refs rc=0"
+    ],
+    "barsUnchanged": true,
+    "sideBySide": {
+      "tokenIDs": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 1,
+          "minCase": "lighthouse-512",
+          "passed": 12
+        },
+        "cpuReferences": {
+          "min": 1,
+          "minCase": "lighthouse-512",
+          "passed": 12
+        },
+        "bar": 1
+      },
+      "textRealRowCosine": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 0.9999723492511845,
+          "minCase": "cat-1024",
+          "passed": 12
+        },
+        "cpuReferences": {
+          "min": 0.9999723492511845,
+          "minCase": "cat-1024",
+          "passed": 12
+        },
+        "bar": 0.999
+      },
+      "timesteps": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 1,
+          "minCase": "lighthouse-512",
+          "passed": 12
+        },
+        "cpuReferences": {
+          "min": 1,
+          "minCase": "lighthouse-512",
+          "passed": 12
+        },
+        "bar": 1
+      },
+      "velocityCosine": {
+        "count": 48,
+        "mpsReferences": {
+          "min": 0.9992415300461289,
+          "minCase": "desk-1024x768",
+          "passed": 48
+        },
+        "cpuReferences": {
+          "min": 0.9992390379774518,
+          "minCase": "desk-1024x768",
+          "passed": 48
+        },
+        "bar": 0.999
+      },
+      "referencePositions": {
+        "count": 2,
+        "mpsReferences": {
+          "min": 1,
+          "minCase": "fox-watercolor-ref1",
+          "passed": 2
+        },
+        "cpuReferences": {
+          "min": 1,
+          "minCase": "fox-watercolor-ref1",
+          "passed": 2
+        },
+        "bar": 1
+      },
+      "decoderPSNR": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 87.69024469309596,
+          "minCase": "street-1024x576",
+          "passed": 12
+        },
+        "cpuReferences": {
+          "min": 87.68425402025719,
+          "minCase": "street-1024x576",
+          "passed": 12
+        },
+        "bar": 35
+      },
+      "referenceLatentCosine": {
+        "count": 3,
+        "mpsReferences": {
+          "min": 0.9999999999996574,
+          "minCase": "fox-watercolor-ref1",
+          "passed": 3
+        },
+        "cpuReferences": {
+          "min": 0.9999999999981598,
+          "minCase": "fox-watercolor-ref1",
+          "passed": 3
+        },
+        "bar": 0.999
+      },
+      "imagePathSSIM": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 0.9601581967627534,
+          "minCase": "cafe-512",
+          "passed": 12
+        },
+        "cpuReferences": {
+          "min": 0.9601602193526131,
+          "minCase": "cafe-512",
+          "passed": 12
+        },
+        "bar": 0.94
+      },
+      "imagePathPSNR": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 27.869664325213407,
+          "minCase": "cat-1024"
+        },
+        "cpuReferences": {
+          "min": 27.869427642531242,
+          "minCase": "cat-1024"
+        },
+        "recordedOnly": true
+      },
+      "wholePipelineSSIM": {
+        "count": 12,
+        "mpsReferences": {
+          "min": 0.8120775806210735,
+          "minCase": "fox-lighthouse-ref2"
+        },
+        "cpuReferences": {
+          "min": 0.8120773599319784,
+          "minCase": "fox-lighthouse-ref2"
+        },
+        "recordedOnly": true
+      }
+    }
+  },
+  "notRerun": "The native lifecycle record (flux2-klein-native-lifecycle-2026-10-26.json) still compares against the MPS fixture's fox-512 image; it qualifies lifecycle behavior, not parity, and was not re-run.",
+  "weightFreeFixtureTests": {
+    "passed": [
+      "samplerArithmeticMatchesTheIndependentReference",
+      "bundleTokenizerMatchesReferenceTokenIDs",
+      "paddedPromptMatchesTheLanguageTokenizersThinkingOffRender"
+    ],
+    "against": [
+      "ffc4b1365159e40c",
+      "caf92bb7d83d685c"
+    ]
+  }
+}
