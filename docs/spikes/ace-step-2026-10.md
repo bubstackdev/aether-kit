@@ -1,5 +1,7 @@
 # Spike: ACE-Step music generation on Core AI (2026-10)
 
+**Status: 0.0.2 feasibility result (runs on 2026-10-26), imported for 0.0.3.** It is the evidence for the ACE-Step go/no-go in the [0.0.3 roadmap](../roadmap-0.0.3.md#spikes). The verdict below is the 0.0.2 recommendation, not the 0.0.3 decision; [Open for 0.0.3](#open-for-003) lists what still has to be answered first.
+
 **Verdict: conditional go for 0.0.3. Target ACE-Step 1.5, not v1, and ship text-to-music on Mac first, without the optional 5 Hz LM.**
 
 - **Both expensive stages export cleanly** on the first try: the 1.58B DiT and the 48 kHz audio VAE decoder.
@@ -124,11 +126,28 @@ Leave v1 out: older, slower to sample, and with more exotic stages.
 
 - Code: `Spikes/ace-step/`
   - `export_vae.py`, `export_dit.py`: export plus fp32 references;
-  - `run_ace.py`: GPU timing and comparisons;
+  - `run_ace.py`: GPU timing and comparisons, and `gpu_run.sh`, which runs it per stage under `/usr/bin/time -l`;
   - `dtype_check.py`.
-- Results:
-  - `Spikes/ace-step/results/gpu-run.json`: every stage;
-  - `results/dtype-check.log`.
+- Results: `Spikes/ace-step/results/`
+  - `gpu-run.json`: every stage;
+  - `dit-run2.log`: the 4-minute DiT run, including the peak physical footprint;
+  - `dtype-check.log`.
 - GPU lock holds, 50 s total:
-  - `spikes: triposr+ace-step stages`, 14:44:57–14:45:25, 28 s, shared with TripoSR;
-  - `spikes: ace-step dit 4min`, 15:02:35–15:02:57, 22 s.
+  - `spikes: triposr+ace-step stages`, 14:44:57–14:45:25, 28 s, shared with TripoSR: the three VAE stages in one process, then `dit-1500x512-fp16`;
+  - `spikes: ace-step dit 4min`, 15:02:35–15:02:57, 22 s: `dit-6000x512-fp16`.
+
+## Reproducing
+
+- **Weights.** The scripts read the newest snapshot of `ACE-Step/Ace-Step1.5` from `~/.cache/huggingface/hub/` (the spike used revision `19671f4`; nothing is downloaded by the scripts). Exports and references go to the directory given on the command line; `gpu_run.sh` expects `~/.cache/huggingface/aether-kit/spikes/ace-step/` (`SPIKE_ASSETS` overrides the root).
+- **Python.** Forge's locked environment has the torch 2.11, coreai-torch 0.4.2 and diffusers (`AutoencoderOobleck`) that the scripts use, so `export_vae.py` and `run_ace.py` run in it. The DiT's upstream modeling file also imports `vector-quantize-pytorch`, which is not in Forge's lock: `export_dit.py` and `dtype_check.py` need it added in a separate venv, as the spike did. `gpu_run.sh` takes that interpreter from `SPIKE_PYTHON`.
+- **Memory.** The DiT export is CPU-only but peaked at 16.1 GB, which counts as a heavy CPU job on a shared machine.
+
+## Open for 0.0.3
+
+What these findings leave unanswered before a go/no-go:
+
+1. **The gate itself.** No 8-step trajectory from real conditioning was run. fp16 was checked only as single steps on random inputs, so whether the fp16 DiT passes, or needs fp32 in its modulation and norms, is still open.
+2. **The front of the pipeline.** Neither the Qwen3-Embedding text encoder nor the condition encoder (lyric and timbre encoders, condition packing) was exported, and the upstream code that builds lyric embeddings was not ported. Their timing (under 0.3 s) is an estimate. The license of that GitHub pipeline code wasn't checked; only the model repositories were.
+3. **Encoder K/V reuse.** The DiT was exported with `use_cache=False`, so each step recomputes the cross-attention K/V. The authors' cached form, and its effect on the 361 ms step, is unmeasured.
+4. **Full-song decoding.** The overlap and crossfade for tiled VAE decoding weren't chosen or tested; only single 10 s and 60 s windows ran.
+5. **Resident memory.** The DiT process showed 15–18 GB maximum RSS but a 0.9 GB peak footprint. The real resident cost under Kit's admission is unknown, beyond the expected 5.8 GB of fp16 weights.

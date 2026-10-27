@@ -1,5 +1,7 @@
 # Spike: TripoSR image-to-3D on Core AI (2026-10)
 
+**Status: 0.0.2 feasibility result (runs on 2026-10-26), imported for 0.0.3.** It is the evidence for the TripoSR go/no-go in the [0.0.3 roadmap](../roadmap-0.0.3.md#spikes). The verdict below is the 0.0.2 recommendation, not the 0.0.3 decision; [Open for 0.0.3](#open-for-003) lists what still has to be answered first.
+
 **Verdict: go for 0.0.3.** Both neural stages export to Core AI on the first try and match eager fp32. Single-image-to-mesh takes about 2.5 s on an M5 Max. The remaining work is ordinary engineering: preprocessing, marching cubes, USD packaging and qualification. The one real gap is that Core AI has no `grid_sample`. An explicit gather replaces it and matches upstream to 3.4e-6.
 
 This is a feasibility spike, not product work. The code under `Spikes/triposr/` is throwaway and is not wired into `Package.swift`.
@@ -116,9 +118,27 @@ About 1.5–2 engineer-weeks:
 - Code: `Spikes/triposr/`
   - `export_triposr.py`: export plus eager references;
   - `eager_grid.py`;
-  - `run_triposr.py`: GPU run, mesh and comparisons;
+  - `run_triposr.py`: GPU run, mesh and comparisons, and `gpu_run.sh`, which runs it under `/usr/bin/time -l`;
   - `probe_grid_sample.py`;
   - `obj2usdz*.swift`.
-- Results: `Spikes/triposr/results/run-256-fp16.json`.
-  - Large tensors, meshes and assets live under `~/.cache/huggingface/aether-kit/spikes/triposr/`; they are not committed.
+- Results: `Spikes/triposr/results/`
+  - `run-256-fp16.json`;
+  - `run-256-fp16-time.log`: the run's `/usr/bin/time -l` output, the source of the 3.46 GB peak RSS (excerpted from the shared lock hold's log).
+  - Large tensors, meshes and assets were written under `~/.cache/huggingface/aether-kit/spikes/triposr/` and deleted; they are not committed.
 - GPU lock: one shared hold of 28 s with the ACE-Step stages (`spikes: triposr+ace-step stages`, 14:44:57–14:45:25).
+
+## Reproducing
+
+- **Weights and source.** The scripts read the newest snapshot of `stabilityai/TripoSR` from `~/.cache/huggingface/hub/` (the spike used revision `5b52193`). The upstream code is the MIT source tarball of VAST-AI-Research/TripoSR at `main`, passed as `<tsr-source-dir>`; the spike didn't record its commit. `torchmcubes` and `rembg` are stubbed, so neither is needed.
+- **Python.** Forge's locked environment has the torch 2.11 and coreai-torch 0.4.2 the spike used, so `probe_grid_sample.py` runs in it. The upstream package and `run_triposr.py` need more: the spike's venv added omegaconf, trimesh, PyMCubes and scikit-image over Forge's packages, and upstream also imports einops. None of these is in Forge's lock, so install them in a separate venv and point `SPIKE_PYTHON` at it for `gpu_run.sh`.
+- **USDZ checks.** `obj2usdz.swift` and `obj2usdz_scenekit.swift` run with `swift <script> <in.obj> <out.usdz>`; `usdchecker` and `usdzip` come from Apple's USD tools.
+
+## Open for 0.0.3
+
+What these findings leave unanswered before a go/no-go:
+
+1. **Real images.** Only one synthetic disc on grey ran, which tests numerics and timing, not mesh quality. Neither the Vision foreground-mask preprocessing nor its effect relative to upstream's `rembg` path was tried, and a mesh metric (IoU or Chamfer) on a fixed image set has no threshold yet.
+2. **iPhone.** Not run: 800 MB of fp16 weights and about 1.4 TFLOP for a 256³ grid.
+3. **The grid cost.** The density grid is 2.07 s of the 2.5 s total. Bigger chunks and the separable, gather-free formulation were proposed but not tried.
+4. **Output that passes `usdchecker`.** Both USDZ routes failed it. The self-authored USD stage and USDZ writer, a Swift marching-cubes port, and face winding against upstream are still to be done.
+5. **fp16 error budget.** The field on random points differs from eager fp32 by 1.1% in density and 0.077 in colour, though grid occupancy IoU is 0.999. Whether that holds on real scenes, and what tolerance the qualification uses, is open.

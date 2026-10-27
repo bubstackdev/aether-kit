@@ -1,5 +1,7 @@
 # Spike: hybrid recurrent-state language model (Granite 4.0-H) (2026-10)
 
+**Status: 0.0.2 feasibility result (runs on 2026-10-26), imported for 0.0.3.** It is the evidence for the hybrid-state go/no-go in the [0.0.3 roadmap](../roadmap-0.0.3.md#spikes). The verdict below is the 0.0.2 recommendation, not the 0.0.3 decision; [Open for 0.0.3](#open-for-003) lists what still has to be answered first. The report was written against the 0.0.1-era runtime. Since then 0.0.2 shipped its fixed-shape decode work as the `bucketedPositions` contract ([language guide](../language-generation.md#step-contracts)), which differs from the fixed-capacity variants measured here.
+
 **Verdict: go for 0.0.3, as a language-runtime contract extension, provided the fixed-shape decode work from 0.0.2 lands first.**
 
 - **Recurrent state works.** Mamba-2 state alongside a KV cache works through Core AI with kit-owned buffers and the kit's sequential encode→join contract. Every correct variant reproduces the fp32 reference: cosine ≥ 0.999995, 16/16 argmax, and identical 257-token greedy runs.
@@ -127,24 +129,46 @@ Don't put recurrent snapshots into the sequential runtime.
 ## Evidence
 
 - Code: `Spikes/hybrid-state/`
-  - `export_variants.py`;
+  - `export_variants.py`: every variant, by name (`ref`, `nomamba`, `split`, `nobarrier`, `fp16state`, `staticq`, `static-full`, `static-lean`, `static-kernel`, `static-nomamba`);
   - `harness/`: the Swift timing harness;
-  - `run_timing.sh` and `gpu_job*.sh`: lock-held runs;
-  - `compare_logits.py`, `profile_decode.py`, `summarize_profile.py`, `opcount.py`.
+  - `run_rounds.sh` and `profile.sh`: the lock-held timing rounds and profiler captures;
+  - `compare_logits.py`, `summarize_profile.py`, `opcount.py`, `make_prompt.py`.
 - Results: `Spikes/hybrid-state/results/`
   - `timing-summary.json`: every cell and round;
-  - `round*-numerics.json`;
-  - `round*/*.json`: per-run reports, including generated tokens and per-step ms;
-  - `profile/`: runtime profiler events;
-  - `opcount*.json`.
-- GPU lock holds, 439 s (7.3 minutes) in total:
+  - `round*-numerics.json`: the teacher-forced comparison of each run's first 16 logits rows (no round 2 file);
+  - `greedy-tokens.json`: the reference greedy run, and for every run its length and whether its tokens match the round's `ref:decode`;
+  - `profile-summary.txt`: per-step profiler intervals for each captured variant;
+  - `round*.log`: harness output per round, with the load average before each run;
+  - `opcount*.json`, `prompt.txt`.
+- Not committed: the per-run harness reports (`round*/*.json`, with per-step milliseconds), the logits rows, the profiler event files and a one-run smoke report. `greedy-tokens.json` and `profile-summary.txt` were derived from them before they were dropped; every number above is in a committed file.
+- GPU lock holds, 439 s (7.3 minutes) in total. The command column gives today's equivalent invocation; each hold ran its profiler captures, then its rounds.
 
-| Job | Window | Duration |
-|---|---|---|
-| smoke | 14:19:30–14:20:04 | 34 s |
-| variants | 14:23:12–14:24:24 | 72 s |
-| profile + timing | 14:27:10–14:29:28 | 138 s |
-| static | 14:43:28–14:44:44 | 76 s |
-| lean | 14:53:29–14:54:01 | 32 s |
-| kernel | 15:00:33–15:01:31 | 58 s |
-| kernel v2 | 15:07:15–15:07:44 | 29 s |
+| Job | Window | Duration | Command (`profile.sh`; `run_rounds.sh`) |
+|---|---|---|---|
+| smoke | 14:19:30–14:20:04 | 34 s | one harness run of `ref:decode` |
+| variants | 14:23:12–14:24:24 | 72 s | `round1 256 2 ref:decode ref:main nomamba:main split:main nobarrier:main fp16state:main staticq:main` |
+| profile + timing | 14:27:10–14:29:28 | 138 s | `6 ref:decode nomamba:main ref:main`; `round2 128 4` with round 1's cells |
+| static | 14:43:28–14:44:44 | 76 s | `12 ref:decode static-full:main static-nomamba:main`; `round3 128 3 ref:decode nomamba:main static-full:main static-nomamba:main` |
+| lean | 14:53:29–14:54:01 | 32 s | `12 static-lean:main`; `round4 256 3 ref:decode static-full:main static-lean:main static-nomamba:main` |
+| kernel | 15:00:33–15:01:31 | 58 s | `12 static-kernel:main`; `round5 256 3 ref:decode static-kernel:main static-lean:main static-nomamba:main` |
+| kernel v2 | 15:07:15–15:07:44 | 29 s | as kernel, into `round6`; its capture is kept as `static-kernel2-main` |
+
+## Reproducing
+
+The environment has changed since these runs:
+
+- **Export needs the prototype engine.** `export_variants.py` imports the prototype engine's `aether_forge` package (`arch.granite_hybrid`, `prim.ssm`, `export`, `arch.qwen3`) through `PYTHONPATH`. That package is not part of AetherKit, and Forge has no Granite hybrid module, so the exports can't be regenerated from this repository alone. Because it relies on `PYTHONPATH`, the exporter runs without `-I`: `PYTHONPATH=<engine>/forge Forge/.venv/bin/python Spikes/hybrid-state/export_variants.py <variant>…`. Exports go to `~/.cache/huggingface/aether-kit/spikes/granite/`.
+- **The checkpoint path is the prototype's cache.** `export_variants.py`, `compare_logits.py` and `make_prompt.py` read revision `3b17b71` from `~/Library/Caches/aether/checkpoints/` rather than the Hugging Face hub cache.
+- **Everything else runs in Forge's locked environment** (`uv sync --frozen --project Forge`): it has the same torch 2.11 and coreai-torch 0.4.2 as the prototype venv, and its transformers 4.57.3 includes the Granite hybrid model that `compare_logits.py` and `make_prompt.py` load. `profile.sh` uses it by default (`SPIKE_PYTHON` overrides it).
+- **The harness still builds** with `swift build -c release --package-path Spikes/hybrid-state/harness` on the current toolchain (checked 2026-10-27, with Swift 6 concurrency warnings only). Timing runs go through `run_rounds.sh` under `~/.cache/aether-kit/with-gpu-lock.sh`.
+
+## Open for 0.0.3
+
+What these findings leave unanswered before a go/no-go:
+
+1. **Fit with the bucketed contract.** The proposal assumed in-place KV states. The `bucketedPositions` contract that shipped instead passes the KV cache as read-only inputs, copies `keyUpdate`/`valueUpdate` rows after each join, and ends prefill with a chunk that steps back over rows already written. Recurrent state can't be stepped back: recomputing those rows would apply the tokens twice. The contract for a hybrid (in-place recurrent states next to bucketed KV, or a separate one) has to be chosen, and the ~190 tok/s re-measured under it, since every `static-*` number here used a fixed 1024-row KV capacity blended in the graph.
+2. **An exporter inside AetherKit.** The Granite hybrid module lives only in the prototype engine. It must be ported into Forge, with a reference that is independent of the exporter.
+3. **Prefill and long-context state.** Every run fed its 46-token prompt one token per call. Neither chunked SSD prefill through Core AI nor fp32 SSM-state drift over long contexts was measured.
+4. **Qualification depth.** The comparison covered 16 teacher-forced rows and greedy runs of up to 257 tokens on one prompt, not the prototype's 19-case T2 fixtures or T3 task gates. No iPhone run was made, including for the custom kernel.
+5. **Quiet-host timing.** Every timing was taken with a 1-minute load average of 4–16, so the absolute numbers are only good to about ±25%.
+6. **The `staticq` compile failures.** "FAILED: Input has no defining op" printed twice and wasn't explained. It doesn't block the fixed-shape path, but its cause is unknown.
