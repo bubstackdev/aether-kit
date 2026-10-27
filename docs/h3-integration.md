@@ -548,3 +548,23 @@ Outputs stay byte-identical:
 | Render, median | 406.0 s | 381.6 s | −6.0% |
 
 The two device chain buffers raise the Metal peak by about 0.2 GiB. [The memory gate](evidence/h3-memory-gate-chained-2026-10-26.json), rerun on the chained build, passes: T2VA peaks at 13.69 GiB, FL2VA at 14.00 GiB, and the admission worst case is 15.26 GiB. The bundled measured entry is updated to match.
+
+### Timed renders on this Mac: busy host
+
+**These are busy-host timings, not a quiet reference.** Other sessions kept the host loaded all night, so after the agreed capped wait both renders ran anyway. Each is one complete `H3VideoSession` render (`aether-probe h3-memory-render`, chained build): 960×544, 124 frames, Turbo8 (8 steps), M5 Max, Core AI architecture h17c ([record](evidence/h3-timed-renders-2026-10-26.json)). The T2VA render started at a 1-minute load of 2.8 (5-minute 20.5), and load rose to 126 during the run. The FL2VA render ran at a load of about 68–84 throughout.
+
+| Stage, wall seconds | T2VA (busy host, load 3 → 126) | FL2VA (busy host, load 68–84) |
+| --- | ---: | ---: |
+| Conditioner (graph load + 50 streamed layers) | 19.2 | 26.1 |
+| First-frame encoder, tiled | — | 5.6 |
+| Denoising, 8 steps | 299.4 | 352.0 |
+| Video decode (tile graph load + 105 tiles) | 35.8 | 35.6 |
+| Audio decode | 0.75 | 0.72 |
+| **Total** | **355.1** | **420.0** |
+
+Per-step denoising times:
+
+- T2VA: 33.8, 35.2, 35.3, 35.5, 36.8, 37.4, 42.4 and 42.8 s, slowing as load rose.
+- FL2VA: 43.6–44.3 s.
+
+Graphs open lazily inside their stage, so each stage's time includes its own load and specialization. Under steady load, the FL2VA step 0 (44.0 s) equals the later steps (median 44.1 s). So inside denoising, the body graph's load and specialization, text refinement and first-pass weight hashing add no measurable time: denoising is compute. The conditioner and video-decode rows include their graph loads. A quiet-host reference remains to be measured.
