@@ -9,6 +9,7 @@ import Testing
     let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
     defer { try? FileManager.default.removeItem(at: url) }
     try image.savePNG(to: url)
+    #expect(try image.pngData() == Data(contentsOf: url))
     let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
     let decoded = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
     #expect(decoded.width == 2)
