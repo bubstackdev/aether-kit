@@ -26,11 +26,12 @@ Spikes, with go/no-go reports for 0.0.3: a hybrid recurrent-state language model
 | Bucketed language decode | `bucketedPositions` contract; the default for new exports (`--contract running` keeps the 0.0.1 contract) | On main (#19) |
 | Qwen3-VL-2B | Image input on fixed-shape image grids (five patch grids, at most 484 tokens) | On main (#24) |
 | Kokoro 82M | Speech synthesis, float32 decoder only; frame cap 1024 on macOS and 512 on iOS | On main (#21) |
-| H3 schema-3 | Qualification with an 18 GiB hard memory bar, enforced by measured admission; the bar binds only sessions created with measured admission | PR #25 (open) |
+| H3 schema-3 | Qualification with an 18 GiB hard memory bar, enforced by measured admission; the bar binds only sessions created with measured admission. Device-chained denoiser blocks cut denoising 7% | On main (#25, #27) |
 | `GeneratedImage.pngData()` | In-memory PNG encoding | On main (#20) |
 | AetherLanguageTokenizers | A model's own chat template to token IDs | On main (#22) |
 | Qwen3-4B writer (Atelier's engine drop) | Bucketed export of the abliterated Qwen3-4B-Instruct-2507 | On main (#23) |
-| Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | In progress (Atelier); no PR yet |
+| Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | On main (#26) |
+| Language memory budget | Workaround for Core AI retaining memory on every input-shape change: a fixed prefill width (64) and a 2 GiB growth budget that reloads the model at idle | On main (#28) |
 
 The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviour change (see CHANGELOG).
 
@@ -39,6 +40,8 @@ The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviou
 - **Spikes:** hybrid recurrent state (Granite 4.0-H), ACE-Step and TripoSR.
 - **H3:** Turbo4 and fused attention; video-decode work, and releasing the second specialization.
 - **Qwen3-VL:** iPhone, multi-image input and a quantized decoder.
+- **Qwen3-VL memory:** each function (`main`/`withImage`) and each encoder grid holds its own weight copy (about 23 GiB for 4B, 13 for 2B). The Core AI SDK has no shared-constants option.
+- **Language memory budget:** remove the reload workaround once Core AI stops retaining memory per shape change.
 - **Kokoro:** bucket-2048 memory (about 8.2 GB of Metal stays allocated after that bucket has been used).
 - **GPU lease:** reclaiming pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
 - **FLUX.2 tokenizer:** hash the bundle's `tokenizer/chat_template.jinja`, then render `Flux2Tokenizer` prompts through AetherLanguageTokenizers. Today the template is neither verified nor part of the fingerprint, so FLUX.2 keeps its fixed render. Hashing it changes the bundle fingerprint. An opt-in local-files test already shows that the padded output is identical.
