@@ -4,9 +4,10 @@
     python3 Forge/language/register_qwen3_vl_bundle.py --bundle <dir with model.aimodel, vision.aimodel, tokenizer/> \
         --source-repository Qwen/Qwen3-VL-2B-Instruct --source-revision <sha> --platform macos [--maximum-image-tokens 512]
 
-Reads the text export's `export-report.json` (bounds) and the tokenizer copy's `config.json`,
-`preprocessor_config.json` and `generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does.
-The vision registration never requests `expectFrequentReshapes` (engine F-P3-26).
+Reads the text export's `export-report.json` (bounds), the vision export's `vision-export-report.json` (its fixed
+image grids, one static-shape function each) and the tokenizer copy's `config.json`, `preprocessor_config.json` and
+`generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does. The vision registration never
+requests `expectFrequentReshapes` (engine F-P3-26) and always lists its grids (dynamic-shape encoders are refused).
 """
 
 from __future__ import annotations
@@ -44,6 +45,12 @@ def main() -> None:
     stop = sorted(set(eos if isinstance(eos, list) else [eos]))
     vc = config["vision_config"]
     bounds = report["exportBounds"]
+    vision_report = json.loads((b / "vision-export-report.json").read_text())
+    grids = [{"height": g["height"], "width": g["width"]} for g in vision_report["imageGrids"]]
+    budget = min(args.maximum_image_tokens, bounds["maximumImageChunk"])
+    merge = vc["spatial_merge_size"]
+    if any(g["height"] * g["width"] // merge ** 2 > budget for g in grids):
+        raise SystemExit("an image grid exceeds the image-token budget")
     manifest = {
         "schemaVersion": 1,
         "modelDirectory": "model.aimodel",
@@ -71,7 +78,8 @@ def main() -> None:
             "imageMean": pre["image_mean"],
             "imageStandardDeviation": pre["image_std"],
             "positionTableSide": int(round(vc["num_position_embeddings"] ** 0.5)),
-            "maximumImageTokens": min(args.maximum_image_tokens, bounds["maximumImageChunk"]),
+            "maximumImageTokens": budget,
+            "imageGrids": grids,
         },
     }
     (b / "language-model.json").write_text(json.dumps(manifest, indent=2) + "\n")

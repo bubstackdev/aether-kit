@@ -29,6 +29,9 @@ private struct VLReference: Decodable {
     }
     let cases: [Case]
     let maximumPixels: Int?
+    /// The fixed patch grids [h, w] the reference snapped images to (`--grids`).
+    let imageGrids: [[Int]]
+    var grids: [Qwen3VLImagePreprocessor.Grid] { imageGrids.map { .init(height: $0[0], width: $0[1]) } }
 }
 
 private struct VLCaseReport: Codable {
@@ -99,7 +102,7 @@ func qwen3VLImageTextQualification() async throws {
         let tokens = LanguageImageTokens(visionStart: 151652, imagePad: 151655, visionEnd: 151653)
         let swiftPreprocessing = nativeEnvironment["AETHER_QWEN3VL_PREPROCESS"] == "swift"
         report.stage = "open"
-        let encoder = try await LanguageVisionEncoder.open(at: visionModel)
+        let encoder = try await LanguageVisionEncoder.open(at: visionModel, configuration: .init(imageGrids: reference.grids))
         let session = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: 2048,
                                                                stopTokenIDs: [151645, 151643], exportBounds: bounds)
         #expect(session.acceptsImages && session.takesRopePositions && session.contract == .bucketedPositions)
@@ -110,10 +113,11 @@ func qwen3VLImageTextQualification() async throws {
             var grid = (c.grid[0], c.grid[1], c.grid[2])
             var gridMatches: Bool?, pixelCosine: Double?
             if swiftPreprocessing {
-                // Kit's own path: ImageIO decoding, smart resize under the reference's pixel cap, resampling, patchify.
+                // Kit's own path: ImageIO decoding, snapping to the nearest fixed grid, resampling, patchify.
                 let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(c.image.file))
                 var configuration = Qwen3VLImagePreprocessor.Configuration()
                 if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
+                configuration.imageGrids = reference.grids
                 let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
                                                                      configuration: configuration)
                 gridMatches = [processed.grid.t, processed.grid.h, processed.grid.w] == c.grid

@@ -80,7 +80,8 @@ struct LanguageManifestTests {
             var registration: [String: Any] = ["modelDirectory": "vision.aimodel", "modelSHA256": try visionHash ?? LanguageModelManifest.fileHash(vision),
                 "imageTokenID": 151655, "visionStartTokenID": 151652, "visionEndTokenID": 151653, "patchSize": 16, "mergeSize": 2,
                 "temporalPatchSize": 2, "minimumPixels": 65536, "maximumPixels": 16777216, "imageMean": [0.5, 0.5, 0.5],
-                "imageStandardDeviation": [0.5, 0.5, 0.5], "positionTableSide": 48, "maximumImageTokens": 1024]
+                "imageStandardDeviation": [0.5, 0.5, 0.5], "positionTableSide": 48, "maximumImageTokens": 1024,
+                "imageGrids": [["height": 44, "width": 44], ["height": 36, "width": 48]]]
             if let reshapes { registration["expectFrequentReshapes"] = reshapes }
             var bounds: [String: Any] = ["maximumPrefillChunk": 512, "maximumCacheCapacity": 4096]
             if let imageChunk { bounds["maximumImageChunk"] = imageChunk }
@@ -111,7 +112,8 @@ struct LanguageManifestTests {
             let values: [String: Any] = ["modelDirectory": "vision.aimodel", "modelSHA256": String(repeating: "a", count: 64),
                 "imageTokenID": 151655, "visionStartTokenID": 151652, "visionEndTokenID": 151653, "patchSize": patch, "mergeSize": merge,
                 "temporalPatchSize": 2, "minimumPixels": 65536, "maximumPixels": 16777216, "imageMean": [0.5, 0.5, 0.5],
-                "imageStandardDeviation": [0.5, 0.5, 0.5], "positionTableSide": 48, "maximumImageTokens": tokens]
+                "imageStandardDeviation": [0.5, 0.5, 0.5], "positionTableSide": 48, "maximumImageTokens": tokens,
+                "imageGrids": [["height": 2, "width": 2]]]
             return try JSONDecoder().decode(LanguageVisionRegistration.self, from: JSONSerialization.data(withJSONObject: values))
         }
         let ok = try registration(tokens: 1024)

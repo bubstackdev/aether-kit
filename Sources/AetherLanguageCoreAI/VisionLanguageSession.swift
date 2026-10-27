@@ -25,9 +25,10 @@ extension LanguageGenerationSession: VisionLanguageDecoding {}
 ///
 /// The caller renders the chat template with one `<|vision_start|><|image_pad|><|vision_end|>`
 /// placeholder per image (tokenization stays the consumer's) and passes the images in the same
-/// order. Each image is preprocessed like the reference processor (smart resize capped at the
-/// registration's image-token budget, antialiased bicubic, normalization), encoded by the vision
-/// asset, and spliced into the bucketed decoder's prefill. Decoding is greedy.
+/// order. Each image snaps to the registration's fixed patch grid nearest its aspect ratio, is
+/// resized to it exactly (antialiased bicubic, like the reference processor) and normalized,
+/// encoded by that grid's static-shape encoder function, and spliced into the bucketed decoder's
+/// prefill. Decoding is greedy.
 ///
 /// One request at a time; overlap fails with `busy`. With `gpu`, the encode phase and the
 /// decoder's request are each admitted. `unload()` first withdraws a request still waiting for
@@ -68,7 +69,8 @@ public actor VisionLanguageSession {
         try registration.validate()
         try Self.requireImageBudget(registration: registration, bounds: exportBounds)
         let encoder = try await LanguageVisionEncoder.open(at: visionModel,
-            configuration: .init(mergeSize: registration.mergeSize, positionTableSide: registration.positionTableSide),
+            configuration: .init(mergeSize: registration.mergeSize, positionTableSide: registration.positionTableSide,
+                                 imageGrids: Self.grids(of: registration)),
             expectFrequentReshapes: try registration.encoderExpectsFrequentReshapes())
         do {
             let language = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: maximumContextLength,
@@ -81,6 +83,20 @@ public actor VisionLanguageSession {
         } catch {
             await encoder.unload()
             throw error
+        }
+    }
+
+    /// The registration's fixed grids in the preprocessor's terms (empty when it lists none, which
+    /// `validate()` refuses).
+    static func grids(of registration: LanguageVisionRegistration) -> [Qwen3VLImagePreprocessor.Grid] {
+        (registration.imageGrids ?? []).map { Qwen3VLImagePreprocessor.Grid(height: $0.height, width: $0.width) }
+    }
+
+    /// Planning check: an image's patch grid must be one of the registration's fixed grids, so the
+    /// encoder and the decoder's `withImage` only ever see those shapes.
+    static func requireRegisteredGrid(_ grid: (t: Int, h: Int, w: Int), registration: LanguageVisionRegistration) throws {
+        guard grid.t == 1, registration.imageGrids?.contains(LanguageImageGrid(height: grid.h, width: grid.w)) == true else {
+            throw LanguageGenerationError.invalid("Image grid \(grid.t)x\(grid.h)x\(grid.w) is not one of the registration's fixed grids")
         }
     }
 
@@ -100,9 +116,9 @@ public actor VisionLanguageSession {
         self.preprocessing = Self.preprocessing(for: registration)
     }
 
-    /// The registration's preprocessing, with pixels capped to its image-token budget: one token
-    /// per (patch · merge)² pixels.
-    static func preprocessing(for registration: LanguageVisionRegistration) -> Qwen3VLImagePreprocessor.Configuration {
+    /// The registration's preprocessing: its fixed grids (every image snaps to one), with the
+    /// smart-resize pixel bounds capped to the image-token budget kept for reference.
+    public static func preprocessing(for registration: LanguageVisionRegistration) -> Qwen3VLImagePreprocessor.Configuration {
         var configuration = Qwen3VLImagePreprocessor.Configuration()
         configuration.patchSize = registration.patchSize
         configuration.mergeSize = registration.mergeSize
@@ -112,6 +128,7 @@ public actor VisionLanguageSession {
         configuration.maximumPixels = min(registration.maximumPixels, registration.imageTokenPixelBudget ?? registration.maximumPixels)
         configuration.mean = registration.imageMean
         configuration.standardDeviation = registration.imageStandardDeviation
+        configuration.imageGrids = grids(of: registration)
         return configuration
     }
 
@@ -130,9 +147,12 @@ public actor VisionLanguageSession {
             // Double-precision resampling runs off the actor.
             let processed = try await Self.process(image, configuration: preprocessing)
             guard !closeRequested else { throw LanguageGenerationError.closed }
+            try Self.requireRegisteredGrid(processed.grid, registration: registration)
             let grant = try await admitEncode()
             defer { grant?.release() }
-            features.append(try await encoder.encode(pixels: processed.pixels, grid: processed.grid))
+            let encoded = try await encoder.encode(pixels: processed.pixels, grid: processed.grid)
+            try Self.requireRegisteredGrid(encoded.grid, registration: registration)
+            features.append(encoded)
         }
         guard !closeRequested else { throw LanguageGenerationError.closed }
         let tokens = LanguageImageTokens(visionStart: registration.visionStartTokenID, imagePad: registration.imageTokenID,

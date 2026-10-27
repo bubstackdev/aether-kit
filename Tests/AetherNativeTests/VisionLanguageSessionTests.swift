@@ -17,7 +17,7 @@ private struct PhotoReference: Decodable {
     struct File: Decodable { let file: String }
     struct Case: Decodable { let name: String; let promptTokens: [Int]; let greedyTokens: [Int]; let image: File }
     let cases: [Case]
-    let maximumPixels: Int?
+    let imageGrids: [[Int]]
 }
 
 private struct ComponentReport: Decodable {
@@ -40,7 +40,7 @@ private struct SessionReport: Codable {
     var passed = false
     var stage = "preparation"
     var error: String?
-    var maximumPixels = 0
+    var imageGrids: [[Int]] = []
     var gate = "VisionLanguageSession.open(bundle:) plus generate(renderedTokenIDs:images:) on the photo files reproduces the gated component-level Kit run token for token; unload closes the session"
     var cases: [SessionCase] = []
     var closedAfterUnload = false
@@ -67,9 +67,9 @@ func visionLanguageSessionReproducesQualifiedRun() async throws {
         }
         report.stage = "open"
         let session = try await VisionLanguageSession.open(bundle: bundle, platform: .macos)
-        report.maximumPixels = await session.imagePreprocessing.maximumPixels
-        guard report.maximumPixels == reference.maximumPixels else {
-            throw NativeFailure(description: "the bundle's image budget differs from the reference's pixel cap")
+        report.imageGrids = (await session.imagePreprocessing.imageGrids ?? []).map { [$0.height, $0.width] }
+        guard report.imageGrids == reference.imageGrids else {
+            throw NativeFailure(description: "the bundle's fixed image grids differ from the reference's")
         }
         for c in reference.cases {
             report.stage = "case \(c.name)"

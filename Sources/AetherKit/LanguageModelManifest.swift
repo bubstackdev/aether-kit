@@ -165,6 +165,21 @@ public struct LanguageExportBounds: Codable, Sendable, Equatable {
     public var isValid: Bool { maximumPrefillChunk > 0 && maximumCacheCapacity >= 2 && (maximumImageChunk ?? 1) > 0 }
 }
 
+/// A fixed patch grid the vision encoder was exported for (one static-shape function each).
+public struct LanguageImageGrid: Codable, Sendable, Hashable {
+    /// Patch rows and columns.
+    public let height: Int
+    public let width: Int
+
+    public init(height: Int, width: Int) {
+        self.height = height
+        self.width = width
+    }
+
+    /// The encoder function for this grid, `encode_<height>x<width>`.
+    public var functionName: String { "encode_\(height)x\(width)" }
+}
+
 /// Image input for a language registration (Qwen3-VL): the vision encoder asset, the special tokens
 /// that mark an image, and the preprocessing the encoder was exported for.
 public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
@@ -183,6 +198,11 @@ public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
     public let positionTableSide: Int
     /// Largest image the registration admits, in decoder tokens.
     public let maximumImageTokens: Int
+    /// The fixed patch grids the encoder asset has static-shape functions for. Every image snaps to
+    /// the grid nearest its aspect ratio and is resized to it exactly. Required: a dynamic-shape
+    /// encoder intermittently computed wrong outputs on the GPU even without
+    /// `expectFrequentReshapes` (docs/qwen3-vl.md), so registrations without grids are refused.
+    public let imageGrids: [LanguageImageGrid]?
     /// The encoder asset's `expectFrequentReshapes` specialization request. It must be absent or
     /// false: with it, the dynamic-shape encoder computes wrong outputs on the GPU (engine F-P3-26,
     /// reproduced by Kit), so verification refuses a registration requesting it while
@@ -196,7 +216,7 @@ public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
                 patchSize: Int = 16, mergeSize: Int = 2, temporalPatchSize: Int = 2, minimumPixels: Int = 65_536,
                 maximumPixels: Int = 16_777_216, imageMean: [Float] = [0.5, 0.5, 0.5],
                 imageStandardDeviation: [Float] = [0.5, 0.5, 0.5], positionTableSide: Int = 48, maximumImageTokens: Int = 1024,
-                expectFrequentReshapes: Bool? = nil) {
+                imageGrids: [LanguageImageGrid]?, expectFrequentReshapes: Bool? = nil) {
         self.modelDirectory = modelDirectory
         self.modelSHA256 = modelSHA256
         self.imageTokenID = imageTokenID
@@ -211,6 +231,7 @@ public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
         self.imageStandardDeviation = imageStandardDeviation
         self.positionTableSide = positionTableSide
         self.maximumImageTokens = maximumImageTokens
+        self.imageGrids = imageGrids
         self.expectFrequentReshapes = expectFrequentReshapes
     }
 
@@ -239,6 +260,23 @@ public struct LanguageVisionRegistration: Codable, Sendable, Equatable {
         guard budget >= minimumPixels else {
             throw AetherError.invalidModel("the vision registration's image-token budget is below its minimum pixels")
         }
+        guard let grids = imageGrids, !grids.isEmpty else {
+            throw AetherError.invalidModel("the vision registration must list its fixed image grids (dynamic-shape encoders are refused)")
+        }
+        guard Set(grids).count == grids.count else { throw AetherError.invalidModel("the vision registration repeats an image grid") }
+        for grid in grids {
+            guard grid.height > 0, grid.width > 0, grid.height % mergeSize == 0, grid.width % mergeSize == 0,
+                  let tokens = imageTokens(for: grid), tokens <= maximumImageTokens
+            else { throw AetherError.invalidModel("image grid \(grid.height)x\(grid.width) is invalid or exceeds the image-token budget") }
+        }
+    }
+
+    /// Decoder tokens of an image on `grid`: (height · width) / merge². Nil when it overflows.
+    public func imageTokens(for grid: LanguageImageGrid) -> Int? {
+        let (patches, overflow) = grid.height.multipliedReportingOverflow(by: grid.width)
+        let (window, windowOverflow) = mergeSize.multipliedReportingOverflow(by: mergeSize)
+        guard !overflow, !windowOverflow, window > 0 else { return nil }
+        return patches / window
     }
 
     /// The pixels the image-token budget admits: one token per (patch · merge)² pixels. Nil when

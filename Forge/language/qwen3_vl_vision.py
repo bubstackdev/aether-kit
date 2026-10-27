@@ -6,7 +6,10 @@ imported, so this directory stays self-contained. The tower is its own asset wit
     encode(pixels [n, 1536], pos_index [n, 4] i32, pos_weight [n, 4] f32, patch_rc [n, 2] i32)
       -> image_embeds [n/4, 2048], deepstack [3, n/4, 2048]
 
-n is the patch count of one image (dynamic, a multiple of 4). Every per-patch input is in merge-window order: 2x2
+n is the patch count of one image. The asset has one static-shape function per fixed patch grid, `encode_<h>x<w>`
+(`IMAGE_GRIDS`); every image snaps to the grid nearest its aspect ratio (`nearest_grid`) and is resized to it exactly.
+A dynamic-shape export intermittently computed wrong outputs on the GPU even without `expectFrequentReshapes` (2.5 % of
+encodes, always the same wrong bits), so dynamic shapes are not used. Every per-patch input is in merge-window order: 2x2
 windows in raster order, the patches inside a window in raster order, which is the order of the preprocessor's pixel
 rows. The host computes the per-patch tables (`host_inputs`): the four neighbours of each patch in the learned 48x48
 position table with their bilinear weights (corners aligned), and each patch's integer (row, col) for the 2-D rotary.
@@ -19,6 +22,7 @@ without `expectFrequentReshapes` (engine F-P3-26: with it the dynamic-shape enco
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +31,25 @@ import torch
 import torch.nn.functional as F
 
 PREFIX = "model.visual."
+
+# Fixed patch grids (h, w), each under the 512-token budget: square, 4:3 and 3:4, 16:9 and 9:16 (patch 16, merge 2).
+IMAGE_GRIDS = ((44, 44), (36, 48), (48, 36), (32, 56), (56, 32))
+
+
+def nearest_grid(width: int, height: int, grids=IMAGE_GRIDS) -> tuple[int, int]:
+    """The grid whose aspect ratio (w/h) is nearest the image's in log space; the first listed wins a tie. Kit's
+    `Qwen3VLImagePreprocessor.nearestGrid` applies the same rule."""
+    aspect = math.log(width / height)
+    best, distance = grids[0], math.inf
+    for g in grids:
+        d = abs(aspect - math.log(g[1] / g[0]))
+        if d < distance:
+            best, distance = g, d
+    return best
+
+
+def function_name(grid: tuple[int, int]) -> str:
+    return f"encode_{grid[0]}x{grid[1]}"
 
 
 # MARK: host-side inputs (the math the Swift side reproduces)
@@ -184,15 +207,12 @@ class Qwen3VLVision(torch.nn.Module):
                 levels.append(self.deepstack[self.deepstack_at.index(i)](x))
         return self.merger(x), torch.stack(levels)
 
-    def example(self, max_patches: int = 16384):
-        """(example inputs, dynamic shapes): n = 4·k patches, k >= 2 (a real image has >= 64 windows)."""
-        k = torch.export.Dim("windows", min=2, max=max_patches // 4)
-        ex = host_inputs(1, 8, 12)
+    def example(self, grid: tuple[int, int]):
+        """Static example inputs for one patch grid (h, w): every dimension fixed, no dynamic shapes."""
+        ex = host_inputs(1, *grid)
         count = ex["patch_rc"].shape[0]
-        example = (torch.zeros(count, self.patch_values, dtype=self.patch.weight.dtype),
-                   torch.from_numpy(ex["pos_index"]), torch.from_numpy(ex["pos_weight"]), torch.from_numpy(ex["patch_rc"]))
-        n = 4 * k
-        return example, ({0: n}, {0: n}, {0: n}, {0: n})
+        return (torch.zeros(count, self.patch_values, dtype=self.patch.weight.dtype),
+                torch.from_numpy(ex["pos_index"]), torch.from_numpy(ex["pos_weight"]), torch.from_numpy(ex["patch_rc"]))
 
 
 def name_map(module: Qwen3VLVision, prefix: str = PREFIX) -> dict[str, str]:

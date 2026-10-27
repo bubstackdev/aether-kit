@@ -6,6 +6,10 @@ each case (an image and a question) it records the rendered token ids, the proce
 model's own 3-axis rope positions, a greedy continuation (`generate`, no sampling) and teacher-forced logits for the
 prompt's last row and each forced continuation token.
 
+With `--grids` (Kit's fixed-grid encoder), each image snaps to the grid nearest its aspect ratio (`nearest_grid`) and
+the processor resizes it to exactly that grid: its `smart_resize` is replaced by the grid's pixel size for the case, so
+upstream receives the same bucket-resized image Kit encodes.
+
 It also runs this directory's eager port (vision tower + bucketed text tower, float32) on the same pixels and ids:
 prefill through `withImage`, forced decode through `main`, with host M-RoPE positions (`mrope_positions`), and checks
 the positions and logits against the reference.
@@ -29,7 +33,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qwen3_vl_text import Qwen3VLText, load_weights as load_text, mrope_positions  # noqa: E402
-from qwen3_vl_vision import Qwen3VLVision, host_inputs, load_weights as load_vision  # noqa: E402
+from qwen3_vl_vision import Qwen3VLVision, host_inputs, load_weights as load_vision, nearest_grid  # noqa: E402
 
 
 def sha256(path: Path) -> str:
@@ -57,7 +61,10 @@ def main() -> None:
     parser.add_argument("--forced-tokens", type=int, default=32)
     parser.add_argument("--max-pixels", type=int, default=None,
                         help="processor pixel cap (size.longest_edge), mirroring Kit's maximumPixels")
+    parser.add_argument("--grids", default=None,
+                        help="fixed patch grids HxW, comma-separated: snap each image to the nearest aspect grid")
     args = parser.parse_args()
+    grids = [tuple(int(v) for v in g.split("x")) for g in args.grids.split(",")] if args.grids else None
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     from PIL import Image
@@ -90,11 +97,20 @@ def main() -> None:
         copied = args.output / f"{name}{image_path.suffix.lower()}"
         shutil.copyfile(image_path, copied)
         image = Image.open(image_path).convert("RGB")
+        snapped = None
+        if grids:
+            import transformers.models.qwen2_vl.image_processing_qwen2_vl_fast as fast
+
+            snapped = nearest_grid(image.size[0], image.size[1], grids)
+            patch = int(config["vision_config"]["patch_size"])
+            fast.smart_resize = lambda *a, _g=snapped, **k: (_g[0] * patch, _g[1] * patch)
         messages = [{"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": question}]}]
         inputs = processor.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_dict=True,
                                                return_tensors="pt")
         ids = inputs["input_ids"][0].tolist()
         grid = inputs["image_grid_thw"][0].tolist()
+        if snapped and tuple(grid[1:]) != snapped:
+            raise SystemExit(f"{name}: processor grid {grid} is not the snapped grid {snapped}")
         pixels = inputs["pixel_values"].float()
         with torch.no_grad():
             out = model.generate(**inputs, max_new_tokens=args.greedy_tokens, do_sample=False, temperature=None,
@@ -151,6 +167,9 @@ def main() -> None:
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},
         "maximumPixels": args.max_pixels,
+        "imageGrids": [list(g) for g in grids] if grids else None,
+        "gridSnapping": ("nearest aspect ratio in log space, first listed wins a tie; the processor's smart_resize "
+                         "replaced by the grid's pixel size") if grids else None,
         "imageDecoding": "PIL Image.open(...).convert('RGB'), no EXIF transpose (the photos carry orientation 1 or none)",
         "cases": cases,
     }

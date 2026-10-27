@@ -25,20 +25,33 @@ public enum LanguageVisionSpecialization {
     }
 }
 
-/// Sequential owner of a Qwen3-VL vision encoder asset (`encode`). One request at a time; every
-/// submission is joined before outputs are read; `unload()` releases the model.
+/// Sequential owner of a Qwen3-VL vision encoder asset with one static-shape function per fixed
+/// patch grid (`encode_<h>x<w>`). One request at a time; every submission is joined before outputs
+/// are read; `unload()` releases the model.
+///
+/// Opening refuses a grid without a static function, and a function with any dynamic dimension: a
+/// dynamic-shape export intermittently computed wrong outputs on the GPU even without
+/// `expectFrequentReshapes` (2.5 % of encodes, always the same wrong bits; docs/qwen3-vl.md).
 public actor LanguageVisionEncoder {
     public struct Configuration: Sendable, Equatable {
         public let mergeSize: Int
         public let positionTableSide: Int
-        public init(mergeSize: Int = 2, positionTableSide: Int = 48) {
+        /// The registration's fixed patch grids; each needs its static-shape function.
+        public let imageGrids: [Qwen3VLImagePreprocessor.Grid]
+        public init(mergeSize: Int = 2, positionTableSide: Int = 48, imageGrids: [Qwen3VLImagePreprocessor.Grid]) {
             self.mergeSize = mergeSize
             self.positionTableSide = positionTableSide
+            self.imageGrids = imageGrids
         }
     }
 
+    /// The function name for a grid, `encode_<height>x<width>` (``LanguageImageGrid/functionName``).
+    public static func functionName(for grid: Qwen3VLImagePreprocessor.Grid) -> String {
+        LanguageImageGrid(height: grid.height, width: grid.width).functionName
+    }
+
     private var model: AIModel?
-    private var function: InferenceFunction?
+    private var functions: [Qwen3VLImagePreprocessor.Grid: InferenceFunction] = [:]
     private var stream: ComputeStream?
     private let configuration: Configuration
     private let rowLength: Int
@@ -48,7 +61,7 @@ public actor LanguageVisionEncoder {
 
     /// Opens the encoder GPU-preferred. `expectFrequentReshapes` is the registration's request and
     /// is refused when true (see ``LanguageVisionSpecialization``).
-    public static func open(at url: URL, configuration: Configuration = .init(), expectFrequentReshapes: Bool? = nil,
+    public static func open(at url: URL, configuration: Configuration, expectFrequentReshapes: Bool? = nil,
                             compute: ModelComputePolicy = .preferGPU) async throws -> LanguageVisionEncoder {
         var options: SpecializationOptions
         switch compute {
@@ -62,32 +75,53 @@ public actor LanguageVisionEncoder {
     }
 
     init(model: AIModel, configuration: Configuration) throws {
-        guard let d = model.functionDescriptor(for: "encode"),
-              Set(d.inputNames) == ["pixels", "pos_index", "pos_weight", "patch_rc"],
-              Set(d.outputNames) == ["image_embeds", "deepstack"], d.stateNames.isEmpty,
-              case .ndArray(let pixels)? = d.inputDescriptor(of: "pixels"), pixels.shape.count == 2, pixels.shape[1] > 0,
-              pixels.scalarType == .float16,
-              case .ndArray(let embeds)? = d.outputDescriptor(of: "image_embeds"), embeds.shape.count == 2, embeds.shape[1] > 0,
-              case .ndArray(let deep)? = d.outputDescriptor(of: "deepstack"), deep.shape.count == 3, deep.shape[0] >= 0,
-              let function = try model.loadFunction(named: "encode"),
-              let queue = MTLCreateSystemDefaultDevice()?.makeCommandQueue()
-        else { throw LanguageGenerationError.invalid("Unsupported vision encoder contract") }
+        var functions: [Qwen3VLImagePreprocessor.Grid: InferenceFunction] = [:]
+        var layout: (row: Int, hidden: Int, levels: Int)?
+        try LanguageVisionContract.requireGrids(configuration.imageGrids, mergeSize: configuration.mergeSize)
+        for grid in configuration.imageGrids {
+            let name = Self.functionName(for: grid)
+            guard let d = model.functionDescriptor(for: name) else {
+                throw LanguageGenerationError.invalid("The vision encoder has no static function for grid \(grid.height)x\(grid.width)")
+            }
+            guard Set(d.inputNames) == ["pixels", "pos_index", "pos_weight", "patch_rc"],
+                  Set(d.outputNames) == ["image_embeds", "deepstack"], d.stateNames.isEmpty,
+                  case .ndArray(let pixels)? = d.inputDescriptor(of: "pixels"), pixels.scalarType == .float16,
+                  case .ndArray(let index)? = d.inputDescriptor(of: "pos_index"),
+                  case .ndArray(let weight)? = d.inputDescriptor(of: "pos_weight"),
+                  case .ndArray(let rc)? = d.inputDescriptor(of: "patch_rc"),
+                  case .ndArray(let embeds)? = d.outputDescriptor(of: "image_embeds"),
+                  case .ndArray(let deep)? = d.outputDescriptor(of: "deepstack"),
+                  let found = LanguageVisionContract.staticLayout(grid: grid, mergeSize: configuration.mergeSize,
+                      inputs: [pixels.shape, index.shape, weight.shape, rc.shape], outputs: [embeds.shape, deep.shape]),
+                  layout == nil || layout! == found,
+                  let function = try model.loadFunction(named: name)
+            else { throw LanguageGenerationError.invalid("Unsupported static vision encoder contract for \(name)") }
+            layout = found
+            functions[grid] = function
+        }
+        guard let layout, let queue = MTLCreateSystemDefaultDevice()?.makeCommandQueue() else {
+            throw LanguageGenerationError.invalid("Unsupported vision encoder contract")
+        }
         self.model = model
-        self.function = function
+        self.functions = functions
         self.stream = ComputeStream(commandQueue: queue)
         self.configuration = configuration
-        self.rowLength = pixels.shape[1]
-        self.hiddenSize = embeds.shape[1]
-        self.deepstackLevels = deep.shape[0]
+        self.rowLength = layout.row
+        self.hiddenSize = layout.hidden
+        self.deepstackLevels = layout.levels
     }
 
     /// Encodes one image's patch rows ([patches, rowLength] fp16, merge-window order) for a patch
-    /// grid (t, h, w). The per-patch tables are computed here.
+    /// grid (1, h, w) that is one of the fixed grids; any other grid is refused. The per-patch
+    /// tables are computed here.
     public func encode(pixels: [Float16], grid: (t: Int, h: Int, w: Int)) async throws -> LanguageImageFeatures {
         try Task.checkCancellation()
         try lifecycle.admit()
         defer { lifecycle.finish() }
-        guard let function, let stream else { throw LanguageGenerationError.closed }
+        guard let stream else { throw LanguageGenerationError.closed }
+        guard grid.t == 1, let function = functions[Qwen3VLImagePreprocessor.Grid(height: grid.h, width: grid.w)] else {
+            throw LanguageGenerationError.invalid("Grid \(grid.t)x\(grid.h)x\(grid.w) is not one of the encoder's fixed grids")
+        }
         let tables = try Qwen3VLVisionTables(t: grid.t, h: grid.h, w: grid.w, merge: configuration.mergeSize,
                                              tableSide: configuration.positionTableSide)
         let n = tables.patchCount
@@ -117,7 +151,7 @@ public actor LanguageVisionEncoder {
     /// Releases the model; later requests fail with `closed`.
     public func unload() async {
         guard await lifecycle.beginClose() else { return }
-        function = nil
+        functions = [:]
         stream = nil
         model = nil
         lifecycle.didClose()
@@ -140,5 +174,31 @@ public actor LanguageVisionEncoder {
             }
             return out
         }
+    }
+}
+
+/// The static per-grid encoder contract, checked before any function loads (pure; CPU-tested).
+enum LanguageVisionContract {
+    /// Grids must be present, distinct, positive and multiples of the merge size.
+    static func requireGrids(_ grids: [Qwen3VLImagePreprocessor.Grid], mergeSize: Int) throws {
+        guard mergeSize > 0, !grids.isEmpty, Set(grids).count == grids.count,
+              grids.allSatisfy({ $0.height > 0 && $0.width > 0 && $0.height % mergeSize == 0 && $0.width % mergeSize == 0 })
+        else { throw LanguageGenerationError.invalid("The vision encoder needs distinct fixed image grids (multiples of the merge size)") }
+    }
+
+    /// (row length, hidden size, DeepStack levels) of a grid's function when every shape is static
+    /// and matches the grid: pixels [n, row], pos_index/pos_weight [n, 4], patch_rc [n, 2],
+    /// image_embeds [n/merge², hidden], deepstack [levels, n/merge², hidden]. Nil for any dynamic
+    /// (-1) dimension or mismatch.
+    static func staticLayout(grid: Qwen3VLImagePreprocessor.Grid, mergeSize: Int, inputs: [[Int]], outputs: [[Int]])
+        -> (row: Int, hidden: Int, levels: Int)? {
+        guard inputs.count == 4, outputs.count == 2, (inputs + outputs).allSatisfy({ $0.allSatisfy { $0 > 0 } }) else { return nil }
+        let n = grid.height * grid.width, tokens = n / (mergeSize * mergeSize)
+        let (pixels, index, weight, rc) = (inputs[0], inputs[1], inputs[2], inputs[3])
+        let (embeds, deep) = (outputs[0], outputs[1])
+        guard pixels.count == 2, pixels[0] == n, index == [n, 4], weight == [n, 4], rc == [n, 2],
+              embeds.count == 2, embeds[0] == tokens, deep.count == 3, deep[1] == tokens, deep[2] == embeds[1]
+        else { return nil }
+        return (pixels[1], embeds[1], deep[0])
     }
 }

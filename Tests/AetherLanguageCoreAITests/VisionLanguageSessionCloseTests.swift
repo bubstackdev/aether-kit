@@ -52,9 +52,11 @@ private actor GrantBox {
     func release() { grant?.release(); grant = nil }
 }
 
-private func registration(maximumImageTokens: Int = 64) -> LanguageVisionRegistration {
+private func registration(maximumImageTokens: Int = 64,
+                          grids: [LanguageImageGrid]? = [.init(height: 16, width: 16), .init(height: 8, width: 16)]) -> LanguageVisionRegistration {
     LanguageVisionRegistration(modelDirectory: "vision.aimodel", modelSHA256: String(repeating: "a", count: 64), imageTokenID: 151655,
-                               visionStartTokenID: 151652, visionEndTokenID: 151653, maximumImageTokens: maximumImageTokens)
+                               visionStartTokenID: 151652, visionEndTokenID: 151653, maximumImageTokens: maximumImageTokens,
+                               imageGrids: grids)
 }
 
 private let prompt = [151644, 151652, 151655, 151653, 77091]
@@ -178,5 +180,48 @@ struct VisionLanguageSessionCloseTests {
         let configuration = VisionLanguageSession.preprocessing(for: registration(maximumImageTokens: 64))
         let smallest = try Qwen3VLImagePreprocessor.targetSize(width: 16, height: 16, configuration: configuration)
         #expect(smallest.width * smallest.height <= configuration.maximumPixels)
+    }
+
+    /// Fixed grids are required, distinct, merge-aligned and within the token budget; images snap
+    /// to them, and an unregistered grid is refused while planning.
+    @Test func fixedImageGridsAreRequiredAndEnforced() throws {
+        try registration().validate()
+        #expect(throws: AetherError.self) { try registration(grids: nil).validate() }
+        #expect(throws: AetherError.self) { try registration(grids: []).validate() }
+        #expect(throws: AetherError.self) { try registration(grids: [.init(height: 16, width: 16), .init(height: 16, width: 16)]).validate() }
+        #expect(throws: AetherError.self) { try registration(grids: [.init(height: 15, width: 16)]).validate() }
+        #expect(throws: AetherError.self) { try registration(grids: [.init(height: 18, width: 16)]).validate() }   // 72 tokens > 64
+        #expect(throws: AetherError.self) { try registration(grids: [.init(height: Int.max, width: 2)]).validate() }
+
+        let configuration = VisionLanguageSession.preprocessing(for: registration())
+        #expect(configuration.imageGrids == [.init(height: 16, width: 16), .init(height: 8, width: 16)])
+        let wide = try Qwen3VLImagePreprocessor.process(rgb: Array(repeating: 9, count: 300 * 140 * 3), width: 300, height: 140,
+                                                        configuration: configuration)
+        #expect(wide.grid == (1, 8, 16))
+        try VisionLanguageSession.requireRegisteredGrid(wide.grid, registration: registration())
+        #expect(throws: LanguageGenerationError.self) {
+            try VisionLanguageSession.requireRegisteredGrid((1, 16, 8), registration: registration())
+        }
+        #expect(throws: LanguageGenerationError.self) {
+            try VisionLanguageSession.requireRegisteredGrid((2, 16, 16), registration: registration())
+        }
+    }
+
+    /// The encoder opens only with static per-grid functions matching each grid.
+    @Test func encoderContractRequiresStaticShapesPerGrid() throws {
+        let grid = Qwen3VLImagePreprocessor.Grid(height: 4, width: 6)
+        #expect(LanguageVisionEncoder.functionName(for: grid) == "encode_4x6")
+        let inputs = [[24, 1536], [24, 4], [24, 4], [24, 2]], outputs = [[6, 2048], [3, 6, 2048]]
+        let layout = try #require(LanguageVisionContract.staticLayout(grid: grid, mergeSize: 2, inputs: inputs, outputs: outputs))
+        #expect(layout == (1536, 2048, 3))
+        // Any dynamic dimension, or a shape that does not match the grid, is refused.
+        #expect(LanguageVisionContract.staticLayout(grid: grid, mergeSize: 2, inputs: [[-1, 1536], [-1, 4], [-1, 4], [-1, 2]],
+                                                    outputs: [[-1, 2048], [3, -1, 2048]]) == nil)
+        #expect(LanguageVisionContract.staticLayout(grid: grid, mergeSize: 2, inputs: inputs, outputs: [[6, 2048], [3, -1, 2048]]) == nil)
+        #expect(LanguageVisionContract.staticLayout(grid: .init(height: 6, width: 6), mergeSize: 2, inputs: inputs, outputs: outputs) == nil)
+        try LanguageVisionContract.requireGrids([grid], mergeSize: 2)
+        #expect(throws: LanguageGenerationError.self) { try LanguageVisionContract.requireGrids([], mergeSize: 2) }
+        #expect(throws: LanguageGenerationError.self) { try LanguageVisionContract.requireGrids([grid, grid], mergeSize: 2) }
+        #expect(throws: LanguageGenerationError.self) { try LanguageVisionContract.requireGrids([.init(height: 3, width: 6)], mergeSize: 2) }
     }
 }

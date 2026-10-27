@@ -3,7 +3,8 @@
 
 Upstream Transformers' `Qwen3VLVisionModel` is built from the checkpoint's vision config and loaded with its
 `model.visual.*` tensors in float32 on the CPU. For deterministic synthetic images (seeded shapes on a flat
-background, sides multiples of 32 so no resize is involved) it records the pixel tensor, the grid, the image
+background), one per fixed patch grid at that grid's exact pixel size (no resize, so upstream and Kit see the same
+pixels), it records the pixel tensor, the grid, the image
 embeddings and the DeepStack features. It also checks this directory's eager tower (`qwen3_vl_vision.Qwen3VLVision`,
 float32 and fp16-storage) against them, separating porting errors from Core AI conversion errors.
 
@@ -25,9 +26,10 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from qwen3_vl_vision import Qwen3VLVision, host_inputs, load_weights, patchify  # noqa: E402
+from qwen3_vl_vision import IMAGE_GRIDS, Qwen3VLVision, host_inputs, load_weights, patchify  # noqa: E402
 
-IMAGES = (("scene-448x448", 448, 448, 11), ("scene-320x256", 320, 256, 12), ("scene-256x416", 256, 416, 13))
+# One scene per fixed grid (h, w patches of 16 px): name, width, height, seed.
+IMAGES = tuple((f"scene-{w * 16}x{h * 16}", w * 16, h * 16, 11 + i) for i, (h, w) in enumerate(IMAGE_GRIDS))
 COLORS = ((220, 40, 40), (40, 80, 220), (40, 170, 70), (240, 200, 30), (140, 60, 180), (245, 140, 30))
 
 
@@ -136,8 +138,9 @@ def main() -> None:
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "transformers", "pillow")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},
-        "preprocessing": "numpy patchify of an exact-multiple-of-32 image: (x/255 - 0.5)/0.5, frame repeated twice, "
-                         "rows in merge-window order (no resize)",
+        "preprocessing": "numpy patchify of an image at a fixed grid's exact pixel size: (x/255 - 0.5)/0.5, frame "
+                         "repeated twice, rows in merge-window order (no resize)",
+        "imageGrids": [list(g) for g in IMAGE_GRIDS],
         "images": records,
     }
     (args.output / "reference.json").write_text(json.dumps(record, indent=2) + "\n")

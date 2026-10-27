@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compose the Qwen3-VL image + text evidence record (development tooling only; standard library only).
 
-    python3 Forge/language/record_vl_evidence.py --bundle <bundle> --synthetic-reference <dir> --photo-reference <dir> \
+    python3 Forge/language/record_vl_evidence.py --bundle <bundle> --reference <dir> [--reference <dir> ...] \
         --photos <photo dir with provenance.json> --native NAME=<report.json> [...] --output docs/evidence/<name>.json
 
 Copies each native report next to the record (`<name>-<NAME>.json`) and binds the references, the photos (with their
@@ -27,7 +27,8 @@ def sha256(path: Path) -> str:
 def reference_summary(directory: Path) -> dict:
     r = json.loads((directory / "reference.json").read_text())
     return {"recordSHA256": sha256(directory / "reference.json"), "oracle": r["oracle"], "versions": r["versions"],
-            "maximumPixels": r.get("maximumPixels"),
+            "maximumPixels": r.get("maximumPixels"), "imageGrids": r.get("imageGrids"),
+            "gridSnapping": r.get("gridSnapping"),
             "cases": [{"name": c["name"], "question": c["question"], "image": c["image"], "grid": c["grid"],
                        "imageTokens": c["imageTokens"], "promptTokens": len(c["promptTokens"]),
                        "greedyText": c["greedyText"], "eagerPortVsReference": c["eagerPortVsReference"],
@@ -38,8 +39,7 @@ def reference_summary(directory: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle", type=Path, required=True)
-    parser.add_argument("--synthetic-reference", type=Path, required=True)
-    parser.add_argument("--photo-reference", type=Path, required=True)
+    parser.add_argument("--reference", type=Path, action="append", required=True)
     parser.add_argument("--photos", type=Path, required=True)
     parser.add_argument("--native", action="append", required=True, metavar="NAME=REPORT")
     parser.add_argument("--output", type=Path, required=True)
@@ -61,7 +61,7 @@ def main() -> None:
                                                               for c in report["cases"]]}
     here = Path(__file__).resolve().parent
     record = {
-        "schema": 1,
+        "schema": 2,
         "kind": "qwen3-vl-image-text-qualification",
         "passed": all(n["passed"] for n in natives.values()),
         "model": {"repository": manifest["sourceRepository"], "revision": manifest["sourceRevision"], "license": "apache-2.0",
@@ -69,11 +69,10 @@ def main() -> None:
         "bundle": {"directory": str(b), "manifestSHA256": sha256(b / "language-model.json"), "manifest": manifest,
                    "textExport": {"recipe": text_export["recipe"], "versions": text_export["versions"],
                                   "selfCheck": text_export["selfCheck"], "modelFiles": text_export["modelFiles"]},
-                   "visionExport": {"recipe": vision_export["recipe"], "selfCheck": vision_export["selfCheck"],
-                                    "modelFiles": vision_export["modelFiles"]}},
+                   "visionExport": {"recipe": vision_export["recipe"], "imageGrids": vision_export.get("imageGrids"),
+                                    "selfCheck": vision_export["selfCheck"], "modelFiles": vision_export["modelFiles"]}},
         "photos": json.loads((args.photos / "provenance.json").read_text()),
-        "references": {"synthetic": reference_summary(args.synthetic_reference),
-                       "photos": reference_summary(args.photo_reference)},
+        "references": [reference_summary(r) for r in args.reference],
         "native": natives,
         "scriptSHA256": {p.name: sha256(p) for p in sorted(here.glob("*.py"))},
         "nativeTests": ["Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift",

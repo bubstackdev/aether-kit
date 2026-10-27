@@ -1,8 +1,23 @@
+import Foundation
+
 /// Qwen3-VL image preprocessing, reproducing the reference fast image processor
 /// (`Qwen2VLImageProcessorFast`): smart resize to multiples of `patchSize · mergeSize` within the
 /// pixel bounds, antialiased bicubic resampling of the 8-bit image, (x/255 − mean)/std, the frame
 /// repeated `temporalPatchSize` times, and rows in merge-window order. Pure and Core-AI-independent.
+///
+/// With `imageGrids`, the image instead snaps to the fixed patch grid nearest its aspect ratio
+/// and is resized to it exactly (no padding), matching an encoder exported with static shapes.
 public enum Qwen3VLImagePreprocessor {
+    /// A fixed patch grid: patch rows and columns.
+    public struct Grid: Sendable, Hashable, Codable {
+        public var height: Int
+        public var width: Int
+        public init(height: Int, width: Int) {
+            self.height = height
+            self.width = width
+        }
+    }
+
     public struct Configuration: Sendable, Equatable, Codable {
         public var patchSize = 16
         public var mergeSize = 2
@@ -11,6 +26,8 @@ public enum Qwen3VLImagePreprocessor {
         public var maximumPixels = 16_777_216
         public var mean: [Float] = [0.5, 0.5, 0.5]
         public var standardDeviation: [Float] = [0.5, 0.5, 0.5]
+        /// Fixed patch grids; when set, they replace smart resize (``nearestGrid(width:height:in:)``).
+        public var imageGrids: [Grid]?
 
         public init() {}
         public var factor: Int { patchSize * mergeSize }
@@ -21,15 +38,38 @@ public enum Qwen3VLImagePreprocessor {
     public enum Failure: Error, Equatable {
         case invalidImage(width: Int, height: Int)
         case aspectRatio(Double)
+        case noGrid
+    }
+
+    /// The grid whose aspect ratio (width / height) is nearest the image's in log space; the first
+    /// listed wins a tie. `Forge/language/qwen3_vl_vision.py` (`nearest_grid`) applies the same rule.
+    public static func nearestGrid(width: Int, height: Int, in grids: [Grid]) throws -> Grid {
+        guard width > 0, height > 0 else { throw Failure.invalidImage(width: width, height: height) }
+        guard var best = grids.first else { throw Failure.noGrid }
+        let aspect = log(Double(width) / Double(height))
+        var distance = Double.infinity
+        for grid in grids where grid.height > 0 && grid.width > 0 {
+            let d = abs(aspect - log(Double(grid.width) / Double(grid.height)))
+            if d < distance { best = grid; distance = d }
+        }
+        return best
     }
 
     /// The processor's `smart_resize`: each side rounds to the nearest multiple of the factor
     /// (ties to even); an area above the maximum scales both sides down and floors them, one below
-    /// the minimum scales them up and ceils them. Aspect ratios above 200 are refused.
+    /// the minimum scales them up and ceils them. Aspect ratios above 200 are refused. With
+    /// `imageGrids`, the target is the nearest grid's pixel size instead.
     public static func targetSize(width: Int, height: Int, configuration: Configuration = .init()) throws -> (width: Int, height: Int) {
         guard width > 0, height > 0 else { throw Failure.invalidImage(width: width, height: height) }
         let ratio = Double(max(width, height)) / Double(min(width, height))
         guard ratio <= 200 else { throw Failure.aspectRatio(ratio) }
+        if let grids = configuration.imageGrids {
+            let grid = try nearestGrid(width: width, height: height, in: grids)
+            guard grid.height % configuration.mergeSize == 0, grid.width % configuration.mergeSize == 0 else {
+                throw Failure.invalidImage(width: grid.width * configuration.patchSize, height: grid.height * configuration.patchSize)
+            }
+            return (grid.width * configuration.patchSize, grid.height * configuration.patchSize)
+        }
         let factor = Double(configuration.factor)
         var h = (Double(height) / factor).rounded(.toNearestOrEven) * factor
         var w = (Double(width) / factor).rounded(.toNearestOrEven) * factor
