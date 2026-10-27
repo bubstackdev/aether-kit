@@ -81,7 +81,8 @@ func paddedPromptMatchesTheLanguageTokenizersThinkingOffRender() async throws {
     let assets = try Flux2Assets.open(at: URL(fileURLWithPath: environment["AETHER_FLUX2_BUNDLE"]!))
     let flux = try await Flux2Tokenizer.open(assets: assets)
     let language = try await LanguageTokenizer.open(directory: assets.tokenizerDirectory)
-    var prompts = ["a red fox in the snow", "Café — 🌙\nsecond line", String(repeating: "a lighthouse at dusk, ", count: 120)]
+    let long = String(repeating: "a lighthouse at dusk, ", count: 120)
+    var prompts = ["a red fox in the snow", "Café — 🌙\nsecond line", long]
     if let fixtures = environment["AETHER_FLUX2_FIXTURES"] {
         let cases = try String(contentsOf: URL(fileURLWithPath: fixtures).appendingPathComponent("cases.jsonl"), encoding: .utf8)
         for line in cases.split(separator: "\n") {
@@ -89,12 +90,13 @@ func paddedPromptMatchesTheLanguageTokenizersThinkingOffRender() async throws {
             prompts.append(c["prompt"] as! String)
         }
     }
-    var truncated = 0
     for text in prompts {
         let expected = try flux.prepare(text)
-        #expect(try Flux2Prompt(renderedTokenIDs: language.render([.user(text)]).tokenIDs) == expected, "\(text.prefix(40))")
+        let rendered = try language.render([.user(text)]).tokenIDs
+        #expect(try Flux2Prompt(renderedTokenIDs: rendered) == expected, "\(text.prefix(40))")
         #expect(expected.tokenIDs.count == Flux2Prompt.length && expected.attentionMask.count == Flux2Prompt.length)
-        if expected.wasTruncated { truncated += 1 }
+        // Truncation follows each prompt's rendered length; the synthetic long prompt must exercise it.
+        #expect(expected.wasTruncated == (rendered.count > Flux2Prompt.length), "\(text.prefix(40))")
+        if text == long { #expect(expected.wasTruncated) }
     }
-    #expect(truncated == 1)
 }

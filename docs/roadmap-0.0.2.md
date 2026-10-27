@@ -26,11 +26,11 @@ Spikes, with go/no-go reports for 0.0.3: a hybrid recurrent-state language model
 | Bucketed language decode | `bucketedPositions` contract; the default for new exports (`--contract running` keeps the 0.0.1 contract) | On main (#19) |
 | Qwen3-VL-2B | Image input on fixed-shape image grids (five patch grids, at most 484 tokens) | On main (#24) |
 | Kokoro 82M | Speech synthesis, float32 decoder only; frame cap 1024 on macOS and 512 on iOS | On main (#21) |
-| H3 schema-3 | Qualification with an 18 GiB hard memory bar, enforced by measured admission | In 0.0.2 (separate PR) |
+| H3 schema-3 | Qualification with an 18 GiB hard memory bar, enforced by measured admission; the bar binds only sessions created with measured admission | PR #25 (open) |
 | `GeneratedImage.pngData()` | In-memory PNG encoding | On main (#20) |
 | AetherLanguageTokenizers | A model's own chat template to token IDs | On main (#22) |
 | Qwen3-4B writer (Atelier's engine drop) | Bucketed export of the abliterated Qwen3-4B-Instruct-2507 | On main (#23) |
-| Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | In 0.0.2 (separate PR) |
+| Qwen3-VL-4B describer (Atelier's engine drop) | Export for Atelier's image describer | In progress (Atelier); no PR yet |
 
 The 0.0.2 cleanup moves duplicated helpers onto the shared ones with no behaviour change (see CHANGELOG).
 
