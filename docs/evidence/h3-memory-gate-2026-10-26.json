@@ -1,0 +1,497 @@
+{
+  "schema": 1,
+  "gate": "h3-memory",
+  "completedAt": "2026-10-27T00:31:18.294458+00:00",
+  "passed": true,
+  "failures": [],
+  "memoryBarBytes": 19327352832,
+  "memoryBar": "Metal allocation peak over a complete render must not exceed 18 GiB, for every task and canvas",
+  "marginBytes": 268435456,
+  "admissionWorstCaseBytes": 16176615120,
+  "renders": {
+    "t2va-960x544": {
+      "metalPeakBytes": 14489452544,
+      "metalPeakGiB": 13.494,
+      "footprintPeakGiB": 14.277,
+      "carriedStateBytes": 201326592,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964408832,
+          "footprintPeakBytes": 2158397912,
+          "residentPeakBytes": 2158397912,
+          "metalPeakGiB": 1.829,
+          "footprintPeakGiB": 2.01,
+          "residentPeakGiB": 2.01
+        },
+        "denoising": {
+          "metalPeakBytes": 14489452544,
+          "footprintPeakBytes": 15330021072,
+          "residentPeakBytes": 15330021072,
+          "metalPeakGiB": 13.494,
+          "footprintPeakGiB": 14.277,
+          "residentPeakGiB": 14.277
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 6053101568,
+          "footprintPeakBytes": 10530015776,
+          "residentPeakBytes": 10530015776,
+          "metalPeakGiB": 5.637,
+          "footprintPeakGiB": 9.807,
+          "residentPeakGiB": 9.807
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1105346560,
+          "footprintPeakBytes": 2024688184,
+          "residentPeakBytes": 2024688184,
+          "metalPeakGiB": 1.029,
+          "footprintPeakGiB": 1.886,
+          "residentPeakGiB": 1.886
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "1e6c2d04154e245b26345f069e6d3328c47db089709ce05be3bcb3861559975c"
+    },
+    "fl2va-960x544": {
+      "metalPeakBytes": 14818721792,
+      "metalPeakGiB": 13.801,
+      "footprintPeakGiB": 14.627,
+      "carriedStateBytes": 201326592,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964425216,
+          "footprintPeakBytes": 2161461696,
+          "residentPeakBytes": 2161461696,
+          "metalPeakGiB": 1.83,
+          "footprintPeakGiB": 2.013,
+          "residentPeakGiB": 2.013
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2201501696,
+          "footprintPeakBytes": 2030062016,
+          "residentPeakBytes": 2201501696,
+          "metalPeakGiB": 2.05,
+          "footprintPeakGiB": 1.891,
+          "residentPeakGiB": 2.05
+        },
+        "denoising": {
+          "metalPeakBytes": 14818721792,
+          "footprintPeakBytes": 15705149232,
+          "residentPeakBytes": 15705149232,
+          "metalPeakGiB": 13.801,
+          "footprintPeakGiB": 14.627,
+          "residentPeakGiB": 14.627
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 6203047936,
+          "footprintPeakBytes": 13560269272,
+          "residentPeakBytes": 13560269272,
+          "metalPeakGiB": 5.777,
+          "footprintPeakGiB": 12.629,
+          "residentPeakGiB": 12.629
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1105608704,
+          "footprintPeakBytes": 2058160672,
+          "residentPeakBytes": 2058160672,
+          "metalPeakGiB": 1.03,
+          "footprintPeakGiB": 1.917,
+          "residentPeakGiB": 1.917
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "767c8c9b29e7f196163a556a2eb4d1f41dd3dd0dc697f9d9926f803da9745459"
+    },
+    "t2va-544x960": {
+      "metalPeakBytes": 14489436160,
+      "metalPeakGiB": 13.494,
+      "footprintPeakGiB": 14.281,
+      "carriedStateBytes": 201326592,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964408832,
+          "footprintPeakBytes": 2159544960,
+          "residentPeakBytes": 2159544960,
+          "metalPeakGiB": 1.829,
+          "footprintPeakGiB": 2.011,
+          "residentPeakGiB": 2.011
+        },
+        "denoising": {
+          "metalPeakBytes": 14489436160,
+          "footprintPeakBytes": 15334624976,
+          "residentPeakBytes": 15334624976,
+          "metalPeakGiB": 13.494,
+          "footprintPeakGiB": 14.281,
+          "residentPeakGiB": 14.281
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 6053101568,
+          "footprintPeakBytes": 11350297360,
+          "residentPeakBytes": 11350297360,
+          "metalPeakGiB": 5.637,
+          "footprintPeakGiB": 10.571,
+          "residentPeakGiB": 10.571
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1105346560,
+          "footprintPeakBytes": 1930840536,
+          "residentPeakBytes": 1930840536,
+          "metalPeakGiB": 1.029,
+          "footprintPeakGiB": 1.798,
+          "residentPeakGiB": 1.798
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "0d4a3b874feacbbfcf38b056f29d2ca8eb3304b7d687112dc7f4b6a094255085"
+    },
+    "fl2va-544x960": {
+      "metalPeakBytes": 14818705408,
+      "metalPeakGiB": 13.801,
+      "footprintPeakGiB": 14.628,
+      "carriedStateBytes": 201326592,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964425216,
+          "footprintPeakBytes": 2161969624,
+          "residentPeakBytes": 2161969624,
+          "metalPeakGiB": 1.83,
+          "footprintPeakGiB": 2.013,
+          "residentPeakGiB": 2.013
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2201501696,
+          "footprintPeakBytes": 2030569944,
+          "residentPeakBytes": 2201501696,
+          "metalPeakGiB": 2.05,
+          "footprintPeakGiB": 1.891,
+          "residentPeakGiB": 2.05
+        },
+        "denoising": {
+          "metalPeakBytes": 14818705408,
+          "footprintPeakBytes": 15706853072,
+          "residentPeakBytes": 15706853072,
+          "metalPeakGiB": 13.801,
+          "footprintPeakGiB": 14.628,
+          "residentPeakGiB": 14.628
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 6203047936,
+          "footprintPeakBytes": 11560258344,
+          "residentPeakBytes": 11560258344,
+          "metalPeakGiB": 5.777,
+          "footprintPeakGiB": 10.766,
+          "residentPeakGiB": 10.766
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1105477632,
+          "footprintPeakBytes": 2026277384,
+          "residentPeakBytes": 2026277384,
+          "metalPeakGiB": 1.03,
+          "footprintPeakGiB": 1.887,
+          "residentPeakGiB": 1.887
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "00280f424108876e79f848777899ea019695c1be1819458e53f206432c24dafb"
+    }
+  },
+  "measuredResources": {
+    "execution_identity": "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8",
+    "device_architecture": "h17c",
+    "canvases": [
+      "960x544",
+      "544x960"
+    ],
+    "maximum_frames": 124,
+    "stage_peak_bytes": {
+      "encoding": 2161969624,
+      "encodingKeyframe": 2201501696,
+      "denoising": 15706853072,
+      "decodingVideo": 13560269272,
+      "decodingAudio": 2058160672
+    },
+    "operation_bytes": 201326592,
+    "evidence": "docs/evidence/h3-memory-gate-2026-10-26.json"
+  },
+  "controllers": {
+    "dump-t2va-960x544": {
+      "schema": 1,
+      "stage": "dump-t2va-960x544",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-t2va-960x544"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-26T23:39:46.227383+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 2.979,
+      "endedAt": "2026-10-26T23:39:49.206968+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-t2va-960x544": {
+      "schema": 1,
+      "stage": "render-t2va-960x544",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-memory-gate: t2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-memory-render",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-t2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/render-t2va-960x544"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-26T23:39:49.218497+00:00",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 596.065,
+      "endedAt": "2026-10-26T23:49:45.290037+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "dump-fl2va-960x544": {
+      "schema": 1,
+      "stage": "dump-fl2va-960x544",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-fl2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-26T23:49:45.310593+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 2.515,
+      "endedAt": "2026-10-26T23:49:47.825523+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-fl2va-960x544": {
+      "schema": 1,
+      "stage": "render-fl2va-960x544",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-memory-gate: fl2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-memory-render",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-fl2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/render-fl2va-960x544"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-26T23:49:47.837836+00:00",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 1247.283,
+      "endedAt": "2026-10-27T00:10:35.132619+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "dump-t2va-544x960": {
+      "schema": 1,
+      "stage": "dump-t2va-544x960",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "544",
+        "960",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-t2va-544x960"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-27T00:10:35.150476+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 1.89,
+      "endedAt": "2026-10-27T00:10:37.040155+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-t2va-544x960": {
+      "schema": 1,
+      "stage": "render-t2va-544x960",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-memory-gate: t2va-544x960",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-memory-render",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-t2va-544x960",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/render-t2va-544x960"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-27T00:10:37.049731+00:00",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 574.688,
+      "endedAt": "2026-10-27T00:20:11.743224+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "dump-fl2va-544x960": {
+      "schema": 1,
+      "stage": "dump-fl2va-544x960",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "544",
+        "960",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-fl2va-544x960",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-rotated-544x960.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-27T00:20:11.766643+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 2.311,
+      "endedAt": "2026-10-27T00:20:14.077808+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-fl2va-544x960": {
+      "schema": 1,
+      "stage": "render-fl2va-544x960",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-memory-gate: fl2va-544x960",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe",
+        "h3-memory-render",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/dump-fl2va-544x960",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate/render-fl2va-544x960"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "62b64f14ca23f54c6d67159da1a4884717624fb62ff97a99f2f3b9eeb203e66e",
+      "startedAt": "2026-10-27T00:20:14.091433+00:00",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 561.861,
+      "endedAt": "2026-10-27T00:29:35.956536+00:00",
+      "sourcePinsUnchanged": true
+    }
+  },
+  "pinsDigest": "73ae6aa4d6582dbf09eb42e6ad85aa7f195f6e2fadce1935cd29829d6217f66a",
+  "pinsUnchanged": true,
+  "filesSHA256": {
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/.build/release/aether-probe": "20b6506e167901ac809c124eaa6e21af407fa625741815c941a0c068bdd9beb3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Package.swift": "a128498523d3f8b0f52b86167b413690bd7e81f453a9c065be3768f9c2594a53",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png": "4bbd8e87040de91a172246535b4e550648d5ada0b8d0406057e3a1ada00f4d24",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-rotated-544x960.png": "28f52430220e8b4094dc5e4f0e03e7220d2e523c40def5a6fdbdf0c153a42963",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/AetherKit.docc/AetherKit.md": "f9bbb9a06a9b3df68131d163d375704d46985124ba73e8ff88723180e5a92abe",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/FairInferenceQueue.swift": "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/FloatTensor.swift": "2d1e05c7a554a57703eecfc25634a0234532ebf1c9afeb28ff4f206fa35b47a3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/GPUAdmission.swift": "d43d70d3e530139890a578ff70cd33654c0364a94a6709321ee764811fdd1077",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/LanguageModelManifest.swift": "fdb7c1e6d6d4dbe53480e62dbecacc00fd77f76d39a22a114235ccdd236d79ef",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/ResourceCoordinator.swift": "8b871d9522e8c04c8bacc0c04e65b94632046c76e629a6f11f7fa77fc6f97da3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/SeededGaussianNoise.swift": "2f49c10edfa40a4f589d8c97fd8a7f6a3c545585db0c85d73d7b2b85dc92a981",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherKit/SharedGPULease.swift": "a4be3232fe0650915d28cf73a31999c92c907b638b47b7376bcdbf33764f599a",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherCoreAI/CoreAIBackend.swift": "7350a66804756d61a136dc5ee225621fcec057434677dc84ffe661f9e432e789",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherCoreAI/ModelDescription.swift": "aea241eabf14edc60585ffdef20beb5f160cb74de49d32985fcbd0202fbd3e82",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherCoreAI/ModelSession.swift": "7a07254ce2dfdf1fd67154eb31bf49c3f4d8e19bb3b2e8d52a47888f3a01d6e2",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherCoreAI/StagedModel.swift": "8afc01acaa20667e10df0af73e1e6bea195c7dfc2710843ab0a1eb66098094db",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/AetherH3.docc/AetherH3.md": "66f2c88105db5801c69c527ee2acfc4e7fccfb430f57b1f3e7368cd6661e0748",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3BlockProbePlan.swift": "ab2fb6b99ec5a34338dfc284695c56b3c51c8f0a4e961b5993eae16a217f150e",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Bundle.swift": "b92e08e085aa357cea34c03a2ebe293288b00447e894ec10c7a31cb460e4ae25",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3ChainProbePlan.swift": "e149199d52924693c18a1cf3435e0e2e37ee4d417373399fe23cbb41eeacc1b3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3DenoisingPlan.swift": "29ac08b2e2a84ed188f025bfe8b6eb240fd440ac2396fe31f4b23e5858c1c5de",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3ExportHeader.swift": "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Geometry.swift": "4ef248f8b61d0e6ac8a022ff1947a3401b7ef66914ca319d3350fe940953bc85",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Layout.swift": "b3f1864c8e7205ae703563d69a0c23a5c7c010a84d9c3f86adb68b91960f9640",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3MeasuredResources.swift": "030cf3402b94d91f00ba4f165054478cbf3735428bde1a12409e9ccb85e6b324",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Noise.swift": "38c9da44d0d072cc217291160be03d49cd2882910cee6177cd9c6a120e06e4cc",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3PhaseProbePlan.swift": "f0e9fb6888b527da5e027f04e4a68cb653b52b2ebfb9d37b03fa26d13eae4dba",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Profile.swift": "d381061e1663865ad82672e68f927e3ef4872f0db3d5363a7341048f1def8c9c",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3ReferenceComparison.swift": "c0bb8d1b8d54d260f2d015b1d7abb49a8499ccdc924b4f8f99e4a887ff2ddb51",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3ResourceAdmission.swift": "cfa7061cf5626b7d916bafd577b723a99cfa01a07dc814dad3f20ff80e66d86e",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3Schedule.swift": "a8dfee22d82a51f25a169dc59e76eb1c62db087e4022c731bc23194080cef63a",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3TensorComparison.swift": "2aa88598d6c6164afb3e95544a57c98518de44a799c790e251ae6a87226d9c83",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3TensorData.swift": "2ec2c2feef6b369ddd95281545e564e49448ae3200f2a24e32d9c23c25faf6a0",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3VideoSession.swift": "f697d3371ffeed515ad9dc2d6c7741385259f75277bf94348f505414621554c8",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/H3VideoStitching.swift": "2177f0265cc3312f32758b92b68351751accc1b98001bff7250b0ed0c061d58e",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3/Resources/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/AetherH3CoreAI.docc/AetherH3CoreAI.md": "814fd74c5851b4e95f3f94ad8cfaf774117e7642a6b96fbcb150d58e840d9d1c",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3BlockSession.swift": "67c65092f33649c606d051f6295e496fb94a8cf22688671853630a75d17426ee",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3ChainSession.swift": "5942dc84571fc92c663c19a8805bf2dbec41188a0608693af31864b45b43d7d9",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3DenoisingLoop.swift": "c07787f5dd8b49fb2085ee3abf7c7e5250c1b409c9d3a776f9bd497fd9d9d3f0",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3DenoisingSession.swift": "eb95fab64ad98cf2ced508a616cfffa8e4bddf34d6615a40515343d739814d64",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3MeasuredAdmission.swift": "b5c6477ea4909c422d2649e8f57ceb2e00efe74b09f2439e28c0a1df700931cd",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3PhaseSession.swift": "0ed3d1e54e2688e594e4292f2baae58468ba098daf0a969fa3f33f795e9c4bc0",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/H3ProfileStages.swift": "21e1f1a9f76afdc067dbb52f7a1734d368de4cdede62f25fc55366b51d40ce5c",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift": "b3a411237e411e5d8a1973106dad27e2d2d22555e3717f78400b15b12ee10bd8",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift": "0673b4e2d9504bc2677e5826691cb3fcf10698328132403128679ca849fa09db",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3DenoisingBackend.swift": "54bceb6b93312d251e74376a1c57644e6aa7e7e75208fb53bb62bfcf14bc44a8",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3Function.swift": "978d1feae56b71c7f8b1a69dba18263956de7646d03ce0afdd5440abca89a719",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3Graph.swift": "633897e1d95d453a2f1e2c0052ddb2488be9b54c4ad6bf034fd7e20062cacc84",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift": "9890bc74d07353eb5f019a8dbb16b0ab98c02934320f7055608ef1c74eed1c1f",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/AetherProbe.swift": "d64178886d01f7d589edfe8371bf93d5fb286b19962f26edfdcf7acf2af8b4e8",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3ChainCommand.swift": "5c0d2b5c5a6574fa17b3d320ce3fab0aa588c7dbf6dc800d8e0f57071f9df58b",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3DenoisingCommand.swift": "4eb395e943071e8f98ad05677a761f9ebdca34cf7806613da75e9d2e8407f5ef",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3DenoisingLifecycleTrace.swift": "0086c06c6040d5e83ceed5d69869f9d7c464e88a24c7345ff68bba79603480e3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3LifecycleCommand.swift": "1d07893223e04e3a6d9279d29e225cb937938266bb2dfb094bb00c16cb2e6ffc",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3MemoryDiagnosis.swift": "a0ad6f22fb38e179950b816948db2927a8b7b5637f702bacaccea24030584720",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3PhaseCommand.swift": "1d8fa20e62046d63c0b7a4732186dd711e225072a87bed663454d0bc5d744d56",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3ProfileCommand.swift": "31e3234676a07d4ebe8824ce04678e0a4bf05eeb01013c1a3920dcc1bf0a5940",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/H3QualificationCommand.swift": "0c7b37e8abbff58873cd474407cbb70377b9cc5bf2050bf2ef378cea4d81ab98",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/KreaBatchCommand.swift": "54d40c0f7c0deb805ce5985106d875c6b4d39958aea514b56c896e381588d785",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/KreaBenchmark.swift": "52fe2961f550705f2ed29fb17888398473381c8507387f5e150e04dc22021296",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/KreaBenchmarkCommand.swift": "832f438a65bd3322730939856c29b99fd5d2877a88272541256aceb568f5ccf3",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/rebase-src/Sources/AetherProbe/ProbeGPULease.swift": "68301c685ddff22ec321ed34d6cf4eb6fe3900c0bc73f4a6e18312045d519994"
+  },
+  "scriptSHA256": "d2389de74766ab89830a35650b869966f3f2f9579e1a8ca44afe4f5e14af9e38",
+  "scope": "Complete H3VideoSession renders (conditioner, first-frame encoder for FL2VA, eight Turbo steps, video and audio decode) at the 5 s clip menu; per-stage peaks attribute residual memory from the previous stage to the next stage."
+}

@@ -32,6 +32,7 @@ import subprocess
 import time
 
 LIMIT = 0.02
+MEMORY_BAR = 18 << 30   # the H3 bar: Metal allocation peak over a complete render
 BOUNDARIES_PER_STEP = 2 + 1 + 50 + 2 + 2   # latents in, packed, blocks, heads, latents out
 
 
@@ -82,7 +83,7 @@ def main():
     if (args.task == "fl2va") != (args.keyframe is not None):
         ap.error("--keyframe is required for fl2va and refused for t2va")
     root = Path(__file__).resolve().parent.parent
-    probe = root / ".build/arm64-apple-macosx/release/aether-probe"
+    probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     oracle = root / "Scripts/prepare-h3-profile-oracle.py"
     work = args.work.resolve()
     (work / "controllers").mkdir(parents=True, exist_ok=True)
@@ -227,12 +228,17 @@ def main():
     pins_unchanged = all(sha(p) == v for p, v in pins.items())
     if not pins_unchanged:
         failures.append("pins changed during the gate")
-    open_items = []
+    # The 18 GiB H3 memory bar: the Metal peak over each complete render (capture and replay) must stay under it.
+    open_items, render_peaks = [], {}
     for n, m in (("capture", capture), ("replay", replay)):
         metal = ((m.get("report") or {}).get("sampledPeak") or {}).get("metalAllocatedBytes")
-        if metal and metal > 18 * (1 << 30):
-            open_items.append(f"{n}: sampled Metal peak {metal / (1 << 30):.2f} GiB exceeds 18 GiB")
+        render_peaks[n] = metal
+        if metal is None:
+            failures.append(f"{n}: no sampled Metal peak recorded")
+        elif metal > MEMORY_BAR:
+            failures.append(f"{n}: sampled Metal peak {metal / (1 << 30):.2f} GiB exceeds the 18 GiB bar")
     gate = dict(schema=1, gate=f"h3-profile-trajectory-{t}", completedAt=now(), passed=not failures, failures=failures, openItems=open_items,
+                memoryBarBytes=MEMORY_BAR, renderMetalPeakBytes=render_peaks,
                 predefinedRelativeL2Limit=LIMIT, task=t, referencedSteps=selected,
                 canvas=dict(width=args.width, height=args.height, frames=int(dump_fields["frames"]), rows=int(dump_fields["rows"]),
                             tokens=int(dump_fields["tokens"]), seed=args.seed, recipe=args.recipe, anchors=dump_fields.get("anchors")),

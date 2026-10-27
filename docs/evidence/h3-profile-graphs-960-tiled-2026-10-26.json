@@ -1,0 +1,1293 @@
+{
+  "schema": 1,
+  "gate": "h3-profile-graphs",
+  "completedAt": "2026-10-26T23:31:43.181241+00:00",
+  "passed": true,
+  "failures": [],
+  "openItems": [],
+  "predefinedRelativeL2Limit": 0.02,
+  "canvas": {
+    "width": 960,
+    "height": 544,
+    "frames": 124,
+    "rows": 19333,
+    "tokens": 49,
+    "seed": 1043,
+    "recipe": "turbo8"
+  },
+  "profileSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+  "comparisons": {
+    "compare-t2va-text/tap": {
+      "cosine": 0.9999979591936109,
+      "finite": true,
+      "max_abs": 128.0,
+      "reference_max_abs": 15168.0,
+      "relative_l2": 0.00850766082286073
+    },
+    "compare-t2va-text/refined": {
+      "cosine": 0.9999782472165814,
+      "finite": true,
+      "max_abs": 1.5,
+      "reference_max_abs": 105.0,
+      "relative_l2": 0.00659872951635728
+    },
+    "compare-t2va-graphs/packed": {
+      "cosine": 0.9999999999012147,
+      "finite": true,
+      "max_abs": 0.0625,
+      "reference_max_abs": 105.0,
+      "relative_l2": 1.4442866355402255e-05
+    },
+    "compare-t2va-graphs/block00": {
+      "cosine": 0.9999815413198165,
+      "finite": true,
+      "max_abs": 1024.0,
+      "reference_max_abs": 122880.0,
+      "relative_l2": 0.007005569778945807
+    },
+    "compare-t2va-graphs/block49": {
+      "cosine": 0.999980859869389,
+      "finite": true,
+      "max_abs": 4096.0,
+      "reference_max_abs": 9895936.0,
+      "relative_l2": 0.006208437829820858
+    },
+    "compare-t2va-graphs/heads_video": {
+      "cosine": 0.9999985611442986,
+      "finite": true,
+      "max_abs": 0.013223648071289062,
+      "reference_max_abs": 7.078566074371338,
+      "relative_l2": 0.0016992435866928857
+    },
+    "compare-t2va-graphs/heads_audio": {
+      "cosine": 0.9999983957525833,
+      "finite": true,
+      "max_abs": 0.010422170162200928,
+      "reference_max_abs": 4.394158363342285,
+      "relative_l2": 0.0017954454849718217
+    },
+    "compare-t2va-graphs/tile": {
+      "cosine": 0.9999801314792744,
+      "finite": true,
+      "max_abs": 0.13584542274475098,
+      "reference_max_abs": 7.247300148010254,
+      "relative_l2": 0.006306689014774965
+    },
+    "compare-t2va-graphs/pcm": {
+      "cosine": 0.9999999997672168,
+      "finite": true,
+      "max_abs": 0.0002276897430419922,
+      "reference_max_abs": 1.0,
+      "relative_l2": 2.1573310426099307e-05
+    },
+    "compare-fl2va/condition": {
+      "cosine": 0.9999999762200413,
+      "finite": true,
+      "max_abs": 0.0015499591827392578,
+      "reference_max_abs": 3.382902145385742,
+      "relative_l2": 0.00021809068599566085
+    }
+  },
+  "tokenizer": {
+    "tokenIdsEqualTransformers": true,
+    "tapSeconds": 23.3
+  },
+  "layoutChecks": {
+    "audio_indices": true,
+    "positions": true,
+    "step0": true,
+    "step1": true,
+    "step2": true,
+    "step3": true,
+    "step4": true,
+    "step5": true,
+    "step6": true,
+    "step7": true,
+    "text_indices": true,
+    "token_tags": true,
+    "video_indices": true
+  },
+  "oracleReports": {
+    "oracle-graphs-t2va": {
+      "block00_seconds": 1216.9,
+      "block49_seconds": 1093.0,
+      "block_inputs": {
+        "block00": "packed",
+        "block49": "context49"
+      },
+      "graphs_seconds": 2367.5,
+      "heads_input": "native block49 output",
+      "layout": {
+        "audio_indices": true,
+        "positions": true,
+        "step0": true,
+        "step1": true,
+        "step2": true,
+        "step3": true,
+        "step4": true,
+        "step5": true,
+        "step6": true,
+        "step7": true,
+        "text_indices": true,
+        "token_tags": true,
+        "video_indices": true
+      }
+    },
+    "oracle-graphs-fl2va": {
+      "condition_seconds": 32.5
+    }
+  },
+  "oracleFields": {
+    "oracle-text": {
+      "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+      "oracle_sha256": "0ff6b7af3dd20e19a66517ae87b52cc5fb6dc47a415c366fa51dd8138da2fcc3",
+      "part": "text",
+      "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+      "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+      "torch": "2.13.0"
+    },
+    "oracle-graphs-t2va": {
+      "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+      "oracle_sha256": "0ff6b7af3dd20e19a66517ae87b52cc5fb6dc47a415c366fa51dd8138da2fcc3",
+      "part": "graphs",
+      "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+      "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+      "torch": "2.13.0"
+    },
+    "oracle-graphs-fl2va": {
+      "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-fl2va",
+      "oracle_sha256": "0ff6b7af3dd20e19a66517ae87b52cc5fb6dc47a415c366fa51dd8138da2fcc3",
+      "part": "graphs",
+      "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+      "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+      "torch": "2.13.0"
+    }
+  },
+  "nativeReports": {
+    "native-t2va": {
+      "sampledPeak": {
+        "metalAllocatedBytes": 13500383232,
+        "physicalFootprintBytes": 14080250440,
+        "processLifetimePeakFootprintBytes": 14080266824,
+        "processLifetimePeakResidentBytes": 15004581888,
+        "residentBytes": 14870577152
+      },
+      "samples": 1590,
+      "timings": [
+        {
+          "memory": {
+            "metalAllocatedBytes": 1964392448,
+            "physicalFootprintBytes": 2158135672,
+            "processLifetimePeakFootprintBytes": 2158201208,
+            "processLifetimePeakResidentBytes": 2025603072,
+            "residentBytes": 2025537536
+          },
+          "name": "conditioner.tap",
+          "seconds": 22.697825958
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 1964933120,
+            "physicalFootprintBytes": 3814624808,
+            "processLifetimePeakFootprintBytes": 3833663016,
+            "processLifetimePeakResidentBytes": 3683975168,
+            "residentBytes": 3682910208
+          },
+          "name": "prepare.text",
+          "seconds": 0.966205333
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 3227336704,
+            "physicalFootprintBytes": 3842722744,
+            "processLifetimePeakFootprintBytes": 3843296232,
+            "processLifetimePeakResidentBytes": 3683975168,
+            "residentBytes": 2672410624
+          },
+          "name": "prepare.pack",
+          "seconds": 0.189378167
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 13849285048,
+            "processLifetimePeakFootprintBytes": 13849285048,
+            "processLifetimePeakResidentBytes": 4714741760,
+            "residentBytes": 4714741760
+          },
+          "name": "block0",
+          "seconds": 1.381449125
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14058623560,
+            "processLifetimePeakFootprintBytes": 14058623560,
+            "processLifetimePeakResidentBytes": 4923228160,
+            "residentBytes": 4923228160
+          },
+          "name": "block1",
+          "seconds": 0.913551625
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 13223203400,
+            "processLifetimePeakFootprintBytes": 14077366856,
+            "processLifetimePeakResidentBytes": 4926996480,
+            "residentBytes": 4923228160
+          },
+          "name": "block2",
+          "seconds": 1.183846375
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14057886280,
+            "processLifetimePeakFootprintBytes": 14077956680,
+            "processLifetimePeakResidentBytes": 4927160320,
+            "residentBytes": 4923244544
+          },
+          "name": "block3",
+          "seconds": 1.124614958
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059475528,
+            "processLifetimePeakFootprintBytes": 14078693960,
+            "processLifetimePeakResidentBytes": 4927897600,
+            "residentBytes": 4924080128
+          },
+          "name": "block4",
+          "seconds": 1.050903917
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 13641323080,
+            "processLifetimePeakFootprintBytes": 14078693960,
+            "processLifetimePeakResidentBytes": 4927897600,
+            "residentBytes": 4924014592
+          },
+          "name": "block5",
+          "seconds": 1.095973708
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059131464,
+            "processLifetimePeakFootprintBytes": 14078710344,
+            "processLifetimePeakResidentBytes": 4927913984,
+            "residentBytes": 4924063744
+          },
+          "name": "block6",
+          "seconds": 1.052960083
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059524680,
+            "processLifetimePeakFootprintBytes": 14078710344,
+            "processLifetimePeakResidentBytes": 4927913984,
+            "residentBytes": 4924129280
+          },
+          "name": "block7",
+          "seconds": 1.050897667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059098696,
+            "processLifetimePeakFootprintBytes": 14078710344,
+            "processLifetimePeakResidentBytes": 4928143360,
+            "residentBytes": 4924375040
+          },
+          "name": "block8",
+          "seconds": 1.102592625
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059049544,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928307200,
+            "residentBytes": 4924407808
+          },
+          "name": "block9",
+          "seconds": 1.094920209
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059885128,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928307200,
+            "residentBytes": 4924489728
+          },
+          "name": "block10",
+          "seconds": 1.07231675
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060311112,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928339968,
+            "residentBytes": 4924915712
+          },
+          "name": "block11",
+          "seconds": 1.067299792
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059459144,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928618496,
+            "residentBytes": 4924817408
+          },
+          "name": "block12",
+          "seconds": 1.091644
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059475528,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928618496,
+            "residentBytes": 4924833792
+          },
+          "name": "block13",
+          "seconds": 1.066042417
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060376648,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928618496,
+            "residentBytes": 4924981248
+          },
+          "name": "block14",
+          "seconds": 1.049775209
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060393032,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928700416,
+            "residentBytes": 4924997632
+          },
+          "name": "block15",
+          "seconds": 1.05970375
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059557448,
+            "processLifetimePeakFootprintBytes": 14079103560,
+            "processLifetimePeakResidentBytes": 4928700416,
+            "residentBytes": 4924915712
+          },
+          "name": "block16",
+          "seconds": 1.026480958
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059590216,
+            "processLifetimePeakFootprintBytes": 14079119944,
+            "processLifetimePeakResidentBytes": 4928749568,
+            "residentBytes": 4924948480
+          },
+          "name": "block17",
+          "seconds": 1.093957875
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059868744,
+            "processLifetimePeakFootprintBytes": 14079119944,
+            "processLifetimePeakResidentBytes": 4928749568,
+            "residentBytes": 4925030400
+          },
+          "name": "block18",
+          "seconds": 1.040918125
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060524104,
+            "processLifetimePeakFootprintBytes": 14079201864,
+            "processLifetimePeakResidentBytes": 4928831488,
+            "residentBytes": 4925128704
+          },
+          "name": "block19",
+          "seconds": 1.069843667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059885128,
+            "processLifetimePeakFootprintBytes": 14079201864,
+            "processLifetimePeakResidentBytes": 4928831488,
+            "residentBytes": 4925046784
+          },
+          "name": "block20",
+          "seconds": 1.037450042
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059622984,
+            "processLifetimePeakFootprintBytes": 14079218248,
+            "processLifetimePeakResidentBytes": 4928847872,
+            "residentBytes": 4924981248
+          },
+          "name": "block21",
+          "seconds": 1.088446417
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060622408,
+            "processLifetimePeakFootprintBytes": 14079218248,
+            "processLifetimePeakResidentBytes": 4928847872,
+            "residentBytes": 4925128704
+          },
+          "name": "block22",
+          "seconds": 1.028826583
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060507720,
+            "processLifetimePeakFootprintBytes": 14079218248,
+            "processLifetimePeakResidentBytes": 4928847872,
+            "residentBytes": 4925112320
+          },
+          "name": "block23",
+          "seconds": 1.088571583
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060212808,
+            "processLifetimePeakFootprintBytes": 14079218248,
+            "processLifetimePeakResidentBytes": 4928847872,
+            "residentBytes": 4925063168
+          },
+          "name": "block24",
+          "seconds": 1.049262208
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059704904,
+            "processLifetimePeakFootprintBytes": 14079775304,
+            "processLifetimePeakResidentBytes": 4928978944,
+            "residentBytes": 4925063168
+          },
+          "name": "block25",
+          "seconds": 1.109657792
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060769864,
+            "processLifetimePeakFootprintBytes": 14079775304,
+            "processLifetimePeakResidentBytes": 4928978944,
+            "residentBytes": 4925276160
+          },
+          "name": "block26",
+          "seconds": 1.046400375
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060032584,
+            "processLifetimePeakFootprintBytes": 14079775304,
+            "processLifetimePeakResidentBytes": 4928978944,
+            "residentBytes": 4925194240
+          },
+          "name": "block27",
+          "seconds": 1.01851925
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060655176,
+            "processLifetimePeakFootprintBytes": 14079775304,
+            "processLifetimePeakResidentBytes": 4928978944,
+            "residentBytes": 4925259776
+          },
+          "name": "block28",
+          "seconds": 1.070185291
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 13642502728,
+            "processLifetimePeakFootprintBytes": 14079775304,
+            "processLifetimePeakResidentBytes": 4928978944,
+            "residentBytes": 4925194240
+          },
+          "name": "block29",
+          "seconds": 1.062828208
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059819592,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925177856
+          },
+          "name": "block30",
+          "seconds": 1.062557417
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060704328,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925308928
+          },
+          "name": "block31",
+          "seconds": 1.0435975
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060687944,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925292544
+          },
+          "name": "block32",
+          "seconds": 1.06395975
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059934280,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925210624
+          },
+          "name": "block33",
+          "seconds": 1.03804325
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059852360,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925210624
+          },
+          "name": "block34",
+          "seconds": 1.036505208
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059885128,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925243392
+          },
+          "name": "block35",
+          "seconds": 1.048556209
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060737096,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925341696
+          },
+          "name": "block36",
+          "seconds": 1.052770166
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060753480,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925358080
+          },
+          "name": "block37",
+          "seconds": 1.043648958
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14059983432,
+            "processLifetimePeakFootprintBytes": 14079889992,
+            "processLifetimePeakResidentBytes": 4929093632,
+            "residentBytes": 4925259776
+          },
+          "name": "block38",
+          "seconds": 1.08919575
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14059917896,
+            "processLifetimePeakFootprintBytes": 14079988296,
+            "processLifetimePeakResidentBytes": 4929191936,
+            "residentBytes": 4925276160
+          },
+          "name": "block39",
+          "seconds": 1.076798
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060802632,
+            "processLifetimePeakFootprintBytes": 14079988296,
+            "processLifetimePeakResidentBytes": 4929191936,
+            "residentBytes": 4925407232
+          },
+          "name": "block40",
+          "seconds": 1.062179541
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060819016,
+            "processLifetimePeakFootprintBytes": 14079988296,
+            "processLifetimePeakResidentBytes": 4929191936,
+            "residentBytes": 4925423616
+          },
+          "name": "block41",
+          "seconds": 1.067387208
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060081736,
+            "processLifetimePeakFootprintBytes": 14079988296,
+            "processLifetimePeakResidentBytes": 4929208320,
+            "residentBytes": 4925440000
+          },
+          "name": "block42",
+          "seconds": 1.057316959
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060114504,
+            "processLifetimePeakFootprintBytes": 14080184904,
+            "processLifetimePeakResidentBytes": 4929388544,
+            "residentBytes": 4925472768
+          },
+          "name": "block43",
+          "seconds": 1.04883875
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060098120,
+            "processLifetimePeakFootprintBytes": 14080184904,
+            "processLifetimePeakResidentBytes": 4929388544,
+            "residentBytes": 4925456384
+          },
+          "name": "block44",
+          "seconds": 1.029243375
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060982856,
+            "processLifetimePeakFootprintBytes": 14080184904,
+            "processLifetimePeakResidentBytes": 4929388544,
+            "residentBytes": 4925587456
+          },
+          "name": "block45",
+          "seconds": 1.034621
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060982856,
+            "processLifetimePeakFootprintBytes": 14080184904,
+            "processLifetimePeakResidentBytes": 4929388544,
+            "residentBytes": 4925587456
+          },
+          "name": "block46",
+          "seconds": 1.086037708
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 13225513544,
+            "processLifetimePeakFootprintBytes": 14080184904,
+            "processLifetimePeakResidentBytes": 4929388544,
+            "residentBytes": 4925538304
+          },
+          "name": "block47",
+          "seconds": 1.092816
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008748544,
+            "physicalFootprintBytes": 14060180040,
+            "processLifetimePeakFootprintBytes": 14080250440,
+            "processLifetimePeakResidentBytes": 4929454080,
+            "residentBytes": 4925538304
+          },
+          "name": "block48",
+          "seconds": 1.054203125
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13008764928,
+            "physicalFootprintBytes": 14060196424,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 4929470464,
+            "residentBytes": 4925554688
+          },
+          "name": "block49",
+          "seconds": 0.986478875
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13493059584,
+            "physicalFootprintBytes": 13959074712,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 5333925888,
+            "residentBytes": 5291687936
+          },
+          "name": "heads",
+          "seconds": 0.27782675
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12782059520,
+            "physicalFootprintBytes": 9016976000,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 15004581888,
+            "residentBytes": 10205380608
+          },
+          "name": "tile.cold",
+          "seconds": 6.295885875
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12782059520,
+            "physicalFootprintBytes": 9021350552,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 15004581888,
+            "residentBytes": 10209574912
+          },
+          "name": "tile.warm",
+          "seconds": 0.203253125
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13195542528,
+            "physicalFootprintBytes": 9188877216,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 15004581888,
+            "residentBytes": 10502651904
+          },
+          "name": "audio.cold",
+          "seconds": 0.801639042
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 13195673600,
+            "physicalFootprintBytes": 9189335968,
+            "processLifetimePeakFootprintBytes": 14080266824,
+            "processLifetimePeakResidentBytes": 15004581888,
+            "residentBytes": 10503356416
+          },
+          "name": "audio.warm",
+          "seconds": 0.130470291
+        }
+      ]
+    },
+    "native-fl2va": {
+      "sampledPeak": {
+        "metalAllocatedBytes": 2201518080,
+        "physicalFootprintBytes": 1692747384,
+        "processLifetimePeakFootprintBytes": 1692747384,
+        "processLifetimePeakResidentBytes": 1536376832,
+        "residentBytes": 1460748288
+      },
+      "samples": 193,
+      "timings": [
+        {
+          "memory": {
+            "metalAllocatedBytes": 1219362816,
+            "physicalFootprintBytes": 1425720400,
+            "processLifetimePeakFootprintBytes": 1689749112,
+            "processLifetimePeakResidentBytes": 1497399296,
+            "residentBytes": 96321536
+          },
+          "name": "keyframe.cold",
+          "seconds": 5.390779333
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 1219362816,
+            "physicalFootprintBytes": 1426998376,
+            "processLifetimePeakFootprintBytes": 1692747384,
+            "processLifetimePeakResidentBytes": 1536376832,
+            "residentBytes": 97583104
+          },
+          "name": "keyframe.warm",
+          "seconds": 5.455107417
+        }
+      ]
+    }
+  },
+  "controllers": {
+    "dump-t2va": {
+      "schema": 1,
+      "stage": "dump-t2va",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/.build/arm64-apple-macosx/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 82,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T22:19:29.413026+00:00",
+      "pid": 58796,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T22:19:31.020108+00:00",
+      "elapsedSeconds": 1.607,
+      "sampledPeakGroupRSSBytes": 4751360,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "6415dbb2a83eadc55defdb3934689723b77cd0b1fe7eade14e47e5a672c213ef",
+      "outputError": null
+    },
+    "dump-fl2va": {
+      "schema": 1,
+      "stage": "dump-fl2va",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/.build/arm64-apple-macosx/release/aether-probe",
+        "h3-profile-dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "120",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-fl2va",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 83,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T22:19:31.030471+00:00",
+      "pid": 58830,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T22:19:32.671261+00:00",
+      "elapsedSeconds": 1.641,
+      "sampledPeakGroupRSSBytes": 5193728,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "1611c006878d23b1bd920bc688d6d0b530f40b89ad401d4eaf12ebfd16f67cd3",
+      "outputError": null
+    },
+    "oracle-text": {
+      "schema": 1,
+      "stage": "oracle-text",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "text",
+        "--dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+        "--prompt",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-text",
+        "--threads",
+        "8"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 82,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T22:19:32.682475+00:00",
+      "pid": 58847,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T22:20:02.428277+00:00",
+      "elapsedSeconds": 29.746,
+      "sampledPeakGroupRSSBytes": 1401438208,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "c7cb24bf948e1d6a82155de20301b1a143af0d7d77ccdc5487921183000a915d",
+      "outputError": null
+    },
+    "native-t2va": {
+      "schema": 1,
+      "stage": "native-t2va",
+      "kind": "gpu",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-graph-gate: native-t2va",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/.build/arm64-apple-macosx/release/aether-probe",
+        "h3-profile-run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-t2va",
+        "--graphs"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": true,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "startedAt": "2026-10-26T22:20:02.436869+00:00",
+      "pid": 59329,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T22:37:05.571562+00:00",
+      "elapsedSeconds": 1023.123,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "86ed8f383b3fb31ae61c265c4718771bb2c201a54ba9f729279669794f6f710c",
+      "outputError": null
+    },
+    "native-fl2va": {
+      "schema": 1,
+      "stage": "native-fl2va",
+      "kind": "gpu",
+      "command": [
+        "/Users/zakkeown/.cache/aether-kit/with-gpu-lock.sh",
+        "h3-graph-gate: native-fl2va",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/.build/arm64-apple-macosx/release/aether-probe",
+        "h3-profile-run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-fl2va",
+        "-",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-fl2va",
+        "--graphs"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": true,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "startedAt": "2026-10-26T22:37:05.595434+00:00",
+      "pid": 72247,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T22:51:20.732460+00:00",
+      "elapsedSeconds": 855.127,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "21830b941e17e103a77b35ce4901bb6bd5fb243af82325b2ba8c41435f5b4ce4",
+      "outputError": null
+    },
+    "oracle-graphs-t2va": {
+      "schema": 1,
+      "stage": "oracle-graphs-t2va",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "graphs",
+        "--dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+        "--run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-t2va",
+        "--text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-text",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-graphs-t2va",
+        "--threads",
+        "8",
+        "--blocks",
+        "0,49"
+      ],
+      "budgetSeconds": 21600,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 84,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T22:51:20.772923+00:00",
+      "pid": 76324,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T23:30:58.248938+00:00",
+      "elapsedSeconds": 2377.454,
+      "sampledPeakGroupRSSBytes": 10980655104,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "e5fce74ee783362448b7839ccbcc9a15661e18b38e352caaea16388bd2da8ad7",
+      "outputError": null
+    },
+    "oracle-graphs-fl2va": {
+      "schema": 1,
+      "stage": "oracle-graphs-fl2va",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "graphs",
+        "--dump",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-fl2va",
+        "--run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-fl2va",
+        "--text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-text",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-graphs-fl2va",
+        "--threads",
+        "8"
+      ],
+      "budgetSeconds": 3600,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 83,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T23:30:58.275840+00:00",
+      "pid": 93311,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T23:31:38.495768+00:00",
+      "elapsedSeconds": 40.219,
+      "sampledPeakGroupRSSBytes": 3243900928,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "0757502e55fa2602bf26c23447e78f24ce42e484eaaa158145c34e1624408314",
+      "outputError": null
+    },
+    "compare-t2va-text": {
+      "schema": 1,
+      "stage": "compare-t2va-text",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "compare",
+        "--text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-text",
+        "--run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-t2va",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/compare-t2va-text"
+      ],
+      "budgetSeconds": 1800,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 82,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T23:31:38.515704+00:00",
+      "pid": 93688,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T23:31:39.485390+00:00",
+      "elapsedSeconds": 0.97,
+      "sampledPeakGroupRSSBytes": 3309568,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "41438332d2d13df8467e1c98ce27569a5a423e7e7cefe2e52673d596b4fa2e68",
+      "outputError": null
+    },
+    "compare-t2va-graphs": {
+      "schema": 1,
+      "stage": "compare-t2va-graphs",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "compare",
+        "--text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-graphs-t2va",
+        "--run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-t2va",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/compare-t2va-graphs"
+      ],
+      "budgetSeconds": 1800,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 81,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T23:31:39.517598+00:00",
+      "pid": 93702,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T23:31:42.359003+00:00",
+      "elapsedSeconds": 2.841,
+      "sampledPeakGroupRSSBytes": 14106624,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "6d7491488f8dddc959de76ff82b490e13a25e0b1c24c638c877d4e0083599acb",
+      "outputError": null
+    },
+    "compare-fl2va": {
+      "schema": 1,
+      "stage": "compare-fl2va",
+      "kind": "cpu",
+      "command": [
+        "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle/.venv/bin/python",
+        "-I",
+        "-B",
+        "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py",
+        "--part",
+        "compare",
+        "--text",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/oracle-graphs-fl2va",
+        "--run",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/native-fl2va",
+        "--output",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/compare-fl2va"
+      ],
+      "budgetSeconds": 1800,
+      "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+      "gpuLock": false,
+      "passed": true,
+      "joined": true,
+      "timedOut": false,
+      "memoryFreePercentAtStart": 82,
+      "memoryWaitSeconds": 0.0,
+      "rssLimitBytes": 21474836480,
+      "startedAt": "2026-10-26T23:31:42.385501+00:00",
+      "pid": 93708,
+      "exitCode": 0,
+      "endedAt": "2026-10-26T23:31:43.164062+00:00",
+      "elapsedSeconds": 0.778,
+      "sampledPeakGroupRSSBytes": 19972096,
+      "sourcePinsUnchanged": true,
+      "outputManifestSHA256": "47810b0e2e491cd100b729391f95a8678349f64da72d30b35dceda6cc5ed020d",
+      "outputError": null
+    }
+  },
+  "pinsDigest": "d1b5a0b0b11058862a8e4f6fa16172ca63b4c92d83c6cf458b27b02863ff4747",
+  "pinsUnchanged": true,
+  "filesSHA256": {
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/.build/arm64-apple-macosx/release/aether-probe": "3c6c54c6b34405f0d8a1d202f8ec885757b3c9df6f57fa5c78ace0a06f4d38df",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/prepare-h3-profile-oracle.py": "0ff6b7af3dd20e19a66517ae87b52cc5fb6dc47a415c366fa51dd8138da2fcc3",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/h3_export_lib.py": "95da091de9a2a6e049803d71115688dbfb323e6cb77e22147d3422714fbda3b6",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Scripts/qualify-h3-profile-graphs.py": "5e2a1f7ba6df0cfc6681367570e35ac3aa3766d5ac1aaf8ef723a5f51e0b0d80",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Package.swift": "ef5b4788166516c553eef2e2fc40c68100d3ce8fbeb8b9e16c8cdb45cd7b0e70",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png": "4bbd8e87040de91a172246535b4e550648d5ada0b8d0406057e3a1ada00f4d24",
+    "/Users/zakkeown/Code/atelier/.local/team/staging/h3/oracle-scripts/vendor/convert_minimax_h3_to_diffusers.py": "86f61f62934d1eccf2a76ec57b6d072e2c23767c6e49d96aa1cf24d40422b42c",
+    "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/vae/config.json": "7cb686ac348f60f82214935854665e47da85fc7d95f12ad8ee98448ca44a8cfc",
+    "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/audio-vae/config.json": "0867acbc29fb725e8b1a58d9ad1454792a31d23c67402febbfa080f8b073cbfc",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherKit/AetherError.swift": "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherKit/AetherKit.docc/AetherKit.md": "5a2b3096db316fa53cb05f632b867e261ede9334d2b51fa6735e4756913f635c",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherKit/FloatTensor.swift": "2d1e05c7a554a57703eecfc25634a0234532ebf1c9afeb28ff4f206fa35b47a3",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherKit/GeneratedImage.swift": "abecc7cc2836e689165080dd5b9cb9d5b031c891e61ad60923a6c22b0bb6b962",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherKit/ResourceCoordinator.swift": "8b871d9522e8c04c8bacc0c04e65b94632046c76e629a6f11f7fa77fc6f97da3",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherAssets/AssetManifest.swift": "ff00f5ba147b01d8a8933218dbc3543b65e872a4940fee6ad0ca23371bb67628",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherAssets/ExternalFileLease.swift": "b21507f23fc23df06bd59e60c4d180cd95eb48f41d3628cc7d0645489c7334ad",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherAssets/LocalAssetStore.swift": "e0abe7a59d2b19e876686c16c2a53ecb3f5e6a47c0f1eaad62735bd9d0f0ed8e",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherCoreAI/CoreAIBackend.swift": "7350a66804756d61a136dc5ee225621fcec057434677dc84ffe661f9e432e789",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherCoreAI/ModelDescription.swift": "aea241eabf14edc60585ffdef20beb5f160cb74de49d32985fcbd0202fbd3e82",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherCoreAI/ModelSession.swift": "7a07254ce2dfdf1fd67154eb31bf49c3f4d8e19bb3b2e8d52a47888f3a01d6e2",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3BlockProbePlan.swift": "ab2fb6b99ec5a34338dfc284695c56b3c51c8f0a4e961b5993eae16a217f150e",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Bundle.swift": "b92e08e085aa357cea34c03a2ebe293288b00447e894ec10c7a31cb460e4ae25",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3ChainProbePlan.swift": "e149199d52924693c18a1cf3435e0e2e37ee4d417373399fe23cbb41eeacc1b3",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3DenoisingPlan.swift": "29ac08b2e2a84ed188f025bfe8b6eb240fd440ac2396fe31f4b23e5858c1c5de",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3ExportHeader.swift": "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Geometry.swift": "4ef248f8b61d0e6ac8a022ff1947a3401b7ef66914ca319d3350fe940953bc85",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Layout.swift": "b3f1864c8e7205ae703563d69a0c23a5c7c010a84d9c3f86adb68b91960f9640",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Noise.swift": "38c9da44d0d072cc217291160be03d49cd2882910cee6177cd9c6a120e06e4cc",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3PhaseProbePlan.swift": "f0e9fb6888b527da5e027f04e4a68cb653b52b2ebfb9d37b03fa26d13eae4dba",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Profile.swift": "d381061e1663865ad82672e68f927e3ef4872f0db3d5363a7341048f1def8c9c",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3ReferenceComparison.swift": "c0bb8d1b8d54d260f2d015b1d7abb49a8499ccdc924b4f8f99e4a887ff2ddb51",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3ResourceAdmission.swift": "cfa7061cf5626b7d916bafd577b723a99cfa01a07dc814dad3f20ff80e66d86e",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3Schedule.swift": "a8dfee22d82a51f25a169dc59e76eb1c62db087e4022c731bc23194080cef63a",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3TensorComparison.swift": "2aa88598d6c6164afb3e95544a57c98518de44a799c790e251ae6a87226d9c83",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3TensorData.swift": "2ec2c2feef6b369ddd95281545e564e49448ae3200f2a24e32d9c23c25faf6a0",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3VideoSession.swift": "2e2cf3cc518cb71e7427afa6d481434c27acbd26d0a9f8bbe908dfe432d6d4bc",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/H3VideoStitching.swift": "2177f0265cc3312f32758b92b68351751accc1b98001bff7250b0ed0c061d58e",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3/Resources/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3BlockSession.swift": "67c65092f33649c606d051f6295e496fb94a8cf22688671853630a75d17426ee",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3ChainSession.swift": "5942dc84571fc92c663c19a8805bf2dbec41188a0608693af31864b45b43d7d9",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3DenoisingLoop.swift": "c07787f5dd8b49fb2085ee3abf7c7e5250c1b409c9d3a776f9bd497fd9d9d3f0",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3DenoisingSession.swift": "eb95fab64ad98cf2ced508a616cfffa8e4bddf34d6615a40515343d739814d64",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3PhaseSession.swift": "0ed3d1e54e2688e594e4292f2baae58468ba098daf0a969fa3f33f795e9c4bc0",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/H3ProfileStages.swift": "21e1f1a9f76afdc067dbb52f7a1734d368de4cdede62f25fc55366b51d40ce5c",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift": "b3a411237e411e5d8a1973106dad27e2d2d22555e3717f78400b15b12ee10bd8",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift": "0673b4e2d9504bc2677e5826691cb3fcf10698328132403128679ca849fa09db",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3DenoisingBackend.swift": "54bceb6b93312d251e74376a1c57644e6aa7e7e75208fb53bb62bfcf14bc44a8",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3Function.swift": "978d1feae56b71c7f8b1a69dba18263956de7646d03ce0afdd5440abca89a719",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3Graph.swift": "633897e1d95d453a2f1e2c0052ddb2488be9b54c4ad6bf034fd7e20062cacc84",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift": "9890bc74d07353eb5f019a8dbb16b0ab98c02934320f7055608ef1c74eed1c1f",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherH3Tokenizers/H3Tokenizer.swift": "67384043ec874ae42ae2b81ccca69fca456ce12f6d167f1205a8f181bcf8bfd7",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/AetherProbe.swift": "b0e599325697b5adb8324d33ccd43596872f4b7f9af10ba139d05639b4c987b8",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3ChainCommand.swift": "5c0d2b5c5a6574fa17b3d320ce3fab0aa588c7dbf6dc800d8e0f57071f9df58b",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3DenoisingCommand.swift": "4eb395e943071e8f98ad05677a761f9ebdca34cf7806613da75e9d2e8407f5ef",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3DenoisingLifecycleTrace.swift": "0086c06c6040d5e83ceed5d69869f9d7c464e88a24c7345ff68bba79603480e3",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3LifecycleCommand.swift": "1d07893223e04e3a6d9279d29e225cb937938266bb2dfb094bb00c16cb2e6ffc",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3MemoryDiagnosis.swift": "804aeafb6f4ed2b6ee1caf90c51f2005c8632807e9b9b3f5f1a6c5202144ee17",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3PhaseCommand.swift": "1d8fa20e62046d63c0b7a4732186dd711e225072a87bed663454d0bc5d744d56",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3ProfileCommand.swift": "31e3234676a07d4ebe8824ce04678e0a4bf05eeb01013c1a3920dcc1bf0a5940",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/H3QualificationCommand.swift": "0c7b37e8abbff58873cd474407cbb70377b9cc5bf2050bf2ef378cea4d81ab98",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/KreaBatchCommand.swift": "54d40c0f7c0deb805ce5985106d875c6b4d39958aea514b56c896e381588d785",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/KreaBenchmark.swift": "3e714ac1dddb93e1e06f720ceff2066684bc225b7327322545d3f286a3edc89a",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/KreaBenchmarkCommand.swift": "790ed232b37e285bd62aedfabe400f172a0092d9b23d5d7914d7c46209d9abbb",
+    "/Users/zakkeown/Code/bubstackdev/aether/aether-kit/.claude/worktrees/agent-a493f969f1fbbf36e/Sources/AetherProbe/KreaCommands.swift": "b0587eb5a930790f12041ea483c5fdeb41d250a32c1d8d2a0a90ca232af74874"
+  },
+  "scope": "Isolated native graphs (conditioner tap, prepare text/pack, blocks 0 and 49 at their real step-0 contexts from the native chain, heads on the native block-49 output, one 256 px tile window, fixed audio decoder, first-frame encoder) against the original-precision CPU modules on identical input bytes. Step 0 only (one timestep cardinality). Not a denoising trajectory, decoded clip, lifecycle, memory-limit or performance qualification."
+}

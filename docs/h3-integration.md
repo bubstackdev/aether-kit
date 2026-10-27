@@ -413,6 +413,89 @@ The tokenizer ids equal Transformers, and the layout and step-plan checks are al
 
 **The first run failed and is superseded.** [Its gate record](evidence/h3-profile-graphs-960-2026-10-26.json) fed both blocks and the heads the dump's synthetic unit-variance `probe_hidden`. Block 49 measured 2.640% on that input, beyond the limit; everything else passed. [A CPU float32 diagnostic](evidence/h3-profile-graphs-960-block49-diagnostic-2026-10-26.json) explains why. The native output is closer to the float32 module (2.43%) than the original bf16 CPU module itself is (2.63%), so that synthetic input exposed bf16 arithmetic noise, not a native defect. The float32 result is kept as a diagnostic only. The acceptance criterion stays at 0.02 relative L2 against the original-precision CPU module, and the fix was the realistic contexts above.
 
-**Open memory-limit item.** The FL2VA first-frame encoder sampled **27.3 GiB of Metal** in both runs (10.2–11.8 GiB footprint). That is well above the 18 GiB bound earlier H3 probes used. The gate records this under `openItems`. No memory limit is yet defined for the profile path. The native T2VA graphs peaked at 13.5 GiB footprint and 12.6 GiB sampled Metal.
+**Memory item, since resolved.** On profile 00669ed7 the FL2VA first-frame encoder sampled **27.3 GiB of Metal** in both runs (10.2–11.8 GiB footprint), well above 18 GiB. The gate recorded it under `openItems`. The tiled encoder below brings it to 2.05 GiB, and the [rerun on the overlay profile](evidence/h3-profile-graphs-960-tiled-2026-10-26.json) passes every comparison with no open items. The native T2VA graphs peaked at 13.5 GiB footprint and 12.6 GiB sampled Metal.
 
 **Resources for the qualifying run.** GPU-lock hold times were 105 s for T2VA (the 50-block chain) and 23 s for FL2VA, after waits of about 4.4 and 4.6 minutes for other agents. The CPU graph oracle took 14 minutes, about 7 minutes for each bf16 block at 19,333 rows, with a sampled process-group resident peak of 12.4 GiB. This gate checks isolated graphs only. It is not a denoising-trajectory, decoded-clip, lifecycle, memory-limit or performance qualification.
+
+## The 18 GiB memory bar: tiled first-frame encoder and measured admission (2026-10-26)
+
+H3 is held to an 18 GiB bar: the Metal allocation peak over a complete render (`MTLDevice.currentAllocatedSize`, sampled every 20 ms) must not exceed 18 GiB for either task. The bar is checked by a gate and enforced at admission.
+
+### Diagnosis
+
+[The memory record](evidence/h3-memory-2026-10-26.json) breaks the original FL2VA peak down with phase timelines (`aether-probe h3-memory-encoder` / `h3-memory-render`). The whole-frame first-frame encoder holds 0.20 GiB after load and specialization, so there is no load or compile spike. Its first call then raises Metal to 27.26 GiB, and that stays reserved while the model is loaded. It is reclaimed only 1–6 s after release. The graph unrolls the pipeline's own tiled encode, and its scratch grows about 1.8 GiB per 256 px tile: 7.46 GiB for the 4-tile 288×288 canvas, 27.26 GiB for 15 tiles at 960×544. `expectFrequentReshapes` changes neither memory nor output. Nothing else is resident at that point, so reordering residency could not help.
+
+### Tiled first-frame encoder
+
+`export-h3-profile.py --stage video-encoder-first-tiled` splits `encode_vae_condition` where the pipeline already splits it:
+
+- **One tile graph**, shared by every canvas: ImageNet normalization, encoder, `quant_conv` → moments `[1,48,1,16,16]`.
+- **One tail graph per canvas:** the source `_stitch_tiles` blend in latent space, the posterior with the fixed seed-42 draw baked in, float16 rounding and latent normalization.
+
+On CPU, tile graph plus tail is byte-identical to `encode_vae_condition` at 960×544, 544×960 and 288×288 ([export record](evidence/h3-encoder-tiled-export-2026-10-26.json)). The stage writes an overlay bundle that adds `video_encoder_first_tiled` plus a `lineage` record of the base bundle and its hash. Every other entry stays the base 00669ed7's, and the base export directory is never written. The overlay, `c49d8dbf…`, lives on `/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled`.
+
+`H3Profile.keyframeEncoding(width:height:)` selects the tiled graphs when the manifest declares them for the canvas, and otherwise the whole-frame graph; there is no flag. `H3ProfileKeyframeEncoder` runs the tile graph once per source tile (row-major over `H3SpatialTiling.source`) and then the tail. CPU tests cover both paths and the manifest selection.
+
+Natively, the tiled encoder's output is **byte-identical** to the whole-frame graph's: the same condition SHA-256 at 960×544 and at 288×288, so relative L2 is 0. The encoder gate still passes at 0.022% against the CPU oracle. Encoder Metal falls from 27.26 to 2.05 GiB, and footprint from 17.4 to 1.58 GiB, at both canvases. All 457 T2VA trajectory boundary hashes are identical before and after the change ([identity record](evidence/h3-trajectory-t2va-identity-2026-10-26.json)).
+
+### Memory gate
+
+`Scripts/qualify-h3-memory.py` renders T2VA and FL2VA through `H3VideoSession` in both orientations, at 124 frames with Turbo8, under 20 ms timelines. Each sample is attributed to its stage; a stage includes memory the previous stage has not yet returned. [The gate](evidence/h3-memory-gate-2026-10-26.json) states `memoryBarBytes` and fails if any render's Metal peak exceeds it. It passes. Peaks, as Metal / footprint in GiB, at 960×544 (544×960 matches):
+
+| Stage | T2VA | FL2VA |
+| --- | ---: | ---: |
+| Conditioner | 1.83 / 2.01 | 1.83 / 2.01 |
+| First-frame encoder (tiled) | — | 2.05 / 1.89 |
+| Denoising | 13.49 / 14.28 | 13.80 / 14.63 |
+| Video decode | 5.64 / 9.81 | 5.78 / 12.63 |
+| Audio decode | 1.03 / 1.89 | 1.03 / 1.92 |
+| **Whole render, Metal** | **13.49** | **13.80** |
+
+The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below); releasing it is a follow-up.
+
+### Measured admission
+
+The gate writes a measured entry: per stage, the largest sample of max(Metal, footprint), plus the session's carried CPU state. The carried state is sized from the clip's tensors (192 MiB). The entry is bundled as `AetherH3/Resources/h3-measured-resources.json`. `H3ProfileEngine.measuredAdmission(profile:recipe:coordinator:)` turns it into an `H3ResourceAdmission`:
+
+- Every stage reserves its measured peak plus 256 MiB.
+- The operation reserves the carried state.
+- Pixel and frame limits are those measured: 960×544 or 544×960, at most 124 frames.
+
+`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The recorded entry's worst case is 15.07 GiB. A coordinator without that capacity refuses the run before any stage loads. Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the host's `GPUAdmission` owner. The operation and every stage reservation are then taken only after the GPU grant, and a generation waiting for the GPU holds no reservation (CPU-tested).
+
+Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py` on that device against that profile. It must pass, and its `measuredResources` entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file with its gate record in `docs/evidence`. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
+
+## Schema-3 Turbo8 trajectory gate (2026-10-26)
+
+`H3ProfileDenoiser` takes an opt-in `H3DenoiserObserver` through `H3ProfileEngine.stages(..., observer:)`. It receives tensors the trajectory already holds on the CPU: the refined text, each step's input latents, the packed sequence, every block output, both heads and the updated latents. Without an observer nothing is constructed. A CPU test shows identical kernel calls and latents with and without one.
+
+`Scripts/qualify-h3-profile-trajectory.py` owns one task's gate, in order:
+
+1. **Capture:** a complete `H3VideoSession` render (`aether-probe h3-profile-run --render --capture=STEPS`) that hashes every boundary. That is 457 hashes for 8 steps: refined text, then per step the input latents, packed sequence, 50 block outputs, heads and updated latents. It also saves the selected steps' reference contexts.
+2. **Replay:** a fresh render that must reproduce every hash (`--replay`). A difference stops the gate.
+3. **CPU oracle:** `prepare-h3-profile-oracle.py --part trajectory`, which runs off the GPU lock on 8 threads with one block resident. At each selected step it computes original-precision references at the captured contexts, on full tensors:
+   - the original packing;
+   - blocks 0 and 49, on their captured inputs, with live AdaLN from the live time embedding;
+   - both heads, on the captured block-49 output;
+   - both schedulers' `step`.
+4. **Float32 diagnostic:** an optional stage, never an acceptance criterion.
+5. **Gate:** 0.02 relative L2 on every required comparison, exact replay, unchanged pins, and the 18 GiB bar on both renders. Captured tensors are deleted once the gate passes.
+
+**T2VA passes ([gate record](evidence/h3-profile-trajectory-t2va-2026-10-26.json)).** It ran on overlay profile c49d8dbf at 960×544 and 124 frames, seed 1043, with the production prompt.
+
+- **Replay:** all 457 boundary hashes reproduce exactly. They also match a capture taken before the tiled-encoder change and a replay built on the rebased tree.
+- **Comparisons:** 56 across all eight steps; maximum relative L2 per graph:
+
+  | Graph | Maximum relative L2 |
+  | --- | ---: |
+  | Packing | 0.0016% |
+  | Block 0 | 0.838% |
+  | Block 49 | 0.713% |
+  | Heads, video / audio | 0.170% / 0.214% |
+  | Scheduler updates | 0, byte-identical (all 16) |
+
+- **Float32 diagnostic:** native blocks are 0.38–0.62% from the same modules in float32.
+- **Memory:** both renders peak at 13.49 GiB Metal.
+- **Run time:** the CPU oracle took 2 h 49 min on a busy machine, about 10–20 min per bf16 block at 19,333 rows.
+
+The first oracle attempt was stopped by its 20 GiB resident guard ([controller record](evidence/h3-profile-trajectory-t2va-oracle-rss-stop-2026-10-26.json)) because it kept both blocks and their float32 copies resident. The oracle now keeps one block resident, and float32 runs as its own stage.

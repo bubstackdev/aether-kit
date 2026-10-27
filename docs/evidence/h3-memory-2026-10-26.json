@@ -1,0 +1,929 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "limitGiB": 18,
+  "counters": "Metal is MTLDevice.currentAllocatedSize (includes scratch the runtime keeps reserved while a model is loaded); footprint is the process physical footprint. They overlap and cannot be added.",
+  "beforeFix": {
+    "profileSHA256": "00669ed7b7db93a7ec9b939bd58a5f49ebe37c87f69b69530a5ba1a17c46ce96",
+    "note": "Whole-frame first-frame encoder graph measured with a diagnostic copy of aether-probe that opens the graph exactly as NativeH3Graph does (source: h3-memory-whole-graph-diagnosis-2026-10-26.swift), with expectFrequentReshapes true and false.",
+    "encoder960x544": {
+      "fields": {
+        "canvas": "960x544",
+        "condition_sha256_run1": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "condition_sha256_run2": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "expectFrequentReshapes": "true",
+        "mode": "encoder",
+        "model": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/models/video-encoder-first-960x544.aimodel"
+      },
+      "samples": 1155,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 27.261,
+      "footprintPeakGiB": 17.439,
+      "phases": [
+        {
+          "phase": "start",
+          "seconds": 0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.02,
+          "footprintEndGiB": 0.02
+        },
+        {
+          "phase": "baseline",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.028,
+          "footprintEndGiB": 0.028
+        },
+        {
+          "phase": "verify",
+          "seconds": 0.25,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.036,
+          "footprintEndGiB": 0.036
+        },
+        {
+          "phase": "model",
+          "seconds": 0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.036,
+          "footprintEndGiB": 0.036
+        },
+        {
+          "phase": "function",
+          "seconds": 8.48,
+          "metalPeakGiB": 0.196,
+          "metalEndGiB": 0.196,
+          "footprintPeakGiB": 0.274,
+          "footprintEndGiB": 0.274
+        },
+        {
+          "phase": "loaded",
+          "seconds": 1.01,
+          "metalPeakGiB": 0.196,
+          "metalEndGiB": 0.196,
+          "footprintPeakGiB": 0.289,
+          "footprintEndGiB": 0.289
+        },
+        {
+          "phase": "run1",
+          "seconds": 3.94,
+          "metalPeakGiB": 27.259,
+          "metalEndGiB": 27.117,
+          "footprintPeakGiB": 12.143,
+          "footprintEndGiB": 8.975
+        },
+        {
+          "phase": "after-run1",
+          "seconds": 1.0,
+          "metalPeakGiB": 27.117,
+          "metalEndGiB": 27.116,
+          "footprintPeakGiB": 8.975,
+          "footprintEndGiB": 1.432
+        },
+        {
+          "phase": "run2",
+          "seconds": 3.69,
+          "metalPeakGiB": 27.261,
+          "metalEndGiB": 27.117,
+          "footprintPeakGiB": 17.439,
+          "footprintEndGiB": 8.723
+        },
+        {
+          "phase": "after-run2",
+          "seconds": 1.0,
+          "metalPeakGiB": 27.116,
+          "metalEndGiB": 27.116,
+          "footprintPeakGiB": 8.721,
+          "footprintEndGiB": 0.818
+        },
+        {
+          "phase": "release",
+          "seconds": 0.09,
+          "metalPeakGiB": 27.116,
+          "metalEndGiB": 16.826,
+          "footprintPeakGiB": 0.818,
+          "footprintEndGiB": 0.779
+        },
+        {
+          "phase": "released+0-1s",
+          "seconds": 1.0,
+          "metalPeakGiB": 16.826,
+          "metalEndGiB": 16.826,
+          "footprintPeakGiB": 0.777,
+          "footprintEndGiB": 0.108
+        },
+        {
+          "phase": "released+1-6s",
+          "seconds": 5.0,
+          "metalPeakGiB": 16.826,
+          "metalEndGiB": 0.007,
+          "footprintPeakGiB": 0.108,
+          "footprintEndGiB": 0.108
+        }
+      ],
+      "timelineSHA256": "99ef1d47f5893070387ce035c40a20b26d517ad80e05cc5f168a8bb899e8193a"
+    },
+    "encoder960x544StaticShapes": {
+      "fields": {
+        "canvas": "960x544",
+        "condition_sha256_run1": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "condition_sha256_run2": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "expectFrequentReshapes": "false",
+        "mode": "encoder",
+        "model": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/models/video-encoder-first-960x544.aimodel"
+      },
+      "samples": 1136,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 27.261,
+      "footprintPeakGiB": 17.419,
+      "phases": [
+        {
+          "phase": "start",
+          "seconds": 0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.02,
+          "footprintEndGiB": 0.02
+        },
+        {
+          "phase": "baseline",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.028,
+          "footprintEndGiB": 0.028
+        },
+        {
+          "phase": "verify",
+          "seconds": 0.24,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.036,
+          "footprintEndGiB": 0.036
+        },
+        {
+          "phase": "model",
+          "seconds": 5.69,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.12,
+          "footprintEndGiB": 0.079
+        },
+        {
+          "phase": "function",
+          "seconds": 2.59,
+          "metalPeakGiB": 0.196,
+          "metalEndGiB": 0.196,
+          "footprintPeakGiB": 0.298,
+          "footprintEndGiB": 0.298
+        },
+        {
+          "phase": "loaded",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.196,
+          "metalEndGiB": 0.196,
+          "footprintPeakGiB": 0.3,
+          "footprintEndGiB": 0.3
+        },
+        {
+          "phase": "run1",
+          "seconds": 3.83,
+          "metalPeakGiB": 27.259,
+          "metalEndGiB": 27.117,
+          "footprintPeakGiB": 12.287,
+          "footprintEndGiB": 8.499
+        },
+        {
+          "phase": "after-run1",
+          "seconds": 1.0,
+          "metalPeakGiB": 27.116,
+          "metalEndGiB": 27.116,
+          "footprintPeakGiB": 8.496,
+          "footprintEndGiB": 0.886
+        },
+        {
+          "phase": "run2",
+          "seconds": 3.68,
+          "metalPeakGiB": 27.261,
+          "metalEndGiB": 27.117,
+          "footprintPeakGiB": 17.419,
+          "footprintEndGiB": 9.491
+        },
+        {
+          "phase": "after-run2",
+          "seconds": 1.01,
+          "metalPeakGiB": 27.117,
+          "metalEndGiB": 27.116,
+          "footprintPeakGiB": 9.489,
+          "footprintEndGiB": 1.625
+        },
+        {
+          "phase": "release",
+          "seconds": 0.07,
+          "metalPeakGiB": 27.116,
+          "metalEndGiB": 16.826,
+          "footprintPeakGiB": 1.625,
+          "footprintEndGiB": 0.44
+        },
+        {
+          "phase": "released+0-1s",
+          "seconds": 1.02,
+          "metalPeakGiB": 16.826,
+          "metalEndGiB": 16.826,
+          "footprintPeakGiB": 0.438,
+          "footprintEndGiB": 0.125
+        },
+        {
+          "phase": "released+1-6s",
+          "seconds": 5.0,
+          "metalPeakGiB": 16.826,
+          "metalEndGiB": 0.007,
+          "footprintPeakGiB": 0.125,
+          "footprintEndGiB": 0.125
+        }
+      ],
+      "timelineSHA256": "19827d1addb1c45a50c7c03b7c2e37da797ff7a06fd1c9444c2a66edefa2aa7c"
+    },
+    "encoder288x288": {
+      "fields": {
+        "canvas": "288x288",
+        "condition_sha256_run1": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+        "condition_sha256_run2": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+        "expectFrequentReshapes": "true",
+        "mode": "encoder",
+        "model": "/Users/zakkeown/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/models/video-encoder-first-288x288.aimodel"
+      },
+      "samples": 642,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 7.464,
+      "footprintPeakGiB": 5.006,
+      "phases": [
+        {
+          "phase": "start",
+          "seconds": 0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.02,
+          "footprintEndGiB": 0.02
+        },
+        {
+          "phase": "baseline",
+          "seconds": 1.01,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.022,
+          "footprintEndGiB": 0.022
+        },
+        {
+          "phase": "verify",
+          "seconds": 0.29,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.03,
+          "footprintEndGiB": 0.03
+        },
+        {
+          "phase": "model",
+          "seconds": 1.95,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.064,
+          "footprintEndGiB": 0.063
+        },
+        {
+          "phase": "function",
+          "seconds": 0.49,
+          "metalPeakGiB": 0.191,
+          "metalEndGiB": 0.191,
+          "footprintPeakGiB": 0.09,
+          "footprintEndGiB": 0.09
+        },
+        {
+          "phase": "loaded",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.191,
+          "metalEndGiB": 0.191,
+          "footprintPeakGiB": 0.258,
+          "footprintEndGiB": 0.258
+        },
+        {
+          "phase": "run1",
+          "seconds": 1.01,
+          "metalPeakGiB": 7.463,
+          "metalEndGiB": 7.381,
+          "footprintPeakGiB": 4.989,
+          "footprintEndGiB": 4.903
+        },
+        {
+          "phase": "after-run1",
+          "seconds": 1.01,
+          "metalPeakGiB": 7.376,
+          "metalEndGiB": 7.376,
+          "footprintPeakGiB": 4.897,
+          "footprintEndGiB": 0.789
+        },
+        {
+          "phase": "run2",
+          "seconds": 0.98,
+          "metalPeakGiB": 7.464,
+          "metalEndGiB": 7.377,
+          "footprintPeakGiB": 5.006,
+          "footprintEndGiB": 4.899
+        },
+        {
+          "phase": "after-run2",
+          "seconds": 1.01,
+          "metalPeakGiB": 7.377,
+          "metalEndGiB": 7.376,
+          "footprintPeakGiB": 4.899,
+          "footprintEndGiB": 0.64
+        },
+        {
+          "phase": "release",
+          "seconds": 0.03,
+          "metalPeakGiB": 7.376,
+          "metalEndGiB": 4.49,
+          "footprintPeakGiB": 0.64,
+          "footprintEndGiB": 0.579
+        },
+        {
+          "phase": "released+0-1s",
+          "seconds": 1.01,
+          "metalPeakGiB": 4.49,
+          "metalEndGiB": 4.49,
+          "footprintPeakGiB": 0.578,
+          "footprintEndGiB": 0.062
+        },
+        {
+          "phase": "released+1-6s",
+          "seconds": 5.0,
+          "metalPeakGiB": 4.49,
+          "metalEndGiB": 0.002,
+          "footprintPeakGiB": 0.062,
+          "footprintEndGiB": 0.061
+        }
+      ],
+      "timelineSHA256": "f4daade751e3d2d405918927082e203e32033913eab71f6e9c1600e323f5430a"
+    },
+    "fl2vaRenderStageBoundaries": {
+      "source": "Atelier staging runs/native-render-960-fl2va (2026-10-19, profile 00669ed7)",
+      "sampledPeakMetalGiB": 27.258,
+      "sampledPeakFootprintGiB": 13.897
+    },
+    "t2vaRender": {
+      "fields": {
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-t2va/dump-t2va",
+        "mode": "render",
+        "profile_sha256": "00669ed7b7db93a7ec9b939bd58a5f49ebe37c87f69b69530a5ba1a17c46ce96"
+      },
+      "samples": 18724,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 13.494,
+      "footprintPeakGiB": 14.279,
+      "phases": [
+        {
+          "phase": "baseline",
+          "seconds": 1.01,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.02,
+          "footprintEndGiB": 0.02
+        },
+        {
+          "phase": "open",
+          "seconds": 0.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.02,
+          "footprintEndGiB": 0.02
+        },
+        {
+          "phase": "stage.encoding",
+          "seconds": 22.12,
+          "metalPeakGiB": 1.829,
+          "metalEndGiB": 1.829,
+          "footprintPeakGiB": 2.009,
+          "footprintEndGiB": 2.009
+        },
+        {
+          "phase": "released.encoding",
+          "seconds": 0.01,
+          "metalPeakGiB": 0.003,
+          "metalEndGiB": 0.003,
+          "footprintPeakGiB": 1.999,
+          "footprintEndGiB": 1.873
+        },
+        {
+          "phase": "stage.denoising",
+          "seconds": 52.31,
+          "metalPeakGiB": 10.746,
+          "metalEndGiB": 10.739,
+          "footprintPeakGiB": 11.492,
+          "footprintEndGiB": 10.993
+        },
+        {
+          "phase": "stage.denoising.step1",
+          "seconds": 49.83,
+          "metalPeakGiB": 13.308,
+          "metalEndGiB": 13.301,
+          "footprintPeakGiB": 14.09,
+          "footprintEndGiB": 14.09
+        },
+        {
+          "phase": "stage.denoising.step2",
+          "seconds": 49.75,
+          "metalPeakGiB": 13.494,
+          "metalEndGiB": 13.301,
+          "footprintPeakGiB": 14.277,
+          "footprintEndGiB": 14.084
+        },
+        {
+          "phase": "stage.denoising.step3",
+          "seconds": 48.71,
+          "metalPeakGiB": 13.494,
+          "metalEndGiB": 13.301,
+          "footprintPeakGiB": 14.277,
+          "footprintEndGiB": 14.091
+        },
+        {
+          "phase": "stage.denoising.step4",
+          "seconds": 49.66,
+          "metalPeakGiB": 13.494,
+          "metalEndGiB": 13.301,
+          "footprintPeakGiB": 14.278,
+          "footprintEndGiB": 14.091
+        },
+        {
+          "phase": "stage.denoising.step5",
+          "seconds": 49.3,
+          "metalPeakGiB": 13.494,
+          "metalEndGiB": 13.301,
+          "footprintPeakGiB": 14.278,
+          "footprintEndGiB": 14.092
+        },
+        {
+          "phase": "stage.denoising.step6",
+          "seconds": 49.48,
+          "metalPeakGiB": 13.494,
+          "metalEndGiB": 12.91,
+          "footprintPeakGiB": 14.279,
+          "footprintEndGiB": 13.701
+        },
+        {
+          "phase": "stage.denoising.step7",
+          "seconds": 49.83,
+          "metalPeakGiB": 13.104,
+          "metalEndGiB": 12.91,
+          "footprintPeakGiB": 13.888,
+          "footprintEndGiB": 13.694
+        },
+        {
+          "phase": "stage.denoising.step8",
+          "seconds": 0.1,
+          "metalPeakGiB": 12.91,
+          "metalEndGiB": 5.892,
+          "footprintPeakGiB": 13.694,
+          "footprintEndGiB": 10.181
+        },
+        {
+          "phase": "released.denoising",
+          "seconds": 0,
+          "metalPeakGiB": 5.247,
+          "metalEndGiB": 5.247,
+          "footprintPeakGiB": 10.174,
+          "footprintEndGiB": 10.174
+        },
+        {
+          "phase": "stage.decodingVideo",
+          "seconds": 35.79,
+          "metalPeakGiB": 5.247,
+          "metalEndGiB": 0.358,
+          "footprintPeakGiB": 10.174,
+          "footprintEndGiB": 1.554
+        },
+        {
+          "phase": "released.decodingVideo",
+          "seconds": 0,
+          "metalPeakGiB": 0.358,
+          "metalEndGiB": 0.358,
+          "footprintPeakGiB": 1.554,
+          "footprintEndGiB": 1.554
+        },
+        {
+          "phase": "stage.decodingAudio",
+          "seconds": 0.84,
+          "metalPeakGiB": 1.03,
+          "metalEndGiB": 0.343,
+          "footprintPeakGiB": 1.792,
+          "footprintEndGiB": 0.494
+        },
+        {
+          "phase": "released.decodingAudio",
+          "seconds": 0,
+          "metalPeakGiB": 0.343,
+          "metalEndGiB": 0.343,
+          "footprintPeakGiB": 0.204,
+          "footprintEndGiB": 0.204
+        },
+        {
+          "phase": "unload",
+          "seconds": 0,
+          "metalPeakGiB": 0.341,
+          "metalEndGiB": 0.341,
+          "footprintPeakGiB": 0.204,
+          "footprintEndGiB": 0.204
+        },
+        {
+          "phase": "unloaded+0-5s",
+          "seconds": 5.01,
+          "metalPeakGiB": 0.341,
+          "metalEndGiB": 0.002,
+          "footprintPeakGiB": 0.204,
+          "footprintEndGiB": 0.091
+        }
+      ],
+      "timelineSHA256": "1dbd25673ff8a30c8b8caec4c13d88ee2fd2a0d4101d0fbc9069b6b7e60d5a54"
+    }
+  },
+  "afterFix": {
+    "profileSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "encoder960x544": {
+      "fields": {
+        "canvas": "960x544",
+        "condition_sha256_run1": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "condition_sha256_run2": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+        "mode": "encoder",
+        "path": "tiled",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7"
+      },
+      "samples": 768,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 2.053,
+      "footprintPeakGiB": 1.583,
+      "phases": [
+        {
+          "phase": "baseline",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.022,
+          "footprintEndGiB": 0.022
+        },
+        {
+          "phase": "run1 (open, specialize, encode)",
+          "seconds": 4.75,
+          "metalPeakGiB": 2.05,
+          "metalEndGiB": 2.0,
+          "footprintPeakGiB": 1.577,
+          "footprintEndGiB": 1.52
+        },
+        {
+          "phase": "after-run1",
+          "seconds": 1.01,
+          "metalPeakGiB": 2.002,
+          "metalEndGiB": 2.002,
+          "footprintPeakGiB": 1.522,
+          "footprintEndGiB": 0.708
+        },
+        {
+          "phase": "run2",
+          "seconds": 3.77,
+          "metalPeakGiB": 2.053,
+          "metalEndGiB": 2.003,
+          "footprintPeakGiB": 1.583,
+          "footprintEndGiB": 1.525
+        },
+        {
+          "phase": "after-run2",
+          "seconds": 1.01,
+          "metalPeakGiB": 2.002,
+          "metalEndGiB": 2.002,
+          "footprintPeakGiB": 1.523,
+          "footprintEndGiB": 1.236
+        },
+        {
+          "phase": "release",
+          "seconds": 0.0,
+          "metalPeakGiB": 2.002,
+          "metalEndGiB": 2.002,
+          "footprintPeakGiB": 1.236,
+          "footprintEndGiB": 1.236
+        },
+        {
+          "phase": "released+0-1s",
+          "seconds": 1.0,
+          "metalPeakGiB": 1.135,
+          "metalEndGiB": 1.135,
+          "footprintPeakGiB": 1.042,
+          "footprintEndGiB": 0.074
+        },
+        {
+          "phase": "released+1-6s",
+          "seconds": 5.02,
+          "metalPeakGiB": 1.135,
+          "metalEndGiB": 0.001,
+          "footprintPeakGiB": 0.074,
+          "footprintEndGiB": 0.074
+        }
+      ],
+      "timelineSHA256": "db5af2ee0c08ddd912272f8e5a6c8b04020e014f103567dc52686176605ef48a"
+    },
+    "encoder288x288": {
+      "fields": {
+        "canvas": "288x288",
+        "condition_sha256_run1": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+        "condition_sha256_run2": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+        "mode": "encoder",
+        "path": "tiled",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7"
+      },
+      "samples": 502,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 2.051,
+      "footprintPeakGiB": 1.571,
+      "phases": [
+        {
+          "phase": "baseline",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.021,
+          "footprintEndGiB": 0.021
+        },
+        {
+          "phase": "run1 (open, specialize, encode)",
+          "seconds": 1.48,
+          "metalPeakGiB": 2.05,
+          "metalEndGiB": 2.001,
+          "footprintPeakGiB": 1.562,
+          "footprintEndGiB": 1.507
+        },
+        {
+          "phase": "after-run1",
+          "seconds": 1.0,
+          "metalPeakGiB": 2.001,
+          "metalEndGiB": 2.001,
+          "footprintPeakGiB": 1.508,
+          "footprintEndGiB": 0.375
+        },
+        {
+          "phase": "run2",
+          "seconds": 1.0,
+          "metalPeakGiB": 2.051,
+          "metalEndGiB": 2.001,
+          "footprintPeakGiB": 1.571,
+          "footprintEndGiB": 1.514
+        },
+        {
+          "phase": "after-run2",
+          "seconds": 1.0,
+          "metalPeakGiB": 2.001,
+          "metalEndGiB": 2.001,
+          "footprintPeakGiB": 1.512,
+          "footprintEndGiB": 0.551
+        },
+        {
+          "phase": "release",
+          "seconds": 0,
+          "metalPeakGiB": 2.001,
+          "metalEndGiB": 2.001,
+          "footprintPeakGiB": 0.551,
+          "footprintEndGiB": 0.551
+        },
+        {
+          "phase": "released+0-1s",
+          "seconds": 1.02,
+          "metalPeakGiB": 1.135,
+          "metalEndGiB": 1.135,
+          "footprintPeakGiB": 0.545,
+          "footprintEndGiB": 0.064
+        },
+        {
+          "phase": "released+1-6s",
+          "seconds": 5.01,
+          "metalPeakGiB": 1.135,
+          "metalEndGiB": 0.001,
+          "footprintPeakGiB": 0.064,
+          "footprintEndGiB": 0.064
+        }
+      ],
+      "timelineSHA256": "df05013c60c1205f2f0514e72601d964913e19058719ada3f31c7d49e35e364b"
+    },
+    "fl2vaRender": {
+      "fields": {
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-fl2va",
+        "mode": "render",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7"
+      },
+      "samples": 18532,
+      "sampleIntervalMilliseconds": 20,
+      "metalPeakGiB": 13.801,
+      "footprintPeakGiB": 14.621,
+      "phases": [
+        {
+          "phase": "baseline",
+          "seconds": 1.0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.023,
+          "footprintEndGiB": 0.023
+        },
+        {
+          "phase": "open",
+          "seconds": 0,
+          "metalPeakGiB": 0.0,
+          "metalEndGiB": 0.0,
+          "footprintPeakGiB": 0.023,
+          "footprintEndGiB": 0.023
+        },
+        {
+          "phase": "stage.encoding",
+          "seconds": 20.77,
+          "metalPeakGiB": 1.829,
+          "metalEndGiB": 1.829,
+          "footprintPeakGiB": 2.014,
+          "footprintEndGiB": 2.014
+        },
+        {
+          "phase": "released.encoding",
+          "seconds": 0,
+          "metalPeakGiB": 0.003,
+          "metalEndGiB": 0.003,
+          "footprintPeakGiB": 2.003,
+          "footprintEndGiB": 2.003
+        },
+        {
+          "phase": "stage.encodingKeyframe",
+          "seconds": 4.36,
+          "metalPeakGiB": 2.05,
+          "metalEndGiB": 2.0,
+          "footprintPeakGiB": 1.891,
+          "footprintEndGiB": 1.53
+        },
+        {
+          "phase": "released.encodingKeyframe",
+          "seconds": 0.0,
+          "metalPeakGiB": 1.136,
+          "metalEndGiB": 1.136,
+          "footprintPeakGiB": 1.34,
+          "footprintEndGiB": 1.34
+        },
+        {
+          "phase": "stage.denoising",
+          "seconds": 43.27,
+          "metalPeakGiB": 11.645,
+          "metalEndGiB": 10.973,
+          "footprintPeakGiB": 11.787,
+          "footprintEndGiB": 11.787
+        },
+        {
+          "phase": "stage.denoising.after-step1",
+          "seconds": 43.43,
+          "metalPeakGiB": 13.609,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.428,
+          "footprintEndGiB": 14.428
+        },
+        {
+          "phase": "stage.denoising.after-step2",
+          "seconds": 44.59,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.609,
+          "footprintPeakGiB": 14.621,
+          "footprintEndGiB": 14.429
+        },
+        {
+          "phase": "stage.denoising.after-step3",
+          "seconds": 45.55,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.62,
+          "footprintEndGiB": 14.429
+        },
+        {
+          "phase": "stage.denoising.after-step4",
+          "seconds": 48.34,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.621,
+          "footprintEndGiB": 14.429
+        },
+        {
+          "phase": "stage.denoising.after-step5",
+          "seconds": 48.92,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.621,
+          "footprintEndGiB": 14.429
+        },
+        {
+          "phase": "stage.denoising.after-step6",
+          "seconds": 49.63,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.621,
+          "footprintEndGiB": 14.43
+        },
+        {
+          "phase": "stage.denoising.after-step7",
+          "seconds": 50.72,
+          "metalPeakGiB": 13.801,
+          "metalEndGiB": 13.602,
+          "footprintPeakGiB": 14.621,
+          "footprintEndGiB": 14.43
+        },
+        {
+          "phase": "stage.denoising.after-step8",
+          "seconds": 0.04,
+          "metalPeakGiB": 13.602,
+          "metalEndGiB": 7.252,
+          "footprintPeakGiB": 14.43,
+          "footprintEndGiB": 11.057
+        },
+        {
+          "phase": "released.denoising",
+          "seconds": 0,
+          "metalPeakGiB": 5.777,
+          "metalEndGiB": 5.777,
+          "footprintPeakGiB": 10.834,
+          "footprintEndGiB": 10.834
+        },
+        {
+          "phase": "stage.decodingVideo",
+          "seconds": 36.37,
+          "metalPeakGiB": 5.777,
+          "metalEndGiB": 0.358,
+          "footprintPeakGiB": 10.842,
+          "footprintEndGiB": 1.677
+        },
+        {
+          "phase": "released.decodingVideo",
+          "seconds": 0,
+          "metalPeakGiB": 0.358,
+          "metalEndGiB": 0.358,
+          "footprintPeakGiB": 1.676,
+          "footprintEndGiB": 1.676
+        },
+        {
+          "phase": "stage.decodingAudio",
+          "seconds": 0.7,
+          "metalPeakGiB": 1.0,
+          "metalEndGiB": 0.726,
+          "footprintPeakGiB": 1.868,
+          "footprintEndGiB": 1.514
+        },
+        {
+          "phase": "released.decodingAudio",
+          "seconds": 0,
+          "metalPeakGiB": 0.343,
+          "metalEndGiB": 0.343,
+          "footprintPeakGiB": 0.377,
+          "footprintEndGiB": 0.377
+        },
+        {
+          "phase": "unload",
+          "seconds": 0,
+          "metalPeakGiB": 0.341,
+          "metalEndGiB": 0.341,
+          "footprintPeakGiB": 0.377,
+          "footprintEndGiB": 0.377
+        },
+        {
+          "phase": "unloaded+0-5s",
+          "seconds": 5.02,
+          "metalPeakGiB": 0.341,
+          "metalEndGiB": 0.002,
+          "footprintPeakGiB": 0.377,
+          "footprintEndGiB": 0.094
+        }
+      ],
+      "timelineSHA256": "2fea42748cf0dc2e88f63f91af864f75a7703bfb4c8651644531303426059b26"
+    }
+  },
+  "findings": [
+    "Encoder weights hold 0.20 GiB after load and specialization; no load or compile spike.",
+    "The whole-frame graph unrolls the pipeline tiled encode; its scratch scales about 1.8 GiB per 256 px tile (4 tiles: 7.46 GiB, 15 tiles: 27.26 GiB Metal) and stays reserved while the model is loaded; it is reclaimed 1-6 s after release.",
+    "expectFrequentReshapes does not change memory or output.",
+    "Tiled path: 2.05 GiB Metal / 1.58 GiB footprint peak at both canvases; output bytes identical to the whole-frame graph (same condition SHA-256 at 960x544 and 288x288).",
+    "T2VA peaks in denoising: 10.75 GiB Metal at step 0, 13.49 GiB / 14.28 GiB footprint from step 1 (the two-timestep body specialization adds about 2.7 GiB; follow-up item).",
+    "FL2VA after the fix peaks in denoising too: 13.80 GiB Metal / 14.62 GiB footprint; the keyframe stage peaks at 2.05 GiB."
+  ],
+  "tiledVersusWholeNative": {
+    "canvas960x544": {
+      "whole": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+      "tiled": "9e7d47072f007323be166e08bc1ee937ecc55657525b4c650d8b1368789b60a4",
+      "byteIdentical": true,
+      "relativeL2": 0.0
+    },
+    "canvas288x288": {
+      "whole": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+      "tiled": "9b477f8467e8601a34dc07ca46d7458573b58473d0b3a5e3253b2fbe8b9790f1",
+      "byteIdentical": true,
+      "relativeL2": 0.0
+    }
+  }
+}

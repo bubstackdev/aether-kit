@@ -135,7 +135,11 @@ enum H3MemoryDiagnosis {
         }
         timeline.mark("unload"); await session.unload()
         await idle(timeline, "unloaded+0-5s", 5)
-        try write(output, timeline, extra: ["mode": "render", "dump": dump.path, "profile_sha256": profile.manifestSHA256])
+        try write(output, timeline, extra: ["mode": "render", "dump": dump.path, "profile_sha256": profile.manifestSHA256,
+                                             "execution_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: f["recipe"]!),
+                                             "device_architecture": H3ProfileEngine.deviceArchitecture,
+                                             "width": f["width"]!, "height": f["height"]!, "frames": f["frames"]!,
+                                             "task": manifest.tensors["keyframe"] == nil ? "t2va" : "fl2va"])
         print(output.path)
     }
 }

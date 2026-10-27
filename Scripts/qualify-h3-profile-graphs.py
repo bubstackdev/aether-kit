@@ -91,7 +91,7 @@ def main():
     ap.add_argument("--stop-after", help="stop after this stage")
     args = ap.parse_args()
     root = Path(__file__).resolve().parent.parent
-    probe = root / ".build/arm64-apple-macosx/release/aether-probe"
+    probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     oracle = root / "Scripts/prepare-h3-profile-oracle.py"
     work = args.work.resolve()
     (work / "controllers").mkdir(parents=True, exist_ok=True)
