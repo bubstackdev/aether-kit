@@ -1,0 +1,105 @@
+{
+    "availableMemoryMiBAtStart": 3367.6858825683594,
+    "availableMemoryMiBMinimum": 1303.1220779418945,
+    "bucketProbe": {
+        "availableMiB": 1303.6220779418945,
+        "decoderFrames": 512,
+        "firstSeconds": 1.094427209,
+        "footprintMiB": 2072.3779220581055,
+        "frames": 463,
+        "warmRealTimeFactor": 0.064961717062635,
+        "warmSeconds": 0.751931875
+    },
+    "bundleFingerprint": "2448d84471f8f2722fadc6e16259cf9474668a1a29bc34f32abd53397ed8838e",
+    "cases": [
+        {
+            "bound": 0.029168936342142803,
+            "decoderFrames": 128,
+            "firstSeconds": 5.529891792,
+            "footprintMiB": 257.61165618896484,
+            "frames": 98,
+            "framesMatch": true,
+            "name": "short-af_heart",
+            "native": {
+                "log_mel_max_abs": 0.11464068981894115,
+                "log_mel_mean_abs": 0.0037916685951909657,
+                "max_abs": 0.008192767854779959,
+                "rel_l2": 0.008130584281165547,
+                "snr_db": 41.79756487909441
+            },
+            "passed": true,
+            "refusedAboveCap": false,
+            "tokensMatch": true,
+            "warmRealTimeFactor": 0.07780326530612244,
+            "warmSeconds": 0.190618
+        },
+        {
+            "bound": 0.05,
+            "decoderFrames": 256,
+            "firstSeconds": 0.684703541,
+            "footprintMiB": 660.955680847168,
+            "frames": 180,
+            "framesMatch": true,
+            "name": "speed-bf_emma",
+            "native": {
+                "log_mel_max_abs": 0.2809004359237055,
+                "log_mel_mean_abs": 0.0064956799736943654,
+                "max_abs": 0.03933395445346832,
+                "rel_l2": 0.023294001796865815,
+                "snr_db": 32.65511790727843
+            },
+            "passed": true,
+            "refusedAboveCap": false,
+            "tokensMatch": true,
+            "warmRealTimeFactor": 0.08436644444444445,
+            "warmSeconds": 0.379649
+        },
+        {
+            "bound": 0.05,
+            "decoderFrames": 256,
+            "firstSeconds": 0.382269125,
+            "footprintMiB": 662.096305847168,
+            "frames": 247,
+            "framesMatch": true,
+            "name": "sentence-am_michael",
+            "native": {
+                "log_mel_max_abs": 0.3968784807948834,
+                "log_mel_mean_abs": 0.010944976330869329,
+                "max_abs": 0.02839883416891098,
+                "rel_l2": 0.027714573138913907,
+                "snr_db": 31.14583612085805
+            },
+            "passed": true,
+            "refusedAboveCap": false,
+            "tokensMatch": true,
+            "warmRealTimeFactor": 0.06149610672064777,
+            "warmSeconds": 0.379738459
+        },
+        {
+            "bound": 0,
+            "decoderFrames": 0,
+            "firstSeconds": 0,
+            "footprintMiB": 659.0494537353516,
+            "frames": 913,
+            "framesMatch": false,
+            "name": "long-af_bella",
+            "passed": true,
+            "refusedAboveCap": true,
+            "tokensMatch": true,
+            "warmRealTimeFactor": 0,
+            "warmSeconds": 0
+        }
+    ],
+    "decoderPrecision": "float32",
+    "device": {
+        "memoryGiB": "11.3",
+        "model": "iPhone19,4",
+        "os": "Version 27.1 (Build 24A94425)"
+    },
+    "failures": [],
+    "footprintAfterUnloadMiB": 1117.3145065307617,
+    "footprintPeakMiB": 2136.7529220581055,
+    "frameCap": 512,
+    "loadAndVerifySeconds": 0.106369875,
+    "passed": true
+}

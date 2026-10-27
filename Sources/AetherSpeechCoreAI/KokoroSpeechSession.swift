@@ -164,11 +164,13 @@ private actor BudgetedKokoroModel: KokoroExecutable {
 /// The longest utterance, in frames (600 samples, 25 ms each), a session decodes.
 ///
 /// The decoder's GPU memory grows faster than its length: on the qualification Mac, bucket 1024 adds
-/// about 2.3 GB of Metal allocation and bucket 2048 about 8.3 GB more. `standard` (1024 frames, about
-/// 25.6 s) is the default on every platform; `extended` (2048 frames) is an explicit opt-in. Longer
-/// utterances are refused with an error naming their length and the cap; split the phonemes into
-/// shorter segments instead. Lower caps are allowed, for example on devices with less memory.
+/// about 2.3 GB of Metal allocation and bucket 2048 about 8.3 GB more. Sessions default to
+/// `platformDefault`: `standard` (1024 frames, about 25.6 s) on macOS and `compact` (512 frames, about
+/// 12.8 s) on iOS, where the qualification iPhone's app memory budget (about 3.4 GB) admitted bucket 512
+/// (2.1 GB peak) but not bucket 1024. `extended` (2048 frames) is an explicit opt-in. Longer utterances
+/// are refused with an error naming their length and the cap; split the phonemes into shorter segments.
 public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
+    public static let compact = KokoroFrameCap(checked: 512)
     public static let standard = KokoroFrameCap(checked: 1024)
     public static let extended = KokoroFrameCap(checked: 2048)
     public let frames: Int
@@ -182,6 +184,15 @@ public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
     }
 
     private init(checked frames: Int) { self.frames = frames }
+
+    /// `compact` on iOS, `standard` elsewhere.
+    public static var platformDefault: KokoroFrameCap {
+        #if os(iOS)
+        compact
+        #else
+        standard
+        #endif
+    }
 }
 
 /// Compute preference per graph. `recommended` runs the small duration graph on the CPU and the
@@ -227,7 +238,7 @@ public actor KokoroSpeechSession {
     /// grant before any model work and holds it until its native work has joined. With admission, the request's
     /// operation reservation is taken after the grant, and `unload()` withdraws a request still waiting.
     public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil,
-                gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .standard) {
+                gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault) {
         self.assets = assets
         self.frameCap = frameCap
         self.resources = resources
@@ -238,7 +249,7 @@ public actor KokoroSpeechSession {
     /// Holds installation protection until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: KokoroComputePlacement = .recommended,
                 resources: KokoroResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
-                frameCap: KokoroFrameCap = .standard) throws {
+                frameCap: KokoroFrameCap = .platformDefault) throws {
         assets = try KokoroAssets.open(in: installation)
         self.frameCap = frameCap
         self.resources = resources
@@ -248,7 +259,7 @@ public actor KokoroSpeechSession {
     }
 
     init(assets: KokoroAssets, factory: any KokoroModelFactory, resources: KokoroResourceAdmission? = nil,
-         gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .standard) {
+         gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault) {
         self.assets = assets
         self.frameCap = frameCap
         self.resources = resources

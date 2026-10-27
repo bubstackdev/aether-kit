@@ -1,6 +1,6 @@
 # Kokoro speech synthesis — 2026-10-26
 
-Status: experimental, 0.0.2 checkpoint. AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iOS, quantized or fp16 exports, sub-utterance streaming, and listening review.
+Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see [iPhone](#iphone)). AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iOS, quantized or fp16 exports, sub-utterance streaming, and listening review.
 
 ## Source and license
 
@@ -83,15 +83,16 @@ do {
   - A decorator around the model factory, the same pattern Krea uses, reserves each model's residency before opening it. Failed opens roll back, and the residency is held until joined unload.
   - It also reserves per-call scratch around each native call. Operation bytes are held for the whole request and must cover the retained segment audio.
   - These are caller estimates, not measured memory. Qualified estimates for the real models are not yet published.
-- **Frame cap.** `frameCap: KokoroFrameCap` limits utterance length. The default on every platform is `.standard`: 1024 frames, about 25.6 s. `.extended` (2048 frames) is an explicit opt-in that costs about 8 GB more GPU memory. Lower caps are allowed for devices with less memory. An utterance above the cap is refused before decoding, with an error that gives its frame count and the cap. Split such text into shorter segments. `prewarm()` stops at the cap.
+- **Frame cap.** `frameCap: KokoroFrameCap` limits utterance length. The default is `.platformDefault`: `.standard` (1024 frames, about 25.6 s) on macOS and `.compact` (512 frames, about 12.8 s) on iOS. `.extended` (2048 frames) is an explicit opt-in that costs about 8 GB more GPU memory. Lower caps are allowed for devices with less memory. An utterance above the cap is refused before decoding, with an error that gives its frame count and the cap. Split such text into shorter segments. `prewarm()` stops at the cap.
 - **Shared GPU admission.** `gpu: GPUAdmissionOwner` opts a session into a host-shared `GPUAdmission`, following the Krea and FLUX pattern. Each request is granted before any model work or reservation, and `unload()` withdraws a request still waiting. The opt-in native suites take the shared lease through `nativeGPUGrant()`.
 - **Segment results** are retained in the returned array, at 2.4 KB per frame. A request is limited to `maximumSegments` (256).
 
 ## Compute placement
 
-The default `KokoroComputePlacement.recommended` runs `durations` with `cpuOnly` and `decode` with `preferGPU`. Two framework failures on macOS 27.0.1 / coreai-torch 0.4.2 force this:
+The default `KokoroComputePlacement.recommended` runs `durations` with `cpuOnly` and `decode` with `preferGPU`. Framework findings on macOS 27.0.1 / coreai-torch 0.4.2 force this:
 
 - **`durations` on the GPU aborts** in MPSGraph's `ANERegionFormationPass` ("Region input 1 was not rank-4 or rank-5"), reproduced with `Forge/kokoro/probe_coreai_graph.py`. On the CPU it takes about 30 ms per utterance.
+- **A decoder with float16 compute aborts on the GPU.** MPSGraph places its float16 regions on the Neural Engine, and ANE inference then fails with an assertion. `SpecializationOptions.allowedComputeUnitKinds` is read-only, so an app cannot require the GPU and exclude the Neural Engine. See [Reduced-precision decoders](#reduced-precision-decoders).
 - **The decoder opened with `expectFrequentReshapes: true` on the GPU aborts the process** in CoreAIRuntime ("Cannot make a Tensor.Layout from an unresolved TensorRequirements"); see [this log](evidence/kokoro-gpu-reshape-abort-2026-10-26.log). AetherSpeech therefore sets the reshape hint only for CPU placement.
 
 Without the hint, **each new GPU frame count specializes once**. On an unbucketed decoder that means a 2–6 s stall the first time each utterance length appears, plus memory that never comes back (see the next section). MPSGraph also logs a non-fatal ANE compile failure during each specialization and then falls back. `.uniform(.cpuOnly)` avoids GPU specialization but runs at about 1.3× real time.
@@ -135,7 +136,7 @@ The first masking's cost came from the decomposed two-pass norm statistics and f
 | Metal allocation | 33.9 GB, growing with each length | 13.5 GB with buckets 64–2048, flat within each bucket |
 | After `unload()` | 14.0 GB footprint, 17.6 GB Metal | with bucket 2048 used: footprint 0.33 GB or 8.5 GB (two runs), Metal about 8.2 GB; at or under the 1024 cap: 2.2 GB footprint and 2.1 GB Metal in both of two runs |
 
-Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. The session therefore caps utterances at 1024 frames by default (`KokoroFrameCap.standard`), so bucket 2048 is used only with `frameCap: .extended`, and bucket 4096 never. Size admission estimates for the largest bucket the cap allows, and prewarm only the buckets your utterances need. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
+Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.6 and 2.3 GB for buckets 64 through 1024, and 8.3 GB for bucket 2048 alone. The session therefore caps utterances at 1024 frames by default on macOS and at 512 on iOS (`KokoroFrameCap.platformDefault`). Bucket 2048 is used only with `frameCap: .extended`, and bucket 4096 never. Size admission estimates for the largest bucket the cap allows, and prewarm only the buckets your utterances need. Right after unload, the framework's allocator caches are not returned deterministically, and MPSGraph keeps some per-process Metal allocation past model release.
 
 **Cold first synthesis.** The qualification ran on a bundle exported minutes earlier that had never been specialized, so each bucket's first use was genuinely cold. No shared cache was cleared; Core AI exposes no per-process cache directory. Results:
 
@@ -143,9 +144,31 @@ Metal allocation per bucket grows faster than the bucket size: 0.3, 0.4, 0.6, 1.
 - 1.3 s and 2.5 s for the first use of buckets 256 and 1024;
 - 0.12–0.20 s for later unseen lengths (66, 103 and 146 frames) in warmed buckets.
 
+## iPhone
+
+`Examples/SpeechDevice` is an XcodeGen app, KokoroDeviceProbe. It synthesizes the parity cases on the device and prints one JSON report. To run it:
+
+1. `Forge/kokoro/stage_device_assets.py` copies a trimmed bundle (models plus the four reference voices) and the references into `Assets/`, which is git-ignored.
+2. Build with automatic signing, using only existing provisioning.
+3. `xcrun devicectl device process launch --console` runs the app, and the app is uninstalled afterwards.
+
+The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budget about 3.4 GB) with the float32 bundle and the recommended placement ([record](evidence/kokoro-iphone-2026-10-26.json)):
+
+| Case | Bucket | Rel. L2 (bound) | Log-mel mean | Warm synthesis | Warm RTF |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| short-af_heart | 128 | 0.0081 (0.029) | 0.0038 | 0.19 s | 0.078 |
+| speed-bf_emma | 256 | 0.0233 (0.050) | 0.0065 | 0.38 s | 0.084 |
+| sentence-am_michael | 256 | 0.0277 (0.050) | 0.0109 | 0.38 s | 0.061 |
+| long-af_bella (913 frames) | 1024 | killed by the system with the 1024 cap; refused before decoding with the 512 cap | | | |
+| 463-frame memory probe | 512 | not compared (no reference) | | 0.75 s | 0.065 |
+
+- **Parity and speed.** Frames match exactly and parity holds within the Mac limits, running 12–16× faster than real time. The first utterance takes 5.5 s, including model load and the first specialization; a later bucket's first use takes 0.7–1.1 s.
+- **Memory.** Peak footprint was 2.1 GB with bucket 512 in use, leaving 1.3 GB of the budget. Bucket 1024 exhausted the budget: the app had 2.7 GB available before that case and was killed.
+- **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented. Parity at bucket 512 on the device and other iPhone models remain unverified.
+
 ## Reduced-precision decoders
 
-`export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision`:
+**0.0.2 ships the float32 decoder only.** The `--decoder-precision` export flags are experimental, and every reduced-precision decoder fails qualification. `export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision`:
 
 - `float16`: float16 weights and float16 conv/linear compute;
 - `float16-storage`: float16 weights, widened to float32 for compute;
@@ -227,6 +250,7 @@ Core AI exports are not byte-reproducible, so a new export gets new model hashes
 
 ## Next steps
 
+- iPhone parity at bucket 512 (with a reference case in that range), other device models, and whether the increased-memory-limit entitlement admits bucket 1024.
 - A reduced-precision decoder that passes: for example, float16 storage limited to the large generator convolutions, or quantization-aware calibration against the references.
 - Reduce bucket 2048's Metal allocation, or drop that bucket by capping segment length; consider a fixed-window streaming decoder for long utterances.
 - Retest GPU `durations` and the reshape hint on later OS/coreai-torch releases.

@@ -1,0 +1,16 @@
+App installed:
+KOKORO_DEVICE_PROGRESS verified bundle footprint=17MiB peak=18MiB available=3359MiB
+KOKORO_DEVICE_PROGRESS start short-af_heart frames=98 footprint=17MiB peak=18MiB available=3359MiB
+KOKORO_DEVICE_PROGRESS first short-af_heart 5.53s footprint=208MiB peak=277MiB available=3168MiB
+KOKORO_DEVICE_PROGRESS done short-af_heart passed=true warm=0.191s footprint=258MiB peak=293MiB available=3118MiB
+KOKORO_DEVICE_PROGRESS start speed-bf_emma frames=180 footprint=258MiB peak=293MiB available=3118MiB
+KOKORO_DEVICE_PROGRESS first speed-bf_emma 0.68s footprint=654MiB peak=704MiB available=2722MiB
+KOKORO_DEVICE_PROGRESS done speed-bf_emma passed=true warm=0.380s footprint=661MiB peak=711MiB available=2715MiB
+KOKORO_DEVICE_PROGRESS start sentence-am_michael frames=247 footprint=661MiB peak=711MiB available=2715MiB
+KOKORO_DEVICE_PROGRESS first sentence-am_michael 0.38s footprint=682MiB peak=715MiB available=2694MiB
+KOKORO_DEVICE_PROGRESS done sentence-am_michael passed=true warm=0.380s footprint=662MiB peak=716MiB available=2714MiB
+KOKORO_DEVICE_PROGRESS start long-af_bella frames=913 footprint=662MiB peak=716MiB available=2714MiB
+KOKORO_DEVICE_PROGRESS start bucket probe footprint=659MiB peak=716MiB available=2717MiB
+KOKORO_DEVICE_PROGRESS done bucket probe frames=463 footprint=2072MiB peak=2137MiB available=1304MiB
+The app terminated with the exit code 0.
+App uninstalled.

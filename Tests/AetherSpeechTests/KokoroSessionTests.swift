@@ -334,7 +334,8 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     let bundle = try FakeBundle.make(maximumFrames: 4096, decoderBuckets: [64, 1024, 2048, 4096])
     defer { bundle.remove() }
     let assets = try KokoroAssets.open(at: bundle.root)
-    #expect(KokoroFrameCap.standard.frames == 1024 && KokoroFrameCap.extended.frames == 2048)
+    #expect(KokoroFrameCap.compact.frames == 512 && KokoroFrameCap.standard.frames == 1024 && KokoroFrameCap.extended.frames == 2048)
+    #expect(KokoroFrameCap.platformDefault == .standard)  // these tests run on macOS; iOS defaults to .compact
     #expect(throws: AetherError.self) { try KokoroFrameCap(frames: 4096) }
     #expect(throws: AetherError.self) { try KokoroFrameCap(frames: 1) }
     let long = String(repeating: "ə", count: 340)  // 342 tokens x 4 frames = 1368 frames
