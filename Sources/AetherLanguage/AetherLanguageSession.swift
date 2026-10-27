@@ -1,4 +1,5 @@
 import AetherLanguageRuntime
+import Foundation
 import os
 
 /// A conversation with an ``AetherLanguageModel``, in FoundationModels' shape: instructions, then `respond(to:)` or
@@ -47,6 +48,24 @@ public actor AetherLanguageSession {
         try await run(prompt, options: options) { _ in }
     }
 
+    /// A reply decoded into `type`: generation is constrained to JSON matching `Content.generationSchema`, so it
+    /// decodes unless it reaches the output limit first (``AetherLanguageError/decodingFailure(_:)``). A schema the
+    /// constraint doesn't support is refused (``AetherLanguageError/unsupportedSchema(_:)``). With
+    /// `includeSchemaInPrompt` (the default, as in FoundationModels), the schema is also described to the model in the
+    /// system message. The transcript keeps the reply's JSON.
+    public func respond<Content: AetherGenerable>(to prompt: String, generating type: Content.Type = Content.self,
+                                                  includeSchemaInPrompt: Bool = true,
+                                                  options: AetherGenerationOptions = .init()) async throws -> Response<Content> {
+        let structured = LanguageStructuredOutput(schema: Content.generationSchema, includeSchemaInPrompt: includeSchemaInPrompt)
+        let (reply, commit) = try await generate(prompt, options: options, structured: structured) { _ in }
+        let content: Content
+        do { content = try JSONDecoder().decode(Content.self, from: Data(reply.content.utf8)) }
+        catch { throw AetherLanguageError.decodingFailure("\(reply.stopReason == .outputLimit ? "the reply reached the output limit; " : "")\(error)") }
+        return Response(content: content, reasoning: options.reasoning == .on ? reply.reasoning : nil, stopReason: reply.stopReason,
+                        seed: reply.seed, usage: Usage(promptTokens: reply.promptTokens, outputTokens: reply.outputTokens),
+                        transcriptEntries: commit())
+    }
+
     /// The reply as it's generated: each snapshot carries the cumulative text, which only ever grows by whole
     /// characters, and what's new since the snapshot this iteration last saw. Snapshots coalesce when the consumer is
     /// slower than the model, without losing text. Iterate once; stopping early cancels the request.
@@ -68,12 +87,23 @@ public actor AetherLanguageSession {
 
     private func run(_ prompt: String, options: AetherGenerationOptions,
                      onText: @escaping @Sendable (_ cumulative: (content: String, reasoning: String)) -> Void) async throws -> Response<String> {
+        let (reply, commit) = try await generate(prompt, options: options, structured: nil, onText: onText)
+        return Response(content: reply.content, reasoning: options.reasoning == .on ? reply.reasoning : nil, stopReason: reply.stopReason,
+                        seed: reply.seed, usage: Usage(promptTokens: reply.promptTokens, outputTokens: reply.outputTokens),
+                        transcriptEntries: commit())
+    }
+
+    /// One turn: the reply, and a commit that adds the turn to the transcript (called once the reply is accepted, so a
+    /// reply that fails to decode isn't kept either).
+    private func generate(_ prompt: String, options: AetherGenerationOptions, structured: LanguageStructuredOutput?,
+                          onText: @escaping @Sendable (_ cumulative: (content: String, reasoning: String)) -> Void)
+        async throws -> (LanguageEngineReply, commit: () -> [AetherTranscript.Entry]) {
         guard !isResponding else { throw AetherLanguageError.busy }
         isResponding = true
         defer { isResponding = false }
         let messages = AetherTranscript(entries: transcript.entries + [.prompt(prompt)]).messages
         let cumulative = OSAllocatedUnfairLock(initialState: (content: "", reasoning: ""))
-        let reply = try await model.generate(messages: messages, options: options) { delta, _ in
+        let reply = try await model.generate(messages: messages, options: options, structured: structured) { delta, _ in
             let text = cumulative.withLock { text in
                 text.content += delta.content
                 text.reasoning += delta.reasoning
@@ -83,10 +113,7 @@ public actor AetherLanguageSession {
         }
         let entries: [AetherTranscript.Entry] = [.prompt(prompt)] + (reply.reasoning.isEmpty ? [] : [.reasoning(reply.reasoning)])
             + [.response(reply.content)]
-        transcript.entries += entries
-        return Response(content: reply.content, reasoning: options.reasoning == .on ? reply.reasoning : nil, stopReason: reply.stopReason,
-                        seed: reply.seed, usage: Usage(promptTokens: reply.promptTokens, outputTokens: reply.outputTokens),
-                        transcriptEntries: entries)
+        return (reply, { self.transcript.entries += entries; return entries })
     }
 }
 

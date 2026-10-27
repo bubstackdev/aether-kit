@@ -12,14 +12,17 @@ import FoundationModels
 ///
 /// The same engine as ``AetherLanguageSession`` renders the transcript with the model's own template, generates with
 /// the requested sampling (greedy unless the request opts in), and streams UTF-8-safe text, and the model's thinking
-/// when a `reasoningLevel` asks for it. Tool calling, attachments and guided generation (`@Generable`) aren't declared
-/// yet, so FoundationModels refuses those requests itself.
+/// when a `reasoningLevel` asks for it. Guided generation (`@Generable`) is constrained by the same JSON-schema
+/// constraint as ``AetherLanguageSession/respond(to:generating:includeSchemaInPrompt:options:)``: FoundationModels hands
+/// over the type's schema and decodes the JSON. A schema outside the supported subset (a regex guide, for example) is
+/// refused with `LanguageModelError.unsupportedGenerationGuide`. Tool calling and attachments aren't declared, so
+/// FoundationModels refuses those requests itself.
 @available(macOS 27, iOS 27, *)
 extension AetherLanguageModel: LanguageModel {
     public typealias Executor = AetherLanguageExecutor
 
     public var capabilities: LanguageModelCapabilities {
-        LanguageModelCapabilities(supportsReasoning ? [.reasoning] : [])
+        LanguageModelCapabilities(supportsReasoning ? [.guidedGeneration, .reasoning] : [.guidedGeneration])
     }
 
     public var executorConfiguration: AetherLanguageExecutor.Configuration { .init(model: self) }
@@ -41,14 +44,23 @@ public struct AetherLanguageExecutor: LanguageModelExecutor {
     public func respond(to request: LanguageModelExecutorGenerationRequest, model: AetherLanguageModel,
                         streamingInto channel: LanguageModelExecutorGenerationChannel) async throws {
         let options = Self.options(request.generationOptions, request.contextOptions, supportsReasoning: model.supportsReasoning)
+        var structured: LanguageStructuredOutput?
+        if let schema = request.schema {
+            structured = LanguageStructuredOutput(schema: try AetherGenerationSchema(json: try JSONEncoder().encode(schema)),
+                                                  includeSchemaInPrompt: request.contextOptions.includeSchemaInPrompt ?? true)
+        }
         let reply: LanguageEngineReply
         do {
-            reply = try await model.generate(messages: try Self.messages(request.transcript), options: options) { delta, tokens in
+            reply = try await model.generate(messages: try Self.messages(request.transcript), options: options,
+                                             structured: structured) { delta, tokens in
                 if !delta.reasoning.isEmpty {
                     await channel.send(.reasoning(action: .appendText(delta.reasoning, tokenCount: delta.content.isEmpty ? tokens : 0)))
                 }
                 if !delta.content.isEmpty { await channel.send(.response(action: .appendText(delta.content, tokenCount: tokens))) }
             }
+        } catch AetherLanguageError.unsupportedSchema(let reason) {
+            throw LanguageModelError.unsupportedGenerationGuide(.init(schemaName: structured?.schema.name,
+                                                                       debugDescription: "The schema isn't supported: \(reason)"))
         } catch AetherLanguageError.contextWindowExceeded(let prompt, let output, let limit) {
             throw LanguageModelError.contextSizeExceeded(.init(contextSize: limit, tokenCount: prompt + output,
                 debugDescription: "The prompt (\(prompt) tokens) and output limit (\(output)) exceed the model's context (\(limit))"))
