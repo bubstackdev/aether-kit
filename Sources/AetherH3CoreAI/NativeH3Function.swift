@@ -1,7 +1,7 @@
 import AetherKit
 import AetherH3
 import AetherCoreAI
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import Metal
 
@@ -12,7 +12,7 @@ actor NativeH3Function {
     private let model: AIModel
     private let function: InferenceFunction
     private let descriptor: ModelFunctionDescription
-    private let stream: ComputeStream
+    private let stream: SerialComputeStream
     private let device: any MTLDevice
     private var inputs: [String: any MTLBuffer] = [:]
     private var outputs: [String: any MTLBuffer] = [:]
@@ -27,7 +27,7 @@ actor NativeH3Function {
         guard let description = model.functionDescriptor(for: asset.function),
               let function = try model.loadFunction(named: asset.function) else { throw AetherError.invalidModel("missing H3 runtime function") }
         self.model = model; self.function = function; self.descriptor = ModelFunctionDescription(description)
-        self.device = device; self.stream = ComputeStream()
+        self.device = device; self.stream = SerialComputeStream()
     }
     func run(inputs data: [String: H3TensorData], outputs specs: [String: H3TensorSpec],
              observer: (@Sendable (H3BlockEvent) -> Void)? = nil) async throws -> [String: H3TensorData] {
@@ -55,17 +55,16 @@ actor NativeH3Function {
             (name, InferenceFunction.AsyncValue(unsafeBuffer: inputs[name]!, scalarType: tensor.spec.scalarType.native, shape: tensor.spec.shape))
         })
         let names = specs.keys.sorted(), first = names[0], firstSpec = specs[first]!
-        let stream = self.stream
         do {
             var a = InferenceFunction.AsyncMutableValue(unsafeBuffer: outputs[first]!, scalarType: firstSpec.scalarType.native, shape: firstSpec.shape)
             if names.count == 2 {
                 let second = names[1], secondSpec = specs[second]!
                 var b = InferenceFunction.AsyncMutableValue(unsafeBuffer: outputs[second]!, scalarType: secondSpec.scalarType.native, shape: secondSpec.shape)
                 var views = InferenceFunction.AsyncMutableViews(); views.insert(&a, for: first); views.insert(&b, for: second)
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             } else {
                 var views = InferenceFunction.AsyncMutableViews(); views.insert(&a, for: first)
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             }
         } catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }
         observer?(.nativeSubmitted); await stream.currentWorkCompleted(); observer?(.nativeCompleted)

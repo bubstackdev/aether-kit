@@ -1,7 +1,7 @@
 import AetherKit
 import AetherH3
 import AetherCoreAI
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import Metal
 
@@ -17,7 +17,7 @@ actor NativeH3PhaseBackend: H3PhaseBackend {
     private let function: InferenceFunction
     private let inputs: [Binding]
     private let outputs: [Binding]
-    private let stream: ComputeStream
+    private let stream: SerialComputeStream
     private let observer: (@Sendable (H3BlockEvent) -> Void)?
     static func open(_ probe: H3PhaseProbePlan.Case,
                      observer: (@Sendable (H3BlockEvent) -> Void)?) async throws -> NativeH3PhaseBackend {
@@ -61,17 +61,16 @@ actor NativeH3PhaseBackend: H3PhaseBackend {
             outputs.append(Binding(name: file.name, buffer: buffer, spec: file.spec))
         }
         self.model = model; self.function = function; self.inputs = inputs; self.outputs = outputs
-        self.stream = ComputeStream(); self.observer = observer
+        self.stream = SerialComputeStream(); self.observer = observer
     }
     func run() async throws -> [String: H3TensorData] {
         try Task.checkCancellation()
         let values = Dictionary(uniqueKeysWithValues: inputs.map {
             ($0.name, InferenceFunction.AsyncValue(unsafeBuffer: $0.buffer, scalarType: $0.spec.scalarType.native, shape: $0.spec.shape))
         })
-        // The opaque SDK stream is not Sendable. This compatibility import is
-        // confined here; the session retains admission and buffers until joined
-        // completion, even after cancellation or a partial encode failure.
-        let stream = self.stream
+        // The session retains admission and buffers until joined completion,
+        // even after cancellation or a partial encode failure (the rule
+        // `SerialComputeStream` relies on).
         do {
             let first = outputs[0]
             var a = InferenceFunction.AsyncMutableValue(unsafeBuffer: first.buffer, scalarType: first.spec.scalarType.native, shape: first.spec.shape)
@@ -80,11 +79,11 @@ actor NativeH3PhaseBackend: H3PhaseBackend {
                 var b = InferenceFunction.AsyncMutableValue(unsafeBuffer: second.buffer, scalarType: second.spec.scalarType.native, shape: second.spec.shape)
                 var views = InferenceFunction.AsyncMutableViews()
                 views.insert(&a, for: first.name); views.insert(&b, for: second.name)
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             } else {
                 var views = InferenceFunction.AsyncMutableViews()
                 views.insert(&a, for: first.name)
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             }
         }
         catch { await stream.currentWorkCompleted(); observer?(.nativeCompleted); throw error }

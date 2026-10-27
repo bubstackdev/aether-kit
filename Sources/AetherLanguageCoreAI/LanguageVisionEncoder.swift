@@ -1,4 +1,4 @@
-@preconcurrency import CoreAI
+import CoreAI
 import AetherCoreAI
 import AetherKit
 import AetherVision
@@ -52,7 +52,7 @@ public actor LanguageVisionEncoder {
 
     private var model: AIModel?
     private var functions: [Qwen3VLImagePreprocessor.Grid: InferenceFunction] = [:]
-    private var stream: ComputeStream?
+    private var stream: SerialComputeStream?
     private let configuration: Configuration
     private let rowLength: Int
     private let hiddenSize: Int
@@ -104,7 +104,7 @@ public actor LanguageVisionEncoder {
         }
         self.model = model
         self.functions = functions
-        self.stream = ComputeStream(commandQueue: queue)
+        self.stream = SerialComputeStream(commandQueue: queue)
         self.configuration = configuration
         self.rowLength = layout.row
         self.hiddenSize = layout.hidden
@@ -134,7 +134,7 @@ public actor LanguageVisionEncoder {
         ]
         let outputs: [String: InferenceFunction.AsyncValue]
         do {
-            outputs = try function.encode(inputs: inputs, states: InferenceFunction.AsyncMutableViews(), to: stream)
+            outputs = try stream.encode(function, inputs: inputs)
         } catch {
             await stream.currentWorkCompleted()
             throw error
