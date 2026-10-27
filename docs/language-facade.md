@@ -1,6 +1,6 @@
 # AetherLanguage text facade
 
-Status: design, 2026-10-27. Nothing here is implemented yet. This is the third piece of the 0.0.3 app-facing language
+Status: design approved, 2026-10-27, with the decisions below ([Decided](#decided)); implementation in progress. This is the third piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)). It builds on the
 [runtime seam](language-runtime-seam.md) (`AetherLanguageRuntime`) and on `AetherLanguageTokenizers`. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -307,8 +307,8 @@ The executor:
   assistant messages, and reasoning entries are skipped. When `contextOptions.includeSchemaInPrompt` is true, the
   schema's JSON goes into the system message.
 - **Maps the options:** `generationOptions` through the table above, and `contextOptions.reasoningLevel` to
-  `reasoning: .on` when it's set and the model supports it. The three levels aren't distinguished, because the model has
-  one switch.
+  `reasoning: .on` when it's set and the model supports it; no level means the bundle's default. The three levels
+  aren't distinguished, because the model has one switch.
 - **Streams** response and reasoning text through the channel as `.response(.appendText(delta, tokenCount:))` and
   `.reasoning(.appendText(…))`, using the same UTF-8-safe deltas. When the reply ends, it sends `updateUsage` (prompt and
   output token counts).
@@ -409,18 +409,21 @@ Each commit builds and passes `Scripts/check-cpu.sh`. GPU checks run under `with
 Then the structured-output piece: the JSON automaton and the constraint, `.guidedGeneration` in the adapter, the
 facade's `generating:` API, and the macro if the user wants it.
 
-## Questions for the user and the lead
+## Decided
 
-- **The adapter's place in 0.0.3.** It gives the two apps the cheapest switch on OS 27: `LanguageModelSession` and
-  `@Generable` stay as they are. Kit's own facade covers older OSes only once an older-OS backend exists. Should 0.0.3
-  ship both, as planned above, with the adapter as the recommended path on OS 27? Or should it ship the adapter only,
-  and defer the native facade to the MLX go/no-go?
-- **Kit's own `@Generable` macro.** Through the adapter, OS 27 apps use FoundationModels' macro. Kit's macro, and its
-  swift-syntax dependency, matter only for the native facade, and so only below OS 27, once there's a backend there.
-  Should it be deferred to that point, with 0.0.3's native structured output taking hand-written `AetherGenerable`
-  schemas?
-- **Which item replaces `AetherKit`'s `Mutex`:** the facade (commit 1) or the deployment-floor work.
-- **Reasoning levels.** FoundationModels has light, moderate and deep; Qwen3 has on and off. Mapping any level to on is
-  the proposal.
-- **The default output limit.** What's left of the context, capped at 4,096, is the proposal. FoundationModels leaves it
-  to the system.
+The user answered the first two on 2026-10-27; the rest are the lead's.
+
+1. **Both surfaces ship in 0.0.3:** the native `AetherLanguage` facade, which links on macOS 14 and iOS 17, and the
+   `AetherLanguageFoundationModels` adapter, the recommended path on OS 27, over one engine.
+2. **Kit's own `@Generable`-style macro ships in 0.0.3** with the swift-syntax dependency, in the structured-output piece
+   after the seven commits above. `AetherGenerable` stays macro-friendly: the macro generates the static schema, and its
+   JSON Schema output matches what FoundationModels' `@Generable` emits (the probe's record shows the shape), so one
+   constraint serves both surfaces.
+3. **Reasoning levels:** any FoundationModels `reasoningLevel` means thinking on; no level means the bundle's default
+   (off for every registration today).
+4. **Default output limit:** the remaining context, capped at 4,096 tokens, and always overridable with
+   `maximumResponseTokens`.
+5. **`AetherKit`'s `Mutex`** is replaced in commit 1 with `OSAllocatedUnfairLock`, as a mechanical swap with the existing
+   tests unchanged (`GPUAdmission` and `SharedGPULease` are lease-critical). The rest of the floor work (package
+   platforms, availability on the Core AI targets, the weak `CoreAI` link, the macOS 14 launch check) comes after the
+   decoder rework lands, because it touches every target.
