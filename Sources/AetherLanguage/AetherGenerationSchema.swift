@@ -218,6 +218,7 @@ extension AetherGenerationGuide {
     public static func maximumCount<Element>(_ count: Int) -> Self where Value == [Element] {
         setting([("maxItems", .number(Double(count)))])
     }
+
     /// Applies `guide` to every element.
     public static func element<Element>(_ guide: AetherGenerationGuide<Element>) -> Self where Value == [Element] {
         Self { node, definitions in
@@ -227,6 +228,16 @@ extension AetherGenerationGuide {
             node = .object(array)
         }
     }
+}
+
+// So an `@AetherGuide(.count(…))` attribute type-checks without its property's element type, as FoundationModels'
+// `@Guide` does: the attribute resolves to `[Never]`. `@AetherGenerable` copies the guides into code where the element
+// type is known, so these are never applied.
+extension AetherGenerationGuide where Value == [Never] {
+    @_documentation(visibility: private) public static func count(_ count: Int) -> Self { Self { _, _ in } }
+    @_documentation(visibility: private) public static func count(_ range: ClosedRange<Int>) -> Self { Self { _, _ in } }
+    @_documentation(visibility: private) public static func minimumCount(_ count: Int) -> Self { Self { _, _ in } }
+    @_documentation(visibility: private) public static func maximumCount(_ count: Int) -> Self { Self { _, _ in } }
 }
 
 extension String: AetherGenerable { public static var generationSchema: AetherGenerationSchema { .primitive("string") } }
@@ -281,4 +292,13 @@ package enum JSONValue: Sendable, Hashable, Codable {
         object[key] = value
         return .object(object)
     }
+}
+
+/// A coding key from a string, for the decoders `@AetherGenerable` writes for enums with associated values.
+public struct AetherGenerableCodingKey: CodingKey, ExpressibleByStringLiteral, Sendable {
+    public let stringValue: String
+    public var intValue: Int? { nil }
+    public init(stringValue: String) { self.stringValue = stringValue }
+    public init?(intValue: Int) { nil }
+    public init(stringLiteral value: String) { stringValue = value }
 }
