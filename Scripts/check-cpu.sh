@@ -6,4 +6,4 @@ cd "$(dirname "$0")/.."
 for name in $(env | sed -n 's/^\(AETHER_[A-Z0-9_]*\)=.*/\1/p'); do
     case "$name" in AETHER_BUILD_SYSTEM) ;; *) unset "$name" ;; esac
 done
-exec sh Scripts/check.sh
+exec sh Scripts/check.sh "$@"
