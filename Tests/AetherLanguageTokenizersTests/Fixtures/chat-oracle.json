@@ -1,0 +1,1331 @@
+{
+ "schemaVersion": 1,
+ "generator": "Forge/language/reference_chat_tokens.py",
+ "environment": {
+  "python": "3.12.14",
+  "transformers": "4.57.3",
+  "tokenizers": "0.22.2"
+ },
+ "models": [
+  {
+   "repository": "Qwen/Qwen3-0.6B",
+   "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+   "vision": false,
+   "cases": [
+    {
+     "name": "user-only",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "A lighthouse keeper's cat at dusk."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nA lighthouse keeper's cat at dusk.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      32,
+      326,
+      57909,
+      53416,
+      594,
+      8251,
+      518,
+      92885,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      151667,
+      271,
+      151668,
+      271
+     ]
+    },
+    {
+     "name": "system-and-user",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters for an image generator."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Field: look\nCurrent: silver braid, amber eyes"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters for an image generator.<|im_end|>\n<|im_start|>user\nField: look\nCurrent: silver braid, amber eyes<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      369,
+      458,
+      2168,
+      13823,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      1877,
+      25,
+      1401,
+      198,
+      5405,
+      25,
+      14961,
+      293,
+      13831,
+      11,
+      67605,
+      6414,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      151667,
+      271,
+      151668,
+      271
+     ]
+    },
+    {
+     "name": "unicode-and-newlines",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Café crème — naïve résumé 🌙\n\n  indented line\ttab"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nCafé crème — naïve résumé 🌙\n\n  indented line\ttab<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      34,
+      2577,
+      963,
+      1560,
+      24267,
+      1959,
+      94880,
+      586,
+      9333,
+      1242,
+      963,
+      11162,
+      234,
+      247,
+      271,
+      220,
+      1257,
+      15864,
+      1555,
+      58149,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      151667,
+      271,
+      151668,
+      271
+     ]
+    },
+    {
+     "name": "multi-turn",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "Answer in one line."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Name a colour."
+        }
+       ]
+      },
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "text": "Teal."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Another."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nAnswer in one line.<|im_end|>\n<|im_start|>user\nName a colour.<|im_end|>\n<|im_start|>assistant\nTeal.<|im_end|>\n<|im_start|>user\nAnother.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      16141,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      675,
+      264,
+      12463,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      6639,
+      278,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      14037,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      151667,
+      271,
+      151668,
+      271
+     ]
+    },
+    {
+     "name": "thinking-on",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Count to three."
+        }
+       ]
+      }
+     ],
+     "thinking": true,
+     "text": "<|im_start|>user\nCount to three.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      2507,
+      311,
+      2326,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    }
+   ],
+   "decode": {
+    "tokenIDs": [
+     52343,
+     293,
+     13831,
+     11,
+     67605,
+     6414,
+     11,
+     264,
+     9104,
+     291,
+     6303,
+     22875,
+     1959,
+     19300,
+     13,
+     11162,
+     234,
+     247,
+     151645
+    ],
+    "text": "Silver braid, amber eyes, a weathered blue coat — calm. 🌙"
+   }
+  },
+  {
+   "repository": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+   "revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+   "vision": false,
+   "cases": [
+    {
+     "name": "user-only",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "A lighthouse keeper's cat at dusk."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nA lighthouse keeper's cat at dusk.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      32,
+      326,
+      57909,
+      53416,
+      594,
+      8251,
+      518,
+      92885,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "system-and-user",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters for an image generator."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Field: look\nCurrent: silver braid, amber eyes"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters for an image generator.<|im_end|>\n<|im_start|>user\nField: look\nCurrent: silver braid, amber eyes<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      369,
+      458,
+      2168,
+      13823,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      1877,
+      25,
+      1401,
+      198,
+      5405,
+      25,
+      14961,
+      293,
+      13831,
+      11,
+      67605,
+      6414,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "unicode-and-newlines",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Café crème — naïve résumé 🌙\n\n  indented line\ttab"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nCafé crème — naïve résumé 🌙\n\n  indented line\ttab<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      34,
+      2577,
+      963,
+      1560,
+      24267,
+      1959,
+      94880,
+      586,
+      9333,
+      1242,
+      963,
+      11162,
+      234,
+      247,
+      271,
+      220,
+      1257,
+      15864,
+      1555,
+      58149,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "multi-turn",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "Answer in one line."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Name a colour."
+        }
+       ]
+      },
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "text": "Teal."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Another."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nAnswer in one line.<|im_end|>\n<|im_start|>user\nName a colour.<|im_end|>\n<|im_start|>assistant\nTeal.<|im_end|>\n<|im_start|>user\nAnother.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      16141,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      675,
+      264,
+      12463,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      6639,
+      278,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      14037,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "thinking-on",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Count to three."
+        }
+       ]
+      }
+     ],
+     "thinking": true,
+     "text": "<|im_start|>user\nCount to three.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      2507,
+      311,
+      2326,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    }
+   ],
+   "decode": {
+    "tokenIDs": [
+     52343,
+     293,
+     13831,
+     11,
+     67605,
+     6414,
+     11,
+     264,
+     9104,
+     291,
+     6303,
+     22875,
+     1959,
+     19300,
+     13,
+     11162,
+     234,
+     247,
+     151645
+    ],
+    "text": "Silver braid, amber eyes, a weathered blue coat — calm. 🌙"
+   }
+  },
+  {
+   "repository": "Qwen/Qwen3-VL-2B-Instruct",
+   "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+   "vision": true,
+   "cases": [
+    {
+     "name": "user-only",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "A lighthouse keeper's cat at dusk."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nA lighthouse keeper's cat at dusk.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      32,
+      326,
+      57909,
+      53416,
+      594,
+      8251,
+      518,
+      92885,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "system-and-user",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters for an image generator."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Field: look\nCurrent: silver braid, amber eyes"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters for an image generator.<|im_end|>\n<|im_start|>user\nField: look\nCurrent: silver braid, amber eyes<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      369,
+      458,
+      2168,
+      13823,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      1877,
+      25,
+      1401,
+      198,
+      5405,
+      25,
+      14961,
+      293,
+      13831,
+      11,
+      67605,
+      6414,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "unicode-and-newlines",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Café crème — naïve résumé 🌙\n\n  indented line\ttab"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nCafé crème — naïve résumé 🌙\n\n  indented line\ttab<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      34,
+      2577,
+      963,
+      1560,
+      24267,
+      1959,
+      94880,
+      586,
+      9333,
+      1242,
+      963,
+      11162,
+      234,
+      247,
+      271,
+      220,
+      1257,
+      15864,
+      1555,
+      58149,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "multi-turn",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "Answer in one line."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Name a colour."
+        }
+       ]
+      },
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "text": "Teal."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Another."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nAnswer in one line.<|im_end|>\n<|im_start|>user\nName a colour.<|im_end|>\n<|im_start|>assistant\nTeal.<|im_end|>\n<|im_start|>user\nAnother.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      16141,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      675,
+      264,
+      12463,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      6639,
+      278,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      14037,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "thinking-on",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Count to three."
+        }
+       ]
+      }
+     ],
+     "thinking": true,
+     "text": "<|im_start|>user\nCount to three.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      2507,
+      311,
+      2326,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "one-image-first",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "image": true
+        },
+        {
+         "text": "Describe her look in one line."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>Describe her look in one line.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      151652,
+      151655,
+      151653,
+      74785,
+      1059,
+      1401,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "two-images-after-text",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Describe the outfit."
+        },
+        {
+         "image": true
+        },
+        {
+         "image": true
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters.<|im_end|>\n<|im_start|>user\nDescribe the outfit.<|vision_start|><|image_pad|><|vision_end|><|vision_start|><|image_pad|><|vision_end|><|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      74785,
+      279,
+      27303,
+      13,
+      151652,
+      151655,
+      151653,
+      151652,
+      151655,
+      151653,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    }
+   ],
+   "decode": {
+    "tokenIDs": [
+     52343,
+     293,
+     13831,
+     11,
+     67605,
+     6414,
+     11,
+     264,
+     9104,
+     291,
+     6303,
+     22875,
+     1959,
+     19300,
+     13,
+     11162,
+     234,
+     247,
+     151645
+    ],
+    "text": "Silver braid, amber eyes, a weathered blue coat — calm. 🌙"
+   }
+  },
+  {
+   "repository": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+   "revision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+   "vision": true,
+   "cases": [
+    {
+     "name": "user-only",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "A lighthouse keeper's cat at dusk."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nA lighthouse keeper's cat at dusk.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      32,
+      326,
+      57909,
+      53416,
+      594,
+      8251,
+      518,
+      92885,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "system-and-user",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters for an image generator."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Field: look\nCurrent: silver braid, amber eyes"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters for an image generator.<|im_end|>\n<|im_start|>user\nField: look\nCurrent: silver braid, amber eyes<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      369,
+      458,
+      2168,
+      13823,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      1877,
+      25,
+      1401,
+      198,
+      5405,
+      25,
+      14961,
+      293,
+      13831,
+      11,
+      67605,
+      6414,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "unicode-and-newlines",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Café crème — naïve résumé 🌙\n\n  indented line\ttab"
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\nCafé crème — naïve résumé 🌙\n\n  indented line\ttab<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      34,
+      2577,
+      963,
+      1560,
+      24267,
+      1959,
+      94880,
+      586,
+      9333,
+      1242,
+      963,
+      11162,
+      234,
+      247,
+      271,
+      220,
+      1257,
+      15864,
+      1555,
+      58149,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "multi-turn",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "Answer in one line."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Name a colour."
+        }
+       ]
+      },
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "text": "Teal."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Another."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nAnswer in one line.<|im_end|>\n<|im_start|>user\nName a colour.<|im_end|>\n<|im_start|>assistant\nTeal.<|im_end|>\n<|im_start|>user\nAnother.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      16141,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      675,
+      264,
+      12463,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198,
+      6639,
+      278,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      14037,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "thinking-on",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Count to three."
+        }
+       ]
+      }
+     ],
+     "thinking": true,
+     "text": "<|im_start|>user\nCount to three.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      2507,
+      311,
+      2326,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "one-image-first",
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "image": true
+        },
+        {
+         "text": "Describe her look in one line."
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>Describe her look in one line.<|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      872,
+      198,
+      151652,
+      151655,
+      151653,
+      74785,
+      1059,
+      1401,
+      304,
+      825,
+      1555,
+      13,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    },
+    {
+     "name": "two-images-after-text",
+     "messages": [
+      {
+       "role": "system",
+       "parts": [
+        {
+         "text": "You describe fictional adult characters."
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "parts": [
+        {
+         "text": "Describe the outfit."
+        },
+        {
+         "image": true
+        },
+        {
+         "image": true
+        }
+       ]
+      }
+     ],
+     "thinking": false,
+     "text": "<|im_start|>system\nYou describe fictional adult characters.<|im_end|>\n<|im_start|>user\nDescribe the outfit.<|vision_start|><|image_pad|><|vision_end|><|vision_start|><|image_pad|><|vision_end|><|im_end|>\n<|im_start|>assistant\n",
+     "tokenIDs": [
+      151644,
+      8948,
+      198,
+      2610,
+      7512,
+      43582,
+      6683,
+      5766,
+      13,
+      151645,
+      198,
+      151644,
+      872,
+      198,
+      74785,
+      279,
+      27303,
+      13,
+      151652,
+      151655,
+      151653,
+      151652,
+      151655,
+      151653,
+      151645,
+      198,
+      151644,
+      77091,
+      198
+     ]
+    }
+   ],
+   "decode": {
+    "tokenIDs": [
+     52343,
+     293,
+     13831,
+     11,
+     67605,
+     6414,
+     11,
+     264,
+     9104,
+     291,
+     6303,
+     22875,
+     1959,
+     19300,
+     13,
+     11162,
+     234,
+     247,
+     151645
+    ],
+    "text": "Silver braid, amber eyes, a weathered blue coat — calm. 🌙"
+   }
+  }
+ ]
+}

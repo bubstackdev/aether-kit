@@ -20,6 +20,10 @@ public struct LanguageModelManifest: Codable, Sendable {
     /// The shape bounds the asset was exported with. Required to open a bucketed-contract asset,
     /// whose submissions must stay inside them; optional for running-contract assets.
     public let exportBounds: LanguageExportBounds?
+    /// SHA-256 of every file in the tokenizer directory by relative path, as the exporters record them
+    /// (`tree_hashes`). When present, `verifyTokenizer` requires the directory to hold exactly these files with
+    /// these hashes, so the chat template and special-token maps are covered, not only `tokenizer.json`.
+    public let tokenizerFiles: [String: String]?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
@@ -39,6 +43,52 @@ public struct LanguageModelManifest: Codable, Sendable {
             throw AetherError.invalidModel("language model or tokenizer checksum mismatch")
         }
         return model
+    }
+    /// Verifies the registration and the tokenizer, returning the tokenizer directory. For tokenizer-only consumers
+    /// (`AetherLanguageTokenizers`): it neither hashes the model asset nor checks the platform. `tokenizer.json` is
+    /// always checked; with `tokenizerFiles`, the directory must hold exactly those files with those hashes (the
+    /// chat template included). Without it, other tokenizer files are unverified.
+    public func verifyTokenizer(in directory: URL) throws -> URL {
+        guard schemaVersion == 1, Self.hex(sourceRevision, count: 40), Self.hex(tokenizerSHA256, count: 64),
+              !sourceRepository.isEmpty, tokenizerFiles.map({ !$0.isEmpty && $0.values.allSatisfy { Self.hex($0, count: 64) } }) ?? true
+        else { throw AetherError.invalidModel("invalid language model registration") }
+        let tokenizer = try Self.child(tokenizerDirectory, of: directory)
+        guard try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
+            throw AetherError.invalidModel("language tokenizer checksum mismatch")
+        }
+        if let tokenizerFiles {
+            guard tokenizerFiles["tokenizer.json"] == tokenizerSHA256 else {
+                throw AetherError.invalidModel("tokenizer file list disagrees with tokenizerSHA256")
+            }
+            let present = try Self.regularFiles(in: tokenizer)
+            guard present == Set(tokenizerFiles.keys) else {
+                throw AetherError.invalidModel("tokenizer directory files differ from the registration")
+            }
+            for (path, hash) in tokenizerFiles where path != "tokenizer.json" {
+                guard try Self.fileHash(Self.child(path, of: tokenizer)) == hash else {
+                    throw AetherError.invalidModel("language tokenizer file \(path) checksum mismatch")
+                }
+            }
+        }
+        return tokenizer
+    }
+
+    /// Relative paths of every regular file under `directory`; a link or other non-regular entry refuses.
+    private static func regularFiles(in directory: URL) throws -> Set<String> {
+        let base = directory.standardizedFileURL.resolvingSymlinksInPath().path + "/"
+        guard let walk = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey]) else {
+            throw AetherError.invalidModel("tokenizer directory unreadable")
+        }
+        var files = Set<String>()
+        for case let url as URL in walk {
+            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
+            if values.isDirectory == true { continue }
+            guard values.isRegularFile == true else { throw AetherError.invalidModel("tokenizer directory holds a non-regular entry") }
+            let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+            guard path.hasPrefix(base) else { throw AetherError.invalidModel("tokenizer path escapes its directory") }
+            files.insert(String(path.dropFirst(base.count)))
+        }
+        return files
     }
     public static func fileHash(_ url: URL) throws -> String {
         let file = try FileHandle(forReadingFrom: url)

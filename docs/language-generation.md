@@ -39,6 +39,49 @@ falls back to another device. GPU preference is a Core AI specialization prefere
 actual processor placement remains controlled by Core AI. Tokenization and template
 rendering remain explicit consumer responsibilities in this first product.
 
+## Tokenizer and chat template
+
+`AetherLanguageTokenizers` renders a chat with the model's own template, so callers no longer hand-build prompts:
+
+```swift
+import AetherLanguageTokenizers
+
+let tokenizer = try await LanguageTokenizer.open(bundle: localBundleURL)   // verifies tokenizer.json
+let prompt = try tokenizer.render([
+    .system("You describe fictional adult characters for an image generator."),
+    .user("Describe her look in one line.", images: 1),                      // one placeholder, before the text
+], thinking: false)
+// Text only: session.generate(prompt: prompt.tokenIDs, ...)
+// With images: visionSession.generate(renderedTokenIDs: prompt.tokenIDs, images: photos, ...)
+//              (prompt.imageCount images, in message order)
+let text = tokenizer.decode(reply.tokens)                                     // special tokens dropped
+```
+
+- **The model's template, not a copy.** Exactness against upstream is verified for Qwen3-family templates (below);
+  others render through swift-jinja unverified. A hybrid Qwen3 renders its empty think block when `thinking` is false, an
+  instruct-only Qwen3 (2507) renders none, and Qwen3-VL renders `<|vision_start|><|image_pad|><|vision_end|>` per
+  image. Placeholders stay unexpanded: the vision session expands them to the image's token count, so the image
+  grid has one owner.
+- **Sources.** The template is read like the swift-transformers loader (`chat_template.jinja`, then
+  `chat_template.json`, then `tokenizer_config.json`). Upstream renders with Jinja's `keep_trailing_newline=False`,
+  dropping one trailing newline from the template source; swift-jinja keeps it (a stray `\n` after Qwen3-VL's
+  generation prompt), so the kit drops it.
+- **Local only, verified.** `open(directory:)` reads a snapshot or export folder; `open(bundle:)` runs
+  `LanguageModelManifest.verifyTokenizer(in:)` before and after loading. It always checks `tokenizer.json`; when the
+  registration lists `tokenizerFiles` (every tokenizer file's SHA-256, as the exporters record), the directory must
+  hold exactly those files, so a swapped chat template or special-token map is refused. The model asset isn't
+  hashed. Nothing is downloaded. The Qwen3 exporter now copies the template files with the tokenizer.
+- **One text part per text-only message.** It renders as the template's plain string content. Messages with images
+  render as typed parts, each text part separately.
+- **Decode whole replies.** One token from `generate(onToken:)` can be part of a multi-byte character; decode the
+  whole reply or a growing prefix.
+- **Qualification.** `Forge/language/reference_chat_tokens.py` records upstream Transformers' `apply_chat_template`
+  for pinned snapshots of Qwen/Qwen3-0.6B, huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated,
+  Qwen/Qwen3-VL-2B-Instruct and huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated (Apache-2.0): text-only, system, multi-turn, Unicode, thinking on and
+  image placeholders before and after text. With `AETHER_LANGUAGE_TOKENIZER_HUB` set to a hub cache holding
+  them, all 24 cases match token for token, as does the decode check. Qwen3's thinking-off render equals FLUX.2's
+  `Flux2Prompt.render`, so FLUX can delegate to this product without changing a token.
+
 ## State and ownership
 
 Each actor admits one request; overlap fails. Submitted work is joined before
