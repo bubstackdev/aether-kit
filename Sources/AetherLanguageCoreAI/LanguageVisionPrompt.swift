@@ -138,9 +138,44 @@ struct LanguagePromptPlan {
         }
     }
 
-    /// Prefill submissions: text runs in the contract's prefill chunks (bucketed: one fixed width, the last chunk
-    /// stepping back within the run), each image span as one image submission (an image never straddles
-    /// submissions).
+    /// Prefill submissions for a decoder that takes image rows in `main` (one-function assets): the whole prompt in
+    /// the contract's prefill chunks, as for a text prompt, image tokens included. Each chunk carries the rows of its
+    /// own image tokens (``alignedImageRows(offset:count:images:hiddenSize:levels:)``), so an image may straddle
+    /// chunks and a stepping-back chunk carries its rewritten image rows again. Image spans then add no input
+    /// shapes of their own: Core AI retains memory on every shape change of a function.
+    func uniformSubmissions(contract: LanguageStepContract, requestedChunk: Int?, maximumChunk: Int?) -> [LanguagePrefillChunk] {
+        contract.prefillChunks(promptCount: ids.count, requestedChunk: requestedChunk, maximumChunk: maximumChunk)
+    }
+
+    /// Image rows aligned with the tokens `offset..<offset + count`: row i is token offset + i's image row (image
+    /// embeddings [count, hidden], DeepStack [levels, count, hidden], row-major) and zero for text tokens. Nil when
+    /// the range holds no image token.
+    func alignedImageRows(offset: Int, count: Int, images: [LanguageImageFeatures], hiddenSize: Int,
+                          levels: Int) -> (embeddings: [Float16], deepstack: [Float16])? {
+        let end = offset + count
+        let touching = spans.filter { $0.start < end && $0.start + $0.count > offset }
+        guard !touching.isEmpty else { return nil }
+        var embeddings = [Float16](repeating: 0, count: count * hiddenSize)
+        var deepstack = [Float16](repeating: 0, count: levels * count * hiddenSize)
+        for span in touching {
+            let image = images[span.image]
+            for token in max(offset, span.start)..<min(end, span.start + span.count) {
+                let row = token - span.start, slot = token - offset
+                embeddings.replaceSubrange(slot * hiddenSize..<(slot + 1) * hiddenSize,
+                                           with: image.embeddings[row * hiddenSize..<(row + 1) * hiddenSize])
+                for level in 0..<levels {
+                    let source = (level * image.tokenCount + row) * hiddenSize
+                    let target = (level * count + slot) * hiddenSize
+                    deepstack.replaceSubrange(target..<target + hiddenSize, with: image.deepstack[source..<source + hiddenSize])
+                }
+            }
+        }
+        return (embeddings, deepstack)
+    }
+
+    /// Prefill submissions for a 0.0.2 two-function decoder: text runs in the contract's prefill chunks (bucketed:
+    /// one fixed width, the last chunk stepping back within the run), each image span as one `withImage`
+    /// submission (an image never straddles submissions).
     func submissions(contract: LanguageStepContract, requestedChunk: Int?, maximumChunk: Int?) -> [(start: Int, count: Int, image: Int?)] {
         var out: [(start: Int, count: Int, image: Int?)] = []
         var cursor = 0

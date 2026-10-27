@@ -77,7 +77,7 @@ def main() -> None:
         "kind": "qwen3-vl-image-text-qualification",
         "passed": all(n["passed"] for n in natives.values()),
         "model": model,
-        "bundle": {"directory": str(b), "manifestSHA256": sha256(b / "language-model.json"), "manifest": manifest,
+        "bundle": {"directory": b.name, "manifestSHA256": sha256(b / "language-model.json"), "manifest": manifest,
                    "textExport": {"recipe": text_export["recipe"], "versions": text_export["versions"],
                                   "selfCheck": text_export["selfCheck"], "modelFiles": text_export["modelFiles"]},
                    "visionExport": {"recipe": vision_export["recipe"], "imageGrids": vision_export.get("imageGrids"),

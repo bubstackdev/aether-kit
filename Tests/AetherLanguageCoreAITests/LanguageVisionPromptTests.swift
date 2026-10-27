@@ -78,4 +78,41 @@ struct LanguageVisionPromptTests {
         #expect(submissions.map(\.start) == [0, 8, 12, 20, 36])
         #expect(submissions.last.map { $0.start + $0.count } == plan.ids.count)
     }
+
+    /// A one-function decoder prefills the whole prompt in uniform chunks; each chunk's image rows are its own image
+    /// tokens' rows, zero for text, including a chunk that straddles the image's edge or steps back into it.
+    @Test func uniformChunksCarryAlignedImageRows() throws {
+        let hidden = 3, levels = 2, count = 16                  // grid 8x8, merge 2: 16 tokens
+        let embeddings = (0..<(count * hidden)).map { Float16($0 + 1) }
+        let deepstack = (0..<(levels * count * hidden)).map { Float16(1000 + $0) }
+        let image = try LanguageImageFeatures(grid: (1, 8, 8), mergeSize: 2, hiddenSize: hidden, deepstackLevels: levels,
+                                              embeddings: embeddings, deepstack: deepstack)
+        let rendered = Array(1...19) + [tokens.visionStart, tokens.imagePad, tokens.visionEnd] + Array(30...34)
+        let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: [image]), tokens: tokens)
+        // 42 tokens in width 8: five chunks, then the last one stepping back to 34.
+        let chunks = plan.uniformSubmissions(contract: .bucketedPositions, requestedChunk: 8, maximumChunk: 512)
+        #expect(chunks.map(\.offset) == [0, 8, 16, 24, 32, 34])
+        #expect(chunks.allSatisfy { $0.count == 8 })
+        #expect(plan.alignedImageRows(offset: 0, count: 8, images: [image], hiddenSize: hidden, levels: levels) == nil)
+        for chunk in chunks {
+            guard let rows = plan.alignedImageRows(offset: chunk.offset, count: chunk.count, images: [image],
+                                                   hiddenSize: hidden, levels: levels) else {
+                #expect(!(chunk.offset..<chunk.offset + chunk.count).contains { plan.ids[$0] == tokens.imagePad })
+                continue
+            }
+            for slot in 0..<chunk.count {
+                let token = chunk.offset + slot
+                let row = token - 20                             // the image starts after 19 text tokens and vision start
+                let inImage = (0..<count).contains(row)
+                #expect((plan.ids[token] == tokens.imagePad) == inImage)
+                for h in 0..<hidden {
+                    #expect(rows.embeddings[slot * hidden + h] == (inImage ? embeddings[row * hidden + h] : 0))
+                    for level in 0..<levels {
+                        #expect(rows.deepstack[(level * chunk.count + slot) * hidden + h]
+                                == (inImage ? deepstack[(level * count + row) * hidden + h] : 0))
+                    }
+                }
+            }
+        }
+    }
 }

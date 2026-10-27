@@ -255,9 +255,9 @@ public actor LanguageGenerationSession {
     }
 
     /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
-    /// placeholder expands to its tokens, which go to the decoder in one image submission (through
-    /// `main` for a one-function asset, `withImage` for a 0.0.2 one);
-    /// text runs use the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
+    /// placeholder expands to its tokens. A one-function asset prefills the whole prompt in the bucketed
+    /// chunks, image tokens carrying their rows; a 0.0.2 asset sends each image in one `withImage`
+    /// submission and text runs in the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
     /// Not grid-restricted: any image span up to the exported image chunk is accepted. Only
     /// ``VisionLanguageSession`` limits images to the registration's fixed grids.
     public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
@@ -315,6 +315,18 @@ public actor LanguageGenerationSession {
     private func prefill(_ plan: LanguagePromptPlan, images: [LanguageImageFeatures], chunkSize: Int?,
                          observer: Observer?) async throws -> [Float] {
         var last: [Float] = []
+        if let imageRows {
+            // One function: uniform chunks over the whole prompt, each carrying its image tokens' rows.
+            guard images.allSatisfy({ $0.hiddenSize == imageRows.hiddenSize && $0.deepstackLevels == imageRows.levels })
+            else { throw LanguageGenerationError.invalid("Image features do not match the decoder") }
+            for chunk in plan.uniformSubmissions(contract: contract, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+                let tokens = plan.ids[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init)
+                let rows = plan.alignedImageRows(offset: chunk.offset, count: chunk.count, images: images,
+                                                 hiddenSize: imageRows.hiddenSize, levels: imageRows.levels)
+                last = try await step(tokens: tokens, position: chunk.offset, observer: observer, rows: rows)
+            }
+            return last
+        }
         for submission in plan.submissions(contract: contract, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
             let tokens = plan.ids[submission.start..<(submission.start + submission.count)].map(Int32.init)
             last = try await step(tokens: tokens, position: submission.start, observer: observer,
@@ -450,7 +462,10 @@ public actor LanguageGenerationSession {
         return out
     }
 
-    private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil) async throws -> [Float] {
+    /// `image`: a 0.0.2 `withImage` submission (exactly one image's span). `rows`: a one-function asset's image rows
+    /// aligned with `tokens`; nil sends zero rows.
+    private func step(tokens: [Int32], position: Int, observer: Observer?, image: LanguageImageFeatures? = nil,
+                      rows: (embeddings: [Float16], deepstack: [Float16])? = nil) async throws -> [Float] {
         try Task.checkCancellation()
         // A bucketed prefill's last chunk may step back over rows it rewrites (the graph attends only to rows before
         // the chunk), but must reach the materialized end.
@@ -482,15 +497,18 @@ public actor LanguageGenerationSession {
                                                                              shape: [3, tokens.count]))
         }
         if let image {
-            // An image submission is exactly the image's span, so its rows are aligned with the tokens for either layout.
-            guard image.tokenCount == tokens.count else { throw LanguageGenerationError.invalid("Image span does not match its features") }
-            if let imageRows {
-                guard image.hiddenSize == imageRows.hiddenSize, image.deepstackLevels == imageRows.levels
-                else { throw LanguageGenerationError.invalid("Image features do not match the decoder") }
-            }
+            guard imageRows == nil, image.tokenCount == tokens.count
+            else { throw LanguageGenerationError.invalid("Image span does not match its features") }
             inputs["image_embeds"] = InferenceFunction.AsyncValue(NDArray(scalars: image.embeddings, shape: [image.tokenCount, image.hiddenSize]))
             inputs["deepstack"] = InferenceFunction.AsyncValue(NDArray(scalars: image.deepstack,
                                                                       shape: [image.deepstackLevels, image.tokenCount, image.hiddenSize]))
+        } else if let imageRows, let rows {
+            guard rows.embeddings.count == tokens.count * imageRows.hiddenSize,
+                  rows.deepstack.count == imageRows.levels * tokens.count * imageRows.hiddenSize
+            else { throw LanguageGenerationError.invalid("Image rows do not match the submission") }
+            inputs["image_embeds"] = InferenceFunction.AsyncValue(NDArray(scalars: rows.embeddings, shape: [tokens.count, imageRows.hiddenSize]))
+            inputs["deepstack"] = InferenceFunction.AsyncValue(NDArray(scalars: rows.deepstack,
+                                                                      shape: [imageRows.levels, tokens.count, imageRows.hiddenSize]))
         } else if let imageRows {
             let zeros = zeroRows(count: tokens.count, layout: imageRows)
             inputs["image_embeds"] = InferenceFunction.AsyncValue(zeros.rows)
