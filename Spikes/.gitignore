@@ -1,0 +1,9 @@
+# Throwaway spike outputs: keep JSON summaries and logs, not raw tensors or builds.
+*.logits
+*.npy
+*.aimodel
+.build/
+*.obj
+*.usdz
+# Raw per-run reports and profiler captures (run_rounds.sh, profile.sh); the committed summaries sit in results/.
+hybrid-state/results/*/

@@ -1,0 +1,43 @@
+# Output of summarize_profile.py over the Core AI runtime profiler captures (results/profile/*.jsonl, 12 steps each
+# except ref-main 6, from profile_decode.py under the GPU lock). The raw event files are not committed.
+# static-kernel-main is the first custom-kernel build (round 5), which produced NaNs; static-kernel2-main is the
+# corrected build (round 6). ref-decode and ref-main ran on the Python runtime, which re-infers types every call.
+ref-decode.jsonl wall per call median 3905.660 ms
+   Compute Stream Wait          median 0.816 ms  (n=11)
+   Function Encode              median 1977.000 ms  (n=11)
+   Function Type Inference      median 1965.772 ms  (n=11)
+   call.!MPSGraph               median 0.013 ms  (n=11)
+   call.#MPSGraph               median 1965.668 ms  (n=11)
+   call.MPSGraph                median 1976.887 ms  (n=11)
+ref-main.jsonl
+   Compute Stream Wait          median 0.161 ms  (n=5)
+   Function Encode              median 2230.666 ms  (n=5)
+   Function Type Inference      median 2340.477 ms  (n=5)
+   call.!MPSGraph               median 0.014 ms  (n=5)
+   call.#MPSGraph               median 2340.380 ms  (n=5)
+   call.MPSGraph                median 2230.564 ms  (n=5)
+static-full-main.jsonl wall per call median 9.662 ms
+   Compute Stream Wait          median 0.121 ms  (n=11)
+   Function Encode              median 9.252 ms  (n=11)
+   call.!MPSGraph               median 0.103 ms  (n=11)
+   call.MPSGraph                median 9.031 ms  (n=11)
+static-kernel-main.jsonl wall per call median 5.317 ms
+   Compute Stream Wait          median 1.407 ms  (n=11)
+   Function Encode              median 3.609 ms  (n=11)
+   call.!MPSGraph               median 0.073 ms  (n=11)
+   call.MPSGraph                median 3.499 ms  (n=11)
+static-kernel2-main.jsonl wall per call median 5.816 ms
+   Compute Stream Wait          median 0.782 ms  (n=11)
+   Function Encode              median 4.761 ms  (n=11)
+   call.!MPSGraph               median 0.090 ms  (n=11)
+   call.MPSGraph                median 4.610 ms  (n=11)
+static-lean-main.jsonl wall per call median 6.919 ms
+   Compute Stream Wait          median 1.084 ms  (n=11)
+   Function Encode              median 5.491 ms  (n=11)
+   call.!MPSGraph               median 0.083 ms  (n=11)
+   call.MPSGraph                median 5.335 ms  (n=11)
+static-nomamba-main.jsonl wall per call median 5.041 ms
+   Compute Stream Wait          median 2.529 ms  (n=11)
+   Function Encode              median 2.114 ms  (n=11)
+   call.!MPSGraph               median 0.093 ms  (n=11)
+   call.MPSGraph                median 1.936 ms  (n=11)

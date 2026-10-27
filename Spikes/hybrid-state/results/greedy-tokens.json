@@ -1,0 +1,582 @@
+{
+ "note": "Derived from the per-run harness reports in round1..round6/ (not committed). referenceTokens is ref:decode's greedy run (prompt results/prompt.txt, then argmax per step; the first token comes from the last prompt step). Each run lists its generated length and whether its tokens equal ref:decode's from the same round, or the first index where they differ. nomamba variants drop the Mamba mixers by design.",
+ "referenceTokens": [574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255, 1139, 41021, 11, 1855, 27800, 555, 264, 45103, 295, 269, 13, 578, 32447, 574, 18255],
+ "rounds": {
+  "round1": {
+   "fp16state-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 10.407
+   },
+   "fp16state-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 10.243
+   },
+   "nobarrier-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.472
+   },
+   "nobarrier-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 10.279
+   },
+   "nomamba-main-r1": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.453
+   },
+   "nomamba-main-r2": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.802
+   },
+   "ref-decode-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.362
+   },
+   "ref-decode-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 10.86
+   },
+   "ref-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.249
+   },
+   "ref-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.829
+   },
+   "split-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.002
+   },
+   "split-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 10.543
+   },
+   "staticq-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 10.84
+   },
+   "staticq-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 10.577
+   }
+  },
+  "round2": {
+   "fp16state-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 9.024
+   },
+   "fp16state-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 10.829
+   },
+   "fp16state-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 13.179
+   },
+   "fp16state-main-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 15505408,
+    "warmMedianMs": 13.832
+   },
+   "nobarrier-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.998
+   },
+   "nobarrier-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.962
+   },
+   "nobarrier-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 12.841
+   },
+   "nobarrier-main-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 13.033
+   },
+   "nomamba-main-r1": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.068
+   },
+   "nomamba-main-r2": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.089
+   },
+   "nomamba-main-r3": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 4.659
+   },
+   "nomamba-main-r4": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.908
+   },
+   "ref-decode-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.355
+   },
+   "ref-decode-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.386
+   },
+   "ref-decode-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.463
+   },
+   "ref-decode-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.977
+   },
+   "ref-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.087
+   },
+   "ref-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.41
+   },
+   "ref-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 13.336
+   },
+   "ref-main-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 17.938
+   },
+   "split-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.644
+   },
+   "split-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.863
+   },
+   "split-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 14.613
+   },
+   "split-main-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 18.137
+   },
+   "staticq-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.894
+   },
+   "staticq-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 9.086
+   },
+   "staticq-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 12.534
+   },
+   "staticq-main-r4": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 12.83
+   }
+  },
+  "round3": {
+   "nomamba-main-r1": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.543
+   },
+   "nomamba-main-r2": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.702
+   },
+   "nomamba-main-r3": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.927
+   },
+   "ref-decode-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.077
+   },
+   "ref-decode-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.219
+   },
+   "ref-decode-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 11.049
+   },
+   "static-full-main-r1": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.546
+   },
+   "static-full-main-r2": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.776
+   },
+   "static-full-main-r3": {
+    "generated": 129,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.399
+   },
+   "static-nomamba-main-r1": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.004
+   },
+   "static-nomamba-main-r2": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.941
+   },
+   "static-nomamba-main-r3": {
+    "generated": 129,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.819
+   }
+  },
+  "round4": {
+   "ref-decode-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 7.93
+   },
+   "ref-decode-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.121
+   },
+   "ref-decode-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.387
+   },
+   "static-full-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.183
+   },
+   "static-full-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 6.187
+   },
+   "static-full-main-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 6.72
+   },
+   "static-lean-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.189
+   },
+   "static-lean-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.328
+   },
+   "static-lean-main-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.769
+   },
+   "static-nomamba-main-r1": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.857
+   },
+   "static-nomamba-main-r2": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.444
+   },
+   "static-nomamba-main-r3": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 3.521
+   }
+  },
+  "round5": {
+   "ref-decode-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 7.573
+   },
+   "ref-decode-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.301
+   },
+   "ref-decode-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.32
+   },
+   "static-kernel-main-r1": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.195
+   },
+   "static-kernel-main-r2": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.327
+   },
+   "static-kernel-main-r3": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.484
+   },
+   "static-lean-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.489
+   },
+   "static-lean-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.05
+   },
+   "static-lean-main-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.028
+   },
+   "static-nomamba-main-r1": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.431
+   },
+   "static-nomamba-main-r2": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.656
+   },
+   "static-nomamba-main-r3": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.401
+   }
+  },
+  "round6": {
+   "ref-decode-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.471
+   },
+   "ref-decode-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.339
+   },
+   "ref-decode-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 8.259
+   },
+   "static-kernel-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 4.973
+   },
+   "static-kernel-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.014
+   },
+   "static-kernel-main-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 4.983
+   },
+   "static-lean-main-r1": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.218
+   },
+   "static-lean-main-r2": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.497
+   },
+   "static-lean-main-r3": {
+    "generated": 257,
+    "matchesReference": true,
+    "stateBytes": 26515456,
+    "warmMedianMs": 5.224
+   },
+   "static-nomamba-main-r1": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.559
+   },
+   "static-nomamba-main-r2": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.51
+   },
+   "static-nomamba-main-r3": {
+    "generated": 257,
+    "matchesReference": false,
+    "firstDifference": 0,
+    "stateBytes": 4194304,
+    "warmMedianMs": 2.452
+   }
+  }
+ }
+}

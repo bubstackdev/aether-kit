@@ -1,0 +1,41 @@
+{
+ "tag": "fp16",
+ "res": 256,
+ "loadSeconds": 2.3658133330754936,
+ "sceneSeconds": {
+  "first": 0.6355079999193549,
+  "warmMedian": 0.060624292003922164
+ },
+ "sceneCodesRelErr": 0.0012373255939221815,
+ "sceneCodesCosine": 0.9999997126583544,
+ "fieldDensityRelErr": 0.011476344545551562,
+ "fieldColorMaxErr": 0.0770108699798584,
+ "gridSeconds": 2.074462292017415,
+ "gridPoints": 16777216,
+ "marchingCubesSeconds": 0.17230945802293718,
+ "vertexColorSeconds": 0.023340457933954895,
+ "objExportSeconds": 0.21161516604479402,
+ "mesh": {
+  "vertices": 99424,
+  "faces": 198844,
+  "watertight": false,
+  "bounds": [
+   [
+    -0.498425710503043,
+    -0.5013551818383276,
+    -0.4862884250474383
+   ],
+   [
+    0.4993548529219206,
+    0.5009437409841321,
+    0.49373320580264635
+   ]
+  ]
+ },
+ "gridDensityRelErr": 0.01376896934243024,
+ "occupancyIoU": 0.9989895745006705,
+ "refMesh": {
+  "vertices": 99454,
+  "faces": 198904
+ }
+}

@@ -1,0 +1,173 @@
+{
+ "ref-decode-r1": {
+  "minCosine": 0.9999984502792358,
+  "maxAbs": 0.05027961730957031,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 126.10074920238124,
+  "warmMedianMs": 7.930167,
+  "warmP90Ms": 8.349957999999999,
+  "loadSeconds": 0.767860917
+ },
+ "ref-decode-r2": {
+  "minCosine": 0.9999984502792358,
+  "maxAbs": 0.05027961730957031,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 123.13818148055933,
+  "warmMedianMs": 8.120958,
+  "warmP90Ms": 8.576167000000002,
+  "loadSeconds": 0.148856542
+ },
+ "ref-decode-r3": {
+  "minCosine": 0.9999984502792358,
+  "maxAbs": 0.05027961730957031,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 119.23036797472315,
+  "warmMedianMs": 8.387125000000001,
+  "warmP90Ms": 9.40125,
+  "loadSeconds": 0.150034042
+ },
+ "static-full-main-r1": {
+  "minCosine": 0.999995231628418,
+  "maxAbs": 0.07046890258789062,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 122.20083707573397,
+  "warmMedianMs": 8.18325,
+  "warmP90Ms": 8.494916,
+  "loadSeconds": 0.873084417
+ },
+ "static-full-main-r2": {
+  "minCosine": 0.999995231628418,
+  "maxAbs": 0.07046890258789062,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 161.64118824377172,
+  "warmMedianMs": 6.186541999999999,
+  "warmP90Ms": 6.544584,
+  "loadSeconds": 0.185544416
+ },
+ "static-full-main-r3": {
+  "minCosine": 0.999995231628418,
+  "maxAbs": 0.07046890258789062,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 148.81875854498708,
+  "warmMedianMs": 6.719583,
+  "warmP90Ms": 7.25,
+  "loadSeconds": 0.181273375
+ },
+ "static-lean-main-r1": {
+  "minCosine": 0.9999979734420776,
+  "maxAbs": 0.058109283447265625,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 192.7091573657198,
+  "warmMedianMs": 5.189166999999999,
+  "warmP90Ms": 5.6587499999999995,
+  "loadSeconds": 1.285299959
+ },
+ "static-lean-main-r2": {
+  "minCosine": 0.9999979734420776,
+  "maxAbs": 0.058109283447265625,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 187.69649476796022,
+  "warmMedianMs": 5.32775,
+  "warmP90Ms": 5.755875,
+  "loadSeconds": 0.165393084
+ },
+ "static-lean-main-r3": {
+  "minCosine": 0.9999979734420776,
+  "maxAbs": 0.058109283447265625,
+  "argmaxAgree": "16/16",
+  "disagreeMargins": [],
+  "tokPerSecMedian": 173.3302318777176,
+  "warmMedianMs": 5.769334,
+  "warmP90Ms": 6.400042,
+  "loadSeconds": 0.175575208
+ },
+ "static-nomamba-main-r1": {
+  "minCosine": -0.3184260427951813,
+  "maxAbs": 39.55132293701172,
+  "argmaxAgree": "0/16",
+  "disagreeMargins": [
+   2.2466087341308594,
+   1.6958999633789062,
+   0.02910614013671875,
+   0.3979530334472656,
+   0.4126148223876953,
+   0.4393501281738281,
+   0.2794914245605469,
+   0.5557594299316406,
+   0.13206863403320312,
+   0.2801647186279297,
+   0.11882781982421875,
+   0.00897216796875,
+   0.9434051513671875,
+   0.43546295166015625,
+   0.5141716003417969,
+   0.6553535461425781
+  ],
+  "tokPerSecMedian": 350.0787677227376,
+  "warmMedianMs": 2.8565,
+  "warmP90Ms": 3.027,
+  "loadSeconds": 0.642477916
+ },
+ "static-nomamba-main-r2": {
+  "minCosine": -0.3184260427951813,
+  "maxAbs": 39.55132293701172,
+  "argmaxAgree": "0/16",
+  "disagreeMargins": [
+   2.2466087341308594,
+   1.6958999633789062,
+   0.02910614013671875,
+   0.3979530334472656,
+   0.4126148223876953,
+   0.4393501281738281,
+   0.2794914245605469,
+   0.5557594299316406,
+   0.13206863403320312,
+   0.2801647186279297,
+   0.11882781982421875,
+   0.00897216796875,
+   0.9434051513671875,
+   0.43546295166015625,
+   0.5141716003417969,
+   0.6553535461425781
+  ],
+  "tokPerSecMedian": 409.2351272700784,
+  "warmMedianMs": 2.443583,
+  "warmP90Ms": 2.559,
+  "loadSeconds": 0.111383583
+ },
+ "static-nomamba-main-r3": {
+  "minCosine": -0.3184260427951813,
+  "maxAbs": 39.55132293701172,
+  "argmaxAgree": "0/16",
+  "disagreeMargins": [
+   2.2466087341308594,
+   1.6958999633789062,
+   0.02910614013671875,
+   0.3979530334472656,
+   0.4126148223876953,
+   0.4393501281738281,
+   0.2794914245605469,
+   0.5557594299316406,
+   0.13206863403320312,
+   0.2801647186279297,
+   0.11882781982421875,
+   0.00897216796875,
+   0.9434051513671875,
+   0.43546295166015625,
+   0.5141716003417969,
+   0.6553535461425781
+  ],
+  "tokPerSecMedian": 284.0404757677969,
+  "warmMedianMs": 3.520625,
+  "warmP90Ms": 3.9474590000000003,
+  "loadSeconds": 0.116037666
+ }
+}

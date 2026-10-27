@@ -1,0 +1,19 @@
+# /usr/bin/time -l for run_triposr.py --res 256 --tag fp16 (excerpt of the shared TripoSR + ACE-Step lock hold's log).
+        7.93 real         2.68 user         1.32 sys
+          3461840896  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              366039  page reclaims
+              258972  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                 265  messages sent
+                 265  messages received
+                   0  signals received
+                1302  voluntary context switches
+               34455  involuntary context switches
+         49759822813  instructions retired
+         16099834039  cycles elapsed
+          1736313808  peak memory footprint

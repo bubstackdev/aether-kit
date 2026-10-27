@@ -1,0 +1,16 @@
+ref.aimodel decode: load 0.80s prefill 2.000s decode median 8.362 ms (119.6 tok/s) mean 117.8 tok/s p90 8.888 ms
+ref.aimodel main: load 0.16s prefill 0.807s decode median 9.249 ms (108.1 tok/s) mean 105.6 tok/s p90 10.143 ms
+nomamba.aimodel main: load 1.39s prefill 0.452s decode median 2.453 ms (407.7 tok/s) mean 405.7 tok/s p90 2.554 ms
+split.aimodel main: load 6.59s prefill 0.531s decode median 8.002 ms (125.0 tok/s) mean 124.3 tok/s p90 8.280 ms
+nobarrier.aimodel main: load 6.27s prefill 0.526s decode median 8.472 ms (118.0 tok/s) mean 111.6 tok/s p90 10.576 ms
+fp16state.aimodel main: load 6.16s prefill 1.177s decode median 10.407 ms (96.1 tok/s) mean 93.9 tok/s p90 12.251 ms
+  FAILED: Input has no defining op (block argument)
+  FAILED: Input has no defining op (block argument)
+staticq.aimodel main: load 2.69s prefill 1.095s decode median 10.840 ms (92.2 tok/s) mean 90.3 tok/s p90 12.922 ms
+staticq.aimodel main: load 0.16s prefill 0.677s decode median 10.577 ms (94.5 tok/s) mean 92.9 tok/s p90 12.188 ms
+fp16state.aimodel main: load 0.19s prefill 0.756s decode median 10.243 ms (97.6 tok/s) mean 96.2 tok/s p90 11.978 ms
+nobarrier.aimodel main: load 0.18s prefill 0.695s decode median 10.279 ms (97.3 tok/s) mean 96.4 tok/s p90 11.766 ms
+split.aimodel main: load 0.17s prefill 0.694s decode median 10.543 ms (94.8 tok/s) mean 92.7 tok/s p90 12.554 ms
+nomamba.aimodel main: load 0.12s prefill 0.269s decode median 2.802 ms (356.9 tok/s) mean 320.6 tok/s p90 3.941 ms
+ref.aimodel main: load 0.23s prefill 1.559s decode median 11.829 ms (84.5 tok/s) mean 79.5 tok/s p90 14.698 ms
+ref.aimodel decode: load 0.19s prefill 0.958s decode median 10.860 ms (92.1 tok/s) mean 91.3 tok/s p90 12.235 ms

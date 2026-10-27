@@ -1,0 +1,5 @@
+W1026 14:48:15.188000 69159 <venv>/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+missing [] unexpected []
+decoder params 1.58B
+torch.bfloat16 relL2 0.2994 cosine 0.955316 finite True
+torch.float16 relL2 0.2927 cosine 0.957214 finite True

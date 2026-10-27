@@ -1,0 +1,284 @@
+{
+ "round1": {
+  "fp16state-main": {
+   "warmMedianMsPerRound": [
+    10.407,
+    10.243
+   ],
+   "medianMs": 10.325,
+   "tokPerSec": 96.9
+  },
+  "nobarrier-main": {
+   "warmMedianMsPerRound": [
+    8.472,
+    10.279
+   ],
+   "medianMs": 9.375499999999999,
+   "tokPerSec": 106.7
+  },
+  "nomamba-main": {
+   "warmMedianMsPerRound": [
+    2.453,
+    2.802
+   ],
+   "medianMs": 2.6275,
+   "tokPerSec": 380.6
+  },
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    8.362,
+    10.86
+   ],
+   "medianMs": 9.611,
+   "tokPerSec": 104.0
+  },
+  "ref-main": {
+   "warmMedianMsPerRound": [
+    9.249,
+    11.829
+   ],
+   "medianMs": 10.539000000000001,
+   "tokPerSec": 94.9
+  },
+  "split-main": {
+   "warmMedianMsPerRound": [
+    8.002,
+    10.543
+   ],
+   "medianMs": 9.2725,
+   "tokPerSec": 107.8
+  },
+  "staticq-main": {
+   "warmMedianMsPerRound": [
+    10.84,
+    10.577
+   ],
+   "medianMs": 10.7085,
+   "tokPerSec": 93.4
+  }
+ },
+ "round2": {
+  "fp16state-main": {
+   "warmMedianMsPerRound": [
+    9.024,
+    10.829,
+    13.179,
+    13.832
+   ],
+   "medianMs": 12.004000000000001,
+   "tokPerSec": 83.3
+  },
+  "nobarrier-main": {
+   "warmMedianMsPerRound": [
+    8.998,
+    8.962,
+    12.841,
+    13.033
+   ],
+   "medianMs": 10.9195,
+   "tokPerSec": 91.6
+  },
+  "nomamba-main": {
+   "warmMedianMsPerRound": [
+    3.068,
+    3.089,
+    4.659,
+    3.908
+   ],
+   "medianMs": 3.4985,
+   "tokPerSec": 285.8
+  },
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    9.355,
+    9.386,
+    9.463,
+    11.977
+   ],
+   "medianMs": 9.424499999999998,
+   "tokPerSec": 106.1
+  },
+  "ref-main": {
+   "warmMedianMsPerRound": [
+    11.087,
+    11.41,
+    13.336,
+    17.938
+   ],
+   "medianMs": 12.373000000000001,
+   "tokPerSec": 80.8
+  },
+  "split-main": {
+   "warmMedianMsPerRound": [
+    9.644,
+    9.863,
+    14.613,
+    18.137
+   ],
+   "medianMs": 12.238,
+   "tokPerSec": 81.7
+  },
+  "staticq-main": {
+   "warmMedianMsPerRound": [
+    8.894,
+    9.086,
+    12.534,
+    12.83
+   ],
+   "medianMs": 10.81,
+   "tokPerSec": 92.5
+  }
+ },
+ "round3": {
+  "nomamba-main": {
+   "warmMedianMsPerRound": [
+    3.543,
+    3.702,
+    2.927
+   ],
+   "medianMs": 3.543,
+   "tokPerSec": 282.2
+  },
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    11.077,
+    11.219,
+    11.049
+   ],
+   "medianMs": 11.077,
+   "tokPerSec": 90.3
+  },
+  "static-full-main": {
+   "warmMedianMsPerRound": [
+    8.546,
+    8.776,
+    8.399
+   ],
+   "medianMs": 8.546,
+   "tokPerSec": 117.0
+  },
+  "static-nomamba-main": {
+   "warmMedianMsPerRound": [
+    3.004,
+    2.941,
+    2.819
+   ],
+   "medianMs": 2.941,
+   "tokPerSec": 340.0
+  }
+ },
+ "round4": {
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    7.93,
+    8.121,
+    8.387
+   ],
+   "medianMs": 8.121,
+   "tokPerSec": 123.1
+  },
+  "static-full-main": {
+   "warmMedianMsPerRound": [
+    8.183,
+    6.187,
+    6.72
+   ],
+   "medianMs": 6.72,
+   "tokPerSec": 148.8
+  },
+  "static-lean-main": {
+   "warmMedianMsPerRound": [
+    5.189,
+    5.328,
+    5.769
+   ],
+   "medianMs": 5.328,
+   "tokPerSec": 187.7
+  },
+  "static-nomamba-main": {
+   "warmMedianMsPerRound": [
+    2.857,
+    2.444,
+    3.521
+   ],
+   "medianMs": 2.857,
+   "tokPerSec": 350.0
+  }
+ },
+ "round5": {
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    7.573,
+    8.301,
+    8.32
+   ],
+   "medianMs": 8.301,
+   "tokPerSec": 120.5
+  },
+  "static-kernel-main": {
+   "warmMedianMsPerRound": [
+    5.195,
+    5.327,
+    5.484
+   ],
+   "medianMs": 5.327,
+   "tokPerSec": 187.7
+  },
+  "static-lean-main": {
+   "warmMedianMsPerRound": [
+    5.489,
+    5.05,
+    5.028
+   ],
+   "medianMs": 5.05,
+   "tokPerSec": 198.0
+  },
+  "static-nomamba-main": {
+   "warmMedianMsPerRound": [
+    2.431,
+    2.656,
+    2.401
+   ],
+   "medianMs": 2.431,
+   "tokPerSec": 411.4
+  }
+ },
+ "round6": {
+  "ref-decode": {
+   "warmMedianMsPerRound": [
+    8.471,
+    8.339,
+    8.259
+   ],
+   "medianMs": 8.339,
+   "tokPerSec": 119.9
+  },
+  "static-kernel-main": {
+   "warmMedianMsPerRound": [
+    4.973,
+    5.014,
+    4.983
+   ],
+   "medianMs": 4.983,
+   "tokPerSec": 200.7
+  },
+  "static-lean-main": {
+   "warmMedianMsPerRound": [
+    5.218,
+    5.497,
+    5.224
+   ],
+   "medianMs": 5.224,
+   "tokPerSec": 191.4
+  },
+  "static-nomamba-main": {
+   "warmMedianMsPerRound": [
+    2.559,
+    2.51,
+    2.452
+   ],
+   "medianMs": 2.51,
+   "tokPerSec": 398.4
+  }
+ }
+}
