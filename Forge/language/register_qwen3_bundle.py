@@ -28,15 +28,16 @@ def sha256(path: Path) -> str:
 
 
 def tokenizer_files(root: Path) -> dict[str, str]:
-    """Every regular tokenizer file by relative path, as `verifyTokenizer` sees them: dotfiles (a Finder .DS_Store)
-    are skipped, and a symbolic link refuses registration."""
+    """Every regular tokenizer file by relative path, as `verifyTokenizer` sees them. Any symbolic link refuses
+    registration first, hidden or not (the verifier refuses non-regular entries before it ignores dotfiles); then
+    dotfiles (a Finder .DS_Store) are skipped."""
     files = {}
     for p in sorted(root.rglob("*")):
         rel = p.relative_to(root)
-        if any(part.startswith(".") for part in rel.parts):
-            continue
         if p.is_symlink():
             sys.exit(f"tokenizer entry {rel} is a symbolic link; register real files only")
+        if any(part.startswith(".") for part in rel.parts):
+            continue
         if p.is_file():
             files[str(rel)] = sha256(p)
     return files
