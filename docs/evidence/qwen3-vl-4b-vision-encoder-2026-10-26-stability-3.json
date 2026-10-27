@@ -1,0 +1,89 @@
+{
+  "device" : "h17c",
+  "footprint" : [
+    {
+      "bytes" : 64455472,
+      "phase" : "before open"
+    },
+    {
+      "bytes" : 1168098912,
+      "phase" : "after open"
+    },
+    {
+      "bytes" : 1799227360,
+      "phase" : "all grids warmed"
+    },
+    {
+      "bytes" : 1893992464,
+      "phase" : "after all encodes"
+    }
+  ],
+  "gate" : "every encode of every fixed grid bit-identical to that grid's first encode (FNV-1a 64 over the fp16 bits, then full comparison)",
+  "grids" : [
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "15ad854247dd00b",
+      "firstEmbedsHash" : "92954aa5ef6b57bd",
+      "function" : "encode_44x44",
+      "meanEncodeSeconds" : 0.24832866021
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "8cce80d97da5563c",
+      "firstEmbedsHash" : "7b534ad4681998c9",
+      "function" : "encode_36x48",
+      "meanEncodeSeconds" : 0.2205352612150001
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "e425e9db79625279",
+      "firstEmbedsHash" : "359c1db0a6dfc15d",
+      "function" : "encode_48x36",
+      "meanEncodeSeconds" : 0.22117459876999981
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "e9e7a22c9515413e",
+      "firstEmbedsHash" : "4b911531a6e6b468",
+      "function" : "encode_32x56",
+      "meanEncodeSeconds" : 0.22752576558999993
+    },
+    {
+      "differing" : [
+
+      ],
+      "differingFromFirst" : 0,
+      "distinctOutputs" : 1,
+      "encodes" : 200,
+      "firstDeepstackHash" : "faf1ad349d0091de",
+      "firstEmbedsHash" : "dcc65c94be6ed9c3",
+      "function" : "encode_56x32",
+      "meanEncodeSeconds" : 0.228692187935
+    }
+  ],
+  "modelFileSHA256" : "52128c9c75254bb4dea33bd0acd4b4187870fbf6a07098c10cbd1d0bd2c9d4e0",
+  "order" : "round-robin across the grids, one process",
+  "passed" : true,
+  "photoSHA256" : "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd",
+  "stage" : "complete"
+}

@@ -9,7 +9,8 @@ embeddings and the DeepStack features. It also checks this directory's eager tow
 float32 and fp16-storage) against them, separating porting errors from Core AI conversion errors.
 
 Outputs under the new `--output` directory: `reference.json`, and per image `<name>.png`, `<name>-pixels.f32`
-([n, 1536]), `<name>-embeds.f32` ([n/4, 2048]) and `<name>-deepstack.f32` ([3, n/4, 2048]), all little-endian float32.
+([n, 1536]), `<name>-embeds.f32` ([n/4, d]) and `<name>-deepstack.f32` ([3, n/4, d]), all little-endian float32, where d is the
+vision config's `out_hidden_size` (2048 for Qwen3-VL-2B, 2560 for 4B).
 """
 
 from __future__ import annotations

@@ -4,9 +4,10 @@ Adapted from the aether-engine forge (`forge/aether_forge/arch/qwen3_vl_vision.p
 imported, so this directory stays self-contained. The tower is its own asset with one function:
 
     encode(pixels [n, 1536], pos_index [n, 4] i32, pos_weight [n, 4] f32, patch_rc [n, 2] i32)
-      -> image_embeds [n/4, 2048], deepstack [3, n/4, 2048]
+      -> image_embeds [n/4, d], deepstack [3, n/4, d]
 
-n is the patch count of one image. The asset has one static-shape function per fixed patch grid, `encode_<h>x<w>`
+n is the patch count of one image; d is the vision config's `out_hidden_size` (the decoder's hidden size: 2048 for
+Qwen3-VL-2B, 2560 for 4B). The asset has one static-shape function per fixed patch grid, `encode_<h>x<w>`
 (`IMAGE_GRIDS`); every image snaps to the grid nearest its aspect ratio (`nearest_grid`) and is resized to it exactly.
 A dynamic-shape export intermittently computed wrong outputs on the GPU even without `expectFrequentReshapes` (2.5 % of
 encodes, always the same wrong bits), so dynamic shapes are not used. Every per-patch input is in merge-window order: 2x2
