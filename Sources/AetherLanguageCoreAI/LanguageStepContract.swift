@@ -108,28 +108,32 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         }
     }
 
-    /// Submission sizes for a fresh-cache prefill, never above `maximumChunk` (the export bound, when
-    /// declared). The running contract keeps 0.0.1 behaviour: uniform chunks of `requestedChunk`
-    /// (whole prompt when nil) and a shorter tail. The bucketed contract takes the largest power of
-    /// two that fits both the remaining tokens and the chunk limit (`requestedChunk` and the bound,
-    /// rounded down to a power of two), so submissions take at most log2(bound) + 1 sizes and none
-    /// is padded.
-    func prefillChunks(promptCount: Int, requestedChunk: Int?, maximumChunk: Int?) -> [Int] {
+    /// The bucketed contract's prefill chunk when the request names none (within the export bound).
+    static let defaultBucketedPrefillChunk = 64
+
+    /// Submissions for a fresh-cache prefill of a `promptCount`-token run, never above `maximumChunk`
+    /// (the export bound, when declared). The running contract keeps 0.0.1 behaviour: uniform chunks
+    /// of `requestedChunk` (whole prompt when nil) and a shorter tail. The bucketed contract submits
+    /// one width C (`requestedChunk`, default ``defaultBucketedPrefillChunk``, within the bound) so a
+    /// warm request switches shape only between C and the 1-token decode step: Core AI retains memory
+    /// on every shape change. A run that is not a multiple of C ends with a C-token chunk over its
+    /// last C tokens, recomputing up to C - 1 already written rows. That is the same computation:
+    /// the graph's cache mask admits only rows before the chunk's first position
+    /// (`key_positions < cache_positions[0]`), so the stepped-over rows are invisible to the chunk,
+    /// are recomputed from the same prefix, and are overwritten with the chunk's own keys and
+    /// values (equal up to floating-point rounding). A run shorter than C is one chunk of its own
+    /// length.
+    func prefillChunks(promptCount: Int, requestedChunk: Int?, maximumChunk: Int?) -> [LanguagePrefillChunk] {
         precondition(promptCount > 0 && (requestedChunk ?? 1) > 0 && (maximumChunk ?? 1) > 0)
         switch self {
         case .runningPositions:
             let width = min(requestedChunk ?? promptCount, promptCount, maximumChunk ?? .max)
-            return stride(from: 0, to: promptCount, by: width).map { min(width, promptCount - $0) }
+            return stride(from: 0, to: promptCount, by: width).map { LanguagePrefillChunk(offset: $0, count: min(width, promptCount - $0)) }
         case .bucketedPositions:
-            let bound = maximumChunk ?? promptCount
-            let limit = Self.floorPowerOfTwo(min(requestedChunk ?? bound, bound))
-            var chunks: [Int] = []
-            var remaining = promptCount
-            while remaining > 0 {
-                let chunk = min(limit, Self.floorPowerOfTwo(remaining))
-                chunks.append(chunk)
-                remaining -= chunk
-            }
+            let width = min(requestedChunk ?? Self.defaultBucketedPrefillChunk, maximumChunk ?? .max)
+            guard promptCount > width else { return [LanguagePrefillChunk(offset: 0, count: promptCount)] }
+            var chunks = stride(from: 0, through: promptCount - width, by: width).map { LanguagePrefillChunk(offset: $0, count: width) }
+            if promptCount % width != 0 { chunks.append(LanguagePrefillChunk(offset: promptCount - width, count: width)) }
             return chunks
         }
     }
@@ -138,4 +142,11 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         precondition(value > 0)
         return 1 << (Int.bitWidth - 1 - value.leadingZeroBitCount)
     }
+}
+
+/// One prefill submission: `count` tokens at `offset` from the run's start. Bucketed offsets can step
+/// back over rows already written (the run's last chunk).
+struct LanguagePrefillChunk: Sendable, Equatable {
+    let offset: Int
+    let count: Int
 }

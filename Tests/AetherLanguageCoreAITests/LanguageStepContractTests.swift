@@ -87,37 +87,50 @@ struct LanguageStepContractTests {
 
     @Test func runningPrefillKeepsUniformChunksWithinTheBound() {
         let running = LanguageStepContract.runningPositions
-        #expect(running.prefillChunks(promptCount: 10, requestedChunk: nil, maximumChunk: nil) == [10])
-        #expect(running.prefillChunks(promptCount: 10, requestedChunk: 4, maximumChunk: nil) == [4, 4, 2])
-        #expect(running.prefillChunks(promptCount: 3, requestedChunk: 64, maximumChunk: nil) == [3])
+        let counts = { (count: Int, request: Int?, bound: Int?) in
+            running.prefillChunks(promptCount: count, requestedChunk: request, maximumChunk: bound).map(\.count)
+        }
+        #expect(counts(10, nil, nil) == [10])
+        #expect(counts(10, 4, nil) == [4, 4, 2])
+        #expect(counts(3, 64, nil) == [3])
         // A declared export bound caps the whole-prompt default and larger requests.
-        #expect(running.prefillChunks(promptCount: 1000, requestedChunk: nil, maximumChunk: 512) == [512, 488])
+        #expect(counts(1000, nil, 512) == [512, 488])
+        #expect(running.prefillChunks(promptCount: 10, requestedChunk: 4, maximumChunk: nil).map(\.offset) == [0, 4, 8])
     }
 
-    @Test func bucketedPrefillUsesBoundedPowerOfTwoSizes() {
+    @Test func bucketedPrefillUsesOneWidthAndAnOverlappingTail() {
         let bucketed = LanguageStepContract.bucketedPositions
-        #expect(bucketed.prefillChunks(promptCount: 1, requestedChunk: nil, maximumChunk: 512) == [1])
-        #expect(bucketed.prefillChunks(promptCount: 19, requestedChunk: nil, maximumChunk: 512) == [16, 2, 1])
-        #expect(bucketed.prefillChunks(promptCount: 1300, requestedChunk: nil, maximumChunk: 512) == [512, 512, 256, 16, 4])
-        #expect(bucketed.prefillChunks(promptCount: 130, requestedChunk: 64, maximumChunk: 512) == [64, 64, 2])
-        // Non-power-of-two requests and bounds round down; requests above the bound are capped.
-        #expect(bucketed.prefillChunks(promptCount: 200, requestedChunk: 100, maximumChunk: 512) == [64, 64, 64, 8])
-        #expect(bucketed.prefillChunks(promptCount: 2048, requestedChunk: 4096, maximumChunk: 512) == [512, 512, 512, 512])
-        #expect(bucketed.prefillChunks(promptCount: 300, requestedChunk: nil, maximumChunk: 100) == [64, 64, 64, 64, 32, 8, 4])
-        // Every prompt length up to 2,048 is covered exactly, by sizes within the bound.
+        let plan = { (count: Int, request: Int?, bound: Int?) in
+            bucketed.prefillChunks(promptCount: count, requestedChunk: request, maximumChunk: bound).map { [$0.offset, $0.count] }
+        }
+        let c = LanguageStepContract.defaultBucketedPrefillChunk
+        // A run shorter than the width is one chunk of its own length.
+        #expect(plan(1, nil, 512) == [[0, 1]])
+        #expect(plan(12, nil, 512) == [[0, 12]])
+        #expect(plan(c, nil, 512) == [[0, c]])
+        // Multiples of the width tile exactly; otherwise the last chunk covers the last C tokens.
+        #expect(plan(130, 64, 512) == [[0, 64], [64, 64], [66, 64]])
+        #expect(plan(449, 256, 512) == [[0, 256], [193, 256]])
+        #expect(plan(256, 128, 512) == [[0, 128], [128, 128]])
+        // The bound caps the width.
+        #expect(plan(1300, 4096, 512) == [[0, 512], [512, 512], [788, 512]])
+        #expect(plan(300, nil, 48) == [[0, 48], [48, 48], [96, 48], [144, 48], [192, 48], [240, 48], [252, 48]])
+        // Every prompt length up to 2,048: the chunks cover it, start in order within it, end at it, step back only
+        // in the last chunk, and use one width (or one chunk of the run's length).
         for bound in [512, 128, 48] {
-            let limit = LanguageStepContract.floorPowerOfTwo(bound)
-            let allowed = Set((0...9).map { 1 << $0 }.filter { $0 <= limit })
-            var sizes = Set<Int>()
-            for count in 1...2048 {
-                for request in [nil, 1, 7, 64, 512] as [Int?] {
+            for request in [nil, 1, 7, 64, 512] as [Int?] {
+                let width = min(request ?? c, bound)
+                for count in 1...2048 {
                     let chunks = bucketed.prefillChunks(promptCount: count, requestedChunk: request, maximumChunk: bound)
-                    #expect(chunks.reduce(0, +) == count)
-                    #expect(chunks.allSatisfy { allowed.contains($0) && $0 <= min(request ?? bound, bound) })
-                    sizes.formUnion(chunks)
+                    #expect(chunks.first?.offset == 0)
+                    #expect(chunks.last.map { $0.offset + $0.count } == count)
+                    #expect(chunks.allSatisfy { $0.count == min(width, count) })
+                    for (previous, next) in zip(chunks, chunks.dropFirst()) {
+                        #expect(next.offset > previous.offset && next.offset <= previous.offset + previous.count)
+                    }
+                    #expect(chunks.dropLast().enumerated().allSatisfy { $0.element.offset == $0.offset * width })
                 }
             }
-            #expect(sizes == allowed)
         }
     }
 
@@ -161,19 +174,24 @@ struct LanguageStepContractTests {
     /// 256 tokens it crosses (the running ladder would instead attend up to twice the length).
     @Test func bucketedShapeVocabularyIsBoundedAndGrowsWithLength() throws {
         let prompt = LanguageStepContract.bucketedPositions.prefillChunks(promptCount: 1000, requestedChunk: nil, maximumChunk: 512)
-        var shapes = Set<[Int]>()
-        var position = 0
+            .map { (position: $0.offset, count: $0.count) }
+        let decode = (1000..<16384).map { (position: $0, count: 1) }
+        var promptShapes = Set<[Int]>(), shapes = Set<[Int]>()
+        var capacity = 0
         var decodeShapes = 0
         var worstSlack = 0
-        for (index, count) in (prompt + Array(repeating: 1, count: 16384 - 1000)).enumerated() {
-            let capacity = try LanguageCachePlan.bucketedCapacity(needed: position + count, maximum: 16384)
-            worstSlack = max(worstSlack, capacity - (position + count))
-            if shapes.insert([count, capacity]).inserted && index >= prompt.count { decodeShapes += 1 }
-            position += count
+        for (index, step) in (prompt + decode).enumerated() {
+            // Caches only grow within a request.
+            capacity = max(capacity, try LanguageCachePlan.bucketedCapacity(needed: step.position + step.count, maximum: 16384))
+            worstSlack = max(worstSlack, capacity - (step.position + step.count))
+            if index < prompt.count { promptShapes.insert([step.count, capacity]) }
+            if shapes.insert([step.count, capacity]).inserted && index >= prompt.count { decodeShapes += 1 }
         }
-        #expect(position == 16384)
+        #expect(decode.last.map { $0.position + $0.count } == 16384)
         #expect(decodeShapes == (16384 - 1024) / LanguageCachePlan.bucketedGranularity + 1)
-        #expect(shapes.count == decodeShapes + prompt.count)
+        // One prefill width, at each capacity the prompt crosses.
+        #expect(promptShapes.count == 1000 / LanguageCachePlan.bucketedGranularity + 1)
+        #expect(shapes.count == decodeShapes + promptShapes.count)
         #expect(worstSlack < LanguageCachePlan.bucketedGranularity)
     }
 

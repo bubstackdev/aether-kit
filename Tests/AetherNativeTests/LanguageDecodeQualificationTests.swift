@@ -195,15 +195,16 @@ private func exportBounds(for model: URL) throws -> LanguageExportBounds? {
 }
 
 /// The sessions compared for timing: the bucketed export, the running export with its default
-/// recycling (what 0.0.1 consumers get), and the running export with recycling disabled (its pure
-/// per-step cost; the native shape cache then grows for the whole run).
+/// recycling (what 0.0.1 consumers get), and the running export with recycling and memory-budget
+/// reloads disabled (its pure per-step cost; the native shape cache then grows for the whole run).
 private func timingSessions(bucketed: URL, running: URL, context: Int) async throws -> [(String, LanguageGenerationSession)] {
     [("bucketed", try await LanguageGenerationSession.open(at: bucketed, maximumContextLength: context, stopTokenIDs: [151935],
                                                          exportBounds: try exportBounds(for: bucketed))),
      ("running", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [151935],
                                                         exportBounds: try exportBounds(for: running))),
      ("runningNoRecycle", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [151935],
-                                                                 maximumSubmissionsPerModel: .max, exportBounds: try exportBounds(for: running)))]
+                                                                 maximumSubmissionsPerModel: .max, memoryGrowthBudgetBytes: nil,
+                                                                 exportBounds: try exportBounds(for: running)))]
 }
 
 /// Before/after timing on a shared host: all sessions stay resident and every round runs each

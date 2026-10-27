@@ -20,17 +20,24 @@ struct VisionRGBImageTests {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("vision-rgb-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("image").appendingPathExtension(type.preferredFilenameExtension ?? "img")
-        let destination = try #require(CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil))
+        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil) else {
+            remove(url)
+            throw CocoaError(.fileWriteUnknown)
+        }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         #expect(CGImageDestinationFinalize(destination))
         return url
     }
+
+    /// Deletes a fixture's temporary folder.
+    private static func remove(_ url: URL) { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
 
     private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 
     /// R, G and B land in that order, with the stored values unchanged.
     @Test func losslessRGBKeepsChannelOrderAndValues() throws {
         let url = try Self.write([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 10, 20, 30, 255], width: 2, height: 2, space: Self.sRGB)
+        defer { Self.remove(url) }
         let image = try VisionRGBImage(contentsOf: url)
         #expect(image.width == 2 && image.height == 2)
         #expect(image.rgb == [255, 0, 0, 0, 255, 0, 0, 0, 255, 10, 20, 30])
@@ -40,6 +47,7 @@ struct VisionRGBImageTests {
     @Test func taggedColourSpaceIsNotConverted() throws {
         let p3 = try #require(CGColorSpace(name: CGColorSpace.displayP3))
         let url = try Self.write([200, 100, 50, 255, 10, 220, 130, 255], width: 2, height: 1, space: p3)
+        defer { Self.remove(url) }
         #expect(try VisionRGBImage(contentsOf: url).rgb == [200, 100, 50, 10, 220, 130])
     }
 
@@ -47,6 +55,7 @@ struct VisionRGBImageTests {
     @Test func grayscaleExpandsToEqualChannels() throws {
         let url = try Self.write([0, 64, 128, 255], width: 4, height: 1, space: CGColorSpaceCreateDeviceGray(), bitsPerPixel: 8,
                                  alpha: .none)
+        defer { Self.remove(url) }
         #expect(try VisionRGBImage(contentsOf: url).rgb == [0, 0, 0, 64, 64, 64, 128, 128, 128, 255, 255, 255])
     }
 
@@ -55,6 +64,7 @@ struct VisionRGBImageTests {
     @Test func alphaIsCompositedOverBlack() throws {
         let url = try Self.write([255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 0, 10, 20, 30, 255], width: 2, height: 2,
                                  space: Self.sRGB, alpha: .last)
+        defer { Self.remove(url) }
         let rgb = try VisionRGBImage(contentsOf: url).rgb
         #expect(Array(rgb[0..<3]) == [255, 0, 0])
         #expect(rgb[3] == 0 && abs(Int(rgb[4]) - 128) <= 1 && rgb[5] == 0)
@@ -62,12 +72,16 @@ struct VisionRGBImageTests {
         #expect(Array(rgb[9..<12]) == [10, 20, 30])
     }
 
-    /// EXIF orientation is applied: the decoded size is the displayed size, and each quadrant of a 32x16 image (red, green
+    /// Every EXIF orientation, mirrored ones included, is applied: the decoded size is the displayed size, and each quadrant of a 32x16 image (red, green
     /// over blue, white) lands where the orientation puts it.
     @Test(arguments: [
         (1, 32, 16, ["red", "green", "blue", "white"]),
+        (2, 32, 16, ["green", "red", "white", "blue"]),
         (3, 32, 16, ["white", "blue", "green", "red"]),
+        (4, 32, 16, ["blue", "white", "red", "green"]),
+        (5, 16, 32, ["red", "blue", "green", "white"]),
         (6, 16, 32, ["blue", "red", "white", "green"]),
+        (7, 16, 32, ["white", "green", "blue", "red"]),
         (8, 16, 32, ["green", "white", "red", "blue"]),
     ])
     func exifOrientationIsApplied(orientation: Int, width: Int, height: Int, quadrants: [String]) throws {
@@ -82,6 +96,7 @@ struct VisionRGBImageTests {
         }
         let url = try Self.write(rgba, width: 32, height: 16, space: Self.sRGB, type: .jpeg,
                                  properties: [kCGImagePropertyOrientation: orientation, kCGImageDestinationLossyCompressionQuality: 1.0])
+        defer { Self.remove(url) }
         let image = try VisionRGBImage(contentsOf: url)
         #expect(image.width == width && image.height == height)
         // Top-left, top-right, bottom-left, bottom-right quadrant centres; JPEG is lossy, so allow a few levels.
