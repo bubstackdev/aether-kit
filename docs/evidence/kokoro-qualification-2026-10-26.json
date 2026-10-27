@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "subject": "Kokoro-82M speech synthesis: AetherSpeech + AetherSpeechCoreAI (0.0.2 checkpoint)",
+  "date": "2026-10-26",
+  "passed": true,
+  "base_commit": "c62ac37 (origin/main) + 9054f61 (Kokoro export and session)",
+  "source": {
+    "repository": "hexgrad/Kokoro-82M",
+    "revision": "f3ff3571791e39611d31c381e3a41a3af07b4987",
+    "gated": false,
+    "license": "Apache-2.0 (model card front matter, card text and Hub tag license:apache-2.0, checked 2026-10-26)",
+    "training_data_attribution": "Model card lists CC BY 3.0 (Koniwa tnc) and CC BY 4.0 (SIWIS) audio in the training set",
+    "checkpoint": {"file": "kokoro-v1_0.pth", "sha256": "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4", "matches_model_card": true},
+    "reference_code": {"package": "kokoro 0.9.4", "license": "Apache-2.0", "wheel_sha256": "a129dc6364a286bd6a92c396e9862459d3d3e45f2c15596ed5a94dcee5789efd",
+                       "imported_modules": ["kokoro.model", "kokoro.istftnet", "kokoro.modules"], "package_init_executed": false}
+  },
+  "phonemization_decision": {
+    "decision": "Phoneme-string input validated against the bundle vocabulary; G2P is supplied by the app through SpeechPhonemizer. No G2P code, misaki or espeak-ng in any SDK target or in the export/reference harness.",
+    "reason": "misaki (Apache-2.0) falls back to espeak-ng (GPL-3.0) via phonemizer-fork/espeakng-loader for out-of-vocabulary words; GPL is incompatible with the Apache-2.0 SDK.",
+    "misaki_wheel_sha256": "90e2eeb169786c014c429e5058d2ea6bcd02d651f2a24450ba6c9ffc0f8da15a",
+    "misaki_lexicons": "us/gb gold and silver dictionaries ship in the Apache-2.0 wheel without documented provenance; not recommended for bundling until provenance is checked",
+    "recommended_routes": ["CMUdict (BSD) mapped to Kokoro symbols with a permissive or self-trained OOV model", "offline/server-side precomputed phonemes", "hand-authored phonemes for fixed strings"]
+  },
+  "export": {
+    "record": "kokoro-export-2026-10-26.json",
+    "location": "~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp32-2026-10-26",
+    "kokoro_json_sha256": "89ab89361eb04dbdcdcb6661d414403545605d894011a508fe864beab1b066dc",
+    "precision": "float32",
+    "graphs": {"durations": "dynamic tokens 3...512", "decode": "dynamic frames 2...4096"},
+    "sizes_mib": {"durations.aimodel": 74, "decoder.aimodel": 235, "voices (54)": 27},
+    "tools": {"torch": "2.11.0", "coreai-torch": "0.4.2", "python": "3.12.14", "venv": "aether-engine forge/.venv (read-only)"}
+  },
+  "references": {
+    "record": "kokoro-references-2026-10-26.json",
+    "location": "~/.cache/huggingface/aether-kit/kokoro-82m/reference-2026-10-26",
+    "references_json_sha256": "b99c1e45a4a84f892cbe964f325733db039caa894496872a1a0465c56105871a",
+    "implementation": "unmodified upstream KModel, CPU float32, SineGen harmonic noise from the shared SplitMix64/Box-Muller seed; repeat runs bit-identical",
+    "cases": ["short-af_heart (29 phonemes)", "sentence-am_michael (89)", "speed-bf_emma x1.2 (78)", "long-af_bella x0.9 (335)"],
+    "floors": "per case: 1e-6 relative harmonic-source perturbation (sensitivity) and upstream float32 vs float64 (precision)"
+  },
+  "tolerances": {
+    "stated_before_first_passing_run": true,
+    "tokens_and_frames": "exact equality",
+    "waveform_rel_l2": "<= 0.05 and <= 4 x the case's upstream float32-vs-float64 rel L2",
+    "log_mel_mean_abs": "<= 0.03 nats (80 HTK mel bands 0-12 kHz, n_fft 1024, hop 256, ln with 1e-5 floor)",
+    "metric_cross_check": "Swift and Python metrics agree on each sensitivity pair (rel L2 within 1e-6 relative, log-mel within 1e-4 relative)"
+  },
+  "native": {
+    "report": "kokoro-native-2026-10-26.json",
+    "log": "kokoro-native-tests-2026-10-26.log",
+    "command": "~/.cache/aether-kit/with-gpu-lock.sh 'kokoro: native qualification' sh Scripts/qualify-kokoro-native.sh <bundle> <references> ~/.cache/aether-kit/kokoro/native-qualification-2026-10-26",
+    "host": {"model": "Mac17,6 (Apple M5 Max)", "memory_gib": 64, "os": "macOS 27.0.1 (26A434)", "swift": "6.4 (swiftlang-6.4.0.34.1)", "shared_host": true},
+    "compute": "durations=cpuOnly decoder=preferGPU (KokoroComputePlacement.recommended)",
+    "cases": [
+      {"name": "short-af_heart", "seconds": 2.45, "frames_exact": true, "rel_l2": 0.00983, "bound": 0.0292, "float64_floor": 0.00729, "log_mel_mean": 0.00396, "warm_rtf": 0.0332, "repeat_identical": true},
+      {"name": "sentence-am_michael", "seconds": 6.175, "frames_exact": true, "rel_l2": 0.02479, "bound": 0.05, "float64_floor": 0.02531, "log_mel_mean": 0.01056, "warm_rtf": 0.0306, "repeat_identical": true},
+      {"name": "speed-bf_emma", "seconds": 4.5, "frames_exact": true, "rel_l2": 0.03051, "bound": 0.05, "float64_floor": 0.02154, "log_mel_mean": 0.00702, "warm_rtf": 0.0329, "repeat_identical": true},
+      {"name": "long-af_bella", "seconds": 22.825, "frames_exact": true, "rel_l2": 0.02676, "bound": 0.05, "float64_floor": 0.02288, "log_mel_mean": 0.01439, "warm_rtf": 0.0307, "repeat_identical": true}
+    ],
+    "novel_shape_first_synthesis_seconds": [1.80, 1.90, 1.83],
+    "novel_shape_repeat_seconds": [0.060, 0.090, 0.122],
+    "lifecycle": {"cancellation": "CancellationError after durations predicted; state ready; recovery bit-identical to baseline",
+                  "active_unload": "unload waited; active request completed bit-identical; state closed; later request sessionClosed"},
+    "timing_scope": "shared host, no quiet-window protocol; warm RTF = repeated synthesis wall time / audio seconds; observations, not benchmarks"
+  },
+  "cpu_only_native": {
+    "report": "kokoro-native-cpu-only-2026-10-26.json",
+    "passed": true,
+    "note": "earlier source revision with expectFrequentReshapes for both graphs and uniform cpuOnly placement; rel L2 0.010-0.040, warm RTF 1.25-1.34"
+  },
+  "gpu_findings": [
+    "durations graph with preferGPU aborts in MPSGraph ANERegionFormationPass ('Region input 1 was not rank-4 or rank-5'); reproduced with Forge/kokoro/probe_coreai_graph.py",
+    "decoder opened with expectFrequentReshapes:true on the GPU aborts in CoreAIRuntime ('Cannot make a Tensor.Layout from an unresolved TensorRequirements'); log: kokoro-gpu-reshape-abort-2026-10-26.log",
+    "without the hint each new GPU frame count specializes once (~1.8 s here, cached across processes); MPSGraph logs a non-fatal ANE compile failure and falls back"
+  ],
+  "cpu_suite": {"log": "kokoro-cpu-tests-2026-10-26.log", "command": "sh Scripts/check-cpu.sh", "tests": 249, "result": "passed"},
+  "example": {"package": "Examples/Speech", "run": "aether-speak bundle out.wav af_heart 'həlˈO wˈɜɹld.|ðɪs ɪz kˈOkəɹO, ɹˈʌnɪŋ ˈɑn kˈOɹ ˈA ˈI.'", "output": "4.60 s, 24 kHz Int16 WAV, sha256 a50052443c75bed9e31d4ff3d416d835fbe2676f48506f495be40562a8bba434"},
+  "source_sha256": {
+    "Sources/AetherKit/GeneratedAudio.swift": "5ba5df2ebd022b2784fc23002b8e4789735af0854869c8ef412a68ecc7e5757e",
+    "Sources/AetherSpeech/KokoroAssets.swift": "548f95ef10978ac65e87b2c47a57297664b5da24f296511670bb4e8729bdfa86",
+    "Sources/AetherSpeech/KokoroPhonemes.swift": "68cfd5c7e4a71a4347b9ebc5e6525a7d2d1f9883da44358a4f0b7bb96dfabeb9",
+    "Sources/AetherSpeech/KokoroSynthesis.swift": "e885763060a3f8d3dda9bf7f6b4242c9296e7c47330988d67f6897faf5bb480b",
+    "Sources/AetherSpeech/KokoroVoice.swift": "6795565d3dc6eea0662ebb730eaf56df6a615f52ce1a7a307a14e40c55b9a2df",
+    "Sources/AetherSpeechCoreAI/KokoroContracts.swift": "d5e0a95936b72231058dfcb36daf68952536decb31d2a5d691b9ab34a424af50",
+    "Sources/AetherSpeechCoreAI/KokoroSpeechSession.swift": "c0caaa9f7562c924313f0c9b936609a56c59565ae219a99d1c650b911800c3c0",
+    "Tests/AetherNativeTests/KokoroMetrics.swift": "d2c13c4dc0994d07265965ecd9cb5dc1a59b8f80c6d2bc70f3822fe3d10c7ea8",
+    "Tests/AetherNativeTests/KokoroNativeTests.swift": "7fe48d961a524f1e28f413b892a5b95049320f762f30eedc07b1fc0ed5af9361",
+    "Forge/kokoro/kokoro_graphs.py": "5c6bc5fca5328123856f7eb2849d5258c8c2513736352b88d6fa482e059618f1",
+    "Forge/kokoro/export_kokoro.py": "4dcbc3a1def9d464e6997250a807e817e9293d7d224774b86b8c8a0e544db0cd",
+    "Forge/kokoro/reference_kokoro.py": "df8db5a4204b48192eed8b61dc58980db162beda5fb6333e8955729278ff7fca",
+    "Forge/kokoro/upstream_reference.py": "115310fb6c0d7296fc8e0bf1c6f808892c353a650c6583309dc15d8badb17102",
+    "Forge/kokoro/speech_metrics.py": "86be69b7ad98fcee38582edfc03e1cf5c89f6cd69e3028c85067335127c81eda"
+  },
+  "gpu_lock_seconds_total": 247,
+  "not_verified": ["iOS build/device", "fp16/int8 exports", "sub-utterance streaming", "subjective listening review", "quiet-host benchmarks", "admission estimates for real model sizes"],
+  "post_rebase_recheck": {
+    "base": "origin/main 128573d (0.0.1 release)",
+    "cpu_suite": {"command": "AETHER_BUILD_SYSTEM=swiftbuild sh Scripts/check-cpu.sh", "log": "kokoro-cpu-tests-0.0.1-base-2026-10-26.log",
+                  "tests_registered": 263, "skipped_opt_in": 15, "failures": 0},
+    "native": {"report": "kokoro-native-recheck-0.0.1-base-2026-10-26.json", "log": "kokoro-native-recheck-0.0.1-base-2026-10-26.log",
+               "passed": true, "audio_sha256_identical_to_pre_rebase": true, "metrics_identical_to_pre_rebase": true,
+               "frames_exact": true, "lifecycle_passed": true, "gpu_lock_seconds": 13,
+               "note": "novel-shape first synthesis 0.48-0.57 s because the earlier run had already specialized those lengths (cached across processes)"},
+    "gpu_lock_seconds_total_including_recheck": 260
+  }
+}

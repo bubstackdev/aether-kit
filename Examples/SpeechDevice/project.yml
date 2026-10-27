@@ -1,0 +1,35 @@
+# On-device Kokoro qualification host (XcodeGen spec). Generate with `xcodegen generate` here; the
+# generated KokoroDeviceProbe.xcodeproj is git-ignored. `Forge/kokoro/stage_device_assets.py` copies a
+# trimmed bundle and the reference cases into Assets/ (git-ignored except .gitkeep) before a device run.
+name: KokoroDeviceProbe
+options:
+  deploymentTarget:
+    iOS: "27.0"
+packages:
+  AetherKit:
+    path: ../..
+targets:
+  KokoroDeviceProbe:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: AetherKit
+        product: AetherKit
+      - package: AetherKit
+        product: AetherSpeech
+      - package: AetherKit
+        product: AetherSpeechCoreAI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.zakkeown.aether.kokoro-device-probe
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"

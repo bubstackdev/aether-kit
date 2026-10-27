@@ -1,0 +1,251 @@
+{
+  "bundleFingerprint" : "f3914b4539739b7859ad6be20579c0e3cd7fd031f70b7b2bbd058d16215a59d2",
+  "bundleVerified" : true,
+  "cases" : [
+    {
+      "audioSHA256" : "6cbed1d5916d57319e55c3460befceb4635fc9271f15209b4399257163104863",
+      "audioSeconds" : 2.45,
+      "decoderFrames" : 128,
+      "firstSynthesisSeconds" : 2.878421667,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24334838505555467,
+        "log_mel_mean_abs" : 0.003512241264556211,
+        "max_abs" : 0.006678957148440492,
+        "rel_l2" : 0.007292234085535701,
+        "snr_db" : 42.74278797306552
+      },
+      "footprintMiBAfter" : 389.4861831665039,
+      "framesMatch" : true,
+      "metalMiBAfter" : 400.296875,
+      "name" : "short-af_heart",
+      "native" : {
+        "log_mel_max_abs" : 0.10561432320585729,
+        "log_mel_mean_abs" : 0.00397102004625127,
+        "max_abs" : 0.009663820266723633,
+        "rel_l2" : 0.010318734871371693,
+        "snr_db" : 39.727470922514804
+      },
+      "passed" : true,
+      "phonemeCount" : 29,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522321048234,
+        "log_mel_mean_abs" : 6.255074787703969e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.00014539690593281068,
+        "snr_db" : 76.74889670456085
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522320848394,
+        "log_mel_mean_abs" : 6.255074787702922e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.000145396905932807,
+        "snr_db" : 76.74889670456108
+      },
+      "tokensMatch" : true,
+      "voice" : "af_heart",
+      "warmRealTimeFactor" : 0.18320583346938774,
+      "warmSynthesisSeconds" : 0.448854292
+    },
+    {
+      "audioSHA256" : "13654ed6cd09994dee8c72b414657fc656723e6618251383fe9e9878336dd275",
+      "audioSeconds" : 6.175,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 1.7939700840000001,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24576312898540253,
+        "log_mel_mean_abs" : 0.009674276652978991,
+        "max_abs" : 0.019450740779215894,
+        "rel_l2" : 0.025312769690085935,
+        "snr_db" : 31.933206646174497
+      },
+      "footprintMiBAfter" : 792.1582870483398,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1009.578125,
+      "name" : "sentence-am_michael",
+      "native" : {
+        "log_mel_max_abs" : 0.36726477888279074,
+        "log_mel_mean_abs" : 0.010518800616052159,
+        "max_abs" : 0.019950341433286667,
+        "rel_l2" : 0.024358212191540933,
+        "snr_db" : 32.267091811622
+      },
+      "passed" : true,
+      "phonemeCount" : 89,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.029485985679192694,
+        "log_mel_mean_abs" : 5.6795730316948254e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564733113,
+        "snr_db" : 74.54028282538422
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.02948598567919314,
+        "log_mel_mean_abs" : 5.6795730316928996e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564732308,
+        "snr_db" : 74.5402828253846
+      },
+      "tokensMatch" : true,
+      "voice" : "am_michael",
+      "warmRealTimeFactor" : 0.12466167352226722,
+      "warmSynthesisSeconds" : 0.769785834
+    },
+    {
+      "audioSHA256" : "a11f3c381d09031488eba50ef323039b65ec9d0d8e7e411fa745031456df5082",
+      "audioSeconds" : 4.5,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 0.91044975,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.18049163423601255,
+        "log_mel_mean_abs" : 0.005954439999561048,
+        "max_abs" : 0.04953707827592006,
+        "rel_l2" : 0.0215376501079146,
+        "snr_db" : 33.33603365385049
+      },
+      "footprintMiBAfter" : 796.5020370483398,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1009.578125,
+      "name" : "speed-bf_emma",
+      "native" : {
+        "log_mel_max_abs" : 0.35410606871793515,
+        "log_mel_mean_abs" : 0.007069109339934612,
+        "max_abs" : 0.06222592294216156,
+        "rel_l2" : 0.03089399572744912,
+        "snr_db" : 30.20251835701594
+      },
+      "passed" : true,
+      "phonemeCount" : 78,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478036095,
+        "log_mel_mean_abs" : 8.43060265519897e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.19087982465899e-06,
+        "snr_db" : 102.86435938394794
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478977564,
+        "log_mel_mean_abs" : 8.43060265522708e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.190879824658948e-06,
+        "snr_db" : 102.86435938394797
+      },
+      "tokensMatch" : true,
+      "voice" : "bf_emma",
+      "warmRealTimeFactor" : 0.19322895377777777,
+      "warmSynthesisSeconds" : 0.869530292
+    },
+    {
+      "audioSHA256" : "3f423ce51cbaa8863bebab320caa08ee984592b95cf0c958604e1640d66d860a",
+      "audioSeconds" : 22.825,
+      "decoderFrames" : 1024,
+      "firstSynthesisSeconds" : 5.604116042,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.8828283406266391,
+        "log_mel_mean_abs" : 0.013856211500365754,
+        "max_abs" : 0.04082368257079569,
+        "rel_l2" : 0.022876218044047412,
+        "snr_db" : 32.81231545279292
+      },
+      "footprintMiBAfter" : 3230.1275177001953,
+      "framesMatch" : true,
+      "metalMiBAfter" : 4138.09375,
+      "name" : "long-af_bella",
+      "native" : {
+        "log_mel_max_abs" : 0.6040347511024564,
+        "log_mel_mean_abs" : 0.014066624563316353,
+        "max_abs" : 0.07841269671916962,
+        "rel_l2" : 0.024572995629911776,
+        "snr_db" : 32.190837931662195
+      },
+      "passed" : true,
+      "phonemeCount" : 335,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378795409,
+        "log_mel_mean_abs" : 0.00012779412385802201,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.000728168349763995,
+        "snr_db" : 62.75536403678558
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378796297,
+        "log_mel_mean_abs" : 0.00012779412385808533,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.0007281683497638353,
+        "snr_db" : 62.75536403678749
+      },
+      "tokensMatch" : true,
+      "voice" : "af_bella",
+      "warmRealTimeFactor" : 0.14801034317634174,
+      "warmSynthesisSeconds" : 3.3783360829999998
+    }
+  ],
+  "compute" : "durations=cpuOnly decoder=preferGPU",
+  "decoderBuckets" : [
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "failures" : [
+
+  ],
+  "host" : {
+    "activeProcessors" : "18",
+    "memoryGiB" : "64",
+    "model" : "Mac17,6",
+    "os" : "Version 27.0.1 (Build 26A434)"
+  },
+  "lifecycle" : {
+    "activeCompletedAfterUnload" : true,
+    "activeMatchesBaseline" : true,
+    "cancellationError" : "CancellationError",
+    "recoveryMatchesBaseline" : true,
+    "rejectedAfterUnload" : true,
+    "stateAfterCancellation" : "ready",
+    "unloadClosedWhileActive" : true
+  },
+  "loadAndVerifySeconds" : 0.192445125,
+  "memoryMiB" : {
+    "footprintAfterUnload" : 1550.2984313964844,
+    "footprintBeforeUnload" : 1642.5493927001953,
+    "metalAfterUnload" : 2095.8125,
+    "metalBeforeUnload" : 4138.21875
+  },
+  "novelShapes" : [
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.3047345,
+      "frames" : 66,
+      "phonemes" : 13,
+      "repeatSeconds" : 0.323511542
+    },
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.484934541,
+      "frames" : 103,
+      "phonemes" : 35,
+      "repeatSeconds" : 0.319186
+    },
+    {
+      "decoderFrames" : 256,
+      "firstSeconds" : 0.625922709,
+      "frames" : 146,
+      "phonemes" : 54,
+      "repeatSeconds" : 0.908780375
+    }
+  ],
+  "passed" : true,
+  "references" : "b99c1e45a4a84f892cbe964f325733db039caa894496872a1a0465c56105871a",
+  "tolerances" : {
+    "maximumLogMelMean" : 0.03,
+    "maximumRelativeL2" : 0.05,
+    "precisionFloorMultiple" : 4
+  }
+}

@@ -62,3 +62,6 @@ Update the decision register when an experiment changes a recommendation. Each p
 
 [Shared GPU lease and admission](gpu-lease.md) covers the Kit-owned, Atelier-compatible `/tmp/atelier-gpu.lock` lease, which Kit tools take by default. It also covers opt-in in-process GPU admission for sessions, built on the adopted `FairInferenceQueue`, and the [recorded Kit–Atelier interop check](evidence/gpu-lease-interop-2026-10-26.json).
 
+## Kokoro-82M speech (0.0.2, 2026-10-26)
+
+[Kokoro speech synthesis](kokoro-speech.md) covers the Kokoro-82M export, the license-clean phonemization decision, the speech session API and its native parity, timing and lifecycle [qualification](evidence/kokoro-qualification-2026-10-26.json).

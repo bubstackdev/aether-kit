@@ -1,0 +1,23 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4] AetherGPULeaseHelper-product
+[2 / 11] AetherSpeech
+[4 / 12] AetherSpeech
+[11 / 17] AetherSpeechCoreAI
+[13 / 18] AetherSpeechCoreAI
+[18 / 23] AetherSpeechTests-product
+[20 / 25] AetherSpeechTests-product
+[23 / 25] AetherSpeechTests-product
+[26 / 29] AetherSpeechTests-product
+[26 / 27] AetherNativeTests-product
+[30 / 34] AetherNativeTests-product
+[32 / 34] AetherNativeTests-product
+Build complete! (18.73 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+➜ Test kokoroNativeDecoderShapeSweep() skipped.
+◇ Test kokoroNativeParityTimingAndLifecycle() started.
+✔ Test kokoroNativeParityTimingAndLifecycle() passed after 12.011 seconds.
+✔ Test run with 2 tests in 0 suites passed after 12.011 seconds.
