@@ -379,6 +379,10 @@ AETHER_FLUX2_OUTPUT=/new/output/dir \
 
 `AETHER_FLUX2_CASES` selects text-to-image cases (default: the five 512²-class cases; `all` for all ten).
 
+Since 0.0.3, the parity and lifecycle reports both record their fixtures under `fixtures`: `t2i` for the text-to-image
+fixture ID and, when `AETHER_FLUX2_REFERENCE_FIXTURES` is set, `reference` for the reference fixture ID. Earlier parity
+reports name only `t2i`, with the reference cases listed in `cases`, and earlier lifecycle reports name neither.
+
 ### Post-rebase parity (2026-10-26)
 
 Measured on `f28ef0e8…`; identical contract. After rebasing onto the 0.0.1 release (origin/main `128573d`), the parity suite ran again with all 12 cases in one

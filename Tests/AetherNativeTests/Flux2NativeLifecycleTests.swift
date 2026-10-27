@@ -38,6 +38,9 @@ func flux2NativeLifecycleQualification() async throws {
     let t2i = try Flux2Fixture(URL(fileURLWithPath: try #require(env["AETHER_FLUX2_FIXTURES"])))
     let fox = try #require(t2i.cases.first { $0.id == "fox-512" })
     let references = try env["AETHER_FLUX2_REFERENCE_FIXTURES"].map { try Flux2Fixture(URL(fileURLWithPath: $0)) }
+    var fixtures = ["t2i": t2i.id]
+    fixtures["reference"] = references?.id
+    report.set("fixtures", fixtures)
     let tokenizer = try await Flux2Tokenizer.open(assets: assets)
     let configuration = try Flux2Configuration(width: fox.width, height: fox.height, steps: fox.steps, seed: UInt64(fox.seed))
     let conditioning = try Flux2Conditioning(provided: FloatTensor(shape: [512, 7680], values: fox.text))
