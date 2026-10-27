@@ -6,17 +6,20 @@ import Foundation
 import Metal
 import Synchronization
 
+@available(macOS 27, iOS 27, *)
 private struct PhaseRun: Encodable {
     let name: String
     let role: String
     let comparisons: [String: H3TensorComparison]
 }
+@available(macOS 27, iOS 27, *)
 private struct PhaseCancellation: Encodable {
     let name: String
     let concurrentUnload: Bool
     let events: [String]
     let passed: Bool
 }
+@available(macOS 27, iOS 27, *)
 private struct PhaseLimits: Encodable {
     let sessionOpens = 10
     let retainedCancellations = 5
@@ -30,6 +33,7 @@ private struct PhaseLimits: Encodable {
         try H3LifecycleLimits().checkGrowth(baseline: baseline, current: current)
     }
 }
+@available(macOS 27, iOS 27, *)
 private struct PhaseReport: Encodable {
     let schema = 1
     let scope = "Fixed prepare, time-0/1 and heads-0/1 boundaries with complete original CPU references, repeat/recovery hashes and submitted-work cancellation. Not a linked backbone, complete Turbo8 trajectory, conditioner, decoder or benchmark."
@@ -54,6 +58,7 @@ private struct PhaseReport: Encodable {
     var error: String?
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3PhaseCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "qualify-h3-phases" else { return false }

@@ -9,6 +9,7 @@ import Metal
 /// (in-place) files straight into their slots, hashed the first time each file is read by this graph and trusted
 /// afterwards (the files are immutable checkpoint blobs). Shapes are checked against the native descriptor before any
 /// slot changes. One call at a time; every call joins its GPU work before returning.
+@available(macOS 27, iOS 27, *)
 actor NativeH3Graph {
     enum Input: Sendable {
         case data(H3TensorData)
@@ -157,6 +158,7 @@ actor NativeH3Graph {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private extension H3ScalarType {
     var native: NDArray.ScalarType {
         switch self { case .bfloat16: .bfloat16; case .float32: .float32; case .int32: .int32 }

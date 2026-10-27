@@ -13,6 +13,7 @@ import Metal
 /// Sequential correctness reference. Core AI's unannotated stream stays inside
 /// this actor. Admission rejects overlap, and every submission is joined before
 /// buffers are read, reset, or released, including after task cancellation.
+@available(macOS 27, iOS 27, *)
 public actor LanguageGenerationSession {
     public struct Reply: Sendable {
         public let tokens: [Int]

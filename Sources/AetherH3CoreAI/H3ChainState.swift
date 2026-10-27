@@ -3,6 +3,7 @@ import AetherKit
 /// Device-side chaining state for one graph: two alternating output slots, and whether the last chained call's output
 /// is still valid to bind as the next call's input. Only a completed chained call validates it; starting any call
 /// invalidates it, so a failed or cancelled call (which never completes) breaks the chain.
+@available(macOS 27, iOS 27, *)
 struct H3ChainState<Buffer> {
     private(set) var slots: [Buffer?] = [nil, nil]
     private(set) var current = 0

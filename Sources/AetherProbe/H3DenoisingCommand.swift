@@ -6,6 +6,7 @@ import Foundation
 import Metal
 import Synchronization
 
+@available(macOS 27, iOS 27, *)
 struct H3TrajectoryTensor: Codable, Sendable {
     let key: String
     let stage: String
@@ -17,6 +18,7 @@ struct H3TrajectoryTensor: Codable, Sendable {
     let sha256: String
     let path: String?
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryReference: Decodable, Sendable {
     let key: String
     let context: [String:String]
@@ -31,6 +33,7 @@ private struct TrajectoryReference: Decodable, Sendable {
         }
     }
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryReferences: Decodable, Sendable {
     let schema: Int
     let bundle_sha256: String
@@ -44,12 +47,14 @@ private struct TrajectoryReferences: Decodable, Sendable {
     let expected: [String:String]
     let references: [TrajectoryReference]
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryComparison: Encodable, Sendable {
     let key: String
     let full: H3TensorComparison?
     let sampled: H3ReferenceComparison?
     var passed: Bool { full?.passed ?? sampled?.passed ?? false }
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryLifecycleEvidence: Codable {
     var runs: [String] = []
     var traces: [String:[String]] = [:]
@@ -59,6 +64,7 @@ private struct TrajectoryLifecycleEvidence: Codable {
     var totalOutputCount = 3462
     var totalCPUComparisons = 2212
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryReport: Codable {
     var schema = 1
     var scope = "Eight linked Turbo8 steps with provided conditioning, native time/modulation/prepare/50-block/head stages and coupled CPU F32 latent updates; sampled body checkpoints only, not independent CPU trajectory, conditioning encoder, decoders, media acceptance or benchmark."
@@ -89,15 +95,19 @@ private struct TrajectoryReport: Codable {
     // Final publication retains metadata only, never an array of tensors.
     var outputs: [H3TrajectoryTensor] = []
 }
+@available(macOS 27, iOS 27, *)
 private struct TrajectoryProgress: Encodable, Sendable {
     var outputs: [H3TrajectoryTensor] = []
     var comparisons: [TrajectoryComparison] = []
 }
+@available(macOS 27, iOS 27, *)
 private func trajectoryKey(_ stage: String, _ step: Int, _ block: Int?, _ name: String) -> String {
     "\(stage).\(step).\(block ?? -1).\(name)"
 }
+@available(macOS 27, iOS 27, *)
 private func isDigest(_ value:String) -> Bool { value.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) } }
 
+@available(macOS 27, iOS 27, *)
 private actor TrajectoryRecorder {
     private let output: URL
     private let references: TrajectoryReferences?
@@ -171,6 +181,7 @@ private actor TrajectoryRecorder {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3DenoisingCommand {
     static func run(_ args: [String]) async throws -> Bool {
         guard args.first == "qualify-h3-denoising" else { return false }

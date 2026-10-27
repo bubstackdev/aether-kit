@@ -2,6 +2,7 @@ import AetherKit
 import AetherCoreAI
 import AetherKrea
 
+@available(macOS 27, iOS 27, *)
 enum KreaContracts {
     static let roots: Set<String> = ["latents", "text_embeds", "sigma", "rope_image"]
 
