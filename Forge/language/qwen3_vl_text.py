@@ -7,17 +7,21 @@ block of `qwen3_decode.py` with three differences:
   the host. Each rotary frequency is driven by one axis, interleaved per `mrope_section`. Text tokens repeat their
   running position on all axes, which reduces to 1-D RoPE. The causal mask and the cache rows still follow
   `cache_positions`, the running sequence index: rope positions inside an image are not monotonic (F-P3-1).
-- Image splice (`withImage` only). Rows whose token is `<|image_pad|>` take the next row of `image_embeds`; the row
-  index is a running count over the pad mask, derived from token values, gathered with an embedding lookup (F-P3-2).
-  A chunk carries exactly its own pad tokens' rows.
-- DeepStack (`withImage` only). After decoder layer k < levels, `deepstack[k]` is added at the same rows.
+- Image splice. Rows whose token is `<|image_pad|>` take an image row. With aligned rows (the one-function contract)
+  `image_embeds` has one row per token and row i belongs to token i; otherwise (the eager reference and the 0.0.2
+  `withImage`) the row index is a running count over the pad mask, derived from token values, gathered with an
+  embedding lookup (F-P3-2), and a chunk carries exactly its own pad tokens' rows.
+- DeepStack. After decoder layer k < levels, `deepstack[k]` is added at the same rows.
 
-Bucketed contract, two functions over the same weights (stored once):
+Bucketed contract, one function (0.0.3; docs/qwen3-vl-single-decoder.md):
 
-    main(input_ids [1, q], cache_positions [1, q], rope_positions [3, q], keyCache, valueCache)
+    main(input_ids [1, q], cache_positions [1, q], rope_positions [3, q], image_embeds [q, hidden],
+         deepstack [levels, q, hidden], keyCache, valueCache)
       -> logits [1, 1, vocab], keyUpdate [layers, 1, kv_heads, q, head_dim], valueUpdate
-    withImage(input_ids, cache_positions, rope_positions, image_embeds [n, hidden], deepstack [levels, n, hidden],
-              keyCache, valueCache) -> the same outputs
+
+Image rows are used only where the token is `<|image_pad|>`, so text steps send zero rows. Core AI wires a separate
+copy of the weights for each function, so the 0.0.2 pair (`main` without image inputs, and `withImage` with
+`image_embeds` [n, hidden]) kept two copies resident.
 """
 
 from __future__ import annotations
@@ -102,14 +106,22 @@ class Qwen3VLText(torch.nn.Module):
         self.rope = MRotaryEmbedding(self.head_dim, float(cfg["rope_theta"]),
                                      mrope_axes(list(scaling["mrope_section"]), bool(scaling.get("mrope_interleaved", False))))
 
-    def forward(self, input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds=None, deepstack=None):
+    def forward(self, input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds=None, deepstack=None,
+                aligned=False):
         q_len = input_ids.shape[1]
         x = self.embed(input_ids)
         if image_embeds is not None:
             is_image = input_ids[0] == self.image_token                                         # [q], value-derived
-            row = torch.clamp(torch.cumsum(is_image.to(torch.int32), 0, dtype=torch.int32) - 1, min=0)
             pick = is_image[None, :, None]
-            x = torch.where(pick, F.embedding(row, image_embeds)[None].to(x.dtype), x)
+            if aligned:
+                def image_rows(t):
+                    return t[None].to(x.dtype)
+            else:
+                row = torch.clamp(torch.cumsum(is_image.to(torch.int32), 0, dtype=torch.int32) - 1, min=0)
+
+                def image_rows(t):
+                    return F.embedding(row, t)[None].to(x.dtype)
+            x = torch.where(pick, image_rows(image_embeds), x)
         new_positions = cache_positions[0]
         key_positions = torch.cumsum(torch.ones_like(key_cache[0, 0, 0, :, 0], dtype=torch.int32), 0, dtype=torch.int32) - 1
         cache_visible = key_positions[None, :] < new_positions[:1, None]
@@ -122,7 +134,7 @@ class Qwen3VLText(torch.nn.Module):
             keys.append(k)
             values.append(v)
             if deepstack is not None and i < self.levels:
-                extra = F.embedding(row, deepstack[i])[None].to(x.dtype)
+                extra = image_rows(deepstack[i])
                 x = x + torch.where(pick, extra, torch.zeros_like(extra))
         logits = F.linear(self.norm(x[:, -1:]), self.embed.weight if self.tied else self.lm_head.weight)
         return logits, torch.stack(keys), torch.stack(values)
@@ -133,13 +145,29 @@ class Qwen3VLText(torch.nn.Module):
         dtype = self.embed.weight.dtype
         return torch.zeros(shape, dtype=dtype), torch.zeros(shape, dtype=dtype)
 
-    def step(self, input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds=None, deepstack=None):
+    def step(self, input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds=None, deepstack=None,
+             aligned=False):
         """One host-loop step on torch caches: last-row logits [vocab], with the returned rows written like the host."""
-        logits, ku, vu = self(input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds, deepstack)
+        logits, ku, vu = self(input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds, deepstack,
+                              aligned)
         start, q = int(cache_positions[0, 0]), input_ids.shape[1]
         key_cache[:, :, :, start:start + q] = ku
         value_cache[:, :, :, start:start + q] = vu
         return logits[0, -1]
+
+    def unified_example(self, max_len: int):
+        """(example, dynamic shapes) for the one-function contract: q from 1 to `max_len`, image rows aligned with it."""
+        hidden, dtype = self.cfg["hidden_size"], self.embed.weight.dtype
+        q_dim = torch.export.Dim("q", min=1, max=max_len)
+        cap_dim = torch.export.Dim("capacity", min=2, max=self.max_capacity)
+        q, start = 12, 16
+        ids = torch.arange(q, dtype=torch.int32)[None] + 100
+        ids[0, 3:8] = self.image_token
+        pos = torch.arange(start, start + q, dtype=torch.int32)[None]
+        kc, vc = self.empty_state(56)
+        example = (ids, pos, pos.expand(3, -1).contiguous(), torch.zeros(q, hidden, dtype=dtype),
+                   torch.zeros(self.levels, q, hidden, dtype=dtype), kc, vc)
+        return example, ({1: q_dim}, {1: q_dim}, {1: q_dim}, {0: q_dim}, {1: q_dim}, {3: cap_dim}, {3: cap_dim})
 
     def examples(self, max_len: int):
         """(main example, main dynamic shapes, withImage example, withImage dynamic shapes)."""
@@ -162,6 +190,36 @@ class Qwen3VLText(torch.nn.Module):
                       torch.zeros(self.levels, wn, hidden, dtype=dtype), kc, vc)
         with_dyn = ({1: q2}, {1: q2}, {1: q2}, {0: n_dim}, {1: n_dim}, {3: cap_dim}, {3: cap_dim})
         return main, main_dyn, with_image, with_dyn
+
+
+class Unified(torch.nn.Module):
+    """The one-function contract's module: image rows aligned with the tokens, before the caches."""
+
+    def __init__(self, inner: Qwen3VLText) -> None:
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, input_ids, cache_positions, rope_positions, image_embeds, deepstack, key_cache, value_cache):
+        return self.inner(input_ids, cache_positions, rope_positions, key_cache, value_cache, image_embeds, deepstack,
+                          aligned=True)
+
+
+def build_fp16(cfg: dict[str, Any], image_token: int, levels: int, max_capacity: int = 16384) -> Qwen3VLText:
+    """An uninitialised fp16 tower for `load_weights` to fill: built on the meta device, so no float32 copy of the
+    weights is ever allocated (the float32 build of the 4B needs about 16 GB)."""
+    previous = torch.get_default_dtype()
+    torch.set_default_dtype(torch.float16)
+    try:
+        with torch.device("meta"):
+            text = Qwen3VLText(cfg, image_token, levels, max_capacity=max_capacity)
+    finally:
+        torch.set_default_dtype(previous)
+    text.to_empty(device="cpu")
+    # The rotary tables are plain float32 attributes, not parameters: rebuild them off the meta device.
+    scaling = cfg.get("rope_scaling") or {}
+    text.rope = MRotaryEmbedding(text.head_dim, float(cfg["rope_theta"]),
+                                 mrope_axes(list(scaling["mrope_section"]), bool(scaling.get("mrope_interleaved", False))))
+    return text
 
 
 class WithImage(torch.nn.Module):
