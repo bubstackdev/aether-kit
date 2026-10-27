@@ -1,0 +1,89 @@
+{
+  "checkpoint": "~/.cache/huggingface/hub/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294",
+  "random": false,
+  "bar": 0.99999,
+  "denoiser": {
+    "text-to-image": {
+      "cosine": 1.0,
+      "maxAbs": 7.218122482299805e-05,
+      "scale": 2.9719624519348145,
+      "shape": [
+        24,
+        128
+      ]
+    },
+    "reference": {
+      "cosine": 1.0,
+      "maxAbs": 3.0279159545898438e-05,
+      "scale": 3.193068504333496,
+      "shape": [
+        36,
+        128
+      ]
+    }
+  },
+  "text": {
+    "allRows": {
+      "cosine": 1.0,
+      "maxAbs": 0.0,
+      "scale": 16391.744140625,
+      "shape": [
+        48,
+        7680
+      ]
+    },
+    "realRows": {
+      "cosine": 1.0,
+      "maxAbs": 0.0,
+      "scale": 16391.744140625,
+      "shape": [
+        19,
+        7680
+      ]
+    }
+  },
+  "vae": {
+    "decoder-float32": {
+      "cosine": 1.0,
+      "maxAbs": 0.0,
+      "scale": 0.9331194758415222,
+      "shape": [
+        3,
+        64,
+        96
+      ]
+    },
+    "encoder-float32": {
+      "cosine": 1.0,
+      "maxAbs": 0.0,
+      "scale": 2.894906997680664,
+      "shape": [
+        4,
+        6,
+        128
+      ]
+    },
+    "decoder-float16": {
+      "cosine": 1.0,
+      "maxAbs": 4.023313522338867e-06,
+      "scale": 0.9331194758415222,
+      "shape": [
+        3,
+        64,
+        96
+      ]
+    },
+    "encoder-float16": {
+      "cosine": 1.0,
+      "maxAbs": 4.0531158447265625e-06,
+      "scale": 2.894906997680664,
+      "shape": [
+        4,
+        6,
+        128
+      ]
+    }
+  },
+  "peakRSSGB": 28.16,
+  "passed": true
+}

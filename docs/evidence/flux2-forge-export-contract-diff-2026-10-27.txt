@@ -1,0 +1,50 @@
+metadata.json: identical
+aether.json: 111 gated fields, 0 differ
+  volatile diffusion.assetBytes: {"denoiser0": 1903883457, "denoiser1": 1283968516, "denoiser2": 1444859682, "textEncoder": 3116676234, "vaeDecoder": 101515318, "vaeEncoder": 70793708} -> {"denoiser0": 1903859828, "denoiser1": 1283962582, "denoiser2": 1444851647, "textEncoder": 3116453776, "vaeDecoder": 101482800, "vaeEncoder": 70771852}
+  volatile memory.weightsBytes: 7921696915 -> 7921382485
+  volatile provenance.exportedOn: {"date": "2026-10-05", "os": "26A434"} -> {"date": "2026-10-27", "os": "26A434"}
+  volatile files pinned: 26 -> 26
+  volatile provenance.forge: "0.1.0" -> "aether-kit Forge/flux2/export_flux2.py"
+denoiser0 (flux2_klein_4b_reference-denoiser0.aimodel): IDENTICAL contract
+  segment: (tensor<?x128xf16>, tensor<?x7680xf16>, tensor<1xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> (tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>)
+    args [{coreai.name = "latents"}, {coreai.name = "text_embeds"}, {coreai.name = "sigma"}, {coreai.name = "rope_text"}, {coreai.name = "rope_image"}] -> [{coreai.name = "image_1"}, {coreai.name = "text_1"}, {coreai.name = "cond"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']; compute ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']
+  storage elements Float16 113,762,562 -> 113,759,234, Float32 132 -> 3,460, Int8 1,676,282,880 -> 1,676,289,024
+  bytes 1,903,883,457 -> 1,903,859,828
+  composites (not gated) ['scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>'] -> ['layer_norm (tensor<1x?x3072xf32>, tensor<3072xf32>, tensor<3072xf32>) -> tensor<1x?x3072xf32>', 'scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>']
+denoiser1 (flux2_klein_4b_reference-denoiser1.aimodel): IDENTICAL contract
+  segment: (tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> (tensor<?x3072xf32>, tensor<?x3072xf32>)
+    args [{coreai.name = "image_1"}, {coreai.name = "text_1"}, {coreai.name = "cond"}, {coreai.name = "rope_text"}, {coreai.name = "rope_image"}] -> [{coreai.name = "image_2"}, {coreai.name = "text_2"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']; compute ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']
+  storage elements Float16 302,240,770 -> 302,238,722, Float32 4 -> 2,052, Int8 679,504,896 -> 679,504,896
+  bytes 1,283,968,516 -> 1,283,962,582
+  composites (not gated) ['scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>'] -> ['layer_norm (tensor<1x?x3072xf32>, tensor<3072xf32>, tensor<3072xf32>) -> tensor<1x?x3072xf32>', 'scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>']
+denoiser2 (flux2_klein_4b_reference-denoiser2.aimodel): IDENTICAL contract
+  segment: (tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> tensor<?x128xf16>
+    args [{coreai.name = "image_2"}, {coreai.name = "text_2"}, {coreai.name = "cond"}, {coreai.name = "rope_text"}, {coreai.name = "rope_image"}] -> [{coreai.name = "velocity"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']; compute ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']
+  storage elements Float16 339,990,018 -> 339,987,714, Float32 4 -> 2,309, Int8 764,832,768 -> 764,832,768
+  bytes 1,444,859,682 -> 1,444,851,647
+  composites (not gated) ['scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>'] -> ['layer_norm (tensor<1x?x3072xf32>, tensor<3072xf32>, tensor<3072xf32>) -> tensor<1x?x3072xf32>', 'scaled_dot_product_attention (tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>, tensor<1x24x?x128xf16>) -> tensor<1x24x?x128xf16>']
+textEncoder (flux2_klein_4b_reference-text.aimodel): IDENTICAL contract
+  encode: (tensor<1x?xsi32>, tensor<1x?xsi32>, tensor<1x?xsi32>) -> tensor<?x7680xf16>
+    args [{coreai.name = "input_ids"}, {coreai.name = "position_ids"}, {coreai.name = "attention_mask"}] -> [{coreai.name = "text_embeds"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']; compute ['Bool', 'Float16', 'Float32', 'Int32', 'Int8', 'UInt32', 'UInt64']
+  storage elements Float16 1,267,588 -> 1,136,260, Float32 66 -> 66, Int8 3,114,094,976 -> 3,113,949,184
+  bytes 3,116,676,234 -> 3,116,453,776
+vaeDecoder (flux2_klein_4b_reference-vae.aimodel): IDENTICAL contract
+  decode: (tensor<?x?x128xf16>) -> tensor<3x?x?xf32>
+    args [{coreai.name = "latents"}] -> [{coreai.name = "image"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'UInt32', 'UInt64']; compute ['Float16', 'Float32', 'Int32', 'UInt32', 'UInt64']
+  storage elements Float16 48,529,408 -> 48,529,408, Float32 1,091,110 -> 1,091,115
+  bytes 101,515,318 -> 101,482,800
+  composites (not gated) ['pixel_shuffle (tensor<1x1024x?x?xf32>) -> tensor<1x256x?x?xf32>', 'pixel_shuffle (tensor<1x128x?x?xf32>) -> tensor<1x32x?x?xf32>', 'pixel_shuffle (tensor<1x2048x?x?xf32>) -> tensor<1x512x?x?xf32>', 'scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>'] -> ['group_norm (tensor<1x512x?x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?x?xf32>', 'group_norm (tensor<1x512x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?xf32>', 'group_norm (tensor<?x128x?x?xf32>, tensor<128xf32>, tensor<128xf32>) -> tensor<?x128x?x?xf32>', 'group_norm (tensor<?x256x?x?xf32>, tensor<256xf32>, tensor<256xf32>) -> tensor<?x256x?x?xf32>', 'group_norm (tensor<?x512x?x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<?x512x?x?xf32>', 'pixel_shuffle (tensor<1x128x?x?xf32>) -> tensor<1x32x?x?xf32>', 'scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>']
+vaeEncoder (flux2_klein_4b_reference-vae-encoder.aimodel): IDENTICAL contract
+  encode: (tensor<3x?x?xf32>) -> tensor<?x?x128xf32>
+    args [{coreai.name = "reference_pixels"}] -> [{coreai.name = "reference_latents"}]
+  compat 27.0; storage ['Float16', 'Float32', 'Int32', 'UInt32', 'UInt64']; compute ['Float32', 'Int32', 'UInt32', 'UInt64']
+  storage elements Float16 33,488,896 -> 33,488,896, Float32 937,219 -> 937,219
+  bytes 70,793,708 -> 70,771,852
+  composites (not gated) ['scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>'] -> ['group_norm (tensor<1x128x?x?xf32>, tensor<128xf32>, tensor<128xf32>) -> tensor<1x128x?x?xf32>', 'group_norm (tensor<1x256x?x?xf32>, tensor<256xf32>, tensor<256xf32>) -> tensor<1x256x?x?xf32>', 'group_norm (tensor<1x512x?x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?x?xf32>', 'group_norm (tensor<1x512x?xf32>, tensor<512xf32>, tensor<512xf32>) -> tensor<1x512x?xf32>', 'scaled_dot_product_attention (tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>, tensor<1x1x?x512xf32>) -> tensor<1x1x?x512xf32>']
+tokenizer + LICENSE.md: 8/8 files identical
+RESULT: contract identical

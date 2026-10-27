@@ -55,22 +55,75 @@ Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrid
 
 ### Producing the bundle
 
-The 2026-10-26 bundle's components were exported by the superseded aether-engine prototype's exporter, which is not
-part of aether-kit and is no longer used; re-exporting needs that exporter ported into `Forge/` (open). For the
-record, the export and the kit-side script that adds the target and provenance fields were:
+`Forge/flux2/` exports the bundle from the pinned snapshot in Forge's locked environment. It is written from upstream
+Diffusers 0.37.1 and Transformers 4.57.3 against this contract and reproduces the 2026-10-26 bundle's recipe; the
+superseded prototype exporter that produced that bundle is no longer used. Export is CPU-only (Python loads assets
+`cpu_only` for its self-check), takes about 1.5 minutes on an M5 Max and peaks at an 18.7 GB footprint:
 
 ```sh
-cd <aether-engine>/forge
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 export" uv run --frozen --project . python -m aether_forge export \
-  --recipe ../recipes/flux2-klein-4b-reference.toml --out ~/.cache/huggingface/aether-kit/flux2-klein-4b/export-2026-10-26 \
-  --cache ~/Library/Caches/aether/forge-checkpoints --repo-root <aether-engine>
-python3 Scripts/finalize-flux2-bundle.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/export-2026-10-26 \
-  <checkpoint snapshot> ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu
+uv sync --frozen --project Forge
+C=~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294
+O=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27
+Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir $O/graph-check-real --checkpoint $C   # optional, ~28 GB RSS
+Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint $C --output $O/export
+python3 Scripts/finalize-flux2-bundle.py $O/export $C $O/bundle
+Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu $O/bundle
 ```
+
+- `flux2_graphs.py` holds the six graphs. The text encoder is Qwen3 layers 0–26 with the pipeline's taps, fp16, q/k/v
+  in one projection. The denoiser segments keep the residual streams, LayerNorms, modulation and rotary products in
+  float32 and run matmuls and attention in fp16; every query/key projection row and q/k norm gain is permuted within its
+  head so Kit's split-halves rotary tables give Diffusers' interleaved rotation. `cond` holds the 17 modulation rows
+  (image 6, text 6, single 3, output scale and shift). Both VAE graphs store fp16 weights and compute in float32.
+- `export_flux2.py` verifies every checkpoint file it reads against the pins recorded in the qualification record,
+  applies weight-only int8 per-channel PTQ with coreai-opt (205 modules; the 20 single-block `proj_out` stay fp16, as
+  `quantization.exceptions` declares), converts, and runs each asset `cpu_only` against its eager fp16 module. Core AI's
+  `cpu_only` runtime segfaults on the VAE decoder (the 2026-10-26 asset too), so that one is qualified natively only.
+  It writes `bundle/`, `manifest-fragment.json`, `apple-metadata.json`, `export-report.json` and `forge-log.jsonl`.
+- `check_flux2_graphs.py` compares the graphs in float32 with the unmodified upstream modules, on a random-weight
+  snapshot it writes or on the real one. On the real weights the text encoder and both VAE graphs are exact and the
+  chained denoiser segments reach cosine 1.0 (max error 7·10⁻⁵ at output scale 3) against `Flux2Transformer2DModel`,
+  with and without a reference grid.
+- `check_flux2_contract.py` diffs two finalized bundles: `metadata.json`, every `aether.json` field except the ones a
+  re-export changes (file pins, export date, tool, asset bytes), each function's graph type and argument/result
+  attributes, the OS compatibility version, storage and compute scalar types, and the tokenizer files.
+- `record_flux2_evidence.py` writes the evidence record with parity side by side against a shipped bundle's report.
 
 The finalizer streams every `main.mlirb`, refuses one that differs from its `main.hash`, and writes `aether.json` (Forge
 fragment + target + per-asset placement + provenance file hashes + license) and `metadata.json`. Core AI exports are not
 byte-reproducible, so a re-export changes model hashes and fingerprints.
+
+**The 2026-10-27 Forge export** (`forge-export-2026-10-27/bundle`, fingerprint `a48aaf07…`) has the shipped bundle's
+contract exactly: every function signature, the segment split, `metadata.json`, all 111 compared `aether.json` fields
+(the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm and GroupNorm lower to
+Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the prototype used conv + pixel
+shuffle, and the q/k norm feeds the rotary product in float32 without an fp16 round trip. `Flux2Assets.open` and
+`verify()` accept it, the `AetherFlux2Tests` suite passes 28/28 with the bundle and CPU fixture paths set, and against
+the CPU float32 references it passes native parity (113/113) and lifecycle (44/44, the same 176 native calls, 34
+model instances, 32 loads and 144 reuses):
+
+| Check (bar), CPU references | Shipped bundle (`f28ef0e8…`) | Forge export (`a48aaf07…`) |
+| --- | --- | --- |
+| Token ids and mask (exact) | 12/12 | 12/12 |
+| Text real-row cosine (≥ 0.999) | min 0.999972 | min 0.999972 |
+| Teacher-forced velocity cosine per step (≥ 0.999) | min 0.999239 (1024×768) | min 0.999247 (1024×768) |
+| VAE decoder PSNR (≥ 35 dB) | min 87.684 dB | min 87.684 dB |
+| Reference-encoder latent cosine (≥ 0.999) | 3/3 ≥ 0.9999999 | 3/3 ≥ 0.9999999 |
+| Image path SSIM (≥ 0.94) | min 0.96016 (`cafe-512`) | min 0.95953 (`cafe-512`) |
+| Whole pipeline SSIM (recorded) | 0.812–0.999 | 0.832–0.999 |
+
+Per check, image-path SSIM is within 0.0008 of the shipped bundle's, velocity cosine within 3·10⁻⁵ and decoder PSNR
+within 0.001 dB. The ungated whole-pipeline SSIM moves by up to 0.06 (`fox-lighthouse-ref2` 0.812 → 0.871): that path
+conditions on the native text encoder's padding rows, which move the image more than conversion error does (see the
+MPS-reference section below). The parity
+process peaked at a 17.3 GB lifetime footprint (component VAE phase, as before). The shipped bundle stays the default
+(`macos-any-gpu`). See the [record](evidence/flux2-forge-export-2026-10-27.json) (commands, versions, file hashes,
+every check side by side), the [contract diff](evidence/flux2-forge-export-contract-diff-2026-10-27.txt), the
+[graph check](evidence/flux2-forge-export-graph-check-2026-10-27.json), the
+[parity report](evidence/flux2-forge-export-native-parity-2026-10-27.json) and
+[lifecycle report](evidence/flux2-forge-export-native-lifecycle-2026-10-27.json) with their logs, the
+[manifest fragment](evidence/flux2-forge-export-manifest-fragment-2026-10-27.json) and the
+[export log](evidence/flux2-forge-export-log-2026-10-27.jsonl). GPU-lock time: 4.4 minutes (parity 3.6, lifecycle 0.8).
 
 ## Host math (`AetherFlux2`)
 
