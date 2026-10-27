@@ -33,7 +33,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 ## Installation
 
 ```swift
-.package(url: "https://github.com/atelier-private-dev/aether-kit", exact: "0.0.1")
+.package(url: "https://github.com/bubstackdev/aether-kit", exact: "0.0.1")
 ```
 
 ```swift
