@@ -11,6 +11,10 @@ import AetherKrea
 import AetherKreaCoreAI
 import AetherKreaTokenizers
 import AetherLanguageCoreAI
+import AetherLanguageTokenizers
+import AetherSpeech
+import AetherSpeechCoreAI
+import AetherVision
 import CoreGraphics
 import Foundation
 

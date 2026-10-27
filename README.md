@@ -143,7 +143,7 @@ sh Scripts/check-cpu.sh                         # weight-free Release suite (cle
 swift run -c release aether-probe doctor
 ```
 
-`Scripts/check.sh` uses SwiftPM's default build engine. Set `AETHER_BUILD_SYSTEM=native` in restricted sandboxes where the default engine's `dsymutil` step can't run. CI runs the CPU suite and the independent `Examples/Foundations` consumer on a macOS 27 / Xcode 27.1 runner (`AETHER_MAC_RUNNER`).
+`Scripts/check.sh` uses SwiftPM's default build engine. Set `AETHER_BUILD_SYSTEM=native` in restricted sandboxes where the default engine's `dsymutil` step can't run. Both check scripts forward arguments to `swift test` (for example, `--filter` or `--xunit-output`). [GitHub CI](docs/ci.md) runs the weight-free Release suite and both independent consumers on GitHub's Apple silicon `xcode-27` runner with Xcode 27.1, for PRs targeting `main` and pushes to `main`.
 
 Real-weight suites are opt-in and skipped by default:
 
@@ -166,7 +166,7 @@ Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. 
 - **Language:** 0.0.1-contract (running-position) assets reload the native model every 128 submissions. The bucketed contract avoids reloads at a per-step cost (about 0.88× an unrecycled running step on Qwen3-0.6B fp16, with a longer time to first token) and is qualified on that model on one Mac only.
 - **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
 - **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory until unload; bucket 2048 alone adds about 8 GB. Sessions therefore cap utterances at 1024 frames (about 25.6 s) by default on macOS and 512 (about 12.8 s) on iOS, where one iPhone was qualified; `frameCap: .extended` raises the cap to 2048, and longer segments are refused with their length and the cap. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. 0.0.2 ships the float32 decoder only; the float16/int8 export flags are experimental and fail qualification.
-- **CI** needs an equipped macOS 27 runner; until then, checks run locally.
+- **CI scope:** PR checks cover weight-free contracts and consumer integration. Real-weight GPU qualification remains an explicit local operation.
 
 ## License
 
