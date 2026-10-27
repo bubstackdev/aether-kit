@@ -143,7 +143,10 @@ let result = try await session.generate(request) { token in
 
 The session detects the contract from the `main` function signature
 (`LanguageGenerationSession.contract`); running-contract bundles need no manifest
-change, and bucketed ones declare their `exportBounds`.
+change, and bucketed ones declare their `exportBounds`. A Qwen3-VL bucketed `main` also takes
+`rope_positions` and, since 0.0.3, image rows aligned with the tokens (`image_embeds`,
+`deepstack`), so one function serves text, image and decode steps
+(`imagesThroughMain`; [Qwen3-VL](qwen3-vl.md#pieces)).
 
 | | `runningPositions` (0.0.1, Apple LLM exports) | `bucketedPositions` (0.0.2) |
 | --- | --- | --- |
@@ -312,7 +315,11 @@ every reply identical to the first of its kind.
 | Qwen3-4B writer | 8,581 MiB | 10,631 MiB | 10,688 MiB | 1 (1 / 0) | 36 | 60 of 60 |
 | Qwen3-VL-2B | 10,113 MiB | 12,174 MiB | 12,222 MiB | 1 (1 / 0) | 58 | 60 of 60 |
 | Qwen3-VL-4B describer | 19,566 MiB | 21,705 MiB | 21,918 MiB | 1 (1 / 0) | 34 | 60 of 60 |
+| Qwen3-VL-2B, one function (0.0.3) | 6,065 MiB | 8,066 MiB | 8,180 MiB | 1 (1 / 0) | 34 | 60 of 60 |
+| Qwen3-VL-4B, one function (0.0.3) | 10,847 MiB | 12,822 MiB | 13,311 MiB | 2 (2 / 0) | 20 | 60 of 60 |
 
+The one-function rows are the re-exported Qwen3-VL bundles
+([evidence](evidence/qwen3-vl-one-function-2026-10-27.json), [Qwen3-VL](qwen3-vl.md#one-decoder-function-003)).
 Every reload ran at idle; none delayed a request. Without the budget, the same requests grow without limit (the
 writer by 58.6 MiB per request at this width, 3.4 GiB over 60). Upstream parity was re-run at the fixed width for all
 four models ([evidence](evidence/language-prefill-width-2026-10-27.json)); see

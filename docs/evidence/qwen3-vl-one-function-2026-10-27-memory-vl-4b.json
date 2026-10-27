@@ -1,0 +1,1362 @@
+{
+  "bundle" : "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+  "device" : "h17c",
+  "imagesThroughMain" : true,
+  "phases" : [
+    {
+      "footprintMiB" : 47,
+      "metalDeltaMiB" : 0,
+      "metalMiB" : 0,
+      "phase" : "before open",
+      "residency" : {
+        "anonymousMiB" : 46,
+        "categories" : {
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 27,
+            "wired" : 0
+          }
+        },
+        "fileBackedMiB" : 34,
+        "graphicsFootprintMiB" : 0,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20172,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34414,
+        "hostFreeMiB" : 11840,
+        "hostWiredMiB" : 6615,
+        "residentMiB" : 137
+      }
+    },
+    {
+      "footprintMiB" : 1101,
+      "metalDeltaMiB" : 992,
+      "metalMiB" : 992,
+      "phase" : "encoder open",
+      "residency" : {
+        "anonymousMiB" : 107,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 992,
+            "wired" : 992
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 35,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 64,
+            "wired" : 0
+          },
+          "mapped file" : {
+            "clean" : 794,
+            "dirty" : 0,
+            "wired" : 0
+          }
+        },
+        "fileBackedMiB" : 829,
+        "graphicsFootprintMiB" : 992,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20232,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 35215,
+        "hostFreeMiB" : 9986,
+        "hostWiredMiB" : 7609,
+        "residentMiB" : 993
+      }
+    },
+    {
+      "footprintMiB" : 1644,
+      "metalDeltaMiB" : 1133,
+      "metalMiB" : 2125,
+      "phase" : "encoder, grid 44x44",
+      "residency" : {
+        "anonymousMiB" : 157,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1042,
+            "wired" : 1040
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 47,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 81,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 448,
+            "wired" : 448
+          },
+          "mapped file" : {
+            "clean" : 800,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 835,
+        "graphicsFootprintMiB" : 1490,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20266,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34430,
+        "hostFreeMiB" : 9415,
+        "hostWiredMiB" : 8931,
+        "residentMiB" : 1049
+      }
+    },
+    {
+      "footprintMiB" : 1678,
+      "metalDeltaMiB" : 812,
+      "metalMiB" : 2937,
+      "phase" : "encoder, grid 36x48",
+      "residency" : {
+        "anonymousMiB" : 187,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1046,
+            "wired" : 1044
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 29,
+            "wired" : 29
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 59,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 85,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 448,
+            "wired" : 448
+          },
+          "mapped file" : {
+            "clean" : 800,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 836,
+        "graphicsFootprintMiB" : 1494,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20279,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34430,
+        "hostFreeMiB" : 9379,
+        "hostWiredMiB" : 8955,
+        "residentMiB" : 1079
+      }
+    },
+    {
+      "footprintMiB" : 1706,
+      "metalDeltaMiB" : 811,
+      "metalMiB" : 3748,
+      "phase" : "encoder, grid 48x36",
+      "residency" : {
+        "anonymousMiB" : 215,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1046,
+            "wired" : 1044
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 43,
+            "wired" : 43
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 72,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 86,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 448,
+            "wired" : 448
+          },
+          "mapped file" : {
+            "clean" : 800,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 836,
+        "graphicsFootprintMiB" : 1494,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20307,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34430,
+        "hostFreeMiB" : 9353,
+        "hostWiredMiB" : 8952,
+        "residentMiB" : 1107
+      }
+    },
+    {
+      "footprintMiB" : 1736,
+      "metalDeltaMiB" : 811,
+      "metalMiB" : 4559,
+      "phase" : "encoder, grid 32x56",
+      "residency" : {
+        "anonymousMiB" : 243,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1047,
+            "wired" : 1046
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 57,
+            "wired" : 57
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 84,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 88,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 448,
+            "wired" : 448
+          },
+          "mapped file" : {
+            "clean" : 800,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 836,
+        "graphicsFootprintMiB" : 1495,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20322,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34429,
+        "hostFreeMiB" : 9322,
+        "hostWiredMiB" : 8969,
+        "residentMiB" : 1136
+      }
+    },
+    {
+      "footprintMiB" : 1764,
+      "metalDeltaMiB" : 811,
+      "metalMiB" : 5370,
+      "phase" : "encoder, grid 56x32",
+      "residency" : {
+        "anonymousMiB" : 272,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1047,
+            "wired" : 1045
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 71,
+            "wired" : 65
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 97,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 89,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 448,
+            "wired" : 448
+          },
+          "mapped file" : {
+            "clean" : 800,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 836,
+        "graphicsFootprintMiB" : 1495,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20359,
+        "hostCompressedMiB" : 5703,
+        "hostFileBackedMiB" : 34433,
+        "hostFreeMiB" : 9271,
+        "hostWiredMiB" : 8979,
+        "residentMiB" : 1164
+      }
+    },
+    {
+      "footprintMiB" : 1282,
+      "metalDeltaMiB" : 36,
+      "metalMiB" : 5406,
+      "phase" : "decoder open",
+      "residency" : {
+        "anonymousMiB" : 275,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1005,
+            "wired" : 792
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 71,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 97,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 93,
+            "wired" : 0
+          },
+          "mapped file" : {
+            "clean" : 8473,
+            "dirty" : 0,
+            "wired" : 792
+          }
+        },
+        "fileBackedMiB" : 8508,
+        "graphicsFootprintMiB" : 1005,
+        "graphicsNoFootprintMiB" : 448,
+        "hostAnonymousMiB" : 21218,
+        "hostCompressedMiB" : 5694,
+        "hostFileBackedMiB" : 42229,
+        "hostFreeMiB" : 1388,
+        "hostWiredMiB" : 8215,
+        "residentMiB" : 8840
+      }
+    },
+    {
+      "footprintMiB" : 1539,
+      "metalDeltaMiB" : 8443,
+      "metalMiB" : 13849,
+      "phase" : "main, short prompt",
+      "residency" : {
+        "anonymousMiB" : 283,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1047,
+            "wired" : 53
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 72,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 99,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 161,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 140,
+            "wired" : 140
+          },
+          "mapped file" : {
+            "clean" : 16158,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16194,
+        "graphicsFootprintMiB" : 199,
+        "graphicsNoFootprintMiB" : 320,
+        "hostAnonymousMiB" : 20817,
+        "hostCompressedMiB" : 6791,
+        "hostFileBackedMiB" : 35764,
+        "hostFreeMiB" : 113,
+        "hostWiredMiB" : 15259,
+        "residentMiB" : 16534
+      }
+    },
+    {
+      "footprintMiB" : 1730,
+      "metalDeltaMiB" : 160,
+      "metalMiB" : 14009,
+      "phase" : "main, long prompt",
+      "residency" : {
+        "anonymousMiB" : 201,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1192,
+            "wired" : 198
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 1
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 176,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16158,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16195,
+        "graphicsFootprintMiB" : 364,
+        "graphicsNoFootprintMiB" : 320,
+        "hostAnonymousMiB" : 20563,
+        "hostCompressedMiB" : 6937,
+        "hostFileBackedMiB" : 35492,
+        "hostFreeMiB" : 107,
+        "hostWiredMiB" : 15646,
+        "residentMiB" : 16396
+      }
+    },
+    {
+      "footprintMiB" : 1835,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 14113,
+      "phase" : "withImage pass 1, grid 44x44",
+      "residency" : {
+        "anonymousMiB" : 213,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1296,
+            "wired" : 292
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 1
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 177,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16158,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16194,
+        "graphicsFootprintMiB" : 468,
+        "graphicsNoFootprintMiB" : 320,
+        "hostAnonymousMiB" : 20489,
+        "hostCompressedMiB" : 6995,
+        "hostFileBackedMiB" : 35409,
+        "hostFreeMiB" : 114,
+        "hostWiredMiB" : 15737,
+        "residentMiB" : 16408
+      }
+    },
+    {
+      "footprintMiB" : 1939,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14216,
+      "phase" : "withImage pass 1, grid 36x48",
+      "residency" : {
+        "anonymousMiB" : 222,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1400,
+            "wired" : 294
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 178,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16194,
+        "graphicsFootprintMiB" : 571,
+        "graphicsNoFootprintMiB" : 320,
+        "hostAnonymousMiB" : 20692,
+        "hostCompressedMiB" : 6987,
+        "hostFileBackedMiB" : 34946,
+        "hostFreeMiB" : 111,
+        "hostWiredMiB" : 16008,
+        "residentMiB" : 16417
+      }
+    },
+    {
+      "footprintMiB" : 2043,
+      "metalDeltaMiB" : -217,
+      "metalMiB" : 13999,
+      "phase" : "withImage pass 1, grid 48x36",
+      "residency" : {
+        "anonymousMiB" : 232,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1503,
+            "wired" : 290
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 179,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 674,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20675,
+        "hostCompressedMiB" : 6978,
+        "hostFileBackedMiB" : 34938,
+        "hostFreeMiB" : 370,
+        "hostWiredMiB" : 15784,
+        "residentMiB" : 16426
+      }
+    },
+    {
+      "footprintMiB" : 2148,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 14103,
+      "phase" : "withImage pass 1, grid 32x56",
+      "residency" : {
+        "anonymousMiB" : 242,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1607,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 180,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 778,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20975,
+        "hostCompressedMiB" : 6969,
+        "hostFileBackedMiB" : 34942,
+        "hostFreeMiB" : 328,
+        "hostWiredMiB" : 15530,
+        "residentMiB" : 16436
+      }
+    },
+    {
+      "footprintMiB" : 2252,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14206,
+      "phase" : "withImage pass 1, grid 56x32",
+      "residency" : {
+        "anonymousMiB" : 251,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1710,
+            "wired" : 294
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 180,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 882,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20558,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35071,
+        "hostFreeMiB" : 697,
+        "hostWiredMiB" : 15528,
+        "residentMiB" : 16445
+      }
+    },
+    {
+      "footprintMiB" : 2356,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 14310,
+      "phase" : "withImage pass 2, grid 44x44",
+      "residency" : {
+        "anonymousMiB" : 252,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1813,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 181,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 985,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20642,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35071,
+        "hostFreeMiB" : 617,
+        "hostWiredMiB" : 15525,
+        "residentMiB" : 16446
+      }
+    },
+    {
+      "footprintMiB" : 2459,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14413,
+      "phase" : "withImage pass 2, grid 36x48",
+      "residency" : {
+        "anonymousMiB" : 252,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1917,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 181,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1088,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20745,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35071,
+        "hostFreeMiB" : 512,
+        "hostWiredMiB" : 15526,
+        "residentMiB" : 16446
+      }
+    },
+    {
+      "footprintMiB" : 2563,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14516,
+      "phase" : "withImage pass 2, grid 48x36",
+      "residency" : {
+        "anonymousMiB" : 253,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2020,
+            "wired" : 294
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 181,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1192,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20843,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35071,
+        "hostFreeMiB" : 426,
+        "hostWiredMiB" : 15514,
+        "residentMiB" : 16447
+      }
+    },
+    {
+      "footprintMiB" : 2667,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 14620,
+      "phase" : "withImage pass 2, grid 32x56",
+      "residency" : {
+        "anonymousMiB" : 253,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2124,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 182,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1295,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 20918,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35071,
+        "hostFreeMiB" : 340,
+        "hostWiredMiB" : 15526,
+        "residentMiB" : 16447
+      }
+    },
+    {
+      "footprintMiB" : 2772,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14723,
+      "phase" : "withImage pass 2, grid 56x32",
+      "residency" : {
+        "anonymousMiB" : 254,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2227,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 183,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1398,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 21023,
+        "hostCompressedMiB" : 6890,
+        "hostFileBackedMiB" : 35072,
+        "hostFreeMiB" : 235,
+        "hostWiredMiB" : 15525,
+        "residentMiB" : 16449
+      }
+    },
+    {
+      "footprintMiB" : 2876,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 14827,
+      "phase" : "withImage pass 3, grid 44x44",
+      "residency" : {
+        "anonymousMiB" : 255,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2330,
+            "wired" : 294
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 184,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1502,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 21117,
+        "hostCompressedMiB" : 6889,
+        "hostFileBackedMiB" : 34985,
+        "hostFreeMiB" : 224,
+        "hostWiredMiB" : 15530,
+        "residentMiB" : 16449
+      }
+    },
+    {
+      "footprintMiB" : 2981,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 14930,
+      "phase" : "withImage pass 3, grid 36x48",
+      "residency" : {
+        "anonymousMiB" : 257,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2434,
+            "wired" : 291
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 186,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1605,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 21134,
+        "hostCompressedMiB" : 6010,
+        "hostFileBackedMiB" : 35017,
+        "hostFreeMiB" : 1443,
+        "hostWiredMiB" : 15140,
+        "residentMiB" : 16451
+      }
+    },
+    {
+      "footprintMiB" : 3088,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 15033,
+      "phase" : "withImage pass 3, grid 48x36",
+      "residency" : {
+        "anonymousMiB" : 260,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2537,
+            "wired" : 290
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 189,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1709,
+        "graphicsNoFootprintMiB" : 0,
+        "hostAnonymousMiB" : 21365,
+        "hostCompressedMiB" : 5981,
+        "hostFileBackedMiB" : 35132,
+        "hostFreeMiB" : 1080,
+        "hostWiredMiB" : 15187,
+        "residentMiB" : 16454
+      }
+    },
+    {
+      "footprintMiB" : 3189,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 15137,
+      "phase" : "withImage pass 3, grid 32x56",
+      "residency" : {
+        "anonymousMiB" : 261,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2638,
+            "wired" : 238
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 189,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1810,
+        "graphicsNoFootprintMiB" : 2,
+        "hostAnonymousMiB" : 21600,
+        "hostCompressedMiB" : 5975,
+        "hostFileBackedMiB" : 35156,
+        "hostFreeMiB" : 161,
+        "hostWiredMiB" : 15852,
+        "residentMiB" : 16455
+      }
+    },
+    {
+      "footprintMiB" : 3294,
+      "metalDeltaMiB" : 103,
+      "metalMiB" : 15240,
+      "phase" : "withImage pass 3, grid 56x32",
+      "residency" : {
+        "anonymousMiB" : 263,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2740,
+            "wired" : 238
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 191,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 1913,
+        "graphicsNoFootprintMiB" : 2,
+        "hostAnonymousMiB" : 22041,
+        "hostCompressedMiB" : 5972,
+        "hostFileBackedMiB" : 34939,
+        "hostFreeMiB" : 123,
+        "hostWiredMiB" : 15669,
+        "residentMiB" : 16457
+      }
+    },
+    {
+      "footprintMiB" : 3398,
+      "metalDeltaMiB" : 104,
+      "metalMiB" : 15344,
+      "phase" : "main, long prompt after images",
+      "residency" : {
+        "anonymousMiB" : 263,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 2845,
+            "wired" : 288
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 73,
+            "wired" : 1
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 192,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 16157,
+            "dirty" : 0,
+            "wired" : 8414
+          }
+        },
+        "fileBackedMiB" : 16193,
+        "graphicsFootprintMiB" : 2016,
+        "graphicsNoFootprintMiB" : 2,
+        "hostAnonymousMiB" : 22538,
+        "hostCompressedMiB" : 5970,
+        "hostFileBackedMiB" : 34869,
+        "hostFreeMiB" : 114,
+        "hostWiredMiB" : 15254,
+        "residentMiB" : 16457
+      }
+    },
+    {
+      "footprintMiB" : 1618,
+      "metalDeltaMiB" : -10262,
+      "metalMiB" : 5082,
+      "phase" : "decoder unloaded",
+      "residency" : {
+        "anonymousMiB" : 262,
+        "categories" : {
+          "IOAccelerator (graphics)" : {
+            "clean" : 0,
+            "dirty" : 1075,
+            "wired" : 81
+          },
+          "IOSurface" : {
+            "clean" : 0,
+            "dirty" : 71,
+            "wired" : 0
+          },
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 192,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 814,
+            "dirty" : 0,
+            "wired" : 0
+          }
+        },
+        "fileBackedMiB" : 850,
+        "graphicsFootprintMiB" : 246,
+        "graphicsNoFootprintMiB" : 2,
+        "hostAnonymousMiB" : 21003,
+        "hostCompressedMiB" : 5969,
+        "hostFileBackedMiB" : 27965,
+        "hostFreeMiB" : 17093,
+        "hostWiredMiB" : 6715,
+        "residentMiB" : 1113
+      }
+    },
+    {
+      "footprintMiB" : 482,
+      "metalDeltaMiB" : -5049,
+      "metalMiB" : 33,
+      "phase" : "encoder unloaded",
+      "residency" : {
+        "anonymousMiB" : 232,
+        "categories" : {
+          "Malloc Large" : {
+            "clean" : 0,
+            "dirty" : 108,
+            "wired" : 0
+          },
+          "Malloc Small" : {
+            "clean" : 0,
+            "dirty" : 192,
+            "wired" : 0
+          },
+          "Owned physical footprint (unmapped) (graphics)" : {
+            "clean" : 0,
+            "dirty" : 160,
+            "wired" : 160
+          },
+          "mapped file" : {
+            "clean" : 21,
+            "dirty" : 0,
+            "wired" : 0
+          }
+        },
+        "fileBackedMiB" : 57,
+        "graphicsFootprintMiB" : 170,
+        "graphicsNoFootprintMiB" : 2,
+        "hostAnonymousMiB" : 20974,
+        "hostCompressedMiB" : 4910,
+        "hostFileBackedMiB" : 27023,
+        "hostFreeMiB" : 19272,
+        "hostWiredMiB" : 6566,
+        "residentMiB" : 290
+      }
+    }
+  ],
+  "promptTokens" : {
+    "main long" : 449,
+    "main short" : 12,
+    "withImage 32x56" : 465,
+    "withImage 36x48" : 449,
+    "withImage 44x44" : 501,
+    "withImage 48x36" : 449,
+    "withImage 56x32" : 465
+  },
+  "stage" : "complete"
+}

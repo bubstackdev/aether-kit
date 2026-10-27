@@ -1,0 +1,112 @@
+{
+  "cases" : [
+    {
+      "matchesComponentRun" : true,
+      "name" : "photo-dog-portrait-long-question",
+      "timeToFirstTokenSeconds" : 2.656644709,
+      "tokens" : [
+        1986,
+        374,
+        264,
+        1550,
+        62936,
+        11,
+        3265,
+        5239,
+        10300,
+        315,
+        264,
+        51092,
+        11,
+        6319,
+        2220,
+        8130,
+        5562,
+        11,
+        4363,
+        458,
+        3693,
+        13497,
+        398,
+        476,
+        264,
+        4428,
+        27775,
+        11,
+        11699,
+        389,
+        264,
+        32976,
+        6176,
+        36025,
+        13,
+        576,
+        2168,
+        374,
+        9080,
+        304,
+        7716,
+        323,
+        390,
+        49269,
+        264,
+        3746,
+        11,
+        8205
+      ],
+      "totalSeconds" : 3.830140292,
+      "upstreamAgreementTokens" : 3,
+      "upstreamTokens" : 48
+    }
+  ],
+  "closedAfterUnload" : true,
+  "gate" : "VisionLanguageSession.open(bundle:) plus generate(renderedTokenIDs:images:) on the photo files reproduces the gated component-level Kit run token for token; unload closes the session",
+  "imageGrids" : [
+    [
+      44,
+      44
+    ],
+    [
+      36,
+      48
+    ],
+    [
+      48,
+      36
+    ],
+    [
+      32,
+      56
+    ],
+    [
+      56,
+      32
+    ]
+  ],
+  "memory" : [
+    {
+      "footprintMiB" : 59,
+      "metalMiB" : 0,
+      "phase" : "before open"
+    },
+    {
+      "footprintMiB" : 1111,
+      "metalMiB" : 1028,
+      "phase" : "after open"
+    },
+    {
+      "footprintMiB" : 1676,
+      "metalMiB" : 10832,
+      "phase" : "after photo-dog-portrait-long-question"
+    },
+    {
+      "footprintMiB" : 395,
+      "metalMiB" : 345,
+      "phase" : "after unload"
+    }
+  ],
+  "passed" : true,
+  "stage" : "complete",
+  "tokenizerFilesVerified" : true,
+  "tokenizerRendersReferencePrompts" : true
+}

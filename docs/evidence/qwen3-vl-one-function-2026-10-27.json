@@ -1,0 +1,667 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-one-function-decoder",
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not. Metal is MTLDevice.currentAllocatedSize in the test process; wired is footprint's mapped-file category for the test process",
+  "design": "docs/qwen3-vl-single-decoder.md",
+  "bundles": {
+    "vl-2b": {
+      "oneFunction": "qwen3-vl-2b-one-function-bundle-macos",
+      "twoFunctions": "qwen3-vl-2b-bundle-macos"
+    },
+    "vl-4b": {
+      "oneFunction": "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+      "twoFunctions": "qwen3-vl-4b-abliterated-bundle-macos"
+    }
+  },
+  "exports": {
+    "method": "/usr/bin/time -l around the whole export, including the exec'd self-check (maximum resident set size is the process's peak across both phases); one export at a time, cleared as heavy CPU",
+    "vl-2b": {
+      "bundle": "qwen3-vl-2b-one-function-bundle-macos",
+      "recipe": "qwen3-vl-text-bucketed-mrope-one-function-v1",
+      "versions": {
+        "torch": "2.11.0",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2"
+      },
+      "hostOS": "26A434",
+      "wallSeconds": 46.22,
+      "maximumResidentSetBytes": 7122616320,
+      "stages": [
+        "fp16 tower loaded: rss 4.09 GiB, 3 s",
+        "eager reference saved: rss 4.52 GiB, 17 s",
+        "exported: rss 4.69 GiB, 24 s",
+        "converted: rss 7.92 GiB, 25 s",
+        "saved: rss 5.90 GiB, 29 s"
+      ],
+      "selfCheck": {
+        "passed": true,
+        "case": "photo-dog-portrait",
+        "imageTokens": 432,
+        "referenceSHA256": {
+          "plan.json": "2bd0d7a4c1597e735155781f8c7daaea3327a32f66746ee567c45346587ea04f",
+          "step-0.npz": "1aeab71dde38e6274fa7b0260991de2d3d5ecde685e06ff82f238c5cf0936d51",
+          "step-1.npz": "07a0dc1024e5bc77e05dd9294422c2a8aa77f9eeeb79657be47575b154de2153",
+          "step-2.npz": "9f3c0c1437789e7464f666076a180521af9ed4c780f1f2fb0405ca2b7140f1b9",
+          "step-3.npz": "da1c21f12cc75e900ff71d60de0fe0d5a357248b58e3a636b95c8d13d8061513",
+          "step-4.npz": "df5ffb89737116fd980c1eb79e9d5085bb2369f79d58cb34d07bb9a9a5f92e06",
+          "step-5.npz": "215ba0a6c97922835061e555e4521046efd270e970092a2ecfb602248395b269",
+          "step-6.npz": "3e96627a97181c178cdcd78f174478d5a9d3e9d4c532d5d00650982b5416e6d7",
+          "step-7.npz": "c113a55f79c1f5bb5afb665de166f2c33fca608d38dfb5c6e9b0cfc61bbd9381",
+          "step-8.npz": "b13920d6e3fbb444c5bb240ce6e0e5193c7780dff0c60c16ab76b51d04608de1",
+          "step-9.npz": "3f929961adb21f46a081cfda2199cee1e08372e418609a2d44301bee74bfad57"
+        },
+        "bar": "cosine >= 0.99 (engine fp16 bar), argmax equal, no lost cache rows",
+        "steps": [
+          {
+            "step": 0,
+            "plan": "image",
+            "tokens": 449,
+            "image": true,
+            "cosine": 0.999056,
+            "argmaxEqual": true,
+            "updateCosine": 0.999715,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 1,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999974,
+            "argmaxEqual": true,
+            "updateCosine": 0.999955,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 2,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999983,
+            "argmaxEqual": true,
+            "updateCosine": 0.999975,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 3,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999989,
+            "argmaxEqual": true,
+            "updateCosine": 0.999983,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 4,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999972,
+            "argmaxEqual": true,
+            "updateCosine": 0.99998,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 5,
+            "plan": "text",
+            "tokens": 42,
+            "image": false,
+            "cosine": 0.999623,
+            "argmaxEqual": true,
+            "updateCosine": 0.999875,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 6,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999981,
+            "argmaxEqual": true,
+            "updateCosine": 0.999966,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 7,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999956,
+            "argmaxEqual": true,
+            "updateCosine": 0.999959,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 8,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999938,
+            "argmaxEqual": true,
+            "updateCosine": 0.999915,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 9,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999926,
+            "argmaxEqual": true,
+            "updateCosine": 0.999895,
+            "lostCacheRows": 0
+          }
+        ]
+      },
+      "modelSHA256": "fdda4278ccdbcbe376c5f32a95766e8e8645e4f3b4b16516dc1514a66afc1830",
+      "assetBytes": 3441529597
+    },
+    "vl-4b": {
+      "bundle": "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+      "recipe": "qwen3-vl-text-bucketed-mrope-one-function-v1",
+      "versions": {
+        "torch": "2.11.0",
+        "coreai-torch": "0.4.2",
+        "coreai-core": "1.0.0b2"
+      },
+      "hostOS": "26A434",
+      "wallSeconds": 109.29,
+      "maximumResidentSetBytes": 16336240640,
+      "stages": [
+        "fp16 tower loaded: rss 3.01 GiB, 17 s",
+        "eager reference saved: rss 7.93 GiB, 43 s",
+        "exported: rss 0.97 GiB, 53 s",
+        "converted: rss 12.17 GiB, 60 s",
+        "saved: rss 5.50 GiB, 74 s"
+      ],
+      "selfCheck": {
+        "passed": true,
+        "case": "photo-dog-portrait",
+        "imageTokens": 432,
+        "referenceSHA256": {
+          "plan.json": "3814aad49ac0b8b6016f74c8c987ceb6a891b05c95c8376df0d67e67af99d3e8",
+          "step-0.npz": "9def4c2bf7507005e6324444f5e4da39191bf9ec306d8028cf7e76bbe605aa58",
+          "step-1.npz": "3eaa1f8bc89740efff5b66bbaa58eefb93a64e7870f66774cd2d51327187d126",
+          "step-2.npz": "04c422e7dce176006e291fb0670431698e4d709bf150028864843efebf64f45f",
+          "step-3.npz": "4c1851135d876a1f65c9bdc427a845c7a3f0413dc02c28a5a5b803d41fbe884e",
+          "step-4.npz": "11ab58b28068398894458cc849f77f531efbe3d020da06d8ee8f0fb17034ea60",
+          "step-5.npz": "d9ab20c62fa44baa950dbb83006545bf6e309b798d904b18cac45d8e84bdae6d",
+          "step-6.npz": "bb3c81887b78ed04745ed9d40ecdee038c6df23c4c3186c90b0344595713b27f",
+          "step-7.npz": "210b53bae1c9192b60c4931975ad1d9bbbb407b5406f738c3ad9bb502d387998",
+          "step-8.npz": "62b2cdfd5c196e29ca93f8bbe129ac19ccb2377aa8f7e0a345a3f6ca11a55b20",
+          "step-9.npz": "c624dbddf5f8152afffb22abdfeebc83a18cedc69281886dbc06e748a9cc58cc"
+        },
+        "bar": "cosine >= 0.99 (engine fp16 bar), argmax equal, no lost cache rows",
+        "steps": [
+          {
+            "step": 0,
+            "plan": "image",
+            "tokens": 449,
+            "image": true,
+            "cosine": 0.998908,
+            "argmaxEqual": true,
+            "updateCosine": 0.997722,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 1,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999953,
+            "argmaxEqual": true,
+            "updateCosine": 0.999952,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 2,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999959,
+            "argmaxEqual": true,
+            "updateCosine": 0.999945,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 3,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999929,
+            "argmaxEqual": true,
+            "updateCosine": 0.999977,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 4,
+            "plan": "image",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999984,
+            "argmaxEqual": true,
+            "updateCosine": 0.999984,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 5,
+            "plan": "text",
+            "tokens": 42,
+            "image": false,
+            "cosine": 0.999127,
+            "argmaxEqual": true,
+            "updateCosine": 0.999728,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 6,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999959,
+            "argmaxEqual": true,
+            "updateCosine": 0.999942,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 7,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999981,
+            "argmaxEqual": true,
+            "updateCosine": 0.999946,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 8,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999977,
+            "argmaxEqual": true,
+            "updateCosine": 0.999909,
+            "lostCacheRows": 0
+          },
+          {
+            "step": 9,
+            "plan": "text",
+            "tokens": 1,
+            "image": false,
+            "cosine": 0.999838,
+            "argmaxEqual": true,
+            "updateCosine": 0.9999,
+            "lostCacheRows": 0
+          }
+        ]
+      },
+      "modelSHA256": "6e08a8d060d30e2985749bc41b3292fade10cc484468981bb372757fd1b8897d",
+      "assetBytes": 8045575950
+    },
+    "vl-4b-two-functions-0.0.2": {
+      "maximumResidentSetBytes": 31694000000,
+      "wallSeconds": 75,
+      "source": "the 0.0.2 export's own log (peakRSS=31694MB seconds=75, sampled RSS); the guide had recorded about 35 GB"
+    }
+  },
+  "compiledCacheBytes": {
+    "note": "Core AI's compiled cache file for the decoder (model.aimodelx/.../mpsExecutable.mpsgraphpackage/resources.bin), GPU specialization",
+    "vl-2b-one-function": 6882213932,
+    "vl-4b-one-function": 16089835276,
+    "vl-4b-two-functions": {
+      "GiB": 22.48,
+      "source": "evidence/qwen3-vl-memory-by-phase-2026-10-27.json"
+    }
+  },
+  "residency": {
+    "test": "visionLanguageMemoryByPhase (AETHER_NATIVE_VL_MEMORY=1, release, no memory budget)",
+    "vl-2b": {
+      "file": "qwen3-vl-one-function-2026-10-27-memory-vl-2b.json",
+      "imagesThroughMain": true,
+      "mainFirstUseMetalMiB": 3578,
+      "firstImageRequestMetalMiB": 60,
+      "warmImageRequestMetalMiB": {
+        "min": 60,
+        "max": 61
+      },
+      "metalAfterAllImageRequestsMiB": 9842,
+      "decoderUnloadFreedMetalMiB": 4970,
+      "mappedFileWiredMiB": {
+        "decoder open": 0,
+        "main, short prompt": 3875,
+        "withImage pass 1, grid 44x44": 3875,
+        "main, long prompt after images": 3875,
+        "decoder unloaded": 0
+      }
+    },
+    "vl-4b": {
+      "file": "qwen3-vl-one-function-2026-10-27-memory-vl-4b.json",
+      "imagesThroughMain": true,
+      "mainFirstUseMetalMiB": 8443,
+      "firstImageRequestMetalMiB": 104,
+      "warmImageRequestMetalMiB": {
+        "min": -217,
+        "max": 104
+      },
+      "metalAfterAllImageRequestsMiB": 15344,
+      "decoderUnloadFreedMetalMiB": 10262,
+      "mappedFileWiredMiB": {
+        "decoder open": 792,
+        "main, short prompt": 8414,
+        "withImage pass 1, grid 44x44": 8414,
+        "main, long prompt after images": 8414,
+        "decoder unloaded": 0
+      }
+    },
+    "vl-4b-image-span-submissions": {
+      "file": "qwen3-vl-one-function-2026-10-27-memory-vl-4b-image-span-submissions.json",
+      "imagesThroughMain": true,
+      "mainFirstUseMetalMiB": 8123,
+      "firstImageRequestMetalMiB": 454,
+      "warmImageRequestMetalMiB": {
+        "min": 348,
+        "max": 388
+      },
+      "metalAfterAllImageRequestsMiB": 19275,
+      "decoderUnloadFreedMetalMiB": 14127,
+      "mappedFileWiredMiB": {
+        "decoder open": 792,
+        "main, short prompt": 8414,
+        "withImage pass 1, grid 44x44": 8414,
+        "main, long prompt after images": 8414,
+        "decoder unloaded": 0
+      },
+      "note": "first Kit version: each image as one submission through main (superseded)"
+    },
+    "twoFunctions": "evidence/qwen3-vl-memory-by-phase-2026-10-27.json (VL-4B: main +8,443 MiB Metal and wired 8,414 MiB; withImage first use +8,896 MiB Metal, wired 16,086 MiB; warm image requests about 20 MiB)"
+  },
+  "retention": {
+    "test": "languageMemoryBudgetBoundsRepeatedRequests (AETHER_NATIVE_LANGUAGE_MEMORY_BUDGET=1, release): 60 requests after warming, alternating a 449-token text prompt and a question about a 512x384 synthetic image, 8 tokens each, 2 GiB budget",
+    "imageSpanSubmissions": {
+      "passed": false,
+      "budgetMiB": 2048,
+      "requests": 60,
+      "models": {
+        "vl-2b-two-functions": {
+          "passed": true,
+          "warmMetalMiB": 10113,
+          "maximumMetalMiB": 12174,
+          "boundMiB": 12222,
+          "reloads": 1,
+          "idleReloads": 1,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 58,
+          "mismatchedReplies": 0,
+          "seconds": 36.5
+        },
+        "vl-2b-one-function": {
+          "passed": false,
+          "warmMetalMiB": 6216,
+          "maximumMetalMiB": 8468,
+          "boundMiB": 8466,
+          "reloads": 3,
+          "idleReloads": 3,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 18,
+          "mismatchedReplies": 0,
+          "seconds": 30.7
+        },
+        "vl-4b-two-functions": {
+          "passed": true,
+          "warmMetalMiB": 19566,
+          "maximumMetalMiB": 21705,
+          "boundMiB": 21918,
+          "reloads": 1,
+          "idleReloads": 1,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 34,
+          "mismatchedReplies": 0,
+          "seconds": 105.0
+        },
+        "vl-4b-one-function": {
+          "passed": true,
+          "warmMetalMiB": 11116,
+          "maximumMetalMiB": 13369,
+          "boundMiB": 13521,
+          "reloads": 5,
+          "idleReloads": 5,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 12,
+          "mismatchedReplies": 0,
+          "seconds": 71.6
+        }
+      },
+      "file": "qwen3-vl-one-function-2026-10-27-budget-image-span-submissions.json",
+      "note": "first Kit version (each image one submission through main) with the two-function bundles in the same run; the two-function results equal the 2026-10-27 record"
+    },
+    "uniformChunks": {
+      "passed": true,
+      "budgetMiB": 2048,
+      "requests": 60,
+      "models": {
+        "vl-2b-one-function": {
+          "passed": true,
+          "warmMetalMiB": 6065,
+          "maximumMetalMiB": 8066,
+          "boundMiB": 8180,
+          "reloads": 1,
+          "idleReloads": 1,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 34,
+          "mismatchedReplies": 0,
+          "seconds": 48.8
+        },
+        "vl-4b-one-function": {
+          "passed": true,
+          "warmMetalMiB": 10847,
+          "maximumMetalMiB": 12822,
+          "boundMiB": 13311,
+          "reloads": 2,
+          "idleReloads": 2,
+          "requestReloads": 0,
+          "firstReloadAfterRequest": 20,
+          "mismatchedReplies": 0,
+          "seconds": 118.3
+        }
+      },
+      "file": "qwen3-vl-one-function-2026-10-27-budget.json",
+      "note": "the committed Kit version: one-function prompts prefilled in 64-token chunks, image rows aligned"
+    },
+    "firstReloadAfterRequest": "1-based request count, as in docs/language-generation.md (the report's samples index requests from 0)"
+  },
+  "timing": {
+    "test": "visionLanguageDecoderTiming (AETHER_NATIVE_VL_TIMING=1, release): decoder only, image encoded once; 2 rounds alternating bundles, 2+2 warm then 8 requests of each kind per round, 64 tokens each, no memory budget; medians",
+    "file": "qwen3-vl-one-function-2026-10-27-timing.json",
+    "median": {
+      "vl-2b-two-functions": {
+        "image": {
+          "decodeSecondsPerToken": 0.014344059523809523,
+          "timeToFirstTokenSeconds": 0.29747016699999995
+        },
+        "text": {
+          "decodeSecondsPerToken": 0.0143549795,
+          "timeToFirstTokenSeconds": 0.148044354
+        }
+      },
+      "vl-2b-one-function": {
+        "image": {
+          "decodeSecondsPerToken": 0.01296003538095238,
+          "timeToFirstTokenSeconds": 0.273725479
+        },
+        "text": {
+          "decodeSecondsPerToken": 0.012568011579365079,
+          "timeToFirstTokenSeconds": 0.134577208
+        }
+      },
+      "vl-4b-two-functions": {
+        "image": {
+          "decodeSecondsPerToken": 0.02224074338095238,
+          "timeToFirstTokenSeconds": 0.350212604
+        },
+        "text": {
+          "decodeSecondsPerToken": 0.02192950958730159,
+          "timeToFirstTokenSeconds": 0.2329023335
+        }
+      },
+      "vl-4b-one-function": {
+        "image": {
+          "decodeSecondsPerToken": 0.022137081357142856,
+          "timeToFirstTokenSeconds": 0.448039229
+        },
+        "text": {
+          "decodeSecondsPerToken": 0.022895460976190475,
+          "timeToFirstTokenSeconds": 0.228526917
+        }
+      }
+    },
+    "repliesIdenticalAcrossBundles": {
+      "vl-2b": {
+        "text": true,
+        "image": true
+      },
+      "vl-4b": {
+        "text": true,
+        "image": true
+      }
+    },
+    "promptTokens": {
+      "text": 458,
+      "image": 505
+    },
+    "timeToFirstTokenSpread": {
+      "vl-2b-two-functions": {
+        "text": {
+          "median": 0.148,
+          "min": 0.123,
+          "max": 0.242
+        },
+        "image": {
+          "median": 0.297,
+          "min": 0.193,
+          "max": 0.427
+        }
+      },
+      "vl-2b-one-function": {
+        "text": {
+          "median": 0.135,
+          "min": 0.115,
+          "max": 0.211
+        },
+        "image": {
+          "median": 0.274,
+          "min": 0.239,
+          "max": 0.535
+        }
+      },
+      "vl-4b-two-functions": {
+        "text": {
+          "median": 0.233,
+          "min": 0.214,
+          "max": 0.319
+        },
+        "image": {
+          "median": 0.35,
+          "min": 0.293,
+          "max": 0.538
+        }
+      },
+      "vl-4b-one-function": {
+        "text": {
+          "median": 0.229,
+          "min": 0.21,
+          "max": 0.329
+        },
+        "image": {
+          "median": 0.448,
+          "min": 0.374,
+          "max": 0.851
+        }
+      }
+    }
+  },
+  "overlap": {
+    "test": "languageOverlappedPrefillMatchesOtherPlans (AETHER_NATIVE_LANGUAGE_OVERLAP=1, release) on both one-function bundles: the 449-token text plans, and two image prompts (a 512x384 gradient, 432 image tokens) prefilled three ways (default 64-token chunks, 512-token chunks, 1-token steps) with greedy identical required",
+    "file": "qwen3-vl-one-function-2026-10-27-overlap.json",
+    "passed": true,
+    "imageCases": {
+      "vl-2b": [
+        {
+          "name": "long question",
+          "promptTokens": 562,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": false,
+          "greedyIdentical": true
+        },
+        {
+          "name": "short question",
+          "promptTokens": 446,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": true,
+          "greedyIdentical": true
+        }
+      ],
+      "vl-4b": [
+        {
+          "name": "long question",
+          "promptTokens": 562,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": false,
+          "greedyIdentical": true
+        },
+        {
+          "name": "short question",
+          "promptTokens": 446,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": true,
+          "greedyIdentical": true
+        }
+      ]
+    }
+  },
+  "imageText": {
+    "vl-2b": "evidence/qwen3-vl-2b-one-function-image-text-2026-10-27.json",
+    "vl-4b": "evidence/qwen3-vl-4b-one-function-image-text-2026-10-27.json"
+  },
+  "files": {
+    "qwen3-vl-one-function-2026-10-27-budget-image-span-submissions.json": "be00d02e87a951ae4d140db773c27d5b8281ad036b3adcf84023ed4789733685",
+    "qwen3-vl-one-function-2026-10-27-budget.json": "769b33cc4bb2ba4b57caaeb77c9181c0e9caf17085dbf19455d61ecbffc251cd",
+    "qwen3-vl-one-function-2026-10-27-memory-vl-2b.json": "47aa1fc2826a8f1c6d9e03f9a4007948ff5f241509b5c6d8953c0c0bac7115c2",
+    "qwen3-vl-one-function-2026-10-27-memory-vl-4b-image-span-submissions.json": "ed3fbf0ca78f8887a33a38295871136eaf47f3f396d363bf9f7421f1ad28499b",
+    "qwen3-vl-one-function-2026-10-27-memory-vl-4b.json": "13d7332e703b9910d98de836af4be99c246f1cce594611a10055b38261060c50",
+    "qwen3-vl-one-function-2026-10-27-overlap.json": "495e0ebea5f8f44cfc94ac17397271e7e99bba463fec69f3109bc8bb9dff1a7e",
+    "qwen3-vl-one-function-2026-10-27-timing.json": "fcbdf63787c6d99da752ed348ca21488464b7a59cd56e334e21b0bf66e067955"
+  },
+  "sourceSHA256": {
+    "Sources/AetherLanguageCoreAI/LanguageGenerationSession.swift": "7614cdc21fe7760ecc58fbf3fd2172de67614983f8cbc63ae764b939752f8334",
+    "Sources/AetherLanguageCoreAI/LanguageStepContract.swift": "5ceeb80040ff73ff0ce25fda1843e850850b78a5d7563061a1a631b33a922b1a",
+    "Sources/AetherLanguageCoreAI/LanguageVisionPrompt.swift": "d2c6b97fb42c30137670d54198baeef17ec9aac42c2af4a3335177103a0e10ac",
+    "Forge/language/export_qwen3_vl_text.py": "6d06a39b2ed0b5eae5e24eb89db1d3ca28960da52805af76b7cf27d3dd2ebbf7",
+    "Forge/language/qwen3_vl_text.py": "69179d9e4397f81e81358c453a2e7d036ba1873f7b4042cf8d484909d9399986",
+    "Tests/AetherNativeTests/VisionLanguageMemoryTests.swift": "d35f71a9a952b9284e972e9f9cd7152dd69bf51633076d6c2e9602adc4d91ccb",
+    "Tests/AetherNativeTests/LanguageMemoryBudgetQualificationTests.swift": "99c85046b0368a6dd86a000d457f00e073857b81f8a580167a36856d1f388621",
+    "Tests/AetherNativeTests/VisionLanguageDecoderTimingTests.swift": "7dde5ad8eb99874afb2ff21b58bdef70ec27823898336144cca4f7ec2fa25bd2",
+    "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "418bb987a29728b32a62d7b1e7a221069c98b3e60faa3c37918e9f7030f81746",
+    "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift": "ef5d9c152421c8f5b3cc3a61b64f2480c4f19b14010c8b99949082f87e9fe915",
+    "Tests/AetherNativeTests/VisionLanguageSessionTests.swift": "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0"
+  }
+}
