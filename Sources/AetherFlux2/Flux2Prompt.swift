@@ -1,8 +1,9 @@
 // Derived from the Apache-2.0 Aether prototype (11 §B2). See NOTICE.
 import AetherKit
 
-/// Text-encoder input for klein: the Qwen3 chat template (one user message, generation prompt,
-/// thinking off), right-padded with `<|endoftext|>` to exactly 512 tokens with an attention mask.
+/// Text-encoder input for klein: the bundle's Qwen3 chat template (one user message, generation prompt,
+/// thinking off; rendered by `Flux2Tokenizer`), right-padded with `<|endoftext|>` to exactly 512 tokens
+/// with an attention mask.
 /// All 512 encoder rows condition the denoiser, including the padding rows: they cannot be trimmed.
 public struct Flux2Prompt: Sendable, Equatable {
     public static let length = 512
@@ -32,11 +33,6 @@ public struct Flux2Prompt: Sendable, Equatable {
             throw AetherError.invalidRequest("FLUX.2 needs 512 nonnegative token IDs and a right-padded mask")
         }
         tokenIDs = paddedTokenIDs; self.attentionMask = attentionMask; wasTruncated = false
-    }
-
-    /// The Qwen3 chat template with `enable_thinking=False`.
-    public static func render(_ text: String) -> String {
-        "<|im_start|>user\n\(text)<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
     }
 
     public var encoderInputs: [String: TensorValue] {

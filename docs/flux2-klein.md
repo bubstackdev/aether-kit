@@ -11,6 +11,11 @@ earlier evidence refers to; the two have an identical contract. Core AI exports 
 export gets a new fingerprint and must pass the contract diff, native parity and lifecycle before it becomes the
 default.
 
+**Fingerprint since 0.0.3:** the fingerprint now also hashes the bundle's `tokenizer/chat_template.jinja`, which
+renders the prompt. The same bundle bytes therefore have fingerprint `d27cefc4…` (reference fingerprint `d8a98cb0…`).
+The 0.0.2 records, the qualification below included, name it `a48aaf07…`; see
+[Chat template in the fingerprint](#chat-template-in-the-fingerprint-003).
+
 ## Model and license
 
 - Checkpoint: `black-forest-labs/FLUX.2-klein-4B` at `e7b7dc27f91deacad38e78976d1f2b499d76a294`. Not gated; the model
@@ -27,7 +32,7 @@ default.
 | Product | Contents |
 | --- | --- |
 | `AetherFlux2` | `Flux2Assets` (bundle validation, provenance pins, fingerprints, portable installation), `Flux2Configuration`, `Flux2Schedule` (empirical μ), `Flux2Rotary`, `Flux2Prompt`/`Flux2Conditioning`, `Flux2ReferenceImage` and `Flux2ReferencePolicy`. No Core AI dependency. |
-| `AetherFlux2Tokenizers` | `Flux2Tokenizer`: the bundle's Qwen3 tokenizer through swift-transformers; never downloads. |
+| `AetherFlux2Tokenizers` | `Flux2Tokenizer`: the bundle's Qwen3 tokenizer and chat template through `AetherLanguageTokenizers`; never downloads. |
 | `AetherFlux2CoreAI` | `Flux2GenerationSession`, `Flux2ResourceAdmission`. |
 
 Shared pieces added for this work and usable by other families: `AetherKit.SeededGaussianNoise` (Krea's noise now
@@ -57,7 +62,9 @@ concurrent threads, with each file confined to its asset directory. It reports t
 and stops when the calling task is cancelled.
 Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrides the bundle-wide
 `expectFrequentReshapes`. Undeclared assets are refused.
-`fingerprint` identifies the text-to-image contract; `referenceFingerprint` adds the encoder and reference contract.
+`fingerprint` identifies the text-to-image contract: metadata, manifest, the tokenizer files (`tokenizer.json`,
+`tokenizer_config.json` and `chat_template.jinja`, which must be present) and the model declarations.
+`referenceFingerprint` adds the encoder and reference contract.
 `installationManifest()`/`open(in:)` and `Flux2GenerationSession(installed:)` follow the Krea installation contract.
 
 ### Producing the bundle
@@ -101,7 +108,7 @@ The finalizer streams every `main.mlirb`, refuses one that differs from its `mai
 fragment + target + per-asset placement + provenance file hashes + license) and `metadata.json`. Core AI exports are not
 byte-reproducible, so a re-export changes model hashes and fingerprints.
 
-**The 2026-10-27 export** (`forge-export-2026-10-27/bundle`, `a48aaf07…`) is the qualified bundle. Its contract
+**The 2026-10-27 export** (`forge-export-2026-10-27/bundle`, `a48aaf07…`; `d27cefc4…` since 0.0.3) is the qualified bundle. Its contract
 equals `f28ef0e8…`'s exactly: every function signature, the segment split, `metadata.json`, all 111 compared
 `aether.json` fields (the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm
 and GroupNorm lower to Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the
@@ -216,9 +223,11 @@ All tensors copy through host memory between calls; there is no device-resident 
 
 Opt-in with local files only (`AETHER_FLUX2_FIXTURES`, `AETHER_FLUX2_REFERENCE_FIXTURES`, `AETHER_FLUX2_BUNDLE`):
 `samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs` and
-`paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`. The last test checks that the padded 512-token prompt equals
-the bundle's Qwen3 template rendered through `AetherLanguageTokenizers` with thinking off. `Flux2Tokenizer` keeps its own
-fixed render, because the bundle's `chat_template.jinja` is not among the hashed tokenizer files.
+`templateRenderReproducesTheFixedQwen3Render`. `Flux2Tokenizer` renders one user message through the bundle's own
+template with `AetherLanguageTokenizers`, thinking off. The last test checks that its padded 512-token prompt equals the
+fixed render it replaced in 0.0.3, encoded by the same tokenizer. It covers every fixture prompt and edge cases: empty,
+surrounding whitespace, think tags and a prompt longer than 512 tokens. Until 0.0.2 the test was
+`paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`, which made the same comparison the other way round.
 
 ### Independent references
 
@@ -244,6 +253,34 @@ Generation took 14 minutes on 6 threads at a 30.1 GiB peak RSS for the ten text-
 for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27.json)). The weight-free fixture tests
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
+
+### Chat template in the fingerprint (0.0.3)
+
+Until 0.0.2 the fingerprint hashed `tokenizer.json` and `tokenizer_config.json` but not `chat_template.jinja`, and
+`Flux2Tokenizer` wrote the Qwen3 thinking-off render out by hand. Since 0.0.3 the template is the third hashed tokenizer
+file, so a changed template changes both fingerprints and is refused after opening, a bundle without one does not
+open, and `Flux2Tokenizer` renders through it with `AetherLanguageTokenizers`. `Flux2Prompt.render` was removed. The
+bundle's provenance already pinned the template (`a55ee1b1…`), so the qualified bundle opens unchanged under new
+identities:
+
+| | 0.0.2 | Since 0.0.3 |
+| --- | --- | --- |
+| `fingerprint` | `a48aaf07eab1fdee106c52b3e16c903c629846bf64dc92b5b35860b8a295fa39` | `d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66` |
+| `referenceFingerprint` | `a69abb8e68cadcc56f2b6f5d9822f1600c318712914fae0146237ee24152c988` | `d8a98cb04e2a28167a6354443677fa19d9a5ad6b8019cc8bbb3bd184f34d7664` |
+
+The token IDs do not change. On CPU, with the bundle and both CPU fixture paths set, `AetherFlux2Tests` passes 28/28:
+`bundleTokenizerMatchesReferenceTokenIDs` reproduces the ten text-to-image fixtures' IDs and masks, and
+`templateRenderReproducesTheFixedQwen3Render` gives the same padded prompt as the fixed render for all twelve fixture
+prompts and six edge cases. Rendering with thinking on instead makes both tests fail, so they do detect a render change.
+The evidence records named above keep the 0.0.2 values.
+
+The new identities were recorded natively once (M5 Max, macOS 27.0.1, `preferGPU`, the parity and lifecycle
+commands below with `AETHER_FLUX2_CASES=all`, 2.7 minutes of GPU-lock time). Parity passes **113/113** and lifecycle **44/44**, and every check value equals the 0.0.2
+qualification's exactly, so the qualification carries over to `d27cefc4…`. Both reports name both fixtures
+(`ffc4b136…` and `caf92bb7…`). See the [parity report](evidence/flux2-template-fingerprint-native-parity-2026-10-27.json)
+and [log](evidence/flux2-template-fingerprint-native-parity-2026-10-27.log), and the
+[lifecycle report](evidence/flux2-template-fingerprint-native-lifecycle-2026-10-27.json) and
+[log](evidence/flux2-template-fingerprint-native-lifecycle-2026-10-27.log).
 
 ### Qualified bundle a48aaf07 against the CPU references (2026-10-27)
 
@@ -378,6 +415,10 @@ AETHER_FLUX2_OUTPUT=/new/output/dir \
 ```
 
 `AETHER_FLUX2_CASES` selects text-to-image cases (default: the five 512²-class cases; `all` for all ten).
+
+Since 0.0.3, the parity and lifecycle reports both record their fixtures under `fixtures`: `t2i` for the text-to-image
+fixture ID and, when `AETHER_FLUX2_REFERENCE_FIXTURES` is set, `reference` for the reference fixture ID. Earlier parity
+reports name only `t2i`, with the reference cases listed in `cases`, and earlier lifecycle reports name neither.
 
 ### Post-rebase parity (2026-10-26)
 

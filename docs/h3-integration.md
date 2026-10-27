@@ -65,6 +65,8 @@ The native adapter validates descriptors before allocating inputs, retains one f
 
 The installed SDK's opaque `ComputeStream` is not `Sendable`. The compatibility import is restricted to the native adapter, with actor-owned resources and the session's one-call admission boundary. Swift still emits two concurrency diagnostics at stream completion under that import. This interop boundary remains experimental; no unchecked `Sendable` conformance or process-global native state was added.
 
+In 0.0.3 those diagnostics are gone. Every native adapter, and the language sessions, now hold their stream in AetherCoreAI's `SerialComputeStream`, which only encodes and joins. It is the single `@unchecked Sendable` boundary, resting on the same one-call admission, and it is a workaround for the SDK's missing annotation: it goes once Core AI annotates the stream. The compatibility imports were removed.
+
 ### CPU preparation
 
 The retained corrected local exports are available on this machine:

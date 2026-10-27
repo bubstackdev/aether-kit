@@ -72,18 +72,23 @@ func bundleTokenizerMatchesReferenceTokenIDs() async throws {
     }
 }
 
-/// The padded prompt equals the bundle's own Qwen3 template rendered by `AetherLanguageTokenizers` with thinking off
-/// and padded by `Flux2Prompt`: the same 512 IDs, mask and truncation flag, including a prompt longer than 512 tokens
-/// (local files only). `Flux2Tokenizer` keeps its fixed render, which only the hashed tokenizer files determine; the
-/// bundle's `chat_template.jinja` is not hashed.
+/// `Flux2Tokenizer` renders through the bundle's own Qwen3 template (`AetherLanguageTokenizers`, thinking off), and its
+/// padded prompt equals the fixed render it replaced, encoded by the same tokenizer: the same 512 IDs, mask and
+/// truncation flag, for every fixture prompt and for edge cases including a prompt longer than 512 tokens (local files
+/// only; CPU).
 @Test(.enabled(if: environment["AETHER_FLUX2_BUNDLE"] != nil))
-func paddedPromptMatchesTheLanguageTokenizersThinkingOffRender() async throws {
+func templateRenderReproducesTheFixedQwen3Render() async throws {
     let assets = try Flux2Assets.open(at: URL(fileURLWithPath: environment["AETHER_FLUX2_BUNDLE"]!))
     let flux = try await Flux2Tokenizer.open(assets: assets)
     let language = try await LanguageTokenizer.open(directory: assets.tokenizerDirectory)
+    // The 0.0.2 `Flux2Prompt.render`: Qwen3's chat template with `enable_thinking=False`, written out.
+    func fixed(_ text: String) -> String {
+        "<|im_start|>user\n\(text)<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+    }
     let long = String(repeating: "a lighthouse at dusk, ", count: 120)
-    var prompts = ["a red fox in the snow", "Café — 🌙\nsecond line", long]
-    if let fixtures = environment["AETHER_FLUX2_FIXTURES"] {
+    var prompts = ["a red fox in the snow", "Café — 🌙\nsecond line", "  padded  \n\n", "", "<think>x</think>", long]
+    for key in ["AETHER_FLUX2_FIXTURES", "AETHER_FLUX2_REFERENCE_FIXTURES"] {
+        guard let fixtures = environment[key] else { continue }
         let cases = try String(contentsOf: URL(fileURLWithPath: fixtures).appendingPathComponent("cases.jsonl"), encoding: .utf8)
         for line in cases.split(separator: "\n") {
             let c = try JSONSerialization.jsonObject(with: Data(line.utf8)) as! [String: Any]
@@ -91,12 +96,12 @@ func paddedPromptMatchesTheLanguageTokenizersThinkingOffRender() async throws {
         }
     }
     for text in prompts {
-        let expected = try flux.prepare(text)
-        let rendered = try language.render([.user(text)]).tokenIDs
-        #expect(try Flux2Prompt(renderedTokenIDs: rendered) == expected, "\(text.prefix(40))")
-        #expect(expected.tokenIDs.count == Flux2Prompt.length && expected.attentionMask.count == Flux2Prompt.length)
+        let previous = language.encode(fixed(text))
+        let prompt = try flux.prepare(text)
+        #expect(prompt == (try Flux2Prompt(renderedTokenIDs: previous)), "\(text.prefix(40))")
+        #expect(prompt.tokenIDs.count == Flux2Prompt.length && prompt.attentionMask.count == Flux2Prompt.length)
         // Truncation follows each prompt's rendered length; the synthetic long prompt must exercise it.
-        #expect(expected.wasTruncated == (rendered.count > Flux2Prompt.length), "\(text.prefix(40))")
-        if text == long { #expect(expected.wasTruncated) }
+        #expect(prompt.wasTruncated == (previous.count > Flux2Prompt.length), "\(text.prefix(40))")
+        if text == long { #expect(prompt.wasTruncated) }
     }
 }

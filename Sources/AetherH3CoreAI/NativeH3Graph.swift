@@ -1,7 +1,7 @@
 import AetherKit
 import AetherH3
 import AetherCoreAI
-@preconcurrency import CoreAI
+import CoreAI
 import Foundation
 import Metal
 
@@ -25,7 +25,7 @@ actor NativeH3Graph {
     private let model: AIModel
     private let function: InferenceFunction
     private let descriptor: ModelFunctionDescription
-    private let stream = ComputeStream()
+    private let stream = SerialComputeStream()
     private let device: any MTLDevice
     private var slots: [String: any MTLBuffer] = [:]
     private var outputs: [String: any MTLBuffer] = [:]
@@ -137,10 +137,10 @@ actor NativeH3Graph {
             if names.count == 2 {
                 var b = view(names[1])
                 var views = InferenceFunction.AsyncMutableViews(); views.insert(&a, for: names[0]); views.insert(&b, for: names[1])
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             } else {
                 var views = InferenceFunction.AsyncMutableViews(); views.insert(&a, for: names[0])
-                _ = try function.encode(inputs: values, outputViews: views, to: stream)
+                _ = try stream.encode(function, inputs: values, outputViews: views)
             }
         } catch {
             await stream.currentWorkCompleted(); throw error
