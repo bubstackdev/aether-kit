@@ -1,7 +1,6 @@
 import Darwin
 import Dispatch
 import Foundation
-import Synchronization
 
 /// Failures of the cross-process GPU lease. `holder` is the process the lease names, when it names one.
 public enum SharedGPULeaseError: Error, Sendable, Equatable, CustomStringConvertible {
@@ -105,14 +104,14 @@ public final class SharedGPULease: Sendable {
     public let directory: URL
     public let holding: Holding
     private let owner: pid_t
-    private let held: Mutex<Bool>
+    private let held: UnfairLock<Bool>
     private let signalToken = UUID()
 
     private init(directory: URL, holding: Holding) {
         self.directory = directory
         self.holding = holding
         owner = getpid()
-        held = Mutex(holding == .owned)
+        held = UnfairLock(holding == .owned)
     }
 
     /// True until an owned lease is released. An inherited lease is never held by this object.
@@ -425,7 +424,7 @@ enum LeaseSignalRelease {
         var releases: [UUID: @Sendable () -> Void] = [:]
         var sources: [(signal: Int32, source: any DispatchSourceSignal)] = []
     }
-    private static let state = Mutex(State())
+    private static let state = UnfairLock(State())
 
     static func register(_ token: UUID, release: @escaping @Sendable () -> Void) {
         state.withLock { state in

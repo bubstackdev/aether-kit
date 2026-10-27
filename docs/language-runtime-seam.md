@@ -93,7 +93,7 @@ the Core AI backend. That's the deployment-floor piece's work. This seam only ha
   launch on macOS 14 to that work.
 - **No Core AI or Metal types in its surface,** and none in its imports. The facade holds an `any LanguageBackend`
   with no availability annotation, and reports "unsupported OS" when no conforming backend is available.
-- **Checked while the floor is still 27:** `Scripts/check-language-runtime-floor.sh` typechecks the target's sources on
+- **Checked while the floor is still 27:** `Scripts/check-floor.sh` typechecks the target's sources on
   their own at macOS 14.0 and iOS 17.0 (`swiftc -typecheck -target arm64-apple-macos14.0`, and the iOS equivalent when
   the SDK is installed). CI runs it before the release suite. The deployment-floor piece then turns that into a real
   build.
