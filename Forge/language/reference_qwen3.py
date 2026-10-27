@@ -16,6 +16,7 @@ Outputs, under the new `--output` directory:
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -72,6 +73,8 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--source-repository", required=True)
     parser.add_argument("--source-revision", required=True)
+    parser.add_argument("--license", required=True, help="the checkpoint's model-card licence, e.g. apache-2.0")
+    parser.add_argument("--base-model", help="the upstream model a fine-tune derives from, e.g. Qwen/Qwen3-4B-Instruct-2507")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--greedy-tokens", type=int, default=64)
     parser.add_argument("--forced-tokens", type=int, default=32)
@@ -95,6 +98,9 @@ def main() -> None:
         full = model(torch.tensor([prompt + forced])).logits[0].double().numpy()
     # Row r predicts token r + 1: the prompt's last row, then one row per forced token except the last.
     reference = full[len(prompt) - 1:len(prompt) + len(forced) - 1]
+    # Free the upstream model before loading the port: at 4B, two float32 copies would need about 32 GB.
+    del model, out, full
+    gc.collect()
 
     cfg = read_config(args.checkpoint)
     port = {}
@@ -112,7 +118,8 @@ def main() -> None:
         "schema": 1,
         "kind": "qwen3-cpu-reference",
         "oracle": "transformers AutoModelForCausalLM, float32, CPU",
-        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": "apache-2.0"},
+        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": args.license,
+                   **({"baseModel": args.base_model} if args.base_model else {})},
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "transformers")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},

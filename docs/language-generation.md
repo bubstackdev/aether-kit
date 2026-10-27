@@ -161,6 +161,36 @@ before registration. Registration itself is not evidence of correctness.
 
 ## Evidence and limits
 
+### Qwen3-4B writer (bucketed, fp16)
+
+Atelier's writer, `huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated` (Apache-2.0, revision `c9bd464`, an
+abliterated fine-tune of base model `Qwen/Qwen3-4B-Instruct-2507`: same architecture, no thinking mode), qualified on the bucketed
+contract alone ([evidence](evidence/language-qwen3-4b-writer-2026-10-26.json)); M5 Max (`h17c`), GPU-preferred,
+release build, shared host:
+
+- **Export:** `export_qwen3.py` (bucketed, prefill chunk 512, capacity 16,384), 7.5 GB; its cpu_only self-check
+  matches the eager module (minimum cosine 0.99998, argmax equal, no lost cache rows).
+  `register_qwen3_bundle.py` registers the bundle with its base model and every tokenizer file (`tokenizerFiles`;
+  dotfiles skipped, symbolic links refused, as `verifyTokenizer` sees them).
+- **Reference:** upstream Transformers float32 on CPU (`reference_qwen3.py`, peak RSS 18 GB, now freeing the upstream
+  model before loading the eager port). The eager port matches it on all 32 forced rows (cosine 1.0).
+- **Parity:** 32 teacher-forced rows: minimum cosine 0.9999979, maximum absolute logit difference 0.036, no argmax
+  differences and no near-ties. The 64-token greedy continuation is identical to the reference.
+- **Long run:** 1,024 decode steps in one request: no model reloads, eight distinct (q, capacity) submissions,
+  capacity 1,280.
+- **Chat round trip** (`languageChatBundleRendersGeneratesAndDecodes`): `LanguageTokenizer` renders two short
+  instruction prompts (72 and 73 tokens) with the model's template, `open(bundle:)` decodes them greedily, and both
+  replies stop at `<|im_end|>`; a repeated prompt reproduces its tokens. Memory, sampled after each request (not a
+  continuous peak): Metal allocations reach 8,570 MiB and return to 16 MiB after `unload()`; the process footprint
+  (which does not count Core AI's model memory) reaches 400 MiB. Warm requests reach the first token in 0.05–0.07 s
+  and decode about 50 tokens/s. In the recorded run the open took 24 s and the first request 22 s to its first token
+  on the shared host; expect the first request after opening to be slow.
+
+Not covered for the 4B: phone, other quantizations, long contexts beyond 1,280 tokens of cache, and cancellation or
+unload under load (the lifecycle code paths are those the 0.6B qualification exercises).
+
+### Qwen3-0.6B decode contracts
+
 CPU tests cover cache-growth admission, per-row prefix preservation, platform checks,
 path boundaries, asset integrity, contract detection, export-bound admission and
 registration, position inputs, power-of-two prefill planning within declared chunk

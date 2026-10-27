@@ -24,6 +24,8 @@ public struct LanguageModelManifest: Codable, Sendable {
     /// (`tree_hashes`). When present, `verifyTokenizer` requires the directory to hold exactly these files with
     /// these hashes, so the chat template and special-token maps are covered, not only `tokenizer.json`.
     public let tokenizerFiles: [String: String]?
+    /// Provenance only: the upstream model a fine-tune derives from (for example `Qwen/Qwen3-4B-Instruct-2507`).
+    public let baseModel: String?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
@@ -60,9 +62,15 @@ public struct LanguageModelManifest: Codable, Sendable {
             guard tokenizerFiles["tokenizer.json"] == tokenizerSHA256 else {
                 throw AetherError.invalidModel("tokenizer file list disagrees with tokenizerSHA256")
             }
-            let present = try Self.regularFiles(in: tokenizer)
-            guard present == Set(tokenizerFiles.keys) else {
-                throw AetherError.invalidModel("tokenizer directory files differ from the registration")
+            // Unlisted dotfiles (a Finder .DS_Store, an editor swap file) are ignored: no tokenizer loader reads them.
+            let present = try Self.regularFiles(in: tokenizer).filter { path in
+                tokenizerFiles[path] != nil || !path.split(separator: "/").contains { $0.hasPrefix(".") }
+            }
+            if let extra = present.subtracting(tokenizerFiles.keys).sorted().first {
+                throw AetherError.invalidModel("tokenizer file \(extra) is not in the registration")
+            }
+            if let missing = Set(tokenizerFiles.keys).subtracting(present).sorted().first {
+                throw AetherError.invalidModel("registered tokenizer file \(missing) is missing")
             }
             for (path, hash) in tokenizerFiles where path != "tokenizer.json" {
                 guard try Self.fileHash(Self.child(path, of: tokenizer)) == hash else {
