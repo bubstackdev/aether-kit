@@ -55,6 +55,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--greedy-tokens", type=int, default=48)
     parser.add_argument("--forced-tokens", type=int, default=32)
+    parser.add_argument("--max-pixels", type=int, default=None,
+                        help="processor pixel cap (size.longest_edge), mirroring Kit's maximumPixels")
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
@@ -63,6 +65,11 @@ def main() -> None:
 
     config = json.loads((args.checkpoint / "config.json").read_text())
     processor = AutoProcessor.from_pretrained(args.checkpoint)
+    if args.max_pixels:
+        size = dict(processor.image_processor.size)
+        size["longest_edge"] = args.max_pixels
+        processor.image_processor.size = size
+        processor.image_processor.max_pixels = args.max_pixels
     model = Qwen3VLForConditionalGeneration.from_pretrained(args.checkpoint, torch_dtype=torch.float32).eval()
     image_token, merge = int(config["image_token_id"]), int(config["vision_config"]["spatial_merge_size"])
     vision = Qwen3VLVision(dict(config["vision_config"]))
@@ -143,6 +150,8 @@ def main() -> None:
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "transformers", "torchvision", "pillow")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},
+        "maximumPixels": args.max_pixels,
+        "imageDecoding": "PIL Image.open(...).convert('RGB'), no EXIF transpose (the photos carry orientation 1 or none)",
         "cases": cases,
     }
     (args.output / "reference.json").write_text(json.dumps(record, indent=2) + "\n")

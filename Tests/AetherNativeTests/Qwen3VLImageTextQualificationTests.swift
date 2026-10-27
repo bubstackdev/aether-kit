@@ -1,5 +1,6 @@
 import AetherKit
 import AetherLanguageCoreAI
+import AetherVision
 import Foundation
 import Testing
 
@@ -12,6 +13,7 @@ import Testing
 /// AETHER_QWEN3VL_VISION_MODEL=<vision.aimodel>
 /// AETHER_QWEN3VL_REFERENCE=<reference dir with reference.json>
 /// AETHER_QWEN3VL_OUTPUT=<report .json>
+/// AETHER_QWEN3VL_PREPROCESS=swift (optional: decode and preprocess the reference images with Kit, gated on pixel parity)
 private struct VLReference: Decodable {
     struct File: Decodable { let file: String; let shape: [Int]?; let sha256: String }
     struct Logits: Decodable { let file: String; let rows: Int; let vocab: Int; let sha256: String }
@@ -23,8 +25,10 @@ private struct VLReference: Decodable {
         let forcedTokens: [Int]
         let pixels: File
         let forcedLogits: Logits
+        let image: File
     }
     let cases: [Case]
+    let maximumPixels: Int?
 }
 
 private struct VLCaseReport: Codable {
@@ -42,6 +46,10 @@ private struct VLCaseReport: Codable {
     let greedyAccepted: Bool
     let encodeSeconds: Double
     let timeToFirstTokenSeconds: Double
+    /// "reference": the reference processor's pixel tensor; "swift": Kit's decoding and preprocessing.
+    let preprocessing: String
+    let swiftGridMatches: Bool?
+    let swiftPixelCosine: Double?
 }
 
 private struct VLReport: Codable {
@@ -57,7 +65,8 @@ private struct VLReport: Codable {
 private func f32(_ url: URL) throws -> [Float] { try Data(contentsOf: url).withUnsafeBytes { Array($0.bindMemory(to: Float.self)) } }
 
 /// (cosine, argmax equal, reference top-1 minus top-2 probability, native token's rank in the reference)
-private func compareRow(_ native: [Float], _ reference: ArraySlice<Float>) -> (Double, Bool, Double, Int) {
+private func compareRow(_ native: [Float], _ slice: ArraySlice<Float>) -> (Double, Bool, Double, Int) {
+    let reference = Array(slice)                      // zero-based, like `native`
     var dot = 0.0, nn = 0.0, rr = 0.0
     for (a, b) in zip(native, reference) { dot += Double(a) * Double(b); nn += Double(a) * Double(a); rr += Double(b) * Double(b) }
     let nativeBest = native.indices.max { native[$0] < native[$1] }!
@@ -88,6 +97,7 @@ func qwen3VLImageTextQualification() async throws {
         let bounds = try JSONDecoder().decode(Export.self, from: Data(contentsOf:
             textModel.deletingLastPathComponent().appendingPathComponent("export-report.json"))).exportBounds
         let tokens = LanguageImageTokens(visionStart: 151652, imagePad: 151655, visionEnd: 151653)
+        let swiftPreprocessing = nativeEnvironment["AETHER_QWEN3VL_PREPROCESS"] == "swift"
         report.stage = "open"
         let encoder = try await LanguageVisionEncoder.open(at: visionModel)
         let session = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: 2048,
@@ -95,9 +105,28 @@ func qwen3VLImageTextQualification() async throws {
         #expect(session.acceptsImages && session.takesRopePositions && session.contract == .bucketedPositions)
         for c in reference.cases {
             report.stage = "case \(c.name)"
-            let pixels = try f32(directory.appendingPathComponent(c.pixels.file)).map { Float16($0) }
+            let referencePixels = try f32(directory.appendingPathComponent(c.pixels.file))
+            var pixels = referencePixels.map { Float16($0) }
+            var grid = (c.grid[0], c.grid[1], c.grid[2])
+            var gridMatches: Bool?, pixelCosine: Double?
+            if swiftPreprocessing {
+                // Kit's own path: ImageIO decoding, smart resize under the reference's pixel cap, resampling, patchify.
+                let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(c.image.file))
+                var configuration = Qwen3VLImagePreprocessor.Configuration()
+                if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
+                let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
+                                                                     configuration: configuration)
+                gridMatches = [processed.grid.t, processed.grid.h, processed.grid.w] == c.grid
+                if gridMatches == true {
+                    var dot = 0.0, aa = 0.0, bb = 0.0
+                    for (a, b) in zip(processed.pixels, referencePixels) { dot += Double(a) * Double(b); aa += Double(a * a); bb += Double(b * b) }
+                    pixelCosine = dot / (aa.squareRoot() * bb.squareRoot())
+                }
+                pixels = processed.pixels.map { Float16($0) }
+                grid = processed.grid
+            }
             let start = ContinuousClock.now
-            let features = try await encoder.encode(pixels: pixels, grid: (c.grid[0], c.grid[1], c.grid[2]))
+            let features = try await encoder.encode(pixels: pixels, grid: grid)
             let encodeDuration = start.duration(to: .now)
             var rendered: [Int] = []
             for id in c.promptTokens where !(id == tokens.imagePad && rendered.last == tokens.imagePad) { rendered.append(id) }
@@ -127,12 +156,14 @@ func qwen3VLImageTextQualification() async throws {
                 forcedMismatchesAtNearTies: nearTieMismatches.count, greedyTokens: reply.tokens, referenceGreedyTokens: c.greedyTokens,
                 greedyFirstDivergence: divergence, greedyDivergenceReferenceMargin: margin, greedyAccepted: accepted,
                 encodeSeconds: Double(encodeDuration.components.seconds) + Double(encodeDuration.components.attoseconds) / 1e18,
-                timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds))
+                timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds, preprocessing: swiftPreprocessing ? "swift" : "reference",
+                swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine))
         }
         await session.unload()
         await encoder.unload()
         report.passed = !report.cases.isEmpty && report.cases.allSatisfy {
             $0.forcedMinimumCosine >= 0.995 && $0.forcedArgmaxMismatches == $0.forcedMismatchesAtNearTies && $0.greedyAccepted
+                && ($0.preprocessing == "reference" || ($0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.999))
         }
         report.stage = "complete"
     } catch {
