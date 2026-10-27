@@ -538,6 +538,7 @@ A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hash
 Outputs stay byte-identical:
 
 - A chained build replays all 457 boundary hashes of both the T2VA and the FL2VA captures ([replays](evidence/h3-speed-chaining-replays-2026-10-26.json)).
+- After the chain bookkeeping moved into `H3ChainState`, a native replay at 5cdb5f3 again reproduces all 457 T2VA hashes ([record](evidence/h3-speed-chaining-replay-t2va-5cdb5f3-2026-10-27.json)).
 - Four paired renders without an observer all end on the capture's final latents.
 
 [Paired, interleaved timings](evidence/h3-speed-chaining-paired-t2va-2026-10-26.json) for T2VA at 960×544, ABBA order, n = 2 each, load average 9–20:
