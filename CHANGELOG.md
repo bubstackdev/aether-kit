@@ -4,11 +4,17 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ## Unreleased
 
+### Added
+
+- **AetherLanguageRuntime:** a new backend-neutral library with no Core AI, Metal or AetherKit dependency, checked at macOS 14 and iOS 17. It holds the `LanguageBackend` protocol, the seeded sampler (repetition penalty, temperature, top-k, top-p; matched against Transformers 4.57.3's processors), a token-constraint hook for constrained decoding, and the shared decode loop ([design](docs/language-runtime-seam.md)).
+- **AetherLanguageCoreAI:** `LanguageGenerationSession` conforms to `LanguageBackend`. Greedy stays the default, and its output is token-identical to 0.0.2 on the qualified models. Sampling and constraints are opt-in per request ([guide](docs/language-generation.md)).
+
 ### Changed
 
 - **Qwen3-VL decoder, one function:** `LanguageGenerationSession` accepts a bucketed `main` that takes image rows aligned with the tokens (`image_embeds` [q, hidden], `deepstack` [levels, q, hidden]) and sends text, image and decode steps through it, prefilling the whole prompt in the fixed-width chunks; `imagesThroughMain` reports it. Core AI wires a copy of the weights per function, so the 0.0.2 `main` + `withImage` pair kept two: the re-exported VL-4B wires 8.4 GiB instead of 16.1 GiB for an image request, its compiled cache is 15.0 GiB instead of 22.5 GiB, and both models pass every 0.0.2 parity gate again. An image request retains more memory than before (about 100 MiB on the 4B), so the memory budget reloads the 4B about twice as often. Two-function bundles keep working ([guide](docs/qwen3-vl.md#one-decoder-function-003), [design](docs/qwen3-vl-single-decoder.md)).
 - **Qwen3-VL text export (Forge):** `export_qwen3_vl_text.py` writes the one-function contract and bounds its memory: an fp16 build, the eager reference first, and the self-check in a fresh process. The VL-4B export peaked at 16.3 GB RSS (0.0.2: 31.7 GB). The 0.0.2 peak came from about five copies of the weights at the self-check, not from one copy per exported program.
 - **AetherFlux2:** the bundle fingerprint now also hashes `tokenizer/chat_template.jinja`, which renders the prompt. The template is required, checked against provenance and rechecked by `verifyTokenizer()`. The same qualified bundle bytes therefore have new identities: fingerprint `d27cefc4…` (was `a48aaf07…`) and reference fingerprint `d8a98cb0…` (was `a69abb8e…`). Anything an app keys on the old fingerprint (installation IDs included, which embed it) needs the new one. Native parity (113/113) and lifecycle (44/44) re-run under the new identities give check values identical to the 0.0.2 qualification ([guide](docs/flux2-klein.md#chat-template-in-the-fingerprint-003)).
+- **AetherLanguageCoreAI:** `LanguageGenerationError` moves to `AetherLanguageRuntime`, which `AetherLanguageCoreAI` re-exports, so existing code compiles unchanged.
 - **AetherFlux2Tokenizers:** `Flux2Tokenizer` renders prompts through the bundle's own chat template with `AetherLanguageTokenizers` (thinking off), with token IDs unchanged on every fixture prompt. The product now depends on `AetherLanguageTokenizers` instead of swift-transformers directly.
 
 ### Removed
