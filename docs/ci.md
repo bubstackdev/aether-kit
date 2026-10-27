@@ -10,7 +10,7 @@ The [CI workflow](../.github/workflows/ci.yml) runs on pull requests targeting `
 
 The SDK job checks the host and SDK before building. `Scripts/check-cpu.sh` clears inherited `AETHER_*` opt-ins, so external fixtures and model qualification cannot activate accidentally. Every Swift command uses its committed `Package.resolved` with `--force-resolved-versions`. Dependency repository caches reduce network work; compiler outputs and model assets are not cached. Every run still builds and executes its checks.
 
-Toolchain information, the test log, xUnit results (when testing completes), and consumer logs are uploaded as a `ci-diagnostics-<run>-<attempt>` artifact for 14 days, including on failure. Pipeline failures remain failures when output is captured with `tee`. Jobs have explicit timeouts. The workflow uses a read-only token, does not persist Git credentials, and pins official actions to full commit hashes. Dependabot proposes monthly action updates; the actionlint version and checksum are updated together in the workflow.
+Toolchain information, the test log, xUnit results (`tests-swift-testing.xml`, when testing completes), and consumer logs are uploaded as a `ci-diagnostics-<run>-<attempt>` artifact for 14 days, including on failure. A successful test step must produce a nonempty XML report. Pipeline failures remain failures when output is captured with `tee`. Jobs have explicit timeouts. The workflow uses a read-only token, does not persist Git credentials, and pins official actions to full commit hashes. Dependabot proposes monthly action updates; the actionlint version and checksum are updated together in the workflow.
 
 ## Reproduce a run
 

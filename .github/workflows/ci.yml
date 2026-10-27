@@ -82,6 +82,8 @@ jobs:
           sh Scripts/check-cpu.sh --force-resolved-versions \
             --xunit-output "$RUNNER_TEMP/aether-ci/tests.xml" \
             2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
+          # Swift Testing adds this suffix to the requested xUnit filename.
+          test -s "$RUNNER_TEMP/aether-ci/tests-swift-testing.xml"
       - name: Independent foundation consumer
         run: |
           swift run --package-path Examples/Foundations --force-resolved-versions -c release \
