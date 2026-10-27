@@ -2,7 +2,6 @@ import AetherKit
 import AetherAssets
 import CryptoKit
 import Foundation
-import Synchronization
 
 /// An external model stream with its declared content identity.
 /// A declaration is not verification of the stream bytes; call `verify()` explicitly.
@@ -14,12 +13,11 @@ public struct KreaModelAsset: Sendable {
     public func verify() throws { try verify(checkStop: { try Task.checkCancellation() }) }
 
     func verify(checkStop: () throws -> Void) throws {
-        let declaration = try Data(contentsOf: confinedFile("main.hash", root: url))
-        guard declaration.hex == declaredSHA256,
-              try hashFile(confinedFile("main.mlirb", root: url), checkStop: checkStop) == declaredSHA256,
-              try hashFile(confinedFile("metadata.json", root: url), checkStop: checkStop) == metadataSHA256 else {
-            throw AetherError.invalidModel("model hash mismatch: \(url.lastPathComponent)")
-        }
+        do { try declared.verify(checkStop: checkStop) } catch let error as AssetStoreError { throw kreaError(error) }
+    }
+
+    var declared: DeclaredModelAsset {
+        DeclaredModelAsset(url: url, declaredSHA256: declaredSHA256, metadataSHA256: metadataSHA256)
     }
 }
 
@@ -467,45 +465,27 @@ private func confinedFile(_ relative: String, root: URL, directory: Bool = false
     return url
 }
 
+/// Streams a file through SHA-256 in autoreleased chunks (`BundleFiles.sha256`).
 func hashFile(_ url: URL, checkStop: () throws -> Void = { try Task.checkCancellation() }) throws -> String {
-    let file = try FileHandle(forReadingFrom: url)
-    defer { try? file.close() }
-    var digest = SHA256()
-    // `read(upToCount:)` returns autoreleased buffers. Without a pool per chunk, a synchronous loop keeps
-    // every chunk alive until the caller's pool drains: `verify()` then peaks at the sum of all streams.
-    while try autoreleasepool(invoking: {
-        guard let data = try file.read(upToCount: 4 << 20), !data.isEmpty else { return false }
-        try checkStop()
-        digest.update(data: data)
-        return true
-    }) {}
-    return Data(digest.finalize()).hex
+    try BundleFiles.sha256(of: url, checkStop: checkStop)
 }
 
-/// Hashes independent streams on concurrent threads. Workers observe the calling
-/// task's cancellation. A failure stops only later assets, so the reported error
+/// Hashes independent streams on concurrent threads (`DeclaredModelAsset.verifyConcurrently`). Workers
+/// observe the calling task's cancellation. A failure stops only later assets, so the reported error
 /// is always the first failing asset in input order, matching a serial pass.
 private func verifyConcurrently(_ models: [KreaModelAsset]) throws {
-    struct Superseded: Error {}
-    // `isCancelled` is one of the UnsafeCurrentTask APIs documented as safe from
-    // other threads, and concurrentPerform returns before the reference expires.
-    struct CallerTask: @unchecked Sendable { let task: UnsafeCurrentTask? }
-    let failures = Mutex<[Int: any Error]>([:])
-    withUnsafeCurrentTask { task in
-        let caller = CallerTask(task: task)
-        DispatchQueue.concurrentPerform(iterations: models.count) { index in
-            do {
-                try models[index].verify {
-                    if caller.task?.isCancelled == true { throw CancellationError() }
-                    if failures.withLock({ $0.keys.contains { $0 < index } }) { throw Superseded() }
-                }
-            } catch {
-                failures.withLock { $0[index] = error }
-            }
-        }
+    do { try DeclaredModelAsset.verifyConcurrently(models.map(\.declared)) } catch let error as AssetStoreError { throw kreaError(error) }
+}
+
+/// Krea's verification errors predate AetherAssets: shared verification failures surface as the
+/// `AetherError.invalidModel` messages Krea always reported. Only fixed in-directory names reach
+/// `BundleFiles.confined` here, so an unsafe path can only be a symlink escaping the asset directory.
+private func kreaError(_ error: AssetStoreError) -> any Error {
+    switch error {
+    case .integrityMismatch(let message), .invalidManifest(let message): AetherError.invalidModel(message)
+    case .unsafePath: AetherError.invalidModel("asset symlink escapes its bundle")
+    default: error
     }
-    let first = failures.withLock { failures in failures.min { $0.key < $1.key }?.value }
-    if let first { throw first }
 }
 
 extension Data {

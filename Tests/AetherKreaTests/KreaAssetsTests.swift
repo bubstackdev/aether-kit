@@ -237,6 +237,22 @@ struct BundleFixture {
     }
 }
 
+@Test func streamVerificationKeepsKreaErrorsForReplacedOrEscapingDeclarations() throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let declaration = assets.denoisers[1].url.appendingPathComponent("main.hash")
+    let original = try Data(contentsOf: declaration)
+    try FileManager.default.removeItem(at: declaration)
+    try FileManager.default.createDirectory(at: declaration, withIntermediateDirectories: false)
+    #expect(throws: AetherError.invalidModel("missing file: main.hash")) { try assets.verify() }
+    try FileManager.default.removeItem(at: declaration)
+    let outside = fixture.root.appendingPathComponent("outside.hash")
+    try original.write(to: outside)
+    try FileManager.default.createSymbolicLink(at: declaration, withDestinationURL: outside)
+    #expect(throws: AetherError.invalidModel("asset symlink escapes its bundle")) { try assets.verify() }
+}
+
 @Test func streamVerificationObservesCallerCancellation() async throws {
     let fixture = try BundleFixture()
     defer { fixture.cleanup() }

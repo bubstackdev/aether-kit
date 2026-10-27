@@ -127,7 +127,7 @@ public struct KokoroAssets: Sendable {
             }
             let hashData = try Data(contentsOf: confinedFile(entry.path + "/main.hash", root: root))
             guard hashData.count == 32, hashData.hex == stream, digest(hashData) == declaration,
-                  try hashFile(confinedFile(entry.path + "/metadata.json", root: root)) == metadata else {
+                  try BundleFiles.sha256(of: confinedFile(entry.path + "/metadata.json", root: root)) == metadata else {
                 throw AetherError.invalidModel("Kokoro model declaration differs from kokoro.json: \(entry.path)")
             }
             _ = try confinedFile(entry.path + "/main.mlirb", root: root)
@@ -186,7 +186,7 @@ public struct KokoroAssets: Sendable {
             }
         }
         for asset in voices.values.sorted(by: { $0.relativePath < $1.relativePath }) {
-            guard try hashFile(asset.url) == asset.sha256 else {
+            guard try BundleFiles.sha256(of: asset.url) == asset.sha256 else {
                 throw AetherError.invalidModel("Kokoro voice hash mismatch: \(asset.voice)")
             }
         }
@@ -299,19 +299,6 @@ func confinedFile(_ relative: String, root: URL, directory: Bool = false) throws
         throw AetherError.invalidModel("missing Kokoro \(directory ? "directory" : "file"): \(relative)")
     }
     return url
-}
-
-func hashFile(_ url: URL) throws -> String {
-    let file = try FileHandle(forReadingFrom: url)
-    defer { try? file.close() }
-    var hash = SHA256()
-    while try autoreleasepool(invoking: { () throws -> Bool in
-        guard let data = try file.read(upToCount: 4 << 20), !data.isEmpty else { return false }
-        try Task.checkCancellation()
-        hash.update(data: data)
-        return true
-    }) {}
-    return Data(hash.finalize()).hex
 }
 
 func digest(_ data: Data) -> String { Data(SHA256.hash(data: data)).hex }

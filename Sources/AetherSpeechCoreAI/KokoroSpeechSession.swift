@@ -78,87 +78,24 @@ public struct KokoroResourceAdmission: Sendable {
     }
 }
 
-/// Reserves model residency before opening and per-call scratch around native work. Native and test
-/// factories share this decorator, so admission ordering is exercised without weights.
+/// Reserves model residency before opening and per-call scratch around native work, through the package's
+/// shared `openBudgeted` decorator. Native and test factories share this decorator, so admission ordering is
+/// exercised without weights.
 struct BudgetedKokoroFactory: KokoroModelFactory {
     let base: any KokoroModelFactory
     let resources: KokoroResourceAdmission
 
     func open(_ asset: KokoroModelAsset) async throws -> any KokoroExecutable {
+        // Cancellation is checked before the estimate lookup, as it always was.
         try Task.checkCancellation()
         let estimate = try resources.estimate(for: asset)
-        let residency = try resources.coordinator.reserve(bytes: estimate.residentBytes)
-        do {
-            let model = try await base.open(asset)
-            if Task.isCancelled {
-                await model.unload()
-                throw CancellationError()
-            }
-            return BudgetedKokoroModel(model: model, residency: residency, coordinator: resources.coordinator,
-                                       scratchBytes: estimate.runScratchBytes)
-        } catch {
-            residency.release()
-            throw error
+        return try await openBudgeted(coordinator: resources.coordinator, residentBytes: estimate.residentBytes,
+                                      runScratchBytes: estimate.runScratchBytes) {
+            try await base.open(asset)
         }
     }
 
     func finish() async { await base.finish() }
-}
-
-private actor BudgetedKokoroModel: KokoroExecutable {
-    nonisolated let functions: [ModelFunctionDescription]
-    private var model: (any KokoroExecutable)?
-    private let residency: ResourceReservation
-    private let coordinator: ResourceCoordinator
-    private let scratchBytes: UInt64
-    private var active: Task<[String: TensorValue], any Error>?
-    private var closingTask: Task<Void, Never>?
-
-    init(model: any KokoroExecutable, residency: ResourceReservation, coordinator: ResourceCoordinator, scratchBytes: UInt64) {
-        functions = model.functions
-        self.model = model
-        self.residency = residency
-        self.coordinator = coordinator
-        self.scratchBytes = scratchBytes
-    }
-
-    func runTensors(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue] {
-        try Task.checkCancellation()
-        guard closingTask == nil, let model else { throw AetherError.sessionClosed }
-        guard active == nil else { throw AetherError.sessionBusy }
-        let scratch = try coordinator.reserve(bytes: scratchBytes)
-        let task = Task {
-            defer { scratch.release() }
-            try Task.checkCancellation()
-            return try await model.runTensors(function: function, inputs: inputs)
-        }
-        active = task
-        defer { active = nil }
-        return try await withTaskCancellationHandler {
-            let result = try await task.value
-            try Task.checkCancellation()
-            return result
-        } onCancel: { task.cancel() }
-    }
-
-    func unload() async {
-        if let closingTask { await closingTask.value; return }
-        let pending = active
-        let task = Task { [self] in
-            if let pending { _ = await pending.result }
-            await self.closeModel()
-        }
-        closingTask = task
-        await task.value
-    }
-
-    private func closeModel() async {
-        await model?.unload()
-        model = nil
-        residency.release()
-    }
-
-    deinit { residency.release() }
 }
 
 /// The longest utterance, in frames (600 samples, 25 ms each), a session decodes.
@@ -408,12 +345,8 @@ struct FrameLimits: Sendable {
     }
 }
 
-protocol KokoroExecutable: Sendable {
-    var functions: [ModelFunctionDescription] { get }
-    func runTensors(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue]
-    func unload() async
-}
-extension ModelSession: KokoroExecutable {}
+/// A loaded Kokoro model: the package's shared staged-model protocol, which `ModelSession` and test models adopt.
+typealias KokoroExecutable = StagedModel
 
 protocol KokoroModelFactory: Sendable {
     func open(_ asset: KokoroModelAsset) async throws -> any KokoroExecutable
