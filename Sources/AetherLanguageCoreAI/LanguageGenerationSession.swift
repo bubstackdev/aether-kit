@@ -518,16 +518,8 @@ public actor LanguageGenerationSession {
         }
     }
 
-    public static func greedy(_ logits: [Float]) throws -> Int {
-        var best = -Float.infinity
-        var token: Int?
-        for (i, score) in logits.enumerated() {
-            guard !score.isNaN else { throw LanguageGenerationError.invalid("NaN logits") }
-            if score.isFinite && score > best { best = score; token = i }
-        }
-        guard let token else { throw LanguageGenerationError.invalid("No finite logits") }
-        return token
-    }
+    /// The first index of the largest finite logit (``LanguageSampling/greedy``); infinities are skipped and NaN throws.
+    public static func greedy(_ logits: [Float]) throws -> Int { try LanguageSampler.greedy(logits) }
 
     public struct CacheStatistics: Sendable {
         public let maximumContext: Int
