@@ -38,7 +38,7 @@ let package = Package(
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
         // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit, so it can build below the
-        // Core AI floor (Scripts/check-language-runtime-floor.sh typechecks it at macOS 14 and iOS 17).
+        // Core AI floor (Scripts/check-floor.sh typechecks it at macOS 14 and iOS 17).
         .target(name: "AetherLanguageRuntime"),
         .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision", "AetherLanguageRuntime"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
