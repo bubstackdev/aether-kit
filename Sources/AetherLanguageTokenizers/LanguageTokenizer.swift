@@ -39,7 +39,7 @@ public struct LanguageTokenizer: Sendable {
     /// "default"). Upstream renders with Jinja's default `keep_trailing_newline=False`, which drops one trailing
     /// newline from the template source; swift-jinja keeps it, which would add a stray "\n" after Qwen3-VL's
     /// generation prompt. So that newline is dropped here.
-    static func template(in directory: URL) throws -> String? {
+    package static func template(in directory: URL) throws -> String? {
         func json(_ name: String) throws -> [String: Any]? {
             let url = directory.appendingPathComponent(name)
             guard FileManager.default.fileExists(atPath: url.path) else { return nil }

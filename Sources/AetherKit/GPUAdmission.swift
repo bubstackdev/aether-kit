@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 
 public enum GPUAdmissionError: Error, Sendable, Equatable, CustomStringConvertible {
     /// Fail-fast admission found every slot in use, or work already queued ahead.
@@ -63,7 +62,7 @@ public final class GPUAdmission: Sendable {
         /// The turn expired: no grant joins the held lease; running grants drain and then the lease is handed off.
         var draining = false
     }
-    private let state: Mutex<State>
+    private let state: UnfairLock<State>
 
     public init(maximumConcurrent: Int = 1, waiting: Waiting = .queue(), maximumOutstanding: Int = 64,
                 maximumOutstandingPerOwner: Int = 8, crossProcessLease: SharedGPULease.Configuration? = nil,
@@ -79,7 +78,7 @@ public final class GPUAdmission: Sendable {
         self.crossProcessLease = crossProcessLease
         self.crossProcessTurn = crossProcessTurn
         self.crossProcessHandOffGap = crossProcessHandOffGap
-        state = Mutex(State(queue: queue))
+        state = UnfairLock(State(queue: queue))
     }
 
     public struct Snapshot: Sendable, Equatable {
@@ -335,7 +334,7 @@ public final class GPUAdmissionGrant: Sendable {
     public let owner: String
     private let admission: GPUAdmission
     private let id: UUID
-    private let released = Mutex(false)
+    private let released = UnfairLock(false)
 
     fileprivate init(admission: GPUAdmission, id: UUID, owner: String) {
         self.admission = admission
@@ -370,7 +369,7 @@ public struct GPUAdmissionOwner: Sendable {
 /// never waits behind the GPU queue. A withdrawal after the grant but before `admit` returns releases the grant.
 package final class GPUAdmissionAttempt: Sendable {
     private enum Phase: Sendable { case idle, waiting(Task<GPUAdmissionGrant, any Error>), granted, withdrawn }
-    private let phase = Mutex(Phase.idle)
+    private let phase = UnfairLock(Phase.idle)
     private let owner: GPUAdmissionOwner
 
     package init(_ owner: GPUAdmissionOwner) { self.owner = owner }
