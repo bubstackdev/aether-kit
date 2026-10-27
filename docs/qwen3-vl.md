@@ -293,15 +293,22 @@ qualified again: [VL-2B image + text](evidence/qwen3-vl-2b-one-function-image-te
 (`h17c`), release, shared host. The design and its toy measurements are in
 [qwen3-vl-single-decoder.md](qwen3-vl-single-decoder.md).
 
-**Parity.** Every gate of the 0.0.2 qualification passes again, on the same references: VL-2B model
-parity (forced-row cosine ≥ 0.99990, greedy identical on all five) and Kit end to end (the same two
-reference near-tie divergences as before); VL-4B model parity on the Kit-decoded and the PIL-decoded
-references (≥ 0.99992 and ≥ 0.99995, greedy identical on all five), Kit end to end on the same decode
-(≥ 0.99989, greedy identical), the independent-decode run (decoder sanity; the market photo diverges at
-token 6 as before) and the public session; the long-question runs on both models (the 4B's greedy
-flips at the same reference near-tie as in 0.0.2, margin 0.0046); and the overlapped-prefill check.
-The decoder timing test's 64-token replies are identical, token for token, between the two-function
-and one-function bundles, for a text and an image prompt on both models.
+**Parity.** Every gate of the 0.0.2 qualification passes again on the same references, with the
+whole prompt prefilled in 64-token chunks. VL-2B: model parity on the PIL-decoded reference (forced-row
+cosine ≥ 0.99990, greedy identical on all five) and on a new Kit-decoded reference of the same cases
+(`qwen3-vl-2b-reference-grids-kit-decoded`, made like the 4B's: ≥ 0.99985, greedy identical on all
+five), Kit end to end on the same decode (≥ 0.99992; the market photo flips at a reference near-tie,
+margin 0.012, at token 16), the independent-decode run (the same two near-tie divergences as before)
+and the public session, which 0.0.2 could only run on the long question. VL-4B: model parity on the
+Kit-decoded and the PIL-decoded references (≥ 0.99992 and ≥ 0.99995, greedy identical on all five), Kit
+end to end on the same decode (≥ 0.99989, greedy identical), the independent-decode run (decoder
+sanity; the market photo diverges at token 6 as before) and the public session. The long-question
+runs pass on both models (the 4B's greedy flips at the same reference near-tie as in 0.0.2, margin
+0.0046). The overlapped-prefill check passes with two image prompts whose 432-token image straddles
+chunk boundaries at both edges: after a long question the step-back tail lands in the text, after a
+short one it steps back 54 rows into the image; greedy output is identical across 64-token chunks,
+512-token chunks and 1-token steps. The decoder timing test's 64-token replies are identical, token for
+token, between the two-function and one-function bundles, for a text and an image prompt on both models.
 
 **Memory** (`visionLanguageMemoryByPhase`, no budget; `languageMemoryBudgetBoundsRepeatedRequests`,
 60 alternating text and image requests, 2 GiB budget):
@@ -318,10 +325,13 @@ An image request now adds about 100 MiB of retained memory on the 4B (60 MiB on 
 two-function decoder added about 20 MiB, so the budget reloads the 4B about twice as often; each reload
 re-wires one copy of the weights, at idle.
 
-**Timing** (decoder only, medians of 16 requests per kind, 64 tokens; shared host): text time to first
-token and decode rate are unchanged within host noise (4B: 0.229 s vs 0.233 s, 22.9 vs 21.9 ms per
-token; 2B: 0.135 vs 0.148 s, 12.6 vs 14.4 ms). The 4B's image time to first token rises from 0.35 s to
-0.45 s, the cost of prefilling the image in 64-token chunks (the 2B's fell from 0.30 to 0.27 s).
+**Timing** (decoder only, 16 requests per kind, 64 tokens; shared host, so medians and minima are
+both given). Chunking makes image requests slower to the first token: a 505-token image prompt is eight
+64-token submissions instead of one image submission and text chunks. On the 4B the image time to first
+token rises from 0.350 to 0.448 s at the median (+28 %) and from 0.293 to 0.374 s at the minimum; on the
+2B the minimum rises from 0.193 to 0.239 s while the median moved within noise (0.297 to 0.274 s). Text
+requests are unchanged within noise (4B: 0.233 to 0.229 s to the first token, 21.9 to 22.9 ms per
+token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
 
 **Export.** The bounded pipeline exported the 4B text tower in 109 s with a peak of 16.3 GB RSS
 (0.0.2: 31.7 GB) and the 2B in 46 s at 7.1 GB, self-check included.

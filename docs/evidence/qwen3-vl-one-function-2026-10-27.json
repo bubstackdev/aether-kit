@@ -531,12 +531,112 @@
     "promptTokens": {
       "text": 458,
       "image": 505
+    },
+    "timeToFirstTokenSpread": {
+      "vl-2b-two-functions": {
+        "text": {
+          "median": 0.148,
+          "min": 0.123,
+          "max": 0.242
+        },
+        "image": {
+          "median": 0.297,
+          "min": 0.193,
+          "max": 0.427
+        }
+      },
+      "vl-2b-one-function": {
+        "text": {
+          "median": 0.135,
+          "min": 0.115,
+          "max": 0.211
+        },
+        "image": {
+          "median": 0.274,
+          "min": 0.239,
+          "max": 0.535
+        }
+      },
+      "vl-4b-two-functions": {
+        "text": {
+          "median": 0.233,
+          "min": 0.214,
+          "max": 0.319
+        },
+        "image": {
+          "median": 0.35,
+          "min": 0.293,
+          "max": 0.538
+        }
+      },
+      "vl-4b-one-function": {
+        "text": {
+          "median": 0.229,
+          "min": 0.21,
+          "max": 0.329
+        },
+        "image": {
+          "median": 0.448,
+          "min": 0.374,
+          "max": 0.851
+        }
+      }
     }
   },
   "overlap": {
-    "test": "languageOverlappedPrefillMatchesOtherPlans (AETHER_NATIVE_LANGUAGE_OVERLAP=1, release) on both one-function bundles",
+    "test": "languageOverlappedPrefillMatchesOtherPlans (AETHER_NATIVE_LANGUAGE_OVERLAP=1, release) on both one-function bundles: the 449-token text plans, and two image prompts (a 512x384 gradient, 432 image tokens) prefilled three ways (default 64-token chunks, 512-token chunks, 1-token steps) with greedy identical required",
     "file": "qwen3-vl-one-function-2026-10-27-overlap.json",
-    "passed": true
+    "passed": true,
+    "imageCases": {
+      "vl-2b": [
+        {
+          "name": "long question",
+          "promptTokens": 562,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": false,
+          "greedyIdentical": true
+        },
+        {
+          "name": "short question",
+          "promptTokens": 446,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": true,
+          "greedyIdentical": true
+        }
+      ],
+      "vl-4b": [
+        {
+          "name": "long question",
+          "promptTokens": 562,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": false,
+          "greedyIdentical": true
+        },
+        {
+          "name": "short question",
+          "promptTokens": 446,
+          "imageSpan": [
+            4,
+            436
+          ],
+          "chunksCrossImageEdges": true,
+          "tailReCoversImageRows": true,
+          "greedyIdentical": true
+        }
+      ]
+    }
   },
   "imageText": {
     "vl-2b": "evidence/qwen3-vl-2b-one-function-image-text-2026-10-27.json",
@@ -548,7 +648,7 @@
     "qwen3-vl-one-function-2026-10-27-memory-vl-2b.json": "47aa1fc2826a8f1c6d9e03f9a4007948ff5f241509b5c6d8953c0c0bac7115c2",
     "qwen3-vl-one-function-2026-10-27-memory-vl-4b-image-span-submissions.json": "ed3fbf0ca78f8887a33a38295871136eaf47f3f396d363bf9f7421f1ad28499b",
     "qwen3-vl-one-function-2026-10-27-memory-vl-4b.json": "13d7332e703b9910d98de836af4be99c246f1cce594611a10055b38261060c50",
-    "qwen3-vl-one-function-2026-10-27-overlap.json": "9d05ed1a5e64c35d26b364a7e290e50fa4ac863eafb68a188a933b48a0e91e79",
+    "qwen3-vl-one-function-2026-10-27-overlap.json": "495e0ebea5f8f44cfc94ac17397271e7e99bba463fec69f3109bc8bb9dff1a7e",
     "qwen3-vl-one-function-2026-10-27-timing.json": "fcbdf63787c6d99da752ed348ca21488464b7a59cd56e334e21b0bf66e067955"
   },
   "sourceSHA256": {
@@ -560,7 +660,7 @@
     "Tests/AetherNativeTests/VisionLanguageMemoryTests.swift": "d35f71a9a952b9284e972e9f9cd7152dd69bf51633076d6c2e9602adc4d91ccb",
     "Tests/AetherNativeTests/LanguageMemoryBudgetQualificationTests.swift": "99c85046b0368a6dd86a000d457f00e073857b81f8a580167a36856d1f388621",
     "Tests/AetherNativeTests/VisionLanguageDecoderTimingTests.swift": "7dde5ad8eb99874afb2ff21b58bdef70ec27823898336144cca4f7ec2fa25bd2",
-    "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "71802fc2bb6369d58cfc82a69b9cbd0f951339cad23903816849b3d0a419e6d2",
+    "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "418bb987a29728b32a62d7b1e7a221069c98b3e60faa3c37918e9f7030f81746",
     "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift": "ef5d9c152421c8f5b3cc3a61b64f2480c4f19b14010c8b99949082f87e9fe915",
     "Tests/AetherNativeTests/VisionLanguageSessionTests.swift": "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0"
   }

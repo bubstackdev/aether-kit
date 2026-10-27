@@ -1,9 +1,9 @@
 {
   "cases" : [
     {
-      "encodeSeconds" : 0.303841958,
+      "encodeSeconds" : 0.247925583,
       "forcedArgmaxMismatches" : 0,
-      "forcedMinimumCosine" : 0.999988094897701,
+      "forcedMinimumCosine" : 0.9999527527412251,
       "forcedMismatchesAtNearTies" : 0,
       "forcedRows" : 29,
       "greedyAccepted" : true,
@@ -72,12 +72,12 @@
         13,
         151645
       ],
-      "timeToFirstTokenSeconds" : 0.256501333
+      "timeToFirstTokenSeconds" : 0.285829333
     },
     {
-      "encodeSeconds" : 0.261330333,
+      "encodeSeconds" : 0.248730667,
       "forcedArgmaxMismatches" : 0,
-      "forcedMinimumCosine" : 0.9999075778395189,
+      "forcedMinimumCosine" : 0.9998517399766456,
       "forcedMismatchesAtNearTies" : 0,
       "forcedRows" : 32,
       "greedyAccepted" : true,
@@ -128,8 +128,8 @@
         2176,
         4361,
         323,
-        304,
-        5257
+        3931,
+        1787
       ],
       "imageTokens" : 448,
       "name" : "photo-fruit-stall-wide",
@@ -182,15 +182,15 @@
         2176,
         4361,
         323,
-        304,
-        5257
+        3931,
+        1787
       ],
-      "timeToFirstTokenSeconds" : 0.277732916
+      "timeToFirstTokenSeconds" : 0.250243958
     },
     {
-      "encodeSeconds" : 0.311061125,
+      "encodeSeconds" : 0.228695708,
       "forcedArgmaxMismatches" : 0,
-      "forcedMinimumCosine" : 0.9999926851850478,
+      "forcedMinimumCosine" : 0.9999853956244648,
       "forcedMismatchesAtNearTies" : 0,
       "forcedRows" : 32,
       "greedyAccepted" : true,
@@ -218,11 +218,9 @@
         334,
         382,
         8420,
-        594,
-        264,
-        29985,
-        315,
+        525,
         279,
+        1376,
         42675,
         429,
         1459,
@@ -242,7 +240,9 @@
         264,
         89156,
         11,
-        1787
+        1787,
+        37535,
+        13779
       ],
       "imageTokens" : 432,
       "name" : "photo-fruit-market-4x3",
@@ -272,11 +272,9 @@
         334,
         382,
         8420,
-        594,
-        264,
-        29985,
-        315,
+        525,
         279,
+        1376,
         42675,
         429,
         1459,
@@ -296,12 +294,14 @@
         264,
         89156,
         11,
-        1787
+        1787,
+        37535,
+        13779
       ],
-      "timeToFirstTokenSeconds" : 0.412683125
+      "timeToFirstTokenSeconds" : 0.245375125
     },
     {
-      "encodeSeconds" : 0.486709875,
+      "encodeSeconds" : 0.252130375,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999981904391716,
       "forcedMismatchesAtNearTies" : 0,
@@ -348,10 +348,10 @@
         13,
         151645
       ],
-      "timeToFirstTokenSeconds" : 0.471889792
+      "timeToFirstTokenSeconds" : 0.242176375
     },
     {
-      "encodeSeconds" : 0.330220958,
+      "encodeSeconds" : 0.219192209,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999990009490567,
       "forcedMismatchesAtNearTies" : 0,
@@ -461,7 +461,7 @@
         624,
         12
       ],
-      "timeToFirstTokenSeconds" : 0.425898459
+      "timeToFirstTokenSeconds" : 0.245485375
     }
   ],
   "device" : "h17c",

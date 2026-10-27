@@ -22,8 +22,9 @@ Both Qwen3-VL bundles were re-exported with the contract proposed below and qual
   64-token chunks, each carrying its own image tokens' rows. An image request then retains about 103 MiB and the
   4B reloads twice in 60 requests (the first after request 20, against 34). The `n`-gather fallback would not
   have helped: it needs the same image-width submissions.
-- **Timing.** Text time to first token and decode rate are unchanged within host noise. The 4B's image time to
-  first token rises from 0.35 s to 0.45 s, the cost of the chunked image prefill.
+- **Timing.** Text time to first token and decode rate are unchanged within host noise. Image requests are
+  slower to the first token, the cost of the chunked image prefill: on the 4B 0.35 to 0.45 s at the median and
+  0.29 to 0.37 s at the minimum; on the 2B the minimum rises from 0.19 to 0.24 s.
 - **Export.** The bounded pipeline below exported the 4B text tower in 109 s at a peak of 16.3 GB RSS (0.0.2:
   31.7 GB, 75 s) and the 2B in 46 s at 7.1 GB, self-checks included.
 

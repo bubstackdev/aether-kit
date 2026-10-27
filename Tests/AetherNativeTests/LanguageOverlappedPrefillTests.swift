@@ -17,8 +17,11 @@ import Testing
 ///   probability is under 0.1 (the parity gate's threshold), and the two plans' teacher-forced rows agree at cosine
 ///   >= 0.99999 on every row up to and including the divergence. Judged only where an upstream reference with this
 ///   prompt covers the row; otherwise any divergence fails.
-/// A Qwen3-VL bundle also runs an image prompt whose question (after the image) steps back, through
-/// `VisionLanguageSession`: greedy identical across the three plans, with no near-tie allowance.
+/// A Qwen3-VL bundle also runs two image prompts through `VisionLanguageSession`: greedy identical across the three
+/// plans, with no near-tie allowance. A one-function decoder prefills image tokens in the same chunks as text, so the
+/// default plan's chunks cross the image span's edges in both, and the cases are chosen for the step-back tail: after
+/// a long question it lands in the text after the image; after a short one it steps back into the image span and
+/// re-covers image rows (the report records the image span and the default plan's chunk starts, and requires both).
 ///
 /// AETHER_NATIVE_LANGUAGE_OVERLAP=1
 /// AETHER_OVERLAP_MODELS=<name=path,...: text or Qwen3-VL bundles, or a raw bucketed model.aimodel>
@@ -75,10 +78,22 @@ private struct OverlapModel: Codable {
     var submissions: [String: Int] = [:]
     var defaultGreedy: [Int] = []
     var comparisons: [OverlapComparison] = []
-    var imagePromptTokens: Int?
-    var imageGreedy: [String: [Int]] = [:]
+    var imageCases: [OverlapImageCase] = []
     var imageGreedyIdentical: Bool?
     var passed = false
+}
+
+/// An image prompt prefilled three ways. `imageSpan` is [start, end) in the expanded prompt; `defaultChunkStarts` are the
+/// default plan's chunk starts on a one-function decoder (a 0.0.2 decoder sends the image span as one submission).
+private struct OverlapImageCase: Codable {
+    var name = ""
+    var promptTokens = 0
+    var imageSpan: [Int] = []
+    var defaultChunkStarts: [Int] = []
+    var chunksCrossImageEdges = false
+    var tailReCoversImageRows = false
+    var greedy: [String: [Int]] = [:]
+    var greedyIdentical = false
 }
 
 private struct OverlapReport: Codable {
@@ -179,20 +194,46 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
             }
             await session.unload()
             if vision {
-                let question = "Describe the colours in this picture. " + String(repeating: "Mention every shade you can see, from the brightest to the darkest. ", count: 8)
-                let withImage = try tokenizer.render([.user(question, images: 1)]).tokenIDs
-                model.imagePromptTokens = withImage.count
+                let registration = try #require(try LanguageModelManifest.load(from: path).vision)
+                let grids = try #require(registration.imageGrids).map { Qwen3VLImagePreprocessor.Grid(height: $0.height, width: $0.width) }
+                let grid = try Qwen3VLImagePreprocessor.nearestGrid(width: 512, height: 384, in: grids)
+                let imageTokens = grid.height * grid.width / (registration.mergeSize * registration.mergeSize)
                 let image = try VisionRGBImage(rgb: (0..<(512 * 384)).flatMap { i -> [UInt8] in
                     let x = i % 512, y = i / 512
                     return [UInt8(x * 255 / 511), UInt8(y * 255 / 383), UInt8((x + y) * 127 / 893)]
                 }, width: 512, height: 384)
                 let vl = try await VisionLanguageSession.open(bundle: path, platform: .macos)
-                for (name, chunk) in [("default", nil), ("single chunk", 512), ("1-token steps", 1)] as [(String, Int?)] {
-                    model.imageGreedy[name] = try await vl.generate(renderedTokenIDs: withImage, images: [image], maximumTokens: 32,
-                                                                    prefillChunkSize: chunk).tokens
+                let questions = [("long question", "Describe the colours in this picture. "
+                                    + String(repeating: "Mention every shade you can see, from the brightest to the darkest. ", count: 8)),
+                                 ("short question", "Describe this picture.")]
+                for (caseName, question) in questions {
+                    let rendered = try tokenizer.render([.user(question, images: 1)]).tokenIDs
+                    var imageCase = OverlapImageCase()
+                    imageCase.name = caseName
+                    let start = try #require(rendered.firstIndex(of: registration.imageTokenID))
+                    let total = rendered.count - 1 + imageTokens
+                    imageCase.promptTokens = total
+                    imageCase.imageSpan = [start, start + imageTokens]
+                    let width = 64
+                    imageCase.defaultChunkStarts = Array(stride(from: 0, through: total - width, by: width))
+                        + (total % width == 0 || total <= width ? [] : [total - width])
+                    func inside(_ edge: Int) -> Bool { imageCase.defaultChunkStarts.contains { $0 < edge && edge < $0 + width } }
+                    imageCase.chunksCrossImageEdges = inside(start) && inside(start + imageTokens)
+                    imageCase.tailReCoversImageRows = total % width != 0 && total - width < start + imageTokens
+                    for (name, chunk) in [("default", nil), ("single chunk", 512), ("1-token steps", 1)] as [(String, Int?)] {
+                        imageCase.greedy[name] = try await vl.generate(renderedTokenIDs: rendered, images: [image], maximumTokens: 32,
+                                                                        prefillChunkSize: chunk).tokens
+                    }
+                    imageCase.greedyIdentical = Set(imageCase.greedy.values).count == 1
+                    model.imageCases.append(imageCase)
                 }
                 await vl.unload()
-                model.imageGreedyIdentical = Set(model.imageGreedy.values).count == 1
+                // Each case must exercise what it is for: image edges inside chunks, and the short question's tail
+                // stepping back into the image.
+                let geometry = model.imageCases.allSatisfy(\.chunksCrossImageEdges)
+                    && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows }
+                    && model.imageCases.contains { $0.name == "long question" && !$0.tailReCoversImageRows }
+                model.imageGreedyIdentical = geometry && model.imageCases.allSatisfy(\.greedyIdentical)
             }
             model.passed = model.comparisons.allSatisfy(\.passed) && (model.imageGreedyIdentical ?? true)
             report.models.append(model)
