@@ -21,9 +21,7 @@ actor NativeH3Graph {
     /// between two device buffers, a `.chained` input binds the buffer the previous chained call wrote, and the output
     /// is copied to the host only when `readback` is set.
     struct Chain: Sendable { let output: String; let readback: Bool }
-    private var chainBuffers: [(any MTLBuffer)?] = [nil, nil]
-    private var chainSlot = 0
-    private var chainValid = false
+    private var chainState = H3ChainState<any MTLBuffer>()
     private let model: AIModel
     private let function: InferenceFunction
     private let descriptor: ModelFunctionDescription
@@ -85,11 +83,9 @@ actor NativeH3Graph {
         guard !busy else { throw AetherError.sessionBusy }
         try H3RuntimeBindings.validate(descriptor, inputs: inputs.mapValues(\.spec), outputs: specs)
         let chainedInput = inputs.contains { if case .chained = $0.value { true } else { false } }
-        guard !chainedInput || (chainValid && chain != nil) else { throw AetherError.invalidRequest("H3 chained input without a chained predecessor") }
-        busy = true; defer { busy = false }
         // Until this call completes, no chained output is valid: a failure or cancellation breaks the chain.
-        chainValid = false
-        let previous = chainBuffers[1 - chainSlot]
+        let previous = try chainState.begin(chainedInput: chainedInput, chaining: chain != nil)
+        busy = true; defer { busy = false }
         if let bank {
             var files: [String: H3TensorFile] = [:]
             for (name, input) in inputs { if case .file(let file) = input { files[name] = file } }
@@ -123,8 +119,7 @@ actor NativeH3Graph {
         var targets: [String: any MTLBuffer] = [:]
         for (name, spec) in specs {
             if name == chain?.output {
-                chainBuffers[chainSlot] = try buffer(chainBuffers[chainSlot], spec)
-                targets[name] = chainBuffers[chainSlot]
+                targets[name] = try chainState.output { try buffer($0, spec) }
             } else {
                 outputs[name] = try buffer(outputs[name], spec)
                 targets[name] = outputs[name]
@@ -157,10 +152,7 @@ actor NativeH3Graph {
         for (name, spec) in specs where name != chain?.output || chain!.readback {
             result[name] = try H3TensorData(spec: spec, bytes: Data(bytes: targets[name]!.contents(), count: spec.byteCount))
         }
-        if let chain {
-            chainSlot = 1 - chainSlot
-            chainValid = true
-        }
+        if chain != nil { chainState.complete() }
         return result
     }
 }

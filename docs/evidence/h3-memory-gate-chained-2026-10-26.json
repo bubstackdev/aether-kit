@@ -210,7 +210,7 @@
       "decodingAudio": 1983187512
     },
     "operation_bytes": 201326592,
-    "evidence": "docs/evidence/h3-memory-gate-2026-10-26.json"
+    "evidence": "docs/evidence/h3-memory-gate-chained-2026-10-26.json"
   },
   "controllers": {
     "dump-t2va-960x544": {

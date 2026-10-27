@@ -467,7 +467,7 @@ Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the 
 
 The bar binds callers that use measured admission. It is opt-in: `H3VideoSession(stages:)` without `resources:` reserves nothing and is not checked against the bar.
 
-Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py` on that device against that profile. It must pass, and its `measuredResources` entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file with its gate record in `docs/evidence`. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
+Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py --record NAME` on that device against that profile. It must pass. It writes its gate record to `docs/evidence/NAME`, and its `measuredResources` entry cites that file; the entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
 
 ## Schema-3 Turbo8 trajectory gate (2026-10-26)
 

@@ -60,6 +60,7 @@ def main():
     ap.add_argument("--recipe", default="turbo8")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--record", help="also write the gate record to docs/evidence/RECORD (a new file name); the measured entry cites it")
     args = ap.parse_args()
     root = Path(__file__).resolve().parent.parent
     probe = root / ".build/release/aether-probe"   # both build engines link .build/release
@@ -194,7 +195,8 @@ def main():
                  device_architecture=architectures.pop() if len(architectures) == 1 else None,
                  canvases=args.canvases.split(","), maximum_frames=int(json.loads(runs[0][2].read_text())["fields"]["frames"]),
                  stage_peak_bytes={k: stage_peaks[k] for k in STAGES if k in stage_peaks}, operation_bytes=operation,
-                 evidence="docs/evidence/h3-memory-gate-2026-10-26.json")
+                 # The entry cites the record this run writes: docs/evidence/RECORD, or the work directory's gate.json.
+                 evidence=f"docs/evidence/{args.record}" if args.record else str(work / "gate.json"))
     gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
                 memoryBarBytes=BAR, memoryBar="Metal allocation peak over a complete render must not exceed 18 GiB, for every task and canvas",
                 marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, controllers=records,
@@ -202,6 +204,11 @@ def main():
                 scope=("Complete H3VideoSession renders (conditioner, first-frame encoder for FL2VA, eight Turbo steps, video and audio decode) "
                        "at the 5 s clip menu; per-stage peaks attribute residual memory from the previous stage to the next stage."))
     (work / "gate.json").write_text(json.dumps(gate, indent=2) + "\n")
+    if args.record:
+        record = root / "docs/evidence" / args.record
+        if record.exists():
+            raise SystemExit(f"{record} already exists; choose a new record name")
+        record.write_text(json.dumps(gate, indent=2) + "\n")
     print(json.dumps(dict(passed=gate["passed"], failures=failures, worstGiB=round(worst / (1 << 30), 3),
                           renders={k: v["metalPeakGiB"] for k, v in renders.items()}), indent=2), flush=True)
     return 0 if gate["passed"] else 1
