@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "build": "5cdb5f3 (v0.0.2/h3-speed, after the H3ChainState refactor)",
+  "note": "Native chained replay of the T2VA trajectory capture (observer attached; every block input after block 0 bound on the device). The dump was regenerated with h3-profile-dump and is identical to the gate dump (all fields and tensor hashes equal).",
+  "gpuLock": "2026-10-27 07:24:48-07:31:03",
+  "fields": {
+    "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/replay-5cdb5f3-dump",
+    "mode": "render",
+    "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "replay_mismatches": "0",
+    "trajectory_hashes": "457"
+  },
+  "sampledPeakMetalGiB": 13.688,
+  "captureHashesFrom": "docs/evidence/h3-profile-trajectory-t2va-2026-10-26.json"
+}

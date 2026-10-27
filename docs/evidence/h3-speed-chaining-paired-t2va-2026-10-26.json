@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "profileSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+  "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-t2va-final/dump-t2va",
+  "order": [
+    "A",
+    "B",
+    "B",
+    "A"
+  ],
+  "runs": [
+    {
+      "run": 0,
+      "variant": "A",
+      "exit": 0,
+      "wallIncludingLockWaitSeconds": 425.55,
+      "loadBefore": [
+        15.98,
+        12.15,
+        8.98
+      ],
+      "loadAfter": [
+        8.82,
+        9.75,
+        8.98
+      ],
+      "renderSeconds": 400.244823708,
+      "stages": {
+        "stage.encoding": 21.041311125,
+        "step.1/8": 45.426904625,
+        "step.2/8": 41.632486875,
+        "step.3/8": 41.441837167,
+        "step.4/8": 41.630496,
+        "step.5/8": 42.377041083,
+        "step.6/8": 44.386227333,
+        "step.7/8": 45.2322435,
+        "step.8/8": 43.264397625,
+        "stage.denoising": 345.444132375,
+        "stage.decodingVideo": 33.088662667,
+        "stage.decodingAudio": 0.653980042
+      },
+      "metalPeakGiB": 13.494,
+      "finalLatents": {
+        "video": "23470304a0ebcc35f08be3e5478a8b53435bf67f3703251eb1298f509e4544c6",
+        "audio": "bffd39734ea81347ddab55e8a8feb187d94262e6e6561fc635bb0d1ef7d03c81"
+      },
+      "matchesCapture": true
+    },
+    {
+      "run": 1,
+      "variant": "B",
+      "exit": 0,
+      "wallIncludingLockWaitSeconds": 653.2,
+      "loadBefore": [
+        8.82,
+        9.75,
+        8.98
+      ],
+      "loadAfter": [
+        12.31,
+        13.67,
+        11.33
+      ],
+      "renderSeconds": 384.479361459,
+      "stages": {
+        "stage.encoding": 21.253554833,
+        "step.1/8": 43.557121625,
+        "step.2/8": 39.307156167,
+        "step.3/8": 40.649796208,
+        "step.4/8": 41.410545542,
+        "step.5/8": 42.034320875,
+        "step.6/8": 42.064721917,
+        "step.7/8": 40.3729955,
+        "step.8/8": 39.777907625,
+        "stage.denoising": 329.229504042,
+        "stage.decodingVideo": 33.323540541,
+        "stage.decodingAudio": 0.655485084
+      },
+      "metalPeakGiB": 13.688,
+      "finalLatents": {
+        "video": "23470304a0ebcc35f08be3e5478a8b53435bf67f3703251eb1298f509e4544c6",
+        "audio": "bffd39734ea81347ddab55e8a8feb187d94262e6e6561fc635bb0d1ef7d03c81"
+      },
+      "matchesCapture": true
+    },
+    {
+      "run": 2,
+      "variant": "B",
+      "exit": 0,
+      "wallIncludingLockWaitSeconds": 379.04,
+      "loadBefore": [
+        12.31,
+        13.67,
+        11.33
+      ],
+      "loadAfter": [
+        12.72,
+        14.55,
+        12.59
+      ],
+      "renderSeconds": 378.783156625,
+      "stages": {
+        "stage.encoding": 21.245224167,
+        "step.1/8": 43.6252085,
+        "step.2/8": 39.389386042,
+        "step.3/8": 39.668621583,
+        "step.4/8": 39.936468333,
+        "step.5/8": 40.635965834,
+        "step.6/8": 40.261963541,
+        "step.7/8": 40.007692625,
+        "step.8/8": 39.869064667,
+        "stage.denoising": 323.454839458,
+        "stage.decodingVideo": 33.399430292,
+        "stage.decodingAudio": 0.66593725
+      },
+      "metalPeakGiB": 13.688,
+      "finalLatents": {
+        "video": "23470304a0ebcc35f08be3e5478a8b53435bf67f3703251eb1298f509e4544c6",
+        "audio": "bffd39734ea81347ddab55e8a8feb187d94262e6e6561fc635bb0d1ef7d03c81"
+      },
+      "matchesCapture": true
+    },
+    {
+      "run": 3,
+      "variant": "A",
+      "exit": 0,
+      "wallIncludingLockWaitSeconds": 441.29,
+      "loadBefore": [
+        12.72,
+        14.55,
+        12.59
+      ],
+      "loadAfter": [
+        20.34,
+        16.28,
+        13.75
+      ],
+      "renderSeconds": 411.669261833,
+      "stages": {
+        "stage.encoding": 20.789124125,
+        "step.1/8": 46.557860625,
+        "step.2/8": 43.089776584,
+        "step.3/8": 42.479558125,
+        "step.4/8": 43.704934875,
+        "step.5/8": 45.6966225,
+        "step.6/8": 46.021837666,
+        "step.7/8": 44.2778515,
+        "step.8/8": 44.0679955,
+        "stage.denoising": 355.954074709,
+        "stage.decodingVideo": 34.234409084,
+        "stage.decodingAudio": 0.674277625
+      },
+      "metalPeakGiB": 13.107,
+      "finalLatents": {
+        "video": "23470304a0ebcc35f08be3e5478a8b53435bf67f3703251eb1298f509e4544c6",
+        "audio": "bffd39734ea81347ddab55e8a8feb187d94262e6e6561fc635bb0d1ef7d03c81"
+      },
+      "matchesCapture": true
+    }
+  ],
+  "summary": {
+    "A": {
+      "n": 2,
+      "renderMedian": 405.95704277050004,
+      "denoisingMedian": 350.699103542,
+      "decodingVideoMedian": 33.6615358755,
+      "metalPeakGiB": 13.494,
+      "probeSHA256": "32bbda233135fba4714af39a2203537279d7c4a36929f52beceebdca60b72cb4"
+    },
+    "B": {
+      "n": 2,
+      "renderMedian": 381.631259042,
+      "denoisingMedian": 326.34217175,
+      "decodingVideoMedian": 33.3614854165,
+      "metalPeakGiB": 13.688,
+      "probeSHA256": "799e3f41370141c8cf5e85cba2b746ebb8c4374b52d125f2b114a34ba51e238a"
+    }
+  },
+  "allMatchCapture": true
+}

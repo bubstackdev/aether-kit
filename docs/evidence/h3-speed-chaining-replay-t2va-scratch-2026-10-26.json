@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "note": "Chained build from a Scratch copy of 539e068 replaying the T2VA capture with the observer attached (every block read back; inputs still bound on the device).",
+  "fields": {
+    "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/trajectory-t2va-final/dump-t2va",
+    "mode": "render",
+    "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "replay_mismatches": "0",
+    "trajectory_hashes": "457"
+  },
+  "sampledPeakMetalGiB": 13.688
+}

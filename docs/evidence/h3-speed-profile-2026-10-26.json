@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "note": "Speed profile of one denoising step (50 block calls, 19,333 rows) from a Scratch build with per-phase timers; body graph with expectFrequentReshapes true (current) and false (static), interleaved sessions in one process; load average 16-24; GPU lock 18:49:44-18:58:53.",
+  "fields": {
+    "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/graphs-960-tiled/dump-t2va",
+    "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "rows": "19333"
+  },
+  "sessions": [
+    {
+      "variant": "reshapes",
+      "round": 0,
+      "metalPeakGiB": 9.892,
+      "passes": [
+        {
+          "passIndex": 0,
+          "step": 1,
+          "seconds": 43.33,
+          "outputSHA256": "2a4a1d9b3e5ef2423f0d9f188968261cc2bea2c569fd9e5716a2a76ff0186863",
+          "blockMedianMs": {
+            "seconds": 810.6,
+            "load": 0.0,
+            "copyIn": 4.9,
+            "encode": 8.7,
+            "prefetch": 557.3,
+            "gpuWait": 154.8,
+            "copyOut": 89.7
+          }
+        },
+        {
+          "passIndex": 1,
+          "step": 1,
+          "seconds": 40.06,
+          "outputSHA256": "2a4a1d9b3e5ef2423f0d9f188968261cc2bea2c569fd9e5716a2a76ff0186863",
+          "blockMedianMs": {
+            "seconds": 802.1,
+            "load": 0.0,
+            "copyIn": 5.3,
+            "encode": 10.3,
+            "prefetch": 183.9,
+            "gpuWait": 497.7,
+            "copyOut": 99.6
+          }
+        },
+        {
+          "passIndex": 2,
+          "step": 0,
+          "seconds": 40.39,
+          "outputSHA256": "36dcf1d04ecd54d303f289a572d93eebd8feefc4495165c1e126bad01a05f174",
+          "blockMedianMs": {
+            "seconds": 807.2,
+            "load": 0.0,
+            "copyIn": 4.9,
+            "encode": 9.1,
+            "prefetch": 152.0,
+            "gpuWait": 541.0,
+            "copyOut": 96.7
+          }
+        }
+      ],
+      "switchCallSeconds": [
+        0.771,
+        0.804,
+        0.807,
+        0.808
+      ]
+    },
+    {
+      "variant": "static",
+      "round": 0,
+      "metalPeakGiB": 11.956,
+      "passes": [
+        {
+          "passIndex": 0,
+          "step": 1,
+          "seconds": 41.38,
+          "outputSHA256": "b8822e9c4685399632b9fb96a912addb5f202e7e9f3238f3ceb0b0d66ea369c7",
+          "blockMedianMs": {
+            "seconds": 817.8,
+            "load": 0.0,
+            "copyIn": 4.7,
+            "encode": 6.5,
+            "prefetch": 549.9,
+            "gpuWait": 156.6,
+            "copyOut": 89.5
+          }
+        },
+        {
+          "passIndex": 1,
+          "step": 1,
+          "seconds": 40.67,
+          "outputSHA256": "b8822e9c4685399632b9fb96a912addb5f202e7e9f3238f3ceb0b0d66ea369c7",
+          "blockMedianMs": {
+            "seconds": 812.3,
+            "load": 0.0,
+            "copyIn": 5.4,
+            "encode": 7.8,
+            "prefetch": 233.3,
+            "gpuWait": 467.7,
+            "copyOut": 99.6
+          }
+        },
+        {
+          "passIndex": 2,
+          "step": 0,
+          "seconds": 41.14,
+          "outputSHA256": "438264aaf80244efa62e3f86ccaf72454752b422267dcf719472c94f2621e7b8",
+          "blockMedianMs": {
+            "seconds": 818.4,
+            "load": 0.0,
+            "copyIn": 5.2,
+            "encode": 7.3,
+            "prefetch": 154.0,
+            "gpuWait": 551.2,
+            "copyOut": 96.6
+          }
+        }
+      ],
+      "switchCallSeconds": [
+        0.995,
+        0.832,
+        0.91,
+        0.818
+      ]
+    },
+    {
+      "variant": "static",
+      "round": 1,
+      "metalPeakGiB": 11.956,
+      "passes": [
+        {
+          "passIndex": 0,
+          "step": 1,
+          "seconds": 43.79,
+          "outputSHA256": "b8822e9c4685399632b9fb96a912addb5f202e7e9f3238f3ceb0b0d66ea369c7",
+          "blockMedianMs": {
+            "seconds": 831.3,
+            "load": 0.0,
+            "copyIn": 5.0,
+            "encode": 7.0,
+            "prefetch": 629.5,
+            "gpuWait": 91.8,
+            "copyOut": 96.6
+          }
+        },
+        {
+          "passIndex": 1,
+          "step": 1,
+          "seconds": 41.98,
+          "outputSHA256": "b8822e9c4685399632b9fb96a912addb5f202e7e9f3238f3ceb0b0d66ea369c7",
+          "blockMedianMs": {
+            "seconds": 835.0,
+            "load": 0.0,
+            "copyIn": 5.4,
+            "encode": 8.1,
+            "prefetch": 225.4,
+            "gpuWait": 498.6,
+            "copyOut": 101.0
+          }
+        },
+        {
+          "passIndex": 2,
+          "step": 0,
+          "seconds": 43.8,
+          "outputSHA256": "438264aaf80244efa62e3f86ccaf72454752b422267dcf719472c94f2621e7b8",
+          "blockMedianMs": {
+            "seconds": 852.2,
+            "load": 0.0,
+            "copyIn": 5.5,
+            "encode": 8.3,
+            "prefetch": 182.7,
+            "gpuWait": 544.6,
+            "copyOut": 104.8
+          }
+        }
+      ],
+      "switchCallSeconds": [
+        1.088,
+        0.844,
+        0.922,
+        0.863
+      ]
+    },
+    {
+      "variant": "reshapes",
+      "round": 1,
+      "metalPeakGiB": 9.892,
+      "passes": [
+        {
+          "passIndex": 0,
+          "step": 1,
+          "seconds": 47.02,
+          "outputSHA256": "2a4a1d9b3e5ef2423f0d9f188968261cc2bea2c569fd9e5716a2a76ff0186863",
+          "blockMedianMs": {
+            "seconds": 911.0,
+            "load": 0.0,
+            "copyIn": 5.1,
+            "encode": 9.4,
+            "prefetch": 620.9,
+            "gpuWait": 166.4,
+            "copyOut": 98.4
+          }
+        },
+        {
+          "passIndex": 1,
+          "step": 1,
+          "seconds": 43.06,
+          "outputSHA256": "2a4a1d9b3e5ef2423f0d9f188968261cc2bea2c569fd9e5716a2a76ff0186863",
+          "blockMedianMs": {
+            "seconds": 862.8,
+            "load": 0.0,
+            "copyIn": 5.2,
+            "encode": 10.0,
+            "prefetch": 199.2,
+            "gpuWait": 541.6,
+            "copyOut": 103.7
+          }
+        },
+        {
+          "passIndex": 2,
+          "step": 0,
+          "seconds": 43.13,
+          "outputSHA256": "36dcf1d04ecd54d303f289a572d93eebd8feefc4495165c1e126bad01a05f174",
+          "blockMedianMs": {
+            "seconds": 854.8,
+            "load": 0.0,
+            "copyIn": 5.3,
+            "encode": 8.7,
+            "prefetch": 154.0,
+            "gpuWait": 584.1,
+            "copyOut": 98.5
+          }
+        }
+      ],
+      "switchCallSeconds": [
+        0.827,
+        0.856,
+        0.848,
+        0.852
+      ]
+    }
+  ],
+  "findings": [
+    "Weight streaming (next-block prefetch, 150-230 ms warm, ~560 ms on the first pass with hashing) overlaps ~680 ms of GPU work per block, so residency would save about 0.",
+    "No guidance: one 50-block pass and one heads call per step.",
+    "Step-1 second specialization: first call at the other cardinality 0.77-1.09 s against 0.80-0.86 s steady; it costs memory, not time.",
+    "expectFrequentReshapes=false: no speedup (41.33 vs 41.56 s per pass, n=2), different output bytes, +2.07 GiB Metal; rejected.",
+    "Host round trip per block: ~100 ms copy-out plus ~5 ms copy-in; removed by chaining blocks on the device."
+  ]
+}

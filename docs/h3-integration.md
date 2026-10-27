@@ -467,7 +467,7 @@ Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the 
 
 The bar binds callers that use measured admission. It is opt-in: `H3VideoSession(stages:)` without `resources:` reserves nothing and is not checked against the bar.
 
-Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py` on that device against that profile. It must pass, and its `measuredResources` entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file with its gate record in `docs/evidence`. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
+Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py --record NAME` on that device against that profile. It must pass. It writes its gate record to `docs/evidence/NAME`, and its `measuredResources` entry cites that file; the entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
 
 ## Schema-3 Turbo8 trajectory gate (2026-10-26)
 
@@ -522,3 +522,50 @@ A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hash
 - **Float32 diagnostic:** native blocks are 0.33–1.03% from float32.
 - **Memory:** both renders peak at 13.80 GiB Metal, under the gate's 18 GiB bar.
 - **Run time:** the CPU oracle took 58 min.
+
+## Denoiser speed: device-chained blocks (2026-10-26)
+
+[A phase profile of one denoising step](evidence/h3-speed-profile-2026-10-26.json) covers 50 block calls at 19,333 rows, in interleaved sessions within one process. It shows the denoiser is GPU-bound at about 680 ms of GPU work per block:
+
+- **Weight streaming is already hidden.** The next block's weights are prefetched into the spare bank while the GPU runs: 150–230 ms warm, about 560 ms on the first pass, which also hashes each file. Keeping more weights resident would therefore buy nothing.
+- **No guidance pass.** Each step runs 50 blocks and one heads call.
+- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render.
+- **`expectFrequentReshapes = false` is rejected.** It gave no speedup, changed the output bytes and added 2.07 GiB of Metal.
+- **The removable cost was the host round trip per block:** about 100 ms copying each 208 MB output to the host, and about 5 ms copying it back.
+
+`H3DenoiserKernels.blocks(...)` now runs a step's blocks as one chain. Block 0 copies the packed sequence in. Every later block binds its predecessor's output on the device, through `NativeH3Graph`'s `.chained` input and two alternating output buffers. Only the last output is read back, or every output when an observer is attached.
+
+Outputs stay byte-identical:
+
+- A chained build replays all 457 boundary hashes of both the T2VA and the FL2VA captures ([replays](evidence/h3-speed-chaining-replays-2026-10-26.json)).
+- After the chain bookkeeping moved into `H3ChainState`, a native replay at 5cdb5f3 again reproduces all 457 T2VA hashes ([record](evidence/h3-speed-chaining-replay-t2va-5cdb5f3-2026-10-27.json)).
+- Four paired renders without an observer all end on the capture's final latents.
+
+[Paired, interleaved timings](evidence/h3-speed-chaining-paired-t2va-2026-10-26.json) for T2VA at 960×544, ABBA order, n = 2 each, load average 9–20:
+
+| | Current | Chained | Change |
+| --- | ---: | ---: | ---: |
+| Denoising, median | 350.7 s | 326.3 s | −7.0% |
+| Render, median | 406.0 s | 381.6 s | −6.0% |
+
+The two device chain buffers raise the Metal peak by about 0.2 GiB. [The memory gate](evidence/h3-memory-gate-chained-2026-10-26.json), rerun on the chained build, passes: T2VA peaks at 13.69 GiB, FL2VA at 14.00 GiB, and the admission worst case is 15.26 GiB. The bundled measured entry is updated to match.
+
+### Timed renders on this Mac: busy host
+
+**These are busy-host timings, not a quiet reference.** Other sessions kept the host loaded all night, so after the agreed capped wait both renders ran anyway. Each is one complete `H3VideoSession` render (`aether-probe h3-memory-render`, chained build): 960×544, 124 frames, Turbo8 (8 steps), M5 Max, Core AI architecture h17c ([record](evidence/h3-timed-renders-2026-10-26.json)). The T2VA render started at a 1-minute load of 2.8 (5-minute 20.5), and load rose to 126 during the run. The FL2VA render ran at a load of about 68–84 throughout.
+
+| Stage, wall seconds | T2VA (busy host, load 3 → 126) | FL2VA (busy host, load 68–84) |
+| --- | ---: | ---: |
+| Conditioner (graph load + 50 streamed layers) | 19.2 | 26.1 |
+| First-frame encoder, tiled | — | 5.6 |
+| Denoising, 8 steps | 299.4 | 352.0 |
+| Video decode (tile graph load + 105 tiles) | 35.8 | 35.6 |
+| Audio decode | 0.75 | 0.72 |
+| **Total** | **355.1** | **420.0** |
+
+Per-step denoising times:
+
+- T2VA: 33.8, 35.2, 35.3, 35.5, 36.8, 37.4, 42.4 and 42.8 s, slowing as load rose.
+- FL2VA: 43.6–44.3 s.
+
+Graphs open lazily inside their stage, so each stage's time includes its own load and specialization. Under steady load, the FL2VA step 0 (44.0 s) equals the later steps (median 44.1 s). So inside denoising, the body graph's load and specialization, text refinement and first-pass weight hashing add no measurable time: denoising is compute. The conditioner and video-decode rows include their graph loads. A quiet-host reference remains to be measured.

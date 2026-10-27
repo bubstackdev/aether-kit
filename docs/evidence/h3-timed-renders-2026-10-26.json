@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "build": "v0.0.2/h3-speed (chained blocks)",
+  "canvas": "960x544",
+  "frames": 124,
+  "steps": 8,
+  "renders": {
+    "t2va": {
+      "fields": {
+        "device_architecture": "h17c",
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate-chained/dump-t2va-960x544",
+        "execution_identity": "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8",
+        "frames": "124",
+        "height": "544",
+        "mode": "render",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+        "task": "t2va",
+        "width": "960"
+      },
+      "loadBefore": [
+        2.79,
+        20.53,
+        18.01
+      ],
+      "loadAfter": [
+        125.98,
+        55.38,
+        31.43
+      ],
+      "stagesSeconds": {
+        "conditioner": 19.2,
+        "firstFrameEncoder": null,
+        "denoising": 299.4,
+        "videoDecode": 35.8,
+        "audioDecode": 0.75
+      },
+      "denoisingStepsSeconds": [
+        33.8,
+        35.2,
+        35.3,
+        35.5,
+        36.8,
+        37.4,
+        42.4,
+        42.8
+      ],
+      "denoisingSteadyStepMedianSeconds": 36.8,
+      "denoisingStep0OverheadSeconds": -3.0,
+      "totalSeconds": 355.1,
+      "method": "Wall time per session stage from the 20 ms timeline (aether-probe h3-memory-render, chained build). Graphs open lazily inside their stage, so each stage includes its load/specialization; for denoising, step 0 minus the median later step estimates load, specialization, text refinement and first-pass weight hashing."
+    },
+    "fl2va": {
+      "fields": {
+        "device_architecture": "h17c",
+        "dump": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/memory-gate-chained/dump-fl2va-960x544",
+        "execution_identity": "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8",
+        "frames": "124",
+        "height": "544",
+        "mode": "render",
+        "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+        "task": "fl2va",
+        "width": "960"
+      },
+      "loadBefore": [
+        68.4,
+        77.74,
+        84.25
+      ],
+      "loadAfter": [
+        72.48,
+        73.97,
+        79.52
+      ],
+      "stagesSeconds": {
+        "conditioner": 26.1,
+        "firstFrameEncoder": 5.6,
+        "denoising": 352.0,
+        "videoDecode": 35.6,
+        "audioDecode": 0.72
+      },
+      "denoisingStepsSeconds": [
+        44.0,
+        43.6,
+        43.6,
+        44.0,
+        44.1,
+        44.1,
+        44.2,
+        44.3
+      ],
+      "denoisingSteadyStepMedianSeconds": 44.1,
+      "denoisingStep0OverheadSeconds": -0.0,
+      "totalSeconds": 420.0,
+      "method": "Wall time per session stage from the 20 ms timeline (aether-probe h3-memory-render, chained build). Graphs open lazily inside their stage, so each stage includes its load/specialization; for denoising, step 0 minus the median later step estimates load, specialization, text refinement and first-pass weight hashing."
+    }
+  }
+}
