@@ -107,7 +107,10 @@ that step fails, the in-flight delivery is cancelled and awaited.
 
 The session detects the contract from the `main` function signature
 (`LanguageGenerationSession.contract`); running-contract bundles need no manifest
-change, and bucketed ones declare their `exportBounds`.
+change, and bucketed ones declare their `exportBounds`. A Qwen3-VL bucketed `main` also takes
+`rope_positions` and, since 0.0.3, image rows aligned with the tokens (`image_embeds`,
+`deepstack`), so one function serves text, image and decode steps
+(`imagesThroughMain`; [Qwen3-VL](qwen3-vl.md#pieces)).
 
 | | `runningPositions` (0.0.1, Apple LLM exports) | `bucketedPositions` (0.0.2) |
 | --- | --- | --- |

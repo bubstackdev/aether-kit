@@ -48,8 +48,8 @@ text; its image prompts are refused while planning. Image resampling runs off th
 path, where Kit preprocesses, encodes and checks every image. The lower-level entry points are not
 grid-restricted: `LanguageGenerationSession.generate(prompt: LanguageVisionPrompt…)` and the public
 `LanguageImageFeatures` initializer accept features for any grid, so a direct caller can submit an
-image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The decoder's
-`withImage` then sees shapes outside the qualified set; those are the caller's responsibility.
+image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The decoder then sees
+image shapes outside the qualified set; those are the caller's responsibility.
 
 ## Pieces
 
@@ -58,7 +58,7 @@ image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The
 | Vision encoder asset (`encode_<h>x<w>`, one per grid) | `Forge/language/export_qwen3_vl_vision.py`; run by `LanguageVisionEncoder` |
 | Per-patch host tables | `AetherVision.Qwen3VLVisionTables` (bit-exact with the Forge mirror) |
 | Image decoding and preprocessing | `AetherVision.VisionRGBImage`, `Qwen3VLImagePreprocessor` |
-| Text decoder (`main` + `withImage`, bucketed contract) | `Forge/language/export_qwen3_vl_text.py`; run by `LanguageGenerationSession` |
+| Text decoder (one `main`, bucketed contract) | `Forge/language/export_qwen3_vl_text.py`; run by `LanguageGenerationSession` |
 | M-RoPE positions and prompt expansion | `LanguagePromptPlan` (pure, CPU-tested against upstream's rope index) |
 | Public API | `VisionLanguageSession` |
 
@@ -78,17 +78,20 @@ F-P3-21).
 | 32×56 | 896×512 | 7:4 (≈ 16:9) | 448 |
 | 56×32 | 512×896 | 4:7 (≈ 9:16) | 448 |
 
-**Text decoder.** One fp16 asset (3.2 GB) with two bucketed functions over shared weights:
-`main(input_ids, cache_positions, rope_positions [3, q], keyCache, valueCache)` and
-`withImage(..., image_embeds [n, 2048], deepstack [3, n, 2048], ...)`, each returning last-row
-logits and the chunk's cache rows. `withImage` splices image rows at `<|image_pad|>` tokens with
-an embedding gather and adds the DeepStack features after the first three decoder layers. With
-the fixed grids, `withImage` only ever sees three image submission sizes (484, 448, 432). Rotary
-positions are 3-axis M-RoPE (`rope_positions`), separate from the cache positions that address
-rows and the mask (rope positions inside an image are not monotonic, engine F-P3-1). Text runs are
-prefilled in the contract's fixed width (64) through `main`, a run's last chunk stepping back over rows
-already written ([step contracts](language-generation.md#step-contracts)); each image's tokens go in one `withImage` call
-(at most `maximumImageChunk`, 2,048 here).
+**Text decoder.** One fp16 asset (3.2 GB) with one bucketed function (0.0.3):
+`main(input_ids, cache_positions, rope_positions [3, q], image_embeds [q, 2048], deepstack [3, q, 2048],
+keyCache, valueCache)`, returning last-row logits and the chunk's cache rows. Image rows are aligned
+with the tokens and used only where the token is `<|image_pad|>`: there they replace the embedding,
+and the DeepStack features are added after the first three decoder layers. Text submissions and
+decode steps pass zero rows. One function serves every step because Core AI wires a separate copy
+of the weights for each function it runs ([design](qwen3-vl-single-decoder.md)); the 0.0.2 bundles,
+with `main` for text and `withImage` (`image_embeds` [n, 2048]) for image spans, still open and
+keep their two copies. With the fixed grids, image submissions have three sizes (484, 448, 432).
+Rotary positions are 3-axis M-RoPE (`rope_positions`), separate from the cache positions that
+address rows and the mask (rope positions inside an image are not monotonic, engine F-P3-1). Text
+runs are prefilled in the contract's fixed width (64), a run's last chunk stepping back over rows
+already written ([step contracts](language-generation.md#step-contracts)); each image's tokens go
+in one submission (at most `maximumImageChunk`, 2,048 here).
 
 **Preprocessing.** The image snaps to the grid whose aspect ratio is nearest its own in log
 space (the first listed wins a tie; `Qwen3VLImagePreprocessor.nearestGrid`, mirrored by Forge's
