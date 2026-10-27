@@ -55,7 +55,9 @@ Per-asset placement is read from the manifest: `diffusion.assetReshapes` overrid
 
 ### Producing the bundle
 
-The prototype's Forge exports the components; a kit-side script adds the target and provenance fields:
+The 2026-10-26 bundle's components were exported by the superseded aether-engine prototype's exporter, which is not
+part of aether-kit and is no longer used; re-exporting needs that exporter ported into `Forge/` (open). For the
+record, the export and the kit-side script that adds the target and provenance fields were:
 
 ```sh
 cd <aether-engine>/forge

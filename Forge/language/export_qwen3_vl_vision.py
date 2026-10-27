@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export the Qwen3-VL vision tower as an Aether Kit image-encoder asset (development tooling only).
 
-    <venv>/bin/python -I Forge/language/export_qwen3_vl_vision.py --checkpoint <hf snapshot> --output <new dir> \
+    Forge/.venv/bin/python -I Forge/language/export_qwen3_vl_vision.py --checkpoint <hf snapshot> --output <new dir> \
         --source-repository Qwen/Qwen3-VL-2B-Instruct --source-revision <sha>
 
 Writes only under the new `--output` directory: `vision.aimodel/` (one static-shape function `encode_<h>x<w>` per

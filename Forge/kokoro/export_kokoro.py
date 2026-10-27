@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export Kokoro-82M (hexgrad/Kokoro-82M, Apache-2.0) to a float32 Core AI speech bundle.
 
-Requires torch + Apple's coreai-torch (e.g. the prototype Forge venv, used read-only),
+Runs in Forge's locked environment (`uv sync --frozen --project Forge`) with
 the pinned Hugging Face snapshot and the unpacked kokoro 0.9.4 wheel. No G2P code is
 imported. Writes only the explicitly supplied new output directory:
 

@@ -4,6 +4,10 @@
 Full time/modulation/prepare/head/scheduler checks and sampled blocks 0/49.
 This is not an independently computed CPU trajectory. No GPU API, export,
 checkpoint mutation, or model-weight copy; one CPU backbone block at a time.
+
+Legacy, prototype-only (2026-10-18): this script puts the superseded aether-prototype's forge and the lab's vendored
+Diffusers on sys.path, so it runs in neither Forge environment, and its /private/tmp inputs are gone. The 0.0.2 H3
+qualification uses prepare-h3-profile-oracle.py instead.
 """
 import argparse
 import gc

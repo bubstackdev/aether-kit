@@ -19,7 +19,8 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
   trajectory  References at a native trajectory's captured contexts (`h3-profile-run --render --capture`): per step,
            packing, blocks 0 and 49 on their captured inputs, heads on the captured block-49 output and both scheduler
            updates, compared in-process on full tensors (no reference tensors written); float32 blocks as a diagnostic.
-Usage: python -I -B prepare-h3-profile-oracle.py --part PART --dump DUMP --output NEW_DIR [--run RUN] [--text TEXT_DIR]
+Usage (Forge's H3 oracle environment, `uv sync --frozen --project Forge/h3-oracle`):
+       Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py --part PART --dump DUMP --output NEW_DIR [--run RUN] [--text TEXT_DIR]
 """
 import argparse, json, math, os, sys, time
 from pathlib import Path

@@ -1,0 +1,69 @@
+# Development tooling only: the H3 (MiniMax H3) CPU oracle and profile export, never required by SDK consumers.
+# Pinned to exactly the environment that produced the 2026-10-26 H3 evidence (every installed package at its version;
+# diffusers at the public huggingface/diffusers commit carrying the MiniMax H3 modules):
+#
+#     uv sync --frozen --project Forge/h3-oracle
+#     Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py ...
+#
+# Separate from Forge/pyproject.toml: H3 needs torch 2.13 and transformers 5, the language and Kokoro tooling torch
+# 2.11 and transformers 4.57.
+[project]
+name = "aether-kit-forge-h3-oracle"
+version = "0.0.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "accelerate==1.15.0",
+    "annotated-doc==0.0.5",
+    "anyio==4.15.1",
+    "certifi==2026.10.18",
+    "charset-normalizer==3.5.2",
+    "click==8.5.0",
+    "coreai-core==1.0.0b2",
+    "coreai-torch==0.4.2",
+    "diffusers @ git+https://github.com/huggingface/diffusers@7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "filelock==4.2.4",
+    "fsspec==2026.9.0",
+    "h11==0.16.0",
+    "hf-xet==1.7.0",
+    "httpcore2==2.14.0",
+    "httpx2==2.14.0",
+    "huggingface_hub==2.2.0",
+    "idna==3.20",
+    "importlib_metadata==9.0.1",
+    "Jinja2==3.1.6",
+    "markdown-it-py==4.2.0",
+    "MarkupSafe==3.0.4",
+    "mdurl==0.1.2",
+    "ml_dtypes==0.6.0",
+    "mpmath==1.3.0",
+    "networkx==3.7",
+    "numpy==2.5.4",
+    "packaging==26.3",
+    "peft==0.21.2",
+    "pillow==13.0.0",
+    "psutil==7.2.2",
+    "Pygments==2.21.0",
+    "PyYAML==6.0.3",
+    "regex==2026.9.29",
+    "requests==2.34.2",
+    "rich==15.0.0",
+    "safetensors==0.8.0",
+    "scipy==1.18.1",
+    "setuptools==84.0.0",
+    "shellingham==1.5.4",
+    "StrEnum==0.4.15",
+    "sympy==1.14.0",
+    "tokenizers==0.23.3",
+    "torch==2.13.0",
+    "tqdm==4.70.1",
+    "transformers==5.20.1",
+    "truststore==0.10.5",
+    "typer==0.27.3",
+    "typing_extensions==4.16.0",
+    "urllib3==2.8.0",
+    "yuvio==1.6",
+    "zipp==4.1.1",
+]
+
+[tool.uv]
+package = false
