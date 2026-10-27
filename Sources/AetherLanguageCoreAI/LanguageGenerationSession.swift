@@ -519,8 +519,7 @@ public actor LanguageGenerationSession {
               logits.scalarType == .float16, logits.shape == [1, contract.logitsRows(count: tokens.count), vocabularySize]
         else { throw LanguageGenerationError.invalid("Unexpected logits") }
         return logits.view(as: Float16.self).withUnsafePointer { pointer, shape, strides in
-            let row = (shape[1] - 1) * strides[1]
-            return (0..<shape[2]).map { Float(pointer[row + $0 * strides[2]]) }
+            LanguageLogitsRow.lastRow(pointer, rows: shape[1], rowStride: strides[1], count: shape[2], stride: strides[2])
         }
     }
 

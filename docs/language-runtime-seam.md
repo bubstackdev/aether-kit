@@ -1,7 +1,7 @@
 # Language runtime seam
 
-Status: design approved and commits 1–5 implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
-commit 7 is next and commit 6 waits for the decoder rework. This is the first piece of the 0.0.3 app-facing language
+Status: design approved and commits 1–5 and 7 implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
+commit 6 waits for the decoder rework. This is the first piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)): a sampler and logits hook, and a
 `LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -40,7 +40,8 @@ argmax, not reaching the memory. Two cheaper paths were checked:
 - Passing a Kit-owned shared `MTLBuffer` as the logits output view (`encode(…, outputViews:)`) works on the bucketed
   asset. On every measured step it gave the same argmax as the `NDArray` path, with nothing allocated per step.
 
-Neither is needed for correctness. Both are a later, separately measured commit (see the plan below).
+Neither is needed for correctness. Commit 7 adopted the first: `step` now converts the row with vImage (see the plan
+below).
 
 Host sampling over one full row (single thread; the 4B's first-step row):
 
@@ -423,6 +424,13 @@ throws it from commit 2), and a commit between 4 and 5 sped up random sampling a
      - CPU: vImage's fp16-to-fp32 conversion equals `Float(Float16)` on all 65,536 bit patterns;
      - native: the token-identity check again.
    - It's dropped if the identity check or the gain doesn't hold.
+
+   Done with vImage (`LanguageLogitsRow`), not the output view, which would have changed the step's encoding for no
+   further gain: the conversion takes 7.3 µs including the new array, against 256–283 µs before, and is exact on all
+   65,536 bit patterns. After it, the 0.6B and 4B token-identity runs are identical again, and so are the 0.6B's
+   teacher-forced row metrics, bit for bit. Greedy per-token time went from 21.1 to 20.7 ms on the 4B and from 7.3 to
+   6.2 ms on the 0.6B in the same native test (separate runs on a shared host: observations). The argmax itself (about
+   0.15 ms) is unchanged, so the default path's arithmetic is too.
 
 ### Results of commits 1–5
 
