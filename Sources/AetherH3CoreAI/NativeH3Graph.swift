@@ -13,8 +13,17 @@ actor NativeH3Graph {
     enum Input: Sendable {
         case data(H3TensorData)
         case file(H3TensorFile)
-        var spec: H3TensorSpec { switch self { case .data(let d): d.spec; case .file(let f): f.spec } }
+        /// The previous chained call's output, still on the device (see `run(..., chain:)`).
+        case chained(H3TensorSpec)
+        var spec: H3TensorSpec { switch self { case .data(let d): d.spec; case .file(let f): f.spec; case .chained(let s): s } }
     }
+    /// Chaining one graph's output into its next call's input without a host round trip: the named output alternates
+    /// between two device buffers, a `.chained` input binds the buffer the previous chained call wrote, and the output
+    /// is copied to the host only when `readback` is set.
+    struct Chain: Sendable { let output: String; let readback: Bool }
+    private var chainBuffers: [(any MTLBuffer)?] = [nil, nil]
+    private var chainSlot = 0
+    private var chainValid = false
     private let model: AIModel
     private let function: InferenceFunction
     private let descriptor: ModelFunctionDescription
@@ -71,11 +80,16 @@ actor NativeH3Graph {
     /// per-name slots. `prefetch`: once this call's GPU work is encoded, load those files into that (other) bank while
     /// the GPU runs; a failed prefetch is dropped (the next call loads what it lacks).
     func run(_ inputs: [String: Input], outputs specs: [String: H3TensorSpec], bank: Int? = nil,
-             prefetch: (files: [String: H3TensorFile], bank: Int)? = nil) async throws -> [String: H3TensorData] {
+             prefetch: (files: [String: H3TensorFile], bank: Int)? = nil, chain: Chain? = nil) async throws -> [String: H3TensorData] {
         try Task.checkCancellation()
         guard !busy else { throw AetherError.sessionBusy }
         try H3RuntimeBindings.validate(descriptor, inputs: inputs.mapValues(\.spec), outputs: specs)
+        let chainedInput = inputs.contains { if case .chained = $0.value { true } else { false } }
+        guard !chainedInput || (chainValid && chain != nil) else { throw AetherError.invalidRequest("H3 chained input without a chained predecessor") }
         busy = true; defer { busy = false }
+        // Until this call completes, no chained output is valid: a failure or cancellation breaks the chain.
+        chainValid = false
+        let previous = chainBuffers[1 - chainSlot]
         if let bank {
             var files: [String: H3TensorFile] = [:]
             for (name, input) in inputs { if case .file(let file) = input { files[name] = file } }
@@ -84,6 +98,10 @@ actor NativeH3Graph {
         var bound: [String: any MTLBuffer] = [:]
         for (name, input) in inputs.sorted(by: { $0.key < $1.key }) {
             if let bank, case .file = input { bound[name] = banks[bank][name]!; continue }
+            if case .chained(let spec) = input {
+                guard let previous, previous.length == spec.byteCount else { throw AetherError.invalidRequest("H3 chained input differs from its predecessor") }
+                bound[name] = previous; continue
+            }
             try Task.checkCancellation()
             let slot = try buffer(slots[name], input.spec)
             if slot !== slots[name] { resident[name] = nil }
@@ -98,15 +116,26 @@ actor NativeH3Graph {
                 try file.read(into: UnsafeMutableRawBufferPointer(start: slot.contents(), count: file.spec.byteCount),
                               verify: !verified.contains(file.sha256))
                 verified.insert(file.sha256); resident[name] = file.sha256
+            case .chained:
+                break
             }
         }
-        for (name, spec) in specs { outputs[name] = try buffer(outputs[name], spec) }
+        var targets: [String: any MTLBuffer] = [:]
+        for (name, spec) in specs {
+            if name == chain?.output {
+                chainBuffers[chainSlot] = try buffer(chainBuffers[chainSlot], spec)
+                targets[name] = chainBuffers[chainSlot]
+            } else {
+                outputs[name] = try buffer(outputs[name], spec)
+                targets[name] = outputs[name]
+            }
+        }
         let values = Dictionary(uniqueKeysWithValues: inputs.map { name, input in
             (name, InferenceFunction.AsyncValue(unsafeBuffer: bound[name]!, scalarType: input.spec.scalarType.native, shape: input.spec.shape))
         })
         let names = specs.keys.sorted()
         func view(_ name: String) -> InferenceFunction.AsyncMutableValue {
-            InferenceFunction.AsyncMutableValue(unsafeBuffer: outputs[name]!, scalarType: specs[name]!.scalarType.native, shape: specs[name]!.shape)
+            InferenceFunction.AsyncMutableValue(unsafeBuffer: targets[name]!, scalarType: specs[name]!.scalarType.native, shape: specs[name]!.shape)
         }
         do {
             var a = view(names[0])
@@ -125,8 +154,12 @@ actor NativeH3Graph {
         await stream.currentWorkCompleted()
         try Task.checkCancellation()
         var result: [String: H3TensorData] = [:]
-        for (name, spec) in specs {
-            result[name] = try H3TensorData(spec: spec, bytes: Data(bytes: outputs[name]!.contents(), count: spec.byteCount))
+        for (name, spec) in specs where name != chain?.output || chain!.readback {
+            result[name] = try H3TensorData(spec: spec, bytes: Data(bytes: targets[name]!.contents(), count: spec.byteCount))
+        }
+        if let chain {
+            chainSlot = 1 - chainSlot
+            chainValid = true
         }
         return result
     }

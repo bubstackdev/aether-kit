@@ -19,7 +19,26 @@ protocol H3DenoiserKernels: Sendable {
     func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData)
+    /// One step's blocks 0..<tables.count in order; returns the last block's output. `onBlock`, when given, receives
+    /// every block's output (readback only then).
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+                onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData
     func release() async
+}
+extension H3DenoiserKernels {
+    /// One `block` call per block, each output returned to the host.
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+                onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
+        var hidden = hidden
+        let spec = hidden.spec
+        for (index, table) in tables.enumerated() {
+            try Task.checkCancellation()
+            hidden = try await block(index, hidden: hidden, table: try table.read(), tags: tags, cos: cos, sin: sin)
+            guard hidden.spec == spec else { throw AetherError.invalidTensor("H3 block output shape differs") }
+            try await onBlock?(index, hidden)
+        }
+        return hidden
+    }
 }
 /// One 256 px spatial tile of one temporal window: rows `[448, 96]` f32 -> pixels `[1,3,22,256,256]` f32.
 protocol H3TileKernel: Sendable {
@@ -172,12 +191,17 @@ actor H3ProfileDenoiser: H3Denoiser {
             let hiddenSpec = try H3TensorSpec(scalarType: .bfloat16, shape: [1, layout.rows, 5376])
             guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 packed sequence shape differs") }
             if let observer { try await observer(.packed(step: step.index, hidden: hidden)) }
-            for block in 0..<blocks {
-                try Task.checkCancellation()
-                hidden = try await kernels.block(block, hidden: hidden, table: try entry.tables[block].read(), tags: tags, cos: cos, sin: sin)
-                guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 block output shape differs") }
-                if let observer { try await observer(.block(step: step.index, index: block, output: hidden)) }
+            // Blocks chain on the device; each block's output reaches the host only for an observer.
+            let stepIndex = step.index
+            var onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)? = nil
+            if let observer {
+                onBlock = { @Sendable (index: Int, output: H3TensorData) async throws -> Void in
+                    try await observer(.block(step: stepIndex, index: index, output: output))
+                }
             }
+            try Task.checkCancellation()
+            hidden = try await kernels.blocks(hidden: hidden, tables: Array(entry.tables.prefix(blocks)), tags: tags, cos: cos, sin: sin, onBlock: onBlock)
+            guard hidden.spec == hiddenSpec else { throw AetherError.invalidTensor("H3 block output shape differs") }
             try Task.checkCancellation()
             let velocity = try await kernels.heads(hidden: hidden, temb: try entry.embedding.read(), indices: indices, videoIndices: videoIndices,
                                                    audioIndices: audioIndices, video: latents.video.spec, audio: latents.audio.spec)
@@ -362,6 +386,30 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
         // Block 49 prefetches block 0 for the next step.
         return try await body!.run(inputs, outputs: ["hidden_out": hidden.spec], bank: index % 2,
                                    prefetch: h3Banked(profile.parameters, (index + 1) % profile.parameters.count))["hidden_out"]!
+    }
+    /// The step's blocks on one body graph: block 0 copies `hidden` in, every later block binds its predecessor's output
+    /// on the device (two alternating buffers), and only the last output (or every output, for `onBlock`) is read back.
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+                onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
+        if body == nil { body = try await NativeH3Graph.open(profile.body) }
+        var last: H3TensorData?
+        for (index, table) in tables.enumerated() {
+            try Task.checkCancellation()
+            var inputs: [String: NativeH3Graph.Input] = ["hidden": index == 0 ? .data(hidden) : .chained(hidden.spec), "temb": .data(try table.read()),
+                                                         "tags": .data(tags), "cos": .data(cos), "sin": .data(sin)]
+            for file in profile.parameters[index] { inputs[file.name] = .file(file) }
+            let readback = onBlock != nil || index == tables.count - 1
+            // Block 49 prefetches block 0 for the next step.
+            let result = try await body!.run(inputs, outputs: ["hidden_out": hidden.spec], bank: index % 2,
+                                             prefetch: h3Banked(profile.parameters, (index + 1) % profile.parameters.count),
+                                             chain: NativeH3Graph.Chain(output: "hidden_out", readback: readback))
+            if let output = result["hidden_out"] {
+                try await onBlock?(index, output)
+                last = output
+            }
+        }
+        guard let last else { throw AetherError.invalidRequest("H3 step has no blocks") }
+        return last
     }
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {

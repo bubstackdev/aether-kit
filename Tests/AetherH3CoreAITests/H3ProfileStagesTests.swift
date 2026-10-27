@@ -174,6 +174,63 @@ private actor Observations {
 }
 private struct ObserverFailure: Error {}
 
+/// Kernels that run a step's blocks in one `blocks` call (as the native kernels chain them on the device), recording
+/// whether per-block outputs were requested.
+private struct ChainedKernels: H3DenoiserKernels {
+    let inner: TrajectoryKernels
+    let calls: Calls
+    func refine(_ text: H3TensorData) async throws -> H3TensorData { try await inner.refine(text) }
+    func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
+        try await inner.pack(video: video, audio: audio, text: text, gather: gather)
+    }
+    func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        Issue.record("the denoiser must run a step's blocks through blocks(...)"); return hidden
+    }
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+                onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
+        let step = Int(try tables[0].read().floatValues()[0])
+        await calls.add("blocks \(step) x\(tables.count) readback=\(onBlock != nil)")
+        for index in tables.indices { try await onBlock?(index, hidden) }
+        return hidden
+    }
+    func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
+               video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
+        try await inner.heads(hidden: hidden, temb: temb, indices: indices, videoIndices: videoIndices, audioIndices: audioIndices, video: video, audio: audio)
+    }
+    func release() async { await inner.release() }
+}
+
+@Test func h3ProfileDenoiserRunsEachStepsBlocksInOneChainAndReadsBackOnlyForAnObserver() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: 4))
+    let schedule = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    var steps: [H3Profile.Step] = []
+    for step in schedule.steps {
+        let k = layout.timesteps(for: step).values.count
+        let table = try file(root, "table-\(step.index)", bf16([Float](repeating: Float(step.index), count: 6 * 3 * k * 5376)), .bfloat16, [6, 3 * k, 5376])
+        let temb = try file(root, "temb-\(step.index)", [Float](repeating: Float(step.index), count: k * 2688).withUnsafeBytes { Data($0) }, .float32, [k, 2688])
+        steps.append(H3Profile.Step(timesteps: layout.timesteps(for: step).values, embedding: temb, tables: Array(repeating: table, count: 3)))
+    }
+    let frozen = steps
+    let initial = try geometry.initialLatents(seed: 9)
+    let conditioning = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 2))
+    func run(_ observer: H3DenoiserObserver?) async throws -> [String] {
+        let calls = Calls()
+        let kernels = ChainedKernels(inner: TrajectoryKernels(calls: calls, layout: layout), calls: calls)
+        let denoiser = H3ProfileDenoiser(schedule: schedule, blocks: 3, tables: { _ in frozen }, kernels: kernels, observer: observer)
+        _ = try await denoiser.denoise(initial, conditioning: conditioning, geometry: geometry) { _, _ in }
+        return await calls.log
+    }
+    var expected = ["refine"]
+    for s in 0..<4 { expected += ["pack", "blocks \(s) x3 readback=false", "heads \(s)"] }
+    #expect(try await run(nil) == expected)
+    let seen = Observations()
+    let observed = try await run { event in await seen.add(event) }
+    #expect(observed == expected.map { $0.replacingOccurrences(of: "readback=false", with: "readback=true") })
+    #expect(await seen.events.filter { $0.hasPrefix("block ") }.count == 12)
+}
+
 @Test func h3ProfileDenoiserObserverIsOptInAndLeavesTheTrajectoryUnchanged() async throws {
     let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
     let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
