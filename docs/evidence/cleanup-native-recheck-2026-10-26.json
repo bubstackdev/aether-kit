@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-26",
+  "scope": "Native rechecks of the v0.0.2/cleanup branch (shared noise, verification and admission helpers; no behaviour change). One Apple M5 Max, macOS 27.0.1. Each run held the shared GPU lock through ~/.cache/aether-kit/with-gpu-lock.sh, with the test's own lease at a private path. Raw reports were local scratch outputs; only summaries and hashes are kept here.",
+  "sourceCommit": "3302e6f (code identical to the branch head; later commits change docs only)",
+  "runs": [
+    {
+      "product": "Krea",
+      "suite": "nativeKreaSessionQualification (AETHER_NATIVE_QUALIFICATION=1)",
+      "passed": true,
+      "checks": "23/23",
+      "bundleFingerprint": "cf93b04e2b22c4547c328405508d1a1e289f468ddca3cb9437e4688df0ae7811",
+      "modelStreamsVerified": true,
+      "shapeRegistrationSHA256": "80972ac18da17536bb24c0addce104c1cc548a5f85bcc8e6a6e86081847206de",
+      "reportSHA256": "bc04f7ac60983666cd2f51ac67916cb2196156e9ded0f48514cecf73a503217b",
+      "comparedWith": {
+        "record": "evidence/krea-release-native-2026-10-26.json (AETHER_NATIVE_QUALIFICATION run; raw report .local/rel2-native-session/report.json)",
+        "reportSHA256": "18601abbb6a8840d0859b8e4d000d142e61ad092475d4a0f745ecc89ff30d442",
+        "bundleFingerprintEqual": true
+      },
+      "generations": [
+        {
+          "name": "first",
+          "pixelsSHA256": "58f8de9121b1f3a4d9afb46a1982e16f44ba2c17001130d3011af512fe17d6a8",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "repeat",
+          "pixelsSHA256": "58f8de9121b1f3a4d9afb46a1982e16f44ba2c17001130d3011af512fe17d6a8",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "recovery",
+          "pixelsSHA256": "58f8de9121b1f3a4d9afb46a1982e16f44ba2c17001130d3011af512fe17d6a8",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "dynamic512",
+          "pixelsSHA256": "a3b5bedcc360c3faed31160a43d9de3a2f164e93f3171d110a8bb61aae630194",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "dynamic512-repeat",
+          "pixelsSHA256": "a3b5bedcc360c3faed31160a43d9de3a2f164e93f3171d110a8bb61aae630194",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "dynamic384",
+          "pixelsSHA256": "cecabf2de9dfe49643b75bd9c76c4442e6bcef477045fec63c14572ea1f6dd92",
+          "latentsAndPixelsIdentical": true
+        },
+        {
+          "name": "unload-active",
+          "pixelsSHA256": "cecabf2de9dfe49643b75bd9c76c4442e6bcef477045fec63c14572ea1f6dd92",
+          "latentsAndPixelsIdentical": true
+        }
+      ]
+    },
+    {
+      "product": "Kokoro",
+      "suite": "kokoroNativeParityTimingAndLifecycle (Scripts/qualify-kokoro-native.sh, recommended compute)",
+      "passed": true,
+      "failures": [],
+      "bundleFingerprint": "82331b58b1b6231cb9961f61a69eb3178178c16dcaf0bf8ea4982e127da051f9",
+      "bundleVerified": true,
+      "lifecycle": {
+        "activeCompletedAfterUnload": true,
+        "activeMatchesBaseline": true,
+        "cancellationError": "CancellationError",
+        "recoveryMatchesBaseline": true,
+        "rejectedAfterUnload": true,
+        "stateAfterCancellation": "ready",
+        "unloadClosedWhileActive": true
+      },
+      "reportSHA256": "917c534b46353dc2cd1d7d1cd2dd6897ea22504d48eb508330c94dadae9a7708",
+      "comparedWith": {
+        "record": "evidence/kokoro-buckets-lean-native-2026-10-26.json",
+        "bundleFingerprintEqual": true
+      },
+      "cases": [
+        {
+          "name": "short-af_heart",
+          "audioSHA256": "906d82e5ec952c93e99bc3d003a3cb757b003a9cf1be564f4bf88dcbde20b687",
+          "decoderFrames": 128,
+          "relL2": 0.007901495683335555,
+          "framesMatch": true,
+          "audioIdentical": true
+        },
+        {
+          "name": "sentence-am_michael",
+          "audioSHA256": "c3be50b8c5cdf7cefc41aeea86a0f9321a7ae2537beb52a098c30e39c514d5c3",
+          "decoderFrames": 256,
+          "relL2": 0.023718427289426497,
+          "framesMatch": true,
+          "audioIdentical": true
+        },
+        {
+          "name": "speed-bf_emma",
+          "audioSHA256": "1345243c69c24059d92af9ccb4de79223b249e220cf474ce5e678a8d0c67595a",
+          "decoderFrames": 256,
+          "relL2": 0.033009269481165164,
+          "framesMatch": true,
+          "audioIdentical": true
+        },
+        {
+          "name": "long-af_bella",
+          "audioSHA256": "e489eee66a39df5433f9c6d80bb34127a7dca076d806928aaa101b8b6570d172",
+          "decoderFrames": 1024,
+          "relL2": 0.02200287468694076,
+          "framesMatch": true,
+          "audioIdentical": true
+        }
+      ]
+    },
+    {
+      "product": "FLUX.2 [klein] 4B",
+      "suite": "flux2NativeParityAgainstIndependentReferences (AETHER_NATIVE_FLUX2_QUALIFICATION=1, default case set)",
+      "passed": true,
+      "checks": "68/68",
+      "cases": [
+        "cafe-512",
+        "fox-512",
+        "fox-lighthouse-ref2",
+        "fox-watercolor-ref1",
+        "lighthouse-512",
+        "ramen-576x448",
+        "red-circle-512"
+      ],
+      "bundle": {
+        "fingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+        "referenceFingerprint": "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79"
+      },
+      "reportSHA256": "c7a0db815ac0aa834c01cf80e1b7f32943fd60c02342f59ed4efc4431797564e",
+      "comparedWith": {
+        "record": "evidence/flux2-klein-native-parity-rebased-2026-10-26.json",
+        "bundleEqual": true,
+        "checkValuesIdentical": "68/68",
+        "recordValuesIdentical": "14/14"
+      }
+    }
+  ]
+}

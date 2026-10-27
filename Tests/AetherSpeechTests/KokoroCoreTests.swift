@@ -52,6 +52,7 @@ import Testing
     #expect(sha256Hex(bytes) == fixture.sha256)
     #expect(try KokoroNoise.generate(seed: 1, count: 3) != KokoroNoise.generate(seed: 2, count: 3))
     #expect(try KokoroNoise.generate(seed: 9, count: 0).isEmpty)
+    #expect(try KokoroNoise.generate(seed: 5, count: 5_401) == SeededGaussianNoise.generate(seed: 5, count: 5_401))
 }
 
 @Test func durationRoundingMatchesTorchRound() throws {

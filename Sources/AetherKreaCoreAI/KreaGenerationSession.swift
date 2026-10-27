@@ -235,12 +235,8 @@ public actor KreaGenerationSession {
     }
 }
 
-protocol KreaExecutable: Sendable {
-    var functions: [ModelFunctionDescription] { get }
-    func runTensors(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue]
-    func unload() async
-}
-extension ModelSession: KreaExecutable {}
+/// A loaded Krea model: the package's shared staged-model protocol, which `ModelSession` and test models adopt.
+typealias KreaExecutable = StagedModel
 
 protocol KreaModelFactory: Sendable {
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable
@@ -541,13 +537,6 @@ private actor KreaRunner {
         selectionIdentity = nil
         await factory.finish()
     }
-}
-
-private func signature(_ model: any KreaExecutable, named name: String) throws -> ModelFunctionDescription {
-    guard let value = model.functions.first(where: { $0.name == name }) else {
-        throw AetherError.invalidModel("missing function '\(name)'")
-    }
-    return value
 }
 
 private func halves(_ tensor: FloatTensor) throws -> Float16Tensor {

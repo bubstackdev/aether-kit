@@ -57,80 +57,18 @@ public struct KreaResourceAdmission: Sendable {
 }
 
 /// The decorator is also used by controlled pipeline tests, so native and fake factories share admission ordering.
+/// Residency and per-call scratch are reserved by the package's shared `openBudgeted` decorator.
 struct BudgetedKreaFactory: KreaModelFactory {
     let base: any KreaModelFactory
     let resources: KreaResourceAdmission
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
+        // Cancellation is checked before the estimate lookup, as it always was.
         try Task.checkCancellation()
         let estimate = try resources.estimate(for: asset)
-        let residency = try resources.coordinator.reserve(bytes: estimate.residentBytes)
-        do {
-            let model = try await base.open(asset, frequentReshapes: frequentReshapes)
-            if Task.isCancelled {
-                await model.unload()
-                throw CancellationError()
-            }
-            return BudgetedKreaModel(model: model, residency: residency, resources: resources, estimate: estimate)
-        } catch {
-            residency.release()
-            throw error
+        return try await openBudgeted(coordinator: resources.coordinator, residentBytes: estimate.residentBytes,
+                                      runScratchBytes: estimate.runScratchBytes) {
+            try await base.open(asset, frequentReshapes: frequentReshapes)
         }
     }
     func finish() async { await base.finish() }
-}
-
-private actor BudgetedKreaModel: KreaExecutable {
-    nonisolated let functions: [ModelFunctionDescription]
-    private var model: (any KreaExecutable)?
-    private let residency: ResourceReservation
-    private let resources: KreaResourceAdmission
-    private let estimate: KreaModelResourceEstimate
-    private var active: Task<[String: TensorValue], any Error>?
-    private var closing = false
-    private var closingTask: Task<Void, Never>?
-
-    init(model: any KreaExecutable, residency: ResourceReservation, resources: KreaResourceAdmission,
-         estimate: KreaModelResourceEstimate) {
-        functions = model.functions
-        self.model = model; self.residency = residency; self.resources = resources; self.estimate = estimate
-    }
-
-    func runTensors(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue] {
-        try Task.checkCancellation()
-        guard !closing else { throw AetherError.sessionClosed }
-        guard active == nil else { throw AetherError.sessionBusy }
-        let task = try startRun(function: function, inputs: inputs)
-        active = task
-        defer { active = nil }
-        return try await withTaskCancellationHandler {
-            let result = try await task.value
-            try Task.checkCancellation()
-            return result
-        } onCancel: { task.cancel() }
-    }
-
-    private func startRun(function: String, inputs: [String: TensorValue]) throws -> Task<[String: TensorValue], any Error> {
-        guard let model else { throw AetherError.sessionClosed }
-        let scratch = try resources.coordinator.reserve(bytes: estimate.runScratchBytes)
-        return Task {
-            defer { scratch.release() }
-            try Task.checkCancellation()
-            return try await model.runTensors(function: function, inputs: inputs)
-        }
-    }
-
-    func unload() async {
-        if let closingTask { await closingTask.value; return }
-        closing = true
-        let task = Task { [self] in
-            if let active { _ = await active.result }
-            await model?.unload()
-            model = nil
-            residency.release()
-        }
-        closingTask = task
-        await task.value
-    }
-
-    deinit { model = nil; residency.release() }
 }
