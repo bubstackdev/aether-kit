@@ -13,9 +13,13 @@ public struct LanguageChatMessage: Sendable, Equatable {
     public let role: Role
     public let parts: [Part]
 
-    /// Only user messages carry images, and every message has at least one part.
+    /// Only user messages carry images, and every message has at least one part. A message without images has
+    /// exactly one text part: it renders as the template's plain string content, which has no part boundaries.
     public init(role: Role, parts: [Part]) throws {
         guard !parts.isEmpty else { throw AetherError.invalidRequest("a chat message needs at least one part") }
+        guard parts.contains(.image) || parts.count == 1 else {
+            throw AetherError.invalidRequest("a message without images has one text part")
+        }
         guard role == .user || !parts.contains(.image) else {
             throw AetherError.invalidRequest("only user messages carry images")
         }
@@ -38,7 +42,8 @@ public struct LanguageChatMessage: Sendable, Equatable {
     /// typed content parts otherwise, as Qwen3-VL's template reads them.
     var templateMessage: [String: Any] {
         guard imageCount > 0 else {
-            return ["role": role.rawValue, "content": parts.map { if case .text(let text) = $0 { text } else { "" } }.joined()]
+            guard case .text(let text)? = parts.first else { return ["role": role.rawValue, "content": ""] }
+            return ["role": role.rawValue, "content": text]
         }
         let content: [[String: Any]] = parts.map { part in
             switch part {

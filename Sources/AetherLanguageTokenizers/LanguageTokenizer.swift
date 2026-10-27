@@ -4,15 +4,17 @@ import Tokenizers
 
 /// A language model's local Hugging Face tokenizer and chat template (`tokenizer.json`, `tokenizer_config.json`,
 /// and `chat_template.jinja` or `chat_template.json` when the checkpoint keeps its template there). Never
-/// downloads files. Rendering always uses the model's own template, so a hybrid Qwen3 renders its empty think
-/// block when thinking is off, an instruct-only Qwen3 renders none, and Qwen3-VL renders its image placeholders.
+/// downloads files. Rendering uses the model's own template, so a hybrid Qwen3 renders its empty think block when
+/// thinking is off, an instruct-only Qwen3 renders none, and Qwen3-VL renders its image placeholders. Exactness against
+/// upstream is verified for Qwen3-family templates; other templates render through swift-jinja unverified.
 public struct LanguageTokenizer: Sendable {
     private let tokenizer: any Tokenizer
     /// The model's chat template as upstream Transformers renders it (see `template(in:)`), nil when it has none.
     private let chatTemplate: String?
 
-    /// Opens the tokenizer of a registered language bundle after verifying its `tokenizer.json` (the model asset
-    /// is not hashed here), and verifies it again after loading.
+    /// Opens the tokenizer of a registered language bundle after `LanguageModelManifest.verifyTokenizer(in:)` (every
+    /// registered tokenizer file when the registration lists `tokenizerFiles`; the model asset is not hashed), and
+    /// verifies it again after loading.
     public static func open(bundle: URL) async throws -> Self {
         let manifest = try LanguageModelManifest.load(from: bundle)
         let directory = try manifest.verifyTokenizer(in: bundle)
@@ -64,7 +66,8 @@ public struct LanguageTokenizer: Sendable {
     /// Plain text to token IDs, adding no special tokens.
     public func encode(_ text: String) -> [Int] { tokenizer.encode(text: text, addSpecialTokens: false) }
 
-    /// Token IDs to text. Special tokens (for example a trailing `<|im_end|>`) are dropped by default.
+    /// Token IDs to text. Special tokens (for example a trailing `<|im_end|>`) are dropped by default. Decode the whole
+    /// reply (or a growing prefix): one token from a streaming `onToken` can be part of a multi-byte character.
     public func decode(_ tokenIDs: [Int], skipSpecialTokens: Bool = true) -> String {
         tokenizer.decode(tokens: tokenIDs, skipSpecialTokens: skipSpecialTokens)
     }

@@ -15,6 +15,9 @@ private let environment = ProcessInfo.processInfo.environment
     #expect(after.imageCount == 1)
     #expect(throws: AetherError.self) { try LanguageChatMessage(role: .system, parts: [.image, .text("x")]) }
     #expect(throws: AetherError.self) { try LanguageChatMessage(role: .user, parts: []) }
+    // Without images a message is one plain string; two text parts would lose their boundary.
+    #expect(throws: AetherError.self) { try LanguageChatMessage(role: .user, parts: [.text("a"), .text("b")]) }
+    #expect(try LanguageChatMessage(role: .user, parts: [.text("a"), .image, .text("b")]).imageCount == 1)
 }
 
 @Test func templatesResolveLikeTheLoaderAndDropOneTrailingNewlineAsJinjaDoes() throws {
@@ -42,13 +45,14 @@ private let environment = ProcessInfo.processInfo.environment
     try FileManager.default.createDirectory(at: tokenizer, withIntermediateDirectories: true)
     let contents = Data(#"{"not":"a tokenizer"}"#.utf8)
     try contents.write(to: tokenizer.appendingPathComponent("tokenizer.json"))
-    func register(tokenizerDirectory: String, hash: String) throws {
-        let manifest: [String: Any] = [
+    func register(tokenizerDirectory: String, hash: String, files: [String: String]? = nil) throws {
+        var manifest: [String: Any] = [
             "schemaVersion": 1, "modelDirectory": "model.aimodel", "tokenizerDirectory": tokenizerDirectory,
             "sourceRepository": "Qwen/Qwen3-0.6B", "sourceRevision": String(repeating: "a", count: 40),
             "modelSHA256": String(repeating: "b", count: 64), "tokenizerSHA256": hash, "maximumContextLength": 512,
             "stopTokenIDs": [151645], "platform": "macos", "quantization": "fp16",
         ]
+        if let files { manifest["tokenizerFiles"] = files }
         try JSONSerialization.data(withJSONObject: manifest).write(to: bundle.appendingPathComponent("language-model.json"))
     }
     let digest = SHA256.hash(data: contents).map { String(format: "%02x", $0) }.joined()
@@ -61,6 +65,24 @@ private let environment = ProcessInfo.processInfo.environment
     await #expect(throws: AetherError.self) { try await LanguageTokenizer.open(bundle: bundle) }
     try register(tokenizerDirectory: "../tokenizer", hash: digest)
     await #expect(throws: AetherError.self) { try await LanguageTokenizer.open(bundle: bundle) }
+    // With `tokenizerFiles`, every tokenizer file is covered: the chat template too.
+    func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+    let template = Data("{{- 'instruct' }}".utf8)
+    try template.write(to: tokenizer.appendingPathComponent("chat_template.jinja"))
+    let files = ["tokenizer.json": digest, "chat_template.jinja": hash(template)]
+    try register(tokenizerDirectory: "tokenizer", hash: digest, files: files)
+    #expect(try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle).lastPathComponent == "tokenizer")
+    // A swapped template, an unregistered extra file, or a list that disagrees with tokenizerSHA256 refuses.
+    try Data("{{- '<think>' }}".utf8).write(to: tokenizer.appendingPathComponent("chat_template.jinja"))
+    #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
+    await #expect(throws: AetherError.self) { try await LanguageTokenizer.open(bundle: bundle) }
+    try template.write(to: tokenizer.appendingPathComponent("chat_template.jinja"))
+    try Data("{}".utf8).write(to: tokenizer.appendingPathComponent("chat_template.json"))
+    #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
+    try FileManager.default.removeItem(at: tokenizer.appendingPathComponent("chat_template.json"))
+    #expect(try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle).lastPathComponent == "tokenizer")
+    try register(tokenizerDirectory: "tokenizer", hash: digest, files: files.merging(["tokenizer.json": String(repeating: "c", count: 64)]) { $1 })
+    #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
 }
 
 /// Opt-in: every case in the upstream oracle (`Forge/language/reference_chat_tokens.py`, Transformers' own
