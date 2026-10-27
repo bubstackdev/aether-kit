@@ -1,0 +1,168 @@
+{
+  "date": "2026-10-27",
+  "kind": "language-facade-native-qualification",
+  "note": "Qwen3-0.6B registered in place by Forge/language/register_qwen3_bundle.py (--supports-reasoning true, context 4096); the 4B writer bundle as qualified for 0.0.2. 'facadeMillisecondsPerToken' is wall time of respond() per output token; 'runtimeMillisecondsPerToken' is LanguageGenerationSession's totalSeconds per token on the same rendered prompt; both include the prefill, so a short first reply is dominated by it. Recorded again with the FoundationModels adapter checks (foundationModelsMatches, foundationModelsReasoningMatches): LanguageModelSession(model:) over the same model returns the facade's replies. Re-run on the 4B writer after merging origin/main with the one-function Qwen3-VL decoder change (#41): every check passes, and the greedy replies, the stop-sequence result and the conversation are identical to the earlier run. That run's first request came right after the model load and was cold (first use of its shapes), hence its per-token time.",
+  "qwen3-0.6b": {
+    "cancelledThenAnswered": true,
+    "conversation": [
+      "Cartographer's name: **Elias Voss**.",
+      "Voss.",
+      "Elias."
+    ],
+    "device": "h17c",
+    "foundationModelsReasoningMatches": true,
+    "greedy": [
+      {
+        "content": "- #Violet \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Orange \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Green \ud83c\udf7d\ufe0f *Caf\u00e9*",
+        "facadeMillisecondsPerToken": 12.433864307692307,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 39,
+        "prompt": "Name three colours, each with one emoji, and give the French word for coffee.",
+        "promptTokens": 40,
+        "runtimeDecoded": "- #Violet \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Orange \ud83c\udf7d\ufe0f *Caf\u00e9*  \n- #Green \ud83c\udf7d\ufe0f *Caf\u00e9*",
+        "runtimeMillisecondsPerToken": 16.45605341025641,
+        "runtimeOutputTokens": 39,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 33
+      },
+      {
+        "content": "A lighthouse keeper's cat watches the sea with quiet determination, always ready to help when needed.",
+        "facadeMillisecondsPerToken": 6.43592085,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 20,
+        "prompt": "Write two sentences about a lighthouse keeper's cat.",
+        "promptTokens": 34,
+        "runtimeDecoded": "A lighthouse keeper's cat watches the sea with quiet determination, always ready to help when needed.",
+        "runtimeMillisecondsPerToken": 12.28158955,
+        "runtimeOutputTokens": 20,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 20
+      }
+    ],
+    "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+    "model": "Qwen/Qwen3-0.6B",
+    "otherSeedDiffers": true,
+    "prewarmSeconds": 1.5267397919999999,
+    "reasoning": {
+      "content": "17 times 3 equals 51. \n\nAnswer: 51",
+      "reason": "endOfTurn",
+      "reasoning": "Okay, so I need to figure out what 17 times 3 is. Let me think. Hmm, multiplication is like adding the same number multiple times. So 17 times 3... Let me break it down. \n\nFirst, I know that 17 is the same as 10 plus 7. Maybe I can use the distributive property here. So, 17 times 3 would be (10 + 7) times 3. If I distribute that, it should be 10 times 3 plus 7 times 3. \n\nCalculating each part separately: 10 times 3 is 30, and 7 times 3 is 21. Then, adding those together, 30 plus 21 equals 51. So, 17 times 3 is 51. \n\nWait, let me check if there's another way to do this. Maybe using the standard multiplication method. Let's write it out:\n\n   17\nx  3\n------\n  51 (since 17 x 3 is 51)\n\nYes, that matches. So, both methods give me 51. I don't think I made any mistakes here. The answer should be 51."
+    },
+    "seededRepeats": true,
+    "stopSequence": {
+      "content": "A lighthouse keeper's cat",
+      "expected": "A lighthouse keeper's cat",
+      "reason": "stopSequence",
+      "stop": " watches"
+    }
+  },
+  "qwen3-4b-writer": {
+    "cancelledThenAnswered": true,
+    "conversation": [
+      "Elara Mirelle",
+      "Thorne.",
+      "Elara."
+    ],
+    "device": "h17c",
+    "greedy": [
+      {
+        "content": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
+        "facadeMillisecondsPerToken": 155.97345454545456,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 11,
+        "prompt": "Name three colours, each with one emoji, and give the French word for coffee.",
+        "promptTokens": 36,
+        "runtimeDecoded": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
+        "runtimeMillisecondsPerToken": 161.67584845454545,
+        "runtimeOutputTokens": 11,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 11
+      },
+      {
+        "content": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
+        "facadeMillisecondsPerToken": 19.993463313432837,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 67,
+        "prompt": "Write two sentences about a lighthouse keeper's cat.",
+        "promptTokens": 30,
+        "runtimeDecoded": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
+        "runtimeMillisecondsPerToken": 21.055784208955224,
+        "runtimeOutputTokens": 67,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 68
+      }
+    ],
+    "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+    "model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+    "otherSeedDiffers": true,
+    "prewarmSeconds": 7.365318708,
+    "seededRepeats": true,
+    "stopSequence": {
+      "content": "The lighthouse keeper's cat,",
+      "expected": "The lighthouse keeper's cat,",
+      "reason": "stopSequence",
+      "stop": " named"
+    }
+  },
+  "qwen3-4b-writer-after-merging-0.0.3-vl-decoder": {
+    "cancelledThenAnswered": true,
+    "conversation": [
+      "Elara Mirelle",
+      "Thorne.",
+      "Elara."
+    ],
+    "device": "h17c",
+    "greedy": [
+      {
+        "content": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
+        "facadeMillisecondsPerToken": 726.8211741818182,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 11,
+        "prompt": "Name three colours, each with one emoji, and give the French word for coffee.",
+        "promptTokens": 36,
+        "runtimeDecoded": "\ud83d\udd34 Red  \n\ud83d\udd35 Blue  \n\ud83d\udfe2 Green  \n\u2615 Caf\u00e9",
+        "runtimeMillisecondsPerToken": 137.90380681818183,
+        "runtimeOutputTokens": 11,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 11
+      },
+      {
+        "content": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
+        "facadeMillisecondsPerToken": 19.0919036119403,
+        "foundationModelsMatches": true,
+        "matchesRuntime": true,
+        "outputTokens": 67,
+        "prompt": "Write two sentences about a lighthouse keeper's cat.",
+        "promptTokens": 30,
+        "runtimeDecoded": "The lighthouse keeper's cat, named Silas, slept curled on the weathered railing each morning, watching the sea roll in with quiet patience.  \nShe had a knack for finding the exact spot where the wind carried the most salt spray, and it was said she could hear the foghorn even when the light was dimmed.",
+        "runtimeMillisecondsPerToken": 19.141315298507465,
+        "runtimeOutputTokens": 67,
+        "stopReason": "endOfTurn",
+        "streamDeltasEqualContent": true,
+        "streamSnapshots": 68
+      }
+    ],
+    "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+    "model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+    "otherSeedDiffers": true,
+    "prewarmSeconds": 11.038856209,
+    "seededRepeats": true,
+    "stopSequence": {
+      "content": "The lighthouse keeper's cat,",
+      "expected": "The lighthouse keeper's cat,",
+      "reason": "stopSequence",
+      "stop": " named"
+    }
+  },
+  "test": "Tests/AetherNativeTests/LanguageFacadeQualificationTests.swift (AETHER_NATIVE_LANGUAGE_FACADE=1, release, under the shared GPU lock)"
+}

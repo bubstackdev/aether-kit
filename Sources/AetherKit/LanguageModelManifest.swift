@@ -34,6 +34,16 @@ public struct LanguageModelManifest: Codable, Sendable {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
     }
     public func verify(in directory: URL, platform expectedPlatform: Platform) throws -> URL {
+        let (model, tokenizer) = try locate(in: directory, platform: expectedPlatform)
+        guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
+              try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
+            throw AetherError.invalidModel("language model or tokenizer checksum mismatch")
+        }
+        return model
+    }
+    /// The registration's structural checks without hashing anything: schema, platform, bounds, and model and
+    /// tokenizer paths inside the bundle that exist. Cheap enough for a readiness check; `verify` adds the checksums.
+    public func locate(in directory: URL, platform expectedPlatform: Platform) throws -> (model: URL, tokenizer: URL) {
         guard schemaVersion == 1, platform == expectedPlatform,
               maximumContextLength > 0, maximumContextLength <= 16384, !stopTokenIDs.isEmpty,
               stopTokenIDs.allSatisfy({ $0 >= 0 }), Self.hex(sourceRevision, count: 40),
@@ -49,11 +59,11 @@ public struct LanguageModelManifest: Codable, Sendable {
         }
         let model = try Self.child(modelDirectory, of: directory)
         let tokenizer = try Self.child(tokenizerDirectory, of: directory)
-        guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
-              try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
-            throw AetherError.invalidModel("language model or tokenizer checksum mismatch")
+        guard FileManager.default.fileExists(atPath: model.appendingPathComponent("main.mlirb").path),
+              FileManager.default.fileExists(atPath: tokenizer.appendingPathComponent("tokenizer.json").path) else {
+            throw AetherError.invalidModel("language model or tokenizer file missing")
         }
-        return model
+        return (model, tokenizer)
     }
     /// Verifies the registration and the tokenizer, returning the tokenizer directory. For tokenizer-only consumers
     /// (`AetherLanguageTokenizers`): it neither hashes the model asset nor checks the platform. `tokenizer.json` is

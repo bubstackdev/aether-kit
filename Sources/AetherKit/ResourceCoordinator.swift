@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 
 /// Admission estimates, not measured process memory or an OS allocation guarantee.
 public enum ResourceAdmissionError: Error, Sendable, Equatable {
@@ -23,7 +22,7 @@ public final class ResourceCoordinator: Sendable {
         var total: UInt64 = 0
     }
     public let capacityBytes: UInt64
-    private let ledger = Mutex(Ledger())
+    private let ledger = UnfairLock(Ledger())
 
     public init(capacityBytes: UInt64) throws {
         guard capacityBytes > 0 else { throw ResourceAdmissionError.invalidByteCount }
