@@ -6,7 +6,8 @@
 
 Reads the text export's `export-report.json` (bounds), the vision export's `vision-export-report.json` (its fixed
 image grids, one static-shape function each) and the tokenizer copy's `config.json`, `preprocessor_config.json` and
-`generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does. The vision registration never
+`generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does, and records every tokenizer
+file (`tokenizerFiles`, the exporters' `tree_hashes` form) so `verifyTokenizer` checks the exact file set. The vision registration never
 requests `expectFrequentReshapes` (engine F-P3-26) and always lists its grids (dynamic-shape encoders are refused).
 """
 
@@ -24,6 +25,11 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: f.read(1 << 22), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def tree_hashes(root: Path) -> dict[str, str]:
+    """SHA-256 of every file under `root` by relative path (the exporters' `tree_hashes`)."""
+    return {str(p.relative_to(root)): sha256(p) for p in sorted(root.rglob("*")) if p.is_file()}
 
 
 def main() -> None:
@@ -59,6 +65,7 @@ def main() -> None:
         "sourceRevision": args.source_revision,
         "modelSHA256": sha256(b / "model.aimodel" / "main.mlirb"),
         "tokenizerSHA256": sha256(tok / "tokenizer.json"),
+        "tokenizerFiles": tree_hashes(tok),
         "maximumContextLength": args.maximum_context_length,
         "stopTokenIDs": stop,
         "platform": args.platform,

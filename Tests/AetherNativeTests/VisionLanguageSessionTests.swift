@@ -44,6 +44,8 @@ private struct SessionReport: Codable {
     var gate = "VisionLanguageSession.open(bundle:) plus generate(renderedTokenIDs:images:) on the photo files reproduces the gated component-level Kit run token for token; unload closes the session"
     var cases: [SessionCase] = []
     var closedAfterUnload = false
+    /// The registration lists every tokenizer file (`tokenizerFiles`) and `verifyTokenizer` accepts the bundle.
+    var tokenizerFilesVerified = false
 }
 
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_QWEN3VL_SESSION"] == "1"), .timeLimit(.minutes(20)))
@@ -65,6 +67,10 @@ func visionLanguageSessionReproducesQualifiedRun() async throws {
         guard component.passed, component.cases.allSatisfy({ $0.preprocessing == "swift" }) else {
             throw NativeFailure(description: "the component report must be a passing Kit-preprocessing run")
         }
+        report.stage = "tokenizer"
+        let manifest = try LanguageModelManifest.load(from: bundle)
+        _ = try manifest.verifyTokenizer(in: bundle)
+        report.tokenizerFilesVerified = manifest.tokenizerFiles?.isEmpty == false
         report.stage = "open"
         let session = try await VisionLanguageSession.open(bundle: bundle, platform: .macos)
         report.imageGrids = (await session.imagePreprocessing.imageGrids ?? []).map { [$0.height, $0.width] }
@@ -91,7 +97,7 @@ func visionLanguageSessionReproducesQualifiedRun() async throws {
             _ = try await session.generate(renderedTokenIDs: [1], images: [], maximumTokens: 1)
         }
         report.passed = report.cases.count == reference.cases.count && report.cases.allSatisfy(\.matchesComponentRun)
-            && report.closedAfterUnload
+            && report.closedAfterUnload && report.tokenizerFilesVerified
         report.stage = "complete"
     } catch {
         report.error = String(describing: error)

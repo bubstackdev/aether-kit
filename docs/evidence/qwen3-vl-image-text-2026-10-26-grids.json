@@ -10,7 +10,7 @@
   },
   "bundle": {
     "directory": "/Users/zakkeown/.cache/huggingface/aether-kit/qwen3-vl-2b-bundle-macos",
-    "manifestSHA256": "ba21839c7945ec44262a66ed85509df212d8de80673b48a805f1cb1d1e1f97cd",
+    "manifestSHA256": "fa93114d9a8849b973b7fd6f89c4f13b2cacebe67ba0fbdd08a123921b540c90",
     "manifest": {
       "schemaVersion": 1,
       "modelDirectory": "model.aimodel",
@@ -19,6 +19,16 @@
       "sourceRevision": "89644892e4d85e24eaac8bacfd4f463576704203",
       "modelSHA256": "6e14f4cfdbacd955194054dbc1e1070a9382ac71bd2abed78dc1d7cd4c1bf52c",
       "tokenizerSHA256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7",
+      "tokenizerFiles": {
+        "chat_template.json": "6f8a6a55027e3da5160105556cda5dd69f6423f1c32645f6730d32de7773d0c4",
+        "config.json": "bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b",
+        "generation_config.json": "1e241830b48b397cb0900101421df5450baddc7adf01e5fc86b5615865f3bae4",
+        "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+        "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+        "tokenizer.json": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7",
+        "tokenizer_config.json": "c2da771801886ad9ae98181793ffd3dfb7f1af30f6f7c6a4e15d7dbba52e2399",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
       "maximumContextLength": 4096,
       "stopTokenIDs": [
         151643,
@@ -667,14 +677,14 @@
     },
     "public-session": {
       "file": "qwen3-vl-image-text-2026-10-26-grids-public-session.json",
-      "sha256": "f385defd2e9727a8e5598d07c989f5705a6e3b37c316f6a775b89fda5772e12a",
+      "sha256": "59137b431e8570abef8a273b61a16c82205073e7e3c274bef1e9c42bc998fdde",
       "passed": true,
       "gate": "VisionLanguageSession.open(bundle:) plus generate(renderedTokenIDs:images:) on the photo files reproduces the gated component-level Kit run token for token; unload closes the session",
       "cases": [
         {
           "matchesComponentRun": true,
           "name": "photo-dog-portrait",
-          "timeToFirstTokenSeconds": 0.3119875,
+          "timeToFirstTokenSeconds": 0.400396541,
           "tokens": [
             32,
             3691,
@@ -705,14 +715,14 @@
             700,
             13
           ],
-          "totalSeconds": 0.594225416,
+          "totalSeconds": 0.70283825,
           "upstreamAgreementTokens": 28,
           "upstreamTokens": 28
         },
         {
           "matchesComponentRun": true,
           "name": "photo-fruit-stall-wide",
-          "timeToFirstTokenSeconds": 0.20744375,
+          "timeToFirstTokenSeconds": 0.221669209,
           "tokens": [
             28715,
             389,
@@ -763,14 +773,14 @@
             3931,
             1787
           ],
-          "totalSeconds": 0.680312084,
+          "totalSeconds": 0.730480042,
           "upstreamAgreementTokens": 46,
           "upstreamTokens": 48
         },
         {
           "matchesComponentRun": true,
           "name": "photo-fruit-market-4x3",
-          "timeToFirstTokenSeconds": 0.218245167,
+          "timeToFirstTokenSeconds": 0.233437666,
           "tokens": [
             28715,
             389,
@@ -821,14 +831,14 @@
             374,
             264
           ],
-          "totalSeconds": 0.695055,
+          "totalSeconds": 0.742766,
           "upstreamAgreementTokens": 16,
           "upstreamTokens": 48
         },
         {
           "matchesComponentRun": true,
           "name": "scene-448",
-          "timeToFirstTokenSeconds": 0.228877375,
+          "timeToFirstTokenSeconds": 0.254481291,
           "tokens": [
             785,
             2168,
@@ -847,14 +857,14 @@
             21495,
             13
           ],
-          "totalSeconds": 0.403900083,
+          "totalSeconds": 0.43889925,
           "upstreamAgreementTokens": 16,
           "upstreamTokens": 16
         },
         {
           "matchesComponentRun": true,
           "name": "scene-320x256",
-          "timeToFirstTokenSeconds": 0.212012916,
+          "timeToFirstTokenSeconds": 0.233098375,
           "tokens": [
             28715,
             389,
@@ -905,7 +915,7 @@
             624,
             12
           ],
-          "totalSeconds": 0.70318625,
+          "totalSeconds": 0.750670416,
           "upstreamAgreementTokens": 48,
           "upstreamTokens": 48
         }
@@ -913,7 +923,7 @@
     }
   },
   "scriptSHA256": {
-    "export_qwen3.py": "cf09a8ab62d30849b3fafb1300b0f6445c649b95735074e5a72fcc9d936c9bf3",
+    "export_qwen3.py": "71ef2fc8fee39a975cd46c383aa6b87c8074730b0dc1b163a600a292fa0066ea",
     "export_qwen3_vl_text.py": "dbe1ada8349495346f6809c61ace9d4a7342dd7b3dad5bb081eee26198058407",
     "export_qwen3_vl_vision.py": "f85d0e88646b8202c0d7f1c80b6b9534986d8691fad106f09e3eca19cbb15905",
     "qwen3_decode.py": "43d4fbd0135a0ca2c0ecdc86aef26565b1657e1f59664e6eca7bd5e9c034116f",
@@ -922,10 +932,11 @@
     "record_evidence.py": "21c17d3b4a7c1ff8ad37c771b28a4186f8f46f6c0efff83dcc4e5e78773a85db",
     "record_vision_evidence.py": "81455dc3bc79e0a24bdc7efab09490d7ffe7963c2e32c85e34275b2877235a70",
     "record_vl_evidence.py": "f1cda94a72374fd10d4c582db391a10ce43140d422d3da592ed351a6b7d8345e",
+    "reference_chat_tokens.py": "c9d4f556d2c8afa887b88a147650e717d192edb3eca5046ea181020bdb49c394",
     "reference_qwen3.py": "93474743b412e344f94f037e61b219a79327d5997d59675f4ab4999d4f31f1e4",
     "reference_qwen3_vl.py": "4bdd13fd2096721bf9cc7e44b3ceb173de202caf1f1bc2c5024d1318d26fa995",
     "reference_qwen3_vl_vision.py": "fac0652f549bc9d08341840c2187cd8fe7aca27adc0b74673555837992d0c7ea",
-    "register_qwen3_vl_bundle.py": "5dcd5b82e7edec9b004747cb3a7aab5a4ca17649b538094f5081bde2d12f7e0b"
+    "register_qwen3_vl_bundle.py": "32a2f9502a9a1d82e665cf70acd59104d537742323bca2ce18b4bb581ca9a642"
   },
   "nativeTests": [
     "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift",

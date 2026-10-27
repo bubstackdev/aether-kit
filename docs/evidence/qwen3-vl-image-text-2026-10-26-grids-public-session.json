@@ -3,7 +3,7 @@
     {
       "matchesComponentRun" : true,
       "name" : "photo-dog-portrait",
-      "timeToFirstTokenSeconds" : 0.3119875,
+      "timeToFirstTokenSeconds" : 0.400396541,
       "tokens" : [
         32,
         3691,
@@ -34,14 +34,14 @@
         700,
         13
       ],
-      "totalSeconds" : 0.594225416,
+      "totalSeconds" : 0.70283825,
       "upstreamAgreementTokens" : 28,
       "upstreamTokens" : 28
     },
     {
       "matchesComponentRun" : true,
       "name" : "photo-fruit-stall-wide",
-      "timeToFirstTokenSeconds" : 0.20744375,
+      "timeToFirstTokenSeconds" : 0.221669209,
       "tokens" : [
         28715,
         389,
@@ -92,14 +92,14 @@
         3931,
         1787
       ],
-      "totalSeconds" : 0.680312084,
+      "totalSeconds" : 0.730480042,
       "upstreamAgreementTokens" : 46,
       "upstreamTokens" : 48
     },
     {
       "matchesComponentRun" : true,
       "name" : "photo-fruit-market-4x3",
-      "timeToFirstTokenSeconds" : 0.218245167,
+      "timeToFirstTokenSeconds" : 0.233437666,
       "tokens" : [
         28715,
         389,
@@ -150,14 +150,14 @@
         374,
         264
       ],
-      "totalSeconds" : 0.695055,
+      "totalSeconds" : 0.742766,
       "upstreamAgreementTokens" : 16,
       "upstreamTokens" : 48
     },
     {
       "matchesComponentRun" : true,
       "name" : "scene-448",
-      "timeToFirstTokenSeconds" : 0.228877375,
+      "timeToFirstTokenSeconds" : 0.254481291,
       "tokens" : [
         785,
         2168,
@@ -176,14 +176,14 @@
         21495,
         13
       ],
-      "totalSeconds" : 0.403900083,
+      "totalSeconds" : 0.43889925,
       "upstreamAgreementTokens" : 16,
       "upstreamTokens" : 16
     },
     {
       "matchesComponentRun" : true,
       "name" : "scene-320x256",
-      "timeToFirstTokenSeconds" : 0.212012916,
+      "timeToFirstTokenSeconds" : 0.233098375,
       "tokens" : [
         28715,
         389,
@@ -234,7 +234,7 @@
         624,
         12
       ],
-      "totalSeconds" : 0.70318625,
+      "totalSeconds" : 0.750670416,
       "upstreamAgreementTokens" : 48,
       "upstreamTokens" : 48
     }
@@ -264,5 +264,6 @@
     ]
   ],
   "passed" : true,
-  "stage" : "complete"
+  "stage" : "complete",
+  "tokenizerFilesVerified" : true
 }
