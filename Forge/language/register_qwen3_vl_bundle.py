@@ -7,7 +7,7 @@
 Reads the text export's `export-report.json` (bounds), the vision export's `vision-export-report.json` (its fixed
 image grids, one static-shape function each) and the tokenizer copy's `config.json`, `preprocessor_config.json` and
 `generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does, and records every tokenizer
-file (`tokenizerFiles`, the exporters' `tree_hashes` form) so `verifyTokenizer` checks the exact file set. The vision registration never
+file (`tokenizerFiles`, by the same rules as `register_qwen3_bundle.py`) so `verifyTokenizer` checks the exact file set. The vision registration never
 requests `expectFrequentReshapes` (engine F-P3-26) and always lists its grids (dynamic-shape encoders are refused).
 """
 
@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 
@@ -27,9 +28,20 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def tree_hashes(root: Path) -> dict[str, str]:
-    """SHA-256 of every file under `root` by relative path (the exporters' `tree_hashes`)."""
-    return {str(p.relative_to(root)): sha256(p) for p in sorted(root.rglob("*")) if p.is_file()}
+def tokenizer_files(root: Path) -> dict[str, str]:
+    """Every regular tokenizer file by relative path, as `verifyTokenizer` sees them (`register_qwen3_bundle.py`'s
+    rules). Any symbolic link refuses registration first, hidden or not (the verifier refuses non-regular entries
+    before it ignores dotfiles); then dotfiles (a Finder .DS_Store) are skipped."""
+    files = {}
+    for p in sorted(root.rglob("*")):
+        rel = p.relative_to(root)
+        if p.is_symlink():
+            sys.exit(f"tokenizer entry {rel} is a symbolic link; register real files only")
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if p.is_file():
+            files[str(rel)] = sha256(p)
+    return files
 
 
 def main() -> None:
@@ -65,7 +77,7 @@ def main() -> None:
         "sourceRevision": args.source_revision,
         "modelSHA256": sha256(b / "model.aimodel" / "main.mlirb"),
         "tokenizerSHA256": sha256(tok / "tokenizer.json"),
-        "tokenizerFiles": tree_hashes(tok),
+        "tokenizerFiles": tokenizer_files(tok),
         "maximumContextLength": args.maximum_context_length,
         "stopTokenIDs": stop,
         "platform": args.platform,

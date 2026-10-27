@@ -39,6 +39,13 @@ larger than the exported chunk is refused before any native work. A bare
 `LanguageGenerationSession` over an image-capable asset without a declared chunk still opens for
 text; its image prompts are refused while planning. Image resampling runs off the session actor.
 
+**The encoder is the guarded boundary.** The grid restriction holds on the `VisionLanguageSession`
+path, where Kit preprocesses, encodes and checks every image. The lower-level entry points are not
+grid-restricted: `LanguageGenerationSession.generate(prompt: LanguageVisionPrompt…)` and the public
+`LanguageImageFeatures` initializer accept features for any grid, so a direct caller can submit an
+image span of any size up to the decoder's `maximumImageChunk` (2,048 here). The decoder's
+`withImage` then sees shapes outside the qualified set; those are the caller's responsibility.
+
 ## Pieces
 
 | Piece | Where |
@@ -86,7 +93,10 @@ within the pixel bounds, identical to the reference for 46 sizes). Then antialia
 PIL-style coefficients; within one level of torchvision's uint8 path, ≥ 95 % identical bytes),
 (x/255 − 0.5)/0.5, the frame repeated twice, merge-window patchify. Decoding uses ImageIO,
 applies EXIF orientation, and draws in the image's own RGB colour space (no colour management,
-like the reference's PIL decoding).
+like the reference's PIL decoding). EXIF orientation is applied **before** grid snapping, so a
+rotated portrait snaps by its displayed aspect ratio. Parity is not exercised for rotated photos:
+every reference photo carries orientation 1 (or none), and the reference decodes without an EXIF
+transpose.
 
 ## Dynamic shapes are a correctness hazard for the encoder
 
@@ -169,7 +179,10 @@ pixel cosine ≥ 0.999 against the reference processor, forced-row cosine ≥ 0.
 and reported): grids equal on all five; pixel cosine 0.99997, 0.99999 and 0.99990 for the photos
 and 1.0 for the scenes; forced-row cosine ≥ 0.99201. Greedy output is identical to upstream for
 the portrait and both scenes. The fruit stall agrees for 46 of 48 tokens ("both whole and **cut
-open**" vs upstream "both whole and **in various**"). The 4:3 market photo agrees for 16 tokens,
+open**" vs upstream "both whole and **in various**"), diverging at a reference near-tie: token 46
+is past the 32 forced rows, so its margin was measured separately with upstream on the same
+prompt and prefix ("in" 0.457, "cut" 0.403, gap 0.054; Kit's token is upstream's second choice;
+[record](evidence/qwen3-vl-image-text-2026-10-26-grids-stall-divergence.json)). The 4:3 market photo agrees for 16 tokens,
 then diverges at a reference near-tie (top-1/top-2 probability gap 0.066): Kit answers "likely
 taken in **India**, specifically in a bustling **local market**", upstream "likely taken in
 **Mumbai, India**". The pixels differ slightly because a different JPEG decoder and resampler

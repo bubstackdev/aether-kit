@@ -207,6 +207,8 @@ public actor LanguageGenerationSession {
     /// Greedy generation from a rendered prompt with images (Qwen3-VL assets). Each image's
     /// placeholder expands to its tokens, which go to the decoder in one `withImage` submission;
     /// text runs use the bucketed chunks. Rotary positions follow Qwen3-VL's M-RoPE rule.
+    /// Not grid-restricted: any image span up to the exported image chunk is accepted. Only
+    /// ``VisionLanguageSession`` limits images to the registration's fixed grids.
     public func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int = 48,
                          prefillChunkSize: Int? = nil, onToken: (@Sendable (Int) async throws -> Void)? = nil,
                          observer: Observer? = nil) async throws -> Reply {
