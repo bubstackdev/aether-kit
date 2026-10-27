@@ -8,11 +8,11 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 | Item | Today | Work |
 | --- | --- | --- |
-| Qwen3-VL decoder weights | `main` and `withImage` each wire their own copy of the text weights: +8.4 and +7.9 GiB on the 4B, and about 16 GiB for a one-image request ([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)). Opening the decoder reads its 22.5 GiB compiled file into the page cache. | One decoder function for text and image prefill, or cross-function weight sharing if Core AI adds it. Fewer encoder grids would save nothing resident. |
+| Qwen3-VL decoder weights | `main` and `withImage` each wire their own copy of the text weights: +8.4 and +7.9 GiB on the 4B, and about 16 GiB for a one-image request ([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)). Opening the decoder reads its 22.5 GiB compiled file into the page cache. | One decoder function for text and image prefill, or cross-function weight sharing if Core AI adds it. Fewer encoder grids would save nothing resident. [Design](qwen3-vl-single-decoder.md). |
 | Language memory budget | A 2 GiB growth budget reloads the model to bound Core AI's per-shape-change retention ([guide](language-generation.md#native-memory-retention)). | File the Apple Feedback using the guide's reproduction, and remove the workaround once Core AI stops retaining memory. |
 | Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Release it, or keep 2048 opt-in only. |
 | H3 second specialization | Denoising adds about 2.7 GiB from step 1, when the two-timestep body joins the one-timestep one. | Release or avoid it. |
-| Qwen3-VL-4B export | The converter needs about 33 GB, because it holds weights per ExportedProgram. | Bound the export's memory. |
+| Qwen3-VL-4B export | The converter needs about 33 GB. The [design](qwen3-vl-single-decoder.md#export-memory) found the cause is not per-ExportedProgram copies but about five copies at the self-check. | Bound the export's memory. |
 | FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Add a load/unload cycling test, then fix what it finds. |
 
 ### Speed

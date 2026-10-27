@@ -1,0 +1,392 @@
+{
+  "schema": 1,
+  "kind": "core-ai-function-weight-copies",
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "versions": {
+    "torch": "2.11.0",
+    "coreai-torch": "0.4.2",
+    "coreai-core": "1.0.0b2"
+  },
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not. Metal is MTLDevice.currentAllocatedSize in the probe process; wired and clean are footprint's mapped-file category for the probe process",
+  "scripts": {
+    "Forge/language/probe_function_weights.py": "f06ec7b4ffd753d43c0111f6eeb91a0074de621632de00eac8683aae5beefc91",
+    "Scripts/probe-function-weights.swift": "fbd5040d2c6f7524d43025878bc7e839042082de7e8be3c8172de976580e2012"
+  },
+  "toy": "embedding [8192, 1024] tied to the head and 8 blocks of W1 [4096, 1024] and W2 [1024, 4096], fp16, 144 MiB (150994944 bytes); the Qwen3-VL splice and two DeepStack adds; q bound 512",
+  "specialization": "GPU preferred, expectFrequentReshapes = true (the language runtime's options); one process per layout",
+  "layouts": {
+    "main": "main(input_ids)",
+    "image": "withImage(input_ids, image_embeds [n, hidden], deepstack [levels, n, hidden]) only, q from 1; text steps send one zero row",
+    "two": "main + withImage (q from 2), today's Qwen3-VL decoder layout",
+    "twin": "main + main2, the identical graph under two names",
+    "embeds": "embed(input_ids) + main(inputs_embeds, image_mask, deepstack)",
+    "aligned": "main(input_ids, image_embeds [q, hidden], deepstack [levels, q, hidden]), rows used where the token is an image pad (the proposed contract)"
+  },
+  "compiledCacheBytes": {
+    "main": 301990160,
+    "image": 301990160,
+    "two": 452985240,
+    "twin": 452985240,
+    "embeds": 301990160,
+    "aligned": 301990160
+  },
+  "compiledCacheInWeights": {
+    "main": 2.0,
+    "image": 2.0,
+    "two": 3.0,
+    "twin": 3.0,
+    "embeds": 2.0,
+    "aligned": 2.0
+  },
+  "phases": {
+    "main": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 1
+      },
+      {
+        "phase": "main, q 64",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 291
+      },
+      {
+        "phase": "main, q 1",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 292
+      }
+    ],
+    "image": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 1
+      },
+      {
+        "phase": "withImage, q 64 with 16 image rows",
+        "metalMiB": 162,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 293
+      },
+      {
+        "phase": "withImage, q 64 text (one zero row)",
+        "metalMiB": 162,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 293
+      },
+      {
+        "phase": "withImage, q 1 text (one zero row)",
+        "metalMiB": 162,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 295
+      }
+    ],
+    "two": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 1
+      },
+      {
+        "phase": "main, q 64",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 435
+      },
+      {
+        "phase": "main, q 1",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 436
+      },
+      {
+        "phase": "withImage, q 64 with 16 image rows",
+        "metalMiB": 323,
+        "mappedFileWiredMiB": 304,
+        "mappedFileCleanMiB": 437
+      },
+      {
+        "phase": "withImage, q 64 text (one zero row)",
+        "metalMiB": 323,
+        "mappedFileWiredMiB": 304,
+        "mappedFileCleanMiB": 438
+      },
+      {
+        "phase": "withImage, q 2 text (one zero row)",
+        "metalMiB": 323,
+        "mappedFileWiredMiB": 304,
+        "mappedFileCleanMiB": 438
+      }
+    ],
+    "twin": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 1
+      },
+      {
+        "phase": "main, q 64",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 435
+      },
+      {
+        "phase": "main, q 1",
+        "metalMiB": 161,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 436
+      },
+      {
+        "phase": "main2, q 64",
+        "metalMiB": 322,
+        "mappedFileWiredMiB": 304,
+        "mappedFileCleanMiB": 436
+      },
+      {
+        "phase": "main2, q 1",
+        "metalMiB": 322,
+        "mappedFileWiredMiB": 304,
+        "mappedFileCleanMiB": 436
+      }
+    ],
+    "embeds": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 1
+      },
+      {
+        "phase": "embed, q 64",
+        "metalMiB": 16,
+        "mappedFileWiredMiB": 16,
+        "mappedFileCleanMiB": 290
+      },
+      {
+        "phase": "main from embeddings, q 64",
+        "metalMiB": 163,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 291
+      },
+      {
+        "phase": "main from embeddings, q 1",
+        "metalMiB": 163,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 292
+      }
+    ],
+    "aligned": [
+      {
+        "phase": "before open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "open",
+        "metalMiB": 0,
+        "mappedFileWiredMiB": 0,
+        "mappedFileCleanMiB": 0
+      },
+      {
+        "phase": "main, q 64 with 16 image tokens",
+        "metalMiB": 163,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 292
+      },
+      {
+        "phase": "main, q 64 text (zero rows)",
+        "metalMiB": 163,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 292
+      },
+      {
+        "phase": "main, q 1 text (zero row)",
+        "metalMiB": 163,
+        "mappedFileWiredMiB": 160,
+        "mappedFileCleanMiB": 294
+      }
+    ]
+  },
+  "retention": {
+    "method": "42 requests of a 64-token text chunk, a 48-token image span, an 8-token text run and four 1-token steps; growth of Metal's allocated size per request over the last 40; two processes per layout",
+    "growthPerRequestMiB": {
+      "two": [
+        0.891,
+        0.891
+      ],
+      "image": [
+        1.89,
+        1.891
+      ],
+      "aligned": [
+        2.89,
+        2.89
+      ]
+    }
+  },
+  "exportMemory": {
+    "method": "probe_function_weights.py export-memory: a 2.03 GiB toy converted as two programs (main + withImage) or one, by stage; RSS, its 50 ms sampled peak within the stage, and phys_footprint; --free-eager deletes the eager module before saving",
+    "stages": {
+      "two": [
+        {
+          "stage": "eager module (2.03 GiB)",
+          "rssGiB": 2.29,
+          "rssPeakInStageGiB": 2.29,
+          "footprintGiB": 2.24
+        },
+        {
+          "stage": "exported programs",
+          "rssGiB": 2.43,
+          "rssPeakInStageGiB": 2.43,
+          "footprintGiB": 2.37
+        },
+        {
+          "stage": "to_coreai",
+          "rssGiB": 4.46,
+          "rssPeakInStageGiB": 4.46,
+          "footprintGiB": 2.37
+        },
+        {
+          "stage": "optimize",
+          "rssGiB": 4.48,
+          "rssPeakInStageGiB": 4.48,
+          "footprintGiB": 2.38
+        },
+        {
+          "stage": "save_asset",
+          "rssGiB": 6.52,
+          "rssPeakInStageGiB": 6.52,
+          "footprintGiB": 4.41
+        },
+        {
+          "stage": "cpu_only load and call",
+          "rssGiB": 8.56,
+          "rssPeakInStageGiB": 10.59,
+          "footprintGiB": 4.42
+        }
+      ],
+      "one": [
+        {
+          "stage": "eager module (2.03 GiB)",
+          "rssGiB": 2.29,
+          "rssPeakInStageGiB": 2.29,
+          "footprintGiB": 2.24
+        },
+        {
+          "stage": "exported programs",
+          "rssGiB": 2.42,
+          "rssPeakInStageGiB": 2.42,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "to_coreai",
+          "rssGiB": 4.45,
+          "rssPeakInStageGiB": 4.45,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "optimize",
+          "rssGiB": 4.47,
+          "rssPeakInStageGiB": 4.47,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "save_asset",
+          "rssGiB": 6.5,
+          "rssPeakInStageGiB": 6.5,
+          "footprintGiB": 4.4
+        },
+        {
+          "stage": "cpu_only load and call",
+          "rssGiB": 8.54,
+          "rssPeakInStageGiB": 10.57,
+          "footprintGiB": 4.41
+        }
+      ],
+      "one --free-eager": [
+        {
+          "stage": "eager module (2.03 GiB)",
+          "rssGiB": 2.29,
+          "rssPeakInStageGiB": 2.29,
+          "footprintGiB": 2.24
+        },
+        {
+          "stage": "exported programs",
+          "rssGiB": 2.42,
+          "rssPeakInStageGiB": 2.42,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "to_coreai",
+          "rssGiB": 4.45,
+          "rssPeakInStageGiB": 4.45,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "optimize",
+          "rssGiB": 4.47,
+          "rssPeakInStageGiB": 4.47,
+          "footprintGiB": 2.36
+        },
+        {
+          "stage": "eager module freed",
+          "rssGiB": 4.37,
+          "rssPeakInStageGiB": 4.47,
+          "footprintGiB": 2.27
+        },
+        {
+          "stage": "save_asset",
+          "rssGiB": 6.38,
+          "rssPeakInStageGiB": 6.41,
+          "footprintGiB": 4.27
+        },
+        {
+          "stage": "cpu_only load and call",
+          "rssGiB": 8.42,
+          "rssPeakInStageGiB": 10.45,
+          "footprintGiB": 4.28
+        }
+      ]
+    }
+  },
+  "finding": "Each entry point wires its own copy of the weights it uses, even for identical graphs; one entry point wires one copy for text, image and 1-token steps. The compiled cache holds 2x the weights for one function and 3x for two (the VL-4B decoder's 22.48 GiB is 3 x 7.49 GiB). A separate embedding function wires its own copy of the tied table. Conversion keeps one copy however many programs share the weights; the export's peak comes from the eager module, the converter's copy, the save buffer and the cpu_only load (about 5x at its peak), not from per-program copies. One function retained more per request on the toy (1.9 MiB with a one-row image input, 2.9 MiB with aligned rows, against 0.9 MiB for two functions)."
+}
