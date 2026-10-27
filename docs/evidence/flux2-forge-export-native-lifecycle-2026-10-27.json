@@ -1,0 +1,343 @@
+{
+  "bundle" : {
+    "fingerprint" : "a48aaf07eab1fdee106c52b3e16c903c629846bf64dc92b5b35860b8a295fa39",
+    "referenceFingerprint" : "a69abb8e68cadcc56f2b6f5d9822f1600c318712914fae0146237ee24152c988"
+  },
+  "checkCount" : 44,
+  "checks" : [
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "baseline",
+      "name" : "baselineSSIM",
+      "passed" : true,
+      "value" : 0.98967788786021571
+    },
+    {
+      "bar" : 1,
+      "case" : "baseline",
+      "name" : "baselineOpensDenoisersThenDecoder",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "repeat",
+      "name" : "repeatIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "repeat",
+      "name" : "repeatReusesModels",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "repeat",
+      "name" : "repeatReusesNativeFunctions",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "repeat",
+      "name" : "repeatNativeCallCount",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellation",
+      "name" : "overlapRejected",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellation",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellation",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellation",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellation",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellationRecovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "denoiserCancellationRecovery",
+      "name" : "recoveryReusesModels",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellation",
+      "name" : "overlapRejected",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellation",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellation",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellation",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellation",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellationRecovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "decoderCancellationRecovery",
+      "name" : "recoveryReusesModels",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "balancedPrompt",
+      "name" : "balancedCloseBeforeAcquire",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "references",
+      "name" : "referenceSSIM",
+      "passed" : true,
+      "value" : 0.99852034340384532
+    },
+    {
+      "bar" : 1,
+      "case" : "references",
+      "name" : "referenceEncoderReleased",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "references",
+      "name" : "denoisersRecycledForTokenCount",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "closingRejectsWork",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "activeGenerationCompletesExactly",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "unloadCloses",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "nativeReturnsPrecedeModelRelease",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "closedRejectsWork",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "activeUnload",
+      "name" : "ownedOutputValidAfterUnload",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentSecondPrompt",
+      "name" : "residentReusesEncoderAndDenoisers",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentNewSize",
+      "name" : "residentKeepsEncoderAcrossSizes",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentNewSize",
+      "name" : "residentRecyclesShapeDependentModels",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentReturn",
+      "name" : "residentReturnIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "chargesOperationResidencyAndScratch",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "retainsOnlyResidencyAfterCompletion",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "admittedGenerationIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "oversizedRefusedBeforeLoad",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "unknownEstimateRefusedBeforeRelease",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "unloadReleasesAllReservations",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "insufficientCapacityRollsBack",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admission",
+      "name" : "thirdSegmentNeverOpenedWithoutCapacity",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "summary",
+      "name" : "everyInstanceClosedOnce",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "summary",
+      "name" : "everyNativeCallReturned",
+      "passed" : true,
+      "value" : 1
+    }
+  ],
+  "elapsedSeconds" : "44.0",
+  "functionLoads" : 32,
+  "functionReuses" : 144,
+  "kind" : "flux2-native-lifecycle",
+  "limits" : [
+    "Native boundaries bracket the awaited function.run; GPU queues are not instrumented.",
+    "Admission estimates are logical test values, not measured memory.",
+    "Cancellation is cooperative between native calls; an observed in-flight call always completes."
+  ],
+  "modelInstances" : 34,
+  "nativeCalls" : 176,
+  "passed" : true,
+  "phases" : [
+
+  ],
+  "records" : [
+    {
+      "case" : "balancedPrompt",
+      "name" : "balancedPromptSSIM",
+      "value" : 0.90114267850537044
+    }
+  ],
+  "schema" : 1,
+  "timings" : [
+
+  ]
+}

@@ -1,0 +1,2018 @@
+{
+  "bundle": {
+    "aether.json": "sha256:e4441b9c8214b7482070ea7843c93a05684e1614d6e227d8a7e900e6c1b0731e",
+    "bytes": 7937283476,
+    "files": {
+      "LICENSE.md": "sha256:ca02bc51900ab07789d1b70283329e7137f5af98f5161c23a1c81fc38a4af1fe",
+      "flux2_klein_4b_reference-denoiser0.aimodel/main.hash": "sha256:bfbcf4ef61ebbcc1984c2ee6e2f4ca20a270a815cf13e09a660eea82dbb51858",
+      "flux2_klein_4b_reference-denoiser0.aimodel/main.mlirb": "sha256:7245dffdd88d266041ff0c6d0515d9f8c006bf6cea70cf3a411f1b9eb52c8aa1",
+      "flux2_klein_4b_reference-denoiser0.aimodel/metadata.json": "sha256:e2dabc4b84cb987f3ae327e37f02c890692652f57a1a4b8e99caed83cc454f1a",
+      "flux2_klein_4b_reference-denoiser1.aimodel/main.hash": "sha256:1a973c0121ab80d5f77aa436460db03cc78042a86bd6628af3bdf1f056a6d3b3",
+      "flux2_klein_4b_reference-denoiser1.aimodel/main.mlirb": "sha256:1039e3b5c275c0cf27aa752f057fbce84a5f6d6488b53262a3830632c109bb71",
+      "flux2_klein_4b_reference-denoiser1.aimodel/metadata.json": "sha256:a942cb39b434c7e3010488c1431d9919b3f8c01d4531519de9f2f7449678285c",
+      "flux2_klein_4b_reference-denoiser2.aimodel/main.hash": "sha256:af4958a308e23092ca57805c55ad7d6eec789be6c389fecba07672e1c5ff36af",
+      "flux2_klein_4b_reference-denoiser2.aimodel/main.mlirb": "sha256:49525b12a7ef1505d5f0934acecde0ca2c69d89c73bef0d9028c78eefcba268d",
+      "flux2_klein_4b_reference-denoiser2.aimodel/metadata.json": "sha256:f928599900fbe22ef744dbc4b54eeedc394560e48bdd81b5ca0fa9ff2adad4f9",
+      "flux2_klein_4b_reference-text.aimodel/main.hash": "sha256:84f784edea4ef9881dbd7be80721fc5cf4856ded466311e51e648af7f785ef4f",
+      "flux2_klein_4b_reference-text.aimodel/main.mlirb": "sha256:e654133efaf3bb6b699252a3d45dfd2d5bdb74473548dda6211d8053f6f55ead",
+      "flux2_klein_4b_reference-text.aimodel/metadata.json": "sha256:a676a92e01e328f6ab1f5eb173e5bd1e65c17545081aadc68ff2b28c504bee4f",
+      "flux2_klein_4b_reference-vae-encoder.aimodel/main.hash": "sha256:a40488b435a598208b5fcb56a831faae4cfe6c4de057b2de27449eceeec230d7",
+      "flux2_klein_4b_reference-vae-encoder.aimodel/main.mlirb": "sha256:e7323bdcfee57e2190ba0f3dc1dd41e7b412585f1b6713ca4d77a64b21063381",
+      "flux2_klein_4b_reference-vae-encoder.aimodel/metadata.json": "sha256:435f5c5199ab987b1a804c757f9e2ad2c31da35ee3c4c7c1a7f86f67db0b44d5",
+      "flux2_klein_4b_reference-vae.aimodel/main.hash": "sha256:60cdcaac46a9536a63b3af9e64fa0effc8faece3277a1b03fb67d6abd98fd11b",
+      "flux2_klein_4b_reference-vae.aimodel/main.mlirb": "sha256:8d792ee10edbc05a26b615d2a41a467eeebc4cdbf9c5b0bb40efe199e1823322",
+      "flux2_klein_4b_reference-vae.aimodel/metadata.json": "sha256:14f92728146646ec8bc5c1844a31832ec5642b83ed73954c933c841a8dc3aa0a",
+      "tokenizer/added_tokens.json": "sha256:c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+      "tokenizer/chat_template.jinja": "sha256:a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+      "tokenizer/merges.txt": "sha256:8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "tokenizer/special_tokens_map.json": "sha256:76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+      "tokenizer/tokenizer.json": "sha256:aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer/tokenizer_config.json": "sha256:443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+      "tokenizer/vocab.json": "sha256:ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "metadata.json": "sha256:5bfc72f08165cc388f5153926085a23cb0f581e88840e19ac36ea7a94399ffe4",
+    "root": "~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle"
+  },
+  "commands": [
+    "Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/graph-check-real --checkpoint ~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint ~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294 --output ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/export",
+    "python3 Scripts/finalize-flux2-bundle.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/export ~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294 ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle",
+    "Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle --json contract-diff.json",
+    "AETHER_FLUX2_BUNDLE=<new bundle> AETHER_FLUX2_FIXTURES=<cpu t2i> AETHER_FLUX2_REFERENCE_FIXTURES=<cpu reference> swift test --filter AetherFlux2Tests  (28/28)",
+    "AETHER_NATIVE_FLUX2_QUALIFICATION=1 AETHER_FLUX2_CASES=all ... with-gpu-lock.sh swift test -c release --filter flux2NativeParity  (GPU lock 12:15:48-12:19:21)",
+    "AETHER_NATIVE_FLUX2_LIFECYCLE=1 ... with-gpu-lock.sh swift test -c release --filter flux2NativeLifecycle  (GPU lock 12:19:40-12:20:30)"
+  ],
+  "contract": {
+    "aetherJSON": {
+      "differences": [],
+      "gatedFields": 111,
+      "volatile": {
+        "diffusion.assetBytes": {
+          "candidate": {
+            "denoiser0": 1903859828,
+            "denoiser1": 1283962582,
+            "denoiser2": 1444851647,
+            "textEncoder": 3116453776,
+            "vaeDecoder": 101482800,
+            "vaeEncoder": 70771852
+          },
+          "reference": {
+            "denoiser0": 1903883457,
+            "denoiser1": 1283968516,
+            "denoiser2": 1444859682,
+            "textEncoder": 3116676234,
+            "vaeDecoder": 101515318,
+            "vaeEncoder": 70793708
+          }
+        },
+        "memory.weightsBytes": {
+          "candidate": 7921382485,
+          "reference": 7921696915
+        },
+        "provenance.exportedOn": {
+          "candidate": {
+            "date": "2026-10-27",
+            "os": "26A434"
+          },
+          "reference": {
+            "date": "2026-10-05",
+            "os": "26A434"
+          }
+        },
+        "provenance.files": {
+          "candidate": 26,
+          "reference": 26
+        },
+        "provenance.forge": {
+          "candidate": "aether-kit Forge/flux2/export_flux2.py",
+          "reference": "0.1.0"
+        }
+      }
+    },
+    "assets": {
+      "denoiser0": {
+        "bytes": {
+          "new": 1903859828,
+          "shipped": 1903883457
+        },
+        "differences": [],
+        "functions": {
+          "segment": {
+            "argAttrs": "[{coreai.name = \"latents\"}, {coreai.name = \"text_embeds\"}, {coreai.name = \"sigma\"}, {coreai.name = \"rope_text\"}, {coreai.name = \"rope_image\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"image_1\"}, {coreai.name = \"text_1\"}, {coreai.name = \"cond\"}]",
+            "type": "(tensor<?x128xf16>, tensor<?x7680xf16>, tensor<1xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> (tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>)"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 113759234,
+            "Float32": 3460,
+            "Int32": 139,
+            "Int8": 1676289024,
+            "UInt32": 37,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 113762562,
+            "Float32": 132,
+            "Int32": 120,
+            "Int8": 1676282880,
+            "UInt32": 29,
+            "UInt64": 1
+          }
+        }
+      },
+      "denoiser1": {
+        "bytes": {
+          "new": 1283962582,
+          "shipped": 1283968516
+        },
+        "differences": [],
+        "functions": {
+          "segment": {
+            "argAttrs": "[{coreai.name = \"image_1\"}, {coreai.name = \"text_1\"}, {coreai.name = \"cond\"}, {coreai.name = \"rope_text\"}, {coreai.name = \"rope_image\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"image_2\"}, {coreai.name = \"text_2\"}]",
+            "type": "(tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> (tensor<?x3072xf32>, tensor<?x3072xf32>)"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 302238722,
+            "Float32": 2052,
+            "Int32": 73,
+            "Int8": 679504896,
+            "UInt32": 25,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 302240770,
+            "Float32": 4,
+            "Int32": 72,
+            "Int8": 679504896,
+            "UInt32": 19,
+            "UInt64": 1
+          }
+        }
+      },
+      "denoiser2": {
+        "bytes": {
+          "new": 1444851647,
+          "shipped": 1444859682
+        },
+        "differences": [],
+        "functions": {
+          "segment": {
+            "argAttrs": "[{coreai.name = \"image_2\"}, {coreai.name = \"text_2\"}, {coreai.name = \"cond\"}, {coreai.name = \"rope_text\"}, {coreai.name = \"rope_image\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"velocity\"}]",
+            "type": "(tensor<?x3072xf32>, tensor<?x3072xf32>, tensor<17x3072xf32>, tensor<?x2x128xf32>, tensor<?x2x128xf32>) -> tensor<?x128xf16>"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 339987714,
+            "Float32": 2309,
+            "Int32": 85,
+            "Int8": 764832768,
+            "UInt32": 27,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 339990018,
+            "Float32": 4,
+            "Int32": 82,
+            "Int8": 764832768,
+            "UInt32": 21,
+            "UInt64": 1
+          }
+        }
+      },
+      "textEncoder": {
+        "bytes": {
+          "new": 3116453776,
+          "shipped": 3116676234
+        },
+        "differences": [],
+        "functions": {
+          "encode": {
+            "argAttrs": "[{coreai.name = \"input_ids\"}, {coreai.name = \"position_ids\"}, {coreai.name = \"attention_mask\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"text_embeds\"}]",
+            "type": "(tensor<1x?xsi32>, tensor<1x?xsi32>, tensor<1x?xsi32>) -> tensor<?x7680xf16>"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 1136260,
+            "Float32": 66,
+            "Int32": 30,
+            "Int8": 3113949184,
+            "UInt32": 28,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 1267588,
+            "Float32": 66,
+            "Int32": 46,
+            "Int8": 3114094976,
+            "UInt32": 27,
+            "UInt64": 1
+          }
+        }
+      },
+      "vaeDecoder": {
+        "bytes": {
+          "new": 101482800,
+          "shipped": 101515318
+        },
+        "differences": [],
+        "functions": {
+          "decode": {
+            "argAttrs": "[{coreai.name = \"latents\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"image\"}]",
+            "type": "(tensor<?x?x128xf16>) -> tensor<3x?x?xf32>"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 48529408,
+            "Float32": 1091115,
+            "Int32": 29,
+            "UInt32": 66,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 48529408,
+            "Float32": 1091110,
+            "Int32": 34,
+            "UInt32": 54,
+            "UInt64": 1
+          }
+        }
+      },
+      "vaeEncoder": {
+        "bytes": {
+          "new": 70771852,
+          "shipped": 70793708
+        },
+        "differences": [],
+        "functions": {
+          "encode": {
+            "argAttrs": "[{coreai.name = \"reference_pixels\"}]",
+            "other": {},
+            "resAttrs": "[{coreai.name = \"reference_latents\"}]",
+            "type": "(tensor<3x?x?xf32>) -> tensor<?x?x128xf32>"
+          }
+        },
+        "storageCounts": {
+          "new": {
+            "Float16": 33488896,
+            "Float32": 937219,
+            "Int32": 32,
+            "UInt32": 69,
+            "UInt64": 1
+          },
+          "shipped": {
+            "Float16": 33488896,
+            "Float32": 937219,
+            "Int32": 26,
+            "UInt32": 57,
+            "UInt64": 1
+          }
+        }
+      }
+    },
+    "differences": [],
+    "files": {
+      "LICENSE.md": true,
+      "tokenizer/added_tokens.json": true,
+      "tokenizer/chat_template.jinja": true,
+      "tokenizer/merges.txt": true,
+      "tokenizer/special_tokens_map.json": true,
+      "tokenizer/tokenizer.json": true,
+      "tokenizer/tokenizer_config.json": true,
+      "tokenizer/vocab.json": true
+    },
+    "identical": true,
+    "metadataJSON": "identical",
+    "reference": "~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu"
+  },
+  "date": "2026-10-27",
+  "export": {
+    "bundleBytes": 7937264717,
+    "command": [
+      "Forge/flux2/export_flux2.py",
+      "--checkpoint",
+      "~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294",
+      "--output",
+      "~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/export"
+    ],
+    "conversion": {
+      "denoiser0": {
+        "bytes": 1903859828,
+        "convert_s": 1.74,
+        "export_s": 3.99
+      },
+      "denoiser1": {
+        "bytes": 1283962582,
+        "convert_s": 1.34,
+        "export_s": 1.96
+      },
+      "denoiser2": {
+        "bytes": 1444851647,
+        "convert_s": 1.65,
+        "export_s": 1.92
+      },
+      "textEncoder": {
+        "bytes": 3116453776,
+        "convert_s": 2.7,
+        "export_s": 5.89
+      },
+      "vaeDecoder": {
+        "bytes": 101482800,
+        "convert_s": 0.17,
+        "export_s": 1.79
+      },
+      "vaeEncoder": {
+        "bytes": 70771852,
+        "convert_s": 0.15,
+        "export_s": 1.73
+      }
+    },
+    "host": {
+      "machine": "arm64",
+      "os": "26A434",
+      "python": "3.12.14"
+    },
+    "peakRSSGB": 37.2,
+    "quantization": {
+      "exceptions": {
+        "singles.*.proj_out": "none"
+      },
+      "modules": {
+        "int8-linear-perchannel": 205,
+        "none": 20
+      },
+      "scheme": "int8-linear-perchannel"
+    },
+    "recipe": "flux2-klein-4b-reference@1",
+    "scriptSHA256": {
+      "check_flux2_contract.py": "5d40f09649c769f46c2a17ed360248e0f7eda2e5619768be5893058a478579ef",
+      "check_flux2_graphs.py": "5fd306af07f7ee4ca27c9a47841477fcf3d4238ecf751ed1d2637c3cda18ab87",
+      "export_flux2.py": "d39856301f0f7de4834282b047c5a6c6d2f7b4ea4ae44beb390964d0fd06be64",
+      "flux2_graphs.py": "c89057a64b4a415e7d01faa67e3757cee5b064086c538ac86cb76ed0751e87bb",
+      "record_flux2_evidence.py": "17b3f14321437a665e0034f3ad07d88d620fe688378a4e6a31e983275be16d87"
+    },
+    "selfCheck": {
+      "denoiser0": {
+        "cases": [
+          {
+            "cond": {
+              "cosine": 1.0,
+              "finite": true,
+              "maxAbs": 0.04688,
+              "shape": [
+                17,
+                3072
+              ]
+            },
+            "image_1": {
+              "cosine": 0.999723,
+              "finite": true,
+              "maxAbs": 3.18912,
+              "shape": [
+                24,
+                3072
+              ]
+            },
+            "text_1": {
+              "cosine": 0.999484,
+              "finite": true,
+              "maxAbs": 13.8425,
+              "shape": [
+                32,
+                3072
+              ]
+            }
+          },
+          {
+            "cond": {
+              "cosine": 1.0,
+              "finite": true,
+              "maxAbs": 0.04688,
+              "shape": [
+                17,
+                3072
+              ]
+            },
+            "image_1": {
+              "cosine": 0.999691,
+              "finite": true,
+              "maxAbs": 4.57773,
+              "shape": [
+                64,
+                3072
+              ]
+            },
+            "text_1": {
+              "cosine": 0.999458,
+              "finite": true,
+              "maxAbs": 20.46387,
+              "shape": [
+                64,
+                3072
+              ]
+            }
+          }
+        ],
+        "reference": "eager module before quantization (CPU)",
+        "runtime": "Core AI cpu_only"
+      },
+      "denoiser1": {
+        "cases": [
+          {
+            "image_2": {
+              "cosine": 0.99989,
+              "finite": true,
+              "maxAbs": 3.38019,
+              "shape": [
+                24,
+                3072
+              ]
+            },
+            "text_2": {
+              "cosine": 0.999646,
+              "finite": true,
+              "maxAbs": 3.96564,
+              "shape": [
+                32,
+                3072
+              ]
+            }
+          },
+          {
+            "image_2": {
+              "cosine": 0.999848,
+              "finite": true,
+              "maxAbs": 3.44299,
+              "shape": [
+                64,
+                3072
+              ]
+            },
+            "text_2": {
+              "cosine": 0.999481,
+              "finite": true,
+              "maxAbs": 5.45007,
+              "shape": [
+                64,
+                3072
+              ]
+            }
+          }
+        ],
+        "reference": "eager module before quantization (CPU)",
+        "runtime": "Core AI cpu_only"
+      },
+      "denoiser2": {
+        "cases": [
+          {
+            "velocity": {
+              "cosine": 0.999422,
+              "finite": true,
+              "maxAbs": 0.09766,
+              "shape": [
+                24,
+                128
+              ]
+            }
+          },
+          {
+            "velocity": {
+              "cosine": 0.999366,
+              "finite": true,
+              "maxAbs": 0.09987,
+              "shape": [
+                64,
+                128
+              ]
+            }
+          }
+        ],
+        "reference": "eager module before quantization (CPU)",
+        "runtime": "Core AI cpu_only"
+      },
+      "textEncoder": {
+        "cases": [
+          {
+            "text_embeds": {
+              "cosine": 0.999602,
+              "finite": true,
+              "maxAbs": 888.0,
+              "shape": [
+                512,
+                7680
+              ]
+            }
+          },
+          {
+            "text_embeds": {
+              "cosine": 0.999971,
+              "finite": true,
+              "maxAbs": 888.0,
+              "shape": [
+                24,
+                7680
+              ]
+            }
+          }
+        ],
+        "reference": "eager module before quantization (CPU)",
+        "runtime": "Core AI cpu_only"
+      },
+      "vaeDecoder": {
+        "cases": [],
+        "skipped": "Core AI cpu_only segfaults on this decoder"
+      },
+      "vaeEncoder": {
+        "cases": [
+          {
+            "reference_latents": {
+              "cosine": 1.0,
+              "finite": true,
+              "maxAbs": 1e-05,
+              "shape": [
+                4,
+                6,
+                128
+              ]
+            }
+          },
+          {
+            "reference_latents": {
+              "cosine": 1.0,
+              "finite": true,
+              "maxAbs": 1e-05,
+              "shape": [
+                8,
+                8,
+                128
+              ]
+            }
+          }
+        ],
+        "reference": "eager module before quantization (CPU)",
+        "runtime": "Core AI cpu_only"
+      }
+    },
+    "source": {
+      "checkpoint": "~/.cache/huggingface/hub/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294",
+      "repository": "black-forest-labs/FLUX.2-klein-4B",
+      "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+      "verified": {
+        "LICENSE.md": true,
+        "text_encoder/config.json": true,
+        "text_encoder/model-00001-of-00002.safetensors": true,
+        "text_encoder/model-00002-of-00002.safetensors": true,
+        "text_encoder/model.safetensors.index.json": true,
+        "tokenizer/added_tokens.json": true,
+        "tokenizer/chat_template.jinja": true,
+        "tokenizer/merges.txt": true,
+        "tokenizer/special_tokens_map.json": true,
+        "tokenizer/tokenizer.json": true,
+        "tokenizer/tokenizer_config.json": true,
+        "tokenizer/vocab.json": true,
+        "transformer/config.json": true,
+        "transformer/diffusion_pytorch_model.safetensors": true,
+        "vae/config.json": true,
+        "vae/diffusion_pytorch_model.safetensors": true
+      }
+    },
+    "stages": {
+      "build-denoiser0": 1.49,
+      "build-denoiser1": 0.746,
+      "build-denoiser2": 0.811,
+      "build-textEncoder": 0.989,
+      "build-vae": 2.467,
+      "checkpoint": 5.981,
+      "tokenizer": 0.01
+    },
+    "versions": {
+      "coreai-core": "1.0.0b2",
+      "coreai-opt": "0.3.0",
+      "coreai-torch": "0.4.2",
+      "diffusers": "0.37.1",
+      "safetensors": "0.8.0",
+      "torch": "2.11.0",
+      "transformers": "4.57.3"
+    }
+  },
+  "kind": "flux2-forge-export",
+  "lifecycle": {
+    "new": {
+      "bundle": {
+        "fingerprint": "a48aaf07eab1fdee106c52b3e16c903c629846bf64dc92b5b35860b8a295fa39",
+        "referenceFingerprint": "a69abb8e68cadcc56f2b6f5d9822f1600c318712914fae0146237ee24152c988"
+      },
+      "checkCount": 44,
+      "elapsedSeconds": "44.0",
+      "file": "~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/native-lifecycle-cpu-references/report.json",
+      "functionLoads": 32,
+      "functionReuses": 144,
+      "modelInstances": 34,
+      "nativeCalls": 176,
+      "passed": true,
+      "passedChecks": 44
+    },
+    "shipped": {
+      "bundle": {
+        "fingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+        "referenceFingerprint": "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79"
+      },
+      "checkCount": 44,
+      "elapsedSeconds": "51.3",
+      "file": "docs/evidence/flux2-klein-native-lifecycle-cpu-references-2026-10-27.json",
+      "functionLoads": 32,
+      "functionReuses": 144,
+      "modelInstances": 34,
+      "nativeCalls": 176,
+      "passed": true,
+      "passedChecks": 44
+    }
+  },
+  "notes": [
+    "Export: 1.5 min wall, CPU only (cpu_only self-checks; no GPU). Peak memory footprint 18.7 GB; maxrss 37.2 GB includes mmapped checkpoint pages. Real-weights float32 graph check peak RSS 28.2 GB.",
+    "Fixtures: CPU float32 Diffusers 0.37.1 references t2i ffc4b1365159e40c (10 cases) and reference caf92bb7d83d685c (2 cases); shipped side is the 2026-10-27 re-qualification of the 2026-10-26 bundle on the same fixtures.",
+    "Internal graph differences, not contract: layer_norm/group_norm lower to Core AI composites (shipped: decomposed), the VAE decoder upsamples with nearest-neighbour interpolate (shipped: conv + pixel_shuffle); q/k RMS norm feeds the rotary product in float32 without an fp16 round trip.",
+    "Core AI cpu_only segfaults running the VAE decoder (shipped asset too), so its export self-check is skipped; native parity qualifies it.",
+    "Bundle size 7,937,283,476 bytes; working directory ~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27 7.4 GB (bundle plus 21 MB of reports and PNGs).",
+    "Two supporting files were edited after generation rather than regenerated: the raw parity report's bundle.root was shortened to ~ (home path removed, repository is public), and the contract-diff .txt result line was updated to the script's current wording after check_flux2_contract.py gained the candidate-only tokenizer check (re-run result unchanged: contract identical). No recorded hash covers either file."
+  ],
+  "parity": {
+    "gatedChecks": 113,
+    "minima": {
+      "decoderPSNR": {
+        "new": 87.68422249080844,
+        "shipped": 87.68425402025719
+      },
+      "imagePathSSIM": {
+        "new": 0.959534200753828,
+        "shipped": 0.9601602193526131
+      },
+      "referenceLatentCosine": {
+        "new": 0.9999999999981433,
+        "shipped": 0.9999999999981598
+      },
+      "referencePositions": {
+        "new": 1,
+        "shipped": 1
+      },
+      "textRealRowCosine": {
+        "new": 0.9999723497066121,
+        "shipped": 0.9999723492511845
+      },
+      "timesteps": {
+        "new": 1,
+        "shipped": 1
+      },
+      "tokenIDs": {
+        "new": 1,
+        "shipped": 1
+      },
+      "velocityCosine": {
+        "new": 0.9992466951556802,
+        "shipped": 0.9992390379774518
+      }
+    },
+    "new": [
+      {
+        "bundle": {
+          "fingerprint": "a48aaf07eab1fdee106c52b3e16c903c629846bf64dc92b5b35860b8a295fa39",
+          "referenceFingerprint": "a69abb8e68cadcc56f2b6f5d9822f1600c318712914fae0146237ee24152c988",
+          "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+          "root": "~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle"
+        },
+        "checkCount": 113,
+        "elapsedSeconds": "204.7",
+        "file": "~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/native-parity-cpu-references/report.json",
+        "fixtures": {
+          "cases": "lighthouse-512,red-circle-512,fox-512,ramen-576x448,cafe-512,cat-1024,harbor-768,street-1024x576,desk-1024x768,canyon-1344x768,fox-watercolor-ref1,fox-lighthouse-ref2",
+          "t2i": "ffc4b1365159e40c"
+        },
+        "kind": "flux2-native-parity",
+        "passed": true,
+        "phases": [
+          {
+            "footprintBytesAfter": 664208848,
+            "lifetimePeakFootprintBytes": 1017827312,
+            "name": "textEncoder",
+            "seconds": 4.5408570766448975
+          },
+          {
+            "footprintBytesAfter": 1288177584,
+            "lifetimePeakFootprintBytes": 8158943880,
+            "name": "denoiser",
+            "seconds": 48.13732099533081
+          },
+          {
+            "footprintBytesAfter": 1545898552,
+            "lifetimePeakFootprintBytes": 17314565288,
+            "name": "vae",
+            "seconds": 10.382382035255432
+          },
+          {
+            "footprintBytesAfter": 1760266880,
+            "lifetimePeakFootprintBytes": 17314565288,
+            "name": "session",
+            "seconds": 139.197438955307
+          }
+        ]
+      }
+    ],
+    "passed": true,
+    "shipped": [
+      {
+        "bundle": {
+          "fingerprint": "f28ef0e8fe173fad82aeeaf91f8870c54015ec0d1c37c81df93b2118dc5b0a6c",
+          "referenceFingerprint": "8fb2df90cac5978bcaaf4284d80e41bfbaf4683bfcdb41f446d5804985af9b79",
+          "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+          "root": "~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu"
+        },
+        "checkCount": 113,
+        "elapsedSeconds": "217.5",
+        "file": "docs/evidence/flux2-klein-native-parity-cpu-references-2026-10-27.json",
+        "fixtures": {
+          "cases": "lighthouse-512,red-circle-512,fox-512,ramen-576x448,cafe-512,cat-1024,harbor-768,street-1024x576,desk-1024x768,canyon-1344x768,fox-watercolor-ref1,fox-lighthouse-ref2",
+          "t2i": "ffc4b1365159e40c"
+        },
+        "kind": "flux2-native-parity",
+        "passed": true,
+        "phases": [
+          {
+            "footprintBytesAfter": 723682768,
+            "lifetimePeakFootprintBytes": 1074548552,
+            "name": "textEncoder",
+            "seconds": 4.947251915931702
+          },
+          {
+            "footprintBytesAfter": 1271613264,
+            "lifetimePeakFootprintBytes": 8048777792,
+            "name": "denoiser",
+            "seconds": 39.91777789592743
+          },
+          {
+            "footprintBytesAfter": 1304594808,
+            "lifetimePeakFootprintBytes": 17288973360,
+            "name": "vae",
+            "seconds": 10.500118970870972
+          },
+          {
+            "footprintBytesAfter": 2219805120,
+            "lifetimePeakFootprintBytes": 17288973360,
+            "name": "session",
+            "seconds": 159.21184408664703
+          }
+        ]
+      }
+    ],
+    "table": [
+      {
+        "bar": 35,
+        "case": "cafe-512",
+        "check": "decoderPSNR",
+        "delta": 4.266459060886518e-05,
+        "new": 93.11723181347824,
+        "newPassed": true,
+        "shipped": 93.11718914888763
+      },
+      {
+        "bar": null,
+        "case": "cafe-512",
+        "check": "imagePathPSNR",
+        "delta": -0.068838017690517,
+        "new": 29.355240528250977,
+        "newPassed": null,
+        "shipped": 29.424078545941494
+      },
+      {
+        "bar": 0.94,
+        "case": "cafe-512",
+        "check": "imagePathSSIM",
+        "delta": -0.000626018598785083,
+        "new": 0.959534200753828,
+        "newPassed": true,
+        "shipped": 0.9601602193526131
+      },
+      {
+        "bar": 0.999,
+        "case": "cafe-512",
+        "check": "textRealRowCosine",
+        "delta": 9.8042507445939e-10,
+        "new": 0.9999724445121047,
+        "newPassed": true,
+        "shipped": 0.9999724435316796
+      },
+      {
+        "bar": 1,
+        "case": "cafe-512",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "cafe-512",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "cafe-512",
+        "check": "velocityCosine[0]",
+        "delta": -1.2683307795136045e-06,
+        "new": 0.999878223916731,
+        "newPassed": true,
+        "shipped": 0.9998794922475105
+      },
+      {
+        "bar": 0.999,
+        "case": "cafe-512",
+        "check": "velocityCosine[1]",
+        "delta": -4.780126190206957e-06,
+        "new": 0.9996113717794894,
+        "newPassed": true,
+        "shipped": 0.9996161519056797
+      },
+      {
+        "bar": 0.999,
+        "case": "cafe-512",
+        "check": "velocityCosine[2]",
+        "delta": 8.537796772900563e-07,
+        "new": 0.999768721997257,
+        "newPassed": true,
+        "shipped": 0.9997678682175797
+      },
+      {
+        "bar": 0.999,
+        "case": "cafe-512",
+        "check": "velocityCosine[3]",
+        "delta": -1.8102593523083854e-06,
+        "new": 0.9998452572446949,
+        "newPassed": true,
+        "shipped": 0.9998470675040472
+      },
+      {
+        "bar": null,
+        "case": "cafe-512",
+        "check": "wholePipelineSSIM",
+        "delta": 0.0009715603983116994,
+        "new": 0.9187193487889501,
+        "newPassed": null,
+        "shipped": 0.9177477883906384
+      },
+      {
+        "bar": 35,
+        "case": "canyon-1344x768",
+        "check": "decoderPSNR",
+        "delta": -0.000150155262303997,
+        "new": 91.22512592403828,
+        "newPassed": true,
+        "shipped": 91.22527607930058
+      },
+      {
+        "bar": null,
+        "case": "canyon-1344x768",
+        "check": "imagePathPSNR",
+        "delta": -0.1847705276938072,
+        "new": 33.46362524501267,
+        "newPassed": null,
+        "shipped": 33.64839577270648
+      },
+      {
+        "bar": 0.94,
+        "case": "canyon-1344x768",
+        "check": "imagePathSSIM",
+        "delta": -0.0003487932687031847,
+        "new": 0.9867241244496765,
+        "newPassed": true,
+        "shipped": 0.9870729177183797
+      },
+      {
+        "bar": 0.999,
+        "case": "canyon-1344x768",
+        "check": "textRealRowCosine",
+        "delta": 6.698838150853703e-10,
+        "new": 0.9999723543650183,
+        "newPassed": true,
+        "shipped": 0.9999723536951345
+      },
+      {
+        "bar": 1,
+        "case": "canyon-1344x768",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "canyon-1344x768",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "canyon-1344x768",
+        "check": "velocityCosine[0]",
+        "delta": 2.378937102864853e-08,
+        "new": 0.9998517503166311,
+        "newPassed": true,
+        "shipped": 0.9998517265272601
+      },
+      {
+        "bar": 0.999,
+        "case": "canyon-1344x768",
+        "check": "velocityCosine[1]",
+        "delta": -4.647493307974315e-07,
+        "new": 0.9995363990747287,
+        "newPassed": true,
+        "shipped": 0.9995368638240595
+      },
+      {
+        "bar": 0.999,
+        "case": "canyon-1344x768",
+        "check": "velocityCosine[2]",
+        "delta": -3.592215442993485e-06,
+        "new": 0.9996467765088776,
+        "newPassed": true,
+        "shipped": 0.9996503687243206
+      },
+      {
+        "bar": 0.999,
+        "case": "canyon-1344x768",
+        "check": "velocityCosine[3]",
+        "delta": 3.15678852502721e-07,
+        "new": 0.9998346918540827,
+        "newPassed": true,
+        "shipped": 0.9998343761752302
+      },
+      {
+        "bar": null,
+        "case": "canyon-1344x768",
+        "check": "wholePipelineSSIM",
+        "delta": 0.0012003613986182327,
+        "new": 0.9286268199659103,
+        "newPassed": null,
+        "shipped": 0.9274264585672921
+      },
+      {
+        "bar": 35,
+        "case": "cat-1024",
+        "check": "decoderPSNR",
+        "delta": 2.1243152701799772e-05,
+        "new": 94.14980211356009,
+        "newPassed": true,
+        "shipped": 94.14978087040738
+      },
+      {
+        "bar": null,
+        "case": "cat-1024",
+        "check": "imagePathPSNR",
+        "delta": -0.07551496792818924,
+        "new": 27.793912674603053,
+        "newPassed": null,
+        "shipped": 27.869427642531242
+      },
+      {
+        "bar": 0.94,
+        "case": "cat-1024",
+        "check": "imagePathSSIM",
+        "delta": -0.0004135265761555651,
+        "new": 0.9637771388059055,
+        "newPassed": true,
+        "shipped": 0.9641906653820611
+      },
+      {
+        "bar": 0.999,
+        "case": "cat-1024",
+        "check": "textRealRowCosine",
+        "delta": 4.5542758453365195e-10,
+        "new": 0.9999723497066121,
+        "newPassed": true,
+        "shipped": 0.9999723492511845
+      },
+      {
+        "bar": 1,
+        "case": "cat-1024",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "cat-1024",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "cat-1024",
+        "check": "velocityCosine[0]",
+        "delta": -2.238807042531654e-06,
+        "new": 0.9996737966751499,
+        "newPassed": true,
+        "shipped": 0.9996760354821924
+      },
+      {
+        "bar": 0.999,
+        "case": "cat-1024",
+        "check": "velocityCosine[1]",
+        "delta": -1.2793226767948696e-06,
+        "new": 0.9994278424083679,
+        "newPassed": true,
+        "shipped": 0.9994291217310447
+      },
+      {
+        "bar": 0.999,
+        "case": "cat-1024",
+        "check": "velocityCosine[2]",
+        "delta": 3.3001879967686776e-06,
+        "new": 0.9996463424823292,
+        "newPassed": true,
+        "shipped": 0.9996430422943324
+      },
+      {
+        "bar": 0.999,
+        "case": "cat-1024",
+        "check": "velocityCosine[3]",
+        "delta": 1.6650642963300655e-06,
+        "new": 0.9998361919242083,
+        "newPassed": true,
+        "shipped": 0.9998345268599119
+      },
+      {
+        "bar": null,
+        "case": "cat-1024",
+        "check": "wholePipelineSSIM",
+        "delta": -0.005413611793816386,
+        "new": 0.8624131944214035,
+        "newPassed": null,
+        "shipped": 0.8678268062152199
+      },
+      {
+        "bar": 35,
+        "case": "desk-1024x768",
+        "check": "decoderPSNR",
+        "delta": 8.732207859907248e-05,
+        "new": 97.44030760173301,
+        "newPassed": true,
+        "shipped": 97.44022027965441
+      },
+      {
+        "bar": null,
+        "case": "desk-1024x768",
+        "check": "imagePathPSNR",
+        "delta": -0.05852212242932353,
+        "new": 34.31362334589187,
+        "newPassed": null,
+        "shipped": 34.37214546832119
+      },
+      {
+        "bar": 0.94,
+        "case": "desk-1024x768",
+        "check": "imagePathSSIM",
+        "delta": -0.00021565370276122042,
+        "new": 0.9849136649852849,
+        "newPassed": true,
+        "shipped": 0.9851293186880461
+      },
+      {
+        "bar": 0.999,
+        "case": "desk-1024x768",
+        "check": "textRealRowCosine",
+        "delta": -4.018801957883511e-10,
+        "new": 0.9999723739256735,
+        "newPassed": true,
+        "shipped": 0.9999723743275537
+      },
+      {
+        "bar": 1,
+        "case": "desk-1024x768",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "desk-1024x768",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "desk-1024x768",
+        "check": "velocityCosine[0]",
+        "delta": 4.454013543209179e-06,
+        "new": 0.9998252549372078,
+        "newPassed": true,
+        "shipped": 0.9998208009236645
+      },
+      {
+        "bar": 0.999,
+        "case": "desk-1024x768",
+        "check": "velocityCosine[1]",
+        "delta": 7.657178228370753e-06,
+        "new": 0.9992466951556802,
+        "newPassed": true,
+        "shipped": 0.9992390379774518
+      },
+      {
+        "bar": 0.999,
+        "case": "desk-1024x768",
+        "check": "velocityCosine[2]",
+        "delta": -1.6233075320615242e-06,
+        "new": 0.9996989729887711,
+        "newPassed": true,
+        "shipped": 0.9997005962963031
+      },
+      {
+        "bar": 0.999,
+        "case": "desk-1024x768",
+        "check": "velocityCosine[3]",
+        "delta": -1.777361616883688e-06,
+        "new": 0.9998323471174512,
+        "newPassed": true,
+        "shipped": 0.999834124479068
+      },
+      {
+        "bar": null,
+        "case": "desk-1024x768",
+        "check": "wholePipelineSSIM",
+        "delta": -0.011507344968092359,
+        "new": 0.8664504166481202,
+        "newPassed": null,
+        "shipped": 0.8779577616162125
+      },
+      {
+        "bar": 35,
+        "case": "fox-512",
+        "check": "decoderPSNR",
+        "delta": 0.0006360576875863444,
+        "new": 94.13364951416553,
+        "newPassed": true,
+        "shipped": 94.13301345647794
+      },
+      {
+        "bar": null,
+        "case": "fox-512",
+        "check": "imagePathPSNR",
+        "delta": -0.2439343962510918,
+        "new": 34.93270169487531,
+        "newPassed": null,
+        "shipped": 35.176636091126404
+      },
+      {
+        "bar": 0.94,
+        "case": "fox-512",
+        "check": "imagePathSSIM",
+        "delta": -0.0005434788055892481,
+        "new": 0.9896778878602157,
+        "newPassed": true,
+        "shipped": 0.990221366665805
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-512",
+        "check": "textRealRowCosine",
+        "delta": 2.417192002113211e-10,
+        "new": 0.9999724299016971,
+        "newPassed": true,
+        "shipped": 0.9999724296599779
+      },
+      {
+        "bar": 1,
+        "case": "fox-512",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "fox-512",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-512",
+        "check": "velocityCosine[0]",
+        "delta": -3.522164298885855e-06,
+        "new": 0.9998133231022421,
+        "newPassed": true,
+        "shipped": 0.999816845266541
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-512",
+        "check": "velocityCosine[1]",
+        "delta": 1.9156688080279594e-07,
+        "new": 0.9997477223481768,
+        "newPassed": true,
+        "shipped": 0.999747530781296
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-512",
+        "check": "velocityCosine[2]",
+        "delta": 4.145780278963507e-06,
+        "new": 0.9997792681916472,
+        "newPassed": true,
+        "shipped": 0.9997751224113682
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-512",
+        "check": "velocityCosine[3]",
+        "delta": 5.948272121525378e-07,
+        "new": 0.9998624843074848,
+        "newPassed": true,
+        "shipped": 0.9998618894802727
+      },
+      {
+        "bar": null,
+        "case": "fox-512",
+        "check": "wholePipelineSSIM",
+        "delta": -0.0005063119308595931,
+        "new": 0.9011426785053704,
+        "newPassed": null,
+        "shipped": 0.90164899043623
+      },
+      {
+        "bar": 35,
+        "case": "fox-lighthouse-ref2",
+        "check": "decoderPSNR",
+        "delta": 0.00017231364584802122,
+        "new": 87.95195244874527,
+        "newPassed": true,
+        "shipped": 87.95178013509943
+      },
+      {
+        "bar": null,
+        "case": "fox-lighthouse-ref2",
+        "check": "imagePathPSNR",
+        "delta": -0.14261848017068957,
+        "new": 32.934300569805,
+        "newPassed": null,
+        "shipped": 33.07691904997569
+      },
+      {
+        "bar": 0.94,
+        "case": "fox-lighthouse-ref2",
+        "check": "imagePathSSIM",
+        "delta": -0.00040174673897463986,
+        "new": 0.9877225094433612,
+        "newPassed": true,
+        "shipped": 0.9881242561823358
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "referenceLatentCosine[0]",
+        "delta": -1.6542323066914832e-14,
+        "new": 0.9999999999981433,
+        "newPassed": true,
+        "shipped": 0.9999999999981598
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "referenceLatentCosine[1]",
+        "delta": -4.241051954068098e-14,
+        "new": 0.9999999999982453,
+        "newPassed": true,
+        "shipped": 0.9999999999982877
+      },
+      {
+        "bar": 1,
+        "case": "fox-lighthouse-ref2",
+        "check": "referencePositions",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "textRealRowCosine",
+        "delta": 1.4338421561177483e-09,
+        "new": 0.9999724207852319,
+        "newPassed": true,
+        "shipped": 0.9999724193513897
+      },
+      {
+        "bar": 1,
+        "case": "fox-lighthouse-ref2",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "fox-lighthouse-ref2",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "velocityCosine[0]",
+        "delta": 1.074626150832092e-05,
+        "new": 0.9994544422246674,
+        "newPassed": true,
+        "shipped": 0.9994436959631591
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "velocityCosine[1]",
+        "delta": -9.139683741166138e-06,
+        "new": 0.9994425085046242,
+        "newPassed": true,
+        "shipped": 0.9994516481883654
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "velocityCosine[2]",
+        "delta": -9.989349448735751e-07,
+        "new": 0.9997745960554936,
+        "newPassed": true,
+        "shipped": 0.9997755949904384
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-lighthouse-ref2",
+        "check": "velocityCosine[3]",
+        "delta": -2.2440346435503855e-06,
+        "new": 0.9997692648044143,
+        "newPassed": true,
+        "shipped": 0.9997715088390579
+      },
+      {
+        "bar": null,
+        "case": "fox-lighthouse-ref2",
+        "check": "wholePipelineSSIM",
+        "delta": 0.059076364735540565,
+        "new": 0.871153724667519,
+        "newPassed": null,
+        "shipped": 0.8120773599319784
+      },
+      {
+        "bar": 35,
+        "case": "fox-watercolor-ref1",
+        "check": "decoderPSNR",
+        "delta": 0.00018096098071396227,
+        "new": 89.62300858918101,
+        "newPassed": true,
+        "shipped": 89.6228276282003
+      },
+      {
+        "bar": null,
+        "case": "fox-watercolor-ref1",
+        "check": "imagePathPSNR",
+        "delta": 0.25516213811479815,
+        "new": 45.36760917104182,
+        "newPassed": null,
+        "shipped": 45.11244703292702
+      },
+      {
+        "bar": 0.94,
+        "case": "fox-watercolor-ref1",
+        "check": "imagePathSSIM",
+        "delta": 7.805861192844432e-05,
+        "new": 0.9985203434038453,
+        "newPassed": true,
+        "shipped": 0.9984422847919169
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "referenceLatentCosine[0]",
+        "delta": -1.6542323066914832e-14,
+        "new": 0.9999999999981433,
+        "newPassed": true,
+        "shipped": 0.9999999999981598
+      },
+      {
+        "bar": 1,
+        "case": "fox-watercolor-ref1",
+        "check": "referencePositions",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "textRealRowCosine",
+        "delta": -1.1754919260198449e-09,
+        "new": 0.9999724661524734,
+        "newPassed": true,
+        "shipped": 0.9999724673279653
+      },
+      {
+        "bar": 1,
+        "case": "fox-watercolor-ref1",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "fox-watercolor-ref1",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "velocityCosine[0]",
+        "delta": -2.9750795786931405e-06,
+        "new": 0.999830217645153,
+        "newPassed": true,
+        "shipped": 0.9998331927247317
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "velocityCosine[1]",
+        "delta": 1.3594331610411459e-06,
+        "new": 0.999793662398779,
+        "newPassed": true,
+        "shipped": 0.9997923029656179
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "velocityCosine[2]",
+        "delta": 2.2381728504994314e-06,
+        "new": 0.9998146688773285,
+        "newPassed": true,
+        "shipped": 0.999812430704478
+      },
+      {
+        "bar": 0.999,
+        "case": "fox-watercolor-ref1",
+        "check": "velocityCosine[3]",
+        "delta": 7.911574004815236e-07,
+        "new": 0.9998340500925951,
+        "newPassed": true,
+        "shipped": 0.9998332589351946
+      },
+      {
+        "bar": null,
+        "case": "fox-watercolor-ref1",
+        "check": "wholePipelineSSIM",
+        "delta": -0.0010244186660319787,
+        "new": 0.966143537355378,
+        "newPassed": null,
+        "shipped": 0.9671679560214099
+      },
+      {
+        "bar": 35,
+        "case": "harbor-768",
+        "check": "decoderPSNR",
+        "delta": -6.128540778149727e-05,
+        "new": 91.81311926288362,
+        "newPassed": true,
+        "shipped": 91.8131805482914
+      },
+      {
+        "bar": null,
+        "case": "harbor-768",
+        "check": "imagePathPSNR",
+        "delta": 0.0883039215919652,
+        "new": 36.22012820253298,
+        "newPassed": null,
+        "shipped": 36.13182428094102
+      },
+      {
+        "bar": 0.94,
+        "case": "harbor-768",
+        "check": "imagePathSSIM",
+        "delta": 7.857013078893527e-05,
+        "new": 0.9938077640301791,
+        "newPassed": true,
+        "shipped": 0.9937291938993902
+      },
+      {
+        "bar": 0.999,
+        "case": "harbor-768",
+        "check": "textRealRowCosine",
+        "delta": -2.41655762067694e-09,
+        "new": 0.9999724160166636,
+        "newPassed": true,
+        "shipped": 0.9999724184332213
+      },
+      {
+        "bar": 1,
+        "case": "harbor-768",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "harbor-768",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "harbor-768",
+        "check": "velocityCosine[0]",
+        "delta": 4.227711514204202e-08,
+        "new": 0.9998909952482055,
+        "newPassed": true,
+        "shipped": 0.9998909529710903
+      },
+      {
+        "bar": 0.999,
+        "case": "harbor-768",
+        "check": "velocityCosine[1]",
+        "delta": 4.200955191713263e-06,
+        "new": 0.9995632141419237,
+        "newPassed": true,
+        "shipped": 0.999559013186732
+      },
+      {
+        "bar": 0.999,
+        "case": "harbor-768",
+        "check": "velocityCosine[2]",
+        "delta": -2.430229579353238e-06,
+        "new": 0.9996393843563335,
+        "newPassed": true,
+        "shipped": 0.9996418145859128
+      },
+      {
+        "bar": 0.999,
+        "case": "harbor-768",
+        "check": "velocityCosine[3]",
+        "delta": 2.4011832659986965e-06,
+        "new": 0.9998326534497798,
+        "newPassed": true,
+        "shipped": 0.9998302522665138
+      },
+      {
+        "bar": null,
+        "case": "harbor-768",
+        "check": "wholePipelineSSIM",
+        "delta": 0.00141433103864963,
+        "new": 0.9291155097227957,
+        "newPassed": null,
+        "shipped": 0.927701178684146
+      },
+      {
+        "bar": 35,
+        "case": "lighthouse-512",
+        "check": "decoderPSNR",
+        "delta": 7.261824312365661e-05,
+        "new": 89.9409960796281,
+        "newPassed": true,
+        "shipped": 89.94092346138498
+      },
+      {
+        "bar": null,
+        "case": "lighthouse-512",
+        "check": "imagePathPSNR",
+        "delta": -0.04755861940594741,
+        "new": 34.40081154224153,
+        "newPassed": null,
+        "shipped": 34.448370161647475
+      },
+      {
+        "bar": 0.94,
+        "case": "lighthouse-512",
+        "check": "imagePathSSIM",
+        "delta": -8.643818622322552e-05,
+        "new": 0.9911837319361387,
+        "newPassed": true,
+        "shipped": 0.991270170122362
+      },
+      {
+        "bar": 0.999,
+        "case": "lighthouse-512",
+        "check": "textRealRowCosine",
+        "delta": 3.3872882276853034e-10,
+        "new": 0.9999725032146545,
+        "newPassed": true,
+        "shipped": 0.9999725028759257
+      },
+      {
+        "bar": 1,
+        "case": "lighthouse-512",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "lighthouse-512",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "lighthouse-512",
+        "check": "velocityCosine[0]",
+        "delta": 1.5719892226817578e-06,
+        "new": 0.9998525002792205,
+        "newPassed": true,
+        "shipped": 0.9998509282899978
+      },
+      {
+        "bar": 0.999,
+        "case": "lighthouse-512",
+        "check": "velocityCosine[1]",
+        "delta": -1.1598071345542138e-06,
+        "new": 0.9997061900423999,
+        "newPassed": true,
+        "shipped": 0.9997073498495345
+      },
+      {
+        "bar": 0.999,
+        "case": "lighthouse-512",
+        "check": "velocityCosine[2]",
+        "delta": -3.652447599922226e-07,
+        "new": 0.9998104130683565,
+        "newPassed": true,
+        "shipped": 0.9998107783131165
+      },
+      {
+        "bar": 0.999,
+        "case": "lighthouse-512",
+        "check": "velocityCosine[3]",
+        "delta": 1.125758668951704e-06,
+        "new": 0.9998794456221738,
+        "newPassed": true,
+        "shipped": 0.9998783198635048
+      },
+      {
+        "bar": null,
+        "case": "lighthouse-512",
+        "check": "wholePipelineSSIM",
+        "delta": 0.0016361062483999378,
+        "new": 0.8978354986261848,
+        "newPassed": null,
+        "shipped": 0.8961993923777849
+      },
+      {
+        "bar": 35,
+        "case": "ramen-576x448",
+        "check": "decoderPSNR",
+        "delta": -0.00018911423209999612,
+        "new": 91.88706661313151,
+        "newPassed": true,
+        "shipped": 91.88725572736361
+      },
+      {
+        "bar": null,
+        "case": "ramen-576x448",
+        "check": "imagePathPSNR",
+        "delta": -0.12152869191181281,
+        "new": 33.340941551906916,
+        "newPassed": null,
+        "shipped": 33.46247024381873
+      },
+      {
+        "bar": 0.94,
+        "case": "ramen-576x448",
+        "check": "imagePathSSIM",
+        "delta": -0.0001491003341053121,
+        "new": 0.9914373556794989,
+        "newPassed": true,
+        "shipped": 0.9915864560136042
+      },
+      {
+        "bar": 0.999,
+        "case": "ramen-576x448",
+        "check": "textRealRowCosine",
+        "delta": 2.086585237925931e-09,
+        "new": 0.9999723712209179,
+        "newPassed": true,
+        "shipped": 0.9999723691343326
+      },
+      {
+        "bar": 1,
+        "case": "ramen-576x448",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "ramen-576x448",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "ramen-576x448",
+        "check": "velocityCosine[0]",
+        "delta": -2.099323615389892e-06,
+        "new": 0.9998668825432603,
+        "newPassed": true,
+        "shipped": 0.9998689818668757
+      },
+      {
+        "bar": 0.999,
+        "case": "ramen-576x448",
+        "check": "velocityCosine[1]",
+        "delta": -2.3462439791011036e-07,
+        "new": 0.9996734821542067,
+        "newPassed": true,
+        "shipped": 0.9996737167786046
+      },
+      {
+        "bar": 0.999,
+        "case": "ramen-576x448",
+        "check": "velocityCosine[2]",
+        "delta": 2.395955333800437e-06,
+        "new": 0.9998030505577639,
+        "newPassed": true,
+        "shipped": 0.9998006546024301
+      },
+      {
+        "bar": 0.999,
+        "case": "ramen-576x448",
+        "check": "velocityCosine[3]",
+        "delta": 1.9840730909326254e-06,
+        "new": 0.9998810147570456,
+        "newPassed": true,
+        "shipped": 0.9998790306839547
+      },
+      {
+        "bar": null,
+        "case": "ramen-576x448",
+        "check": "wholePipelineSSIM",
+        "delta": -0.0013203864439983448,
+        "new": 0.9479421959026831,
+        "newPassed": null,
+        "shipped": 0.9492625823466815
+      },
+      {
+        "bar": 35,
+        "case": "red-circle-512",
+        "check": "decoderPSNR",
+        "delta": -0.0002997478259487707,
+        "new": 100.45006067525517,
+        "newPassed": true,
+        "shipped": 100.45036042308112
+      },
+      {
+        "bar": null,
+        "case": "red-circle-512",
+        "check": "imagePathPSNR",
+        "delta": -0.0769990230631521,
+        "new": 52.165557725566984,
+        "newPassed": null,
+        "shipped": 52.242556748630136
+      },
+      {
+        "bar": 0.94,
+        "case": "red-circle-512",
+        "check": "imagePathSSIM",
+        "delta": -2.5028434846863234e-06,
+        "new": 0.9998696715085394,
+        "newPassed": true,
+        "shipped": 0.9998721743520241
+      },
+      {
+        "bar": 0.999,
+        "case": "red-circle-512",
+        "check": "textRealRowCosine",
+        "delta": 1.8346224539556033e-10,
+        "new": 0.9999725068905916,
+        "newPassed": true,
+        "shipped": 0.9999725067071293
+      },
+      {
+        "bar": 1,
+        "case": "red-circle-512",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "red-circle-512",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "red-circle-512",
+        "check": "velocityCosine[0]",
+        "delta": -3.2916056377230163e-06,
+        "new": 0.9998421899992005,
+        "newPassed": true,
+        "shipped": 0.9998454816048382
+      },
+      {
+        "bar": 0.999,
+        "case": "red-circle-512",
+        "check": "velocityCosine[1]",
+        "delta": 4.009515636171912e-07,
+        "new": 0.9999497424976677,
+        "newPassed": true,
+        "shipped": 0.999949341546104
+      },
+      {
+        "bar": 0.999,
+        "case": "red-circle-512",
+        "check": "velocityCosine[2]",
+        "delta": 1.2094206414126063e-08,
+        "new": 0.999958925924019,
+        "newPassed": true,
+        "shipped": 0.9999589138298126
+      },
+      {
+        "bar": 0.999,
+        "case": "red-circle-512",
+        "check": "velocityCosine[3]",
+        "delta": 7.716333527696406e-08,
+        "new": 0.9999563329209663,
+        "newPassed": true,
+        "shipped": 0.999956255757631
+      },
+      {
+        "bar": null,
+        "case": "red-circle-512",
+        "check": "wholePipelineSSIM",
+        "delta": -0.00018319120657372956,
+        "new": 0.9984596337122154,
+        "newPassed": null,
+        "shipped": 0.9986428249187891
+      },
+      {
+        "bar": 35,
+        "case": "street-1024x576",
+        "check": "decoderPSNR",
+        "delta": -3.15294487478468e-05,
+        "new": 87.68422249080844,
+        "newPassed": true,
+        "shipped": 87.68425402025719
+      },
+      {
+        "bar": null,
+        "case": "street-1024x576",
+        "check": "imagePathPSNR",
+        "delta": -0.0962494838281387,
+        "new": 29.48948951136275,
+        "newPassed": null,
+        "shipped": 29.585738995190887
+      },
+      {
+        "bar": 0.94,
+        "case": "street-1024x576",
+        "check": "imagePathSSIM",
+        "delta": -0.000794666068495431,
+        "new": 0.9609704389041325,
+        "newPassed": true,
+        "shipped": 0.9617651049726279
+      },
+      {
+        "bar": 0.999,
+        "case": "street-1024x576",
+        "check": "textRealRowCosine",
+        "delta": -7.999301221417454e-11,
+        "new": 0.9999723974238255,
+        "newPassed": true,
+        "shipped": 0.9999723975038185
+      },
+      {
+        "bar": 1,
+        "case": "street-1024x576",
+        "check": "timesteps",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 1,
+        "case": "street-1024x576",
+        "check": "tokenIDs",
+        "delta": 0,
+        "new": 1,
+        "newPassed": true,
+        "shipped": 1
+      },
+      {
+        "bar": 0.999,
+        "case": "street-1024x576",
+        "check": "velocityCosine[0]",
+        "delta": -2.047860066634044e-06,
+        "new": 0.9997661122678109,
+        "newPassed": true,
+        "shipped": 0.9997681601278775
+      },
+      {
+        "bar": 0.999,
+        "case": "street-1024x576",
+        "check": "velocityCosine[1]",
+        "delta": -2.2388107173143545e-05,
+        "new": 0.9993862519032869,
+        "newPassed": true,
+        "shipped": 0.99940864001046
+      },
+      {
+        "bar": 0.999,
+        "case": "street-1024x576",
+        "check": "velocityCosine[2]",
+        "delta": 5.527356644607906e-07,
+        "new": 0.9995865353306851,
+        "newPassed": true,
+        "shipped": 0.9995859825950206
+      },
+      {
+        "bar": 0.999,
+        "case": "street-1024x576",
+        "check": "velocityCosine[3]",
+        "delta": 2.0521780719207072e-08,
+        "new": 0.9997367746519905,
+        "newPassed": true,
+        "shipped": 0.9997367541302098
+      },
+      {
+        "bar": null,
+        "case": "street-1024x576",
+        "check": "wholePipelineSSIM",
+        "delta": -0.006993083576299575,
+        "new": 0.8323985778442632,
+        "newPassed": null,
+        "shipped": 0.8393916614205628
+      }
+    ]
+  },
+  "schema": 1
+}

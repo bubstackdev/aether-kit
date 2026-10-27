@@ -1,0 +1,44 @@
+{"message": "start", "stage": "checkpoint", "t": 1793122057.595}
+{"message": "done", "peakRSSGB": 0.23, "seconds": 5.981, "stage": "checkpoint", "t": 1793122063.576}
+{"message": "start", "stage": "build-textEncoder", "t": 1793122063.577}
+{"message": "done", "peakRSSGB": 13.03, "seconds": 0.989, "stage": "build-textEncoder", "t": 1793122064.566}
+{"message": "start", "stage": "quantize-textEncoder", "t": 1793122080.118}
+{"message": "done", "modules": {"int8-linear-perchannel": 136}, "peakRSSGB": 13.03, "seconds": 2.733, "stage": "quantize-textEncoder", "t": 1793122082.851}
+{"message": "start", "stage": "export-textEncoder", "t": 1793122082.851}
+{"bytes": 3116453776, "message": "done", "peakRSSGB": 19.12, "seconds": 8.618, "stage": "export-textEncoder", "t": 1793122091.47}
+{"message": "start", "stage": "self-check-textEncoder", "t": 1793122091.711}
+{"cosine": [{"text_embeds": 0.999602}, {"text_embeds": 0.999971}], "message": "done", "peakRSSGB": 19.12, "seconds": 9.846, "stage": "self-check-textEncoder", "t": 1793122101.557}
+{"message": "start", "stage": "build-denoiser0", "t": 1793122101.676}
+{"message": "done", "peakRSSGB": 20.89, "seconds": 1.49, "stage": "build-denoiser0", "t": 1793122103.166}
+{"message": "start", "stage": "quantize-denoiser0", "t": 1793122104.459}
+{"message": "done", "modules": {"int8-linear-perchannel": 51, "none": 3}, "peakRSSGB": 20.89, "seconds": 1.27, "stage": "quantize-denoiser0", "t": 1793122105.73}
+{"message": "start", "stage": "export-denoiser0", "t": 1793122105.73}
+{"bytes": 1903859828, "message": "done", "peakRSSGB": 22.99, "seconds": 5.741, "stage": "export-denoiser0", "t": 1793122111.471}
+{"message": "start", "stage": "self-check-denoiser0", "t": 1793122111.574}
+{"cosine": [{"cond": 1.0, "image_1": 0.999723, "text_1": 0.999484}, {"cond": 1.0, "image_1": 0.999691, "text_1": 0.999458}], "message": "done", "peakRSSGB": 28.25, "seconds": 2.153, "stage": "self-check-denoiser0", "t": 1793122113.727}
+{"message": "start", "stage": "build-denoiser1", "t": 1793122113.83}
+{"message": "done", "peakRSSGB": 28.25, "seconds": 0.746, "stage": "build-denoiser1", "t": 1793122114.576}
+{"message": "start", "stage": "quantize-denoiser1", "t": 1793122115.786}
+{"message": "done", "modules": {"int8-linear-perchannel": 8, "none": 8}, "peakRSSGB": 28.25, "seconds": 0.743, "stage": "quantize-denoiser1", "t": 1793122116.528}
+{"message": "start", "stage": "export-denoiser1", "t": 1793122116.529}
+{"bytes": 1283962582, "message": "done", "peakRSSGB": 28.5, "seconds": 3.32, "stage": "export-denoiser1", "t": 1793122119.848}
+{"message": "start", "stage": "self-check-denoiser1", "t": 1793122119.97}
+{"cosine": [{"image_2": 0.99989, "text_2": 0.999646}, {"image_2": 0.999848, "text_2": 0.999481}], "message": "done", "peakRSSGB": 31.11, "seconds": 1.247, "stage": "self-check-denoiser1", "t": 1793122121.216}
+{"message": "start", "stage": "build-denoiser2", "t": 1793122121.32}
+{"message": "done", "peakRSSGB": 32.95, "seconds": 0.811, "stage": "build-denoiser2", "t": 1793122122.13}
+{"message": "start", "stage": "quantize-denoiser2", "t": 1793122123.487}
+{"message": "done", "modules": {"int8-linear-perchannel": 10, "none": 9}, "peakRSSGB": 32.95, "seconds": 0.804, "stage": "quantize-denoiser2", "t": 1793122124.291}
+{"message": "start", "stage": "export-denoiser2", "t": 1793122124.291}
+{"bytes": 1444851647, "message": "done", "peakRSSGB": 33.8, "seconds": 3.582, "stage": "export-denoiser2", "t": 1793122127.874}
+{"message": "start", "stage": "self-check-denoiser2", "t": 1793122127.976}
+{"cosine": [{"velocity": 0.999422}, {"velocity": 0.999366}], "message": "done", "peakRSSGB": 36.79, "seconds": 1.616, "stage": "self-check-denoiser2", "t": 1793122129.592}
+{"message": "start", "stage": "build-vae", "t": 1793122129.697}
+{"message": "done", "peakRSSGB": 37.13, "seconds": 2.467, "stage": "build-vae", "t": 1793122132.165}
+{"message": "start", "stage": "export-vaeDecoder", "t": 1793122132.204}
+{"bytes": 101482800, "message": "done", "peakRSSGB": 37.2, "seconds": 1.97, "stage": "export-vaeDecoder", "t": 1793122134.174}
+{"message": "start", "stage": "export-vaeEncoder", "t": 1793122134.488}
+{"bytes": 70771852, "message": "done", "peakRSSGB": 37.2, "seconds": 1.889, "stage": "export-vaeEncoder", "t": 1793122136.377}
+{"message": "start", "stage": "self-check-vaeEncoder", "t": 1793122136.514}
+{"cosine": [{"reference_latents": 1.0}, {"reference_latents": 1.0}], "message": "done", "peakRSSGB": 37.2, "seconds": 0.231, "stage": "self-check-vaeEncoder", "t": 1793122136.745}
+{"message": "start", "stage": "tokenizer", "t": 1793122136.88}
+{"message": "done", "peakRSSGB": 37.2, "seconds": 0.01, "stage": "tokenizer", "t": 1793122136.89}
