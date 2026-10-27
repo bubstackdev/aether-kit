@@ -2,7 +2,7 @@
 
 Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
-**Status: 0.0.1 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. See the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
+**Status: 0.0.2 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. See the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 | `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload; Qwen3-VL image + text prompts (`VisionLanguageSession`). |
 | `AetherVision` | **Experimental** | Core-AI-independent image decoding and Qwen3-VL preprocessing. |
 | `AetherH3`, `AetherH3Tokenizers` | **Experimental** | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |
-| `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. End-to-end media qualification is pending. |
+| `AetherH3CoreAI` | **Experimental** | H3 native profile stages behind `H3VideoSession`: prompt conditioning, keyframes, denoising, video/audio decoding. Graph, trajectory and memory gates pass at 960×544 under an 18 GiB bar; media audit is pending ([guide](docs/h3-integration.md)). |
 | `AetherFlux2`, `AetherFlux2Tokenizers` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B CPU contracts: bundle validation, padded Qwen3 prompt, empirical-shift schedule, 4-axis rotary, reference-image policy, and a local tokenizer. |
 | `AetherFlux2CoreAI` | **Experimental** (0.0.2) | FLUX.2 [klein] 4B text-to-image and multi-reference editing: Qwen3 encoder → three denoiser segments → Euler → VAE ([guide](docs/flux2-klein.md)). |
 | `AetherSpeech` | **Experimental** (0.0.2) | Kokoro-82M CPU contracts: typed voices, phoneme validation against the bundle vocabulary, an app-supplied `SpeechPhonemizer` protocol (no bundled G2P), bundle pins, duration alignment and seeded noise. |
@@ -27,13 +27,13 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
 - Apple silicon, macOS 27.
 - Xcode 27.1 / Swift 6.4. Several targets enable Swift's experimental `Lifetimes` feature, which Core AI's span-based APIs require, so older toolchains are unsupported.
-- **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434).** Other Macs are expected to work but are unqualified. The package declares iOS 27, but iOS is unqualified in this repository.
+- **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434).** Other Macs are expected to work but are unqualified. The package declares iOS 27, but iOS is unqualified in this repository, except Kokoro speech on one iPhone.
 - Model assets: your own local Core AI exports (see [Models and assets](#models-and-assets)).
 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/bubstackdev/aether-kit", exact: "0.0.1")
+.package(url: "https://github.com/bubstackdev/aether-kit", exact: "0.0.2")
 ```
 
 ```swift
@@ -81,7 +81,7 @@ The quiet-machine column was measured the same day on a parallel development lin
 
 ## FLUX.2 [klein] text-to-image and reference editing (experimental)
 
-`Flux2GenerationSession` runs a locally exported FLUX.2 [klein] 4B bundle (Apache-2.0 checkpoint). It generates images in four steps without guidance, optionally conditioned on up to two reference pictures. Prompt and reference preparation, residency, cancellation and unload follow the Krea session's contract. Native parity against independent float32 Diffusers references passes at 12 cases from 512² to 1344×768. See the [FLUX.2 klein guide](docs/flux2-klein.md) for the bundle recipe, API and the scope of that evidence.
+`Flux2GenerationSession` runs a locally exported FLUX.2 [klein] 4B bundle (Apache-2.0 checkpoint). It generates images in four steps without guidance, optionally conditioned on up to two reference pictures. Prompt and reference preparation, residency, cancellation and unload follow the Krea session's contract. Export the bundle with `Forge/flux2` in this repository. The qualified 0.0.2 bundle passes native parity against independent float32 Diffusers references computed on the CPU at 12 cases from 512² to 1344×768 (113/113 checks), and the native lifecycle suite (44/44). See the [FLUX.2 klein guide](docs/flux2-klein.md) for the export, API and the scope of that evidence.
 
 ## Language generation (experimental)
 
@@ -94,11 +94,13 @@ let reply = try await session.generate(prompt: renderedTokenIDs, maximumTokens: 
 await session.unload()
 ```
 
-Bundles are registered with a `language-model.json` manifest that Kit verifies before loading. Tokens stream while the next decode step runs on the GPU. Assets with the 0.0.2 bucketed step contract keep a fixed set of input shapes and need no model reloads; 0.0.1-contract assets still reload the native model every 128 submissions. See [language generation](docs/language-generation.md).
+Bundles are registered with a `language-model.json` manifest that Kit verifies before loading. Tokens stream while the next decode step runs on the GPU. `AetherLanguageTokenizers` renders chat messages through the model's own chat template into the token IDs the session takes.
+
+New exports use the 0.0.2 bucketed step contract: input shapes stay in a fixed set (one 64-token prefill width, caches grown in 256-row steps). Core AI still retains Metal memory each time a model's input shape changes, so the session reloads the model once the memory retained since load passes a budget (2 GiB by default). It reloads at idle when it can; for the Qwen3-4B writer that is about once every 35 long prompts. 0.0.1-contract assets still reload every 128 submissions. Qualified models: Qwen3-0.6B, an abliterated Qwen3-4B-Instruct-2507 (Atelier's writer), and Qwen3-VL-2B and an abliterated Qwen3-VL-4B (Atelier's describer) with image input through `VisionLanguageSession` ([Qwen3-VL guide](docs/qwen3-vl.md)). See [language generation](docs/language-generation.md).
 
 ## H3 video with audio (experimental)
 
-`H3VideoSession` takes an `H3VideoRequest` and returns frames and audio. The request carries the prompt, geometry, seed, optional first and last keyframes, and whether to generate audio. It runs over a validated schema-3 H3 profile. The stages are implemented and have been exercised natively, but committed end-to-end qualification records (graphs, trajectory, decoders, lifecycle, media audit) are still pending, so treat outputs and APIs as experimental. See [H3 foundations](docs/h3-foundations.md) and [H3 integration](docs/h3-integration.md).
+`H3VideoSession` takes an `H3VideoRequest` and returns frames and audio. The request carries the prompt, geometry, seed, optional first and last keyframes, and whether to generate audio. It runs over a validated schema-3 H3 profile. At 960×544 for text-to-video+audio and first-frame-to-video+audio, the denoiser graphs (blocks 0 and 49 at real step-0 contexts, prepare and heads), the decoders and the first-frame encoder pass against a CPU oracle, and all 457 block-boundary hashes of a capture replay. With measured admission (`H3ProfileEngine.measuredAdmission`), a render is refused before any stage loads unless its largest stage fits; the worst case is 15.3 GiB, under an 18 GiB bar. Measured admission knows one profile on one Mac (`c49d8dbf`, Turbo8, M5 Max) and refuses others. A 124-frame, eight-step render took about 6–7 minutes on the qualified Mac (busy-host timings). Media audit and per-stage lifecycle qualification are pending, so treat outputs and APIs as experimental. See [H3 integration](docs/h3-integration.md) and [H3 foundations](docs/h3-foundations.md).
 
 ## Kokoro speech synthesis (experimental)
 
@@ -153,8 +155,11 @@ Real-weight suites are opt-in and skipped by default:
 - `AETHER_NATIVE_DECODER_PIPELINE_QUALIFICATION`
 - the H3 profile tests
 - `AETHER_NATIVE_KOKORO_QUALIFICATION` (via `Scripts/qualify-kokoro-native.sh`)
+- `AETHER_NATIVE_FLUX2_QUALIFICATION` and `AETHER_NATIVE_FLUX2_LIFECYCLE`
+- `AETHER_NATIVE_LANGUAGE_QUALIFICATION`, `AETHER_NATIVE_LANGUAGE_MEMORY_BUDGET`, `AETHER_NATIVE_LANGUAGE_OVERLAP` and the other `AETHER_NATIVE_LANGUAGE_*` suites
+- `AETHER_NATIVE_QWEN3VL`, `AETHER_NATIVE_QWEN3VL_SESSION` and `AETHER_NATIVE_VL_MEMORY`
 
-Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.1 checklist](docs/release-0.0.1-checklist.md) and the [SDK roadmap](docs/sdk-roadmap.md).
+Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Python export and reference tooling runs in Forge's locked environments: `uv sync --frozen --project Forge` (language, Qwen3-VL, Kokoro and FLUX.2) and `uv sync --frozen --project Forge/h3-oracle` (H3). Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.2 release notes](docs/release-notes/0.0.2.md) and the [0.0.2 roadmap](docs/roadmap-0.0.2.md).
 
 ## Known limitations
 
@@ -162,9 +167,10 @@ Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. 
 - **No Krea bundle specification**, and no hosted assets or download transport.
 - **Slow first image:** model first-load dominates the first image in a process.
 - **Krea progress callbacks are synchronous:** a slow observer stalls sampling.
-- **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped.
-- **Language:** 0.0.1-contract (running-position) assets reload the native model every 128 submissions. The bucketed contract avoids reloads at a per-step cost (about 0.88× an unrecycled running step on Qwen3-0.6B fp16, with a longer time to first token) and is qualified on that model on one Mac only.
-- **H3:** end-to-end media, lifecycle and memory qualification of `H3VideoSession` is pending. Earlier H3 gates are historical, because their assets were lost.
+- **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped (except H3's measured admission entry).
+- **Language:** Core AI retains Metal memory on every input-shape change until a model is released. Sessions bound it by reloading the model once a growth budget (2 GiB by default) is spent, at idle where possible; this is a workaround, not a fix. Bucketed decode runs at about 0.88× the speed of an unrecycled running-contract step (Qwen3-0.6B fp16). 0.0.1-contract assets reload every 128 submissions.
+- **Qwen3-VL:** Core AI wires a separate copy of the decoder's text weights for text-only and image prompts, so a one-image request on the 4B wires about 16 GiB, and opening the decoder reads its 22.5 GiB compiled file into the page cache. Images snap to five fixed grids (stretching by up to about 15%, more beyond 16:9); one image per prompt; qualified on macOS only ([limits](docs/qwen3-vl.md#limits-and-follow-ups)).
+- **H3:** media audit and per-stage lifecycle qualification are pending. Measured admission knows one profile on one Mac (`c49d8dbf`, Turbo8, M5 Max) and refuses others. The qualified profile is a local export outside this repository. The 2026-10-18 gates are historical, because their assets were lost.
 - **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory until unload; bucket 2048 alone adds about 8 GB. Sessions therefore cap utterances at 1024 frames (about 25.6 s) by default on macOS and 512 (about 12.8 s) on iOS, where one iPhone was qualified; `frameCap: .extended` raises the cap to 2048, and longer segments are refused with their length and the cap. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. 0.0.2 ships the float32 decoder only; the float16/int8 export flags are experimental and fail qualification.
 - **CI scope:** PR checks cover weight-free contracts and consumer integration. Real-weight GPU qualification remains an explicit local operation.
 
