@@ -1,0 +1,36 @@
+FoundationModels custom-model probe, 2026-10-27 (macOS 27, Xcode 27.1 SDK, Swift 6.4; scratch package, not committed).
+
+A fake FoundationModels.LanguageModel whose LanguageModelExecutor prints what it receives and streams canned text through
+LanguageModelExecutorGenerationChannel (one reasoning event, then the reply split at spaces as .response(.appendText)).
+No model and no GPU. Three requests:
+  1. LanguageModelSession(model: FakeModel(reply: "Hello there, world"), instructions: "Be brief.")
+       .respond(to: "Say hi", options: GenerationOptions(samplingMode: .random(top: 40, seed: 7), maximumResponseTokens: 32))
+  2. LanguageModelSession(model: FakeModel(reply: #"{"look": "silver braid", "count": 3}"#)).respond(to: "Describe", generating: Look.self)
+  3. streamResponse(to: "x", generating: Look.self) with reply #"{"look": "amber eyes", "count": 2}"#
+where @Generable struct Look { @Guide(description: "a short look") var look: String; var count: Int }.
+
+Run 1: capabilities [.guidedGeneration, .reasoning]
+  executor: entries ["instructions", "prompt(1)"]
+  executor: schema nil
+  executor: sampling Optional(FoundationModels.GenerationOptions.SamplingMode.Kind.randomTopK(40, seed: Optional(7))) max Optional(32) includeSchemaInPrompt nil
+text: Hello there, world
+  executor: entries ["prompt(1)"]
+  executor: schema {"required":["look","count"],"additionalProperties":false,"title":"Look","properties":{"look":{"type":"string","description":"a short look"},"count":{"type":"integer"}},"x-order":["look","count"],"type":"object"}
+  executor: sampling nil max nil includeSchemaInPrompt Optional(true)
+generable: Look(look: "silver braid", count: 3)
+transcript entries after: 3
+  (request 3: same schema; six snapshots)
+  snapshot: look: nil, count: nil
+  snapshot: look: Optional("amber"), count: nil
+  snapshot: look: Optional("amber eyes"), count: nil
+  snapshot: look: Optional("amber eyes"), count: Optional(2)
+  snapshot: look: Optional("amber eyes"), count: Optional(2)
+  snapshot: look: Optional("amber eyes"), count: Optional(2)
+snapshots: 6
+
+Run 2: capabilities []
+  executor: entries ["instructions", "prompt(1)"]
+  executor: schema nil
+  executor: sampling Optional(FoundationModels.GenerationOptions.SamplingMode.Kind.randomTopK(40, seed: Optional(7))) max Optional(32) includeSchemaInPrompt nil
+text: Hello there, world
+  request 2 threw before reaching the executor: "The selected model does not support guided generation. Consider trying again with a different model."
