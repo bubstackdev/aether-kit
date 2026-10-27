@@ -6,6 +6,7 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ### Added
 
+- **Sampling on the image path:** `VisionLanguageSession` and the image `LanguageGenerationSession.generate` have a sampling entry point (`sampling:`, optional `constraint:`, returning `LanguageGenerationResult`) through the shared decode loop, so Qwen3-VL prompts take seeded random sampling, the repetition penalty and token constraints as text requests do. The greedy entry points are unchanged, token for token ([evidence](docs/evidence/qwen3-vl-sampling-2026-10-27.json)).
 - **AetherLanguageRuntime:** a new backend-neutral library with no Core AI, Metal or AetherKit dependency, checked at macOS 14 and iOS 17. It holds the `LanguageBackend` protocol, the seeded sampler (repetition penalty, temperature, top-k, top-p; matched against Transformers 4.57.3's processors), a token-constraint hook for constrained decoding, and the shared decode loop ([design](docs/language-runtime-seam.md)).
 - **AetherLanguageCoreAI:** `LanguageGenerationSession` conforms to `LanguageBackend`. Greedy stays the default, and its output is token-identical to 0.0.2 on the qualified models. Sampling and constraints are opt-in per request ([guide](docs/language-generation.md)).
 
