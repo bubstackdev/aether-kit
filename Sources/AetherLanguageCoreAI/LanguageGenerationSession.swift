@@ -36,8 +36,10 @@ public actor LanguageGenerationSession {
     private let valueTemplate: NDArrayDescriptor
     private var keyDescriptor: NDArrayDescriptor
     private var valueDescriptor: NDArrayDescriptor
-    private let vocabularySize: Int
-    private let stopTokenIDs: Set<Int>
+    /// Rows of the logits head (``LanguageBackend``).
+    public nonisolated let vocabularySize: Int
+    /// The registered end-of-sequence IDs (``LanguageBackend``).
+    public nonisolated let stopTokenIDs: Set<Int>
     private struct ReopenConfiguration: Sendable {
         let url: URL
         let compute: ModelComputePolicy
@@ -71,6 +73,8 @@ public actor LanguageGenerationSession {
     private var materializedTokens = 0
     private var growthCount = 0
     private let capacity: Int
+    /// The registered context: prompt plus output (``LanguageBackend``).
+    public nonisolated var maximumContextLength: Int { capacity }
     private let initialCapacity: Int
     /// Largest prefill submission (the declared export bound), nil when undeclared.
     private let prefillLimit: Int?
@@ -301,26 +305,54 @@ public actor LanguageGenerationSession {
         return last
     }
 
+    /// Greedy generation from a rendered prompt: the default ``LanguageGenerationRequest`` through
+    /// ``generate(_:prefillChunkSize:observer:onToken:)``.
     public func generate(prompt: [Int], maximumTokens: Int = 48, prefillChunkSize: Int? = nil,
                   onToken: (@Sendable (Int) async throws -> Void)? = nil,
                   observer: Observer? = nil) async throws -> Reply {
-        guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
-        try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
+        var delivery: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?
+        if let onToken {
+            delivery = { token in
+                try await onToken(token.id)
+                return .continue
+            }
+        }
+        let result = try await generate(LanguageGenerationRequest(prompt: prompt, maximumTokens: maximumTokens),
+                                        prefillChunkSize: prefillChunkSize, observer: observer, onToken: delivery)
+        return Reply(tokens: result.tokens, timeToFirstTokenSeconds: result.timeToFirstTokenSeconds, totalSeconds: result.totalSeconds,
+                     stopReason: result.stopReason.rawValue)
+    }
+
+    /// ``LanguageBackend``: one request with the default prefill plan.
+    public func generate(_ request: LanguageGenerationRequest,
+                         onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?) async throws
+        -> LanguageGenerationResult {
+        try await generate(request, prefillChunkSize: nil, observer: nil, onToken: onToken)
+    }
+
+    /// One request with this backend's own options: the prefill chunk size and an observer of native submissions.
+    /// Sampling and the request's constraint run on the host after each step joins (``LanguageDecodeLoop``); they add
+    /// no input, shape or submission, so step shapes, the memory budget and GPU admission are those of greedy decoding.
+    public func generate(_ request: LanguageGenerationRequest, prefillChunkSize: Int?, observer: Observer?,
+                         onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?) async throws
+        -> LanguageGenerationResult {
+        guard request.maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
+        try request.sampling.validate()
+        try begin(prompt: request.prompt, reserve: request.maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
-        let start = ContinuousClock.now
-        let next = try Self.greedy(await prefill(prompt, chunkSize: prefillChunkSize, observer: observer))
-        let first = elapsed(start)
-        // Token delivery overlaps the following native step instead of idling the GPU.
-        let decoded = try await LanguageDecodeLoop.run(first: next, prompt: prompt.count, maximumTokens: maximumTokens,
-            stopTokenIDs: stopTokenIDs, step: { token, position in
-                try Self.greedy(await self.step(tokens: [Int32(token)], position: position, observer: observer))
-            }, onToken: onToken)
-        return Reply(tokens: decoded.tokens, timeToFirstTokenSeconds: first, totalSeconds: elapsed(start), stopReason: decoded.reason)
+        // Token delivery and the constraint overlap the following native step instead of idling the GPU.
+        let output = try await LanguageDecodeLoop.generate(prompt: request.prompt, maximumTokens: request.maximumTokens,
+            stopTokenIDs: stopTokenIDs, vocabularySize: vocabularySize, sampling: request.sampling, processor: request.constraint,
+            prefill: { try await self.prefill(request.prompt, chunkSize: prefillChunkSize, observer: observer) },
+            step: { token, position in try await self.step(tokens: [Int32(token)], position: position, observer: observer) },
+            onToken: onToken)
+        return LanguageGenerationResult(tokens: output.tokens, stopReason: output.stopReason, seed: output.seed,
+                                        timeToFirstTokenSeconds: output.timeToFirstTokenSeconds, totalSeconds: output.totalSeconds)
     }
 
     /// Last-row logits after a fresh-cache prefill. Different chunk sizes exercise
