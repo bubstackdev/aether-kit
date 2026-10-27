@@ -53,10 +53,12 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Spikes
 
-Each spike ends in a go/no-go report:
-- a hybrid recurrent-state language model (Granite 4.0-H);
-- ACE-Step music generation;
-- TripoSR image-to-3D.
+Each spike ends in a go/no-go report. All three start from a 0.0.2 feasibility report, which recommends going ahead and ends with what it leaves open for 0.0.3:
+- a hybrid recurrent-state language model (Granite 4.0-H): [report](spikes/hybrid-state-2026-10.md), go, at about 190 tok/s on the M5 Max with fixed-shape decode; the first open item is how its state contract fits the bucketed decode contract that shipped;
+- ACE-Step music generation: [report](spikes/ace-step-2026-10.md), a conditional go for ACE-Step 1.5 text-to-music on Mac, gated on an 8-step fp16 trajectory check from real prompts;
+- TripoSR image-to-3D: [report](spikes/triposr-2026-10.md), go for image to OBJ and USDZ at 256³, about 2.5 s per mesh.
+
+The scripts and compact results behind each report are under `Spikes/`.
 
 ## Parallel track: an app-facing language product
 
