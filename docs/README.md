@@ -52,7 +52,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 
 ## 0.0.1 release (2026-10-26)
 
-[Release notes](release-notes/0.0.1.md), [release checklist](release-0.0.1-checklist.md) and the [changelog](../CHANGELOG.md). The [0.0.2 roadmap](roadmap-0.0.2.md) records the agreed next scope. [Experimental language generation](language-generation.md) covers the dense-language runtime ported from the parallel local line (`local-line-2026-10-26`); [Qwen3-VL image input](qwen3-vl.md) tracks the in-progress vision path.
+[Release notes](release-notes/0.0.1.md), [release checklist](release-0.0.1-checklist.md) and the [changelog](../CHANGELOG.md). The [0.0.2 roadmap](roadmap-0.0.2.md) records the agreed next scope. [Experimental language generation](language-generation.md) covers the dense-language runtime ported from the parallel local line (`local-line-2026-10-26`); [Qwen3-VL image input](qwen3-vl.md) covers image + text prompts.
 
 ## FLUX.2 [klein] 4B (0.0.2, 2026-10-26)
 

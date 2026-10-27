@@ -16,4 +16,13 @@ The session detects the asset's ``LanguageStepContract`` from its function signa
 
 - ``LanguageGenerationSession``
 - ``LanguageStepContract``
+
+### Image input (Qwen3-VL)
+
+- ``VisionLanguageSession``
+- ``LanguageVisionEncoder``
+- ``LanguageVisionSpecialization``
+- ``LanguageVisionPrompt``
+- ``LanguageImageFeatures``
+- ``LanguageImageTokens``
 - ``LanguageGenerationError``
