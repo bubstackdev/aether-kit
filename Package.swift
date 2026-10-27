@@ -71,7 +71,7 @@ let package = Package(
         .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI"]),
         .testTarget(name: "AetherNativeTests", dependencies: [
             "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
-            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguageCoreAI",
+            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguageCoreAI", "AetherLanguageTokenizers",
         ]),
     ]
 )

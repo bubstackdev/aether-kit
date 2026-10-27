@@ -16,6 +16,7 @@ Outputs, under the new `--output` directory:
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -95,6 +96,9 @@ def main() -> None:
         full = model(torch.tensor([prompt + forced])).logits[0].double().numpy()
     # Row r predicts token r + 1: the prompt's last row, then one row per forced token except the last.
     reference = full[len(prompt) - 1:len(prompt) + len(forced) - 1]
+    # Free the upstream model before loading the port: at 4B, two float32 copies would need about 32 GB.
+    del model, out, full
+    gc.collect()
 
     cfg = read_config(args.checkpoint)
     port = {}

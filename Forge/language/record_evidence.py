@@ -2,7 +2,10 @@
 """Compose the language decode-contract evidence record (development tooling only; standard library only).
 
     python3 Forge/language/record_evidence.py --native <native report .json> --reference <reference dir> \
-        --bucketed <bucketed export dir> --running <running export dir> --output docs/evidence/<name>.json
+        --bucketed <bucketed export dir> [--running <running export dir>] [--chat <native chat report .json>] \
+        --output docs/evidence/<name>.json
+A model qualified on the bucketed contract alone omits `--running` (no before/after comparison). `--chat` binds the
+native chat check (LanguageChatQualificationTests: tokenizer render, bundle open, memory) the same way.
 
 Copies the native report next to the record (`<name>-native.json`) and binds everything by SHA-256: the native
 report, the reference record and logits, each export report and model file, and this directory's scripts.
@@ -47,7 +50,7 @@ def summary(report: dict, export_dir: Path) -> dict:
         "teacherForced": {"rows": len(report["forcedRows"]), "minimumCosine": round(report["forcedMinimumCosine"], 7),
                           "maximumAbs": round(report["forcedMaximumAbs"], 5),
                           "argmaxMismatches": report["forcedArgmaxMismatches"], "nearTies": report["forcedNearTies"]},
-        "greedy": {"tokens": len(report["greedyTokens"]), "firstDivergence": report["greedyFirstDivergence"],
+        "greedy": {"tokens": len(report["greedyTokens"]), "firstDivergence": report.get("greedyFirstDivergence"),
                    "divergenceReferenceMargin": (report.get("greedyDivergenceRow") or {}).get("referenceMargin"),
                    "divergenceNativeRankInReference": (report.get("greedyDivergenceRow") or {}).get("nativeRankInReference")},
         "longRun": {"decodeSteps": report["longRunSteps"], "modelReloads": report["longRunModelReloads"],
@@ -101,10 +104,25 @@ def long_context(native: dict) -> dict | None:
     return out
 
 
+def chat(report_path: Path, output: Path) -> dict:
+    """The native chat check's memory and timings, with its report copied next to the record."""
+    report = json.loads(report_path.read_text())
+    copied = output.with_name(output.stem + "-chat.json")
+    shutil.copyfile(report_path, copied)
+    keys = ("openSeconds", "unloadSeconds", "idleFootprintMiB", "peakFootprintMiB", "afterUnloadFootprintMiB",
+            "idleMetalMiB", "peakMetalMiB", "afterUnloadMetalMiB", "greedyRepeatIdentical")
+    return {**{k: report.get(k) for k in keys},
+            "runs": [{k: r[k] for k in ("name", "promptTokens", "replyTokens", "stopReason", "timeToFirstTokenSeconds",
+                                        "totalSeconds", "text")} for r in report["runs"]],
+            "report": {"file": copied.name, "sha256": sha256(copied)}}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    for name in ("native", "reference", "bucketed", "running", "output"):
+    for name in ("native", "reference", "bucketed", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--running", type=Path)
+    parser.add_argument("--chat", type=Path)
     args = parser.parse_args()
     native = json.loads(args.native.read_text())
     reference = json.loads((args.reference / "reference.json").read_text())
@@ -128,9 +146,10 @@ def main() -> None:
         "tolerance": native["tolerance"],
         "stopTokenNote": native["stopTokenNote"],
         "bucketed": summary(native["bucketed"], args.bucketed),
-        "running": summary(native["running"], args.running),
-        "longRunTokensIdenticalPrefix": native["bucketedLongRunMatchesRunning"],
-        "pairedTiming": paired(native),
+        "running": summary(native["running"], args.running) if args.running else None,
+        "longRunTokensIdenticalPrefix": native.get("bucketedLongRunMatchesRunning") if args.running else None,
+        "pairedTiming": paired(native) if args.running else None,
+        "chat": chat(args.chat, args.output) if args.chat else None,
         "longContext": long_context(native),
         "nativeReport": {"file": copied.name, "sha256": sha256(copied)},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(here.glob("*.py"))},

@@ -81,6 +81,12 @@ private let environment = ProcessInfo.processInfo.environment
     #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
     try FileManager.default.removeItem(at: tokenizer.appendingPathComponent("chat_template.json"))
     #expect(try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle).lastPathComponent == "tokenizer")
+    // An unlisted dotfile (Finder's .DS_Store) is ignored; a missing registered file refuses.
+    try Data("finder".utf8).write(to: tokenizer.appendingPathComponent(".DS_Store"))
+    #expect(try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle).lastPathComponent == "tokenizer")
+    try FileManager.default.removeItem(at: tokenizer.appendingPathComponent("chat_template.jinja"))
+    #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
+    try template.write(to: tokenizer.appendingPathComponent("chat_template.jinja"))
     try register(tokenizerDirectory: "tokenizer", hash: digest, files: files.merging(["tokenizer.json": String(repeating: "c", count: 64)]) { $1 })
     #expect(throws: AetherError.self) { try LanguageModelManifest.load(from: bundle).verifyTokenizer(in: bundle) }
 }
