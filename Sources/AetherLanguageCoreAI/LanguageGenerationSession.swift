@@ -55,6 +55,9 @@ public actor LanguageGenerationSession {
     /// The default memory budget: reload once warm requests have retained 1 GiB of Metal
     /// allocations since the model loaded.
     public static let defaultMemoryGrowthBudgetBytes = 1 << 30
+    /// The smallest budget `open` accepts (256 MiB): a writer request retains about 137 MiB, so a
+    /// smaller budget would reload before nearly every request.
+    public static let minimumMemoryGrowthBudgetBytes = LanguageMemoryBudget.minimumLimitBytes
     /// The asset's KV addressing, detected from the `main` function signature.
     public nonisolated let contract: LanguageStepContract
     private struct StepShape: Hashable { let count: Int; let capacity: Int }
@@ -81,21 +84,18 @@ public actor LanguageGenerationSession {
     private var ropeDelta = 0
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
-    private var pendingGPU: GPUAdmissionAttempt?
-    private var admissionWithdrawn = false
+    private let admission = LanguageRequestAdmission()
 
     /// For an owning session's close (`VisionLanguageSession.unload()`): withdraws a request
-    /// waiting for GPU admission and refuses later admissions, so the owner never waits behind the
+    /// waiting for GPU admission and refuses later requests, so the owner never waits behind the
     /// GPU queue before it unloads this session.
-    package func withdrawPendingAdmission() {
-        admissionWithdrawn = true
-        pendingGPU?.withdraw()
-    }
+    package func withdrawPendingAdmission() { admission.withdraw() }
     public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
     /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
-    /// grant after validation and holds it until its native submissions have joined. Loading is not admitted.
+    /// grant after validation and holds it through a memory-budget reload and until its native submissions have
+    /// joined. Opening is not admitted.
     /// `memoryGrowthBudgetBytes` bounds the native memory requests retain (see the raw-asset entry point).
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
                             memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
@@ -118,7 +118,7 @@ public actor LanguageGenerationSession {
     /// Once the growth retained since the model loaded passes this budget, the next request first
     /// releases and reloads the model (KV state is Kit-owned and unaffected); reloads are checked
     /// only between requests and counted in ``CacheStatistics/modelReloadCount``. nil never reloads
-    /// for memory.
+    /// for memory; a budget below ``minimumMemoryGrowthBudgetBytes`` is refused.
     public static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
                             stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
                             expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
@@ -126,7 +126,7 @@ public actor LanguageGenerationSession {
                             exportBounds: LanguageExportBounds? = nil,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
-        guard (maximumSubmissionsPerModel ?? 1) > 0, (memoryGrowthBudgetBytes ?? 0) >= 0
+        guard (maximumSubmissionsPerModel ?? 1) > 0, LanguageMemoryBudget.admits(limitBytes: memoryGrowthBudgetBytes)
         else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
         var options: SpecializationOptions
         switch compute {
@@ -243,8 +243,7 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        try await reloadIfOverMemoryBudget()
-        let grant = try await admitGPU()
+        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -267,8 +266,7 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        try await reloadIfOverMemoryBudget()
-        let grant = try await admitGPU()
+        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -303,8 +301,7 @@ public actor LanguageGenerationSession {
         guard maximumTokens > 0 else { throw LanguageGenerationError.invalid("Output limit must be positive") }
         try begin(prompt: prompt, reserve: maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
-        try await reloadIfOverMemoryBudget()
-        let grant = try await admitGPU()
+        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -324,8 +321,7 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
-        try await reloadIfOverMemoryBudget()
-        let grant = try await admitGPU()
+        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -336,8 +332,7 @@ public actor LanguageGenerationSession {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
         defer { lifecycle.finish() }
-        try await reloadIfOverMemoryBudget()
-        let grant = try await admitGPU()
+        let grant = try await admission.begin(gpu: gpu, prepare: { try await self.reloadIfOverMemoryBudget() })
         defer { grant?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
@@ -346,16 +341,6 @@ public actor LanguageGenerationSession {
             rows.append(try await step(tokens: [Int32(token)], position: prompt.count + index, observer: nil))
         }
         return rows
-    }
-
-    /// Waits for GPU admission when the session has one. `unload()` withdraws a request still waiting.
-    private func admitGPU() async throws -> GPUAdmissionGrant? {
-        guard let gpu else { return nil }
-        guard !admissionWithdrawn else { throw LanguageGenerationError.closed }
-        let attempt = GPUAdmissionAttempt(gpu)
-        pendingGPU = attempt
-        defer { pendingGPU = nil }
-        return try await attempt.admit(orThrow: { LanguageGenerationError.closed })
     }
 
     private func begin(prompt: [Int], reserve: Int, chunkSize: Int?) throws {
@@ -591,8 +576,9 @@ public actor LanguageGenerationSession {
     /// Then the model, function, stream and KV caches are released. Concurrent calls
     /// return once the release completes. Open a new session to load the model again.
     public func unload() async {
-        // A request still waiting for GPU admission is withdrawn, so close never waits behind the GPU queue.
-        pendingGPU?.withdraw()
+        // A request still waiting for GPU admission is withdrawn and later admissions are refused, so close
+        // never waits behind the GPU queue; a request reloading under its grant stops when the reload returns.
+        admission.withdraw()
         guard await lifecycle.beginClose() else { return }
         function = nil
         imageFunction = nil

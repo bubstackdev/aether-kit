@@ -195,11 +195,15 @@ writer's first request. Neither is a fix: the default chunks are unchanged.
 The session therefore reloads between requests on a memory budget
 (`memoryGrowthBudgetBytes` on both `open` entry points and `VisionLanguageSession.open`,
 default `LanguageGenerationSession.defaultMemoryGrowthBudgetBytes`, 1 GiB; nil
-disables it). Each request is measured from its GPU admission to its end: Metal's
-allocated size, net of the session's own KV cache changes. Once the growth counted
-since the model loaded passes the budget, the next request first releases the model,
+disables it; budgets below `minimumMemoryGrowthBudgetBytes`, 256 MiB, are refused).
+Each request is measured from its GPU admission to its end: Metal's allocated size, net
+of the session's own KV cache changes. Once the growth counted since the model loaded
+passes the budget, the next request, once admitted to the GPU, first releases the model,
 function and stream and loads them again; the KV state is Kit-owned and unaffected.
-The check runs only between requests, never inside one. A reload costs the load plus
+The check runs only between requests, never inside one. The reload runs under the
+request's GPU grant, so it never loads while another owner holds the GPU; `unload()`
+during it ends the request with `closed` when the reload returns, and a request still
+waiting for admission is withdrawn at once. A reload costs the load plus
 the first use of each function again (about 2.6 s for the writer's text function), so
 the default budget reloads the writer about every eighth 449-token request.
 `CacheStatistics` reports `modelReloadCount`, `retainedMemoryBytes` and the budget;
@@ -214,7 +218,10 @@ model's retention (`LanguageMemoryBudget`):
   window) and never offsets the count;
 - growth above half the budget and above four times the request's expected growth (its
   submitted tokens times the median per-token rate of recent counted requests, once
-  three are known) is another allocator's.
+  three are known) is another allocator's, until such outliers since the load reach the
+  budget: then every further outlier counts until the next reload. An outlier is above
+  half the budget, so at most two are set aside per load, and retention that always
+  looks like an outlier counts from the third.
 Set-aside requests are counted in `foreignMemoryRequests` and `foreignMemoryBytes`.
 Sharing a `GPUAdmission` between a host's sessions keeps their admitted GPU work out of
 each other's windows; loading and releasing are not admitted, so another session's load

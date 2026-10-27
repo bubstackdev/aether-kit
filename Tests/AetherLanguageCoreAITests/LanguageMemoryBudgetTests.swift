@@ -63,6 +63,42 @@ struct LanguageMemoryBudgetTests {
         #expect(budget.record(requestGrowthBytes: 1228 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
     }
 
+    /// A leak that always looks like an outlier cannot hide: an outlier is above half the limit, so the cap lets at
+    /// most two be set aside per load and the third counts.
+    @Test func persistentOutliersCountFromTheThird() {
+        var budget = LanguageMemoryBudget(limitBytes: 1024 * Self.mib)
+        for _ in 0..<3 { budget.record(requestGrowthBytes: 137 * Self.mib, submittedTokens: 457, warming: false) }
+        #expect(budget.record(requestGrowthBytes: 600 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
+        #expect(budget.record(requestGrowthBytes: -100 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
+        #expect(budget.record(requestGrowthBytes: 600 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
+        #expect(budget.record(requestGrowthBytes: 600 * Self.mib, submittedTokens: 457, warming: false) == .counted)
+        #expect(budget.retainedBytes == (3 * 137 + 600) * Self.mib)
+    }
+
+    /// Once outliers set aside since the load reach the limit, every further outlier counts; a reload starts over.
+    @Test func setAsideOutliersAreCappedAtTheLimit() {
+        var budget = LanguageMemoryBudget(limitBytes: 1024 * Self.mib)
+        for _ in 0..<3 { budget.record(requestGrowthBytes: 137 * Self.mib, submittedTokens: 457, warming: false) }
+        // Another session's 3 GiB load is set aside...
+        #expect(budget.record(requestGrowthBytes: 3072 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
+        budget.record(requestGrowthBytes: 137 * Self.mib, submittedTokens: 457, warming: false)
+        // ...but nothing more until a reload.
+        #expect(budget.record(requestGrowthBytes: 600 * Self.mib, submittedTokens: 457, warming: false) == .counted)
+        #expect(budget.exhausted)
+        budget.reset()
+        #expect(budget.record(requestGrowthBytes: 3072 * Self.mib, submittedTokens: 457, warming: false) == .foreign)
+    }
+
+    /// nil or at least 256 MiB: a smaller budget would reload before nearly every request.
+    @Test func budgetHasAFloor() {
+        #expect(LanguageMemoryBudget.admits(limitBytes: nil))
+        #expect(LanguageMemoryBudget.admits(limitBytes: 256 * Self.mib))
+        #expect(LanguageMemoryBudget.admits(limitBytes: LanguageGenerationSession.defaultMemoryGrowthBudgetBytes))
+        #expect(!LanguageMemoryBudget.admits(limitBytes: 0))
+        #expect(!LanguageMemoryBudget.admits(limitBytes: 256 * Self.mib - 1))
+        #expect(!LanguageMemoryBudget.admits(limitBytes: -1))
+    }
+
     /// A request that warms a function or shape is not counted, however large: its growth is the one-time
     /// weight copy or specialization.
     @Test func warmingRequestsAreNotCounted() {

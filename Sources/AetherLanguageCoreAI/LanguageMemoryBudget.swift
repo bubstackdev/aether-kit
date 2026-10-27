@@ -19,6 +19,10 @@
 ///   once ``minimumSamples`` counted requests have established the per-token rate. Not counted.
 /// - **counted**: everything else, including growth before a rate is known (an early foreign
 ///   spike costs one unnecessary reload; ignoring real retention would let it grow unbounded).
+///   A backstop keeps the outlier rule from hiding a real leak: once outliers set aside since the
+///   load reach the limit, every further outlier counts until the next reload. An outlier is above
+///   half the limit, so at most two are set aside per load (enough for another session's load and
+///   a second event), and a leak that always looks like an outlier counts from the third.
 struct LanguageMemoryBudget: Sendable, Equatable {
     enum Disposition: Sendable, Equatable { case warming, foreign, counted }
 
@@ -30,20 +34,37 @@ struct LanguageMemoryBudget: Sendable, Equatable {
     private(set) var foreignBytes = 0
     /// Recent counted growth per submitted token, newest last.
     private var rates: [Double] = []
+    /// Outlier growth set aside since the load.
+    private var outlierBytesSinceLoad = 0
 
     static let outlierFactor = 4.0
     static let minimumSamples = 3
     static let rateHistory = 8
+    static let minimumLimitBytes = 256 << 20
+
+    /// nil, or at least ``minimumLimitBytes``.
+    static func admits(limitBytes: Int?) -> Bool { limitBytes.map { $0 >= minimumLimitBytes } ?? true }
 
     init(limitBytes: Int?) { self.limitBytes = limitBytes }
 
     @discardableResult
     mutating func record(requestGrowthBytes growth: Int, submittedTokens: Int, warming: Bool) -> Disposition {
         guard !warming else { return .warming }
-        if growth < 0 || isOutlier(growth, submittedTokens: submittedTokens) {
+        if growth < 0 {
             foreignRequests += 1
-            foreignBytes += abs(growth)
+            foreignBytes -= growth
             return .foreign
+        }
+        if isOutlier(growth, submittedTokens: submittedTokens) {
+            if outlierBytesSinceLoad < limitBytes ?? .max {
+                outlierBytesSinceLoad += growth
+                foreignRequests += 1
+                foreignBytes += growth
+                return .foreign
+            }
+            // The backstop: count it, without letting it set the rate.
+            retainedBytes += growth
+            return .counted
         }
         retainedBytes += growth
         if submittedTokens > 0 {
@@ -63,5 +84,8 @@ struct LanguageMemoryBudget: Sendable, Equatable {
     var exhausted: Bool { limitBytes.map { retainedBytes > $0 } ?? false }
 
     /// After a release and reload: nothing is retained. The learned rate is the model's and stays.
-    mutating func reset() { retainedBytes = 0 }
+    mutating func reset() {
+        retainedBytes = 0
+        outlierBytesSinceLoad = 0
+    }
 }
