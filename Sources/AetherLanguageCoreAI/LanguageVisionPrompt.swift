@@ -1,4 +1,5 @@
-/// One image's vision-encoder output, ready for the decoder's `withImage` entry point.
+/// One image's vision-encoder output, ready for the decoder's image submission (`main` of a one-function
+/// asset, or a 0.0.2 asset's `withImage`).
 public struct LanguageImageFeatures: Sendable {
     /// Patch grid (temporal groups, rows, columns) the encoder saw.
     public let grid: (t: Int, h: Int, w: Int)
@@ -138,8 +139,8 @@ struct LanguagePromptPlan {
     }
 
     /// Prefill submissions: text runs in the contract's prefill chunks (bucketed: one fixed width, the last chunk
-    /// stepping back within the run), each image span as one
-    /// `withImage` submission (an image never straddles submissions).
+    /// stepping back within the run), each image span as one image submission (an image never straddles
+    /// submissions).
     func submissions(contract: LanguageStepContract, requestedChunk: Int?, maximumChunk: Int?) -> [(start: Int, count: Int, image: Int?)] {
         var out: [(start: Int, count: Int, image: Int?)] = []
         var cursor = 0
