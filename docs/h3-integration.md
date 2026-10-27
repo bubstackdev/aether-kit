@@ -164,7 +164,7 @@ Preparation performs no native acquisition. It reports whether all per-block CPU
 The local workflow uses the retained source projects and new output directories:
 
 ```sh
-H3_PYTHON=/Users/zakkeown/Code/aether-engine/forge/.venv/bin/python
+H3_PYTHON=$PWD/Forge/.venv/bin/python   # uv sync --frozen --project Forge
 H3_LAB=/Users/zakkeown/Code/atelier/lab/minimax-h3-lab
 H3_PROTOTYPE=/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype
 H3_BUNDLE=/private/tmp/aether-h3-qkv-ready/render/bundle.json

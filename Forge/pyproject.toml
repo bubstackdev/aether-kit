@@ -1,0 +1,27 @@
+# Development tooling only (exporters, upstream CPU references, evidence recorders); never required by SDK consumers.
+# The locked environment for everything under Forge/ and Scripts/*.py:
+#
+#     uv sync --frozen --project Forge
+#     uv run --frozen --project Forge python -I Forge/language/reference_qwen3.py ...
+#
+# torch, torchvision, transformers, diffusers and Pillow are pinned to the versions the 0.0.2 evidence records.
+# coreai-torch brings Apple's Core AI Python runtime (`coreai`, from coreai-core).
+[project]
+name = "aether-kit-forge"
+version = "0.0.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==4.57.3",
+    "diffusers==0.37.1",
+    "pillow==12.3.0",
+    "coreai-torch==0.4.2",
+    "coreai-opt",
+    "safetensors",
+    "numpy",
+    "huggingface_hub",
+]
+
+[tool.uv]
+package = false

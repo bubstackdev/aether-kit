@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export a Qwen3 dense checkpoint as an Aether Kit language model asset (development tooling only).
 
-Requires torch, safetensors, coreai-torch and coreai (runtime) — e.g. the aether-engine forge venv, used read-only:
+Runs in Forge's locked environment (`uv sync --frozen --project Forge`; `<venv>` is `Forge/.venv`):
 
     <venv>/bin/python -I Forge/language/export_qwen3.py --checkpoint <hf snapshot> [--contract running] --output <dir>
     <venv>/bin/python -I Forge/language/export_qwen3.py --tiny --contract bucketed --output <dir>

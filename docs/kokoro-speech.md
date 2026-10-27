@@ -240,7 +240,7 @@ The pre-rebase [CPU suite](evidence/kokoro-cpu-tests-2026-10-26.log) passed 249 
 ## Reproduce
 
 ```sh
-FORGE=/path/to/forge/.venv/bin/python   # torch 2.11 + coreai-torch 0.4.2
+uv sync --frozen --project Forge; FORGE=Forge/.venv/bin/python   # torch 2.11 + coreai-torch 0.4.2
 SNAP=~/.cache/huggingface/hub/models--hexgrad--Kokoro-82M/snapshots/f3ff3571791e39611d31c381e3a41a3af07b4987
 UP=~/.cache/aether-kit/kokoro/upstream/kokoro-0.9.4   # unpacked kokoro-0.9.4 wheel
 $FORGE -I Forge/kokoro/export_kokoro.py ~/.cache/huggingface/aether-kit/kokoro-82m/NEW --snapshot $SNAP --upstream $UP

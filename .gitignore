@@ -8,3 +8,5 @@ __pycache__/
 Examples/SpeechDevice/Assets/*
 !Examples/SpeechDevice/Assets/.gitkeep
 Examples/SpeechDevice/KokoroDeviceProbe.xcodeproj/
+.worktrees/
+Forge/.venv/
