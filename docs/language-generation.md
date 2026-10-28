@@ -388,6 +388,23 @@ Expected: once both shapes have run, alternating between them allocates nothing 
 without `expectFrequentReshapes`. Observed: every shape change retains memory until the
 model is released. The Feedback is the user's to file.
 
+## On-device host (prepared, 0.0.3)
+
+`Examples/LanguageDevice` is an XcodeGen app, LanguageDeviceProbe. It opens a staged bundle with `platform: .ios` and
+checks it against the float32 Transformers reference, printing one JSON report with timings, footprint and the app's
+available memory.
+
+- **Text** (a dense Qwen3): every teacher-forced row and a greedy continuation, judged by the native qualification's
+  rule.
+- **Vision** (Qwen3-VL): Kit decodes and preprocesses the photos the reference was made from (the `kit-decoded`
+  reference grids). The greedy answer must match, or first diverge at a near-tie of the reference's own row.
+
+`Forge/language/stage_device_assets.py text|vision BUNDLE REFERENCE` copies the model asset(s) and tokenizer, and
+registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
+registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
+4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
+an iPhone grants without the increased-memory-limit entitlement, so its run may end in a refusal or a jetsam kill.
+
 ## Evidence and limits
 
 Different prefill plans (a different width, or 1-token steps) round differently, which can flip a greedy token

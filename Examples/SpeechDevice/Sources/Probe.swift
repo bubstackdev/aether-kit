@@ -51,6 +51,10 @@ struct DeviceReport: Encodable {
     var bucketProbe: [String: Double] = [:]
     var footprintPeakMiB = 0.0
     var footprintAfterUnloadMiB = 0.0
+    /// Decoder-only mode: the reduced-precision decoder against float32 on synthetic inputs (no parity gate).
+    var decoderOnly: DecoderOnlyResult?
+    /// Decoder-only mode is fact-finding with no gate: it sets `completed` when both decoders ran, and never `passed`.
+    var completed: Bool?
     var passed = false
     var failures: [String] = []
 }
@@ -89,6 +93,8 @@ private func sysctlString(_ name: String) -> String {
     return String(decoding: value.prefix { $0 != 0 }, as: UTF8.self)
 }
 
+func progressLine(_ stage: String) { progress(stage) }
+
 /// One progress line per stage, flushed immediately, so a run that is killed (for example by jetsam)
 /// still shows how far it got and the memory state at each step.
 private func progress(_ stage: String) {
@@ -112,6 +118,12 @@ func runKokoroDeviceProbe() async -> DeviceReport {
     do {
         guard let assetsRoot = Bundle.main.url(forResource: "Assets", withExtension: nil) else {
             report.failures.append("no staged Assets folder in the app bundle")
+            return report
+        }
+        if FileManager.default.fileExists(atPath: assetsRoot.appendingPathComponent("decoder-only.json").path) {
+            try await runKokoroDecoderOnlyProbe(assetsRoot: assetsRoot, report: &report)
+            report.footprintPeakMiB = footprint().peak
+            report.completed = report.decoderOnly != nil
             return report
         }
         let references = assetsRoot.appendingPathComponent("references")

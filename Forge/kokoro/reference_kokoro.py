@@ -41,6 +41,10 @@ CASES = [
                   "dəspˈIt ɪts lˈItwˌAt ˈɑɹkətˌɛkʧəɹ, ɪt dəlˈɪvəɹz kˈɑmpəɹəbᵊl kwˈɑləTi tə lˈɑɹʤəɹ mˈɑdᵊlz "
                   "wˌIl bˈiɪŋ səɡnˈɪfəkəntli fˈæstəɹ ənd mˈɔɹ kˈɔst əfˈɪʃənt. wɪð əpˈæʧi lˈIsᵊnst wˈAts, "
                   "kˈOkəɹO kæn bi dəplˈYd ˈɛniwˌɛɹ fɹʌm pɹədˈʌkʃən ənvˈIɹənmənts tə pˈɜɹsᵊnᵊl pɹˈɑʤɛkts.")},
+    # Lands in bucket 512 (257-512 frames), the iOS frame cap, which the other cases skip.
+    {"name": "medium-af_bella", "voice": "af_bella", "speed": 1.0, "seed": 512,
+     "phonemes": ("kˈOkəɹO ɪz ən ˈOpən wˈAt tˌitˌiˈɛs mˈɑdᵊl wɪð ˈATi tˈu mˈɪljən pəɹˈæməTəɹz. "
+                  "dəspˈIt ɪts lˈItwˌAt ˈɑɹkətˌɛkʧəɹ, ɪt dəlˈɪvəɹz kˈɑmpəɹəbᵊl kwˈɑləTi tə lˈɑɹʤəɹ mˈɑdᵊlz.")},
 ]
 
 
