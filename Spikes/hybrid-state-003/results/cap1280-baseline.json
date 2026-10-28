@@ -1,0 +1,44 @@
+{
+  "asset" : "model.aimodel",
+  "chunk" : 64,
+  "compute" : "preferGPU",
+  "decode" : {
+    "256" : {
+      "rounds" : [
+        208.79189252729643,
+        209.5758561907241,
+        208.83911556634558
+      ],
+      "tokPerSecMedian" : 208.83911556634558
+    }
+  },
+  "decodeFunction" : false,
+  "device" : "h17c",
+  "loadSeconds" : 0.145957792,
+  "memory" : [
+    {
+      "cleanMiB" : 0,
+      "metalMiB" : 0,
+      "phase" : "before open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 798,
+      "metalMiB" : 2,
+      "phase" : "open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 807,
+      "metalMiB" : 842,
+      "phase" : "end",
+      "wiredMiB" : 796
+    }
+  ],
+  "stateNames" : [
+    "convState",
+    "keyCache",
+    "ssmState",
+    "valueCache"
+  ]
+}

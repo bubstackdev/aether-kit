@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "date": "2026-10-28",
+  "host": "Apple M5 Max, macOS 27.0.1 (26A434); torch 2.11.0, coreai-torch 0.4.2, coreai-core 1.0.0b2",
+  "options": "SpecializationOptions(preferredComputeUnitKind: .gpu), expectFrequentReshapes, states as Kit-owned MTLBuffers",
+  "note": "GPU runs that ended without a result file (aborts and timeouts). Real-dimension variants use random weights (export_scaled.py); C1/C2/S1/S2 use the checkpoint. Layer patterns: m = Mamba, a = attention.",
+  "runs": [
+    {"asset": "C1 (main, dynamic q, 32 layers)", "load": "60-115", "outcome": "timeout", "detail": "AIModel open did not finish in 6 min (2026-10-28 01:58-02:04); an earlier attempt sat 9 min in specialization"},
+    {"asset": "C2 (main dynamic q + decode, 32 layers)", "load": "about 115", "outcome": "timeout", "detail": "open did not finish in 6 min"},
+    {"asset": "C2 (main dynamic q + decode, 32 layers)", "load": "about 5", "outcome": "timeout", "detail": "open did not finish in 15 min (07:54-08:09); samples at 60 s and 300 s: MPSGraphExecutable applyOptimizationPasses > ShapeFunctionCanonicalizationPass > mpsx::shape_equation::performShapeEquationGeneration > z3_solver::simplifyShapeEquationsWithZ3 > Z3ToMLIRGenerator::generateShapeFunctionFromZ3 > generateIte > generateCondition (recursing 20+ deep)"},
+    {"asset": "L24d (real layers 4..28, main dynamic q + decode)", "load": "about 3", "outcome": "timeout", "detail": "open did not finish in 3 min"},
+    {"asset": "L8 (mmmammmm, main dynamic q)", "load": "about 20", "outcome": "abort at q = 1", "detail": "open, q 4 and q 2 run; first q = 1 call: MPSNDArrayMatrixMultiplication.mm:212: failed assertion `K dimension is inconsistently defined...'"},
+    {"asset": "K4 (mmmam), K5 (mmmmam), K6 (mmmmmam), main dynamic q", "load": "about 2", "outcome": "abort at q = 1", "detail": "same assertion; q 4 and q 2 run"},
+    {"asset": "L4 (mmam, 3 Mamba layers), main dynamic q", "load": "about 20", "outcome": "runs", "detail": "q 4 and q 1 run (scale-L4.json)"},
+    {"asset": "q1_repro.py --layers mmmam (standalone)", "load": "about 1.4", "outcome": "abort at q = 1", "detail": "same MPSNDArrayMatrixMultiplication assertion; cpu_only runs every q"},
+    {"asset": "q1_repro.py --layers mmam (standalone)", "load": "about 1.4", "outcome": "abort at q = 4", "detail": "GPUMemrefOps.mm:164: failed assertion `Failed to resolve dynamic dimensions for memref.alloc'"},
+    {"asset": "S1/S2 before the padding fix", "load": "about 1.7", "outcome": "NaN after a padded submission", "detail": "padded sources counted as causally earlier in the SSD decay: exp overflow times dx = 0; fixed by excluding padded sources"}
+  ]
+}

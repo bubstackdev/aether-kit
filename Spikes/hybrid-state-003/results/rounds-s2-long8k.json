@@ -1,0 +1,134 @@
+{
+  "asset" : "model.aimodel",
+  "chunk" : 64,
+  "compute" : "preferGPU",
+  "decodeFunction" : false,
+  "device" : "h17c",
+  "loadSeconds" : 0.11153775,
+  "long" : {
+    "prefillSeconds" : 1.179995417,
+    "rows" : [
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999933711717581,
+        "nearTie" : false,
+        "row" : 511
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999934931334122,
+        "nearTie" : false,
+        "row" : 1023
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994776888823,
+        "nearTie" : false,
+        "row" : 1535
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999993528544728,
+        "nearTie" : false,
+        "row" : 2047
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999220094469554,
+        "nearTie" : false,
+        "row" : 2559
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999996620087739,
+        "nearTie" : false,
+        "row" : 3071
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994378121193,
+        "nearTie" : true,
+        "row" : 3583
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999989446157178,
+        "nearTie" : true,
+        "row" : 4095
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999843720657278,
+        "nearTie" : false,
+        "row" : 4607
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999986667211727,
+        "nearTie" : false,
+        "row" : 5119
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999972614809729,
+        "nearTie" : false,
+        "row" : 5631
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999898627454575,
+        "nearTie" : true,
+        "row" : 6143
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.999999907119833,
+        "nearTie" : false,
+        "row" : 6655
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999987573882265,
+        "nearTie" : false,
+        "row" : 7167
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.9999998794196121,
+        "nearTie" : false,
+        "row" : 7679
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994741315434,
+        "nearTie" : false,
+        "row" : 8191
+      }
+    ],
+    "tokens" : 8192
+  },
+  "memory" : [
+    {
+      "cleanMiB" : 0,
+      "metalMiB" : 0,
+      "phase" : "before open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 848,
+      "metalMiB" : 0,
+      "phase" : "open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 1313,
+      "metalMiB" : 993,
+      "phase" : "end",
+      "wiredMiB" : 797
+    }
+  ],
+  "stateNames" : [
+    "convState",
+    "ssmState"
+  ]
+}
