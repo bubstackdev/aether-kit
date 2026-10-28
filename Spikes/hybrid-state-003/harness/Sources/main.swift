@@ -14,6 +14,7 @@ import Foundation
 import Metal
 
 struct Failure: Error, CustomStringConvertible { let description: String }
+setvbuf(stdout, nil, _IOLBF, 0)   // progress lines reach a piped log as they happen
 
 var args = Array(CommandLine.arguments.dropFirst())
 func flag(_ name: String) -> Bool { if let i = args.firstIndex(of: name) { args.remove(at: i); return true }; return false }
@@ -27,6 +28,9 @@ let cpu = flag("--cpu")
 let chunk = Int(option("--chunk") ?? "64")!
 let rounds = Int(option("--rounds") ?? "5")!
 let decodeContexts = (option("--decode-contexts") ?? "256,2048").split(separator: ",").map { Int($0)! }
+// --capacity N: allocate the KV caches at N rows once (one capacity, so a run touches few shapes); default: Kit's
+// 256-row growth, a new shape per capacity step.
+let fixedCapacity = option("--capacity").map { Int($0)! }
 let phases = Set((option("--phases") ?? "memory,numerics,long,ttft,decode").split(separator: ",").map(String.init))
 guard args.count == 3 else {
     print("usage: hybrid-step <asset> <reference dir> <out.json> [--decode] [--cpu] [--chunk N] [--rounds N] [--phases …]")
@@ -104,7 +108,8 @@ final class Session {
     func grow(to needed: Int) throws {
         guard needed > capacity, !baseline else { return }
         let start = clock.now
-        let newCapacity = (needed + 255) / 256 * 256
+        if let fixedCapacity, needed > fixedCapacity { throw Failure(description: "needs \(needed) rows, capacity is \(fixedCapacity)") }
+        let newCapacity = fixedCapacity ?? (needed + 255) / 256 * 256
         let rows = kvLayers * kvHeads, rowBytes = headDim * 2
         func relayout(_ old: (any MTLBuffer)?) throws -> any MTLBuffer {
             guard let new = device.makeBuffer(length: rows * newCapacity * rowBytes, options: .storageModeShared) else { throw Failure(description: "alloc kv") }
@@ -230,6 +235,28 @@ func median(_ v: [Double]) -> Double { let s = v.sorted(); return s.isEmpty ? 0 
 var report: [String: Any] = ["asset": assetURL.lastPathComponent, "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
                              "chunk": chunk, "loadSeconds": loadSeconds, "device": AIModel.deviceArchitectureName,
                              "stateNames": states.map(\.name)]
+
+// MARK: cold specialization per shape
+
+if phases.contains("compile") {
+    // First use of each shape (Core AI specializes it), then the same shape again, warm.
+    let tokens = ints((reference["long"] as! [String: Any])["tokens"])
+    var compile: [String: Any] = [:]
+    func timed(_ body: () async throws -> Void) async rethrows -> Double {
+        let t0 = clock.now; try await body(); return seconds(t0.duration(to: clock.now)) * 1e3
+    }
+    let cold = Session()
+    let chunkCold = try await timed { _ = try await cold.step(Array(tokens.prefix(chunk))) }
+    let stepCold = try await timed { _ = try await cold.step([tokens[chunk]]) }
+    let warm = Session()
+    let chunkWarm = try await timed { _ = try await warm.step(Array(tokens.prefix(chunk))) }
+    let stepWarm = try await timed { _ = try await warm.step([tokens[chunk]]) }
+    compile = ["capacity": cold.capacity, "chunkColdMs": chunkCold, "chunkWarmMs": chunkWarm, "stepColdMs": stepCold,
+               "stepWarmMs": stepWarm, "stepFunction": useDecode ? "decode" : "main"]
+    report["compile"] = compile
+    print(String(format: "[compile] capacity %d: q %d cold %.0f ms (warm %.1f), q 1 (%@) cold %.0f ms (warm %.1f)", cold.capacity,
+                 chunk, chunkCold, chunkWarm, useDecode ? "decode" : "main", stepCold, stepWarm))
+}
 
 if phases.contains("memory") {
     let s = Session()

@@ -6,7 +6,7 @@ mask built from position data, plus one in-place state update (`state[0:1] = sta
 what triggers the defects. Each mask form is exported with and without the state and run cpu_only against eager
 float32. No checkpoint; seconds of CPU.
 
-    Forge/.venv/bin/python -I Spikes/hybrid-state-003/mask_repro.py <scratch dir> [granite]
+    Forge/.venv/bin/python -I Spikes/hybrid-state-003/mask_repro.py <scratch dir> [granite] [--mha] [--gpu] [--save DIR]
 
 Prints, per form: OK (cosine >= 0.999), WRONG (runs, cosine below), or FAIL (the call raises).
 
@@ -28,6 +28,25 @@ import torch
 import torch.nn.functional as F
 
 HEADS, KV_HEADS, DIM, HIDDEN, Q, CAP = 12, 4, 64, 768, 8, 64
+if "--mha" in sys.argv:                    # plain multi-head attention: the 2-D float mask is wrong with or without enable_gqa
+    sys.argv.remove("--mha")
+    KV_HEADS = HEADS
+GPU = "--gpu" in sys.argv                  # Python runtime on the GPU (aborts in MPSGraph on these dynamic graphs)
+if GPU:
+    sys.argv.remove("--gpu")
+SAVE = None                                # --save DIR: keep each asset with its inputs and eager output for
+if "--save" in sys.argv:                   # mask-repro-gpu.swift, which runs them the way Kit does
+    i = sys.argv.index("--save")
+    SAVE = Path(sys.argv[i + 1])
+    del sys.argv[i:i + 2]
+
+
+def options():
+    import coreai.runtime as rt
+
+    if GPU:
+        return rt.SpecializationOptions.from_preferred_compute_unit_kind(rt.ComputeUnitKind.gpu())
+    return rt.SpecializationOptions.cpu_only()
 
 
 class Attention(torch.nn.Module):
@@ -98,13 +117,21 @@ def run(form: str, state: bool, scratch: Path) -> str:
                              torch.from_numpy(vc).float(), torch.zeros(2, 4)).numpy().ravel()
 
     async def call():
-        model = await rt.AIModel.load(path, rt.SpecializationOptions.cpu_only())
+        model = await rt.AIModel.load(path, options())
         fn = model.load_function("main")
         feed = {"x": rt.NDArray(x), "positions": rt.NDArray(positions), "keyCache": rt.NDArray(kc), "valueCache": rt.NDArray(vc)}
         st = {"state": rt.NDArray(np.zeros((2, 4), np.float32))}
         r = await (fn(feed, st) if state else fn({**feed, **st}, {}))
         return r["y"].numpy().astype(np.float64).ravel()
 
+    if SAVE is not None:
+        out = SAVE / f"{'mha' if KV_HEADS == HEADS else 'gqa'}-{form}-{'state' if state else 'nostate'}"
+        out.mkdir(parents=True)
+        shutil.copytree(path, out / "m.aimodel")
+        for name, array in (("x", x), ("positions", positions), ("keyCache", kc), ("valueCache", vc)):
+            array.tofile(out / f"{name}.bin")
+        ref.astype("<f4").tofile(out / "reference.bin")
+        (out / "meta.txt").write_text(f"{Q} {HIDDEN} {KV_HEADS} {CAP} {DIM} {int(state)}\n")
     try:
         got = asyncio.run(call())
         cos = float(got @ ref / (np.linalg.norm(got) * np.linalg.norm(ref)))
@@ -167,7 +194,7 @@ def granite(form: str, mutate: bool, scratch: Path) -> str:
     shapes = [t.shape for t in m.empty_state(64)]
 
     async def call():
-        model = await rt.AIModel.load(path, rt.SpecializationOptions.cpu_only())
+        model = await rt.AIModel.load(path, options())
         fn = model.load_function("main")
         feed = {"input_ids": rt.NDArray(np.arange(8, dtype=np.int32)[None] + 300),
                 "cache_positions": rt.NDArray(np.arange(8, dtype=np.int32)[None]),
