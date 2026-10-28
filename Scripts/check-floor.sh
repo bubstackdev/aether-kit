@@ -6,11 +6,27 @@ cd "$(dirname "$0")/.."
 #   2. every product builds at macOS 14, and every library product at iOS 17 (when the iOS SDK is installed);
 #   3. Examples/FloorConsumer, which links the language facade at macOS 14 / iOS 17, links CoreAI weakly and depends
 #      strongly only on libraries the floor OS has; the macOS build runs here.
-# Usage: check-floor.sh [STAGE_DIR]
+# Usage: check-floor.sh [--macos | --ios] [STAGE_DIR]
+# --macos runs 1 and the macOS half of 2 and 3; --ios runs the iOS half, and fails without the iOS SDK. CI runs the two
+# halves as parallel jobs. With neither, everything runs, and the iOS builds are skipped when the iOS SDK is missing.
 # With STAGE_DIR, the floor consumer's macOS binary is copied there with the Span back-deployment library it loads
 # through @rpath, for Scripts/launch-floor-consumer.sh on an older OS (CI's macos-14 job). There is no iOS-simulator
 # consumer: CoreAI is not in the iOS Simulator SDK, so nothing that links the facade builds for the simulator yet.
+part=all
+case ${1:-} in
+    --macos) part=macos; shift ;;
+    --ios) part=ios; shift ;;
+    -*) echo "usage: $0 [--macos | --ios] [STAGE_DIR]" >&2; exit 2 ;;
+esac
+[ $# -le 1 ] || { echo "usage: $0 [--macos | --ios] [STAGE_DIR]" >&2; exit 2; }
 stage=${1:-}
+ios_sdk=false
+if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
+    ios_sdk=true
+elif [ "$part" = ios ]; then
+    echo "No iOS SDK: the iOS 17.0 builds cannot run" >&2
+    exit 1
+fi
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/.build/swift-module-cache"
 # swiftpm <subcommand> [arguments]: SwiftPM with check.sh's build engine and in-checkout caches.
@@ -21,20 +37,22 @@ swiftpm() {
         --config-path "$PWD/.build/config" --security-path "$PWD/.build/security" "$@"
 }
 
-python3 -I Scripts/annotate-floor.py --check
+if [ "$part" != ios ]; then
+    python3 -I Scripts/annotate-floor.py --check
+    swiftpm build
+    echo "Every product builds at macOS 14.0"
+fi
 
-swiftpm build
-echo "Every product builds at macOS 14.0"
-
-if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
+if [ "$part" != macos ] && [ "$ios_sdk" = true ]; then
     libraries=$(swiftpm package dump-package | python3 -I -c '
 import json, sys
 print("\n".join(p["name"] for p in json.load(sys.stdin)["products"] if "library" in p["type"]))')
     for scheme in $libraries; do
-        xcodebuild -quiet -scheme "$scheme" -destination generic/platform=iOS -derivedDataPath .build/floor-ios build
+        xcodebuild -quiet -scheme "$scheme" -destination generic/platform=iOS -derivedDataPath .build/floor-ios \
+            -onlyUsePackageVersionsFromResolvedFile build
     done
     echo "Every library product builds at iOS 17.0"
-else
+elif [ "$part" = all ]; then
     echo "No iOS SDK: skipped the iOS 17.0 builds"
 fi
 
@@ -76,14 +94,16 @@ stage_binary() {
 }
 
 consumer=Examples/FloorConsumer
-swiftpm build --package-path "$consumer" --force-resolved-versions -c release
-macos_binary="$(swiftpm build --package-path "$consumer" -c release --show-bin-path)/AetherFloorConsumer"
-check_binary "$macos_binary" 14.0 macOS
-"$macos_binary"
-[ -z "$stage" ] || stage_binary "$macos_binary" macosx "$stage/macos"
+if [ "$part" != ios ]; then
+    swiftpm build --package-path "$consumer" --force-resolved-versions -c release
+    macos_binary="$(swiftpm build --package-path "$consumer" -c release --show-bin-path)/AetherFloorConsumer"
+    check_binary "$macos_binary" 14.0 macOS
+    "$macos_binary"
+    [ -z "$stage" ] || stage_binary "$macos_binary" macosx "$stage/macos"
+fi
 
-if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
+if [ "$part" != macos ] && [ "$ios_sdk" = true ]; then
     (cd "$consumer" && xcodebuild -quiet -scheme AetherFloorConsumer -destination generic/platform=iOS \
-        -configuration Release -derivedDataPath ../../.build/floor-consumer-ios build)
+        -configuration Release -derivedDataPath ../../.build/floor-consumer-ios -onlyUsePackageVersionsFromResolvedFile build)
     check_binary .build/floor-consumer-ios/Build/Products/Release-iphoneos/AetherFloorConsumer 17.0 iOS
 fi
