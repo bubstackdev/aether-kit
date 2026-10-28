@@ -82,8 +82,8 @@ O=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27
 Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir $O/graph-check-real --checkpoint $C   # optional, about 26 GiB RSS
 Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint $C --output $O/export
 python3 Scripts/finalize-flux2-bundle.py $O/export $C $O/bundle
-# against the f28ef0e8 export, kept at macos-any-gpu as the historical reference
-Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu $O/bundle
+# optional: compare the contract with an earlier bundle you keep (REFERENCE_BUNDLE)
+Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py REFERENCE_BUNDLE $O/bundle
 ```
 
 - `flux2_graphs.py` holds the six graphs. The text encoder is Qwen3 layers 0–26 with the pipeline's taps, fp16, q/k/v
@@ -110,7 +110,7 @@ fragment + target + per-asset placement + provenance file hashes + license) and 
 byte-reproducible, so a re-export changes model hashes and fingerprints.
 
 **The 2026-10-27 export** (`forge-export-2026-10-27/bundle`, `a48aaf07…`; `d27cefc4…` since 0.0.3) is the qualified bundle. Its contract
-equals `f28ef0e8…`'s exactly: every function signature, the segment split, `metadata.json`, all 111 compared
+equals `f28ef0e8…`'s exactly (the superseded export, since deleted locally; the [contract diff](evidence/flux2-forge-export-contract-diff-2026-10-27.txt) is the record): every function signature, the segment split, `metadata.json`, all 111 compared
 `aether.json` fields (the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm
 and GroupNorm lower to Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the
 prototype used conv + pixel shuffle, and the q/k norm feeds the rotary product in float32 without an fp16 round trip.

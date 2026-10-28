@@ -581,6 +581,25 @@ Per-step denoising times:
 
 Graphs open lazily inside their stage, so each stage's time includes its own load and specialization. Under steady load, the FL2VA step 0 (44.0 s) equals the later steps (median 44.1 s). So inside denoising, the body graph's load and specialization, text refinement and first-pass weight hashing add no measurable time: denoising is compute. The conditioner and video-decode rows include their graph loads. A quiet-host reference remains to be measured.
 
+### Quiet-host timing reference (2026-10-28)
+
+The reference for this Mac (M5 Max, Core AI architecture h17c): one complete `H3VideoSession` render per task through `aether-probe h3-memory-render`, at 960×544 and 124 frames, Turbo8, seed 1043, profile `5af39db5…`, build `bd048e4`. The user's transcode was paused. No other GPU work overlapped a render (the lock serialized it; other agents' short GPU jobs ran between renders). A script refused to start a render unless the one-minute load was under 10, memorystatus at least 70 and at least 40 GiB free ([record](evidence/h3-quiet-timing-2026-10-28.json)).
+
+The two references come from different windows: FL2VA ran 07:30–07:36, right after a first T2VA run, and started beside one compile at 100% CPU; the T2VA reference is a re-run at 07:41–07:47, after the FLUX benchmark.
+
+| Stage, wall seconds | T2VA (re-run, load 0.9–2.6) | FL2VA (load 1.3–3.9) |
+| --- | ---: | ---: |
+| Conditioner (graph load + 50 streamed layers) | 18.8 | 19.0 |
+| First-frame encoder, tiled | — | 4.8 |
+| Denoising, 8 steps | 307.9 | 288.5 |
+| Video decode | 30.8 | 29.8 |
+| Audio decode | 0.7 | 0.7 |
+| **Total of the stages** | **358.2** | **342.8** |
+
+Times are sums of the session's raw phase durations, rounded at the end. Steps took 36.3–39.9 s for T2VA and 35.4–36.3 s for FL2VA. T2VA's steps are slower although FL2VA denoises more rows; the comparison crosses windows, and with one run per task the cause is not known. This is one run per task, not a benchmark distribution.
+
+The first T2VA run is kept in the record as a side note only. Its load was 9.3 at the start, so it passed the guard, and peaked at 10.7 at 2.4 min, while another session's TripoSR job, Atelier Studio and an index build were still running; its steps took 38.2–44.6 s (total 380.1 s). The load guard alone does not make a run quiet.
+
 ## Denoiser memory: one modulation shape per render (2026-10-27)
 
 **Cause.** The body graph's `temb` input is the block's AdaLN table, `[6, 3k, 5376]`, and the heads graph's is the timestep embedding, `[k, 2688]`. Both are exported with k dynamic in 1…3, where k is the step's number of distinct row timesteps. T2VA has k = 1 at step 0, where video and audio both start at t = 1.0, and k = 2 from step 1, where the shift-12 and shift-3 schedules diverge. FL2VA has 2 and then 3, because keyframe rows use max(t, 0.999). Core AI specializes a reshape-enabled function once per input shape and keeps every specialization until the model is released, so the change at step 1 left a second body specialization resident: the 2.57 GiB rise in the chained gate's T2VA render.
