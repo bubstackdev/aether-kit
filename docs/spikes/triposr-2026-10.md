@@ -108,7 +108,7 @@ With `HF_HUB_CACHE` pointing at a cache holding the two pinned snapshots, and th
 2. `preprocess.py <inputs> <masked…>`.
 3. `export_triposr.py <src> <exports> --only scene,field`, again with `--only field --points 262144`, and with `--only none --grid-slab 16 --res 256` (into separate directories, since each writes its own reference points).
 4. `reference_images.py <src> <inputs> <references>`.
-5. `gpu_run_images.sh` under the lock.
+5. `gpu_run_images.sh` under the lock, with `SPIKE_ASSETS` set to the data directory that holds `triposr/{exports,inputs}` and the venv.
 6. `gate_triposr.py <references> <results> gate.json --usdz-log <log>` after `write_usdz.py` and `usdchecker --arkit`.
 7. `mesh_metrics.py`.
 
