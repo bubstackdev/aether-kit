@@ -17,8 +17,8 @@ processes died inside MPSGraph:
 - **The VL process** failed with `allocateMTLBufferFromMTLHeap … exceeds heap total`.
 
 The same test with the 4B writer instead of the describer ran clean twice. Two facts make the difference:
-- **The 0.0.2 describer was twice the writer's size.** Its decoder wired two copies of the text weights (16.1 GiB of
-  mapped-file pages) and reached about 23 GiB of Metal allocations, against 8.4 GiB for the writer; opening it read a
+- **The 0.0.2 describer was twice the writer's size.** Its decoder wired two copies of the text weights (15.7 GiB, 16,086 MiB, of
+  mapped-file pages) and reached about 22.4 GiB (22,970 MiB) of Metal allocations, against 8.4 GiB for the writer; opening it read a
   22.5 GiB compiled file into the page cache ([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)). Krea's own
   floor for a balanced 1024×1024 render is 32 GiB of RAM (`sizeFloors` in its manifest). On this 64 GB Mac the two
   together leave little for anything else.
