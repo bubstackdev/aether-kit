@@ -812,13 +812,12 @@ public actor LanguageGenerationSession {
         guard let newKeys = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
               let newValues = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared)
         else { throw LanguageGenerationError.invalid("Could not grow KV caches") }
-        newKeys.contents().initializeMemory(as: UInt8.self, repeating: 0, count: newKeys.length)
-        newValues.contents().initializeMemory(as: UInt8.self, repeating: 0, count: newValues.length)
         let rows = shape[0] * shape[1] * shape[2]
         let rowBytesPerToken = shape[4] * MemoryLayout<Float16>.size
-        LanguageCachePlan.copyPrefix(from: oldKeys.contents(), to: newKeys.contents(), rows: rows,
+        // Prefixes copied and the rest zeroed in one pass (the masked rows must be zero, never stale or NaN).
+        LanguageCachePlan.relayout(from: oldKeys.contents(), to: newKeys.contents(), destinationBytes: newKeys.length, rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
-        LanguageCachePlan.copyPrefix(from: oldValues.contents(), to: newValues.contents(), rows: rows,
+        LanguageCachePlan.relayout(from: oldValues.contents(), to: newValues.contents(), destinationBytes: newValues.length, rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
         keys = newKeys; values = newValues; keyDescriptor = kd; valueDescriptor = vd
         allocatedCapacity = next

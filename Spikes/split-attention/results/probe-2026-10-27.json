@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-27",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "versions": {"torch": "2.11.0", "coreai-torch": "0.4.2", "coreai-core": "1.0.0b2"},
+  "model": "random weights, 2 layers, hidden 1024, 16 query heads, 8 KV heads, head dim 128, vocab 8192, fp16 (76 MB asset)",
+  "gpu": {
+    "options": "preferredComputeUnitKind .gpu, expectFrequentReshapes",
+    "capacity": 2048,
+    "fused": {"wiredMappedFileMiB": 92, "metalMiBEnd": 143,
+              "q1DecodeMedianMs": [6.377, 5.376], "q64PrefillMedianMs": [6.339, 5.698],
+              "logits": {"q64": {"argmax": 4497, "sum": -238.96729}, "q1": {"argmax": 1293, "sum": -281.638}, "q6": {"argmax": 5395, "sum": 149.6525}}},
+    "split": {"wiredMappedFileMiB": 92, "metalMiBEnd": 242,
+              "q1DecodeMedianMs": [8.001, 4.2], "q64PrefillMedianMs": [6.57, 11.663],
+              "logits": {"q64": {"argmax": 4497, "sum": -238.91754}, "q1": {"argmax": 1293, "sum": -281.58273}, "q6": {"argmax": 5395, "sum": 149.94984}}},
+    "cond": {"opened": false, "note": "AIModel open did not finish in 7.5 min at 100% CPU, in MPSGraph AICodeToMPS -> mlir::reconcileUnrealizedCasts; killed"}
+  },
+  "cpuOnly": {
+    "splitVsFused": {"steps": ["q64", "q6", "q1", "q1", "q1", "q1"], "cosine": [0.999913, 0.999854, 0.999816, 0.999833, 0.999836, 0.999844], "argmaxEqual": true},
+    "cond": "first call: CoreAIRuntime/NDArrayKernels.swift:105: Fatal error: Non tensor operand was passed to NDArray.alloc"
+  },
+  "eager": {"splitVsFusedCosineMin": 0.999997, "splitVsFusedMaxAbs": 0.01172}
+}
