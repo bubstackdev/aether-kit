@@ -1,6 +1,8 @@
 # On-device language and Qwen3-VL qualification host (XcodeGen spec). Generate with `xcodegen generate` here; the
 # generated LanguageDeviceProbe.xcodeproj is git-ignored. `Forge/language/stage_device_assets.py` copies a bundle
 # (re-registered for iOS) and its reference into Assets/ (git-ignored except .gitkeep) before a device run.
+# LanguageDeviceProbe.entitlements requests the increased memory limit, for the Qwen3-VL-2B. That capability needs an
+# explicit App ID with it enabled (a wildcard App ID can't carry it); signing stays automatic.
 name: LanguageDeviceProbe
 options:
   deploymentTarget:
@@ -32,4 +34,5 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: LanguageDeviceProbe.entitlements
         TARGETED_DEVICE_FAMILY: "1"
