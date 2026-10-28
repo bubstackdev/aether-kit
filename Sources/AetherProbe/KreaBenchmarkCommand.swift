@@ -237,7 +237,7 @@ enum KreaBenchmarkCommand {
         return true
     }
 
-    private static func sourceIdentities(_ root: URL) throws -> [String: String] {
+    static func sourceIdentities(_ root: URL) throws -> [String: String] {
         guard FileManager.default.fileExists(atPath: root.appendingPathComponent("Package.swift").path),
               FileManager.default.fileExists(atPath: root.appendingPathComponent("Sources").path) else {
             throw AetherError.invalidRequest("benchmark source root must contain Package.swift and Sources")
@@ -263,7 +263,7 @@ enum KreaBenchmarkCommand {
         return hashes
     }
 
-    private static func toolchain() throws -> String {
+    static func toolchain() throws -> String {
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
