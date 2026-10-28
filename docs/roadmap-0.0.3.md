@@ -23,7 +23,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Coverage and iPhone
 
-- **iPhone:** Qwen3-VL and the language models. Kokoro: parity at bucket 512 on the device, and other iPhone models. Run on 2026-10-28 on an iPhone18,2 (iOS 27.2): Kokoro passes every case through bucket 512 and the Qwen3-0.6B passes; the Qwen3-VL-2B waits on the user's App ID registration for the increased memory limit ([summary](evidence/iphone-batch-2026-10-28.json)).
+- **iPhone:** Qwen3-VL and the language models. Kokoro: parity at bucket 512 on the device, and other iPhone models. Run on 2026-10-28 on an iPhone18,2 (iOS 27.2): Kokoro passes every case through bucket 512 and the Qwen3-0.6B passes; the Qwen3-VL-2B aborts while opening at the default memory limit (`std::bad_alloc` in Core AI's specialization) and waits on the user's App ID registration for the increased memory limit ([summary](evidence/iphone-batch-2026-10-28.json)).
 - **Qwen3-VL:**
   - multi-image M-RoPE: done, qualified on the VL-2B and VL-4B;
   - parity on rotated photos: done;

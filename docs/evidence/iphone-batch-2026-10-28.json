@@ -117,19 +117,29 @@
       "availableMemoryMiBMinimum": 3166,
       "footprintAfterUnloadMiB": 174,
       "gate": "text: every teacher-forced row cosine >= 0.995 against the float32 reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token in the reference top-5); greedy identical to the reference (its final stop token excluded) or first diverging at such a near-tie. vision: Kit decodes and preprocesses the photo the reference was made from; greedy identical or first diverging at a near-tie of the reference's teacher-forced row there",
-      "report": "language-iphone18-qwen3-0.6b-2026-10-28.json"
+      "report": "language-iphone18-qwen3-0.6b-2026-10-28.json",
+      "availableMemoryMiBAtStart": 3368.0,
+      "entitlement": "ran without the increased-memory-limit entitlement (default app memory limit)"
     },
     {
-      "item": "D. Qwen3-VL-2B one-function, registered for iOS (4.29 GB staged)",
+      "item": "D1. Qwen3-VL-2B one-function, registered for iOS (4.29 GB staged), built as committed with the increased-memory-limit entitlement",
       "host": "Examples/LanguageDevice (vision), with LanguageDeviceProbe.entitlements (increased-memory-limit)",
       "result": "not run: signing refused",
       "detail": "xcodebuild stopped at signing: the only profile covering the app's bundle ID is the team wildcard, which can't carry the increased-memory-limit capability. The explicit App ID with that capability is the user's to register. Nothing was installed.",
       "log": "qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log"
+    },
+    {
+      "item": "D2. Qwen3-VL-2B, the same bundle, without the entitlement (empty entitlements file on the command line, as for C)",
+      "host": "Examples/LanguageDevice (vision, case photo-dog-portrait)",
+      "result": "aborted while opening: std::bad_alloc in Core AI's model specialization",
+      "detail": "The process aborted 8.7 s after launch, before the session finished opening: an uncaught std::bad_alloc from MetalPerformanceShadersGraph during specialization (runtime canonicalization), SIGABRT. Not a jetsam kill (no JetsamEvent was logged for it) and not a Kit refusal (the probe opens without resource admission). The default limit leaves the app 3,368 MiB at launch; the bundle's decoder and vision assets total 4.29 GB.",
+      "report": "qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json"
     }
   ],
   "notVerified": [
-    "Qwen3-VL-2B on device (waiting on the user's App ID registration)",
+    "Qwen3-VL-2B on device with the increased memory limit (D3, waiting on the user's App ID registration)",
     "Kokoro float16 timing and accuracy on device (aborted)",
     "the writer 4B, VL-4B, Krea and FLUX.2 on iPhone (out of the budget without quantization, or iOS support is 0.0.4)"
-  ]
+  ],
+  "systemJetsamDuringC": "At 11:22, during item C, the system jetsammed two background processes (vm-compressor-thrashing and highwater); the probe was not among them."
 }

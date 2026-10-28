@@ -503,13 +503,20 @@ launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
 - **Qwen3-0.6B passes.** 64 teacher-forced rows at a minimum cosine of 0.9999987 against the float32 reference, with
   one argmax difference at an accepted near-tie. Greedy output first diverges at token 58, at a reference margin of
   0.00015, which the gate accepts. Opening (load and verification) took 4.6 s, and time to first token for the
-  33-token prompt was 0.037 s. Peak footprint was 219 MiB, and 174 MiB after unload
+  33-token prompt was 0.037 s. It ran without the increased memory limit, with 3,368 MiB available at launch. Peak
+  footprint was 219 MiB, and 174 MiB after unload
   ([report](evidence/language-iphone18-qwen3-0.6b-2026-10-28.json)). The 0.6B needs no increased memory limit, so that
   run was signed with an empty entitlements file passed on the command line; the wildcard profile can't carry the
   capability.
-- **Qwen3-VL-2B didn't run.** Signing refused the app with its entitlement, because no profile for its App ID carries
-  the increased memory limit yet ([log](evidence/qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log)). It runs once
-  that App ID is registered as described above.
+- **Qwen3-VL-2B with the entitlement: signing refused.** No profile for the app's App ID carries the increased memory
+  limit yet ([log](evidence/qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log)). It runs once that App ID is
+  registered as described above.
+- **Qwen3-VL-2B without the entitlement aborts while opening.** Built like the 0.6B, at the default limit (3,368 MiB at
+  launch, against 4.29 GB of model assets), the process aborted 8.7 s after launch, before the session had opened: an
+  uncaught `std::bad_alloc` from MetalPerformanceShadersGraph while Core AI specialized a model. It wasn't a jetsam
+  kill, and it wasn't a refusal by Kit; Kit can't catch it, because the abort happens inside Core AI's compiler
+  ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). Without the increased memory
+  limit, the VL-2B doesn't run on this iPhone.
 
 ## Evidence and limits
 
