@@ -1,0 +1,2135 @@
+{
+ "schema": 1,
+ "kind": "language-prefill-plan-qualification",
+ "date": "2026-10-28",
+ "device": "h17c",
+ "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not (a heavy CPU job ran beside most of these runs); timings are observations",
+ "plan": {
+  "width": "64 for prompts of up to 256 tokens, 256 above (LanguageStepContract.defaultPrefillChunk); a requested width and the export bound win",
+  "capacity": "a bucketed request's cache is allocated for its prefill tokens rounded up to 256 rows (at least the initial capacity) before the prefill (LanguageCachePlan.requestCapacity); decoding grows it in 256-row steps as before",
+  "shortPrompts": "prompts of up to 256 tokens: the same width (64) and capacity (256) as before"
+ },
+ "bundles": {
+  "qwen3-0.6b": "qwen3-0.6b-bucketed-fp16/model.aimodel (raw Forge export, Qwen/Qwen3-0.6B)",
+  "writer": "qwen3-4b-instruct-2507-abliterated-bucketed-fp16 (huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated)",
+  "vl-2b": "qwen3-vl-2b-one-function-bundle-macos (Qwen/Qwen3-VL-2B-Instruct)",
+  "vl-4b": "qwen3-vl-4b-abliterated-one-function-bundle-macos (huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated)"
+ },
+ "sourceSHA256": {
+  "Sources/AetherLanguageCoreAI/LanguageStepContract.swift": "063279571d51ce3aab413e22f00ff7ef4e80638fafeac21d5206f1e5a8b3acc0",
+  "Sources/AetherLanguageCoreAI/LanguageCachePlan.swift": "a12314cae3c95a1940ee2ba421b5148b5b60f398c484840d488ffec76689fdb0",
+  "Sources/AetherLanguageCoreAI/LanguageGenerationSession.swift": "c3b5b000e07c5cb551366a81a7e3f209d4570b1473464112614ec2f601f55fa8",
+  "Sources/AetherLanguageCoreAI/LanguageVisionPrompt.swift": "e8c4f649d96a252c31006d512aa8c83b17886cd8a6226c1e23ee8b6289bd1348"
+ },
+ "nativeTests": {
+  "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "ac733b75f826988c706b085d9328638e4bb5c215ba2908286683b1a75db41cb1",
+  "Tests/AetherNativeTests/LanguageDecodeQualificationTests.swift": "395adba9e1e335adc4f7c6af223a2397c3d4778e9974f2afbb67fd02308fffdc",
+  "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift": "d45d68ed270aba31af229ec535e23171b684ff546f38f69fef57007387048f57",
+  "Tests/AetherNativeTests/VisionLanguageSessionTests.swift": "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0",
+  "Tests/AetherNativeTests/LanguageTimeToFirstTokenTests.swift": "2b0816dc3057411d5ed5d2eba981c4ebcfc2f5ece3fe3b4a3aee0ac6490f894a",
+  "Tests/AetherNativeTests/LanguagePrefillChunkSweepTests.swift": "5864c822abe721563d9b7af39e20d3a17703410fb7ea4aa209a1f8425a0f09d9",
+  "Tests/AetherNativeTests/LanguageMemoryBudgetQualificationTests.swift": "99c85046b0368a6dd86a000d457f00e073857b81f8a580167a36856d1f388621",
+  "Tests/AetherNativeTests/LanguageChatQualificationTests.swift": "2a0580115e0806cefe7225969e5aebd560bf99d294ed4d0505c0696143ee04c6",
+  "Tests/AetherNativeTests/VisionLanguageResourceTests.swift": "fd8505596523fd1fee08a777b140edaa42773779512a92909809a7452efe02b6"
+ },
+ "before": "an origin/main build (bfbf814) with the branch's LanguagePrefillChunkSweepTests.swift, which adds the longer-prompt options; same bundles",
+ "planGate": {
+  "gate": "449-token prompt, default plan (width 256 above 256 prompt tokens, last chunk stepping back 63 rows, cache sized for the prompt before the prefill) against three plans; last-row logits cosine >= 0.9999 with equal argmax for each. Rule step-back (against one whole-prompt chunk, the exactness claim): identical 32-token greedy. Rule plan-rounding (against 1-token steps and against the 0.0.2 width of 64, other kernel shapes): identical greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.99999 on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Qwen3-VL image prompts (a long and a short question about one image, and two images) under the default plan, one 512-token-wide plan and 1-token steps: identical greedy, no near-tie allowance",
+  "models": {
+   "qwen3-0.6b": {
+    "file": "overlap-qwen3-0.6b.json",
+    "sha256": "c69fa50867e09d60bb55513d898a372ce6e981ce0b0fb4208e959c2a6152ef94",
+    "passed": true,
+    "promptTokens": 453,
+    "submissions": {
+     "0.0.2 width": 8,
+     "1-token steps": 453,
+     "default": 2,
+     "single chunk": 1
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999975278969424,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.9999983220170007,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 16,
+      "acceptedAtNearTie": true,
+      "nearTie": {
+       "marginSource": "qwen3-0.6b-reference-long forced row 16",
+       "row": 16,
+       "rowCosines": [
+        0.9999983220170007,
+        0.9999990759440177,
+        0.9999987882338683,
+        0.9999994705883399,
+        0.9999989579016186,
+        0.9999993278167135,
+        0.9999990335644027,
+        0.9999993304078444,
+        0.9999993479826488,
+        0.999999261381646,
+        0.999999608425057,
+        0.9999994519736437,
+        0.99999914849791,
+        0.9999994288715495,
+        0.9999994904366946,
+        0.9999991810362173,
+        0.9999946234974609
+       ],
+       "tokens": [
+        576,
+        1096
+       ],
+       "upstreamMargin": 0.0014245069308876624,
+       "upstreamTopTwo": [
+        1096,
+        576
+       ]
+      },
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.9999979361642212,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 16,
+      "acceptedAtNearTie": true,
+      "nearTie": {
+       "marginSource": "qwen3-0.6b-reference-long forced row 16",
+       "row": 16,
+       "rowCosines": [
+        0.9999979361642212,
+        0.9999989025220101,
+        0.9999983066980811,
+        0.9999993574325884,
+        0.9999991002211561,
+        0.999999396130042,
+        0.999999543901579,
+        0.9999992646322666,
+        0.9999996013160887,
+        0.9999995837579486,
+        0.9999996869151836,
+        0.9999996173507825,
+        0.9999995396932154,
+        0.999999550899018,
+        0.9999995815882943,
+        0.9999994779756308,
+        0.9999985820853278
+       ],
+       "tokens": [
+        576,
+        1096
+       ],
+       "upstreamMargin": 0.0014245069308876624,
+       "upstreamTopTwo": [
+        1096,
+        576
+       ]
+      },
+      "kitRowsAtDivergence": null,
+      "passed": true
+     }
+    ],
+    "imageCases": [],
+    "imageGreedyIdentical": null
+   },
+   "writer": {
+    "file": "overlap-writer.json",
+    "sha256": "2b359d98adfa076ebf8d9649480a145bafbbdf1cb9790927191183dd848ad15a",
+    "passed": true,
+    "promptTokens": 449,
+    "submissions": {
+     "0.0.2 width": 8,
+     "1-token steps": 449,
+     "default": 2,
+     "single chunk": 1
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999900068129346,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.999982981080399,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.9999703093468986,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     }
+    ],
+    "imageCases": [],
+    "imageGreedyIdentical": null
+   },
+   "vl-2b": {
+    "file": "overlap-vl-2b-quick.json",
+    "sha256": "22d3c8b35ab9fbd74adf45b081b6b06d104cea7094c1ccebfb8859c7d9388432",
+    "passed": true,
+    "promptTokens": 449,
+    "submissions": {
+     "0.0.2 width": 8,
+     "1-token steps": 449,
+     "default": 2,
+     "single chunk": 1
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999967051985557,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.9999982538341335,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.9999981608305529,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     }
+    ],
+    "imageCases": [
+     {
+      "name": "long question",
+      "promptTokens": 730,
+      "imageSpan": [
+       4,
+       436
+      ],
+      "defaultChunkStarts": [
+       0,
+       256,
+       474
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": false,
+      "greedyIdentical": true
+     },
+     {
+      "name": "short question",
+      "promptTokens": 446,
+      "imageSpan": [
+       4,
+       436
+      ],
+      "defaultChunkStarts": [
+       0,
+       190
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": true,
+      "greedyIdentical": true
+     },
+     {
+      "name": "two images",
+      "promptTokens": 883,
+      "imageSpan": [
+       4,
+       436,
+       438,
+       870
+      ],
+      "defaultChunkStarts": [
+       0,
+       256,
+       512,
+       627
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": true,
+      "greedyIdentical": true
+     }
+    ],
+    "imageGreedyIdentical": true
+   },
+   "vl-4b": {
+    "file": "overlap-vl-4b.json",
+    "sha256": "aa92bf63e4484876c6a2dbce713a431c9af4a94801fcdb7ce0cf0bde8c2ee0fc",
+    "passed": false,
+    "promptTokens": 449,
+    "submissions": {
+     "0.0.2 width": 8,
+     "1-token steps": 449,
+     "default": 2,
+     "single chunk": 1
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999971393789621,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 4,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": {
+       "default": {
+        "margin": 0,
+        "topTwo": [
+         3129,
+         3982
+        ]
+       },
+       "single chunk": {
+        "margin": 0,
+        "topTwo": [
+         3129,
+         3982
+        ]
+       }
+      },
+      "passed": false
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.9999953764364249,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 4,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": {
+       "1-token steps": {
+        "margin": 0.010443472383753805,
+        "topTwo": [
+         3982,
+         3129
+        ]
+       },
+       "default": {
+        "margin": 0,
+        "topTwo": [
+         3129,
+         3982
+        ]
+       }
+      },
+      "passed": false
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.999996828206825,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 4,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": {
+       "0.0.2 width": {
+        "margin": 0.010443573791622782,
+        "topTwo": [
+         3982,
+         3129
+        ]
+       },
+       "default": {
+        "margin": 0,
+        "topTwo": [
+         3129,
+         3982
+        ]
+       }
+      },
+      "passed": false
+     }
+    ],
+    "imageCases": [
+     {
+      "name": "long question",
+      "promptTokens": 730,
+      "imageSpan": [
+       4,
+       436
+      ],
+      "defaultChunkStarts": [
+       0,
+       256,
+       474
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": false,
+      "greedyIdentical": true
+     },
+     {
+      "name": "short question",
+      "promptTokens": 446,
+      "imageSpan": [
+       4,
+       436
+      ],
+      "defaultChunkStarts": [
+       0,
+       190
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": true,
+      "greedyIdentical": true
+     },
+     {
+      "name": "two images",
+      "promptTokens": 883,
+      "imageSpan": [
+       4,
+       436,
+       438,
+       870
+      ],
+      "defaultChunkStarts": [
+       0,
+       256,
+       512,
+       627
+      ],
+      "chunksCrossImageEdges": true,
+      "tailReCoversImageRows": true,
+      "greedyIdentical": true
+     }
+    ],
+    "imageGreedyIdentical": true
+   },
+   "writer-1021": {
+    "file": "overlap-writer-r92.json",
+    "sha256": "4d2367468d18867011e80fd45c29a84ba14074a5e3bc43177ad31344dda7a56d",
+    "passed": false,
+    "promptTokens": 1021,
+    "submissions": {
+     "0.0.2 width": 16,
+     "1-token steps": 1021,
+     "default": 4,
+     "single chunk": 2
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999949804811294,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.9999896946089469,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": {
+       "1-token steps": {
+        "margin": 0,
+        "topTwo": [
+         498,
+         1075
+        ]
+       },
+       "default": {
+        "margin": 0.007683570955224337,
+        "topTwo": [
+         1075,
+         498
+        ]
+       }
+      },
+      "passed": false
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.999969312171291,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": {
+       "0.0.2 width": {
+        "margin": 0.007696554032657095,
+        "topTwo": [
+         1075,
+         498
+        ]
+       },
+       "default": {
+        "margin": 0.007683570955224337,
+        "topTwo": [
+         1075,
+         498
+        ]
+       }
+      },
+      "passed": false
+     }
+    ],
+    "imageCases": [],
+    "imageGreedyIdentical": null
+   }
+  }
+ },
+ "textUpstreamParity": {
+  "0.6b-short": {
+   "file": "decode-0.6b-short.json",
+   "sha256": "03f72d0427240df03659580da23bcae73e958ed20ee3138548a15b8d2b81adcf",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "15a13e901aa2fed6bf30c7d81f0fe665f1dfb196cab11daf89b1993f43bbff76",
+    "reference.json": "8d45deef96831d1cadf62e73f65820477e72cdad4f18c0d20e07f5151d530085"
+   },
+   "forcedRows": 64,
+   "forcedMinimumCosine": 0.9999989455131314,
+   "forcedArgmaxMismatches": 1,
+   "forcedNearTies": 1,
+   "greedyFirstDivergence": 58,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 1280
+  },
+  "0.6b-long": {
+   "file": "decode-0.6b-long.json",
+   "sha256": "77bc41e8421b41930f017efb9535d1392ca76ccec5e2880ee51ad774227a4d44",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "eb07a19c300a8d2e41d7402e6ddadbe170430af067423810cbb6fa62a96c273b",
+    "reference.json": "302fbd2164447d3062b948aa837b468a1f5ff1384cc635f69383a4655992b1ad"
+   },
+   "forcedRows": 32,
+   "forcedMinimumCosine": 0.9999925590775972,
+   "forcedArgmaxMismatches": 1,
+   "forcedNearTies": 1,
+   "greedyFirstDivergence": 16,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 1536
+  },
+  "writer-short": {
+   "file": "decode-writer-short.json",
+   "sha256": "3173f7bca8c949fbf79d09ef211d9c6966d0d7d03f7113849790ceae5012f919",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "90baba20d04ff8c3f6c410e454da1b1db4f82102f43596f8bf3ce3552a15ba06",
+    "reference.json": "fcb1652cef0d8195edd8af61f65d81a170e7c1b704056ce1df69afae3ede5267"
+   },
+   "forcedRows": 32,
+   "forcedMinimumCosine": 0.9999987015881698,
+   "forcedArgmaxMismatches": 0,
+   "forcedNearTies": 0,
+   "greedyFirstDivergence": null,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 1280
+  },
+  "writer-long": {
+   "file": "decode-writer-long.json",
+   "sha256": "05b3c5c9b18653cb3cbc606b9a37350660c5857f5dec766f702cebc0b4fb5b58",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "344a8fedb82607df901daa63efc5a4e73d7887cb662f934b97ef3f361bb1ec19",
+    "reference.json": "d5dbea936988524aa60ee7c22e4ff7024f892889726620b40668d2d1a4504aad"
+   },
+   "forcedRows": 32,
+   "forcedMinimumCosine": 0.999984801167479,
+   "forcedArgmaxMismatches": 0,
+   "forcedNearTies": 0,
+   "greedyFirstDivergence": null,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 1536
+  }
+ },
+ "visionUpstreamParity": {
+  "vl-2b": {
+   "model-parity": {
+    "file": "vl-vl-2b-model-parity.json",
+    "sha256": "7c13ac8e685f0ef9acee4939967aadab6a022df3ecfa1d8a08d40122234129ae",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-model-parity.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999495004823568,
+      "previousForcedMinimumCosine": 0.9999527527412251,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": 464,
+      "forcedMinimumCosine": 0.9998449675219626,
+      "previousForcedMinimumCosine": 0.9998517399766456,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": 450,
+      "forcedMinimumCosine": 0.9999845988209967,
+      "previousForcedMinimumCosine": 0.9999853956244648,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": 508,
+      "forcedMinimumCosine": 0.9999963777622435,
+      "previousForcedMinimumCosine": 0.9999981904391716,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.999997889659236,
+      "previousForcedMinimumCosine": 0.9999990009490567,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "kit-end-to-end": {
+    "file": "vl-vl-2b-kit-end-to-end.json",
+    "sha256": "3a63dac25480e16d31162a0e7e409a77abff8a62609325ccf3a6b41a04f89ea3",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-kit-end-to-end.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999357317789163,
+      "previousForcedMinimumCosine": 0.9999331261571813,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": 464,
+      "forcedMinimumCosine": 0.9999832019363281,
+      "previousForcedMinimumCosine": 0.9999878013167945,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": 450,
+      "forcedMinimumCosine": 0.9999278840316971,
+      "previousForcedMinimumCosine": 0.9999243156682918,
+      "forcedArgmaxMismatches": 1,
+      "greedyFirstDivergence": 16,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": 508,
+      "forcedMinimumCosine": 0.9999963777622435,
+      "previousForcedMinimumCosine": 0.9999981904391716,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999981944979542,
+      "previousForcedMinimumCosine": 0.999998670246263,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-model-parity": {
+    "file": "vl-vl-2b-long-model-parity.json",
+    "sha256": "9ba21d76674a736d46eb90a9ad7abccf064ab6a6bbef27c12a05f9983b98a8ee",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-long-model-parity.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": 539,
+      "forcedMinimumCosine": 0.9999751717567218,
+      "previousForcedMinimumCosine": 0.9999771059901489,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-kit-same-decode": {
+    "file": "vl-vl-2b-long-kit-same-decode.json",
+    "sha256": "745aefc579318d466209cc8624add20c8ad69ae7e4cbc2a7b7dc698e43434383",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-long-kit-same-decode.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": 539,
+      "forcedMinimumCosine": 0.9999737707701969,
+      "previousForcedMinimumCosine": 0.9999727848099268,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "public-session": {
+    "file": "vlsession-vl-2b.json",
+    "sha256": "d81099bfb793efe174759e0ac7e9e7dd36194efe64925bc2f4b1d1ea670bb041",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-public-session.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-session": {
+    "file": "vlsession-vl-2b-long.json",
+    "sha256": "179061df70d97cc0ab6b1e060857dcbaab00656815a976c7b994431c44ef971c",
+    "passed": true,
+    "previousRecord": "qwen3-vl-2b-one-function-image-text-2026-10-27-long-session.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   }
+  },
+  "vl-4b": {
+   "model-parity-forced48": {
+    "file": "vl-vl-4b-model-parity-forced48.json",
+    "sha256": "3b20b4307212668917622e0da8db741df79bca98f90cbf0c1fd68d6355d1a963",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-model-parity-forced48.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999223240148807,
+      "previousForcedMinimumCosine": 0.9999278000110209,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": 464,
+      "forcedMinimumCosine": 0.9999963460370213,
+      "previousForcedMinimumCosine": 0.999989795177494,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": 450,
+      "forcedMinimumCosine": 0.9999890032145577,
+      "previousForcedMinimumCosine": 0.9999864951272271,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": 508,
+      "forcedMinimumCosine": 0.999993402210157,
+      "previousForcedMinimumCosine": 0.9999870787405664,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999949863523114,
+      "previousForcedMinimumCosine": 0.999990273535692,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "kit-end-to-end": {
+    "file": "vl-vl-4b-kit-end-to-end.json",
+    "sha256": "f38ca63059d97be9ce7fdf801db455a2cc87146b45c46a19006809aead39b419",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-kit-end-to-end.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999000444823483,
+      "previousForcedMinimumCosine": 0.9998993152727081,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": 464,
+      "forcedMinimumCosine": 0.9999936339545729,
+      "previousForcedMinimumCosine": 0.9999956781007159,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": 450,
+      "forcedMinimumCosine": 0.9999843172017057,
+      "previousForcedMinimumCosine": 0.9999836463932293,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": 508,
+      "forcedMinimumCosine": 0.999993402210157,
+      "previousForcedMinimumCosine": 0.9999870787405664,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": 449,
+      "forcedMinimumCosine": 0.9999939640158608,
+      "previousForcedMinimumCosine": 0.9999933033543045,
+      "forcedArgmaxMismatches": 0,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-model-parity": {
+    "file": "vl-vl-4b-long-model-parity.json",
+    "sha256": "f64bf309fe375646c666ff1a3d1a5fb9c8348a44b2fab0e00b73975809e85430",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-long-model-parity.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": 539,
+      "forcedMinimumCosine": 0.9999119154543681,
+      "previousForcedMinimumCosine": 0.9999094782323648,
+      "forcedArgmaxMismatches": 1,
+      "greedyFirstDivergence": 3,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-kit-same-decode": {
+    "file": "vl-vl-4b-long-kit-same-decode.json",
+    "sha256": "53d9c7997c078040db8225bbcfbe97cedf7e166be295ce5d3808adba0a8b6903",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-long-kit-same-decode.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": 539,
+      "forcedMinimumCosine": 0.9999230100206518,
+      "previousForcedMinimumCosine": 0.9999226756141005,
+      "forcedArgmaxMismatches": 1,
+      "greedyFirstDivergence": 3,
+      "greedyAccepted": true,
+      "matchesComponentRun": null,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "public-session": {
+    "file": "vlsession-vl-4b.json",
+    "sha256": "c2fd4b7fbcb3f05a20ab544ff314178ac31ba1ff3e681c10346854aad8fb3fa1",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-public-session.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-stall-wide",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "photo-fruit-market-4x3",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-448",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     },
+     {
+      "name": "scene-320x256",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   },
+   "long-session": {
+    "file": "vlsession-vl-4b-long.json",
+    "sha256": "80ab4158f5ce705e56aaa7623793952989a6c22e8be3500945d758169ec54576",
+    "passed": true,
+    "previousRecord": "qwen3-vl-4b-one-function-image-text-2026-10-27-long-session.json",
+    "cases": [
+     {
+      "name": "photo-dog-portrait-long-question",
+      "promptTokens": null,
+      "forcedMinimumCosine": null,
+      "previousForcedMinimumCosine": null,
+      "forcedArgmaxMismatches": null,
+      "greedyFirstDivergence": null,
+      "greedyAccepted": null,
+      "matchesComponentRun": true,
+      "greedyIdenticalToPreviousRecord": true
+     }
+    ]
+   }
+  }
+ },
+ "timeToFirstToken": {
+  "test": "languageTimeToFirstToken; one-token requests, warm median of 5 interleaved rounds; run order base-1, after-1, base-2, after-2; widths: after-1 also at 64 and 512 with the 0.0.3 capacity sizing",
+  "runs": {
+   "base-1": {
+    "file": "ttft-base-1.json",
+    "sha256": "207ccf3d86eaaf64104e224930ce710dd75f37d44db373a2f1ae56185d4c1413",
+    "warm": {
+     "qwen3-0.6b": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 149.1,
+       "submissions": 16,
+       "widths": [
+        64
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 364.9,
+       "submissions": 32,
+       "widths": [
+        64
+       ],
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 31.7,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 24.0,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 389
+      }
+     },
+     "qwen3-4b-writer": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 439.5,
+       "submissions": 16,
+       "widths": [
+        64
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 948.7,
+       "submissions": 32,
+       "widths": [
+        64
+       ],
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 101.5,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 26.3,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 258
+      }
+     }
+    },
+    "widths": {}
+   },
+   "after-1": {
+    "file": "ttft-after-1.json",
+    "sha256": "fd1582a7078ceb4cb601aa86845745866f1d080833db01219578aedf27e4c2cc",
+    "warm": {
+     "qwen3-0.6b": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 65.0,
+       "submissions": 4,
+       "widths": [
+        256
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 146.5,
+       "submissions": 8,
+       "widths": [
+        256
+       ],
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 34.8,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 12.7,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 389
+      }
+     },
+     "qwen3-4b-writer": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 205.5,
+       "submissions": 4,
+       "widths": [
+        256
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 488.6,
+       "submissions": 8,
+       "widths": [
+        256
+       ],
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 100.4,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 27.7,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 258
+      }
+     }
+    },
+    "widths": {
+     "qwen3-0.6b@512": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 55.5,
+       "submissions": 2,
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 122.9,
+       "submissions": 4,
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 15.7,
+       "submissions": 1,
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 14.7,
+       "submissions": 1,
+       "firstToken": 389
+      }
+     },
+     "qwen3-0.6b@64": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 154.6,
+       "submissions": 16,
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 361.9,
+       "submissions": 32,
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 33.6,
+       "submissions": 4,
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 10.4,
+       "submissions": 1,
+       "firstToken": 389
+      }
+     },
+     "qwen3-4b-writer@512": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 228.1,
+       "submissions": 2,
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 475.4,
+       "submissions": 4,
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 56.3,
+       "submissions": 1,
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 30.4,
+       "submissions": 1,
+       "firstToken": 258
+      }
+     },
+     "qwen3-4b-writer@64": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 440.6,
+       "submissions": 16,
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 949.9,
+       "submissions": 32,
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 103.5,
+       "submissions": 4,
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 27.1,
+       "submissions": 1,
+       "firstToken": 258
+      }
+     }
+    }
+   },
+   "base-2": {
+    "file": "ttft-base-2.json",
+    "sha256": "ea7ea479f9ab8abeb81e2249267d499de9f8ad28a8a03acf668ed3ce54ae13ec",
+    "warm": {
+     "qwen3-0.6b": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 159.7,
+       "submissions": 16,
+       "widths": [
+        64
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 370.9,
+       "submissions": 32,
+       "widths": [
+        64
+       ],
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 33.6,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 24.7,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 389
+      }
+     },
+     "qwen3-4b-writer": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 437.0,
+       "submissions": 16,
+       "widths": [
+        64
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 972.5,
+       "submissions": 32,
+       "widths": [
+        64
+       ],
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 101.2,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 26.1,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 258
+      }
+     }
+    },
+    "widths": {}
+   },
+   "after-2": {
+    "file": "ttft-after-2.json",
+    "sha256": "376cc4e66b789170f284a9f9247e4890b6d30f77ee3aa46c39b5c745a2dea420",
+    "warm": {
+     "qwen3-0.6b": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 68.4,
+       "submissions": 4,
+       "widths": [
+        256
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 154.5,
+       "submissions": 8,
+       "widths": [
+        256
+       ],
+       "firstToken": 79
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 35.2,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 11.7,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 389
+      }
+     },
+     "qwen3-4b-writer": {
+      "1024": {
+       "timeToFirstTokenMilliseconds": 226.1,
+       "submissions": 4,
+       "widths": [
+        256
+       ],
+       "firstToken": 198
+      },
+      "2048": {
+       "timeToFirstTokenMilliseconds": 533.4,
+       "submissions": 8,
+       "widths": [
+        256
+       ],
+       "firstToken": 83
+      },
+      "256": {
+       "timeToFirstTokenMilliseconds": 101.8,
+       "submissions": 4,
+       "widths": [
+        64
+       ],
+       "firstToken": 311
+      },
+      "64": {
+       "timeToFirstTokenMilliseconds": 27.6,
+       "submissions": 1,
+       "widths": [
+        64
+       ],
+       "firstToken": 258
+      }
+     }
+    },
+    "widths": {}
+   }
+  },
+  "note": "firstTokensAgree in the raw reports compares the two models with each other (different checkpoints), so it is false; per model the first tokens are equal across builds, lengths' plans and widths"
+ },
+ "retentionSweep": {
+  "test": "languagePrefillChunkSweep with AETHER_CHUNK_SWEEP_WIDTHS=default (the session's plan) and AETHER_CHUNK_SWEEP_LONG_REPEATS 40 / 92 / 185; 'base' is the origin/main build, 'after' this one",
+  "runs": {
+   "0.6b-after-r185": {
+    "file": "sweep-0.6b-after-r185.json",
+    "sha256": "e1eed0dd0df27d5948665dcd268f6c3081de0fb516c545d42b982e6b7f67dc1e",
+    "promptTokens": {
+     "long": 2048,
+     "short": 16
+    },
+    "retainedPerLongRequestMiB": 82.43671875,
+    "retainedPerMixedRequestMiB": 44.4296875,
+    "medianTimeToFirstTokenLongSeconds": 0.137369667,
+    "medianTimeToFirstTokenShortSeconds": 0.010008916,
+    "reloadsPer60AtDefaultBudget": 2,
+    "secondsFor60AtDefaultBudget": 13.917422791,
+    "repliesStable": true,
+    "longReply": [
+     785,
+     326,
+     57909,
+     53416,
+     56848,
+     279,
+     91830,
+     264
+    ]
+   },
+   "0.6b-after-r92": {
+    "file": "sweep-0.6b-after-r92.json",
+    "sha256": "af204a36b73bd611eb0ae8a4f38ab08fe18bbefc4d4a69a79d63a1520a05f511",
+    "promptTokens": {
+     "long": 1025,
+     "short": 16
+    },
+    "retainedPerLongRequestMiB": 73.17109375,
+    "retainedPerMixedRequestMiB": 37.40625,
+    "medianTimeToFirstTokenLongSeconds": 0.07658575,
+    "medianTimeToFirstTokenShortSeconds": 0.009101042,
+    "reloadsPer60AtDefaultBudget": 2,
+    "secondsFor60AtDefaultBudget": 8.252191084,
+    "repliesStable": true,
+    "longReply": [
+     785,
+     326,
+     57909,
+     53416,
+     56848,
+     279,
+     91830,
+     264
+    ]
+   },
+   "0.6b-base-r185": {
+    "file": "sweep-0.6b-base-r185.json",
+    "sha256": "13a1d16a2e4872856737c0318476482332f25ec57a6748ea2eba6fc0423f2231",
+    "promptTokens": {
+     "long": 2048,
+     "short": 16
+    },
+    "retainedPerLongRequestMiB": 0,
+    "retainedPerMixedRequestMiB": 81.5234375,
+    "medianTimeToFirstTokenLongSeconds": 0.360849541,
+    "medianTimeToFirstTokenShortSeconds": 0.010453125,
+    "reloadsPer60AtDefaultBudget": 0,
+    "secondsFor60AtDefaultBudget": 25.438835791,
+    "repliesStable": true,
+    "longReply": [
+     785,
+     326,
+     57909,
+     53416,
+     56848,
+     279,
+     91830,
+     264
+    ]
+   },
+   "0.6b-base-r92": {
+    "file": "sweep-0.6b-base-r92.json",
+    "sha256": "8481fc99b3d9af638091cce2b9bac7727220c72f66881c0b564171bb9fc1b50c",
+    "promptTokens": {
+     "long": 1025,
+     "short": 16
+    },
+    "retainedPerLongRequestMiB": 98.29609375,
+    "retainedPerMixedRequestMiB": 49.96875,
+    "medianTimeToFirstTokenLongSeconds": 0.171132208,
+    "medianTimeToFirstTokenShortSeconds": 0.009737167,
+    "reloadsPer60AtDefaultBudget": 2,
+    "secondsFor60AtDefaultBudget": 14.103528083,
+    "repliesStable": true,
+    "longReply": [
+     785,
+     326,
+     57909,
+     53416,
+     56848,
+     279,
+     91830,
+     264
+    ]
+   },
+   "writer-after-r185": {
+    "file": "sweep-writer-after-r185.json",
+    "sha256": "37320b3d7525b21a38d2de77f70fa5c173e14fab779c1b946c6521bd7d915de3",
+    "promptTokens": {
+     "long": 2044,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 139.453125,
+    "retainedPerMixedRequestMiB": 73.546875,
+    "medianTimeToFirstTokenLongSeconds": 0.528686667,
+    "medianTimeToFirstTokenShortSeconds": 0.023037583,
+    "reloadsPer60AtDefaultBudget": 3,
+    "secondsFor60AtDefaultBudget": 49.943421708,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     498,
+     3003,
+     11504,
+     279,
+     1852,
+     11652
+    ]
+   },
+   "writer-after-r40": {
+    "file": "sweep-writer-after-r40.json",
+    "sha256": "4b2511f52a94e13cee1d3c5dfa5e0b5ed0e651201fa64b87b94ff208dc5a5c8c",
+    "promptTokens": {
+     "long": 449,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 109.8125,
+    "retainedPerMixedRequestMiB": 58.7265625,
+    "medianTimeToFirstTokenLongSeconds": 0.107676708,
+    "medianTimeToFirstTokenShortSeconds": 0.022085834,
+    "reloadsPer60AtDefaultBudget": 3,
+    "secondsFor60AtDefaultBudget": 23.111280917,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     1075,
+     498,
+     3003,
+     11504,
+     279,
+     1852
+    ]
+   },
+   "writer-after-r92": {
+    "file": "sweep-writer-after-r92.json",
+    "sha256": "b0b281c20480776b5993afa67f9900046bbd820020450053ded7d528d7e7a2c8",
+    "promptTokens": {
+     "long": 1021,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 122.953125,
+    "retainedPerMixedRequestMiB": 62.34375,
+    "medianTimeToFirstTokenLongSeconds": 0.233465708,
+    "medianTimeToFirstTokenShortSeconds": 0.022051917,
+    "reloadsPer60AtDefaultBudget": 3,
+    "secondsFor60AtDefaultBudget": 32.010147833,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     1075,
+     498,
+     3003,
+     11504,
+     279,
+     1852
+    ]
+   },
+   "writer-base-r185": {
+    "file": "sweep-writer-base-r185.json",
+    "sha256": "c20dfbb8de17cf67a7425b37b3b52558adec58a774d5589e12eaca26785e1abd",
+    "promptTokens": {
+     "long": 2044,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 272.0625,
+    "retainedPerMixedRequestMiB": 139.8515625,
+    "medianTimeToFirstTokenLongSeconds": 0.980792958,
+    "medianTimeToFirstTokenShortSeconds": 0.023173625,
+    "reloadsPer60AtDefaultBudget": 6,
+    "secondsFor60AtDefaultBudget": 85.363919292,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     498,
+     3003,
+     11504,
+     279,
+     1852,
+     11652
+    ]
+   },
+   "writer-base-r40": {
+    "file": "sweep-writer-base-r40.json",
+    "sha256": "d6b5b50fc224089924a14b98895cb01c98f9ee66b8edb2da937d6551e0886a82",
+    "promptTokens": {
+     "long": 449,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 58.578125,
+    "retainedPerMixedRequestMiB": 33.109375,
+    "medianTimeToFirstTokenLongSeconds": 0.209439375,
+    "medianTimeToFirstTokenShortSeconds": 0.02212325,
+    "reloadsPer60AtDefaultBudget": 1,
+    "secondsFor60AtDefaultBudget": 24.466902083,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     1075,
+     498,
+     3003,
+     11504,
+     279,
+     1852
+    ]
+   },
+   "writer-base-r92": {
+    "file": "sweep-writer-base-r92.json",
+    "sha256": "a71fc6214d79e415b6f8e75d3f7a286ba87223bfc03426d482da081a081971ba",
+    "promptTokens": {
+     "long": 1021,
+     "short": 12
+    },
+    "retainedPerLongRequestMiB": 129,
+    "retainedPerMixedRequestMiB": 65.3671875,
+    "medianTimeToFirstTokenLongSeconds": 0.4627625,
+    "medianTimeToFirstTokenShortSeconds": 0.022056958,
+    "reloadsPer60AtDefaultBudget": 3,
+    "secondsFor60AtDefaultBudget": 45.042154125,
+    "repliesStable": true,
+    "longReply": [
+     2132,
+     4977,
+     498,
+     3003,
+     11504,
+     279,
+     1852,
+     11652
+    ]
+   }
+  }
+ },
+ "memoryBudgetBounds": {
+  "gate": "Per model: at least 60 identical-shape requests after warming; Metal after every request at most the post-warm baseline plus the budget plus the largest warm request's growth (its kind already ran since the last reload); at least one reload; every reply of a kind identical to the first",
+  "models": {
+   "qwen3-0.6b": {
+    "file": "budget-qwen3-0.6b.json",
+    "sha256": "9ebbc0879b54d361460ceff55272b4ecd30cfd4a34d3c6ba21270877e63f9168",
+    "passed": true,
+    "promptTokens": {
+     "text": 453
+    },
+    "warmMetalMiB": 1598,
+    "maximumMetalMiB": 3694,
+    "boundMiB": 3712,
+    "maximumRequestGrowthMiB": 66,
+    "reloads": 1,
+    "idleReloads": 1,
+    "requestReloads": 0,
+    "mismatchedReplies": 0,
+    "seconds": 7.571410208,
+    "firstReloadAfterRequest": 32
+   },
+   "writer": {
+    "file": "budget-writer.json",
+    "sha256": "6c020caae747489a1fb00e88ccf64e903bb0682ef760284e5d7c8eca25bb0f8c",
+    "passed": true,
+    "promptTokens": {
+     "text": 449
+    },
+    "warmMetalMiB": 8648,
+    "maximumMetalMiB": 10735,
+    "boundMiB": 10809,
+    "maximumRequestGrowthMiB": 113,
+    "reloads": 3,
+    "idleReloads": 3,
+    "requestReloads": 0,
+    "mismatchedReplies": 0,
+    "seconds": 48.739168791,
+    "firstReloadAfterRequest": 19
+   },
+   "vl-2b": {
+    "file": "budget-vl-2b.json",
+    "sha256": "0cad2d2342ada24f0d638fef4bf8a81a1b09e9f3e4b5fd4de4b403b21d90b524",
+    "passed": true,
+    "promptTokens": {
+     "image": 18,
+     "text": 449
+    },
+    "warmMetalMiB": 6184,
+    "maximumMetalMiB": 8235,
+    "boundMiB": 8352,
+    "maximumRequestGrowthMiB": 120,
+    "reloads": 3,
+    "idleReloads": 3,
+    "requestReloads": 0,
+    "mismatchedReplies": 0,
+    "seconds": 38.728349292,
+    "firstReloadAfterRequest": 18
+   },
+   "vl-4b": {
+    "file": "budget-vl-4b.json",
+    "sha256": "e079f079a97637dea98c0820b9f7aa52b9eab4607847d300c6801f52d715e4ca",
+    "passed": true,
+    "promptTokens": {
+     "image": 18,
+     "text": 449
+    },
+    "warmMetalMiB": 11058,
+    "maximumMetalMiB": 13059,
+    "boundMiB": 13314,
+    "maximumRequestGrowthMiB": 208,
+    "reloads": 5,
+    "idleReloads": 5,
+    "requestReloads": 0,
+    "mismatchedReplies": 0,
+    "seconds": 76.761245042,
+    "firstReloadAfterRequest": 10
+   }
+  }
+ },
+ "chatParity": {
+  "file": "chat-writer.json",
+  "sha256": "dc34a5a4c9414cb1d92e1b7477608a8a8a4606664dbbe05729bbbc6172163ea9",
+  "runs": [
+   {
+    "name": "rewrite",
+    "promptTokens": 72,
+    "replyTokens": 35,
+    "stopReason": "eos"
+   },
+   {
+    "name": "look",
+    "promptTokens": 73,
+    "replyTokens": 19,
+    "stopReason": "eos"
+   },
+   {
+    "name": "rewrite-repeat",
+    "promptTokens": 72,
+    "replyTokens": 35,
+    "stopReason": "eos"
+   }
+  ],
+  "identicalToRecords": [
+   "docs/evidence/language-qwen3-4b-writer-2026-10-26-chat.json",
+   "qwen3-4b-writer-chat-serial-stream-2026-10-27.json (local run record)"
+  ],
+  "greedyRepeatIdentical": true
+ },
+ "visionResourcePeaks": {
+  "test": "visionLanguageResourcePeaks; a request's transient is its sampled peak above both its starting and ending level",
+  "models": {
+   "vl-2b": {
+    "file": "peaks-vl-2b.json",
+    "sha256": "97f82de4ad43da939afca49dd8fbb32441a40c3042916a9c0c7e689c068d2052",
+    "requests": [
+     {
+      "phase": "first text request",
+      "metalTransientMiB": 23,
+      "footprintTransientMiB": 0,
+      "minimumFreeMiB": 1012
+     },
+     {
+      "phase": "warm text request",
+      "metalTransientMiB": 52,
+      "footprintTransientMiB": 52,
+      "minimumFreeMiB": 1012
+     },
+     {
+      "phase": "image request, grid 44x44",
+      "metalTransientMiB": 27,
+      "footprintTransientMiB": 27,
+      "minimumFreeMiB": 130
+     },
+     {
+      "phase": "image request, grid 36x48",
+      "metalTransientMiB": 0,
+      "footprintTransientMiB": 43,
+      "minimumFreeMiB": 133
+     },
+     {
+      "phase": "image request, grid 48x36",
+      "metalTransientMiB": 59,
+      "footprintTransientMiB": 63,
+      "minimumFreeMiB": 176
+     },
+     {
+      "phase": "image request, grid 32x56",
+      "metalTransientMiB": 62,
+      "footprintTransientMiB": 41,
+      "minimumFreeMiB": 141
+     },
+     {
+      "phase": "image request, grid 56x32",
+      "metalTransientMiB": 55,
+      "footprintTransientMiB": 62,
+      "minimumFreeMiB": 158
+     },
+     {
+      "phase": "warm image request",
+      "metalTransientMiB": 25,
+      "footprintTransientMiB": 39,
+      "minimumFreeMiB": 187
+     }
+    ],
+    "largestMetalTransientMiB": 62,
+    "largestFootprintTransientMiB": 63,
+    "reservedAfterOpenMiB": 8300,
+    "reservedAfterUnloadMiB": 0
+   },
+   "vl-4b": {
+    "file": "peaks-vl-4b.json",
+    "sha256": "09ea65f6d75c1e8aab23d100752d1de4c56224c76512d4e841256f313cae8a46",
+    "requests": [
+     {
+      "phase": "first text request",
+      "metalTransientMiB": 69,
+      "footprintTransientMiB": 50,
+      "minimumFreeMiB": 108
+     },
+     {
+      "phase": "warm text request",
+      "metalTransientMiB": 25,
+      "footprintTransientMiB": 15,
+      "minimumFreeMiB": 124
+     },
+     {
+      "phase": "image request, grid 44x44",
+      "metalTransientMiB": 67,
+      "footprintTransientMiB": 33,
+      "minimumFreeMiB": 132
+     },
+     {
+      "phase": "image request, grid 36x48",
+      "metalTransientMiB": 74,
+      "footprintTransientMiB": 76,
+      "minimumFreeMiB": 192
+     },
+     {
+      "phase": "image request, grid 48x36",
+      "metalTransientMiB": 69,
+      "footprintTransientMiB": 75,
+      "minimumFreeMiB": 190
+     },
+     {
+      "phase": "image request, grid 32x56",
+      "metalTransientMiB": 76,
+      "footprintTransientMiB": 75,
+      "minimumFreeMiB": 190
+     },
+     {
+      "phase": "image request, grid 56x32",
+      "metalTransientMiB": 74,
+      "footprintTransientMiB": 75,
+      "minimumFreeMiB": 133
+     },
+     {
+      "phase": "warm image request",
+      "metalTransientMiB": 74,
+      "footprintTransientMiB": 75,
+      "minimumFreeMiB": 159
+     }
+    ],
+    "largestMetalTransientMiB": 76,
+    "largestFootprintTransientMiB": 76,
+    "reservedAfterOpenMiB": 13800,
+    "reservedAfterUnloadMiB": 0
+   }
+  }
+ },
+ "probe": {
+  "tool": "Spikes/ttft/ttft-probe.swift (standalone Core AI, outside Kit's session)",
+  "outputs": {
+   "probe-prefill-1.txt": {
+    "sha256": "6ece98aeaf245bb3b9f298737bfb43a0cecfe213b9944c93cc2d5a072246aa11",
+    "lines": [
+     "opened; metal 0 MiB",
+     "bucketed C=512 N=1024: total 67.2 ms (median), subs 2, encode 53.0, encodeCPU 41.8, join 0.1, host 1.5, growth 10.9, argmax 198; all totals [\"67.2\", \"64.8\", \"68.0\", \"59.0\", \"67.8\"]",
+     "bucketed C=512 N=2048: total 148.4 ms (median), subs 4, encode 108.7, encodeCPU 72.6, join 0.1, host 2.2, growth 35.5, argmax 79; all totals [\"150.1\", \"148.1\", \"149.6\", \"143.0\", \"148.4\"]",
+     "bucketed C=64 N=1024: total 151.7 ms (median), subs 16, encode 129.6, encodeCPU 124.2, join 0.5, host 2.5, growth 16.6, argmax 198; all totals [\"151.7\", \"156.4\", \"147.9\", \"155.0\", \"147.8\"]",
+     "bucketed C=64 N=2048: total 352.6 ms (median), subs 32, encode 279.0, encodeCPU 249.6, join 1.0, host 5.3, growth 63.2, argmax 79; all totals [\"353.5\", \"353.8\", \"350.3\", \"351.7\", \"352.6\"]",
+     "running C=512 N=1024: total 37.2 ms (median), subs 2, encode 11.2, encodeCPU 15.6, join 25.7, host 0.1, growth 0.0, argmax 198; all totals [\"37.5\", \"36.0\", \"37.2\", \"36.9\", \"37.2\"]",
+     "running C=512 N=2048: total 80.5 ms (median), subs 4, encode 14.4, encodeCPU 22.9, join 65.6, host 0.2, growth 0.0, argmax 79; all totals [\"79.3\", \"80.5\", \"81.1\", \"81.0\", \"78.7\"]",
+     "running C=64 N=1024: total 130.7 ms (median), subs 16, encode 51.9, encodeCPU 86.3, join 77.5, host 0.2, growth 0.0, argmax 198; all totals [\"129.2\", \"132.0\", \"131.6\", \"128.9\", \"130.7\"]",
+     "running C=64 N=2048: total 260.1 ms (median), subs 32, encode 103.2, encodeCPU 171.4, join 154.7, host 0.2, growth 0.0, argmax 79; all totals [\"260.9\", \"270.0\", \"257.8\", \"260.1\", \"258.3\"]"
+    ]
+   },
+   "micro-1.txt": {
+    "sha256": "57e1843a4a0198c7ed56d2b299aa283ebffef5435fab8faf67df029663fb6a67",
+    "lines": [
+     "opened; metal 0 MiB",
+     "bucketed q=1 context=256: total 6.5 encode 6.1 encodeCPU 8.1 join 0.0 host 0.3",
+     "bucketed q=64 context=256: total 8.4 encode 8.0 encodeCPU 10.2 join 0.0 host 0.3",
+     "bucketed q=512 context=256: total 21.3 encode 20.6 encodeCPU 16.2 join 0.0 host 0.7",
+     "bucketed q=1 context=2048: total 6.8 encode 6.5 encodeCPU 9.7 join 0.0 host 0.3",
+     "bucketed q=64 context=2048: total 10.2 encode 9.8 encodeCPU 11.5 join 0.0 host 0.3",
+     "bucketed q=512 context=2048: total 27.7 encode 26.8 encodeCPU 23.9 join 0.0 host 0.7",
+     "running q=1 context=256: total 6.2 encode 2.0 encodeCPU 5.3 join 4.0 host 0.2",
+     "running q=64 context=256: total 7.7 encode 3.1 encodeCPU 5.3 join 4.5 host 0.2",
+     "running q=512 context=256: total 17.1 encode 3.5 encodeCPU 5.6 join 13.4 host 0.2",
+     "running q=1 context=2048: total 6.5 encode 2.0 encodeCPU 5.2 join 4.3 host 0.2",
+     "running q=64 context=2048: total 8.6 encode 3.2 encodeCPU 5.3 join 5.3 host 0.2",
+     "running q=512 context=2048: total 21.6 encode 3.5 encodeCPU 5.6 join 17.9 host 0.2"
+    ]
+   },
+   "compare-l4.txt": {
+    "sha256": "a727dc8c201f96c2bbd3699de97c12af45649938a5d6b5e69e16a5e15c714ed9",
+    "lines": [
+     "micro bucketed q=1 ctx=2048: total 3.26 encode 2.99 encodeCPU 2.33 join 0.03 argmax 67411",
+     "micro bucketed q=512 ctx=2048: total 7.11 encode 6.77 encodeCPU 4.20 join 0.03 argmax 73623",
+     "micro bucketed q=64 ctx=2048: total 3.70 encode 3.42 encodeCPU 2.37 join 0.03 argmax 125370",
+     "micro keypos q=1 ctx=2048: total 3.29 encode 3.04 encodeCPU 2.35 join 0.03 argmax 67411",
+     "micro keypos q=512 ctx=2048: total 6.63 encode 6.29 encodeCPU 3.65 join 0.03 argmax 73623",
+     "micro keypos q=64 ctx=2048: total 3.63 encode 3.35 encodeCPU 2.29 join 0.03 argmax 125370",
+     "micro running q=1 ctx=2048: total 3.64 encode 1.75 encodeCPU 1.87 join 1.64 argmax 73623",
+     "micro running q=512 ctx=2048: total 6.83 encode 2.02 encodeCPU 2.20 join 4.58 argmax 73623",
+     "micro running q=64 ctx=2048: total 3.10 encode 1.56 encodeCPU 1.69 join 1.37 argmax 73623",
+     "prefill bucketed C=512 N=2048: total 31.1 encode 24.6 encodeCPU 14.0 join 0.1 growth 5.0 host 0.8 argmax 49489",
+     "prefill bucketed C=64 N=2048: total 89.9 encode 76.7 encodeCPU 41.1 join 1.0 growth 8.5 host 2.0 argmax 49489",
+     "prefill keypos C=512 N=2048: total 31.1 encode 24.4 encodeCPU 13.8 join 0.1 growth 5.1 host 0.8 argmax 49489",
+     "prefill keypos C=64 N=2048: total 89.3 encode 75.9 encodeCPU 42.4 join 1.0 growth 8.3 host 2.0 argmax 49489",
+     "prefill running C=512 N=2048: total 25.5 encode 7.3 encodeCPU 8.0 join 17.8 growth 0.0 host 0.2 argmax 49489",
+     "prefill running C=64 N=2048: total 80.6 encode 31.2 encodeCPU 35.7 join 47.7 growth 0.0 host 0.2 argmax 49489"
+    ]
+   },
+   "retain-06b-2.txt": {
+    "sha256": "3ce9b58a73ebff665a13928ad5629092512d953082e62325d132aa6d67311722",
+    "lines": [
+     "model open 2 ms, metal 0 MiB",
+     "function load 202 ms, metal 0 MiB",
+     "warm: metal 4500 MiB",
+     "N=2048 C=64 ladder: +19.6 MiB per request over 8 (metal 4657 MiB), median prefill 375 ms, request 452 ms, argmax 79",
+     "N=2048 C=512 ladder: +516.2 MiB per request over 8 (metal 8787 MiB), median prefill 157 ms, request 235 ms, argmax 79",
+     "N=2048 C=64 fixed: +2.0 MiB per request over 8 (metal 8803 MiB), median prefill 345 ms, request 402 ms, argmax 79",
+     "N=2048 C=256 fixed: +77.9 MiB per request over 8 (metal 9426 MiB), median prefill 154 ms, request 215 ms, argmax 79",
+     "N=2048 C=512 fixed: +143.8 MiB per request over 8 (metal 10576 MiB), median prefill 132 ms, request 194 ms, argmax 79",
+     "N=1024 C=64 ladder: +78.1 MiB per request over 8 (metal 11201 MiB), median prefill 161 ms, request 225 ms, argmax 198",
+     "N=1024 C=512 ladder: +255.0 MiB per request over 8 (metal 13241 MiB), median prefill 66 ms, request 130 ms, argmax 198",
+     "N=1024 C=512 fixed: +133.4 MiB per request over 8 (metal 14308 MiB), median prefill 63 ms, request 119 ms, argmax 198",
+     "N=449 C=64 ladder: +36.4 MiB per request over 8 (metal 14599 MiB), median prefill 77 ms, request 124 ms, argmax 198",
+     "N=449 C=512 ladder: +110.2 MiB per request over 8 (metal 15481 MiB), median prefill 31 ms, request 81 ms, argmax 198",
+     "released function and stream: metal 15480 MiB (was 15481)",
+     "function reload 2 ms, then first N=2048 C=512 request 245 ms, metal 16003 MiB",
+     "released model: metal 116 MiB",
+     "model reopen 213 ms, then first N=2048 C=512 request 445 ms, second 239 ms, metal 2585 MiB"
+    ]
+   },
+   "retain-4b.txt": {
+    "sha256": "17bbb806be8fa2e9493f3e0f7c5dc20e4c788a60b73dae13216a6e1e884e731e",
+    "lines": [
+     "model open 24515 ms, metal 0 MiB",
+     "function load 1258 ms, metal 0 MiB",
+     "warm: metal 12318 MiB",
+     "N=2048 C=64 ladder: +245.8 MiB per request over 4 (metal 13301 MiB), median prefill 1023 ms, request 1256 ms, argmax 83",
+     "N=2048 C=64 fixed: +49.5 MiB per request over 4 (metal 13499 MiB), median prefill 1036 ms, request 1247 ms, argmax 83",
+     "N=2048 C=256 fixed: +132.2 MiB per request over 4 (metal 14028 MiB), median prefill 519 ms, request 709 ms, argmax 83",
+     "N=2048 C=512 fixed: +241.2 MiB per request over 4 (metal 14993 MiB), median prefill 493 ms, request 679 ms, argmax 83",
+     "N=1024 C=64 ladder: +118.0 MiB per request over 4 (metal 15465 MiB), median prefill 441 ms, request 627 ms, argmax 198",
+     "N=1024 C=512 fixed: +222.0 MiB per request over 4 (metal 16353 MiB), median prefill 224 ms, request 396 ms, argmax 198",
+     "N=2048 C=512 ladder: +870.2 MiB per request over 4 (metal 19834 MiB), median prefill 494 ms, request 708 ms, argmax 83",
+     "released function and stream: metal 19834 MiB (was 19834)",
+     "function reload 4 ms, then first N=2048 C=512 request 703 ms, metal 20705 MiB",
+     "released model: metal 114 MiB",
+     "model reopen 1984 ms, then first N=2048 C=512 request 2603 ms, second 663 ms, metal 10273 MiB"
+    ]
+   },
+   "retain-4b-matrix.txt": {
+    "sha256": "a16feeab2161db45a65ecf600fa0357987c295585a74ac56139e1115584be1cd",
+    "lines": [
+     "model open 3 ms, metal 0 MiB",
+     "function load 3219 ms, metal 0 MiB",
+     "warm: metal 16152 MiB",
+     "N=1024 C=64 ladder: +122.5 MiB per request over 4 (metal 16642 MiB), median prefill 476 ms, request 674 ms, argmax 198",
+     "N=1024 C=64 fixed: +18.2 MiB per request over 4 (metal 16715 MiB), median prefill 507 ms, request 693 ms, argmax 198",
+     "N=1024 C=256 ladder: +442.5 MiB per request over 4 (metal 18485 MiB), median prefill 296 ms, request 496 ms, argmax 198",
+     "N=1024 C=256 fixed: +117.5 MiB per request over 4 (metal 18955 MiB), median prefill 283 ms, request 467 ms, argmax 198",
+     "N=1024 C=512 ladder: +444.0 MiB per request over 4 (metal 20731 MiB), median prefill 266 ms, request 464 ms, argmax 198",
+     "N=1024 C=512 fixed: +223.5 MiB per request over 4 (metal 21625 MiB), median prefill 271 ms, request 460 ms, argmax 198",
+     "N=2048 C=64 ladder: +253.5 MiB per request over 4 (metal 22639 MiB), median prefill 1067 ms, request 1285 ms, argmax 83",
+     "N=2048 C=64 fixed: +41.2 MiB per request over 4 (metal 22804 MiB), median prefill 1085 ms, request 1280 ms, argmax 83",
+     "N=2048 C=256 fixed: +132.2 MiB per request over 4 (metal 23333 MiB), median prefill 651 ms, request 847 ms, argmax 83",
+     "N=2048 C=512 fixed: +242.8 MiB per request over 4 (metal 24304 MiB), median prefill 584 ms, request 782 ms, argmax 83",
+     "N=2048 C=256 ladder: +886.5 MiB per request over 4 (metal 27850 MiB), median prefill 636 ms, request 854 ms, argmax 83",
+     "N=2048 C=512 ladder: +868.2 MiB per request over 4 (metal 31323 MiB), median prefill 586 ms, request 812 ms, argmax 83",
+     "released function and stream: metal 31323 MiB (was 31323)",
+     "function reload 5 ms, then first N=2048 C=512 request 825 ms, metal 32194 MiB",
+     "released model: metal 136 MiB",
+     "model reopen 3430 ms, then first N=2048 C=512 request 3993 ms, second 643 ms, metal 10285 MiB"
+    ]
+   },
+   "retain-06b-c256.txt": {
+    "sha256": "41664da1a8f6faa963c41fe7be8679b9c28d9340d031a1a89abc738ba1127a9c",
+    "lines": [
+     "model open 3 ms, metal 0 MiB",
+     "function load 1141 ms, metal 0 MiB",
+     "warm: metal 2506 MiB",
+     "N=1024 C=64 ladder: +78.2 MiB per request over 6 (metal 2975 MiB), median prefill 156 ms, request 223 ms, argmax 198",
+     "N=1024 C=256 fixed: +73.2 MiB per request over 6 (metal 3414 MiB), median prefill 69 ms, request 122 ms, argmax 198",
+     "N=1024 C=512 fixed: +133.5 MiB per request over 6 (metal 4215 MiB), median prefill 59 ms, request 112 ms, argmax 198",
+     "N=2048 C=64 ladder: +26.2 MiB per request over 6 (metal 4372 MiB), median prefill 359 ms, request 434 ms, argmax 79",
+     "N=2048 C=256 fixed: +83.3 MiB per request over 6 (metal 4872 MiB), median prefill 154 ms, request 216 ms, argmax 79",
+     "released function and stream: metal 4872 MiB (was 4872)",
+     "function reload 2 ms, then first N=2048 C=512 request 230 ms, metal 5388 MiB",
+     "released model: metal 176 MiB",
+     "model reopen 181 ms, then first N=2048 C=512 request 429 ms, second 233 ms, metal 2645 MiB"
+    ]
+   }
+  }
+ },
+ "passed": null
+}

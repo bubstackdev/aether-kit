@@ -31,6 +31,8 @@ import Testing
 /// AETHER_OVERLAP_REFERENCES=<optional name=dir,...: upstream text references (reference.json, forced logits) of the
 ///   same prompt, for the plan-rounding near-tie rule>
 /// AETHER_OVERLAP_OUTPUT=<report .json>
+/// AETHER_OVERLAP_TEXT_REPEATS=<optional: sentences in the text prompt, default 40 (449 tokens on Qwen3); 92 is about
+///   1,024 tokens and 185 about 2,048>
 /// A plan-rounding divergence judged against the upstream reference.
 private struct OverlapNearTie: Codable {
     var row = 0
@@ -140,7 +142,8 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try? encoder.encode(report).write(to: output)
     }
-    let text = String(repeating: "The lighthouse keeper paints the railing a calm teal. ", count: 40)
+    let text = String(repeating: "The lighthouse keeper paints the railing a calm teal. ",
+                      count: Int(nativeEnvironment["AETHER_OVERLAP_TEXT_REPEATS"] ?? "") ?? 40)
     do {
         var references: [String: OverlapReference] = [:]
         for entry in (nativeEnvironment["AETHER_OVERLAP_REFERENCES"] ?? "").split(separator: ",") {
