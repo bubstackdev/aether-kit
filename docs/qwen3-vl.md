@@ -26,7 +26,8 @@ await session.unload()
 
 The bundle's `language-model.json` carries a `vision` registration
 (`LanguageVisionRegistration`): the encoder asset and its hash, the image tokens, the
-preprocessing parameters, an image-token budget per image (`maximumImageTokens`) and the encoder's fixed
+preprocessing parameters, an image-token budget per image (`maximumImageTokens`; a request may carry several images, and a host's
+`LanguageResourceAdmission` caps their sum per request, checked before the first encode) and the encoder's fixed
 patch grids (`imageGrids`), plus `exportBounds` with a `maximumImageChunk` covering the budget.
 `Forge/language/register_qwen3_vl_bundle.py` writes one for an assembled bundle, listing every tokenizer file (`tokenizerFiles`) so `verifyTokenizer` checks the exact set. Each image
 snaps to the grid nearest its aspect ratio, is resized to that grid exactly, encoded once by
@@ -223,17 +224,21 @@ change.)
 **Public API.** `VisionLanguageSession.open(bundle:)` on the registered bundle reproduces the
 component-level Kit run token for token on all five cases, and closes on `unload()`.
 
-**Several images** ([evidence](evidence/qwen3-vl-multi-image-2026-10-27.json), VL-2B). Three prompts against
-upstream with several images each, one case per reference process (14.3 GB peak each): the portrait and the fruit
+**Several images** ([VL-2B](evidence/qwen3-vl-multi-image-2026-10-27.json),
+[VL-4B](evidence/qwen3-vl-multi-image-4b-2026-10-28.json)). Three prompts against
+upstream with several images each, one case per reference process (14.3 GB peak each on the 2B, 20.1–24.8 GB on the 4B): the portrait and the fruit
 stall (48×36 and 32×56, 880 image tokens), three images (the portrait, the 4:3 market photo and the 448×448 scene, 1,348 tokens), and the
 two photos with a sentence between them. On the CPU, the prompt plan's expansion and M-RoPE positions equal the
 processor's ids and the model's rope index for every token (`LanguageVisionPromptTests.severalImagesMatchUpstream`):
 each image starts its span at the position after the previous text and the following text resumes at max(t, h, w) of the
-merged grid past the span's start, with no temporal offset between images. Natively, model parity passes on all three (forced-row
+merged grid past the span's start, with no temporal offset between images. On the 2B, model parity passes on all three (forced-row
 cosine ≥ 0.99978, no argmax differences, greedy identical), and so does Kit preprocessing on the same decode (pixel
 cosine ≥ 0.9999998 and equal grids per image, forced-row cosine ≥ 0.99994, greedy identical). The overlapped-prefill
 check adds a two-image prompt whose 64-token chunks cross every image edge: default chunks, 512-token chunks and
-1-token steps give identical greedy output. The 4B is not yet qualified with several images.
+1-token steps give identical greedy output. The 4B passes the same checks on the same prompts (its prompt tokens
+are the 2B's): model parity with forced-row cosine ≥ 0.99994, Kit preprocessing on the same decode with pixel cosine
+≥ 0.9999998, equal grids and forced-row cosine ≥ 0.99961, no argmax differences and greedy identical in all six runs,
+and the overlapped-prefill check with the two-image prompt.
 
 ## Qwen3-VL-4B describer
 
