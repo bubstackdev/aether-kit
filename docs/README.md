@@ -84,4 +84,4 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 
 ## 0.0.3 release (2026-10-28)
 
-[Release notes](release-notes/0.0.3.md), the [0.0.3 roadmap](roadmap-0.0.3.md) with its decisions and its 0.0.4 plan, and the [changelog](../CHANGELOG.md).
+[Release notes](release-notes/0.0.3.md), the [0.0.3 roadmap](roadmap-0.0.3.md) with its decisions and its 0.0.4 plan, and the [changelog](../CHANGELOG.md). Next: the [0.0.4 roadmap](roadmap-0.0.4.md).
