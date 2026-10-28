@@ -81,3 +81,7 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 ## 0.0.3 deployment floor (2026-10-27)
 
 [Deployment floor](deployment-floor.md): the package floor is macOS 14 / iOS 17. The Core AI targets are gated at OS 27 by `Scripts/annotate-floor.py`, CoreAI links weakly, tests build with the 27 triple, and CI launches `Examples/FloorConsumer` on macOS 14.
+
+## 0.0.3 release (YYYY-MM-DD)
+
+[Release notes](release-notes/0.0.3.md), the [0.0.3 roadmap](roadmap-0.0.3.md) with its decisions and its 0.0.4 plan, and the [changelog](../CHANGELOG.md).
