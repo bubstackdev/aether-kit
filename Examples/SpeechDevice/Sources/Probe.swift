@@ -53,6 +53,8 @@ struct DeviceReport: Encodable {
     var footprintAfterUnloadMiB = 0.0
     /// Decoder-only mode: the reduced-precision decoder against float32 on synthetic inputs (no parity gate).
     var decoderOnly: DecoderOnlyResult?
+    /// Decoder-only mode is fact-finding with no gate: it sets `completed` when both decoders ran, and never `passed`.
+    var completed: Bool?
     var passed = false
     var failures: [String] = []
 }
@@ -121,7 +123,7 @@ func runKokoroDeviceProbe() async -> DeviceReport {
         if FileManager.default.fileExists(atPath: assetsRoot.appendingPathComponent("decoder-only.json").path) {
             try await runKokoroDecoderOnlyProbe(assetsRoot: assetsRoot, report: &report)
             report.footprintPeakMiB = footprint().peak
-            report.passed = report.decoderOnly != nil
+            report.completed = report.decoderOnly != nil
             return report
         }
         let references = assetsRoot.appendingPathComponent("references")

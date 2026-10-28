@@ -1,6 +1,6 @@
 # Kokoro speech synthesis — 2026-10-26
 
-Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see [iPhone](#iphone)). AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iOS, quantized or fp16 exports, sub-utterance streaming, and listening review.
+Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see [iPhone](#iphone)). AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iPhone parity at bucket 512 and on other iPhone models, quantized or fp16 exports, sub-utterance streaming, and listening review.
 
 ## Source and license
 
@@ -195,12 +195,14 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 **Prepared for the next device run (0.0.3).** No device has run these yet.
 
 - **A bucket-512 reference case.** `reference_kokoro.py` adds `medium-af_bella`: two sentences, 442 frames, float64
-  floor rel L2 0.022. The four earlier cases regenerate with byte-identical audio. On the Mac, native parity passes all
+  floor rel L2 0.022. The four earlier cases regenerate with byte-identical audio: each `audio.f32` hashes the same as
+  before ([audio hashes](evidence/kokoro-references-bucket512-audio-2026-10-27.json)). On the Mac, native parity passes all
   five cases, with the new one at rel L2 0.027 and log-mel 0.015
   ([references](evidence/kokoro-references-bucket512-2026-10-27.json),
   [report](evidence/kokoro-native-bucket512-2026-10-27.json)). A first choice, `medium-am_adam` (419 frames), was
-  rejected: its own float32-versus-float64 upstream floor is 0.054, above the 0.05 bound, and Kit measured 0.058
-  ([report](evidence/kokoro-native-bucket512-am_adam-rejected-2026-10-27.json)). Staged with `--frame-cap 512`, the
+  rejected. Kit measured 0.058, about 1.07× that case's own float32-versus-float64 upstream floor (0.054), so it was within
+  the floor-multiple rule. But the absolute 0.05 bound is out of reach on that voice even for upstream float32 against
+  float64, so the case can't be judged by it ([report](evidence/kokoro-native-bucket512-am_adam-rejected-2026-10-27.json)). Staged with `--frame-cap 512`, the
   device run covers the four cases up to bucket 512 and checks that the 913-frame case is refused before decoding.
 - **The float16 Neural Engine retest.** `stage_device_assets.py BUNDLE REFERENCES --decoder-only FP16_BUNDLE` stages
   only two decoders: the float32 one and the reduced-precision one from an `export_kokoro.py --decoder-precision

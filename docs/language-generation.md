@@ -364,7 +364,7 @@ available memory.
 `Forge/language/stage_device_assets.py text|vision BUNDLE REFERENCE` copies the model asset(s) and tokenizer, and
 registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
 registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
-4.37 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
+4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
 an iPhone grants without the increased-memory-limit entitlement, so its run may end in a refusal or a jetsam kill.
 
 ## Evidence and limits

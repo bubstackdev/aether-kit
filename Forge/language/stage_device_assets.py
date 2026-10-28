@@ -64,8 +64,14 @@ def main():
         command += ["--supports-reasoning", "true" if registration["supportsReasoning"] else "false"]
     subprocess.run(command, check=True)
     ios = json.loads((bundle / "language-model.json").read_text())
-    if ios["platform"] != "ios" or ios["modelSHA256"] != registration["modelSHA256"]:
-        raise SystemExit("the iOS registration does not describe the same model asset")
+    if ios.get("platform") != "ios":
+        raise SystemExit("the iOS registration does not name the ios platform")
+    # Only the platform may differ: the model and vision hashes, tokenizer files, stop tokens, bounds and every other
+    # field must match the macOS registration exactly.
+    differences = sorted(k for k in set(ios) | set(registration)
+                         if k != "platform" and ios.get(k) != registration.get(k))
+    if differences:
+        raise SystemExit(f"the iOS registration differs from the macOS one beyond platform: {differences}")
 
     reference = args.output / "reference"
     reference.mkdir()
