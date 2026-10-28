@@ -292,7 +292,10 @@ struct TrackedFlux2Factory: Flux2ModelFactory {
         let backend = try await CoreAIBackend.load(at: asset.url, compute: .preferGPU, expectFrequentReshapes: frequentReshapes,
             executionObserver: { began in trace.native(began: began, model: model, instance: instance) },
             boundaryObserver: { boundary in
-                if boundary.hasPrefix("function") { trace.add(boundary, model: model, instance: instance) }
+                // `outputCopyBegin` follows only a native call that returned its outputs.
+                if boundary.hasPrefix("function") || boundary == "outputCopyBegin" {
+                    trace.add(boundary, model: model, instance: instance)
+                }
             })
         trace.add("modelOpened", model: model, instance: instance)
         return TrackedFlux2Model(session: ModelSession(backend: backend, functions: backend.functions), trace: trace,
