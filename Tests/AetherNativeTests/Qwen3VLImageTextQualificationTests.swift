@@ -61,7 +61,10 @@ private struct VLCaseReport: Codable {
     /// "reference": the reference processor's pixel tensor; "swift": Kit's decoding and preprocessing.
     let preprocessing: String
     let swiftGridMatches: Bool?
+    /// Over all of the case's images at once (one image: that image's).
     let swiftPixelCosine: Double?
+    /// Each image's own, in prompt order; the gates take the smallest.
+    let swiftPixelCosinePerImage: [Double]?
 }
 
 private struct VLReport: Codable {
@@ -127,7 +130,7 @@ func qwen3VLImageTextQualification() async throws {
         for c in reference.cases {
             report.stage = "case \(c.name)"
             let referencePixels = try f32(directory.appendingPathComponent(c.pixels.file))
-            var gridMatches: Bool?, pixelCosine: Double?
+            var gridMatches: Bool?, pixelCosine: Double?, perImageCosines: [Double]?
             var features: [LanguageImageFeatures] = []
             var encodeSeconds = 0.0
             var offset = 0, dot = 0.0, aa = 0.0, bb = 0.0
@@ -148,7 +151,12 @@ func qwen3VLImageTextQualification() async throws {
                     let matches = [processed.grid.t, processed.grid.h, processed.grid.w] == referenceGrid
                     gridMatches = (gridMatches ?? true) && matches
                     if matches {
-                        for (a, b) in zip(processed.pixels, referenceSlice) { dot += Double(a) * Double(b); aa += Double(a * a); bb += Double(b * b) }
+                        var imageDot = 0.0, imageAA = 0.0, imageBB = 0.0
+                        for (a, b) in zip(processed.pixels, referenceSlice) {
+                            imageDot += Double(a) * Double(b); imageAA += Double(a * a); imageBB += Double(b * b)
+                        }
+                        dot += imageDot; aa += imageAA; bb += imageBB
+                        perImageCosines = (perImageCosines ?? []) + [imageDot / (imageAA.squareRoot() * imageBB.squareRoot())]
                     }
                     pixels = processed.pixels.map { Float16($0) }
                     grid = processed.grid
@@ -191,7 +199,8 @@ func qwen3VLImageTextQualification() async throws {
                 greedyFirstDivergence: divergence, greedyDivergenceReferenceMargin: margin, greedyAccepted: accepted,
                 encodeSeconds: encodeSeconds,
                 timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds, preprocessing: swiftPreprocessing ? "swift" : "reference",
-                swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine))
+                swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine,
+                swiftPixelCosinePerImage: gridMatches == true ? perImageCosines : nil))
         }
         await session.unload()
         await encoder.unload()
@@ -202,11 +211,12 @@ func qwen3VLImageTextQualification() async throws {
             if $0.preprocessing == "reference" { return modelParity }
             // Kit end to end on the decode the reference saw: only Kit's resampler differs from the reference processor
             // (within one level), so the logits must meet the model-parity bar.
-            if sameDecode { return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.9999 && modelParity }
+            let pixelCosine = $0.swiftPixelCosinePerImage?.min() ?? 0
+            if sameDecode { return $0.swiftGridMatches == true && pixelCosine >= 0.9999 && modelParity }
             // An independent decode (ImageIO against libjpeg-turbo) moves pixels by up to tens of levels, which can move
             // a model's answer; the gate is decoder sanity (a swapped channel or a lost orientation fails it), and the
             // logits and tokens are reported.
-            return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.999
+            return $0.swiftGridMatches == true && pixelCosine >= 0.999
         }
         if swiftPreprocessing && !sameDecode {
             report.logitsWithinDecoderBand = report.cases.allSatisfy { $0.forcedMinimumCosine >= 0.98 }

@@ -146,8 +146,8 @@ struct VisionRGBImageTests {
     }
 
     /// The orientation transform is exact: a lossless PNG of seeded random pixels, tagged with each orientation, decodes
-    /// to precisely the stored pixels moved where the orientation puts them, byte for byte. So the full-size thumbnail path
-    /// used for rotated files moves pixels and never resamples them, at an odd photo-like size.
+    /// to precisely the stored pixels moved where the orientation puts them, byte for byte. So rotated files, decoded at
+    /// full size and then oriented, have their pixels moved and never resampled, at an odd photo-like size.
     @Test(arguments: 1...8) func exifOrientationMovesPixelsWithoutResampling(orientation: Int) throws {
         let width = 1201, height = 797
         var state: UInt64 = 0x9E37_79B9_7F4A_7C15 &+ UInt64(orientation)

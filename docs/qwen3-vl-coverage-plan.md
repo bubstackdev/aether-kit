@@ -79,8 +79,10 @@ document it. Proposed: match upstream by default and offer compositing as an exp
 transparent regions shown as a colour can say which colour:
 
 ```swift
-public enum VisionAlphaPolicy: Sendable { case dropAlpha, composite(over: (UInt8, UInt8, UInt8)) }   // default .dropAlpha
+public enum VisionAlphaPolicy: Sendable, Equatable { case dropAlpha; case composite(red: UInt8, green: UInt8, blue: UInt8) }   // default .dropAlpha
 ```
+
+(As built; the sketch first proposed `composite(over:)` with a tuple.)
 
 **Plan:**
 1. **Decoding.** For `.dropAlpha`, read the decoded image's own bytes instead of drawing them.
@@ -89,7 +91,9 @@ public enum VisionAlphaPolicy: Sendable { case dropAlpha, composite(over: (UInt8
    - Premultiplied sources (`.premultipliedLast/First`) have already lost the stored colour of transparent pixels.
      They are unpremultiplied where alpha > 0, and alpha-0 pixels become black. That matches PIL only for formats PIL
      also premultiplies, so the guide states the limit.
-   - Other layouts (16-bit, indexed, CMYK) keep today's drawing path, composited over black, and are documented.
+   - Other layouts keep the drawing path, composited over black, and are documented. As built, 8- and 16-bit
+     straight alpha (RGB or grey, either 16-bit byte order) is read directly, and ImageIO returns palette PNGs with a
+     transparency table as 8-bit RGBA, so they are read directly too; CMYK, float and opaque images draw.
 2. **CPU tests:**
    - Generated PNGs with known stored colours under alpha 0, 128 and 255, in RGBA, ARGB and premultiplied layouts.
      Kit's bytes must equal PIL's `convert("RGB")` bytes, recorded as a fixture by a Forge script so no Python runs in

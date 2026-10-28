@@ -226,7 +226,7 @@ component-level Kit run token for token on all five cases, and closes on `unload
 
 **Several images** ([VL-2B](evidence/qwen3-vl-multi-image-2026-10-27.json),
 [VL-4B](evidence/qwen3-vl-multi-image-4b-2026-10-28.json)). Three prompts against
-upstream with several images each, one case per reference process (14.3 GB peak each on the 2B, 20.1–24.8 GB on the 4B): the portrait and the fruit
+upstream with several images each, one case per reference process (14.2–14.3 GB peak on the 2B, 20.1–24.8 GB on the 4B): the portrait and the fruit
 stall (48×36 and 32×56, 880 image tokens), three images (the portrait, the 4:3 market photo and the 448×448 scene, 1,348 tokens), and the
 two photos with a sentence between them. On the CPU, the prompt plan's expansion and M-RoPE positions equal the
 processor's ids and the model's rope index for every token (`LanguageVisionPromptTests.severalImagesMatchUpstream`):
@@ -402,6 +402,8 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
   Krea process's ledger. The cross-process case waits for the [shared-protocol proposal](shared-residency-proposal.md).
 - **Coverage still missing:** iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
+- **Opaque 16-bit images** take the drawing path, which converts each 16-bit value to 8 bits where PIL takes the high
+  byte, so a pixel can differ from upstream's by one level (16-bit images with alpha are read exactly).
 - The encoder stays loaded for the session's lifetime.
 - **Text export memory.** The 0.0.2 export of the 4B text tower peaked at 31.7 GB of RSS (it was run on
   a 64 GB host with a 45 GB guard). The cause was not one copy of the weights per program (the converter
