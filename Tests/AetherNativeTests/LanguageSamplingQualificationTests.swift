@@ -1,6 +1,7 @@
 import AetherKit
 import AetherLanguageCoreAI
 import AetherLanguageTokenizers
+import AetherVision
 import Foundation
 import Testing
 
@@ -162,4 +163,87 @@ private struct SamplingReport: Encodable {
     var decodeMillisecondsPerToken: [String: [Double]] = [:]
     var modelReloads = 0
     var distinctStepShapes = 0
+}
+
+/// Opt-in native qualification of sampling on the image path, through the public `VisionLanguageSession` of a
+/// registered Qwen3-VL bundle: its sampling entry point with `.greedy` against the greedy one, token for token; seeded
+/// random sampling of an image prompt (repeats after other requests and in a freshly opened session, differs by seed);
+/// and the digits-then-stop constraint on every token of an image prompt. The image is a synthetic gradient. Run under
+/// the shared GPU lease (`with-gpu-lock.sh`), release build:
+///
+/// AETHER_NATIVE_LANGUAGE_SAMPLING_VL=1
+/// AETHER_LANGUAGE_SAMPLING_VL_BUNDLE=<registered Qwen3-VL bundle>
+/// AETHER_LANGUAGE_SAMPLING_VL_OUTPUT=<report .json>
+@Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_LANGUAGE_SAMPLING_VL"] == "1"), .timeLimit(.minutes(30)))
+func languageSamplingQualificationWithImages() async throws {
+    let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
+    let output = URL(filePath: try #require(nativeEnvironment["AETHER_LANGUAGE_SAMPLING_VL_OUTPUT"]))
+    let bundle = URL(filePath: try #require(nativeEnvironment["AETHER_LANGUAGE_SAMPLING_VL_BUNDLE"]))
+    let tokenizer = try await LanguageTokenizer.open(bundle: bundle)
+    var report = VisionSamplingReport()
+    report.bundle = bundle.lastPathComponent
+    let image = try VisionRGBImage(rgb: (0..<(512 * 384)).flatMap { i -> [UInt8] in
+        let x = i % 512, y = i / 512
+        return [UInt8(x * 255 / 511), UInt8(y * 255 / 383), UInt8((x + y) * 127 / 893)]
+    }, width: 512, height: 384)
+    let describe = try tokenizer.render([.user("Describe this picture in detail.", images: 1)], thinking: false).tokenIDs
+    let numbers = try tokenizer.render([.user("Count the shapes in this picture.", images: 1)], thinking: false).tokenIDs
+    let session = try await VisionLanguageSession.open(bundle: bundle, platform: .macos)
+
+    // 1. The sampling entry point with `.greedy` is the greedy entry point, token for token.
+    let old = try await session.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64)
+    let delivered = DeliveryCount()
+    let new = try await session.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64, sampling: .greedy) { _ in
+        delivered.add(); return .continue
+    }
+    report.defaultPath = .init(prompt: "describe", tokens: old.tokens, protocolTokens: new.tokens, deliveries: delivered.value,
+                               identical: old.tokens == new.tokens && old.stopReason == new.stopReason.rawValue)
+    #expect(old.tokens == new.tokens && delivered.value == new.tokens.count, "image: sampling entry point's greedy equals the greedy one")
+
+    // 2. Seeded random sampling of an image prompt repeats and differs by seed.
+    let random = LanguageSampling.random(temperature: 0.8, topK: 40, topP: 0.95, seed: 1234)
+    let first = try await session.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64, sampling: random)
+    _ = try await session.generate(renderedTokenIDs: numbers, images: [image], maximumTokens: 16)
+    let again = try await session.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64, sampling: random)
+    let different = try await session.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64,
+                                               sampling: .random(temperature: 0.8, topK: 40, topP: 0.95, seed: 1235))
+    let manifest = try LanguageModelManifest.load(from: bundle)
+    let fresh = try await VisionLanguageSession.open(bundle: bundle, platform: .macos)
+    let reopened = try await fresh.generate(renderedTokenIDs: describe, images: [image], maximumTokens: 64, sampling: random)
+    await fresh.unload()
+    report.seeded = .init(seed: 1234, tokens: first.tokens, repeatedAfterOtherRequests: again.tokens == first.tokens,
+                          repeatedInFreshSession: reopened.tokens == first.tokens, otherSeedTokens: different.tokens,
+                          otherSeedDiffers: different.tokens != first.tokens, reportedSeed: first.seed)
+    #expect(first.seed == 1234 && again.tokens == first.tokens && reopened.tokens == first.tokens && different.tokens != first.tokens)
+
+    // 3. The digits-then-stop constraint holds on every token of an image prompt.
+    let digits = Set((0...9).compactMap { tokenizer.encode(String($0)).count == 1 ? tokenizer.encode(String($0))[0] : nil })
+    // The head's rows, from the checkpoint configuration the bundle's tokenizer directory carries.
+    struct Config: Decodable { struct Text: Decodable { let vocab_size: Int }; let text_config: Text }
+    let size = try JSONDecoder().decode(Config.self, from: Data(contentsOf: bundle.appendingPathComponent("tokenizer/config.json")))
+        .text_config.vocab_size
+    let stops = Set(manifest.stopTokenIDs)
+    let processor = DigitsThenStop(digits: LanguageTokenSet(digits, vocabularySize: size), stop: LanguageTokenSet(stops, vocabularySize: size),
+                                   limit: 12)
+    let constrained = try await session.generate(renderedTokenIDs: numbers, images: [image], maximumTokens: 64, sampling: .greedy,
+                                                 constraint: processor)
+    report.constrained = .init(allowedDigitTokens: digits.sorted(), tokens: constrained.tokens, text: tokenizer.decode(constrained.tokens),
+                               stopReason: constrained.stopReason.rawValue, everyTokenAllowed: constrained.tokens.allSatisfy(digits.contains))
+    #expect(digits.count == 10 && constrained.tokens.allSatisfy(digits.contains) && constrained.tokens.count <= 12
+            && constrained.stopReason == .endOfSequence)
+    report.decoderReloads = await session.decoderStatistics()?.modelReloadCount ?? 0
+    await session.unload()
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    try encoder.encode(report).write(to: output)
+}
+
+private struct VisionSamplingReport: Encodable {
+    var device = LanguageGenerationSession.deviceArchitectureName
+    var bundle = ""
+    var hostLoad = "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not"
+    var defaultPath: SamplingReport.DefaultPath?
+    var seeded: SamplingReport.Seeded?
+    var constrained: SamplingReport.Constrained?
+    var decoderReloads = 0
 }

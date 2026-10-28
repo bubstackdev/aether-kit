@@ -1,7 +1,7 @@
 # Language runtime seam
 
-Status: design approved and commits 1–5 and 7 implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
-commit 6 waits for the decoder rework. This is the first piece of the 0.0.3 app-facing language
+Status: design approved and all seven commits implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
+commit 6 followed the decoder rework. This is the first piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)): a sampler and logits hook, and a
 `LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -183,8 +183,8 @@ cancels the task that runs `generate`.
 (`@_exported import`), so Shilo's source doesn't change; a typealias would have made the name ambiguous in files that
 import both modules. This is the only existing public type that moves.
 
-**Images are out of the protocol for now.** `VisionLanguageSession` keeps its own API. Once the decoder rework lands, its
-decoder path takes a `LanguageSampling` and a constraint through the same private body (commit 6). An image-capable
+**Images are out of the protocol for now.** `VisionLanguageSession` keeps its own API, and since commit 6 its sampling
+entry point, and the image `generate`'s, take a `LanguageSampling` and a constraint through the same decode loop. An image-capable
 protocol is a later refinement, if the apps need images through the facade.
 
 ## Sampling
@@ -417,6 +417,17 @@ throws it from commit 2), and a commit between 4 and 5 sped up random sampling a
 6. **After the decoder rework lands, give the image path the same options.** The image `generate` and
    `VisionLanguageSession` take a `LanguageSampling` and a constraint through the shared body.
    - Native: a VL token-identity check against the committed qualification tokens.
+
+   Done: each gained a sampling entry point (`sampling:` and an optional `constraint:`) returning a
+   `LanguageGenerationResult`, and the image `generate` runs through `LanguageDecodeLoop.generate`; the greedy entry
+   points wrap it with `.greedy`. The sampler and the processor see the expanded prompt. Before (`147c4b1`) and after,
+   under the GPU lock, the greedy replies are identical: the decoder-level text and image replies of the VL-2B and VL-4B,
+   one-function and two-function bundles; the public session's five image cases on the one-function 2B and 4B and the
+   two-function 4B, each also matching its qualified Kit run; and the writer's chat round trip. An opt-in
+   `languageSamplingQualificationWithImages` checks a VL bundle's public session: the sampling entry point's greedy equals
+   the greedy one, a seeded image request repeats (after other requests and in a freshly opened session) and differs by
+   seed, and the digits-then-stop constraint holds on every token of an image prompt
+   ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
 7. **Optional, measured: drop the per-step row allocation.** Fill a reused buffer by vImage, or use a Kit-owned logits
    output view.
    - Expected gain: about 0.25 ms a step, 4% of a 0.6B step and 1% of a 4B step.
