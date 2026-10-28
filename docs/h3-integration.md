@@ -14,7 +14,9 @@ The experimental `AetherH3` SwiftPM product starts with CPU preparation contract
 - that no referenced path is missing or under a temporary directory;
 - the passing opt-in `AETHER_H3_PROFILE`/`AETHER_H3_PROFILE_PARAMETERS` test, which hashes every table, model stream and in-place weight binding.
 
-aether-kit does not own that folder: moving or deleting it invalidates the pins. Choosing a durable home is a separate decision.
+aether-kit does not own that folder: moving or deleting it invalidates the pins.
+
+**Kit-owned home (2026-10-27).** The referenced staging files (17.6 GiB, 1,266 files) are now APFS clones under `~/.cache/aether-kit/h3/profile-c49d8dbf/`, with the tiled first-frame encoder overlay beside them; the checkpoint and adapter blobs stay in the Hugging Face cache. The new `bundle.json` differs from the old one only in two path prefixes, and every content hash is unchanged, but Kit identifies a profile by its manifest bytes and requires absolute paths, so the profile identity is now `5af39db5…` (was `c49d8dbf…`). Every cloned file verifies against its recorded hash, regenerated dumps match the gate dumps tensor for tensor, and a replay of the qualified T2VA capture under the new identity reproduces all 457 boundary hashes ([record](evidence/h3-profile-home-2026-10-27.json)). Measured admission still covers the old identity until the next memory gate. Paths relative to `bundle.json`, which would make the identity independent of location, are a promotion follow-up.
 
 ## Available contracts
 

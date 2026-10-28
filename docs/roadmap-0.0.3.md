@@ -30,7 +30,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
   - alpha handling, which differs from upstream: PIL keeps the stored RGB, while Kit composites over black.
 - **Quantization:** quantized Qwen3-VL and language decoders.
 - **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases.
-- **H3 promotion:** media audit and per-stage lifecycle qualification before the experimental label is dropped, plus a durable home for the qualified profile. Measured admission covers more profiles and Macs as they're measured.
+- **H3 promotion:** media audit and per-stage lifecycle qualification before the experimental label is dropped, plus a durable home for the qualified profile (a Kit-owned clone since 2026-10-27; profile paths relative to `bundle.json` are a follow-up). Measured admission covers more profiles and Macs as they're measured.
 
 ### Safety and correctness
 

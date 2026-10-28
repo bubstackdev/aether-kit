@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "kind": "h3-profile-home",
+  "date": "2026-10-27",
+  "passed": true,
+  "decision": "Clone the referenced Atelier staging files into a Kit-owned home before the re-gate; leave the Hugging Face checkpoint and adapter blobs in the user's Hugging Face cache (Atelier OK'd the read-only clone).",
+  "home": "~/.cache/aether-kit/h3/profile-c49d8dbf/ (bundle.json, h3-fl2va/ clone, models/ overlay, build-overlay.json, clone-manifest.json)",
+  "previousProfile": {
+    "manifestSHA256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+    "location": "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/profile-encoder-tiled/bundle.json, referencing ~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va in place"
+  },
+  "profile": {
+    "manifestSHA256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8"
+  },
+  "pathOnly": "The new bundle.json is the old one with two path prefixes rewritten (1,240 staging paths, including lineage.base_bundle, and 4 overlay model paths); mapping the new prefixes back reproduces the old bytes exactly. Every content hash is unchanged. Kit requires absolute profile paths and identifies a profile by its manifest bytes, so the identity changes.",
+  "clone": {
+    "method": "clonefile(2) per file (Python ctypes), largest first, failing on any nonzero return; abort if Data free space fell by more than 2 GiB",
+    "referencedPaths": 1240,
+    "files": 1266,
+    "GiB": 17.58,
+    "dataFreeDropMB": 1,
+    "overlay": "the four tiled first-frame encoder models (0.67 GiB) copied from Scratch (another volume)",
+    "atelierStaging": "read only"
+  },
+  "verification": {
+    "entries": 1244,
+    "GiBRead": 18.25,
+    "mismatches": 0,
+    "rule": "every path+sha256 entry under the new home: whole-file SHA-256, or main.mlirb for .aimodel packages, plus the lineage base bundle"
+  },
+  "dumps": "T2VA and FL2VA 960x544x120 dumps regenerated under the new identity: every field except profile_sha256 and every tensor hash equal the gate dumps",
+  "replay": {
+    "capture": "trajectory-t2va-final/capture-t2va (gate record h3-profile-trajectory-t2va-2026-10-26.json, profile c49d8dbf)",
+    "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "replay_mismatches": "0",
+    "trajectory_hashes": "457",
+    "build": "1945f7b",
+    "gpuLock": "2026-10-27 22:43:38-22:51:09"
+  },
+  "measuredAdmission": "The bundled entry is keyed by the c49d8dbf identity until the re-gate measures 5af39db5.",
+  "followUp": "Allow profile paths relative to bundle.json (H3 promotion backlog), so a profile's identity no longer depends on where it is stored."
+}
