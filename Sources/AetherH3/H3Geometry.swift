@@ -1,7 +1,7 @@
 // Derived from the Apache-2.0 Aether prototype. See NOTICE.
 import AetherKit
 
-/// Experimental H3 geometry contract; acceptance does not establish device support.
+/// H3 geometry contract (Preview since 0.0.3); acceptance does not establish device support.
 /// Requested frames snap upward to the source VAE's 17n+5 frame grid at 24 fps.
 public struct H3Geometry: Sendable, Equatable {
     public let width: Int

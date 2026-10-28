@@ -59,6 +59,7 @@ Again every prompt beats bf16 on every measure.
 - The encoders are close: the text encoder's hidden states have cosine ≥ 0.9999981 (relative L2 ≤ 0.002) against eager fp32, and the packed condition sequence has cosine ≥ 0.9999982 (relative L2 ≤ 0.0019), with the same rows and mask (`encoders-run.json`).
 - **The lo-fi prompt is a sensitive one.** Its trajectory amplifies small differences: bf16 ends 0.437 away and Core AI 0.307, at SNRs of −0.80 dB and −0.68 dB. So the two outputs are different takes of the same prompt, not near-copies of the fp32 audio. The other three prompts stay close.
 - A 20 s excerpt of Core AI against fp32 for this prompt and for the indie-pop prompt is staged for a listening check.
+  The user's listening check on 2026-10-28 passed.
 
 ### The padding mask: upstream ignores it, Kit must apply it
 

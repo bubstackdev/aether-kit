@@ -495,8 +495,7 @@ the owner's team, first change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to a
 register that ID with the capability in your developer account, or let Xcode register it: select your team for the
 target in the generated project (the spec sets none) and build once with automatic signing. The team selection lives in
 the generated, git-ignored `.xcodeproj`, so the next `xcodegen generate` resets it. The report's
-`availableMemoryMiBAtStart` shows whether the larger limit applies. Without it, the VL-2B run may end in a refusal or a
-jetsam kill.
+`availableMemoryMiBAtStart` shows whether the larger limit applies. At the default limits the VL-2B doesn't open (below).
 
 **First device run (2026-10-28),** on an iPhone18,2 (iPhone 17 Pro Max, iOS 27.2), 3,368 MiB available to the app at
 launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
@@ -511,17 +510,22 @@ launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
 - **Qwen3-VL-2B with the entitlement: signing refused.** No profile for the app's App ID carries the increased memory
   limit yet ([log](evidence/qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log)). It runs once that App ID is
   registered as described above.
-- **Qwen3-VL-2B without the entitlement aborts while opening.** Built like the 0.6B, at the default limit (3,368 MiB at
-  launch, against 4.29 GB of model assets), the process aborted 8.7 s after launch, before the session had opened: an
-  uncaught `std::bad_alloc` from MetalPerformanceShadersGraph, while MPSGraph's runtime canonicalization folded a
-  transpose during Core AI's model specialization. It wasn't a jetsam kill, and it wasn't a refusal by Kit; Kit can't catch it, because the abort happens inside Core AI's compiler
-  ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). Without the increased memory
-  limit, the VL-2B doesn't run on this iPhone.
+- **Qwen3-VL-2B without the entitlement fails while opening: virtual address space at default limits.** Built like the
+  0.6B, at the default limits (3,368 MiB available at launch, against 4.29 GB of model assets), the process aborted
+  8.7 s after launch, before the session had opened, on an uncaught `std::bad_alloc`. The crash report's VM summary
+  lists `mapped file 6.9G` (its binary units) for those 4.29 GB of assets, so they appear to be mapped more than once. The
+  failure is attributed to exhausting the app's virtual address space at default limits. It isn't a compiler failure
+  as such: the allocation that failed happened to be MetalPerformanceShadersGraph's, during Core AI's model
+  specialization. It wasn't a jetsam kill, and it wasn't a refusal by Kit, which can't catch the abort
+  ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). The fix is planned for 0.0.4:
+  the extended-virtual-addressing entitlement (`com.apple.developer.kernel.extended-virtual-addressing`) alongside the
+  increased memory limit, and an open-time check that counts mapped bytes, not only footprint.
 
 **Sizing admission on iOS.** The resource estimates `LanguageResourceAdmission` uses ([design](qwen3-vl-resource-admission.md))
 are Mac measurements. An iOS host should size its `ResourceCoordinator` from `os_proc_available_memory()` at launch,
-not from the Mac's figures. Without that, a model over the app's budget isn't refused before it loads: it can abort
-inside Core AI's compiler instead of failing cleanly, as the VL-2B run above did.
+not from the Mac's figures. That measures footprint only, not the virtual address space that mapped model files use.
+Without a check on both, a model too large for the app isn't refused before it loads, and it can abort while opening
+instead of failing cleanly, as the VL-2B run above did.
 
 ## Evidence and limits
 
