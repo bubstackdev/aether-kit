@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "generator": "Forge/kokoro/reference_kokoro.py",
+  "scripts": {
+    "check_buckets.py": "2e9209175bd07c55475e809af5b7a1d07db19c611ad0ebcd17adededccbffe76",
+    "check_coreai.py": "78988dcd66d2ac11d11c4545da45ae98ec3e04ceddb4b1670f454278a1a24e30",
+    "check_graphs.py": "597039c61ce6f5781cea07e01d966edcdd3946cd1bd6c34da7a2791e17fee2ca",
+    "export_kokoro.py": "0cfb3f30de2fef682a469b473399dce1cde5c4faff05f02561e7e22dec8b5c7e",
+    "kokoro_graphs.py": "a44b330ed3721dc3038834379eb14c61b43ef3bf560d15e7471f809f488ca915",
+    "make_cpu_fixtures.py": "6f4a03a0fc8e169c3bb04d8d52c7b483d725a8306052291eec2604a9ea951022",
+    "probe_coreai_graph.py": "761478302389ca348b3d03f629b138a33f3c6a063d68d13cf61de2803aa78b76",
+    "reference_kokoro.py": "9e27b40e5dcfedcf21a62b29a1baf2467f20d9d5720f350924f64b87b783f6e7",
+    "speech_metrics.py": "86be69b7ad98fcee38582edfc03e1cf5c89f6cd69e3028c85067335127c81eda",
+    "stage_device_assets.py": "810223795c73d7a7dc8c039fe9d2d542e4ee898ef32dcd211980bf91c6880720",
+    "time_decoders.py": "6307a6d30c018a317f32c94db69b8f71efac9f54ef401d34d530d6086e025a42",
+    "upstream_reference.py": "115310fb6c0d7296fc8e0bf1c6f808892c353a650c6583309dc15d8badb17102",
+    "write_evidence.py": "f75ae6fcdda2c9af6d29e53648a9317eea5cf588c844ad48291e5e8e76b0a769"
+  },
+  "upstream": {
+    "package": "kokoro 0.9.4",
+    "wheel_sha256": "a129dc6364a286bd6a92c396e9862459d3d3e45f2c15596ed5a94dcee5789efd",
+    "checkpoint_sha256": "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4",
+    "revision": "f3ff3571791e39611d31c381e3a41a3af07b4987"
+  },
+  "tools": {
+    "torch": "2.11.0",
+    "python": "3.12.14",
+    "device": "cpu",
+    "dtype": "float32"
+  },
+  "metrics": {
+    "waveform": "rel_l2 = ||x - r|| / ||r||; max_abs; snr_db = 20 log10(||r|| / ||x - r||)",
+    "log_mel": "|STFT| n_fft=1024 hop=256 periodic Hann, no centering; 80 HTK-mel triangles 0-12000 Hz, unnormalized; ln(max(mel, 1e-05)); mean and max over bins of |x - r|"
+  },
+  "cases": [
+    {
+      "name": "short-af_heart",
+      "case_sha256": "440225d46a7ce308ed164d1e564a633088b74dc714c04578b7d0b3f3c93d488b"
+    },
+    {
+      "name": "sentence-am_michael",
+      "case_sha256": "4aace66d57afc1ad47a4ac41b3fd7e05e73bae0e3fcc461db8235dd378573371"
+    },
+    {
+      "name": "speed-bf_emma",
+      "case_sha256": "1dc16ecf7ddde7c27fd0cfc3821da5806460524b3fe38b6c0bbe342bc5d56d1f"
+    },
+    {
+      "name": "long-af_bella",
+      "case_sha256": "3cc8c4d8a77945225d803d4deef16118b3d5ebcdc4da6c23a6868793f874d7d2"
+    },
+    {
+      "name": "medium-af_bella",
+      "case_sha256": "1b3f14dec6823595738b2419d8002b55d8375d0b38a6594af6bfdaa58c41b0fc"
+    }
+  ]
+}

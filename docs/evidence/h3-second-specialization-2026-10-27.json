@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "kind": "h3-second-specialization",
+  "date": "2026-10-27",
+  "passed": true,
+  "roadmapItem": "docs/roadmap-0.0.3.md, Memory: H3 second specialization",
+  "profile_sha256": "c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7",
+  "recipe": "turbo8",
+  "device_architecture": "h17c",
+  "cause": "The body graph's temb input is [6, 3k, 5376] and the heads graph's [k, 2688], with k (the step's distinct row timesteps) dynamic in 1...3 (Scripts/export-h3-profile.py). T2VA passes k = 1 at step 0 (video and audio both at t = 1.0) and k = 2 afterwards (the shift-12 and shift-3 schedules diverge); FL2VA passes 2 and then 3 (keyframe rows at max(t, 0.999)). Core AI specializes a reshape-enabled function once per input shape and keeps every specialization until the model is released, so the k change at step 1 added a second body specialization.",
+  "fix": "H3ModulationPadding (Sources/AetherH3CoreAI/H3ProfileStages.swift): every step's AdaLN tables and timestep embedding are padded to the trajectory's largest k by repeating existing rows, so a render uses one body and one heads specialization. Exact because the block reads its table only through index_select on the AdaLN indices (< 3k) and the heads read temb rows only through the timestep indices (< k). No re-export. A workaround for Core AI's per-shape retention, not a fix of it.",
+  "rejectedAlternatives": {
+    "reopen the body after step 0": "same plateau at 288x288x22 (1.904 GiB) but step 1 took 14.4 s instead of 2.2 s (re-specialization)",
+    "export with a fixed cardinality": "equivalent to padding but needs a re-export"
+  },
+  "smallCanvasExperiments": {
+    "note": "Phase 1, environment-variable knobs on 147c4b1 (not committed); T2VA Turbo8, denoising Metal GiB",
+    "288x288x22 (690 rows)": {
+      "current": {
+        "plateauGiB": 1.988,
+        "peakGiB": 1.995
+      },
+      "bodyPadded": {
+        "plateauGiB": 1.904,
+        "peakGiB": 1.911
+      },
+      "bodyReopen": {
+        "plateauGiB": 1.904,
+        "peakGiB": 1.911
+      },
+      "bodyAndHeadsPadded": {
+        "plateauGiB": 1.897,
+        "peakGiB": 1.904
+      },
+      "replays": {
+        "bodyPadded": {
+          "replay_mismatches": "0",
+          "trajectory_hashes": "457"
+        },
+        "bodyAndHeadsPadded": {
+          "replay_mismatches": "0",
+          "trajectory_hashes": "457"
+        }
+      }
+    },
+    "960x544x22 (3693 rows)": {
+      "current": {
+        "plateauGiB": 3.835,
+        "peakGiB": 3.871
+      },
+      "bodyAndHeadsPadded": {
+        "plateauGiB": 3.345,
+        "peakGiB": 3.382
+      }
+    },
+    "scaling": "about 0.133 MiB of Metal per row; 2.56 GiB predicted at 19,333 rows, against the 2.57 GiB step-1 rise of the chained gate"
+  },
+  "qualifiedReplays": {
+    "build": "8db3523",
+    "t2va": {
+      "replay_mismatches": "0",
+      "trajectory_hashes": "457",
+      "capture": "trajectory-t2va-final/capture-t2va (gate record h3-profile-trajectory-t2va-2026-10-26.json)",
+      "dump": "regenerated; every field and tensor hash equals the stored gate dump",
+      "gpuLock": "2026-10-27 16:43:39-16:51:37"
+    },
+    "fl2va": {
+      "replay_mismatches": "0",
+      "trajectory_hashes": "457",
+      "capture": "trajectory-fl2va/capture-fl2va (gate record h3-profile-trajectory-fl2va-2026-10-26.json)",
+      "dump": "regenerated; every field and tensor hash equals the stored gate dump",
+      "gpuLock": "2026-10-27 16:55:59-17:04:49"
+    }
+  },
+  "fullSizeRenders": {
+    "note": "aether-probe h3-memory-render, T2VA 960x544x124 unless named; single runs on a shared host, not a benchmark",
+    "current (origin/main 013143b, unpadded)": {
+      "stepSeconds": [
+        49.4,
+        47.6,
+        47.4,
+        47.8,
+        47.6,
+        47.7,
+        47.9,
+        48.6
+      ],
+      "denoisingSeconds": 384.0,
+      "medianStep1to7Seconds": 47.7,
+      "denoisingMetalPeakGiB": 13.688,
+      "denoisingMetalPlateauGiB": 13.494,
+      "step0MetalPeakGiB": 10.94,
+      "gpuLock": "17:06:09-17:13:46"
+    },
+    "padded, standalone repeat": {
+      "stepSeconds": [
+        49.1,
+        47.4,
+        47.3,
+        47.2,
+        47.3,
+        47.7,
+        47.4,
+        47.4
+      ],
+      "denoisingSeconds": 380.8,
+      "medianStep1to7Seconds": 47.4,
+      "denoisingMetalPeakGiB": 11.127,
+      "denoisingMetalPlateauGiB": 10.94,
+      "step0MetalPeakGiB": 10.94,
+      "gpuLock": "17:58:41-18:06:12"
+    },
+    "padded, fresh Core AI compiled cache": {
+      "stepSeconds": [
+        48.5,
+        46.4,
+        46.2,
+        47.6,
+        47.0,
+        46.7,
+        47.1,
+        47.6
+      ],
+      "denoisingSeconds": 377.1,
+      "medianStep1to7Seconds": 47.0,
+      "denoisingMetalPeakGiB": 11.127,
+      "denoisingMetalPlateauGiB": 10.933,
+      "step0MetalPeakGiB": 10.94,
+      "gpuLock": "18:11:06-18:18:48",
+      "cache": "the probe ran under a new executable name, so Core AI compiled every H3 graph into a new, empty cache directory (deleted afterwards); the Metal shader cache is per user and was not cleared"
+    },
+    "padded, memory gate run 1 (transient)": {
+      "stepSeconds": [
+        54.6,
+        49.3,
+        48.5,
+        49.0,
+        49.4,
+        49.1,
+        48.6,
+        48.6
+      ],
+      "denoisingSeconds": 397.1,
+      "medianStep1to7Seconds": 49.0,
+      "denoisingMetalPeakGiB": 16.119,
+      "denoisingMetalPlateauGiB": 10.933,
+      "step0MetalPeakGiB": 16.119,
+      "gpuLock": "17:16:07-17:24:07"
+    },
+    "padded, memory gate run 2": {
+      "stepSeconds": [
+        48.9,
+        46.7,
+        47.3,
+        47.7,
+        48.1,
+        48.1,
+        48.2,
+        48.4
+      ],
+      "denoisingSeconds": 383.4,
+      "medianStep1to7Seconds": 48.1,
+      "denoisingMetalPeakGiB": 14.053,
+      "denoisingMetalPlateauGiB": 10.933,
+      "step0MetalPeakGiB": 14.053,
+      "gpuLock": "18:19:37-18:27:23"
+    },
+    "padded, memory gate T2VA 544x960": {
+      "stepSeconds": [
+        49.2,
+        47.9,
+        48.6,
+        48.5,
+        48.9,
+        49.1,
+        49.3,
+        49.1
+      ],
+      "denoisingSeconds": 390.6,
+      "medianStep1to7Seconds": 48.9,
+      "denoisingMetalPeakGiB": 11.127,
+      "denoisingMetalPlateauGiB": 10.933,
+      "step0MetalPeakGiB": 10.94
+    },
+    "padded, memory gate FL2VA 960x544": {
+      "stepSeconds": [
+        51.6,
+        49.7,
+        49.7,
+        49.6,
+        49.9,
+        49.8,
+        49.9,
+        50.0
+      ],
+      "denoisingSeconds": 400.2,
+      "medianStep1to7Seconds": 49.8,
+      "denoisingMetalPeakGiB": 11.844,
+      "denoisingMetalPlateauGiB": 11.172,
+      "step0MetalPeakGiB": 11.844
+    },
+    "padded, memory gate FL2VA 544x960": {
+      "stepSeconds": [
+        52.3,
+        49.8,
+        49.8,
+        49.9,
+        49.8,
+        49.9,
+        49.5,
+        49.5
+      ],
+      "denoisingSeconds": 400.5,
+      "medianStep1to7Seconds": 49.8,
+      "denoisingMetalPeakGiB": 11.844,
+      "denoisingMetalPlateauGiB": 11.172,
+      "step0MetalPeakGiB": 11.844
+    }
+  },
+  "stepTime": "The extra table rows cost nothing measurable: steps 1-7 use the k = 2 (T2VA) or k = 3 (FL2VA) specialization in both builds; the padded build no longer specializes again at step 1.",
+  "step0Transient": "Both memory-gate renders of T2VA 960x544 showed a transient Metal rise in step 0: run 1 twice to 16.12 GiB (12 s and 28.6 s into the step, about 5.5 and 6.3 s each), run 2 once to 14.05 GiB (13 s into the step, about 5.8 s), each released in pieces back to the 10.5 GiB level. Footprint rose with Metal within about 0.3 s each time (run 1: 15.96 and 15.71 GiB; run 2: 13.89 GiB), stayed above 12.5 GiB for about 0.8-1.1 s and fell back to about 11.1 GiB while Metal stayed high: the memory is touched briefly. (An earlier version of this record said the footprint stayed near 11.1 GiB; the timelines show otherwise.) No transient appeared in the standalone repeat, the fresh-cache render, the gate's other three renders, or the current-build render. Cold Core AI specialization does not reproduce it; the cause is not known. The 2026-10-28 gate carries run 1's 16.12 GiB peak into the measured entry.",
+  "memoryGate": {
+    "record": "h3-memory-gate-padded-2026-10-27.json",
+    "firstRun": "h3-memory-gate-padded-transient-2026-10-27.json",
+    "passed": true,
+    "admissionWorstCaseGiB": 14.49,
+    "previousAdmissionWorstCaseGiB": 15.26,
+    "previousRecord": "h3-memory-gate-chained-2026-10-26.json",
+    "admissionNote": "This gate's entry (14.49 GiB) kept only the second T2VA 960x544 render and does not cover the first render's 16.12 GiB transient; the next gate carries it (--carry-peaks), for an admitted worst case of about 16.6 GiB, higher than the unpadded build's 15.26 GiB. Padding lowers the steady plateaus and the video-decode footprint, not the admission."
+  }
+}

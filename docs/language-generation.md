@@ -107,8 +107,8 @@ that step fails, the in-flight delivery is cancelled and awaited.
 
 `AetherLanguageRuntime` holds what doesn't depend on Core AI: the `LanguageBackend` protocol, `LanguageSampling`, the
 constraint hook and the decode loop every backend shares ([design](language-runtime-seam.md)). It imports only the
-standard library and Foundation, so it can build below the Core AI floor (`Scripts/check-floor.sh`
-typechecks it at macOS 14 and iOS 17), and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
+standard library and Foundation, so it builds at the package floor (macOS 14 and iOS 17) without availability
+annotations, and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
 AI backend:
 
 ```swift
@@ -144,6 +144,27 @@ let result = try await session.generate(request) { token in
   ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
 - **Next:** the facade's tokenizer, templates and structured output.
 
+## Resource admission
+
+`LanguageGenerationSession.open(bundle:…, resources:)` and `VisionLanguageSession.open(bundle:…, resources:)` take an
+opt-in `LanguageResourceAdmission`: caller estimates (`LanguageModelResourceEstimate`, keyed by the registration's
+model hash) reserved against a host-selected `ResourceCoordinator`, as Krea and FLUX.2 do.
+- **Residency** is reserved before the model loads (after the open grant, with `gpu:`), held while it is loaded,
+  across memory-budget reloads, and released on unload or a failed load. For a decoder it covers the weights, the KV
+  caches at the registered context and the memory budget's growth allowance.
+- **Scratch** is reserved after each request's grant (and each image encode's) and released when its native work
+  joins. A request's is reserved before a memory-budget reload, so a refusal never costs a model load.
+- **Refusals before native work:** model bytes without an estimate and a registered context above the profile's (a
+  bundle's before its files are hashed), and a request with more image tokens than the profile allows, summed over its
+  images (every image is preprocessed and the total checked before the first encode).
+- **Opening is admitted.** With `gpu:`, the model's load and its functions' specialization run under a grant, so a
+  session never specializes beside another owner's GPU work.
+- **Per process.** The ledger cannot see other processes, and it leaves out the page cache a model's compiled file is
+  read into at open.
+
+Measured estimates for the Qwen3-VL bundles, and why the feature exists, are in
+[Qwen3-VL resource admission](qwen3-vl-resource-admission.md).
+
 ## Step contracts
 
 The session detects the contract from the `main` function signature
@@ -158,9 +179,9 @@ change, and bucketed ones declare their `exportBounds`. A Qwen3-VL bucketed `mai
 | Positions | `position_ids` [1, total] = 0..<total | `cache_positions` [1, q] = start..<start+q |
 | KV cache | states `keyCache`/`valueCache`, written in place | read-only inputs; outputs `keyUpdate`/`valueUpdate` [layers, 1, heads, q, dim], copied into rows start..<start+q after the join |
 | Logits | [1, q, vocab] | [1, 1, vocab] |
-| Prefill submissions | uniform `prefillChunkSize` chunks (within a declared chunk bound) | one width C (`prefillChunkSize`, default 64, within the chunk bound); a run that is not a multiple of C ends with a C-token chunk stepping back over rows already written; a run shorter than C is one chunk |
-| Attention reads | the `total` materialized rows | every cache row (the real length rounded up to 256), concatenated with the chunk's |
-| Input shapes | a new `total` every step | (q, cache capacity): q is C, 1 or a run shorter than C, times one capacity per 256 tokens of context |
+| Prefill submissions | uniform `prefillChunkSize` chunks (within a declared chunk bound) | one width C (`prefillChunkSize`; by default 64 for prompts up to 256 tokens and 256 above, within the chunk bound); a run that is not a multiple of C ends with a C-token chunk stepping back over rows already written; a run shorter than C is one chunk |
+| Attention reads | the `total` materialized rows | every cache row (the prompt's length rounded up to 256 during the prefill, then the real length rounded up), concatenated with the chunk's |
+| Input shapes | a new `total` every step | (q, cache capacity): q is C, 1 or a run shorter than C; the prefill at the prompt's capacity, then one capacity per 256 tokens decoded |
 | Shape recycling | every 128 submissions by default | none by default |
 | Memory-budget reloads | between requests, past the budget | between requests, past the budget |
 
@@ -181,7 +202,8 @@ misreading it. Asset files must remain immutable for the lifetime of the session
 The bucketed graph never writes the cache: each layer attends with one fused SDPA
 over [cache ‖ chunk] keys under a boolean mask built from position data, and
 returns the chunk's keys and values. The session passes the caches as zero-copy
-contiguous inputs and grows them in 256-row steps with the real length (a strided
+contiguous inputs, allocates them for the whole prompt when a request starts, and grows them
+in 256-row steps with the real length while decoding (a strided
 view into a larger buffer measured 3–8× slower: Core AI copies non-contiguous inputs
 every step). The [cache ‖ chunk] concatenation copies every cache row each step, so a
 bucketed step costs more than a running one and the gap grows with the context; what
@@ -192,8 +214,13 @@ export tooling for Qwen3 lives in `Forge/language/` (development only, not a
 shipping dependency); its module documentation records the rejected alternatives and
 their measurements.
 
-The prefill keeps every chunk at one width C so that a warm request changes shape as
-little as possible (see [Native memory retention](#native-memory-retention)). A text run
+The prefill keeps every chunk at one width C and one cache capacity, so that a warm request
+changes shape as little as possible (see [Native memory retention](#native-memory-retention)):
+C is 64 for a prompt of up to 256 tokens and 256 for a longer one (0.0.3), and the cache is sized
+for the prompt before the prefill. That plan applies to text bundles and one-function Qwen3-VL
+bundles, where it was qualified; a 0.0.2 two-function Qwen3-VL bundle (`main` plus `withImage`)
+keeps the 0.0.2 plan for every request, C = 64 whatever the prompt's length and the cache growing
+in 256-row steps from the initial capacity. A text run
 that is not a multiple of C ends with a C-token chunk over its last C tokens, starting
 before rows the previous chunk already wrote. This is the same computation, not an
 approximation: the graph's cache mask admits only rows before the chunk's first position
@@ -202,22 +229,93 @@ and are recomputed from the same prefix, then overwritten in the cache with the 
 own keys and values. They can differ from the first computation only by floating-point
 rounding (a different grouping of the same operations), as any change of chunking does.
 The cost is up to C − 1 recomputed tokens per run. A run shorter than C (a short prompt,
-or a short text run beside a Qwen3-VL image) is one chunk of its own length,
-and a chunk never steps back into an image span. `languageOverlappedPrefillMatchesOtherPlans`
-(opt-in) checks this on every model against a whole-prompt chunk and 1-token steps.
+or a short text run beside a Qwen3-VL image in a 0.0.2 two-function asset) is one chunk of its
+own length; a two-function asset's text chunk never steps back into an image span, while a
+one-function asset's chunks carry image rows and may (see [Qwen3-VL](qwen3-vl.md#pieces)).
+`languageOverlappedPrefillMatchesOtherPlans` (opt-in) checks this on every model against the
+widest chunk the export allows (the whole prompt in one chunk up to the export's chunk bound,
+512 for the Qwen3 exports, so a 1,021-token prompt takes two), 1-token steps and the 0.0.2 width
+of 64.
+
+**Equal up to rounding is not equal.** Until 0.0.3's plan, that check's step-back rule (the
+default plan against the widest chunk) required identical greedy tokens with no near-tie
+allowance, and its plan-rounding rule (against 1-token steps and other widths) accepted a flip
+only at an upstream near-tie whose two plans' teacher-forced rows agreed at cosine >= 0.99999.
+At C = 64 the step-back rule held on every model, but by rounding luck, not by construction: at
+C = 256 the VL-4B's 449-token text prompt takes token 3129 where the widest chunk, 1-token
+steps and the 64 width take 3982, at a row where the default plan's top two fp16 logits are
+exactly equal. And the 0.99999 row bar, set from 449-token prompts, is missed by plans of
+different kernel shapes over a 1,021-token prompt (the writer's rows agree at 0.9999897 against
+1-token steps and 0.9999693 against the 64 width). Since 0.0.3 both comparisons use one rule:
+identical greedy tokens, or a first divergence where the two plans' tokens are the upstream
+reference's top two, its top-1 minus top-2 probability is under 0.1 (the parity threshold), and
+the rows agree at the check's own last-row bar, cosine >= 0.9999. The rows compared are the
+default plan's teacher-forced rows (its prefill, then 1-token steps) and, as a proxy for the other
+plan's, row r recomputed by prefilling the prompt and the first r generated tokens at that plan's
+width. Upstream parity against the float32 reference still judges every plan on its own (see
+[Evidence and limits](#evidence-and-limits)).
+
+### Time to first token
+
+Since 0.0.3 a bucketed prompt longer than 256 tokens prefills in 256-token chunks, with its cache allocated for the whole
+prompt before the prefill. That halves time to first token on long prompts
+([evidence](evidence/language-prefill-plan-2026-10-28.json), `languageTimeToFirstToken`, opt-in). These are warm medians
+in milliseconds for one-token requests, on one M5 Max, a shared host: an origin/main build ("before") and this one
+("after"), each run twice, interleaved:
+
+| Prompt tokens | 0.6B before | 0.6B after | writer before | writer after |
+| --- | --- | --- | --- | --- |
+| 64 | 24, 25 | 13, 12 | 26, 26 | 28, 28 |
+| 256 | 32, 34 | 35, 35 | 101, 101 | 100, 102 |
+| 1,024 | 149, 160 | 65, 68 | 439, 437 | 206, 226 |
+| 2,048 | 365, 371 | 147, 155 | 949, 973 | 489, 533 |
+
+Prompts of up to 256 tokens keep the 0.0.2 plan, so the 64- and 256-token rows run the same submissions in both builds
+(the 0.6B's 64-token difference is unexplained, not a plan change). The first token was identical before and after at
+every length. The running export of the 0.6B, for comparison, took 83 ms at 2,048 tokens
+([0.0.3 record](evidence/language-time-to-first-token-2026-10-27.json)).
+
+**Where the time goes** (measured with a standalone Core AI probe, `Spikes/ttft/ttft-probe.swift`, 0.6B, 2,048 tokens):
+- **Submission count, most of it.** A forward pass has a fixed cost of about 6.5 ms even for one token, on either
+  contract (steady state, 2,048 rows: bucketed 6.8, running 6.5). At C = 64 a 2,048-token prompt is 32 passes; at
+  C = 512 it is 4. The running contract alone goes from 260 to 80.5 ms between those widths, so the 0.0.2 comparison
+  of bucketed C = 64 against running C = 512 (496 against 83 ms) mostly compared widths.
+- **The bucketed graph, a little.** At equal width a bucketed pass costs 1.2-1.3 times a running one (q = 64: 10.2
+  against 8.6 ms; q = 512: 27.7 against 21.6). Its encode is synchronous: the GPU work finishes inside
+  `encode`, which samples as MPSGraph's parallel region encoding, not a CPU fallback. Taking the mask's cumulative sum
+  out of the graph changed nothing.
+- **Cache growth on the host.** Growing in 256-row steps cost 63 ms (C = 64) and 35 ms (C = 512), bound by first
+  touches of each new buffer. Sizing the cache for the prompt up front removes the steps.
+
+**Rejected or out of reach:**
+- **A wider chunk with the cache growing in steps.** Every capacity step is a new input shape, and Core AI retains
+  memory on each shape change: the writer retained 868-887 MiB per 2,048-token request at C = 256 or 512 that way,
+  against 132-243 MiB with the cache sized up front (probe). C = 512 sized up front was 5-10% faster than 256 on
+  the writer for about 1.8 times the retention.
+- **Reusing large KV buffers.** Growth fell, but Core AI's encode rose by as much: it pays for an input buffer larger
+  than its view, as for strided views ([probe](evidence/language-ttft-buffer-reuse-probe-2026-10-27.json)).
+- **A running-style prefill.** It needs a second function (a second wired copy of the weights) or a `torch.cond`
+  between two attention forms, which hangs the GPU compile; split attention in `main` halves decode
+  ([spike report](spikes/split-attention-2026-10.md)). At equal width it would save at most about 20% per pass.
 
 ## Cache allocation
 
 The registered context is an admission maximum. Allocation starts at 256 tokens
 and grows with actual materialization. KV prefixes are copied row by row across
 layer/head strides. Growth doubles small caches; above 4K it uses 1K increments to
-bound transient allocation size. Bucketed caches instead grow in 256-row steps,
-because bucketed attention reads every allocated row. Each step copies the whole
+bound transient allocation size. A bucketed request instead starts with its cache sized for its
+prompt (the prompt's length rounded up to 256 rows, at least the initial capacity; 0.0.3), so the
+prefill neither grows nor reshapes it, and decoding grows it in 256-row steps, because bucketed
+attention reads every allocated row. Each step copies the whole
 cache into the larger one, so growth copies add up over a long generation (estimated, not measured: about
 1 GB by 2K tokens and tens of GB over a full 16K generation for Qwen3-0.6B);
 larger steps would trade per-step attention cost for fewer copies. This reduces eager allocation
 but does not promise that every registered context fits every device’s current memory
-budget. A bucketed session starts every request again at the initial capacity rather
+budget (on iOS the allocation at a request's start is checked against the app's available
+memory, as growth is). The allocation happens when the request starts, before its GPU
+admission, so a request queued behind another GPU owner already holds its whole prompt's KV
+cache while it waits; that memory is within the model's residency, whose estimate counts the KV
+caches at the registered context ([Resource admission](#resource-admission)). A bucketed session sizes every request's cache afresh rather
 than keeping a previous long request's caches; running-contract sessions keep their
 grown caches.
 
@@ -242,16 +340,40 @@ When requests have retained that much, the session reloads the model, usually at
 after the request that crossed the budget, so the next request does not wait for it. A
 request that arrives during an idle reload waits for the rest of it. A reload costs the
 model load plus the first use of each function again: about 2.6 s for the writer. With the
-default prefill width and budget, the writer reloads about once every 35 back-to-back
-449-token requests, and less often with shorter or mixed prompts. Replies are identical,
-token for token, across reloads (the KV state is Kit-owned and unaffected).
+default plan and budget, the writer reloads 3 times in 60 back-to-back long requests (449,
+1,021 or 2,044 tokens alike), and less often with shorter or mixed prompts. Replies are identical, token for token, across reloads (the KV state
+is Kit-owned and unaffected).
 
-**Prefill width.** The retained amount follows the shape changed to: about 0.85 MiB per
-token of prefill width on the writer. The bucketed contract therefore prefills in one fixed
-width C (64), so a warm request switches only between q = C and the 1-token step; see
-[Step contracts](#step-contracts) for the step-back tail that keeps every chunk at C. C was
-chosen on the writer (`languagePrefillChunkSweep`, opt-in; one M5 Max; 8 tokens per
-request; retention without a budget; reloads over 60 long requests at the 2 GiB default):
+**Prefill width and capacity.** The retained amount follows the shape changed to: about 0.85
+MiB per token of prefill width on the writer at a 449-token prompt (the 0.0.2 sweep below:
+110.8 MiB at C = 128 and 215.3 MiB at C = 256, 0.87 and 0.84 MiB per token). Both parts of a bucketed
+shape count, the width q and the cache capacity: until 0.0.3 the cache grew in 256-row steps
+through the prefill, so a long prompt changed shape once per step. That made the figures below,
+measured at 449 tokens (one or two steps), understate long prompts about fourfold: the writer
+retained 272 MiB per 2,044-token request at the 0.0.2 width, against 58.6 MiB at 449 tokens.
+Since 0.0.3 the cache is sized for the prompt before the prefill, so the prefill is one shape
+(q = C at the prompt's capacity) whatever its length, and C is 64 up to 256 prompt tokens and
+256 above. Measured on the writer and the 0.6B (`languagePrefillChunkSweep`, opt-in, with the
+session's default plan; 8 tokens per request; retention without a budget; reloads and total
+time over 60 long requests at the 2 GiB default; one M5 Max, shared host;
+[evidence](evidence/language-prefill-plan-2026-10-28.json)):
+
+| Model, long prompt | Retained per long request, before / after | Per request, alternating with 12 tokens | Median time to first token | Reloads per 60, and their total time |
+| --- | --- | --- | --- | --- |
+| writer, 449 tokens | 58.6 / 109.8 MiB | 33.1 / 58.7 MiB | 209 / 108 ms | 1 / 3, 24.5 / 23.1 s |
+| writer, 1,021 tokens | 129.0 / 123.0 MiB | 65.4 / 62.3 MiB | 463 / 233 ms | 3 / 3, 45.0 / 32.0 s |
+| writer, 2,044 tokens | 272.1 / 139.5 MiB | 139.9 / 73.5 MiB | 981 / 529 ms | 6 / 3, 85.4 / 49.9 s |
+| 0.6B, 1,025 tokens | 98.3 / 73.2 MiB | 50.0 / 37.4 MiB | 171 / 77 ms | 2 / 2, 14.1 / 8.3 s |
+| 0.6B, 2,048 tokens | 0.0 / 82.4 MiB | 81.5 / 44.4 MiB | 361 / 137 ms | 0 / 2, 25.4 / 13.9 s |
+
+The cost of the wider chunk shows at 449 tokens, where the 0.0.2 plan crossed only one capacity
+step: retention doubles and the writer reloads three times in 60 instead of once, though the 60
+requests still finish sooner. From about 1,000 tokens on the new plan retains no more than the
+old, and half as much at 2,048 on the writer. (The 0.6B's 0.0 at 2,048 tokens before is as
+measured: that run's repeated long requests retained nothing, while its alternating ones
+retained 81.5 MiB per request.) Replies were stable within every run.
+
+The 0.0.2 choice of C = 64, with the cache growing in steps (writer, 449-token prompt):
 
 | C | Retained per 449-token request | Per request, alternating 12/449 | Median time to first token, 449 / 12 tokens | Reloads per 60 long requests |
 | --- | --- | --- | --- | --- |
@@ -263,7 +385,8 @@ request; retention without a budget; reloads over 60 long requests at the 2 GiB 
 
 64 retains 2.3 times less than the earlier power-of-two plan and reaches the first token
 sooner. 128 saves 80 ms on a 449-token prompt but triples the reload rate. Replies were
-identical at every width.
+identical at every width. At longer prompts that trade-off reverses, because the steps the
+cache took through the prefill were shape changes too (above).
 
 **The budget.** `memoryGrowthBudgetBytes` is on both `open` entry points and
 `VisionLanguageSession.open`: default `LanguageGenerationSession.defaultMemoryGrowthBudgetBytes`
@@ -301,34 +424,34 @@ model's retention (`LanguageMemoryBudget`):
   looks like an outlier counts from the third.
 Set-aside requests are counted in `foreignMemoryRequests` and `foreignMemoryBytes`.
 Sharing a `GPUAdmission` between a host's sessions keeps their admitted GPU work out of
-each other's windows; loading and releasing are not admitted, so another session's load
-inside a window is caught only by the outlier rule. Without `gpu:`, the accounting
+each other's windows; opening is admitted too, but releasing is not, so another session's
+release inside a window is caught only by the net-decrease rule. Without `gpu:`, the accounting
 assumes no concurrent Metal work beyond what those rules catch. Before a model's rate is
 known, a foreign load inside a window counts and can cause one unnecessary reload; this
 errs towards reloading, because uncounted retention would grow without bound.
 
 **Bound qualification** (`languageMemoryBudgetBoundsRepeatedRequests`, opt-in; one M5 Max, release build,
-shared host; [evidence](evidence/language-memory-budget-2026-10-27.json)). Each model is opened as an application
-would and warmed, then serves 60 back-to-back requests of 8 tokens: a 449-token text prompt (453 for the 0.6B), and
-for the Qwen3-VL bundles alternating with a one-line question about a 512×384 synthetic image. Gate: Metal after every request
-at most the post-warm level plus the budget (2 GiB) plus the largest warm request's growth, at least one reload, and
-every reply identical to the first of its kind.
+shared host; [evidence](evidence/language-prefill-plan-2026-10-28.json), re-run with the 0.0.3 plan). Each model is
+opened as an application would and warmed, then serves 60 back-to-back requests of 8 tokens: a 449-token text prompt
+(453 for the 0.6B), and for the Qwen3-VL bundles alternating with a one-line question about a 512×384 synthetic image.
+Every one of those prompts is longer than 256 tokens, so they prefill in 256-token chunks. Gate: Metal after every
+request at most the post-warm level plus the budget (2 GiB) plus the largest warm request's growth, at least one reload,
+and every reply identical to the first of its kind.
 
-| Model | Warm | Highest after a request | Bound | Reloads (at idle / in front) | First reload after request | Replies identical |
-| --- | --- | --- | --- | --- | --- | --- |
-| Qwen3-0.6B | 1,557 MiB | 3,631 MiB | 3,642 MiB | 1 (1 / 0) | 58 | 60 of 60 |
-| Qwen3-4B writer | 8,581 MiB | 10,631 MiB | 10,688 MiB | 1 (1 / 0) | 36 | 60 of 60 |
-| Qwen3-VL-2B | 10,113 MiB | 12,174 MiB | 12,222 MiB | 1 (1 / 0) | 58 | 60 of 60 |
-| Qwen3-VL-4B describer | 19,566 MiB | 21,705 MiB | 21,918 MiB | 1 (1 / 0) | 34 | 60 of 60 |
-| Qwen3-VL-2B, one function (0.0.3) | 6,065 MiB | 8,066 MiB | 8,180 MiB | 1 (1 / 0) | 34 | 60 of 60 |
-| Qwen3-VL-4B, one function (0.0.3) | 10,847 MiB | 12,822 MiB | 13,311 MiB | 2 (2 / 0) | 20 | 60 of 60 |
+| Model | Warm | Highest after a request | Bound | Largest request growth | Reloads (at idle / in front) | First reload after request | Replies identical |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Qwen3-0.6B | 1,598 MiB | 3,694 MiB | 3,712 MiB | 66 MiB | 1 (1 / 0) | 32 | 60 of 60 |
+| Qwen3-4B writer | 8,648 MiB | 10,735 MiB | 10,809 MiB | 113 MiB | 3 (3 / 0) | 19 | 60 of 60 |
+| Qwen3-VL-2B, one function | 6,184 MiB | 8,235 MiB | 8,352 MiB | 120 MiB | 3 (3 / 0) | 18 | 60 of 60 |
+| Qwen3-VL-4B, one function | 11,058 MiB | 13,059 MiB | 13,314 MiB | 208 MiB | 5 (5 / 0) | 10 | 60 of 60 |
 
-The one-function rows are the re-exported Qwen3-VL bundles
-([evidence](evidence/qwen3-vl-one-function-2026-10-27.json), [Qwen3-VL](qwen3-vl.md#one-decoder-function-003)).
-Every reload ran at idle; none delayed a request. Without the budget, the same requests grow without limit (the
-writer by 58.6 MiB per request at this width, 3.4 GiB over 60). Upstream parity was re-run at the fixed width for all
-four models ([evidence](evidence/language-prefill-width-2026-10-27.json)); see
-[Evidence and limits](#evidence-and-limits) for the two greedy near-tie flips it found.
+Every reload ran at idle; none delayed a request. Before this change (C = 64, the cache growing in steps) the same runs reloaded 1, 1, 1 and 2 times
+([0.0.3 one-function record](evidence/qwen3-vl-one-function-2026-10-27.json),
+[0.0.2-width record](evidence/language-memory-budget-2026-10-27.json)): these prompts sit just above the 256-token
+threshold, where the wider chunk retains about twice as much (see the table above). The 0.0.2 two-function Qwen3-VL
+bundles were not re-run. Without the budget, the same requests grow without limit (the writer by 109.8 MiB per
+449-token request with the 0.0.3 plan). Upstream parity was re-run with the 0.0.3 plan on all four models; see
+[Evidence and limits](#evidence-and-limits).
 
 ### Minimal reproduction for Apple
 
@@ -350,12 +473,57 @@ Expected: once both shapes have run, alternating between them allocates nothing 
 without `expectFrequentReshapes`. Observed: every shape change retains memory until the
 model is released. The Feedback is the user's to file.
 
+## On-device host (prepared, 0.0.3)
+
+`Examples/LanguageDevice` is an XcodeGen app, LanguageDeviceProbe. It opens a staged bundle with `platform: .ios` and
+checks it against the float32 Transformers reference, printing one JSON report with timings, footprint and the app's
+available memory.
+
+- **Text** (a dense Qwen3): every teacher-forced row and a greedy continuation, judged by the native qualification's
+  rule.
+- **Vision** (Qwen3-VL): Kit decodes and preprocesses the photos the reference was made from (the `kit-decoded`
+  reference grids). The greedy answer must match, or first diverge at a near-tie of the reference's own row.
+
+`Forge/language/stage_device_assets.py text|vision BUNDLE REFERENCE` copies the model asset(s) and tokenizer, and
+registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
+registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
+4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
+an iPhone grants by default, so the app requests the increased memory limit
+(`com.apple.developer.kernel.increased-memory-limit`, in `LanguageDeviceProbe.entitlements`). That capability needs an
+explicit App ID with it enabled; a wildcard App ID can't carry it. Explicit App IDs are unique across teams, so outside
+the owner's team, first change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to an ID in your own team. Then either
+register that ID with the capability in your developer account, or let Xcode register it: select your team for the
+target in the generated project (the spec sets none) and build once with automatic signing. The team selection lives in
+the generated, git-ignored `.xcodeproj`, so the next `xcodegen generate` resets it. The report's
+`availableMemoryMiBAtStart` shows whether the larger limit applies. Without it, the VL-2B run may end in a refusal or a
+jetsam kill.
+
 ## Evidence and limits
 
-Different prefill plans (a different width, or 1-token steps) round differently, which can flip a greedy token
-where upstream's top two are nearly tied (observed margins 0.0014 and 0.0115). This is kernel rounding, not a
-step-back effect: the default width and a single whole-prompt chunk give identical tokens on every qualified model
-([evidence](evidence/language-prefill-width-2026-10-27.json)).
+Different prefill plans (a different width, the widest chunk, or 1-token steps) round differently, which can flip a
+greedy token where upstream's top two are nearly tied (observed margins 0.0014 and 0.0115 at the 64 width,
+[evidence](evidence/language-prefill-width-2026-10-27.json)). The 0.0.3 plan was qualified again on the 0.6B, the
+writer and the one-function VL-2B and VL-4B ([evidence](evidence/language-prefill-plan-2026-10-28.json)):
+- **Short prompts** (up to 256 tokens) keep the 0.0.2 plan: the 0.6B's and the writer's short parity runs reproduce
+  their earlier minimum cosines exactly (0.9999989455131314 and 0.9999987015881698), and the writer's chat replies are
+  token-identical to their records.
+- **A 0.0.2 two-function Qwen3-VL bundle keeps the 0.0.2 plan.** The VL-2B two-function bundle's model parity
+  reproduces the 64-width record's minimum cosines exactly on all five cases, and its plan check passes with identical
+  greedy output across plans (its default plan is 8 chunks of 64 at 449 tokens).
+- **Image prompts** on one-function bundles (449-539 tokens, all now 256 wide): every Qwen3-VL parity and session run passes, and every greedy
+  sequence is token-identical to its 0.0.3 record.
+- **Long text prompts** pass upstream parity (0.6B 453 tokens, writer 449 and 1,021, VL-4B 449). Three greedy flips
+  against other plans sit at upstream near-ties: the 0.6B at token 16 (margin 0.00142, the known one), the VL-4B at
+  token 4 (upstream picks 3982, the 0.0.3 plan its second choice 3129, margin 0.00574) and the writer at 1,021 tokens
+  at token 2 (upstream picks 498, the 0.0.3 plan 1075, margin 0.00791). The last two references were made for this
+  (`reference_qwen3_vl_text.py`, and `reference_qwen3.py --prompt-repeat 92`).
+- **The plan check's rules were aligned for this** ([Step contracts](#step-contracts)). Under the old rules the
+  VL-4B flip failed the step-back comparison (no near-tie allowance) and the writer's 1,021-token flip failed the
+  0.99999 row bar (rows at 0.9999897 and 0.9999693). Under the aligned rules all five prompts pass: the 0.6B (453
+  tokens), the writer (449 and 1,021), the VL-2B (text and its three image cases, identical across plans) and the
+  VL-4B (449-token text and its three image cases). Both flips also pass upstream parity, where each plan is judged
+  against float32 upstream on its own: forced rows at cosine >= 0.99989 (VL-4B) and >= 0.99999 (writer), one argmax
+  difference each, at the near-tie, and greedy output first diverging there with Kit's token upstream's second.
 
 ### Qwen3-4B writer (bucketed, fp16)
 

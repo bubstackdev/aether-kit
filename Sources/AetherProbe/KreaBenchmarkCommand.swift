@@ -7,6 +7,7 @@ import Darwin
 import Foundation
 import Metal
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkPreparedCase: Codable, Sendable {
     let id: String
     let tokenIDs: [Int32]
@@ -17,6 +18,7 @@ struct BenchmarkPreparedCase: Codable, Sendable {
     let selectionIdentity: String
 }
 
+@available(macOS 27, iOS 27, *)
 struct KreaBenchmarkReport: Encodable {
     let schema = 1
     let purpose = "Opt-in Krea generation benchmark"
@@ -57,6 +59,7 @@ struct KreaBenchmarkReport: Encodable {
     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
 }
 
+@available(macOS 27, iOS 27, *)
 enum KreaBenchmarkCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "benchmark-krea" else { return false }
@@ -237,7 +240,7 @@ enum KreaBenchmarkCommand {
         return true
     }
 
-    private static func sourceIdentities(_ root: URL) throws -> [String: String] {
+    static func sourceIdentities(_ root: URL) throws -> [String: String] {
         guard FileManager.default.fileExists(atPath: root.appendingPathComponent("Package.swift").path),
               FileManager.default.fileExists(atPath: root.appendingPathComponent("Sources").path) else {
             throw AetherError.invalidRequest("benchmark source root must contain Package.swift and Sources")
@@ -263,7 +266,7 @@ enum KreaBenchmarkCommand {
         return hashes
     }
 
-    private static func toolchain() throws -> String {
+    static func toolchain() throws -> String {
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")

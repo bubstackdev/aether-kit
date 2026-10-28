@@ -17,6 +17,7 @@ import AetherKit
 /// at once, later admissions are refused, an idle reload is cancelled (an in-progress load
 /// finishes, then is dropped), and a request inside its reload fails with `closed` when the reload
 /// returns. So close never waits behind the GPU queue, at most for one model load.
+@available(macOS 27, iOS 27, *)
 final class LanguageRequestAdmission {
     private var pending: [ObjectIdentifier: GPUAdmissionAttempt] = [:]
     private(set) var withdrawn = false
@@ -38,11 +39,15 @@ final class LanguageRequestAdmission {
         await idleTask?.value
     }
 
-    /// The start of a request: admission, then (under the grant) a reload when `reloadNeeded()`.
-    func begin(gpu: GPUAdmissionOwner?, reloadNeeded: () -> Bool, reload: () async throws -> Void,
-               isolation: isolated (any Actor)? = #isolation) async throws -> GPUAdmissionGrant? {
+    /// The start of a request: admission, then (under the grant) its scratch reservation, then a reload when
+    /// `reloadNeeded()`. The reservation comes first so a refusal never costs a model load.
+    func begin(gpu: GPUAdmissionOwner?, reserveScratch: () throws -> ResourceReservation? = { nil }, reloadNeeded: () -> Bool,
+               reload: () async throws -> Void,
+               isolation: isolated (any Actor)? = #isolation) async throws -> LanguageAdmittedRequest {
         let grant = try await admit(gpu)
+        var scratch: ResourceReservation?
         do {
+            scratch = try reserveScratch()
             if let idleTask {
                 // Reloading: wait for it. Not yet holding its grant: cancel it and reload here.
                 if !idleReloading { idleTask.cancel(); withdrawIdleAttempt() }
@@ -53,8 +58,9 @@ final class LanguageRequestAdmission {
                 requestReloads += 1
             }
             guard !withdrawn else { throw LanguageGenerationError.closed }
-            return grant
+            return LanguageAdmittedRequest(grant: grant, scratch: scratch)
         } catch {
+            scratch?.release()
             grant?.release()
             throw error
         }
@@ -95,5 +101,16 @@ final class LanguageRequestAdmission {
         if idle { idleAttempt = attempt }
         defer { pending[key] = nil; if idle { idleAttempt = nil } }
         return try await attempt.admit(orThrow: { LanguageGenerationError.closed })
+    }
+}
+
+/// An admitted request's GPU grant and scratch reservation, held until it ends.
+@available(macOS 27, iOS 27, *)
+struct LanguageAdmittedRequest {
+    let grant: GPUAdmissionGrant?
+    let scratch: ResourceReservation?
+    func release() {
+        scratch?.release()
+        grant?.release()
     }
 }

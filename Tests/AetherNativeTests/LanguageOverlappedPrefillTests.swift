@@ -1,33 +1,41 @@
 import AetherKit
-import AetherLanguageCoreAI
+@testable import AetherLanguageCoreAI
 import AetherLanguageTokenizers
 import AetherVision
 import Foundation
 import Synchronization
 import Testing
 
-/// Opt-in native check that the bucketed prefill's step-back tail is exact on real models. A 449-token prompt (seven
-/// 64-token chunks, then a last chunk stepping back 63 rows) is prefilled three ways: the default width (64, stepping
-/// back), one chunk for the whole prompt, and 1-token steps. The graph attends only to cache rows before a chunk's
-/// first position, so the rows a step-back rewrites are recomputed from the same prefix. Every comparison needs the
-/// default plan's last-row logits at cosine >= 0.9999 with the same argmax, then:
-/// - step-back (default against one chunk, the exactness claim): identical 32-token greedy continuations;
-/// - plan rounding (default against 1-token steps, another kernel shape): identical greedy, or a first divergence at an
-///   upstream near-tie: the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2
-///   probability is under 0.1 (the parity gate's threshold), and the two plans' teacher-forced rows agree at cosine
-///   >= 0.99999 on every row up to and including the divergence. Judged only where an upstream reference with this
-///   prompt covers the row; otherwise any divergence fails.
-/// A Qwen3-VL bundle also runs two image prompts through `VisionLanguageSession`: greedy identical across the three
-/// plans, with no near-tie allowance. A one-function decoder prefills image tokens in the same chunks as text, so the
-/// default plan's chunks cross the image span's edges in both, and the cases are chosen for the step-back tail: after
-/// a long question it lands in the text after the image; after a short one it steps back into the image span and
-/// re-covers image rows (the report records the image span and the default plan's chunk starts, and requires both).
+/// Opt-in native check that the bucketed prefill's step-back tail is exact on real models, and that other prefill plans
+/// differ from it only by rounding. A 449-token prompt (by default one 256-token chunk, then a last chunk stepping back
+/// 63 rows, with the cache sized for the prompt before the prefill) is prefilled four ways: the default plan, the widest
+/// chunk the export allows (the whole prompt in one chunk up to the export's chunk bound, 512 for the Qwen3 exports;
+/// a longer prompt takes more than one), 1-token steps, and the 0.0.2 width (64-token chunks). The graph attends only to cache rows
+/// before a chunk's first position, so the rows a step-back rewrites are recomputed from the same prefix. Every
+/// comparison needs the default plan's last-row logits at cosine >= 0.9999 with the same argmax, then identical 32-token
+/// greedy continuations, or a first divergence at an upstream near-tie: the two plans' tokens are the upstream
+/// reference's top two at that row, its top-1 minus top-2 probability is under 0.1 (the parity gate's threshold), and
+/// the two plans' teacher-forced rows agree at cosine >= 0.9999 (the last-row bar) on every row up to and including the
+/// divergence (the other plan's row r: the prompt and r generated tokens prefilled at its width). Judged only where an
+/// upstream reference with this prompt covers the row; otherwise any divergence fails. The comparisons are labelled
+/// step-back (default against the widest chunk: the stepped-over rows are masked, so the plans differ only by rounding) and
+/// plan rounding (default against 1-token steps and the 0.0.2 width: other kernel shapes); both rules are the same.
+/// Until 0.0.3's plan the step-back rule allowed no divergence and the row bar was 0.99999: equal up to rounding is not
+/// equal, and over a 1,021-token prompt plans of different kernel shapes agree at 0.99997-0.99999.
+/// A Qwen3-VL bundle also runs three image prompts through `VisionLanguageSession`, two with one image and one with two:
+/// greedy identical across the three plans, with no near-tie allowance. A one-function decoder prefills image tokens in the same chunks as text, so the
+/// default plan's chunks (256 wide: the image prompts are longer than 256 tokens) cross the image span's edges in both,
+/// and the cases are chosen for the step-back tail: after a long question it lands in the text after the image; after
+/// a short one it steps back into the image span and re-covers image rows (the report records the image span and the
+/// default plan's chunk starts, and requires both).
 ///
 /// AETHER_NATIVE_LANGUAGE_OVERLAP=1
 /// AETHER_OVERLAP_MODELS=<name=path,...: text or Qwen3-VL bundles, or a raw bucketed model.aimodel>
 /// AETHER_OVERLAP_REFERENCES=<optional name=dir,...: upstream text references (reference.json, forced logits) of the
 ///   same prompt, for the plan-rounding near-tie rule>
 /// AETHER_OVERLAP_OUTPUT=<report .json>
+/// AETHER_OVERLAP_TEXT_REPEATS=<optional: sentences in the text prompt, default 40 (449 tokens on Qwen3); 92 is about
+///   1,024 tokens and 185 about 2,048>
 /// A plan-rounding divergence judged against the upstream reference.
 private struct OverlapNearTie: Codable {
     var row = 0
@@ -47,8 +55,23 @@ private struct OverlapComparison: Codable {
     var firstDivergence: Int?
     var greedy: [Int] = []
     var nearTie: OverlapNearTie?
+    /// At a divergence, reported and never gating: each plan's own row there (the default plan's teacher-forced row,
+    /// the other plan's prefill of the prompt and prefix), as [Kit's top-1, top-2] tokens and top-1 minus top-2 probability.
+    var kitRowsAtDivergence: [String: KitRow]?
     var acceptedAtNearTie = false
     var passed = false
+}
+
+private struct KitRow: Codable {
+    var topTwo: [Int] = []
+    var margin = 0.0
+    init(_ logits: [Float]) {
+        let order = logits.indices.sorted { logits[$0] > logits[$1] }
+        let top = Double(logits[order[0]])
+        let denominator = logits.reduce(0.0) { $0 + exp(Double($1) - top) }
+        topTwo = [order[0], order[1]]
+        margin = (1 - exp(Double(logits[order[1]]) - top)) / denominator
+    }
 }
 
 /// An upstream text reference: row r of `logits` follows prompt + forcedTokens[:r].
@@ -84,20 +107,21 @@ private struct OverlapModel: Codable {
 }
 
 /// An image prompt prefilled three ways. `imageSpan` is [start, end) in the expanded prompt; `defaultChunkStarts` are the
-/// default plan's chunk starts on a one-function decoder (a 0.0.2 decoder sends the image span as one submission).
+/// default plan's chunk starts on a one-function decoder, and with the two flags below nil on a 0.0.2 two-function
+/// decoder, which never chunks an image (each image is one `withImage` submission).
 private struct OverlapImageCase: Codable {
     var name = ""
     var promptTokens = 0
     var imageSpan: [Int] = []
-    var defaultChunkStarts: [Int] = []
-    var chunksCrossImageEdges = false
-    var tailReCoversImageRows = false
+    var defaultChunkStarts: [Int]?
+    var chunksCrossImageEdges: Bool?
+    var tailReCoversImageRows: Bool?
     var greedy: [String: [Int]] = [:]
     var greedyIdentical = false
 }
 
 private struct OverlapReport: Codable {
-    var gate = "449-token prompt, default width (64, last chunk stepping back 63 rows) against two plans; last-row logits cosine >= 0.9999 with equal argmax for both. Rule step-back (against one whole-prompt chunk, the exactness claim): identical 32-token greedy. Rule plan-rounding (against 1-token steps, another kernel shape): identical greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.99999 on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Qwen3-VL image prompt with a stepping-back question: identical greedy across the three plans, no near-tie allowance"
+    var gate = "Text prompt (449 tokens unless AETHER_OVERLAP_TEXT_REPEATS sets another length), default plan (width 256 above 256 prompt tokens, last chunk stepping back 63 rows, cache sized for the prompt before the prefill) against three plans; last-row logits cosine >= 0.9999 with equal argmax for each. Rules step-back (against the widest chunk the export allows: the whole prompt in one chunk up to the chunk bound, more above it) and plan-rounding (against 1-token steps and against the 0.0.2 width of 64), the same for both: identical 32-token greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.9999 (the last-row bar) on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Before 0.0.3's plan: step-back allowed no divergence and the row bar was 0.99999. Qwen3-VL image prompts (a long and a short question about one image, and two images) under the default plan, one 512-token-wide plan and 1-token steps: identical greedy, no near-tie allowance"
     var device = LanguageGenerationSession.deviceArchitectureName
     var models: [OverlapModel] = []
     var error: String?
@@ -122,7 +146,8 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try? encoder.encode(report).write(to: output)
     }
-    let text = String(repeating: "The lighthouse keeper paints the railing a calm teal. ", count: 40)
+    let text = String(repeating: "The lighthouse keeper paints the railing a calm teal. ",
+                      count: Int(nativeEnvironment["AETHER_OVERLAP_TEXT_REPEATS"] ?? "") ?? 40)
     do {
         var references: [String: OverlapReference] = [:]
         for entry in (nativeEnvironment["AETHER_OVERLAP_REFERENCES"] ?? "").split(separator: ",") {
@@ -150,8 +175,10 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
             }
             let prompt = try tokenizer.render([.user(text)]).tokenIDs
             model.promptTokens = prompt.count
-            // nil: the default width (64); the whole prompt in one chunk; 1-token steps.
-            let plans: [(String, Int?)] = [("default", nil), ("single chunk", prompt.count), ("1-token steps", 1)]
+            // nil: the default plan (256 wide for this prompt); the widest chunk the export allows (the whole prompt in one
+            // chunk within the export's chunk bound, more chunks above it); 1-token steps; the 0.0.2 width.
+            let plans: [(String, Int?)] = [("default", nil), ("widest chunk", prompt.count), ("1-token steps", 1),
+                                           ("0.0.2 width", LanguageStepContract.defaultBucketedPrefillChunk)]
             var logits: [String: [Float]] = [:], greedy: [String: [Int]] = [:]
             for (name, chunk) in plans {
                 let submissions = Counter()
@@ -163,13 +190,18 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                 model.submissions[name] = submissions.value - reply.tokens.count + (reply.stopReason == "eos" ? 0 : 1)
             }
             model.defaultGreedy = greedy["default"]!
-            for (name, _) in plans.dropFirst() {
+            for (name, chunk) in plans.dropFirst() {
                 let a = greedy["default"]!, b = greedy[name]!
-                var comparison = OverlapComparison(plan: name, rule: name == "single chunk" ? "step-back" : "plan-rounding",
+                var comparison = OverlapComparison(plan: name, rule: name == "widest chunk" ? "step-back" : "plan-rounding",
                     cosine: cosine(logits["default"]!, logits[name]!),
                     argmaxEqual: argmax(logits["default"]!) == argmax(logits[name]!), greedyIdentical: a == b,
                     firstDivergence: zip(a, b).enumerated().first { $0.element.0 != $0.element.1 }?.offset, greedy: b)
-                if comparison.rule == "plan-rounding", let d = comparison.firstDivergence, let reference = references[model.name],
+                if let d = comparison.firstDivergence {
+                    let own = try await session.teacherForcedLogits(prompt: prompt, continuation: Array(a.prefix(d)))[d]
+                    let other = try await session.prefillLogits(prompt: prompt + a.prefix(d), chunkSize: chunk)
+                    comparison.kitRowsAtDivergence = ["default": KitRow(own), name: KitRow(other)]
+                }
+                if let d = comparison.firstDivergence, let reference = references[model.name],
                    reference.record.promptTokens == prompt, d < reference.record.forcedLogits.rows,
                    Array(reference.record.forcedTokens.prefix(d)) == Array(a.prefix(d)) {
                     var tie = OverlapNearTie(row: d, tokens: [a[d], b[d]], marginSource: "\(reference.name) forced row \(d)")
@@ -178,20 +210,24 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     let denominator = row.reduce(0.0) { $0 + exp($1 - row[order[0]]) }
                     tie.upstreamTopTwo = [order[0], order[1]]
                     tie.upstreamMargin = (1 - exp(row[order[1]] - row[order[0]])) / denominator
-                    // Default plan: its prefill, then 1-token steps; 1-token plan: 1-token steps throughout.
+                    // Default plan: its prefill, then 1-token steps; the other plan: the prompt and r tokens prefilled at
+                    // its width (for 1-token steps, 1-token steps throughout).
                     let defaultRows = try await session.teacherForcedLogits(prompt: prompt, continuation: Array(a.prefix(d)))
                     for r in 0...d {
-                        let stepRow = try await session.prefillLogits(prompt: prompt + a.prefix(r), chunkSize: 1)
+                        let stepRow = try await session.prefillLogits(prompt: prompt + a.prefix(r), chunkSize: chunk)
                         tie.rowCosines.append(cosine(defaultRows[r], stepRow))
                     }
                     comparison.acceptedAtNearTie = Set(tie.tokens) == Set(tie.upstreamTopTwo) && tie.upstreamMargin < 0.1
-                        && tie.rowCosines.allSatisfy { $0 >= 0.99999 }
+                        && tie.rowCosines.allSatisfy { $0 >= 0.9999 }
                     comparison.nearTie = tie
                 }
                 comparison.passed = (comparison.cosine ?? 0) >= 0.9999 && comparison.argmaxEqual == true
                     && (comparison.greedyIdentical || comparison.acceptedAtNearTie)
                 model.comparisons.append(comparison)
             }
+            // A 0.0.2 two-function decoder keeps the 0.0.2 plan (64-token text chunks, each image one `withImage`
+            // submission), so the one-function image geometry below does not apply to it.
+            let oneFunction = session.imagesThroughMain
             await session.unload()
             if vision {
                 let registration = try #require(try LanguageModelManifest.load(from: path).vision)
@@ -203,8 +239,9 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     return [UInt8(x * 255 / 511), UInt8(y * 255 / 383), UInt8((x + y) * 127 / 893)]
                 }, width: 512, height: 384)
                 let vl = try await VisionLanguageSession.open(bundle: path, platform: .macos)
+                // The long question puts the default plan's stepping-back tail after the image at width 256.
                 let questions = [("long question", "Describe the colours in this picture. "
-                                    + String(repeating: "Mention every shade you can see, from the brightest to the darkest. ", count: 8)),
+                                    + String(repeating: "Mention every shade you can see, from the brightest to the darkest. ", count: 20)),
                                  ("short question", "Describe this picture.")]
                 for (caseName, question) in questions {
                     let rendered = try tokenizer.render([.user(question, images: 1)]).tokenIDs
@@ -214,32 +251,62 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     let total = rendered.count - 1 + imageTokens
                     imageCase.promptTokens = total
                     imageCase.imageSpan = [start, start + imageTokens]
-                    let width = 64
-                    imageCase.defaultChunkStarts = Array(stride(from: 0, through: total - width, by: width))
-                        + (total % width == 0 || total <= width ? [] : [total - width])
-                    func inside(_ edge: Int) -> Bool { imageCase.defaultChunkStarts.contains { $0 < edge && edge < $0 + width } }
-                    imageCase.chunksCrossImageEdges = inside(start) && inside(start + imageTokens)
-                    imageCase.tailReCoversImageRows = total % width != 0 && total - width < start + imageTokens
-                    for (name, chunk) in [("default", nil), ("single chunk", 512), ("1-token steps", 1)] as [(String, Int?)] {
+                    if oneFunction {
+                        let width = try #require(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total))
+                        let starts = Array(stride(from: 0, through: total - width, by: width))
+                            + (total % width == 0 || total <= width ? [] : [total - width])
+                        func inside(_ edge: Int) -> Bool { starts.contains { $0 < edge && edge < $0 + width } }
+                        imageCase.defaultChunkStarts = starts
+                        imageCase.chunksCrossImageEdges = inside(start) && inside(start + imageTokens)
+                        imageCase.tailReCoversImageRows = total % width != 0 && total - width < start + imageTokens
+                    }
+                    for (name, chunk) in [("default", nil), ("512 wide", 512), ("1-token steps", 1)] as [(String, Int?)] {
                         imageCase.greedy[name] = try await vl.generate(renderedTokenIDs: rendered, images: [image], maximumTokens: 32,
                                                                         prefillChunkSize: chunk).tokens
                     }
                     imageCase.greedyIdentical = Set(imageCase.greedy.values).count == 1
                     model.imageCases.append(imageCase)
                 }
+                // Two images in one prompt: both spans' edges and the gap between them fall wherever the chunks put them.
+                let second = try VisionRGBImage(rgb: (0..<(512 * 384)).flatMap { i -> [UInt8] in
+                    let x = i % 512, y = i / 512
+                    return [UInt8((x + y) * 127 / 893), UInt8(x * 255 / 511), UInt8(y * 255 / 383)]
+                }, width: 512, height: 384)
+                let pair = try tokenizer.render([.user("What differs between these two pictures?", images: 2)]).tokenIDs
+                var pairCase = OverlapImageCase()
+                pairCase.name = "two images"
+                let pads = pair.indices.filter { pair[$0] == registration.imageTokenID }
+                let first = pads[0], next = pads[1] + imageTokens - 1
+                pairCase.promptTokens = pair.count - 2 + 2 * imageTokens
+                pairCase.imageSpan = [first, first + imageTokens, next, next + imageTokens]
+                if oneFunction {
+                    let total = pairCase.promptTokens
+                    let width = try #require(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total))
+                    let starts = Array(stride(from: 0, through: total - width, by: width))
+                        + (total % width == 0 || total <= width ? [] : [total - width])
+                    pairCase.defaultChunkStarts = starts
+                    pairCase.chunksCrossImageEdges = pairCase.imageSpan.allSatisfy { edge in starts.contains { $0 < edge && edge < $0 + width } }
+                    pairCase.tailReCoversImageRows = total % width != 0 && total - width < next + imageTokens
+                }
+                for (name, chunk) in [("default", nil), ("512 wide", 512), ("1-token steps", 1)] as [(String, Int?)] {
+                    pairCase.greedy[name] = try await vl.generate(renderedTokenIDs: pair, images: [image, second], maximumTokens: 32,
+                                                                   prefillChunkSize: chunk).tokens
+                }
+                pairCase.greedyIdentical = Set(pairCase.greedy.values).count == 1
+                model.imageCases.append(pairCase)
                 await vl.unload()
-                // Each case must exercise what it is for: image edges inside chunks, and the short question's tail
-                // stepping back into the image.
-                let geometry = model.imageCases.allSatisfy(\.chunksCrossImageEdges)
-                    && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows }
-                    && model.imageCases.contains { $0.name == "long question" && !$0.tailReCoversImageRows }
+                // Each single-image case must exercise what it is for: image edges inside chunks, and the short
+                // question's tail stepping back into the image. Every case's greedy output must agree across plans.
+                let geometry = !oneFunction || model.imageCases.filter { $0.name != "two images" }.allSatisfy { $0.chunksCrossImageEdges == true }
+                    && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows == true }
+                    && model.imageCases.contains { $0.name == "long question" && $0.tailReCoversImageRows == false }
                 model.imageGreedyIdentical = geometry && model.imageCases.allSatisfy(\.greedyIdentical)
             }
             model.passed = model.comparisons.allSatisfy(\.passed) && (model.imageGreedyIdentical ?? true)
             report.models.append(model)
             #expect(model.passed, "\(model.name): \(model.comparisons), image identical \(String(describing: model.imageGreedyIdentical))")
         }
-        report.passed = report.models.allSatisfy(\.passed)
+        report.passed = !report.models.isEmpty && report.models.allSatisfy(\.passed)
     } catch {
         report.error = String(describing: error)
         throw error

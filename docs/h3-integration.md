@@ -14,7 +14,9 @@ The experimental `AetherH3` SwiftPM product starts with CPU preparation contract
 - that no referenced path is missing or under a temporary directory;
 - the passing opt-in `AETHER_H3_PROFILE`/`AETHER_H3_PROFILE_PARAMETERS` test, which hashes every table, model stream and in-place weight binding.
 
-aether-kit does not own that folder: moving or deleting it invalidates the pins. Choosing a durable home is a separate decision.
+aether-kit does not own that folder: moving or deleting it invalidates the pins.
+
+**Kit-owned home (2026-10-27).** The referenced staging files (17.6 GiB, 1,266 files) are now APFS clones under `~/.cache/aether-kit/h3/profile-c49d8dbf/`, with the tiled first-frame encoder overlay beside them; the checkpoint and adapter blobs stay in the Hugging Face cache. The new `bundle.json` differs from the old one only in two path prefixes, and every content hash is unchanged, but Kit identifies a profile by its manifest bytes and requires absolute paths, so the profile identity is now `5af39db5…` (was `c49d8dbf…`). Every cloned file verifies against its recorded hash, regenerated dumps match the gate dumps tensor for tensor, and a replay of the qualified T2VA capture under the new identity reproduces all 457 boundary hashes ([record](evidence/h3-profile-home-2026-10-27.json)). The 2026-10-28 memory gate measures the new identity, and the bundled measured entry is keyed to it. Paths relative to `bundle.json`, which would make the identity independent of location, are a promotion follow-up.
 
 ## Available contracts
 
@@ -167,8 +169,8 @@ Preparation performs no native acquisition. It reports whether all per-block CPU
 
 ```sh
 H3_PYTHON=<the 2026-10-18 prototype forge interpreter; not provided>
-H3_LAB=/Users/zakkeown/Code/atelier/lab/minimax-h3-lab
-H3_PROTOTYPE=/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype
+H3_LAB=<minimax-h3-lab checkout>
+H3_PROTOTYPE=<aether-prototype checkout>
 H3_BUNDLE=/private/tmp/aether-h3-qkv-ready/render/bundle.json
 H3_PHASES=/private/tmp/aether-h3-qkv-ready/phase/bundle.json
 H3_PROBE="$PWD/.build/arm64-apple-macosx/release/aether-probe"
@@ -314,12 +316,13 @@ The shared CPU-tested control loop carries both modalities through all eight ind
 `qualify-h3-denoising` separates CPU-only preparation, explicitly unqualified capture, and context-aware qualification:
 
 ```sh
+H3_PROTOTYPE=<aether-prototype checkout>
 python3 -B Scripts/qualify-h3-denoising.py \
   --bundle /private/tmp/aether-h3-qkv-ready/render/bundle.json \
   --phases /private/tmp/aether-h3-qkv-ready/phase/bundle.json \
   --cpu-record /private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json \
   --chain .local/h3-backbone-cpu-references-01/chain.json \
-  --modulations /Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/.local/h3-diagnostic/models \
+  --modulations "$H3_PROTOTYPE/.local/h3-diagnostic/models" \
   --output NEW_PREPARATION_DIRECTORY --prepare-only
 ```
 
@@ -453,7 +456,11 @@ Natively, the tiled encoder's output is **byte-identical** to the whole-frame gr
 | Audio decode | 1.03 / 1.89 | 1.03 / 1.92 |
 | **Whole render, Metal** | **13.49** | **13.80** |
 
-The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below); releasing it is a follow-up.
+The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below). Since 2026-10-27 a render uses one specialization, and the current gate is in [one modulation shape per render](#denoiser-memory-one-modulation-shape-per-render-2026-10-27).
+
+**Diagnostic: spike capture.** `aether-probe h3-memory-render PROFILE DUMP NEW_DIR --spike-capture=GiB` (and `qualify-h3-memory.py --spike-capture GIB`, which passes it to every render and lists the triggers in the gate record) watches the 20 ms Metal samples. The first time a denoising sample exceeds the given level, it writes `trigger.json` (phase, time, Metal and footprint), a 1 s `sample` of every thread's stack, `vmmap --summary` and `footprint` for the process into `NEW_DIR.spike/`, about 120 KB. It is off by default and fires at most once per render. `sample` suspends the process's threads while it reads them, so step timing inside a captured window is not representative; memory is. Instruments is not used: even a Blank template with only Metal Resource Events writes GPU-counter files at about 2 GB per minute.
+
+`--carry-peaks RECORD…` makes the measured entry also cover the per-stage peaks of earlier gate records, each cited in the new record (`carriedStagePeaks`), so a transient one gate saw is not dropped by the next.
 
 ### Measured admission
 
@@ -463,13 +470,15 @@ The gate writes a measured entry: per stage, the largest sample of max(Metal, fo
 - The operation reserves the carried state.
 - Pixel and frame limits are those measured, at most 124 frames. Admission is keyed by pixel count, so any canvas up to 522,240 px (960×544) is admitted on the 960×544 numbers. That is conservative: the measured canvas is the largest allowed, and both measured orientations peak identically.
 
-`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The recorded entry's worst case is 15.07 GiB. Before a run reserves anything, admission checks that the operation plus the largest stage the request needs fits the coordinator's capacity. Once the operation is reserved, it checks that the largest stage fits what is still available. Either check refuses the run before any stage loads. A request needing a stage the entry lacks is also refused up front: the first-frame encoder for FL2VA, the audio decoder when audio is produced. Stages are still reserved one at a time, so if other holders take the budget mid-run, a later stage can still be refused (CPU-tested).
+`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The worst case was 15.07 GiB at first and 15.26 GiB on the chained build; the padded build's entry must also cover a step-0 transient, about 16.6 GiB (see [one modulation shape per render](#denoiser-memory-one-modulation-shape-per-render-2026-10-27)). Before a run reserves anything, admission checks that the operation plus the largest stage the request needs fits the coordinator's capacity. Once the operation is reserved, it checks that the largest stage fits what is still available. Either check refuses the run before any stage loads. A request needing a stage the entry lacks is also refused up front: the first-frame encoder for FL2VA, the audio decoder when audio is produced. Stages are still reserved one at a time, so if other holders take the budget mid-run, a later stage can still be refused (CPU-tested).
 
 Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the host's `GPUAdmission` owner. The operation and every stage reservation are then taken only after the GPU grant, and a generation waiting for the GPU holds no reservation (CPU-tested).
 
 The bar binds callers that use measured admission. It is opt-in: `H3VideoSession(stages:)` without `resources:` reserves nothing and is not checked against the bar.
 
-Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the c49d8dbf overlay with Turbo8 on Core AI architecture `h17c`. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py --record NAME` on that device against that profile. It must pass. It writes its gate record to `docs/evidence/NAME`, and its `measuredResources` entry cites that file; the entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
+The gate record pins the files a render depends on (`filesSHA256`): the probe binary, `Package.swift`, the profile, prompt and keyframes, and the `AetherKit`, `AetherCoreAI`, `AetherH3`, `AetherH3CoreAI` and `AetherProbe` sources. Nothing enforces them after the gate; the release checklist ([qualification and release](qualification-and-release.md)) requires a re-gate when any pinned path has changed since the bundled entry's record.
+
+Measured admission covers only the profile/device pairs present in `h3-measured-resources.json`. Today that is the Kit-owned clone of the qualified profile (`5af39db5…`, the c49d8dbf overlay with only its paths changed) with Turbo8 on Core AI architecture `h17c`; the in-place c49d8dbf identity no longer has an entry. Any other Mac or profile is refused, not estimated. To add one, run `Scripts/qualify-h3-memory.py --record NAME` on that device against that profile. It must pass. It writes its gate record to `docs/evidence/NAME`, and its `measuredResources` entry cites that file; the entry, `stage_peak_bytes` and `operation_bytes` included, is then appended to the resource file. The trajectory gate also fails when its capture or replay render exceeds 18 GiB.
 
 ## Schema-3 Turbo8 trajectory gate (2026-10-26)
 
@@ -531,7 +540,7 @@ A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hash
 
 - **Weight streaming is already hidden.** The next block's weights are prefetched into the spare bank while the GPU runs: 150–230 ms warm, about 560 ms on the first pass, which also hashes each file. Keeping more weights resident would therefore buy nothing.
 - **No guidance pass.** Each step runs 50 blocks and one heads call.
-- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render.
+- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render. It is avoided since 2026-10-27 (see below).
 - **`expectFrequentReshapes = false` is rejected.** It gave no speedup, changed the output bytes and added 2.07 GiB of Metal.
 - **The removable cost was the host round trip per block:** about 100 ms copying each 208 MB output to the host, and about 5 ms copying it back.
 
@@ -571,3 +580,70 @@ Per-step denoising times:
 - FL2VA: 43.6–44.3 s.
 
 Graphs open lazily inside their stage, so each stage's time includes its own load and specialization. Under steady load, the FL2VA step 0 (44.0 s) equals the later steps (median 44.1 s). So inside denoising, the body graph's load and specialization, text refinement and first-pass weight hashing add no measurable time: denoising is compute. The conditioner and video-decode rows include their graph loads. A quiet-host reference remains to be measured.
+
+### Quiet-host timing reference (2026-10-28)
+
+The reference for this Mac (M5 Max, Core AI architecture h17c): one complete `H3VideoSession` render per task through `aether-probe h3-memory-render`, at 960×544 and 124 frames, Turbo8, seed 1043, profile `5af39db5…`, build `bd048e4`. The user's transcode was paused. No other GPU work overlapped a render (the lock serialized it; other agents' short GPU jobs ran between renders). A script refused to start a render unless the one-minute load was under 10, memorystatus at least 70 and at least 40 GiB free ([record](evidence/h3-quiet-timing-2026-10-28.json)).
+
+The two references come from different windows: FL2VA ran 07:30–07:36, right after a first T2VA run, and started beside one compile at 100% CPU; the T2VA reference is a re-run at 07:41–07:47, after the FLUX benchmark.
+
+| Stage, wall seconds | T2VA (re-run, load 0.9–2.6) | FL2VA (load 1.3–3.9) |
+| --- | ---: | ---: |
+| Conditioner (graph load + 50 streamed layers) | 18.8 | 19.0 |
+| First-frame encoder, tiled | — | 4.8 |
+| Denoising, 8 steps | 307.9 | 288.5 |
+| Video decode | 30.8 | 29.8 |
+| Audio decode | 0.7 | 0.7 |
+| **Total of the stages** | **358.2** | **342.8** |
+
+Times are sums of the session's raw phase durations, rounded at the end. Steps took 36.3–39.9 s for T2VA and 35.4–36.3 s for FL2VA. T2VA's steps are slower although FL2VA denoises more rows; the comparison crosses windows, and with one run per task the cause is not known. This is one run per task, not a benchmark distribution.
+
+The first T2VA run is kept in the record as a side note only. Its load was 9.3 at the start, so it passed the guard, and peaked at 10.7 at 2.4 min, while another session's TripoSR job, Atelier Studio and an index build were still running; its steps took 38.2–44.6 s (total 380.1 s). The load guard alone does not make a run quiet.
+
+## Denoiser memory: one modulation shape per render (2026-10-27)
+
+**Cause.** The body graph's `temb` input is the block's AdaLN table, `[6, 3k, 5376]`, and the heads graph's is the timestep embedding, `[k, 2688]`. Both are exported with k dynamic in 1…3, where k is the step's number of distinct row timesteps. T2VA has k = 1 at step 0, where video and audio both start at t = 1.0, and k = 2 from step 1, where the shift-12 and shift-3 schedules diverge. FL2VA has 2 and then 3, because keyframe rows use max(t, 0.999). Core AI specializes a reshape-enabled function once per input shape and keeps every specialization until the model is released, so the change at step 1 left a second body specialization resident: the 2.57 GiB rise in the chained gate's T2VA render.
+
+**Workaround.** `H3ModulationPadding` pads every step's tables and embedding to the trajectory's largest k by repeating existing rows, so a render uses one body and one heads specialization. This works around Core AI's per-shape retention; it does not fix it. The padding is exact: the block reads its table only through `index_select` on the AdaLN indices (below 3k) and the heads read embedding rows only through the timestep indices (below k), so the appended rows are never selected. No re-export is needed. Two alternatives were rejected: reopening the body after step 0 gave the same plateau but cost 12 s of re-specialization at step 1 even at 288×288, and exporting a fixed cardinality is equivalent but needs a re-export.
+
+**Exactness.** Replays of both qualified captures on the padded build reproduce all 457 boundary hashes each (`replay_mismatches` 0 for T2VA and FL2VA), from dumps regenerated identical to the gate dumps.
+
+**Memory.** Denoising Metal, plateau / peak in GiB, T2VA 960×544×124 unless named:
+
+| Render | Current build | Padded |
+| --- | ---: | ---: |
+| T2VA 960×544 (standalone) | 13.49 / 13.69 | 10.93 / 11.13 |
+| T2VA 544×960 (gate) | — | 10.93 / 11.13 |
+| FL2VA, both orientations (gate) | 13.80 / 14.00 (chained gate) | 11.17 / 11.84 |
+| 960×544×22, 3,693 rows | 3.83 / 3.87 | 3.35 / 3.38 |
+| 288×288×22, 690 rows | 1.99 / 2.00 | 1.90 / 1.90 |
+
+The saving scales at about 0.133 MiB per packed row. FL2VA's 11.84 GiB peak is at step 0, as before. The video-decode stage's footprint, mostly denoiser memory not yet reclaimed, falls from 11.07 to 8.16 GiB.
+
+**Step time.** The extra table rows cost nothing measurable. Single T2VA 960×544 renders on a shared host: the current build took 384.0 s of denoising (median of steps 1–7: 47.7 s) and the padded build 380.8 s (47.4 s). Steps 1–7 use the same specialization in both builds, and the padded build no longer specializes again at step 1.
+
+**Memory gate and an unexplained step-0 transient.** [The gate](evidence/h3-memory-gate-padded-2026-10-27.json) passes: T2VA 960×544 peaks at 14.05 GiB and the other three renders at 11.13–11.84 GiB. The 14.05 GiB is a transient: both gate renders of T2VA 960×544 showed a rise in step 0 that was released within about 5 s. [The first](evidence/h3-memory-gate-padded-transient-2026-10-27.json) reached 16.12 GiB twice, at 12 s and 28.6 s into step 0, for about 5.5 and 6.3 s. Each time the footprint rose with it within about 0.3 s, to 15.96 and 15.71 GiB, stayed above 12.5 GiB for about 1 s, and fell back to about 11.1 GiB while Metal stayed at 16.12 GiB for the rest of the window. The second reached 14.05 GiB once (footprint 13.89 GiB, above 12.5 GiB for about 0.8 s). So the memory is touched, briefly; admission counts the Metal peak, which is the larger. It did not appear in a standalone repeat of the same render, in a render with a fresh, empty Core AI compiled cache, in the gate's other three renders or in the current-build render, so it is not cold specialization, and its cause is unknown. In all, it appeared in 2 of 9 full-size padded renders, both of them gate renders on a busy host; the unpadded build was never measured under the same conditions, so whether padding causes it is unknown.
+
+**Admission covers the transient.** That gate's own entry kept only the second render (worst case 14.49 GiB), which does not cover the first render's 16.12 GiB. **The 2026-10-28 gate** ([record](evidence/h3-memory-gate-review-2026-10-28.json)) measures the final build (merged main with the deployment floor, and the #55 review fixes) on the Kit-owned profile `5af39db5…` with `--spike-capture 12.5` and `--carry-peaks`. It passes. All four renders peak at 11.13 GiB (T2VA) and 11.84 GiB (FL2VA, step 0); the transient did not recur, so no capture fired. The same gate before the review fixes ([earlier record](evidence/h3-memory-gate-2026-10-28.json)) gave the same result. The carried record must have passed on the same device, and its SHA-256 is recorded (`carriedRecords`). The entry carries the first padded gate's 16.12 GiB denoising peak, citing its record (`carriedStagePeaks`), so the bundled measured entry's admitted worst case is 16.56 GiB: higher than the unpadded build's 15.26 GiB, and under the 18 GiB bar. Padding lowers the steady plateaus and the video-decode footprint, not the admission. The gate ran on a busy host (one-minute load 59–142, 51–150 in the earlier run; the CPU saturated by an unrelated transcode), so its stage timings are recorded but are not a timing reference; a quiet-host reference is still open. See the [record](evidence/h3-second-specialization-2026-10-27.json) for every render's step times and peaks.
+
+## Session lifecycle qualification (2026-10-28)
+
+`H3ProfileEngine.stages(..., nativeObserver:)` takes an opt-in `H3NativeCallObserver` for qualification. Every native submission of every stage's graphs reports `begin` right before its GPU work is encoded and `end` once that work has joined (`failed` if encoding threw, after the join), with the graph's role (`conditioner`, `text`, `pack`, `body`, `heads`, `keyframe`, `videoTile`, `audio`) and a per-graph call count. Without an observer nothing is reported.
+
+`aether-probe qualify-h3-session-lifecycle PROFILE DUMP NEW_DIR` uses it to qualify `H3VideoSession` on the native stages, in one process:
+
+- **Baseline:** a render whose denoiser boundaries are all hashed, with its frames and PCM.
+- **Cancellation during each stage:** requested while a native call of that stage is in flight. T2VA: conditioner layer 10, body call 60 (step 1, block 10), video tile 1 and the audio decoder. FL2VA: the first keyframe-encoder call. The in-flight call must be that stage's, must join before the cancellation error returns, and no native call may begin afterwards; the session returns to ready, and a recovery render in the same session must reproduce the baseline: every trajectory hash, the frames and the PCM.
+- **Unload during an active denoiser call:** the active render completes and matches the baseline, every call joins before `unload()` returns, none begins afterwards, and a later `generate` is refused.
+- **Reopened session:** a new session renders the baseline again, and memory 0, 1 and 5 s after its unload stays within 512 MiB of the first session's.
+
+Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA 15 of 15, and T2VA 34 of 34, run as two shorter GPU holds with `--scenarios` (the conditioner and denoiser cancellations; then the video-tile and audio cancellations, unload and reopen). Every recovery, the active render under unload and the reopened render reproduce the baseline's 457 trajectory hashes, frames and PCM. After each unload Metal settles to about 2 MiB within 5 s. The qualifying runs (profile `5af39db5…`, on the build pinned by the first 2026-10-28 memory gate; the final build differs from it only in the probe's GPU-lease parsing for `h3-memory-render`, an empty-table guard in the padding, `H3ModulationPadding` becoming internal, and the memory-gate script's carried-record checks, none of them on the lifecycle path) pass all 49 checks: T2VA 13 and 21 in two holds, FL2VA 15 ([record](evidence/h3-session-lifecycle-2026-10-28.json)). The host was busy during them, which does not affect these checks.
+
+**Media audit.** `Scripts/audit-h3-media.py` passes on the Turbo8 T2VA and FL2VA 960×544×124 renders: 124 frames at 24 fps with no constant, black, white or frozen frames, and PCM of the right length with no clipping beyond a few samples in a million. The T2VA render is the qualified replay under `5af39db5…`; the FL2VA render is the qualified replay on the padded build under the in-place profile `c49d8dbf…`, whose content is identical (the identities differ only in paths). The T2VA audio is very quiet, as its prompt asks. The 544×960 gate renders keep no media, so the audit covers 960×544 only. The subjective review is with the user ([record](evidence/h3-media-audit-2026-10-28.json)).
+
+## Turbo4 and video-decode tiling measurements (0.0.3)
+
+**Turbo4 stays experimental.** The profile already carries Turbo4 tables, so a Turbo4 render needs no export: `h3-profile-dump ... turbo4` and `h3-profile-run --render`. At 960×544×124 a Turbo4 render takes about 227 s for T2VA and 242 s for FL2VA. Both pass the media audit. Against Turbo8 on the same seed and prompt, frame PSNR is 12–15 dB and luma SSIM 0.41–0.49, but the two schedules give different clips (the same scene and bird in a different pose), so those numbers measure difference, not quality; quality is a subjective review of the side-by-side clips. Turbo4 has no measured-admission entry (its execution identity ends in `turbo4`) and no CPU trajectory gate, so in 0.0.3 it is outside measured admission ([record](evidence/h3-turbo4-and-decode-tiling-2026-10-28.json)).
+
+**Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
+

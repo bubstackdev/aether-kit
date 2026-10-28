@@ -9,9 +9,12 @@ import Metal
 
 /// Raw tensor directory: `manifest.json` names every little-endian tensor file with its dtype, shape and SHA-256, so
 /// the CPU oracle (`Scripts/prepare-h3-profile-oracle.py`) and the comparison script read exactly these bytes.
-private struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
-private struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
-private final class H3RawDirectory {
+@available(macOS 27, iOS 27, *)
+struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
+@available(macOS 27, iOS 27, *)
+struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
+@available(macOS 27, iOS 27, *)
+final class H3RawDirectory {
     let url: URL
     var tensors: [String: H3RawEntry] = [:]
     var fields: [String: String] = [:]
@@ -51,13 +54,16 @@ private final class H3RawDirectory {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private func ints(_ values: [Int32], _ shape: [Int]) throws -> H3TensorData {
     try H3TensorData(spec: H3TensorSpec(scalarType: .int32, shape: shape), bytes: values.withUnsafeBytes { Data($0) })
 }
+@available(macOS 27, iOS 27, *)
 private func floats(_ values: [Float], _ shape: [Int]) throws -> H3TensorData {
     try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: shape), bytes: values.withUnsafeBytes { Data($0) })
 }
 /// Round-to-nearest-even float32 -> bf16 (finite inputs).
+@available(macOS 27, iOS 27, *)
 private func bf16(_ values: [Float], _ shape: [Int]) throws -> H3TensorData {
     let bits = values.map { value -> UInt16 in
         let b = value.bitPattern
@@ -66,9 +72,11 @@ private func bf16(_ values: [Float], _ shape: [Int]) throws -> H3TensorData {
     return try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: shape), bytes: bits.withUnsafeBytes { Data($0) })
 }
 
+@available(macOS 27, iOS 27, *)
 private struct H3Timing: Codable { let name: String; let seconds: Double; var memory: BenchmarkMemory? }
 
 /// Records what each stage returns, so a render can be compared stage by stage against the CPU oracle.
+@available(macOS 27, iOS 27, *)
 private actor H3RenderTape {
     var tap: H3TensorData?, latents: H3Latents?, frames = Data(), pcm: H3AudioPCM?
     func set(tap: H3TensorData) { self.tap = tap }
@@ -76,6 +84,7 @@ private actor H3RenderTape {
     func append(_ batch: H3DecodedFrames) { for frame in batch.rgb { frames.append(contentsOf: frame) } }
     func set(pcm: H3AudioPCM) { self.pcm = pcm }
 }
+@available(macOS 27, iOS 27, *)
 private struct TapeConditioner: H3PromptConditioner {
     let inner: any H3PromptConditioner, tape: H3RenderTape
     func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
@@ -83,6 +92,7 @@ private struct TapeConditioner: H3PromptConditioner {
     }
     func release() async { await inner.release() }
 }
+@available(macOS 27, iOS 27, *)
 private struct TapeDenoiser: H3Denoiser {
     let inner: any H3Denoiser, tape: H3RenderTape
     var steps: Int { inner.steps }
@@ -93,6 +103,7 @@ private struct TapeDenoiser: H3Denoiser {
     func release() async { await inner.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3ProfileCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         switch arguments.first {
@@ -366,6 +377,7 @@ enum H3ProfileCommand {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 extension H3ProfileCommand {
     /// Video decode only, from a render's final latents, with the GPU tile calls and the CPU work timed apart.
     static func decode(profile url: URL, dump: URL, render: URL, output: URL, decoder: H3ModelAsset?) async throws {
@@ -425,7 +437,14 @@ extension H3ProfileCommand {
     }
 }
 
+@available(macOS 27, iOS 27, *)
+extension H3ProfileCommand {
+    /// The dump's keyframe (FL2VA dumps), if any.
+    static func dumpKeyframe(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? { try firstFrame(dump, geometry: geometry) }
+}
+
 /// The dump's keyframe (FL2VA dumps), if any.
+@available(macOS 27, iOS 27, *)
 private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? {
     struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
     let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
@@ -436,6 +455,7 @@ private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe?
 }
 
 /// Wall-clock per session stage, from the session's own events.
+@available(macOS 27, iOS 27, *)
 private actor H3StageClock {
     private var started: [String: ContinuousClock.Instant] = [:]
     private(set) var timings: [H3Timing] = []
@@ -459,7 +479,8 @@ private actor H3StageClock {
 /// outputs, heads, updated latents) is hashed; `--capture` also saves the tensors the CPU references read for the
 /// selected steps: input latents, packed (block 0's input), blocks 0 and 49, block 48's output (`context49`, block
 /// 49's input), heads and updated latents.
-private actor H3TrajectoryRecorder {
+@available(macOS 27, iOS 27, *)
+actor H3TrajectoryRecorder {
     struct Summary { let hashes: Int; let mismatches: [String]? }
     private let out: H3RawDirectory?
     private let steps: Set<Int>?

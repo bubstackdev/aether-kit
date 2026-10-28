@@ -30,6 +30,11 @@ private struct VLReference: Decodable {
         let pixels: File
         let forcedLogits: Logits
         let image: File
+        /// Several images: every image and grid in prompt order (`pixels` holds their rows concatenated).
+        let images: [File]?
+        let grids: [[Int]]?
+        var allImages: [File] { images ?? [image] }
+        var allGrids: [[Int]] { grids ?? [grid] }
     }
     let cases: [Case]
     let maximumPixels: Int?
@@ -56,7 +61,10 @@ private struct VLCaseReport: Codable {
     /// "reference": the reference processor's pixel tensor; "swift": Kit's decoding and preprocessing.
     let preprocessing: String
     let swiftGridMatches: Bool?
+    /// Over all of the case's images at once (one image: that image's).
     let swiftPixelCosine: Double?
+    /// Each image's own, in prompt order; the gates take the smallest.
+    let swiftPixelCosinePerImage: [Double]?
 }
 
 private struct VLReport: Codable {
@@ -122,32 +130,46 @@ func qwen3VLImageTextQualification() async throws {
         for c in reference.cases {
             report.stage = "case \(c.name)"
             let referencePixels = try f32(directory.appendingPathComponent(c.pixels.file))
-            var pixels = referencePixels.map { Float16($0) }
-            var grid = (c.grid[0], c.grid[1], c.grid[2])
-            var gridMatches: Bool?, pixelCosine: Double?
-            if swiftPreprocessing {
-                // Kit's own path: ImageIO decoding, snapping to the nearest fixed grid, resampling, patchify.
-                let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(c.image.file))
-                var configuration = Qwen3VLImagePreprocessor.Configuration()
-                if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
-                configuration.imageGrids = reference.grids
-                let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
-                                                                     configuration: configuration)
-                gridMatches = [processed.grid.t, processed.grid.h, processed.grid.w] == c.grid
-                if gridMatches == true {
-                    var dot = 0.0, aa = 0.0, bb = 0.0
-                    for (a, b) in zip(processed.pixels, referencePixels) { dot += Double(a) * Double(b); aa += Double(a * a); bb += Double(b * b) }
-                    pixelCosine = dot / (aa.squareRoot() * bb.squareRoot())
+            var gridMatches: Bool?, pixelCosine: Double?, perImageCosines: [Double]?
+            var features: [LanguageImageFeatures] = []
+            var encodeSeconds = 0.0
+            var offset = 0, dot = 0.0, aa = 0.0, bb = 0.0
+            for (file, referenceGrid) in zip(c.allImages, c.allGrids) {
+                let count = referenceGrid.reduce(1, *)
+                let referenceSlice = Array(referencePixels[offset..<(offset + count * 1536)])
+                offset += count * 1536
+                var pixels = referenceSlice.map { Float16($0) }
+                var grid = (referenceGrid[0], referenceGrid[1], referenceGrid[2])
+                if swiftPreprocessing {
+                    // Kit's own path: ImageIO decoding, snapping to the nearest fixed grid, resampling, patchify.
+                    let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(file.file))
+                    var configuration = Qwen3VLImagePreprocessor.Configuration()
+                    if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
+                    configuration.imageGrids = reference.grids
+                    let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
+                                                                         configuration: configuration)
+                    let matches = [processed.grid.t, processed.grid.h, processed.grid.w] == referenceGrid
+                    gridMatches = (gridMatches ?? true) && matches
+                    if matches {
+                        var imageDot = 0.0, imageAA = 0.0, imageBB = 0.0
+                        for (a, b) in zip(processed.pixels, referenceSlice) {
+                            imageDot += Double(a) * Double(b); imageAA += Double(a * a); imageBB += Double(b * b)
+                        }
+                        dot += imageDot; aa += imageAA; bb += imageBB
+                        perImageCosines = (perImageCosines ?? []) + [imageDot / (imageAA.squareRoot() * imageBB.squareRoot())]
+                    }
+                    pixels = processed.pixels.map { Float16($0) }
+                    grid = processed.grid
                 }
-                pixels = processed.pixels.map { Float16($0) }
-                grid = processed.grid
+                let start = ContinuousClock.now
+                features.append(try await encoder.encode(pixels: pixels, grid: grid))
+                let duration = start.duration(to: .now)
+                encodeSeconds += Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
             }
-            let start = ContinuousClock.now
-            let features = try await encoder.encode(pixels: pixels, grid: grid)
-            let encodeDuration = start.duration(to: .now)
+            if gridMatches == true { pixelCosine = dot / (aa.squareRoot() * bb.squareRoot()) }
             var rendered: [Int] = []
             for id in c.promptTokens where !(id == tokens.imagePad && rendered.last == tokens.imagePad) { rendered.append(id) }
-            let prompt = LanguageVisionPrompt(renderedTokenIDs: rendered, images: [features])
+            let prompt = LanguageVisionPrompt(renderedTokenIDs: rendered, images: features)
 
             let forced = try f32(directory.appendingPathComponent(c.forcedLogits.file))
             let vocab = c.forcedLogits.vocab
@@ -171,13 +193,14 @@ func qwen3VLImageTextQualification() async throws {
                 margin = row.2
                 accepted = row.2 < 0.1 && row.3 < 5
             }
-            report.cases.append(VLCaseReport(name: c.name, promptTokens: c.promptTokens.count, imageTokens: features.tokenCount,
+            report.cases.append(VLCaseReport(name: c.name, promptTokens: c.promptTokens.count, imageTokens: features.reduce(0) { $0 + $1.tokenCount },
                 forcedRows: rows.count, forcedMinimumCosine: compared.map(\.0).min() ?? 0, forcedArgmaxMismatches: mismatches.count,
                 forcedMismatchesAtNearTies: nearTieMismatches.count, greedyTokens: reply.tokens, referenceGreedyTokens: c.greedyTokens,
                 greedyFirstDivergence: divergence, greedyDivergenceReferenceMargin: margin, greedyAccepted: accepted,
-                encodeSeconds: Double(encodeDuration.components.seconds) + Double(encodeDuration.components.attoseconds) / 1e18,
+                encodeSeconds: encodeSeconds,
                 timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds, preprocessing: swiftPreprocessing ? "swift" : "reference",
-                swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine))
+                swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine,
+                swiftPixelCosinePerImage: gridMatches == true ? perImageCosines : nil))
         }
         await session.unload()
         await encoder.unload()
@@ -188,11 +211,12 @@ func qwen3VLImageTextQualification() async throws {
             if $0.preprocessing == "reference" { return modelParity }
             // Kit end to end on the decode the reference saw: only Kit's resampler differs from the reference processor
             // (within one level), so the logits must meet the model-parity bar.
-            if sameDecode { return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.9999 && modelParity }
+            let pixelCosine = $0.swiftPixelCosinePerImage?.min() ?? 0
+            if sameDecode { return $0.swiftGridMatches == true && pixelCosine >= 0.9999 && modelParity }
             // An independent decode (ImageIO against libjpeg-turbo) moves pixels by up to tens of levels, which can move
             // a model's answer; the gate is decoder sanity (a swapped channel or a lost orientation fails it), and the
             // logits and tokens are reported.
-            return $0.swiftGridMatches == true && ($0.swiftPixelCosine ?? 0) >= 0.999
+            return $0.swiftGridMatches == true && pixelCosine >= 0.999
         }
         if swiftPreprocessing && !sameDecode {
             report.logitsWithinDecoderBand = report.cases.allSatisfy { $0.forcedMinimumCosine >= 0.98 }

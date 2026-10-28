@@ -10,9 +10,11 @@ import Synchronization
 /// reference encoder after each preparation (its specializations are shape-dependent) and recycle
 /// denoisers and the decoder when the token count or output size changes, so specializations for
 /// different shapes do not accumulate.
+@available(macOS 27, iOS 27, *)
 public enum Flux2Residency: Sendable { case balanced, resident }
 
 /// Delivered synchronously in order. Return to continue; throw to abort.
+@available(macOS 27, iOS 27, *)
 public enum Flux2GenerationEvent: Sendable {
     case conditioningReady(Flux2Conditioning)
     case referencesReady(Flux2PreparedReferences)
@@ -24,12 +26,14 @@ public enum Flux2GenerationEvent: Sendable {
 
 /// Owned conditioning encoded once for repeated generation with the same bundle. No native model or
 /// raw prompt text is retained. The payload is 512 × 7,680 float16 values (7.5 MiB).
+@available(macOS 27, iOS 27, *)
 public struct Flux2PreparedPrompt: Sendable {
     public let conditioning: Flux2Conditioning
     public let bundleFingerprint: String
 }
 
 /// One encoded reference: its token grid and immutable packed latents `[rows·columns, 128]`.
+@available(macOS 27, iOS 27, *)
 public struct Flux2EncodedReference: Sendable, Equatable {
     public let rows: Int
     public let columns: Int
@@ -38,6 +42,7 @@ public struct Flux2EncodedReference: Sendable, Equatable {
 
 /// Reference images encoded once by the VAE encoder, in request order. Reuse across seeds and
 /// prompts of the same bundle; reference k is positioned at t = 10·(k + 1).
+@available(macOS 27, iOS 27, *)
 public struct Flux2PreparedReferences: Sendable {
     public let images: [Flux2EncodedReference]
     public let referenceFingerprint: String
@@ -53,6 +58,7 @@ public struct Flux2PreparedReferences: Sendable {
 /// One operation at a time: overlapping prepare/generate fails with `sessionBusy`. Cancelling the
 /// caller task stops cooperatively between native calls after any submitted call returns.
 /// `unload()` rejects new work, waits for the active operation and closes the session permanently.
+@available(macOS 27, iOS 27, *)
 public actor Flux2GenerationSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -230,12 +236,15 @@ public actor Flux2GenerationSession {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 protocol Flux2ModelFactory: Sendable {
     func open(_ asset: DeclaredModelAsset, frequentReshapes: Bool) async throws -> any StagedModel
     func finish() async
 }
+@available(macOS 27, iOS 27, *)
 extension Flux2ModelFactory { func finish() async {} }
 
+@available(macOS 27, iOS 27, *)
 private final class InstallationAccess: Sendable {
     private let held: Mutex<AssetReadLease?>
     init(_ installation: AssetReadLease) { held = Mutex(installation) }
@@ -243,6 +252,7 @@ private final class InstallationAccess: Sendable {
     func release() { held.withLock { $0 = nil } }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct NativeFlux2Factory: Flux2ModelFactory {
     let compute: ModelComputePolicy
     let installation: InstallationAccess?
@@ -259,7 +269,9 @@ private struct NativeFlux2Factory: Flux2ModelFactory {
     func finish() async { installation?.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 enum TextSource: Sendable { case prompt(Flux2Prompt), provided(Flux2Conditioning) }
+@available(macOS 27, iOS 27, *)
 enum ReferenceSource: Sendable {
     case none, images([Flux2ReferenceImage]), prepared(Flux2PreparedReferences)
     var tokens: Int {
@@ -271,6 +283,7 @@ enum ReferenceSource: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 actor Flux2Runner {
     let assets: Flux2Assets
     let factory: any Flux2ModelFactory

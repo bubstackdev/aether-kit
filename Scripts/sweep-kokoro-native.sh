@@ -10,5 +10,5 @@ export AETHER_KOKORO_BUNDLE="$1" AETHER_NATIVE_KOKORO_OUTPUT="$2" AETHER_NATIVE_
 export AETHER_NATIVE_KOKORO_SWEEP_BUCKETS="${4:-}"
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/.build/swift-module-cache"
-exec swift test --build-system "${AETHER_BUILD_SYSTEM:-swiftbuild}" --disable-sandbox --cache-path "$PWD/.build/cache" \
+exec swift test --triple arm64-apple-macosx27.0 --build-system "${AETHER_BUILD_SYSTEM:-swiftbuild}" --disable-sandbox --cache-path "$PWD/.build/cache" \
     --config-path "$PWD/.build/config" --security-path "$PWD/.build/security" -c release --filter kokoroNativeDecoderShapeSweep

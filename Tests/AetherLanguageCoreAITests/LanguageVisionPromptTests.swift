@@ -38,6 +38,29 @@ struct LanguageVisionPromptTests {
         }
     }
 
+    /// Prompts with two and three images, and with text between two images: expansion reproduces the upstream
+    /// processor's ids and the host M-RoPE rule its rope index for every token, each image advancing the position by
+    /// its largest merged side.
+    @Test func severalImagesMatchUpstream() throws {
+        struct Fixture: Decodable {
+            struct Case: Decodable { let name: String; let promptTokens: [Int]; let grids: [[Int]]; let ropePositions: [[Int]] }
+            let cases: [Case]
+        }
+        let url = try #require(Bundle.module.url(forResource: "qwen3vl-rope-multi", withExtension: "json", subdirectory: "Fixtures"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        #expect(fixture.cases.count == 3)
+        for c in fixture.cases {
+            var rendered: [Int] = []
+            for id in c.promptTokens where !(id == tokens.imagePad && rendered.last == tokens.imagePad) { rendered.append(id) }
+            let images = try c.grids.map { try features(grid: $0) }
+            let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: images), tokens: tokens)
+            #expect(plan.ids == c.promptTokens, "ids \(c.name)")
+            #expect(plan.rope.map { $0.map(Int.init) } == c.ropePositions, "rope \(c.name)")
+            #expect(plan.spans.map(\.count) == c.grids.map { $0[0] * $0[1] * $0[2] / 4 }, "spans \(c.name)")
+            #expect(Int(plan.rope[0].last!) + 1 == plan.ids.count + plan.ropeDelta)
+        }
+    }
+
     @Test func positionsAdvanceByTheLargestImageSideNotItsTokenCount() throws {
         // [text, start, image 4x6 patches -> 2x3 tokens, end, text]: the image spans rotary positions 2..4.
         let image = try features(grid: [1, 4, 6])
@@ -77,6 +100,26 @@ struct LanguageVisionPromptTests {
         #expect(submissions.map(\.image) == [nil, nil, nil, 0, nil])
         #expect(submissions.map(\.start) == [0, 8, 12, 20, 36])
         #expect(submissions.last.map { $0.start + $0.count } == plan.ids.count)
+    }
+
+    /// Without a requested width, a 0.0.2 two-function prompt keeps the 0.0.2 plan: every text run in 64-token chunks
+    /// whatever the prompt's length (a 100-token run is two chunks, the second stepping back), while a one-function
+    /// prompt takes the width of its length (256 above 256 tokens).
+    @Test func twoFunctionTextRunsKeepTheFixedWidth() throws {
+        let image = try features(grid: [1, 32, 32])          // 256 tokens
+        let rendered = Array(1...99) + [tokens.visionStart, tokens.imagePad, tokens.visionEnd] + Array(300...309)
+        let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: [image]), tokens: tokens)
+        #expect(plan.ids.count == 367)
+        let submissions = plan.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512)
+        #expect(submissions.map(\.count) == [64, 64, 256, 11])
+        #expect(submissions.map(\.start) == [0, 36, 100, 356])
+        #expect(submissions.map(\.image) == [nil, nil, 0, nil])
+        // A short image prompt: the same 64-token text chunks, and its one-function plan uses 64 too.
+        let small = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: Array(1...99) + [tokens.visionStart,
+            tokens.imagePad, tokens.visionEnd], images: [try features(grid: [1, 8, 8])]), tokens: tokens)
+        #expect(small.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.count) == [64, 64, 16, 1])
+        #expect(small.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).allSatisfy { $0.count == 64 })
+        #expect(plan.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.offset) == [0, 111])
     }
 
     /// A one-function decoder prefills the whole prompt in uniform chunks; each chunk's image rows are its own image

@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "kind": "h3-media-audit",
+  "date": "2026-10-28",
+  "script": "Scripts/audit-h3-media.py",
+  "renders": {
+    "t2va-960x544-turbo8": {
+      "source": "the qualified T2VA replay under profile 5af39db5",
+      "passed": true,
+      "checks": {
+        "frameShape": [
+          124,
+          544,
+          960,
+          3
+        ],
+        "noConstantFrame": 0,
+        "noBlackFrame": 0,
+        "noWhiteFrame": 0,
+        "frozenTransitionsAtMost10Percent": 0,
+        "pcmShape": [
+          2,
+          165600
+        ],
+        "pcmFinite": 0,
+        "durationMatchesVideo": 0.00833,
+        "clippingAtMost0.1Percent": 0.0,
+        "dcOffsetBelow0.01": [
+          2e-05,
+          2e-05
+        ],
+        "notSilent": 0.6589
+      },
+      "stats": {
+        "frames": {
+          "meanRange": [
+            67.44,
+            115.52
+          ],
+          "spreadRange": [
+            56.19,
+            64.0
+          ],
+          "saturatedShare": 0.01218,
+          "temporalDifference": {
+            "min": 0.547,
+            "median": 7.55,
+            "max": 14.136
+          },
+          "lumaJumpsAbove25": 0
+        },
+        "audio": {
+          "sampleRate": 32000,
+          "channels": 2,
+          "samples": 165600,
+          "seconds": 5.175,
+          "peakDBFS": [
+            -16.58,
+            -16.57
+          ],
+          "rmsDBFS": [
+            -53.21,
+            -53.11
+          ],
+          "silentWindowShare": 0.6589,
+          "channelCorrelation": 0.5965
+        }
+      }
+    },
+    "fl2va-960x544-turbo8": {
+      "source": "the qualified FL2VA replay on the padded build (profile c49d8dbf, path-only identical content to 5af39db5)",
+      "passed": true,
+      "checks": {
+        "frameShape": [
+          124,
+          544,
+          960,
+          3
+        ],
+        "noConstantFrame": 0,
+        "noBlackFrame": 0,
+        "noWhiteFrame": 0,
+        "frozenTransitionsAtMost10Percent": 0,
+        "pcmShape": [
+          2,
+          165600
+        ],
+        "pcmFinite": 0,
+        "durationMatchesVideo": 0.00833,
+        "clippingAtMost0.1Percent": 3e-06,
+        "dcOffsetBelow0.01": [
+          2e-05,
+          2e-05
+        ],
+        "notSilent": 0.5349
+      },
+      "stats": {
+        "frames": {
+          "meanRange": [
+            112.47,
+            121.1
+          ],
+          "spreadRange": [
+            62.79,
+            70.3
+          ],
+          "saturatedShare": 0.02446,
+          "temporalDifference": {
+            "min": 1.105,
+            "median": 4.762,
+            "max": 10.222
+          },
+          "lumaJumpsAbove25": 0
+        },
+        "audio": {
+          "sampleRate": 32000,
+          "channels": 2,
+          "samples": 165600,
+          "seconds": 5.175,
+          "peakDBFS": [
+            0.0,
+            -0.01
+          ],
+          "rmsDBFS": [
+            -42.01,
+            -42.18
+          ],
+          "silentWindowShare": 0.5349,
+          "channelCorrelation": 0.701
+        }
+      }
+    },
+    "t2va-960x544-turbo4": "see h3-turbo4-and-decode-tiling-2026-10-28.json",
+    "fl2va-960x544-turbo4": "see h3-turbo4-and-decode-tiling-2026-10-28.json"
+  },
+  "notes": [
+    "The T2VA audio is very quiet (RMS about -53 dBFS, 66% of 20 ms windows under -60 dBFS), as the prompt asks (soft paper rustling, quiet room tone).",
+    "The FL2VA Turbo8 audio peaks at 0 dBFS on one channel: 3 samples in a million at or above 0.999, under the 0.1% clipping bar.",
+    "The 544x960 renders of the memory gate keep no frames or PCM, so the audit covers 960x544 only.",
+    "Subjective review: the user has the clips (render.mp4 and the Turbo4/Turbo8 side-by-sides); the outcome is recorded separately."
+  ]
+}

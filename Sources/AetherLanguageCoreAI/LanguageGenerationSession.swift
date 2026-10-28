@@ -13,6 +13,7 @@ import Metal
 /// Sequential correctness reference. Core AI's unannotated stream stays inside
 /// this actor. Admission rejects overlap, and every submission is joined before
 /// buffers are read, reset, or released, including after task cancellation.
+@available(macOS 27, iOS 27, *)
 public actor LanguageGenerationSession {
     public struct Reply: Sendable {
         public let tokens: [Int]
@@ -101,6 +102,9 @@ public actor LanguageGenerationSession {
     private var ropeDelta = 0
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
+    /// The model's estimates under a host's ``LanguageResourceAdmission``, and its residency reservation while loaded.
+    private var resourceBudget: LanguageModelBudget?
+    private var residency: ResourceReservation?
     private let admission = LanguageRequestAdmission()
 
     /// For an owning session's close (`VisionLanguageSession.unload()`): withdraws a request
@@ -110,18 +114,23 @@ public actor LanguageGenerationSession {
     public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
-    /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
-    /// grant after validation and holds it through a memory-budget reload and until its native submissions have
-    /// joined. Opening is not admitted.
+    /// `gpu` opts into a host-shared ``GPUAdmission``: opening (the model's load and its functions' specialization)
+    /// waits for a grant, and each request waits for (or, in fail-fast mode, requires) one after validation and holds
+    /// it through a memory-budget reload and until its native submissions have joined.
     /// `memoryGrowthBudgetBytes` bounds the native memory requests retain (see the raw-asset entry point).
+    /// `resources` opts into reservations against a host's ``ResourceCoordinator`` (``LanguageResourceAdmission``):
+    /// the model's residency while it is loaded and each request's scratch.
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
                             memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
-                            gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
+                            gpu: GPUAdmissionOwner? = nil, resources: LanguageResourceAdmission? = nil) async throws
+        -> LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
+        // The estimate is looked up, and the profile's limits checked, before the asset is hashed.
+        let budget = try resources?.budget(modelSHA256: manifest.modelSHA256, contextLength: manifest.maximumContextLength)
         let modelURL = try manifest.verify(in: directory, platform: platform)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
             stopTokenIDs: Set(manifest.stopTokenIDs), memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
-            exportBounds: manifest.exportBounds, gpu: gpu)
+            exportBounds: manifest.exportBounds, gpu: gpu, budget: budget)
     }
 
     /// Explicit raw-asset entry point for qualification before bundle registration.
@@ -143,6 +152,21 @@ public actor LanguageGenerationSession {
                             memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
                             exportBounds: LanguageExportBounds? = nil,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
+        try await open(at: modelURL, maximumContextLength: maximumContextLength, initialCacheCapacity: initialCacheCapacity,
+                       stopTokenIDs: stopTokenIDs, compute: compute, expectFrequentReshapes: expectFrequentReshapes,
+                       maximumSubmissionsPerModel: maximumSubmissionsPerModel, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
+                       exportBounds: exportBounds, gpu: gpu, budget: nil)
+    }
+
+    /// The raw-asset opening with an optional resource budget (the bundle entry points look it up by the registered
+    /// model hash). With `gpu`, the load and its specialization run under a grant; the residency is reserved after the
+    /// grant, before the load, and released if the load fails.
+    static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
+                     stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
+                     expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
+                     memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
+                     exportBounds: LanguageExportBounds? = nil,
+                     gpu: GPUAdmissionOwner? = nil, budget: LanguageModelBudget?) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
         guard (maximumSubmissionsPerModel ?? 1) > 0, LanguageMemoryBudget.admits(limitBytes: memoryGrowthBudgetBytes)
         else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
@@ -153,14 +177,16 @@ public actor LanguageGenerationSession {
         case .preferGPU: options = SpecializationOptions(preferredComputeUnitKind: .gpu)
         }
         options.expectFrequentReshapes = expectFrequentReshapes
-        let model = try await AIModel(contentsOf: modelURL, options: options)
-        try Task.checkCancellation()
-        let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
-            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
+        let (session, residency) = try await withReservedOpen(gpu, budget: budget) {
+            let model = try await AIModel(contentsOf: modelURL, options: options)
+            try Task.checkCancellation()
+            return try LanguageGenerationSession(model: model, capacity: maximumContextLength,
+                initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
+        }
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
             expectFrequentReshapes: expectFrequentReshapes,
             maximumSubmissions: maximumSubmissionsPerModel ?? session.contract.defaultMaximumSubmissionsPerModel),
-            memoryGrowthBudgetBytes: memoryGrowthBudgetBytes)
+            memoryGrowthBudgetBytes: memoryGrowthBudgetBytes, budget: budget, residency: residency)
         return session
     }
     public static var deviceArchitectureName: String { AIModel.deviceArchitectureName }
@@ -300,9 +326,9 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         let output = try await LanguageDecodeLoop.generate(prompt: plan.ids, maximumTokens: maximumTokens,
@@ -319,13 +345,13 @@ public actor LanguageGenerationSession {
     public func teacherForcedLogits(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens,
                                     continuation: [Int]) async throws -> [[Float]] {
         let plan = try imagePlan(prompt, imageTokens: imageTokens)
-        try begin(prompt: plan.ids + continuation, reserve: 0, chunkSize: nil)
+        try begin(prompt: plan.ids + continuation, reserve: 0, chunkSize: nil, prefillTokens: plan.ids.count)
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(plan, images: prompt.images, chunkSize: nil, observer: nil)]
@@ -339,6 +365,7 @@ public actor LanguageGenerationSession {
         guard acceptsImages else { throw LanguageGenerationError.invalid("This asset has no image input") }
         let plan = try LanguagePromptPlan.expand(prompt, tokens: imageTokens)
         try plan.requireImageSpans(within: imageLimit)
+        try resourceBudget?.check(imageTokens: plan.spans.reduce(0) { $0 + $1.count })
         return plan
     }
 
@@ -400,9 +427,9 @@ public actor LanguageGenerationSession {
         try request.sampling.validate()
         try begin(prompt: request.prompt, reserve: request.maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         // Token delivery and the constraint overlap the following native step instead of idling the GPU.
@@ -420,9 +447,9 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
@@ -430,11 +457,11 @@ public actor LanguageGenerationSession {
 
     public func teacherForcedLogits(prompt: [Int], continuation: [Int]) async throws -> [[Float]] {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
-        try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
+        try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil, prefillTokens: prompt.count)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]
@@ -444,7 +471,18 @@ public actor LanguageGenerationSession {
         return rows
     }
 
-    private func begin(prompt: [Int], reserve: Int, chunkSize: Int?) throws {
+    /// A 0.0.2 two-function (`withImage`) asset keeps the 0.0.2 prefill plan for every request: the fixed width and the
+    /// cache growing in steps from the initial capacity. The 0.0.3 plan was qualified on text and one-function assets.
+    private var keepsFixedPrefillPlan: Bool { acceptsImages && !imagesThroughMain }
+
+    /// The width a prefill uses when the request names none (nil: the contract's default by prompt length).
+    private func prefillWidth(_ requested: Int?) -> Int? {
+        requested ?? (keepsFixedPrefillPlan ? contract.fixedPrefillChunk : nil)
+    }
+
+    /// `prefillTokens`: the tokens the prefill submits (the prompt, without a teacher-forced continuation), which the
+    /// bucketed cache is sized for before the prefill (default: the whole `prompt`; none for a two-function asset).
+    private func begin(prompt: [Int], reserve: Int, chunkSize: Int?, prefillTokens: Int? = nil) throws {
         try Task.checkCancellation()
         try lifecycle.admit()
         guard !prompt.isEmpty, prompt.allSatisfy({ $0 >= 0 && $0 < vocabularySize }),
@@ -460,15 +498,24 @@ public actor LanguageGenerationSession {
         materializedTokens = 0
         promptRope = []
         ropeDelta = 0
-        // A bucketed request restarts at the initial capacity rather than keeping a previous long
+        // A bucketed request starts at its prefill's capacity rather than keeping a previous long
         // request's caches (memory, and the zeroing below, follow the allocation).
-        let start = LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
-                                                      resets: !contract.cachesAreStates)
+        let start: Int
+        do {
+            start = try LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
+                                                          resets: !contract.cachesAreStates,
+                                                          prefillTokens: keepsFixedPrefillPlan ? 0 : prefillTokens ?? prompt.count,
+                                                          maximum: capacity)
+        } catch {
+            lifecycle.finish()
+            throw error
+        }
         if start != allocatedCapacity {
             var shape = keyDescriptor.shape
             shape[3] = start
             let kd = keyTemplate.resolvingDynamicDimensions(shape)
             let vd = valueTemplate.resolvingDynamicDimensions(shape)
+            do { try requireAvailableMemory(for: kd, vd) } catch { lifecycle.finish(); throw error }
             guard let kb = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
                   let vb = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared) else {
                 lifecycle.finish()
@@ -487,7 +534,7 @@ public actor LanguageGenerationSession {
     /// (`LanguageStepContract.prefillChunks`).
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
         var last: [Float] = []
-        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: prefillWidth(chunkSize), maximumChunk: prefillLimit) {
             last = try await step(tokens: prompt[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init), position: chunk.offset,
                                   observer: observer)
         }
@@ -673,10 +720,16 @@ public actor LanguageGenerationSession {
             foreignMemoryBytes: memoryBudget.foreignBytes, distinctStepShapes: stepShapes.count)
     }
 
-    private func configureReopening(_ configuration: ReopenConfiguration, memoryGrowthBudgetBytes: Int?) {
+    private func configureReopening(_ configuration: ReopenConfiguration, memoryGrowthBudgetBytes: Int?,
+                                    budget: LanguageModelBudget?, residency: ResourceReservation?) {
         reopenConfiguration = configuration
         memoryBudget = LanguageMemoryBudget(limitBytes: memoryGrowthBudgetBytes)
+        resourceBudget = budget
+        self.residency = residency
     }
+
+    /// A request's scratch under the resource budget, reserved once it holds its grant (nil without a budget).
+    private func reserveScratch() throws -> ResourceReservation? { try resourceBudget?.reserveScratch() }
 
     /// Starts a request's measurement once it is admitted. Metal's allocated size is process-wide: a
     /// shared ``GPUAdmission`` keeps other admitted GPU work out of the window, and
@@ -735,6 +788,8 @@ public actor LanguageGenerationSession {
         materializedTokens = 0
         promptRope = []
         ropeDelta = 0
+        residency?.release()
+        residency = nil
         lifecycle.didClose()
     }
 
@@ -801,27 +856,31 @@ public actor LanguageGenerationSession {
               valueDescriptor.preferredStrides == LanguageCachePlan.strides(valueDescriptor.shape),
               kd.preferredStrides == LanguageCachePlan.strides(shape), vd.preferredStrides == LanguageCachePlan.strides(shape)
         else { throw LanguageGenerationError.invalid("Growing KV caches require contiguous row-major storage") }
-        #if os(iOS)
-        let available = UInt64(max(0, os_proc_available_memory()))
-        let required = UInt64(kd.minimumByteCount) + UInt64(vd.minimumByteCount) + 64 * 1024 * 1024
-        guard required <= available else {
-            throw LanguageGenerationError.memoryBudget(requiredBytes: required, availableBytes: available)
-        }
-        #endif
+        try requireAvailableMemory(for: kd, vd)
         guard let newKeys = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
               let newValues = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared)
         else { throw LanguageGenerationError.invalid("Could not grow KV caches") }
-        newKeys.contents().initializeMemory(as: UInt8.self, repeating: 0, count: newKeys.length)
-        newValues.contents().initializeMemory(as: UInt8.self, repeating: 0, count: newValues.length)
         let rows = shape[0] * shape[1] * shape[2]
         let rowBytesPerToken = shape[4] * MemoryLayout<Float16>.size
-        LanguageCachePlan.copyPrefix(from: oldKeys.contents(), to: newKeys.contents(), rows: rows,
+        // Prefixes copied and the rest zeroed in one pass (the masked rows must be zero, never stale or NaN).
+        LanguageCachePlan.relayout(from: oldKeys.contents(), to: newKeys.contents(), destinationBytes: newKeys.length, rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
-        LanguageCachePlan.copyPrefix(from: oldValues.contents(), to: newValues.contents(), rows: rows,
+        LanguageCachePlan.relayout(from: oldValues.contents(), to: newValues.contents(), destinationBytes: newValues.length, rows: rows,
             oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
         keys = newKeys; values = newValues; keyDescriptor = kd; valueDescriptor = vd
         allocatedCapacity = next
         growthCount += 1
+    }
+
+    /// On iOS, refuses a KV allocation the app's remaining memory cannot hold (with 64 MiB to spare).
+    private func requireAvailableMemory(for keys: NDArrayDescriptor, _ values: NDArrayDescriptor) throws {
+        #if os(iOS)
+        let available = UInt64(max(0, os_proc_available_memory()))
+        let required = UInt64(keys.minimumByteCount) + UInt64(values.minimumByteCount) + 64 * 1024 * 1024
+        guard required <= available else {
+            throw LanguageGenerationError.memoryBudget(requiredBytes: required, availableBytes: available)
+        }
+        #endif
     }
 
     private func elapsed(_ start: ContinuousClock.Instant) -> Double {

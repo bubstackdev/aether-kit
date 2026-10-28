@@ -2,9 +2,13 @@
 import CompilerPluginSupport
 import PackageDescription
 
+// The floor is macOS 14 / iOS 17, so apps can link the language facade there; it reports "unsupported OS" below 27.
+// Every target that uses Core AI is gated at macOS 27 / iOS 27 declaration by declaration (Scripts/annotate-floor.py),
+// and CoreAI links weakly because every reference to it is availability-gated. Tests build with
+// `--triple arm64-apple-macosx27.0` (docs/deployment-floor.md).
 let package = Package(
     name: "AetherKit",
-    platforms: [.macOS("27.0"), .iOS("27.0")],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherAssets", targets: ["AetherAssets"]),
@@ -43,18 +47,17 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
-        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit, so it can build below the
-        // Core AI floor (Scripts/check-floor.sh typechecks it at macOS 14 and iOS 17).
+        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit.
         .target(name: "AetherLanguageRuntime"),
         .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision", "AetherLanguageRuntime"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
-        // The app-facing text facade. It must link on macOS 14 and iOS 17 once the package floor drops; it reaches Core AI
-        // only behind availability checks (docs/language-facade.md).
+        // The app-facing text facade. It links and launches on macOS 14 and iOS 17, and reaches Core AI only behind
+        // availability checks (docs/language-facade.md).
         .target(name: "AetherLanguage", dependencies: [
             "AetherKit", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherLanguageCoreAI",
         ]),
-        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. A separate product, so an
-        // app on an older OS doesn't link FoundationModels' newer API.
+        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. FoundationModels links
+        // weakly, like CoreAI.
         .target(name: "AetherLanguageFoundationModels", dependencies: ["AetherLanguage", "AetherLanguageTokenizers"]),
         // @AetherGenerable and @AetherGuide: a separate product, so facade users who write schemas by hand (or use
         // FoundationModels' @Generable through the adapter) don't build swift-syntax.
@@ -82,7 +85,7 @@ let package = Package(
         .target(name: "AetherFlux2CoreAI", dependencies: ["AetherFlux2", "AetherCoreAI", "AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeech", dependencies: ["AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeechCoreAI", dependencies: ["AetherSpeech", "AetherCoreAI", "AetherKit", "AetherAssets"]),
-        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI"]),
+        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI", "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers"]),
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit", "AetherAssets"], resources: [.copy("Fixtures")]),
         // Test-only child process for the GPU lease contention and signal tests. Not a product; never shipped.
@@ -113,7 +116,7 @@ let package = Package(
             "AetherSpeech", "AetherSpeechCoreAI", "AetherCoreAI", "AetherKit", "AetherAssets",
         ], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherKreaTokenizersTests", dependencies: ["AetherKreaTokenizers", "AetherKrea"]),
-        .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI"]),
+        .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI", "AetherFlux2", "AetherFlux2CoreAI"]),
         .testTarget(name: "AetherNativeTests", dependencies: [
             "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
             "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguage", "AetherLanguageFoundationModels", "AetherLanguageMacros", "AetherLanguageCoreAI", "AetherLanguageTokenizers",

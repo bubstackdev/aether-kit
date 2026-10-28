@@ -4,6 +4,7 @@ import Foundation
 
 /// Explicit caller estimates for model residency and peak per-call temporary storage.
 /// Unknown sizes must be qualified before using budgeted execution; these are not measured memory.
+@available(macOS 27, iOS 27, *)
 public struct ModelResourceAdmission: Sendable {
     public let coordinator: ResourceCoordinator
     public let residentBytes: UInt64
@@ -19,6 +20,7 @@ public struct ModelResourceAdmission: Sendable {
 /// Executes one stateless float32, float16 or int32 call at a time. Concurrent calls fail with
 /// `sessionBusy`; `unload()` rejects new calls and waits for the active call.
 /// Native calls are awaited before their buffers and model can be released.
+@available(macOS 27, iOS 27, *)
 public actor ModelSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
 

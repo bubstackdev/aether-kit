@@ -6,6 +6,7 @@ import CryptoKit
 import Darwin
 import Foundation
 
+@available(macOS 27, iOS 27, *)
 struct KreaBatchOptions: Sendable {
     static let usage = "use render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N] [--ref=IMAGE ...]"
     let bundle: URL
@@ -62,6 +63,7 @@ struct KreaBatchOptions: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BatchPreparation: Codable, Sendable {
     let bundleFingerprint: String
     let conditioningSHA256: String
@@ -70,12 +72,14 @@ struct BatchPreparation: Codable, Sendable {
     let wasTruncated: Bool
 }
 
+@available(macOS 27, iOS 27, *)
 protocol BatchRenderer: Sendable {
     func prepare() async throws -> BatchPreparation
     func generate(_ configuration: KreaConfiguration) async throws -> GeneratedImage
     func unload() async
 }
 
+@available(macOS 27, iOS 27, *)
 private actor NativeBatchRenderer: BatchRenderer {
     enum Source: Sendable {
         case text(KreaPrompt)
@@ -112,6 +116,7 @@ private actor NativeBatchRenderer: BatchRenderer {
     func unload() async { await session.unload(); prepared = nil }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BatchImageRecord: Codable, Sendable {
     let index: Int
     let seed: UInt64
@@ -122,6 +127,7 @@ struct BatchImageRecord: Codable, Sendable {
     var pngSHA256: String?
 }
 
+@available(macOS 27, iOS 27, *)
 struct KreaBatchReport: Encodable, Sendable {
     let schema = 1
     let startedAt = ISO8601DateFormatter().string(from: Date())
@@ -150,6 +156,7 @@ struct KreaBatchReport: Encodable, Sendable {
     var error: String?
 }
 
+@available(macOS 27, iOS 27, *)
 enum KreaBatchCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "render-krea-batch" else { return false }
@@ -249,8 +256,10 @@ enum KreaBatchCommand {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private func fileSHA256(_ url: URL) throws -> String {
     SHA256.hash(data: try Data(contentsOf: url)).map { String(format: "%02x", $0) }.joined()
 }
 
+@available(macOS 27, iOS 27, *)
 private func log(_ message: String) { FileHandle.standardError.write(Data((message + "\n").utf8)) }

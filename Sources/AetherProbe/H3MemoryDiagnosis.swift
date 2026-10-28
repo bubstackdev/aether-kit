@@ -8,6 +8,7 @@ import Synchronization
 /// A 20 ms memory timeline with named phases, so a peak can be attributed to model load and specialization, a call's
 /// scratch, or memory still held after release. Metal is `MTLDevice.currentAllocatedSize`; footprint is the
 /// process's physical footprint. The two overlap and cannot be added.
+@available(macOS 27, iOS 27, *)
 final class H3MemoryTimeline: Sendable {
     struct Sample: Codable, Sendable { let t: Double; let phase: String; let metal: UInt64; let footprint: UInt64; let resident: UInt64 }
     private let state = Mutex((phase: "start", samples: [Sample]()))
@@ -22,6 +23,7 @@ final class H3MemoryTimeline: Sendable {
         state.withLock { $0.samples.append(Sample(t: t, phase: $0.phase, metal: m.metalAllocatedBytes ?? 0, footprint: m.physicalFootprintBytes, resident: m.residentBytes)) }
     }
     var samples: [Sample] { state.withLock { $0.samples } }
+    var last: Sample? { state.withLock { $0.samples.last } }
     struct Phase: Codable { let phase: String; let seconds: Double; let metalStart: UInt64; let metalPeak: UInt64; let metalEnd: UInt64
         let footprintPeak: UInt64; let footprintEnd: UInt64; let samples: Int }
     func phases() -> [Phase] {
@@ -38,6 +40,7 @@ final class H3MemoryTimeline: Sendable {
 }
 
 /// Memory diagnosis commands (GPU; run them under the GPU lock).
+@available(macOS 27, iOS 27, *)
 enum H3MemoryDiagnosis {
     static func run(_ arguments: [String]) async throws -> Bool {
         switch arguments.first {
@@ -50,11 +53,31 @@ enum H3MemoryDiagnosis {
                               output: URL(fileURLWithPath: arguments[5]))
             return true
         case "h3-memory-render":
-            // h3-memory-render PROFILE.json DUMP NEW_DIR: an H3VideoSession render with the timeline split at stage events.
-            guard arguments.count == 4 else { throw AetherError.invalidRequest("use h3-memory-render PROFILE.json DUMP NEW_DIR") }
-            try await render(profile: URL(fileURLWithPath: arguments[1]), dump: URL(fileURLWithPath: arguments[2]), output: URL(fileURLWithPath: arguments[3]))
+            // h3-memory-render PROFILE.json DUMP NEW_DIR [--spike-capture=GiB]: an H3VideoSession render with the timeline split
+            // at stage events; see H3SpikeTrigger for the optional capture.
+            let options = try RenderOptions(arguments)
+            try await render(profile: options.profile, dump: options.dump, output: options.output, spikeCapture: options.spikeCapture)
             return true
         default: return false
+        }
+    }
+
+    struct RenderOptions: Equatable {
+        static let usage = "use h3-memory-render PROFILE.json DUMP NEW_DIR [--spike-capture=GiB]"
+        let profile: URL, dump: URL, output: URL
+        /// Metal level, in bytes, above which a denoising sample triggers the one-shot capture; nil when off.
+        let spikeCapture: UInt64?
+        init(_ arguments: [String]) throws {
+            let flags = arguments.dropFirst().filter { $0.hasPrefix("--") }, paths = arguments.dropFirst().filter { !$0.hasPrefix("--") }
+            guard arguments.first == "h3-memory-render", paths.count == 3, flags.count <= 1 else { throw AetherError.invalidRequest(Self.usage) }
+            var spike: UInt64?
+            if let flag = flags.first {
+                guard flag.hasPrefix("--spike-capture="), let gib = Double(flag.dropFirst("--spike-capture=".count)), gib.isFinite, gib > 0, gib < 1024 else {
+                    throw AetherError.invalidRequest(Self.usage)
+                }
+                spike = UInt64(gib * Double(1 << 30))
+            }
+            profile = URL(fileURLWithPath: paths[0]); dump = URL(fileURLWithPath: paths[1]); output = URL(fileURLWithPath: paths[2]); spikeCapture = spike
         }
     }
 
@@ -103,7 +126,7 @@ enum H3MemoryDiagnosis {
     }
 
     /// A complete H3VideoSession render with the timeline split at the session's stage and step events.
-    static func render(profile url: URL, dump: URL, output: URL) async throws {
+    static func render(profile url: URL, dump: URL, output: URL, spikeCapture: UInt64? = nil) async throws {
         let profile = try H3Profile(url: url)
         struct Manifest: Decodable { struct Entry: Decodable { let file: String; let sha256: String }; let tensors: [String: Entry]; let fields: [String: String] }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
@@ -118,7 +141,12 @@ enum H3MemoryDiagnosis {
         }
         let device = MTLCreateSystemDefaultDevice()
         let timeline = H3MemoryTimeline(device: device)
-        let sampling = Task.detached { while !Task.isCancelled { timeline.sample(); try? await Task.sleep(for: .milliseconds(20)) } }
+        // The capture goes beside NEW_DIR (written last) so the render's own output stays unchanged.
+        let spikeDirectory = URL(fileURLWithPath: output.path + ".spike")
+        let trigger = spikeCapture.map { H3SpikeTrigger(threshold: $0, capture: H3SpikeTrigger.processSnapshot(into: spikeDirectory)) }
+        let sampling = Task.detached {
+            while !Task.isCancelled { timeline.sample(); if let s = timeline.last { trigger?.observe(s) }; try? await Task.sleep(for: .milliseconds(20)) }
+        }
         defer { sampling.cancel() }
         await idle(timeline, "baseline", 1)
         timeline.mark("open")
@@ -139,7 +167,51 @@ enum H3MemoryDiagnosis {
                                              "execution_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: f["recipe"]!),
                                              "device_architecture": H3ProfileEngine.deviceArchitecture,
                                              "width": f["width"]!, "height": f["height"]!, "frames": f["frames"]!,
-                                             "task": manifest.tensors["keyframe"] == nil ? "t2va" : "fl2va"])
+                                             "task": manifest.tensors["keyframe"] == nil ? "t2va" : "fl2va",
+                                             "spike_capture_bytes": spikeCapture.map(String.init) ?? "off",
+                                             "spike_captured": trigger?.fired == true ? spikeDirectory.lastPathComponent : "no"])
         print(output.path)
+    }
+}
+
+/// Diagnostic: the first time a denoising sample's Metal allocation exceeds `threshold`, `capture` runs once with that
+/// sample (`h3-memory-render --spike-capture=GiB`). The default capture snapshots this process with `sample` (thread
+/// stacks for 1 s), `vmmap --summary` and `footprint`. `sample` suspends the threads briefly, so timing inside a captured
+/// window is not representative; memory is.
+@available(macOS 27, iOS 27, *)
+final class H3SpikeTrigger: Sendable {
+    struct Event: Sendable, Equatable { let phase: String; let t: Double; let metal: UInt64; let footprint: UInt64; let secondsIntoPhase: Double }
+    private let threshold: UInt64
+    private let capture: @Sendable (Event) -> Void
+    private let state = Mutex((phase: "", phaseT: 0.0, fired: false))
+    init(threshold: UInt64, capture: @escaping @Sendable (Event) -> Void) { self.threshold = threshold; self.capture = capture }
+    var fired: Bool { state.withLock { $0.fired } }
+
+    func observe(_ sample: H3MemoryTimeline.Sample) {
+        let event: Event? = state.withLock { s in
+            if s.phase != sample.phase { s.phase = sample.phase; s.phaseT = sample.t }
+            guard !s.fired, sample.phase.hasPrefix("stage.denoising"), sample.metal > threshold else { return nil }
+            s.fired = true
+            return Event(phase: sample.phase, t: sample.t, metal: sample.metal, footprint: sample.footprint, secondsIntoPhase: sample.t - s.phaseT)
+        }
+        if let event { capture(event) }
+    }
+
+    static func processSnapshot(into directory: URL) -> @Sendable (Event) -> Void {
+        { event in
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+            let pid = String(ProcessInfo.processInfo.processIdentifier)
+            let info = ["phase": event.phase, "t": String(format: "%.2f", event.t), "secondsIntoPhase": String(format: "%.2f", event.secondsIntoPhase),
+                        "metal": String(event.metal), "footprint": String(event.footprint)]
+            try? JSONSerialization.data(withJSONObject: info, options: [.prettyPrinted, .sortedKeys]).write(to: directory.appendingPathComponent("trigger.json"))
+            for (tool, arguments, name) in [("/usr/bin/sample", [pid, "1", "1", "-mayDie", "-file", directory.appendingPathComponent("sample.txt").path], "sample.log"),
+                                            ("/usr/bin/vmmap", ["--summary", pid], "vmmap.txt"), ("/usr/bin/footprint", ["-p", pid], "footprint.txt")] {
+                let path = directory.appendingPathComponent(name).path
+                guard FileManager.default.createFile(atPath: path, contents: nil), let handle = FileHandle(forWritingAtPath: path) else { continue }
+                let process = Process(); process.executableURL = URL(fileURLWithPath: tool); process.arguments = arguments
+                process.standardOutput = handle; process.standardError = handle
+                try? process.run()
+            }
+        }
     }
 }
