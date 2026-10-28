@@ -1,6 +1,7 @@
 # Proposal: shared declared residency and pid-less leases
 
-Status: a coordinated future change, not 0.0.3 work. Proposed 2026-10-27 and revised after Atelier's review the same day.
+Status: a coordinated future change, not 0.0.3 work. Proposed 2026-10-27, revised after Atelier's review, and
+approved by Atelier with the `start.<pid>` fix the same day, for an Atelier decision record at its 0.0.3 bump.
 Nothing here is implemented. It changes the protocol around the shared GPU lease ([GPU lease](gpu-lease.md)), so it is
 adopted only through an Atelier decision record and one coordinated release of Atelier's `SharedGPULock`, Kit's
 `SharedGPULease` and the development wrappers. This page is meant to be reviewed on its own.
@@ -46,34 +47,54 @@ An age-based reclaim alone would be unsafe:
 4. A resumes and writes its `pid` into B's directory. `Data.write(.atomic)` replaces the file.
 
 Now both A and B believe they hold the lease. Had A's write failed instead, A's cleanup would have removed B's
-directory. So every implementation adopts all of these rules in the same release:
+directory. A single shared `start` file would race the same way: if A writes `start` = A, B writes `start` = B, and A
+then wins `pid`, readers see `pid` = A with B's start time and reclaim a lease A is using. The mirror case breaks B.
+So every implementation adopts all of these rules in the same release:
 
 1. **`pid` is created exclusively.** The holder writes its pid to a temporary file and moves it into place with
    `renamex_np(tmp, "pid", RENAME_EXCL)`. In a direct open that is `O_EXCL`; in the shell wrappers, `set -C`
    (noclobber). **Whoever creates `pid` owns the lease.**
    - A process whose exclusive create fails, because `pid` exists or the directory is gone, has lost.
    - A loser never removes the directory. It retries acquisition or reports busy.
-   - In the race above, A's create fails against B's `pid`, and A retries.
-2. **`start` before `pid`.** The holder writes `start` (its process start time, [format below](#start-time)) by
-   temporary file and rename *before* it creates `pid`. A reader that sees `pid` then sees `start` too, except from an
-   implementation that writes no `start`; for those, a reader checks the pid only.
+2. **`start.<pid>` before `pid`, keyed by pid.** Each contender writes its own `start.<its pid>` (its process start time,
+   [format below](#start-time)) by temporary file and rename, *before* it tries to create `pid`. A reader reads `pid`,
+   then `start.<that pid>`.
+   - Contenders never write the same file, so a winner's start time can't be overwritten by a loser's.
+   - A loser's stray `start.<pid>` is harmless and goes when the directory goes. Readers that predate the change ignore
+     it.
+   - A missing `start.<that pid>` means "check the pid only", **never** stale. A holder writes its start file before
+     `pid`, so a holder with `pid` and no start file is an implementation that writes none, such as the shell wrappers.
 3. **Age from birth time.** A lease directory with no readable `pid` is stale once its age exceeds **60 seconds**,
    measured from the directory's `st_birthtime`, not its modification time.
    - With rule 1 in place, the age no longer guards correctness. It only bounds how long a dead pid-less lease blocks
      everyone.
    - The directory is reclaimed with today's steps under the `.reclaim` flock: move it aside, and delete it only if the
      moved copy is still pid-less; otherwise restore it with `renamex_np(RENAME_EXCL)`.
-4. **Replaced holders.** A lease is also stale when its `start` does not match, at whole seconds, the live process
-   named by `pid`. A reused pid no longer keeps a dead holder's lease.
+4. **Replaced holders.** A lease is also stale when `start.<pid>` exists and does not match, at whole seconds, the live
+   process named by `pid`. A reused pid no longer keeps a dead holder's lease.
+
+The race, with these rules:
+1. A creates the directory, writes `start.A`, and stalls before creating `pid`.
+2. Past 60 seconds of age, R reclaims the pid-less directory under `.reclaim`. A's `start.A` goes with it.
+3. B creates a new directory, writes `start.B`, and creates `pid` = B exclusively. B holds the lease.
+4. A resumes:
+   - If its `start.A` write lands in B's directory, it is a stray file that no reader looks up.
+   - Its exclusive create of `pid` fails against B's, or fails because its directory is gone. A has lost, removes
+     nothing, and retries.
+5. Readers read `pid` = B and then `start.B`, which matches the live B. Nobody marks B stale, and only B holds the
+   lease.
+
+If A wins instead (B stalls before `pid`), the same holds with the roles swapped. `pid` = A is checked against `start.A`,
+never against B's file.
 
 ## Start time
 
-Every start time here (the lease's `start`, a record's `processStart`) is **integer epoch seconds**: the process's
+Every start time here (a lease's `start.<pid>`, a record's `processStart`) is **integer epoch seconds**: the process's
 `pbi_start_tvsec` from `proc_pidinfo(pid, PROC_PIDTBSDINFO, …)`, compared at whole seconds.
 - **Swift and C** read it with `proc_pidinfo`.
 - **Python** reads it with `psutil.Process(pid).create_time()`, truncated to an integer.
-- **The shell wrappers** write no `start`, because `ps -o lstart` is localized. For a lease without one, readers check
-  the pid only.
+- **The shell wrappers** write no start file, because `ps -o lstart` is localized. For a lease without
+  `start.<pid>`, readers check the pid only.
 
 ## Declared residency
 
@@ -182,6 +203,9 @@ A live writer's record is never deleted, because it is named by a live pid with 
   admits and spawns the one-shot `atelier-language` helper, and it writes **one record**: the pool's resident bytes plus
   the reservation of any helper in flight. Today those reservations are 9 GiB for the writer and 17 GiB for the
   describer, to be re-measured at Atelier's 0.0.3 bump.
+- **Shrinking before registering.** Registration sums the participant's own current total with the new estimate, so a
+  participant may shrink its own total first, for example by evicting idle models. Studio would evict an idle Krea
+  from its pool before registering the describer helper.
 - **The `atelier-language` helper** writes no record. Studio's record covers it from before it is spawned until it
   exits.
 - **Kit:**
@@ -190,8 +214,8 @@ A live writer's record is never deleted, because it is named by a live pid with 
   - **`aether-probe`** declares for its runs.
   - **Heavy CPU jobs** (model exports, fixture regenerations, anything above a few GiB) declare their estimated peak
     before they start.
-  - **`SharedGPULease`** adopts the exclusive `pid`, `start` and pid-less rules.
-- **The development wrappers** adopt the exclusive `pid` (`set -C`) and pid-less rules, and write no `start`.
+  - **`SharedGPULease`** adopts the exclusive `pid`, `start.<pid>` and pid-less rules.
+- **The development wrappers** adopt the exclusive `pid` (`set -C`) and pid-less rules, and write no start file.
 - **Agreed in the decision record:** the paths, the record format, the 60-second age, and the capacity fraction after
   the calibration window.
 
