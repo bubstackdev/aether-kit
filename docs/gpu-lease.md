@@ -47,6 +47,44 @@ defer { lease.release() }
 
 A lease directory without a readable `pid` is never reclaimed. Either a holder is between `mkdir` and its pid write, or a holder was killed in that window and abandoned it. Age-based reclaim would need every implementation (Atelier, the wrappers, Kit) to agree on a rule, which would change the shared protocol, so it isn't implemented. Kit no longer creates such leases on release. Waiting Kit tools report a pid-less lease explicitly, repeat the report every minute, and say how to clear it: if no GPU job is running, remove the directory by hand. The proposed wrapper logs it the same way.
 
+### Proposal: declared residency and pid-less leases
+
+Status: proposed, 2026-10-27, for Atelier to agree on; not implemented. One change to the shared protocol, covering two
+gaps.
+
+**Why.** The lease serializes GPU work, but a model stays loaded, with its wired pages and Metal allocations, after its
+holder's turn ends. Two cooperating processes can therefore take turns correctly and still hold more memory together
+than the host has. On Kit 0.0.2, Atelier's VL-4B describer (in its own helper process) beside a Krea 1024×1024 render
+did that and both processes died inside MPSGraph at memorystatus level 44
+([analysis](qwen3-vl-resource-admission.md#the-crash)). An in-process `ResourceCoordinator` cannot see the other
+process.
+
+**Declared residency.**
+1. **The record.** While a process has models loaded, it keeps one file per process in a sibling directory,
+   `<lease path>.residency/` (`/tmp/atelier-gpu.lock.residency/<pid>.json`): its pid, its process start time (so a reused
+   pid is not mistaken for it), a label, and the bytes it has reserved for loaded models, which for Kit is its
+   coordinator's reserved total. The file is written to a temporary name and renamed into place, updated when the total
+   changes, and removed when the last model unloads. The lease directory itself is created and removed every turn, so
+   the record cannot live inside it.
+2. **The check.** Before loading a model, a process reads every record, ignores (and may delete) any whose pid is not
+   alive with the recorded start time, adds its own reservation and the new model's estimate, and refuses or waits when
+   the sum exceeds the host's agreed capacity (for example a fraction of physical memory, configured once per host).
+3. **Under the lease.** The check and the record's update happen while the process holds the lease, so two processes
+   never check and load at the same time. Kit's language sessions now load under their GPU grant, as Krea, FLUX and H3
+   do, so a lease-backed `GPUAdmission` gives this ordering.
+4. **Advisory.** A process that doesn't take part is invisible to it, as with the lease today. The capacity is an agreed
+   number, not a measurement: it bounds what cooperating processes reserve, not what the host has free.
+
+**Pid-less leases, in the same change.** The record's liveness rule (pid plus start time) and the change window make it
+the moment to settle the [open item above](#open-item-pid-less-leases): for example, a lease directory with no readable
+`pid` older than an agreed age (seconds, since the pid is written right after `mkdir`) may be reclaimed under the
+existing `.reclaim` flock. Every implementation (Atelier's `SharedGPULock`, the wrappers and Kit) has to adopt the same
+rule at once, which is why the two belong in one agreed change.
+
+**What it needs from Atelier.** Agreement on the directory and record format, the capacity rule, the pid-less age, and
+that `atelier-language` and Krea's process both write records. Kit would then implement it in `SharedGPULease` and have
+`GPUAdmission` publish its sessions' `ResourceCoordinator` total.
+
 ## Kit tools take the lease by default
 
 `aether-probe` takes the lease itself before any well-formed GPU command and holds it until the command returns. It releases the lease explicitly on the error path, because `exit` skips deinit. A malformed GPU command (wrong argument count, an unparsable number, an unknown mode or compute policy) takes no lease, so its usage error prints at once instead of after a wait.
@@ -94,7 +132,8 @@ What each session holds a grant for:
 
 - **`KreaGenerationSession` and `Flux2GenerationSession`:** each operation (prepare, generate, refine, image encode). The grant is taken before any model opens and released after the operation's native work has joined.
 - **`H3VideoSession`:** each generation, from before its first stage until every stage is released.
-- **`LanguageGenerationSession`:** each request, after validation, until its submissions have joined. Model loading isn't admitted.
+- **`LanguageGenerationSession`:** its opening (the model's load and its functions' specialization), and each request, after validation, until its submissions have joined.
+- **`VisionLanguageSession`:** the encoder's opening and the decoder's, each under its own grant; each image's encode; and each decoder request.
 
 Sessions created without `gpu:` behave as before. Admission composes with `ResourceCoordinator`. The coordinator answers whether memory is available, admission answers whose turn it is, and either can refuse. With admission, a session takes its operation reservation only after its grant, so a request waiting for the GPU never holds capacity the running request needs. `unload()` withdraws an operation that is still waiting for admission; it ends with the session's closed error, so unload never waits behind the GPU queue. An operation that already holds its grant is waited for as before.
 

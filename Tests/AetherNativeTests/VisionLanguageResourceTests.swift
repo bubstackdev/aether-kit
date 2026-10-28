@@ -113,17 +113,17 @@ private func gradient(width: Int, height: Int, seed: Int) throws -> VisionRGBIma
     return try VisionRGBImage(rgb: rgb, width: width, height: height)
 }
 
-/// The resource profile under test: the design's resident estimates (docs/qwen3-vl-resource-admission.md) with a
-/// generous capacity, so the measurement observes, rather than trips, the ledger.
+/// The resource profile under test: the estimates in docs/qwen3-vl-resource-admission.md (the scratch figures set from
+/// this test's first runs), with a generous capacity, so the measurement observes, rather than trips, the ledger.
 private func profile(for manifest: LanguageModelManifest, coordinator: ResourceCoordinator) throws -> LanguageResourceAdmission {
     guard let vision = manifest.vision else { throw LanguageGenerationError.invalid("not a Qwen3-VL bundle") }
     let fourB = manifest.sourceRepository.contains("4B")
     let mib: UInt64 = 1 << 20
     return try LanguageResourceAdmission(coordinator: coordinator, models: [
         try LanguageModelResourceEstimate(modelSHA256: manifest.modelSHA256, residentBytes: (fourB ? 11_600 : 6_300) * mib,
-                                          runScratchBytes: (fourB ? 512 : 256) * mib),
+                                          runScratchBytes: (fourB ? 256 : 128) * mib),
         try LanguageModelResourceEstimate(modelSHA256: vision.modelSHA256,
-                                          residentBytes: (fourB ? 2_200 : 2_000) * mib, runScratchBytes: 256 * mib),
+                                          residentBytes: (fourB ? 2_200 : 2_000) * mib, runScratchBytes: 128 * mib),
     ], maximumContextLength: manifest.maximumContextLength, maximumImageTokens: vision.maximumImageTokens)
 }
 
