@@ -292,10 +292,10 @@ harder set (counts, spatial relations, rendered text, attribute binding) would b
 C=~/.cache/huggingface/aether-kit
 AETHER_NATIVE_FLUX2_ADHERENCE=generate AETHER_FLUX2_BUNDLE=$C/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence generate" swift test -c release --filter flux2PromptAdherenceGenerate
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence generate" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceGenerate
 AETHER_NATIVE_FLUX2_ADHERENCE=judge AETHER_FLUX2_ADHERENCE_JUDGE=$C/qwen3-vl-4b-abliterated-one-function-bundle-macos \
 AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence judge" swift test -c release --filter flux2PromptAdherenceJudge
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence judge" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceJudge
 ```
 
 ### Benchmark harness (0.0.3)
