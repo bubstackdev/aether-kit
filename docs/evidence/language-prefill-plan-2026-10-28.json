@@ -22,7 +22,7 @@
   "Sources/AetherLanguageCoreAI/LanguageVisionPrompt.swift": "e8c4f649d96a252c31006d512aa8c83b17886cd8a6226c1e23ee8b6289bd1348"
  },
  "nativeTests": {
-  "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "ac733b75f826988c706b085d9328638e4bb5c215ba2908286683b1a75db41cb1",
+  "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "0d2e02bf237db493e193a64832a2a97b32ec161d2982e7f05f529ed488ac5bc4",
   "Tests/AetherNativeTests/LanguageDecodeQualificationTests.swift": "395adba9e1e335adc4f7c6af223a2397c3d4778e9974f2afbb67fd02308fffdc",
   "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift": "d45d68ed270aba31af229ec535e23171b684ff546f38f69fef57007387048f57",
   "Tests/AetherNativeTests/VisionLanguageSessionTests.swift": "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0",
@@ -34,11 +34,11 @@
  },
  "before": "an origin/main build (bfbf814) with the branch's LanguagePrefillChunkSweepTests.swift, which adds the longer-prompt options; same bundles",
  "planGate": {
-  "gate": "449-token prompt, default plan (width 256 above 256 prompt tokens, last chunk stepping back 63 rows, cache sized for the prompt before the prefill) against three plans; last-row logits cosine >= 0.9999 with equal argmax for each. Rule step-back (against one whole-prompt chunk, the exactness claim): identical 32-token greedy. Rule plan-rounding (against 1-token steps and against the 0.0.2 width of 64, other kernel shapes): identical greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.99999 on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Qwen3-VL image prompts (a long and a short question about one image, and two images) under the default plan, one 512-token-wide plan and 1-token steps: identical greedy, no near-tie allowance",
+  "gate": "Text prompt (449 tokens unless AETHER_OVERLAP_TEXT_REPEATS sets another length), default plan (width 256 above 256 prompt tokens, last chunk stepping back 63 rows, cache sized for the prompt before the prefill) against three plans; last-row logits cosine >= 0.9999 with equal argmax for each. Rules step-back (against one whole-prompt chunk) and plan-rounding (against 1-token steps and against the 0.0.2 width of 64), the same for both: identical 32-token greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.9999 (the last-row bar) on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Before 0.0.3's plan: step-back allowed no divergence and the row bar was 0.99999. Qwen3-VL image prompts (a long and a short question about one image, and two images) under the default plan, one 512-token-wide plan and 1-token steps: identical greedy, no near-tie allowance",
   "models": {
    "qwen3-0.6b": {
     "file": "overlap-qwen3-0.6b.json",
-    "sha256": "6b6dd77bc2c4a7fcf5ecb78d8e2046d8331099d850a1d9a9fab413a1c31073ff",
+    "sha256": "f2858015d20c705da98f13d31087551d0d641843303e9928aa066064086ae3b8",
     "passed": true,
     "promptTokens": 453,
     "submissions": {
@@ -182,7 +182,7 @@
    },
    "writer": {
     "file": "overlap-writer.json",
-    "sha256": "2b359d98adfa076ebf8d9649480a145bafbbdf1cb9790927191183dd848ad15a",
+    "sha256": "6fff9c9d839b1ce43a9aff4e45927af12c7d77d194cfded02ba0659778703ec4",
     "passed": true,
     "promptTokens": 449,
     "submissions": {
@@ -234,8 +234,8 @@
    },
    "writer-1021": {
     "file": "overlap-writer-r92.json",
-    "sha256": "8d52f51ae3cdf6069457815bfe985c8832814aa3842a3419bdc8c32769f96f47",
-    "passed": false,
+    "sha256": "b5a8518357bc78571cc276a6afafedaa5bdaa7933b39828648ea84b2dbfd3f94",
+    "passed": true,
     "promptTokens": 1021,
     "submissions": {
      "0.0.2 width": 16,
@@ -263,7 +263,7 @@
       "argmaxEqual": true,
       "greedyIdentical": false,
       "firstDivergence": 2,
-      "acceptedAtNearTie": false,
+      "acceptedAtNearTie": true,
       "nearTie": {
        "marginSource": "qwen3-4b-instruct-2507-abliterated-reference-1021 forced row 2",
        "row": 2,
@@ -298,7 +298,7 @@
         ]
        }
       },
-      "passed": false
+      "passed": true
      },
      {
       "plan": "0.0.2 width",
@@ -307,7 +307,7 @@
       "argmaxEqual": true,
       "greedyIdentical": false,
       "firstDivergence": 2,
-      "acceptedAtNearTie": false,
+      "acceptedAtNearTie": true,
       "nearTie": {
        "marginSource": "qwen3-4b-instruct-2507-abliterated-reference-1021 forced row 2",
        "row": 2,
@@ -342,7 +342,7 @@
         ]
        }
       },
-      "passed": false
+      "passed": true
      }
     ],
     "imageCases": [],
@@ -350,7 +350,7 @@
    },
    "vl-2b": {
     "file": "overlap-vl-2b.json",
-    "sha256": "22d3c8b35ab9fbd74adf45b081b6b06d104cea7094c1ccebfb8859c7d9388432",
+    "sha256": "346eb989ec11d506aae3d263b6624117941ef69ce6d3ca3551df3824e02a2093",
     "passed": true,
     "promptTokens": 449,
     "submissions": {
@@ -453,8 +453,8 @@
    },
    "vl-4b": {
     "file": "overlap-vl-4b.json",
-    "sha256": "bfebcb792315389244a353b57d56e8cb97d66191b8be870ef54d2778740f3412",
-    "passed": false,
+    "sha256": "f21fc85262080d3e14efe4735036baa6ee455279a07c9d600bd4d6b662c5a4ee",
+    "passed": true,
     "promptTokens": 449,
     "submissions": {
      "0.0.2 width": 8,
@@ -470,8 +470,27 @@
       "argmaxEqual": true,
       "greedyIdentical": false,
       "firstDivergence": 4,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
+      "acceptedAtNearTie": true,
+      "nearTie": {
+       "marginSource": "qwen3-vl-4b-abliterated-reference-text-long forced row 4",
+       "row": 4,
+       "rowCosines": [
+        0.9999971393789621,
+        0.9999992384912455,
+        0.999998967969149,
+        0.9999979693644946,
+        0.9999989590309785
+       ],
+       "tokens": [
+        3129,
+        3982
+       ],
+       "upstreamMargin": 0.005737241062050351,
+       "upstreamTopTwo": [
+        3982,
+        3129
+       ]
+      },
       "kitRowsAtDivergence": {
        "default": {
         "margin": 0,
@@ -488,7 +507,7 @@
         ]
        }
       },
-      "passed": false
+      "passed": true
      },
      {
       "plan": "1-token steps",
@@ -2536,6 +2555,69 @@
    "seconds": 148.89
   }
  },
- "passed": false,
- "status": "Every run passes except the plan gate on two prompts (writer 1,021 tokens, VL-4B 449-token text): their flips are upstream near-ties (margins 0.00791 and 0.00574) and both prompts pass upstream parity, but the gate's step-back rule has no near-tie allowance and its row-agreement bar (0.99999) is missed at 1,021 tokens; whether to change those rules is open"
+ "passed": true,
+ "planGateRuleChange": {
+  "before": "step-back: identical greedy, no near-tie allowance; plan-rounding: identical greedy, or a first divergence at an upstream near-tie (the two plans' tokens upstream's top two, top-1 minus top-2 probability < 0.1) with the two plans' teacher-forced rows at cosine >= 0.99999",
+  "after": "both comparisons: identical greedy, or a first divergence at an upstream near-tie (same token and margin rule) with the rows at cosine >= 0.9999, the gate's last-row bar",
+  "why": "the step-back rule held at C = 64 by rounding, not construction (the VL-4B 449-token text prompt flips at an exact fp16 tie at C = 256), and the 0.99999 row bar was set from 449-token prompts (the writer's 1,021-token rows agree at 0.9999897 and 0.9999693)",
+  "decidedBy": "the user, 2026-10-28",
+  "resultsUnderPreviousRules": {
+   "vl-4b": {
+    "file": "strict-rules/overlap-vl-4b.json",
+    "sha256": "bfebcb792315389244a353b57d56e8cb97d66191b8be870ef54d2778740f3412",
+    "passed": false,
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "firstDivergence": 4,
+      "acceptedAtNearTie": false,
+      "passed": false
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "firstDivergence": 4,
+      "acceptedAtNearTie": true,
+      "passed": true
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "firstDivergence": 4,
+      "acceptedAtNearTie": true,
+      "passed": true
+     }
+    ]
+   },
+   "writer-1021": {
+    "file": "strict-rules/overlap-writer-r92.json",
+    "sha256": "8d52f51ae3cdf6069457815bfe985c8832814aa3842a3419bdc8c32769f96f47",
+    "passed": false,
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "passed": false
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "passed": false
+     }
+    ]
+   }
+  }
+ }
 }

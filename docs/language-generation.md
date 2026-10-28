@@ -232,14 +232,20 @@ one-function asset's chunks carry image rows and may (see [Qwen3-VL](qwen3-vl.md
 `languageOverlappedPrefillMatchesOtherPlans` (opt-in) checks this on every model against a
 whole-prompt chunk, 1-token steps and the 0.0.2 width of 64.
 
-**Equal up to rounding is not equal.** The step-back rule of that check (the default plan
-against one whole-prompt chunk) requires identical greedy tokens, with no near-tie allowance.
-At C = 64 it held on every model, but by rounding luck, not by construction: at C = 256 the
-VL-4B's 449-token text prompt takes token 3129 where the whole-prompt chunk, 1-token steps and
-the 64 width take 3982, at a row where the default plan's top two fp16 logits are exactly equal
-([evidence](evidence/language-prefill-plan-2026-10-28.json)). A change of plan can flip a greedy
-token wherever the top two are close enough for rounding to reorder them; the qualification
-judges such flips by the upstream reference's margin (see [Evidence and limits](#evidence-and-limits)).
+**Equal up to rounding is not equal.** Until 0.0.3's plan, that check's step-back rule (the
+default plan against one whole-prompt chunk) required identical greedy tokens with no near-tie
+allowance, and its plan-rounding rule (against 1-token steps and other widths) accepted a flip
+only at an upstream near-tie whose two plans' teacher-forced rows agreed at cosine >= 0.99999.
+At C = 64 the step-back rule held on every model, but by rounding luck, not by construction: at
+C = 256 the VL-4B's 449-token text prompt takes token 3129 where the whole-prompt chunk, 1-token
+steps and the 64 width take 3982, at a row where the default plan's top two fp16 logits are
+exactly equal. And the 0.99999 row bar, set from 449-token prompts, is missed by plans of
+different kernel shapes over a 1,021-token prompt (the writer's rows agree at 0.9999897 against
+1-token steps and 0.9999693 against the 64 width). Since 0.0.3 both comparisons use one rule:
+identical greedy tokens, or a first divergence where the two plans' tokens are the upstream
+reference's top two, its top-1 minus top-2 probability is under 0.1 (the parity threshold), and
+the rows agree at the check's own last-row bar, cosine >= 0.9999. Upstream parity against the
+float32 reference still judges every plan on its own (see [Evidence and limits](#evidence-and-limits)).
 
 ### Time to first token
 
@@ -488,13 +494,13 @@ writer and the one-function VL-2B and VL-4B ([evidence](evidence/language-prefil
   token 4 (upstream picks 3982, the 0.0.3 plan its second choice 3129, margin 0.00574) and the writer at 1,021 tokens
   at token 2 (upstream picks 498, the 0.0.3 plan 1075, margin 0.00791). The last two references were made for this
   (`reference_qwen3_vl_text.py`, and `reference_qwen3.py --prompt-repeat 92`).
-- **The plan gate's own rules reject two of those comparisons as written.** Its step-back rule (default against one
-  whole-prompt chunk) has no near-tie allowance, so the VL-4B flip fails it; and its near-tie rule also asks the two
-  plans' teacher-forced rows to agree at cosine >= 0.99999 up to the flip, which the writer's 1,021-token rows miss
-  (0.9999897 against 1-token steps, 0.9999693 against the 64 width; the bar was set from 449-token prompts). Both flips
-  pass upstream parity, where each plan is judged against float32 upstream. Whether to give the step-back rule the
-  near-tie allowance and to set the row agreement at the gate's last-row bar (0.9999) is open; until then these two
-  are recorded as near-tie flips accepted on upstream parity.
+- **The plan check's rules were aligned for this** ([Step contracts](#step-contracts)). Under the old rules the
+  VL-4B flip failed the step-back comparison (no near-tie allowance) and the writer's 1,021-token flip failed the
+  0.99999 row bar (rows at 0.9999897 and 0.9999693). Under the aligned rules all five prompts pass: the 0.6B (453
+  tokens), the writer (449 and 1,021), the VL-2B (text and its three image cases, identical across plans) and the
+  VL-4B (449-token text and its three image cases). Both flips also pass upstream parity, where each plan is judged
+  against float32 upstream on its own: forced rows at cosine >= 0.99989 (VL-4B) and >= 0.99999 (writer), one argmax
+  difference each, at the near-tie, and greedy output first diverging there with Kit's token upstream's second.
 
 ### Qwen3-4B writer (bucketed, fp16)
 
