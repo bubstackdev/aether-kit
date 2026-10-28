@@ -5,7 +5,7 @@
 **Verdict: go for an MLX language backend at a macOS 14 / iOS 17 floor, as a separate optional product, on three conditions:**
 
 1. The floor PR lands first. Kit's products are still macOS 27 / iOS 27, so a macOS 14 package cannot conform to `LanguageBackend` yet. The spike runs standalone for that reason.
-2. Depend on mlx-swift core only, not mlx-swift-lm. mlx-swift-lm 3.32.3 pins swift-syntax `602..<604`, which cannot resolve alongside Kit's exact 604.0.0. The decoder here is about 170 lines adapted from mlx-swift-lm (MIT).
+2. Depend on mlx-swift core only, not mlx-swift-lm. mlx-swift-lm 3.32.3 pins swift-syntax `602..<604`, which cannot resolve alongside Kit's exact 604.0.0. The decoder here is about 170 lines adapted from mlx-swift-lm (MIT; its license is in `Spikes/mlx-backend/MLXQwen3/LICENSE-mlx-swift-lm`).
 3. CI can build Metal shaders (see [Dependency cost](#dependency-cost)).
 
 Results:

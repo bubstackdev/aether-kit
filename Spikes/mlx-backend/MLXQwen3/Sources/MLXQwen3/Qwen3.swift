@@ -1,6 +1,8 @@
-// Qwen3 dense decoder on MLX. Structure adapted from mlx-swift-lm's Qwen3.swift (MIT, ml-explore; itself a port of
-// mlx-lm's qwen3.py), reduced to what the spike needs: no quantization, a plain concatenating KV cache, and MLX core
-// only (no MLXLMCommon, which would bring a swift-syntax pin that conflicts with Kit's).
+// Qwen3 dense decoder on MLX. Structure adapted from mlx-swift-lm's Libraries/MLXLLM/Models/Qwen3.swift (3.32.3,
+// itself a port of mlx-lm's qwen3.py), reduced to what the spike needs: no quantization, a plain concatenating KV cache,
+// and MLX core only (no MLXLMCommon, which would bring a swift-syntax pin that conflicts with Kit's).
+//
+// Portions Copyright (c) 2024 ml-explore, used under the MIT License; see ../../LICENSE-mlx-swift-lm.
 
 import Foundation
 import MLX
