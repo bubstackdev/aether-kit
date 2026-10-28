@@ -29,7 +29,7 @@ Every figure is from a single run, and the timings come from a lightly loaded sh
   - `run_trajectory_coreai.py`: the trajectory from the reference's conditions, which judges the DiT alone;
   - `run_encoders_coreai.py`: the text and condition encoders, host packing, then the trajectory end to end, plus tiled decoding;
   - `decode_latents_coreai.py`: every trajectory's latents decoded by one VAE.
-  - The final runs used one hold, 10:55:17–10:55:59. The VAE measurements used two more, 10:56:38–10:58:21, and the go-configuration measurements a fourth, 11:09:03–11:09:18. Host load was 1.1–2.4 with no heavy job alongside (`host-load.log`).
+  - The final runs used one hold, 10:55:17–10:55:59. The VAE measurements used two more, 10:56:38–10:58:21, and the go-configuration measurements a fourth, 11:09:03–11:09:18. The first three holds ran at load 1.1–2.4 and the fourth at 3.4–5.5, with no heavy job alongside (`host-load.log`).
 
 ### The gate
 
@@ -70,7 +70,7 @@ Again every prompt beats bf16 on every measure.
   - Eager, the masked padded step is 1.7e-5 from the unpadded one.
   - The masked Core AI step 0 has cosine 0.982 against the unpadded fp32 step (`dit-mask-coreai.json`).
   - Kit's port must keep this mask, or export exact condition lengths.
-- **Upstream's batched generation does pad.** At the pinned pipeline, caption and lyric tokens are padded to the batch's longest (`conditioning_text.py`, lines 154–160), and the diffusion handler documents `encoder_attention_mask` as unused (`diffusion.py`, line 57). In a batch of different-length prompts, the shorter ones attend padding upstream too. This was read in the code, not run. Single requests, which the gate's reference is, aren't padded.
+- **Upstream's batched generation does pad.** At the pinned pipeline, caption and lyric tokens are padded to the batch's longest (`conditioning_text.py`, lines 154–160), and they reach the PyTorch DiT, whose forward discards the mask it's given. In the pinned model's `modeling_acestep_v15_turbo.py`, line 1381 sets it to `None`, and lines 1416–1425 rebuild it from the self-attention mask; the eager check above (`dit-mask-eager.json`) shows the effect. The pipeline's MLX diffusion handler also documents `encoder_attention_mask` as unused (`diffusion.py`, line 57). In a batch of different-length prompts, the shorter ones attend padding upstream too. This was read in the code, not run. Single requests, which the gate's reference is, aren't padded.
 - **The 0.0.2 step check couldn't have caught this:** it used random inputs with an all-ones mask. On those inputs the masked export still gives the 0.0.2 figure (relative L2 0.051, cosine 0.9987).
 
 ### A reference bug, and which references were redone
@@ -100,7 +100,7 @@ Again every prompt beats bf16 on every measure.
 ### Time and memory (60 s of audio, warm)
 
 **The go configuration in one process** (`go_pipeline_coreai.py`: fp16 text and condition encoders, the masked fp16 DiT, the fp32 VAE in 10 s tiles, nothing else loaded; `go-pipeline.json`):
-- **Per prompt, wall clock from token IDs to audio:** 1.80–2.07 s. That's the text encoder 10–52 ms, the condition encoder 12–22 ms, the DiT's 8 steps 0.42–0.51 s and the tiled VAE 1.31–1.52 s. Host load was 3.4–5.5 during this hold.
+- **Per prompt, wall clock from token IDs to audio:** 1.80–2.07 s. That's the text encoder 10–52 ms, the condition encoder 12–22 ms, the DiT's 8 steps 0.42–0.51 s and the tiled VAE 1.30–1.52 s. Host load was 3.4–5.5 during this hold.
 - **It computes what the gate judged:** every prompt's final latents equal the earlier end-to-end run's exactly, and its tiled audio is 53.9–63.9 dB from that run's one-window fp32 decode.
 - **Process peak footprint 2.68 GB, maximum RSS 8.39 GB** (`time-excerpts.log`). The footprint is below the four assets' 5.1 GiB on disk (`data-footprint.log`) because the assets' weights are file-backed pages, which RSS counts and the footprint doesn't. Kit's admission measurement is port work.
 
