@@ -23,13 +23,13 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Coverage and iPhone
 
-- **iPhone:** Qwen3-VL and the language models. Kokoro: parity at bucket 512 on the device, and other iPhone models.
+- **iPhone:** Qwen3-VL and the language models. Kokoro: parity at bucket 512 on the device, and other iPhone models. Run on 2026-10-28 on an iPhone18,2 (iOS 27.2): Kokoro passes every case through bucket 512 and the Qwen3-0.6B passes; the Qwen3-VL-2B aborts while opening at the default memory limit (`std::bad_alloc` in Core AI's specialization) and waits on the user's App ID registration for the increased memory limit ([summary](evidence/iphone-batch-2026-10-28.json)).
 - **Qwen3-VL:**
   - multi-image M-RoPE: done, qualified on the VL-2B and VL-4B;
   - parity on rotated photos: done;
   - alpha handling: done; Kit now drops alpha like upstream by default (`VisionAlphaPolicy`), where 0.0.2 composited over black.
   - Plan and evidence for all three: [Qwen3-VL coverage plan](qwen3-vl-coverage-plan.md).
-- **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases.
+- **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases. Retested on iOS 27.2: it still aborts on the Neural Engine at the first float16 call, so float32 stays the only shipped decoder ([log](evidence/kokoro-iphone18-fp16-ane-abort-2026-10-28.log)).
 - **H3 promotion:** media audit and per-stage lifecycle qualification (both done 2026-10-28; the subjective review is with the user) before the experimental label is dropped, plus a durable home for the qualified profile (a Kit-owned clone since 2026-10-27; profile paths relative to `bundle.json` are a follow-up). Measured admission covers more profiles and Macs as they're measured.
 
 ### Safety and correctness
@@ -57,7 +57,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 Each spike ends in a go/no-go report. All three start from a 0.0.2 feasibility report, which recommends going ahead and ends with what it leaves open for 0.0.3:
 - a hybrid recurrent-state language model (Granite 4.0-H): [0.0.2 report](spikes/hybrid-state-2026-10.md), go, at about 190 tok/s on the M5 Max with fixed-shape decode. The 0.0.3 [go/no-go](spikes/hybrid-state-0.0.3.md) is a go on a static-width step contract: one `main` at width 64 (797 MiB wired, about 130 tok/s) or with a q = 1 `decode` (1,446 MiB, about 165–180 tok/s), both matching the fp32 reference. The dynamic-q contracts that mirror the bucketed one failed as exported, because their positions input carried q a second time. A start-scalar export fixes that (measured, not yet qualified);
-- ACE-Step music generation: [report](spikes/ace-step-2026-10.md), a conditional go for ACE-Step 1.5 text-to-music on Mac, gated on an 8-step fp16 trajectory check from real prompts;
+- ACE-Step music generation: [report](spikes/ace-step-2026-10.md). **Decided 2026-10-28: go** for ACE-Step 1.5 text-to-music on Mac without the LM: fp16 DiT and encoders, fp32 VAE in 10 s tiles. On four real 60 s prompts the Core AI trajectory is closer to fp32 than the authors' bf16 is; Kit must mask the padded condition sequence itself, since upstream's DiT ignores the mask;
 - TripoSR image-to-3D: [report](spikes/triposr-2026-10.md). **Decided 2026-10-28: go** for image to mesh (OBJ and USDZ) at 256³ on Mac. On six real images Core AI fp16 matches eager fp32 (occupancy IoU ≥ 0.996, USDZ passes `usdchecker`), at 0.37–0.38 s per mesh after load with the gather-free grid; iPhone is a separate item.
 
 The scripts and compact results behind each report are under `Spikes/`.
@@ -85,6 +85,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **An MLX backend for older OSes,** as an optional separate product, by user decision (2026-10-28). The [spike](spikes/mlx-backend-2026-10.md) is a conditional go on three conditions: the lower floor (done in 0.0.3), mlx-swift core only (mlx-swift-lm's swift-syntax range conflicts with Kit's pin), and the Metal toolchain in CI. It also needs its own manifest kind, since it loads Hugging Face safetensors.
 - **FLUX.2 on iOS,** moved from 0.0.3 by user decision (2026-10-28).
 - **Hybrid language models: re-qualify a start-scalar dynamic-q contract** ([0.0.3 spike](spikes/hybrid-state-0.0.3.md#core-ai-defects-and-apple-feedback-candidates)). Positions go in as a [1, 1] start, which removes the two-carrier export cause of the 0.0.3 GPU failures. It is measured but not parity-qualified, and it would let hybrids use the bucketed planner without padding.
+- **iOS open-time memory check,** calibrated from a measured on-device peak (needs the VL-2B run with the entitlement). On an iPhone18,2 at the default limit, an over-budget VL-2B aborted inside Core AI's compiler instead of being refused ([on-device host](language-generation.md#on-device-host-003)).
 - **H3 fused attention,** moved from 0.0.3: re-exporting the body graph gives a new profile identity, which resets H3's qualification evidence.
 
 ## Open questions

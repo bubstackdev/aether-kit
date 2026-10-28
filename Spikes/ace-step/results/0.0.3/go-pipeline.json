@@ -1,0 +1,97 @@
+{
+ "configuration": {
+  "text": "text-encoder-256-fp16",
+  "condition": "condition-256x512-fp16",
+  "dit": "dit-1500x512-fp16",
+  "vae": "vae-dec-250-fp32",
+  "overlap": 32
+ },
+ "load": {
+  "text-encoder-256-fp16": 0.28523395815864205,
+  "condition-256x512-fp16": 0.15566029190085828,
+  "dit-1500x512-fp16": 0.5840171249583364,
+  "vae-dec-250-fp32": 0.09775937511585653
+ },
+ "prompts": {
+  "folk-ballad-vocal": {
+   "textSeconds": 0.05162800010293722,
+   "conditionSeconds": 0.021765500074252486,
+   "stepSeconds": [
+    0.08068608306348324,
+    0.05010766605846584,
+    0.05071808281354606,
+    0.050386750139296055,
+    0.05114650004543364,
+    0.050791791174560785,
+    0.05076029198244214,
+    0.05120774987153709
+   ],
+   "ditSeconds": 0.43580491514876485,
+   "vaeSeconds": 1.3047694589477032,
+   "vaeWindows": 7,
+   "totalSeconds": 1.8214268749579787,
+   "finalLatentsEqualEarlierE2E": true,
+   "audioSNRdBVsEarlierE2EOneWindowFp32VAE": 56.16798868722797
+  },
+  "indie-pop-vocal": {
+   "textSeconds": 0.010245750192552805,
+   "conditionSeconds": 0.012261708034202456,
+   "stepSeconds": [
+    0.05040329205803573,
+    0.05135287484154105,
+    0.05280795902945101,
+    0.05261495802551508,
+    0.05395304202102125,
+    0.05325474985875189,
+    0.05376149993389845,
+    0.05374179198406637
+   ],
+   "ditSeconds": 0.42189016775228083,
+   "vaeSeconds": 1.3439324169885367,
+   "vaeWindows": 7,
+   "totalSeconds": 1.7950085829943419,
+   "finalLatentsEqualEarlierE2E": true,
+   "audioSNRdBVsEarlierE2EOneWindowFp32VAE": 54.18788212892076
+  },
+  "lofi-instrumental": {
+   "textSeconds": 0.010947250062599778,
+   "conditionSeconds": 0.013259666971862316,
+   "stepSeconds": [
+    0.054275792092084885,
+    0.05531554203480482,
+    0.055851666955277324,
+    0.057096916949376464,
+    0.05800737510435283,
+    0.05940087488852441,
+    0.05997779197059572,
+    0.06091320887207985
+   ],
+   "ditSeconds": 0.4608391688670963,
+   "vaeSeconds": 1.4852891250047833,
+   "vaeWindows": 7,
+   "totalSeconds": 1.9773999170865864,
+   "finalLatentsEqualEarlierE2E": true,
+   "audioSNRdBVsEarlierE2EOneWindowFp32VAE": 63.93243482331684
+  },
+  "orchestral-instrumental": {
+   "textSeconds": 0.011479417094960809,
+   "conditionSeconds": 0.014713709009811282,
+   "stepSeconds": [
+    0.058776249876245856,
+    0.05958962510339916,
+    0.06204941705800593,
+    0.07400529179722071,
+    0.06346320896409452,
+    0.06458658399060369,
+    0.06468829093500972,
+    0.06597262504510581
+   ],
+   "ditSeconds": 0.5131312927696854,
+   "vaeSeconds": 1.518238834105432,
+   "vaeWindows": 7,
+   "totalSeconds": 2.065594708081335,
+   "finalLatentsEqualEarlierE2E": true,
+   "audioSNRdBVsEarlierE2EOneWindowFp32VAE": 53.947843799130126
+  }
+ }
+}

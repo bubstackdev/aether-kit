@@ -5,6 +5,7 @@ usage: export_vae.py <out-dir> [--frames 250] [--dtype float16|float32]
 Writes vae-dec-<frames>-<tag>.aimodel plus an eager fp32 reference (input latents + output audio) for the window.
 """
 import argparse
+import os
 import time
 from pathlib import Path
 
@@ -21,7 +22,8 @@ ap.add_argument("--dtype", default="float16")
 a = ap.parse_args()
 out = Path(a.out)
 out.mkdir(parents=True, exist_ok=True)
-snap = next((Path.home() / ".cache/huggingface/hub/models--ACE-Step--Ace-Step1.5/snapshots").iterdir())
+hub = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
+snap = next((hub / "models--ACE-Step--Ace-Step1.5/snapshots").iterdir())
 vae = AutoencoderOobleck.from_pretrained(snap / "vae", torch_dtype=torch.float32).eval()
 # Fold weight norm (g · v/‖v‖) into plain weights: the export should see ordinary convolutions.
 for m in vae.modules():

@@ -1,0 +1,19 @@
+{
+ "note": "Four fixed 60 s text-to-music requests for the trajectory gate: two instrumental, two with short original lyrics (written for this spike). Seeds are fixed so every run starts from the same noise.",
+ "duration_seconds": 60,
+ "shift": 3.0,
+ "prompts": [
+  {"id": "lofi-instrumental", "seed": 7, "language": "unknown", "bpm": 82,
+   "caption": "warm lo-fi hip hop beat with mellow Rhodes piano, vinyl crackle, soft kick and brushed snare",
+   "lyrics": "[Instrumental]"},
+  {"id": "orchestral-instrumental", "seed": 8, "language": "unknown", "bpm": 120,
+   "caption": "energetic orchestral trailer music with pounding taiko drums, brass stabs and soaring strings",
+   "lyrics": "[Instrumental]"},
+  {"id": "indie-pop-vocal", "seed": 9, "language": "en", "bpm": 116,
+   "caption": "upbeat indie pop song with jangly electric guitars, bright synths and a female vocal",
+   "lyrics": "[Verse]\nStreetlights hum a quiet tune\nWe chase the bus beneath the moon\n[Chorus]\nHold on, hold on, the night is young\nSing it loud with every lung"},
+  {"id": "folk-ballad-vocal", "seed": 10, "language": "en", "bpm": 72,
+   "caption": "slow acoustic folk ballad with fingerpicked guitar, soft cello and a gentle male vocal",
+   "lyrics": "[Verse]\nThe river keeps the stories that the old pines told\nOf lanterns in the window and a road of gold\n[Chorus]\nCarry me home, carry me slow\nBack where the willows grow"}
+ ]
+}

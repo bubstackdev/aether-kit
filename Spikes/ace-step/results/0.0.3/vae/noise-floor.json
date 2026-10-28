@@ -1,0 +1,30 @@
+{
+ "folk-ballad-vocal": {
+  "signalRMSdBFS": -18.484157316337,
+  "residualRMSdBFS": -76.52170609501674,
+  "residualPeakdBFS": -49.68769688484549,
+  "binsResidualAboveSignal": 0.4093770986802718,
+  "binsSignalBelowMetricFloor": 0.2536042203538364
+ },
+ "indie-pop-vocal": {
+  "signalRMSdBFS": -13.328041641575762,
+  "residualRMSdBFS": -72.67079226024765,
+  "residualPeakdBFS": -40.44558522501998,
+  "binsResidualAboveSignal": 0.3227369827593687,
+  "binsSignalBelowMetricFloor": 0.12673000668107
+ },
+ "lofi-instrumental": {
+  "signalRMSdBFS": -15.3145636014597,
+  "residualRMSdBFS": -75.93162843956542,
+  "residualPeakdBFS": -50.44091997473532,
+  "binsResidualAboveSignal": 0.2901586971045804,
+  "binsSignalBelowMetricFloor": 0.14435727238809207
+ },
+ "orchestral-instrumental": {
+  "signalRMSdBFS": -14.676615034627307,
+  "residualRMSdBFS": -73.37000333156952,
+  "residualPeakdBFS": -48.626343955971166,
+  "binsResidualAboveSignal": 0.24965943896365325,
+  "binsSignalBelowMetricFloor": 0.16071964668419364
+ }
+}

@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "subject": "0.0.3 iPhone batch: Kokoro bucket 512, Kokoro float16 decoder retest, Qwen3-0.6B, Qwen3-VL-2B",
+  "date": "2026-10-28",
+  "sourceCommit": "dadc2910",
+  "device": {
+    "model": "iPhone18,2 (iPhone 17 Pro Max)",
+    "os": "iOS 27.2 (24B119)",
+    "memoryGiB": "11.4 (as the probe reports it)",
+    "availableMemoryMiBAtStart": 3368.2,
+    "note": "os_proc_available_memory at launch without the increased-memory-limit entitlement; the 0.0.2 run on an iPhone19,4 (iOS 27.1) recorded 3,368 MiB too"
+  },
+  "signing": "Release builds with automatic signing against the existing development identity and the existing wildcard team provisioning profile, which covers this device; the team was passed on the xcodebuild command line only. No -allowProvisioningUpdates; no App ID, profile, certificate or device was created, registered or modified. Each app was installed with devicectl, run with `devicectl device process launch --console`, and uninstalled afterwards; staged assets were removed.",
+  "items": [
+    {
+      "item": "A. Kokoro, float32 buckets, frame cap 512",
+      "host": "Examples/SpeechDevice",
+      "bundleFingerprint": "2448d84471f8f2722fadc6e16259cf9474668a1a29bc34f32abd53397ed8838e",
+      "passed": true,
+      "cases": [
+        {
+          "name": "short-af_heart",
+          "bucket": 128,
+          "frames": 98,
+          "relL2": 0.0102,
+          "logMelMean": 0.004,
+          "bound": 0.029168936342142803,
+          "passed": true,
+          "refusedAboveCap": false,
+          "warmSeconds": 0.239,
+          "warmRealTimeFactor": 0.097
+        },
+        {
+          "name": "speed-bf_emma",
+          "bucket": 256,
+          "frames": 180,
+          "relL2": 0.0331,
+          "logMelMean": 0.007,
+          "bound": 0.05,
+          "passed": true,
+          "refusedAboveCap": false,
+          "warmSeconds": 0.495,
+          "warmRealTimeFactor": 0.11
+        },
+        {
+          "name": "sentence-am_michael",
+          "bucket": 256,
+          "frames": 247,
+          "relL2": 0.0268,
+          "logMelMean": 0.011,
+          "bound": 0.05,
+          "passed": true,
+          "refusedAboveCap": false,
+          "warmSeconds": 0.494,
+          "warmRealTimeFactor": 0.08
+        },
+        {
+          "name": "medium-af_bella",
+          "bucket": 512,
+          "frames": 442,
+          "relL2": 0.0254,
+          "logMelMean": 0.015,
+          "bound": 0.05,
+          "passed": true,
+          "refusedAboveCap": false,
+          "warmSeconds": 1.011,
+          "warmRealTimeFactor": 0.091
+        },
+        {
+          "name": "long-af_bella",
+          "bucket": null,
+          "frames": 913,
+          "relL2": null,
+          "logMelMean": null,
+          "bound": null,
+          "passed": true,
+          "refusedAboveCap": true,
+          "warmSeconds": 0,
+          "warmRealTimeFactor": 0
+        }
+      ],
+      "bucket512MemoryProbe": {
+        "frames": 463,
+        "warmSeconds": 1.007
+      },
+      "footprintPeakMiB": 2144,
+      "availableMemoryMiBMinimum": 1292,
+      "footprintAfterUnloadMiB": 1094,
+      "firstUtteranceSeconds": 7.0,
+      "report": "kokoro-iphone18-bucket512-2026-10-28.json"
+    },
+    {
+      "item": "B. Kokoro float16-compute decoder, decoder-only, bucket 256, preferGPU",
+      "host": "Examples/SpeechDevice (decoder-only mode)",
+      "result": "aborted",
+      "detail": "The float32 decoder ran its three calls (peak footprint 564 MiB). The float16-compute decoder opened and aborted on its first call with SIGABRT: MPSGraph ANERegion.mm:445 failed assertion 'ANE inference operation failed', Error Domain=com.apple.metalperformanceshadersgraph Code=-19. The macOS 27.0.1 run of 2026-10-26 failed with the same assertion message at ANERegion.mm:414. No float16 timing or accuracy was obtained.",
+      "log": "kokoro-iphone18-fp16-ane-abort-2026-10-28.log"
+    },
+    {
+      "item": "C. Qwen3-0.6B, bucketed fp16, registered for iOS",
+      "host": "Examples/LanguageDevice (text)",
+      "bundleModelSHA256": "d1c7232962eb5a6f1f31b71cfce03f734a43476ec90558deb7aab012504ff734",
+      "passed": true,
+      "signingNote": "Built with CODE_SIGN_ENTITLEMENTS pointed at an empty entitlements file on the command line, because the 0.6B needs no increased memory limit and the wildcard profile cannot carry it; an empty CODE_SIGN_ENTITLEMENTS override did not take effect. The signed app carries no memory entitlement.",
+      "forcedRows": 64,
+      "forcedMinimumCosine": 0.999998678893086,
+      "forcedArgmaxMismatches": 1,
+      "forcedMismatchesAtNearTies": 1,
+      "greedyFirstDivergence": 58,
+      "greedyDivergenceReferenceMargin": 0.0001476034895491756,
+      "greedyAccepted": true,
+      "openSeconds": 4.57,
+      "promptTokens": 33,
+      "timeToFirstTokenSeconds": 0.037,
+      "totalSeconds": 1.51,
+      "footprintPeakMiB": 219,
+      "availableMemoryMiBMinimum": 3166,
+      "footprintAfterUnloadMiB": 174,
+      "gate": "text: every teacher-forced row cosine >= 0.995 against the float32 reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token in the reference top-5); greedy identical to the reference (its final stop token excluded) or first diverging at such a near-tie. vision: Kit decodes and preprocesses the photo the reference was made from; greedy identical or first diverging at a near-tie of the reference's teacher-forced row there",
+      "report": "language-iphone18-qwen3-0.6b-2026-10-28.json",
+      "availableMemoryMiBAtStart": 3368.0,
+      "entitlement": "ran without the increased-memory-limit entitlement (default app memory limit)"
+    },
+    {
+      "item": "D1. Qwen3-VL-2B one-function, registered for iOS (4.29 GB staged), built as committed with the increased-memory-limit entitlement",
+      "host": "Examples/LanguageDevice (vision), with LanguageDeviceProbe.entitlements (increased-memory-limit)",
+      "result": "not run: signing refused",
+      "detail": "xcodebuild stopped at signing: the only profile covering the app's bundle ID is the team wildcard, which can't carry the increased-memory-limit capability. The explicit App ID with that capability is the user's to register. Nothing was installed.",
+      "log": "qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log"
+    },
+    {
+      "item": "D2. Qwen3-VL-2B, the same bundle, without the entitlement (empty entitlements file on the command line, as for C)",
+      "host": "Examples/LanguageDevice (vision, case photo-dog-portrait)",
+      "result": "aborted while opening: std::bad_alloc in Core AI's model specialization",
+      "detail": "The process aborted 8.7 s after launch, before the session finished opening: an uncaught std::bad_alloc from MetalPerformanceShadersGraph while MPSGraph's runtime canonicalization folded a transpose during Core AI's model specialization, SIGABRT. Not a jetsam kill (no JetsamEvent named the probe) and not a Kit refusal (the probe opens without resource admission). The default limit leaves the app 3,368 MiB at launch; the bundle's decoder and vision assets total 4.29 GB. Launch and crash timestamps are in the crash excerpt.",
+      "report": "qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json"
+    }
+  ],
+  "notVerified": [
+    "Qwen3-VL-2B on device with the increased memory limit (D3, waiting on the user's App ID registration)",
+    "Kokoro float16 timing and accuracy on device (aborted)",
+    "the writer 4B, VL-4B, Krea and FLUX.2 on iPhone (out of the budget without quantization, or iOS support is 0.0.4)"
+  ],
+  "systemJetsamDuringC": "At 11:22, during item C, the system jetsammed two background processes (vm-compressor-thrashing and highwater); the probe was not among them."
+}

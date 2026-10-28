@@ -1,0 +1,17 @@
+{
+ "validRows": 93,
+ "L": 512,
+ "referenceStep0VsUnpadded": 0.0,
+ "paddedVsUnpadded": {
+  "relL2": 0.7946553826332092,
+  "cosine": 0.6597521104036513
+ },
+ "unmaskedVsUnpadded": {
+  "relL2": 0.7946553826332092,
+  "cosine": 0.6597521104036513
+ },
+ "maskedVsUnpadded": {
+  "relL2": 1.697276093182154e-05,
+  "cosine": 0.9999999998559671
+ }
+}

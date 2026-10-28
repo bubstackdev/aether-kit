@@ -1,0 +1,106 @@
+== export-dit
+eager fp32 CPU step T=1500 L=512: 2.0s
+torch.export 7.1s
+dit-1500x512-fp16.aimodel exported in 16.0s
+       26.25 real        22.69 user         4.49 sys
+         16127393792  maximum resident set size
+         12918157312  peak memory footprint
+== export-dit-masked
+eager fp32 CPU step T=1500 L=512: 4.6s
+torch.export 11.2s
+dit-1500x512-fp16.aimodel exported in 20.5s
+       32.30 real        30.93 user         8.10 sys
+         16127197184  maximum resident set size
+         12917944296  peak memory footprint
+== export-text
+text-encoder-256-fp16.aimodel exported in 6.0s
+        9.19 real         7.82 user         1.73 sys
+          5037195264  maximum resident set size
+          4636594736  peak memory footprint
+== export-condition
+condition-256x512-fp16.aimodel exported in 2.5s
+       11.24 real        10.15 user         1.92 sys
+          8434008064  maximum resident set size
+          8343624448  peak memory footprint
+== export-vae-250
+eager fp32 CPU decode of 250 frames: 1.96s -> (1, 2, 480000)
+vae-dec-250-fp16.aimodel exported in 1.0s
+        5.73 real         7.21 user         1.65 sys
+          6826180608  maximum resident set size
+          6643783296  peak memory footprint
+== export-vae-1500
+eager fp32 CPU decode of 1500 frames: 25.99s -> (1, 2, 2880000)
+vae-dec-1500-fp16.aimodel exported in 1.4s
+       30.90 real        32.92 user        18.14 sys
+         22757163008  maximum resident set size
+         28270465952  peak memory footprint
+== export-vae-1500-fp32
+vae-dec-1500-fp32.aimodel exported in 1.4s
+        6.45 real         3.95 user         1.43 sys
+          2742550528  maximum resident set size
+          2479426320  peak memory footprint
+== export-vae-250-fp32
+vae-dec-250-fp32.aimodel exported in 1.1s
+        3.68 real         2.66 user         0.73 sys
+          2742321152  maximum resident set size
+          2479196896  peak memory footprint
+== references
+     3040.81 real      3625.50 user        85.28 sys
+         41066774528  maximum resident set size
+         40719235240  peak memory footprint
+== references-vocal
+     3038.00 real      3637.28 user        82.77 sys
+         39356547072  maximum resident set size
+         40601450784  peak memory footprint
+== references-fp32-redo
+       77.36 real       106.74 user        19.68 sys
+         40540143616  maximum resident set size
+         40539239992  peak memory footprint
+== gpu-trajectory-all
+        5.65 real         0.67 user         1.00 sys
+          6357843968  maximum resident set size
+          4774727784  peak memory footprint
+== gpu-encoders-all
+       15.35 real         1.70 user         2.66 sys
+          8388345856  maximum resident set size
+          6302603624  peak memory footprint
+== vae-timing
+        9.28 real         0.28 user         0.55 sys
+          1006321664  maximum resident set size
+         13952108296  peak memory footprint
+== time-vae-dec-1500-fp16
+        2.71 real         0.11 user         0.22 sys
+           389234688  maximum resident set size
+          4544906536  peak memory footprint
+== time-vae-dec-1500-fp32
+        6.66 real         0.23 user         0.36 sys
+           726794240  maximum resident set size
+          9607677416  peak memory footprint
+== time-vae-dec-250-fp16
+        0.56 real         0.11 user         0.11 sys
+           389234688  maximum resident set size
+           939427016  peak memory footprint
+== time-vae-dec-250-fp32
+        1.47 real         0.23 user         0.20 sys
+           804110336  maximum resident set size
+          1782793608  peak memory footprint
+== tiled-fp16
+       11.69 real         4.32 user         1.12 sys
+          1298366464  maximum resident set size
+          6053480440  peak memory footprint
+== tiled-fp32
+       25.44 real         5.40 user         1.67 sys
+          1857159168  maximum resident set size
+         12151245200  peak memory footprint
+== diag-mask-eager
+       24.83 real        25.69 user        13.53 sys
+         16125214720  maximum resident set size
+         12918943768  peak memory footprint
+== tiled-fp32-alone
+        5.50 real         0.56 user         0.69 sys
+           758693888  maximum resident set size
+          2083833464  peak memory footprint
+== go-pipeline
+        9.00 real         1.73 user         1.82 sys
+          8394833920  maximum resident set size
+          2682378504  peak memory footprint

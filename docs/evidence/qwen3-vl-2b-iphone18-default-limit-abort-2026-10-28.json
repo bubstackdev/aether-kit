@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "subject": "Qwen3-VL-2B on iPhone without the increased-memory-limit entitlement (iPhone batch item D2)",
+  "date": "2026-10-28",
+  "device": {
+    "model": "iPhone18,2",
+    "os": "iOS 27.2 (24B119)",
+    "availableMemoryMiBAtStart": "3,368 (measured at launch in items A and C; the probe printed nothing before it aborted)"
+  },
+  "build": "Examples/LanguageDevice (vision mode, one case photo-dog-portrait), the Qwen3-VL-2B one-function bundle registered for iOS (model fdda4278…, 4.29 GB staged); CODE_SIGN_ENTITLEMENTS pointed at an empty entitlements file on the command line, so the app ran at the default memory limit",
+  "outcome": "The process aborted 8.7 s after launch, before the probe's first progress line (\"session opened\"): `libc++abi: terminating due to uncaught exception of type std::bad_alloc`, SIGABRT. The failed allocation was MetalPerformanceShadersGraph's, while MPSGraph's runtime canonicalization folded a transpose during Core AI's model specialization (on Core AI's compiler queue). It was neither a jetsam kill nor a refusal by Kit; the probe opens the session without resource admission. Kit cannot catch it: the abort happens inside Core AI's compiler.",
+  "crashReport": {
+    "exception": {
+      "codes": "0x0000000000000000, 0x0000000000000000",
+      "rawCodes": [
+        0,
+        0
+      ],
+      "type": "EXC_CRASH",
+      "signal": "SIGABRT"
+    },
+    "termination": {
+      "code": 6,
+      "namespace": "SIGNAL",
+      "indicator": "Abort trap: 6"
+    },
+    "faultingThreadTopFrames": [
+      "libsystem_kernel.dylib  __pthread_kill",
+      "libsystem_pthread.dylib  pthread_kill",
+      "libsystem_c.dylib  __abort",
+      "libsystem_c.dylib  abort",
+      "libc++abi.dylib  __abort_message",
+      "libc++abi.dylib  demangling_terminate_handler()",
+      "libobjc.A.dylib  _objc_terminate()",
+      "libc++abi.dylib  std::__terminate(void (*)())",
+      "libc++abi.dylib  __cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*)",
+      "libc++abi.dylib  __cxa_throw",
+      "libc++abi.dylib  operator new(unsigned long, std::align_val_t) (.cold.1)",
+      "libc++abi.dylib  operator new(unsigned long, std::align_val_t)",
+      "MetalPerformanceShadersGraph  mlir::mps::(anonymous namespace)::BumpMmapResourceAllocator::allocateResource(unsigned long, unsigned long)",
+      "MetalPerformanceShadersGraph  mlir::mps::MPSResourceBlobManagerInterface::allocateBufferTensorBlob(unsigned long, unsigned long)",
+      "MetalPerformanceShadersGraph  mlir::mps::createBlobHandle(mlir::MLIRContext*, unsigned long, unsigned long)",
+      "MetalPerformanceShadersGraph  mlir::mps::getBufferTensorAttr(mlir::RankedTensorType)",
+      "MetalPerformanceShadersGraph  mlir::tryCreateMutableElementsAttr(mlir::RankedTensorType, mlir::ElementsAttr&)",
+      "MetalPerformanceShadersGraph  mlir::mps::CPUNDArray::tryMakeAliasedArray(mlir::ShapedType, mlir::ElementsAttr*)",
+      "MetalPerformanceShadersGraph  mlir::mps::foldTransposeOp(mlir::mps::TransposeOp, mlir::ElementsAttr, bool)",
+      "MetalPerformanceShadersGraph  mlir::mps::(anonymous namespace)::CanonicalizeMatMulNNToNT::matchAndRewriteImpl(mlir::mps::TransposeOp, mlir::PatternRewriter&) const",
+      "MetalPerformanceShadersGraph  void llvm::function_ref<void ()>::callback_fn<mlir::PatternApplicator::matchAndRewrite(mlir::Operation*, mlir::PatternRewriter&, llvm::function_ref<bool (mlir::Pattern const&)>, llvm::function_ref<void (mlir::Pattern const&)>, llvm::function_ref<llvm::LogicalResult (mlir::Pattern const&)>)::$_0>(long)",
+      "MetalPerformanceShadersGraph  mlir::PatternApplicator::matchAndRewrite(mlir::Operation*, mlir::PatternRewriter&, llvm::function_ref<bool (mlir::Pattern const&)>, llvm::function_ref<void (mlir::Pattern const&)>, llvm::function_ref<llvm::LogicalResult (mlir::Pattern const&)>)",
+      "MetalPerformanceShadersGraph  (anonymous namespace)::GreedyPatternRewriteDriver::processWorklist()",
+      "MetalPerformanceShadersGraph  mlir::applyPatternsGreedily(mlir::Region&, mlir::FrozenRewritePatternSet const&, mlir::GreedyRewriteConfig, bool*)",
+      "MetalPerformanceShadersGraph  mlir::mps::(anonymous namespace)::RuntimeCanonicalizationPass::canonicalize(mlir::Operation*)",
+      "MetalPerformanceShadersGraph  mlir::mps::(anonymous namespace)::RuntimeCanonicalizationPass::runOnOperation()",
+      "MetalPerformanceShadersGraph  mlir::detail::OpToOpPassAdaptor::run(mlir::Pass*, mlir::Operation*, mlir::AnalysisManager, bool, unsigned int)"
+    ],
+    "vmSummaryExcerpt": [
+      "ReadOnly portion of Libraries: Total=1.5G resident=0K(0%) swapped_out_or_unallocated=1.5G(100%)",
+      "Writable regions: Total=339.1M written=4119K(1%) resident=4119K(1%) swapped_out=80K(0%) unallocated=335.0M(99%)",
+      "Malloc                           249.8M       53 ",
+      "mapped file                        6.9G       62 "
+    ],
+    "note": "Excerpt of the device crash report (bug_type 309). Identifiers (incident and crash-reporter keys, signing team, boot session, USB and device fields) are omitted."
+  },
+  "related": "During item C (11:22), the system jetsammed two background processes (vm-compressor-thrashing and highwater); the probe was not among them.",
+  "timing": {
+    "processLaunch": "2026-10-28 11:29:01.1446 -0600 (crash report procLaunch)",
+    "crashCapture": "2026-10-28 11:29:09.9509 -0600 (crash report captureTime)",
+    "processLifetimeSeconds": 8.73,
+    "lifetimeSource": "(procExitAbsTime - procStartAbsTime) / 24 MHz mach time base, from the crash report"
+  },
+  "jetsam": "No JetsamEvent named the probe as killed. The device's JetsamEvent reports for 2026-10-28 are from 06:47 and 11:22; none falls between this launch (11:29:01) and the crash (11:29:10), and the 11:22 one, during item C, killed two background processes and left the probe running."
+}

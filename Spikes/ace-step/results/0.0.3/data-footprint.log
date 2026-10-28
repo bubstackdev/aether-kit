@@ -1,0 +1,22 @@
+# spike data, du -sh, paths relative to the spike data directory
+5.9G	hf/models--ACE-Step--Ace-Step1.5
+ 30M	ace-step/src
+6.1G	ace-step/exports
+2.9G	ace-step/exports-unmasked-dit-1500x512-fp16.aimodel
+179M	ace-step/references
+168M	ace-step/references-vocal
+ 89M	ace-step/references-fp32-redo
+248M	ace-step/references-all
+398M	ace-step/coreai
+179M	ace-step/coreai-unmasked
+797M	ace-step/coreai-all
+1.5M	ace-step/diag-mask
+ 15M	ace-step/listening
+ 17G	total
+777M	ace-step/exports/condition-256x512-fp16.aimodel
+2.9G	ace-step/exports/dit-1500x512-fp16.aimodel
+1.1G	ace-step/exports/text-encoder-256-fp16.aimodel
+161M	ace-step/exports/vae-dec-1500-fp16.aimodel
+322M	ace-step/exports/vae-dec-1500-fp32.aimodel
+161M	ace-step/exports/vae-dec-250-fp16.aimodel
+322M	ace-step/exports/vae-dec-250-fp32.aimodel

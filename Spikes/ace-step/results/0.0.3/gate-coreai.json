@@ -1,0 +1,433 @@
+{
+ "criteria": "Core AI <= bf16 on final-latent relL2, STFT distance and log-mel (1 - cosine), every prompt",
+ "candidate": "coreai",
+ "referencesDirectory": "references-all",
+ "candidatesDirectory": "coreai-all",
+ "prompts": {
+  "folk-ballad-vocal": {
+   "bf16": {
+    "steps": [
+     {
+      "relL2": 0.0016558782663196325,
+      "cosine": 0.999998629044705
+     },
+     {
+      "relL2": 0.00961038563400507,
+      "cosine": 0.9999538194376505
+     },
+     {
+      "relL2": 0.013129401952028275,
+      "cosine": 0.9999138124277426
+     },
+     {
+      "relL2": 0.02377524971961975,
+      "cosine": 0.9997173380997667
+     },
+     {
+      "relL2": 0.04321970418095589,
+      "cosine": 0.9990657922428996
+     },
+     {
+      "relL2": 0.07403542846441269,
+      "cosine": 0.9972587305441998
+     },
+     {
+      "relL2": 0.12058956176042557,
+      "cosine": 0.9927253553253034
+     },
+     {
+      "relL2": 0.18225011229515076,
+      "cosine": 0.9834013177271843
+     }
+    ],
+    "finalRelL2": 0.24302563071250916,
+    "finalCosine": 0.9705120333760836,
+    "snrDB": 7.984119415283203,
+    "stftDistance": 0.3059268548840082,
+    "logMelCosine": 0.9960624441165131
+   },
+   "coreai": {
+    "steps": [
+     {
+      "relL2": 0.0,
+      "cosine": 1.0
+     },
+     {
+      "relL2": 0.002401949604973197,
+      "cosine": 0.9999971156457137
+     },
+     {
+      "relL2": 0.0029283098410815,
+      "cosine": 0.999995713374748
+     },
+     {
+      "relL2": 0.00661723967641592,
+      "cosine": 0.9999781066045127
+     },
+     {
+      "relL2": 0.012860597111284733,
+      "cosine": 0.9999172992010751
+     },
+     {
+      "relL2": 0.025495188310742378,
+      "cosine": 0.9996749849899914
+     },
+     {
+      "relL2": 0.04406698793172836,
+      "cosine": 0.999029129383473
+     },
+     {
+      "relL2": 0.0727962926030159,
+      "cosine": 0.9973513919830992
+     }
+    ],
+    "finalRelL2": 0.1075969710946083,
+    "finalCosine": 0.994215177075076,
+    "snrDB": 14.095714569091797,
+    "stftDistance": 0.1411149739740207,
+    "logMelCosine": 0.9991811946204334
+   },
+   "checks": {
+    "finalRelL2": true,
+    "stftDistance": true,
+    "logMel": true
+   },
+   "pass": true,
+   "audioDecodedBy": "the Core AI fp32 VAE, for every trajectory",
+   "vaeFp16OnFp32Latents": {
+    "snrDB": 58.03754806518555,
+    "stftDistance": 0.8017152330860551,
+    "logMelCosine": 0.9811008862554264
+   },
+   "asRunAudio": {
+    "snrDB": 14.097024917602539,
+    "stftDistance": 0.8932132613013294,
+    "logMelCosine": 0.9803687908059076
+   },
+   "files": {
+    "folk-ballad-vocal.npz": "2b5d494dc78a464b10d55175f4f23ae13a792c0a7dff3e34f83aecc6a8fbd034",
+    "folk-ballad-vocal-coreai.npz": "621c29fe6f63dd60a0b92b3c61884c7764f7504db9819c0af9148a663f3b7afb",
+    "folk-ballad-vocal-decoded.npz": "9908cd4202cae04d9df74a50fdce6eabbffed8004be17fe3a6ce24a3e88019d1"
+   }
+  },
+  "indie-pop-vocal": {
+   "bf16": {
+    "steps": [
+     {
+      "relL2": 0.001673637772910297,
+      "cosine": 0.9999985994990345
+     },
+     {
+      "relL2": 0.010304485447704792,
+      "cosine": 0.9999469074683048
+     },
+     {
+      "relL2": 0.016027789562940598,
+      "cosine": 0.9998715477308432
+     },
+     {
+      "relL2": 0.022198306396603584,
+      "cosine": 0.9997535874367012
+     },
+     {
+      "relL2": 0.034558892250061035,
+      "cosine": 0.9994026915441517
+     },
+     {
+      "relL2": 0.05542373284697533,
+      "cosine": 0.9984634678788503
+     },
+     {
+      "relL2": 0.09224565327167511,
+      "cosine": 0.9957420083568836
+     },
+     {
+      "relL2": 0.145142063498497,
+      "cosine": 0.9894664457880916
+     }
+    ],
+    "finalRelL2": 0.20448240637779236,
+    "finalCosine": 0.9791034042209729,
+    "snrDB": 9.04047966003418,
+    "stftDistance": 0.25726543396044327,
+    "logMelCosine": 0.9971901432256424
+   },
+   "coreai": {
+    "steps": [
+     {
+      "relL2": 0.0,
+      "cosine": 1.0
+     },
+     {
+      "relL2": 0.004642845597118139,
+      "cosine": 0.9999892220715646
+     },
+     {
+      "relL2": 0.008549035526812077,
+      "cosine": 0.9999634563933352
+     },
+     {
+      "relL2": 0.010086702182888985,
+      "cosine": 0.9999491279226892
+     },
+     {
+      "relL2": 0.013041648082435131,
+      "cosine": 0.999914954537275
+     },
+     {
+      "relL2": 0.019709648564457893,
+      "cosine": 0.999805746015619
+     },
+     {
+      "relL2": 0.030419211834669113,
+      "cosine": 0.9995372313038022
+     },
+     {
+      "relL2": 0.04594464972615242,
+      "cosine": 0.9989441999097894
+     }
+    ],
+    "finalRelL2": 0.06279844790697098,
+    "finalCosine": 0.9980275802938684,
+    "snrDB": 14.913345336914062,
+    "stftDistance": 0.06915382556347294,
+    "logMelCosine": 0.9998325188212832
+   },
+   "checks": {
+    "finalRelL2": true,
+    "stftDistance": true,
+    "logMel": true
+   },
+   "pass": true,
+   "audioDecodedBy": "the Core AI fp32 VAE, for every trajectory",
+   "vaeFp16OnFp32Latents": {
+    "snrDB": 59.342750549316406,
+    "stftDistance": 0.6514947325952208,
+    "logMelCosine": 0.9813469248148685
+   },
+   "asRunAudio": {
+    "snrDB": 14.914421081542969,
+    "stftDistance": 0.6918191859386368,
+    "logMelCosine": 0.9813753359888128
+   },
+   "files": {
+    "indie-pop-vocal.npz": "456cb40bb38f7670a28f77d6193b6266dd7256fab6b8bd3a9aa489278624c9cc",
+    "indie-pop-vocal-coreai.npz": "98833a6bb615a6f10393d6f1966836d1044377c316d972ad52c3a263d224cbd4",
+    "indie-pop-vocal-decoded.npz": "4e76c46829df5686b6acde5a4c7d3735ead5effa10cdfafa42f36f337b50da6a"
+   }
+  },
+  "lofi-instrumental": {
+   "bf16": {
+    "steps": [
+     {
+      "relL2": 0.0016668388852849603,
+      "cosine": 0.999998610838148
+     },
+     {
+      "relL2": 0.015600025653839111,
+      "cosine": 0.9998783194072163
+     },
+     {
+      "relL2": 0.026115061715245247,
+      "cosine": 0.9996590513559288
+     },
+     {
+      "relL2": 0.044866666197776794,
+      "cosine": 0.9989935228186427
+     },
+     {
+      "relL2": 0.07517877966165543,
+      "cosine": 0.9971725749681475
+     },
+     {
+      "relL2": 0.12507633864879608,
+      "cosine": 0.992166574904881
+     },
+     {
+      "relL2": 0.20874007046222687,
+      "cosine": 0.9781341892736786
+     },
+     {
+      "relL2": 0.325276643037796,
+      "cosine": 0.9468817426848365
+     }
+    ],
+    "finalRelL2": 0.4370129406452179,
+    "finalCosine": 0.9040978042809568,
+    "snrDB": -0.802445113658905,
+    "stftDistance": 0.48467276004240434,
+    "logMelCosine": 0.9815892030024428
+   },
+   "coreai": {
+    "steps": [
+     {
+      "relL2": 0.0,
+      "cosine": 1.0
+     },
+     {
+      "relL2": 0.009031166322529316,
+      "cosine": 0.9999592181902393
+     },
+     {
+      "relL2": 0.014905042946338654,
+      "cosine": 0.9998889184577785
+     },
+     {
+      "relL2": 0.030874211341142654,
+      "cosine": 0.9995233386156794
+     },
+     {
+      "relL2": 0.04372003301978111,
+      "cosine": 0.9990439416354125
+     },
+     {
+      "relL2": 0.07090486586093903,
+      "cosine": 0.9974846575438368
+     },
+     {
+      "relL2": 0.13324527442455292,
+      "cosine": 0.9911118416559707
+     },
+     {
+      "relL2": 0.22132724523544312,
+      "cosine": 0.9754779839549712
+     }
+    ],
+    "finalRelL2": 0.3073922395706177,
+    "finalCosine": 0.952718786163546,
+    "snrDB": -0.6789377927780151,
+    "stftDistance": 0.2583091829023045,
+    "logMelCosine": 0.9954749487260487
+   },
+   "checks": {
+    "finalRelL2": true,
+    "stftDistance": true,
+    "logMel": true
+   },
+   "pass": true,
+   "audioDecodedBy": "the Core AI fp32 VAE, for every trajectory",
+   "vaeFp16OnFp32Latents": {
+    "snrDB": 60.6170654296875,
+    "stftDistance": 0.5871324988751677,
+    "logMelCosine": 0.9828989018121375
+   },
+   "asRunAudio": {
+    "snrDB": -0.6773579120635986,
+    "stftDistance": 0.7454066116670838,
+    "logMelCosine": 0.977886475314194
+   },
+   "files": {
+    "lofi-instrumental.npz": "bd6bfb5b9247a1d55a172bf7261d9a0cdb9b8696828f0e5bc1e8e61c39ae7136",
+    "lofi-instrumental-coreai.npz": "c6a9c334584f214ee6440af7932c2105f8dcaaf1f422407ee8c2f3f2a58ee359",
+    "lofi-instrumental-decoded.npz": "f96276b07100db405d95b9750ae417097ac12b64eed175f9bd44494a6eb88339"
+   }
+  },
+  "orchestral-instrumental": {
+   "bf16": {
+    "steps": [
+     {
+      "relL2": 0.0016664249124005437,
+      "cosine": 0.9999986115154442
+     },
+     {
+      "relL2": 0.007051215041428804,
+      "cosine": 0.9999751399472426
+     },
+     {
+      "relL2": 0.008131351321935654,
+      "cosine": 0.9999669402705386
+     },
+     {
+      "relL2": 0.01227793749421835,
+      "cosine": 0.9999246252512812
+     },
+     {
+      "relL2": 0.01934383623301983,
+      "cosine": 0.9998129268027255
+     },
+     {
+      "relL2": 0.031185071915388107,
+      "cosine": 0.9995138446732835
+     },
+     {
+      "relL2": 0.052110668271780014,
+      "cosine": 0.9986413672317275
+     },
+     {
+      "relL2": 0.08258427679538727,
+      "cosine": 0.9965865251899394
+     }
+    ],
+    "finalRelL2": 0.11394275724887848,
+    "finalCosine": 0.9934944572905041,
+    "snrDB": 16.906572341918945,
+    "stftDistance": 0.1785601755264663,
+    "logMelCosine": 0.9983537368253991
+   },
+   "coreai": {
+    "steps": [
+     {
+      "relL2": 0.0,
+      "cosine": 0.9999999999999999
+     },
+     {
+      "relL2": 0.001937641529366374,
+      "cosine": 0.999998127392676
+     },
+     {
+      "relL2": 0.002087054308503866,
+      "cosine": 0.9999978285248787
+     },
+     {
+      "relL2": 0.0032562653068453074,
+      "cosine": 0.9999947099880699
+     },
+     {
+      "relL2": 0.005603628698736429,
+      "cosine": 0.9999843177108722
+     },
+     {
+      "relL2": 0.00874868780374527,
+      "cosine": 0.999961748389735
+     },
+     {
+      "relL2": 0.014275138266384602,
+      "cosine": 0.9998981595237277
+     },
+     {
+      "relL2": 0.023080507293343544,
+      "cosine": 0.9997336274174655
+     }
+    ],
+    "finalRelL2": 0.034156545996665955,
+    "finalCosine": 0.999416617311834,
+    "snrDB": 27.858171463012695,
+    "stftDistance": 0.05164066222202656,
+    "logMelCosine": 0.9998318323576371
+   },
+   "checks": {
+    "finalRelL2": true,
+    "stftDistance": true,
+    "logMel": true
+   },
+   "pass": true,
+   "audioDecodedBy": "the Core AI fp32 VAE, for every trajectory",
+   "vaeFp16OnFp32Latents": {
+    "snrDB": 58.693389892578125,
+    "stftDistance": 0.5359064282950176,
+    "logMelCosine": 0.9816439258431461
+   },
+   "asRunAudio": {
+    "snrDB": 27.859289169311523,
+    "stftDistance": 0.5561327838456228,
+    "logMelCosine": 0.981545863645149
+   },
+   "files": {
+    "orchestral-instrumental.npz": "43156dd337907587d48f74cefc2db04f15ea9071c6f6201796e20e006d081e19",
+    "orchestral-instrumental-coreai.npz": "734fd2bee07e83ae6ee6fdb44386829ff9beb2c59e49ade3ec2d4ac5d29086d2",
+    "orchestral-instrumental-decoded.npz": "e659e10840afe2716b21eea4ec32492efea1f51dfcd9d9505fb18d3c8347a623"
+   }
+  }
+ },
+ "gate": "pass"
+}

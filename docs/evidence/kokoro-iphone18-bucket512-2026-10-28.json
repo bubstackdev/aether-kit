@@ -1,0 +1,126 @@
+{
+  "availableMemoryMiBAtStart": 3368.1859283447266,
+  "availableMemoryMiBMinimum": 1291.950294494629,
+  "bucketProbe": {
+    "availableMiB": 1328.747169494629,
+    "decoderFrames": 512,
+    "firstSeconds": 1.004373084,
+    "footprintMiB": 2047.252830505371,
+    "frames": 463,
+    "warmRealTimeFactor": 0.08699410730021599,
+    "warmSeconds": 1.006956792
+  },
+  "bundleFingerprint": "2448d84471f8f2722fadc6e16259cf9474668a1a29bc34f32abd53397ed8838e",
+  "cases": [
+    {
+      "bound": 0.029168936342142803,
+      "decoderFrames": 128,
+      "firstSeconds": 6.995257125,
+      "footprintMiB": 259.54915618896484,
+      "frames": 98,
+      "framesMatch": true,
+      "name": "short-af_heart",
+      "native": {
+        "log_mel_max_abs": 0.14278956981769197,
+        "log_mel_mean_abs": 0.003990827992507229,
+        "max_abs": 0.00805441290140152,
+        "rel_l2": 0.010214216056719742,
+        "snr_db": 39.81589919894821
+      },
+      "passed": true,
+      "refusedAboveCap": false,
+      "tokensMatch": true,
+      "warmRealTimeFactor": 0.09747857142857141,
+      "warmSeconds": 0.2388225
+    },
+    {
+      "bound": 0.05,
+      "decoderFrames": 256,
+      "firstSeconds": 0.924150625,
+      "footprintMiB": 654.6743850708008,
+      "frames": 180,
+      "framesMatch": true,
+      "name": "speed-bf_emma",
+      "native": {
+        "log_mel_max_abs": 0.4385415244390094,
+        "log_mel_mean_abs": 0.007004539090352411,
+        "max_abs": 0.059729017317295074,
+        "rel_l2": 0.03308295316517794,
+        "snr_db": 29.607914597809526
+      },
+      "passed": true,
+      "refusedAboveCap": false,
+      "tokensMatch": true,
+      "warmRealTimeFactor": 0.11007616666666667,
+      "warmSeconds": 0.49534275
+    },
+    {
+      "bound": 0.05,
+      "decoderFrames": 256,
+      "firstSeconds": 0.500548416,
+      "footprintMiB": 655.7056579589844,
+      "frames": 247,
+      "framesMatch": true,
+      "name": "sentence-am_michael",
+      "native": {
+        "log_mel_max_abs": 0.3372164428922457,
+        "log_mel_mean_abs": 0.01097657961970257,
+        "max_abs": 0.023557308595627546,
+        "rel_l2": 0.026780616819043836,
+        "snr_db": 31.443588488211272
+      },
+      "passed": true,
+      "refusedAboveCap": false,
+      "tokensMatch": true,
+      "warmRealTimeFactor": 0.07998615384615385,
+      "warmSeconds": 0.4939145
+    },
+    {
+      "bound": 0.05,
+      "decoderFrames": 512,
+      "firstSeconds": 1.469381917,
+      "footprintMiB": 2046.002830505371,
+      "frames": 442,
+      "framesMatch": true,
+      "name": "medium-af_bella",
+      "native": {
+        "log_mel_max_abs": 0.7494026602668828,
+        "log_mel_mean_abs": 0.014951535463130416,
+        "max_abs": 0.0357825830578804,
+        "rel_l2": 0.02536559029532439,
+        "snr_db": 31.915100530902297
+      },
+      "passed": true,
+      "refusedAboveCap": false,
+      "tokensMatch": true,
+      "warmRealTimeFactor": 0.0914663838914027,
+      "warmSeconds": 1.010703542
+    },
+    {
+      "bound": 0,
+      "decoderFrames": 0,
+      "firstSeconds": 0,
+      "footprintMiB": 2054.268455505371,
+      "frames": 913,
+      "framesMatch": false,
+      "name": "long-af_bella",
+      "passed": true,
+      "refusedAboveCap": true,
+      "tokensMatch": true,
+      "warmRealTimeFactor": 0,
+      "warmSeconds": 0
+    }
+  ],
+  "decoderPrecision": "float32",
+  "device": {
+    "memoryGiB": "11.4",
+    "model": "iPhone18,2",
+    "os": "Version 27.2 (Build 24B119)"
+  },
+  "failures": [],
+  "footprintAfterUnloadMiB": 1093.6425857543945,
+  "footprintPeakMiB": 2144.2997283935547,
+  "frameCap": 512,
+  "loadAndVerifySeconds": 0.10313875,
+  "passed": true
+}

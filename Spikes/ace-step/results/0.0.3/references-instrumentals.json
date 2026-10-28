@@ -1,0 +1,21 @@
+{
+ "snapshot": "19671f406d603126926c1b7e2adc169acbcade22",
+ "frames": 1500,
+ "shift": 3.0,
+ "encoderLength": 512,
+ "prompts": {
+  "lofi-instrumental": {
+   "conditionTokens": 93,
+   "conditionSeconds": 0.9008679389953613,
+   "fp32TrajectorySeconds": 13.394150972366333,
+   "upstreamGenerateAudioRelL2": 1.0250480954709928e-05,
+   "bf16TrajectorySeconds": 1325.7997620105743
+  },
+  "orchestral-instrumental": {
+   "conditionTokens": 90,
+   "conditionSeconds": 1.4472041130065918,
+   "fp32TrajectorySeconds": 11.924353122711182,
+   "bf16TrajectorySeconds": 1267.6066598892212
+  }
+ }
+}
