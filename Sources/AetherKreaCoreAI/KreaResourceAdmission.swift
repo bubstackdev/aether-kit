@@ -3,6 +3,7 @@ import AetherKit
 import AetherKrea
 
 /// Caller-qualified maximum estimates for one exact model stream and descriptor pair.
+@available(macOS 27, iOS 27, *)
 public struct KreaModelResourceEstimate: Sendable {
     let identity: String
     let residentBytes: UInt64
@@ -17,6 +18,7 @@ public struct KreaModelResourceEstimate: Sendable {
 /// Opt-in reservations for host operation storage and every loaded model/native call. Estimates must
 /// include load peaks, overlapping host carries/copies and all shapes up to the stated limits.
 /// This is admission of caller estimates, not allocator enforcement or a measured memory guarantee.
+@available(macOS 27, iOS 27, *)
 public struct KreaResourceAdmission: Sendable {
     public let coordinator: ResourceCoordinator
     public let operationBytes: UInt64
@@ -58,6 +60,7 @@ public struct KreaResourceAdmission: Sendable {
 
 /// The decorator is also used by controlled pipeline tests, so native and fake factories share admission ordering.
 /// Residency and per-call scratch are reserved by the package's shared `openBudgeted` decorator.
+@available(macOS 27, iOS 27, *)
 struct BudgetedKreaFactory: KreaModelFactory {
     let base: any KreaModelFactory
     let resources: KreaResourceAdmission

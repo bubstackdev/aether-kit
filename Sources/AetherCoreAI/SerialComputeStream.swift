@@ -12,6 +12,7 @@ import Metal
 /// the lifecycle admission of the language sessions). So a join never overlaps another encode or join
 /// on the same stream, which is what `@unchecked Sendable` asserts here. Remove this type once Core AI
 /// annotates the stream.
+@available(macOS 27, iOS 27, *)
 package final class SerialComputeStream: @unchecked Sendable {
     private let stream: ComputeStream
 

@@ -1,6 +1,7 @@
 import Foundation
 
 /// Pure capacity and row-copy rules shared by the native adapter and CPU tests.
+@available(macOS 27, iOS 27, *)
 enum LanguageCachePlan {
     static func nextCapacity(current: Int, needed: Int, maximum: Int) throws -> Int {
         guard current > 0, needed >= 0, maximum >= current, needed <= maximum else {

@@ -3,6 +3,7 @@ import AetherKit
 /// How a language asset's `main` function addresses its KV cache. Detected from the function
 /// signature, so registered bundles need no manifest change. Pure rules shared by the native
 /// session and CPU tests.
+@available(macOS 27, iOS 27, *)
 public enum LanguageStepContract: String, Sendable, Equatable {
     /// Inputs `input_ids` [1, q] and `position_ids` [1, total] = 0..<total; states `keyCache` and
     /// `valueCache`, written in place; output `logits` [1, q, vocab]. The 0.0.1 and Apple LLM export
@@ -158,6 +159,7 @@ public enum LanguageStepContract: String, Sendable, Equatable {
 
 /// One prefill submission: `count` tokens at `offset` from the run's start. Bucketed offsets can step
 /// back over rows already written (the run's last chunk).
+@available(macOS 27, iOS 27, *)
 struct LanguagePrefillChunk: Sendable, Equatable {
     let offset: Int
     let count: Int

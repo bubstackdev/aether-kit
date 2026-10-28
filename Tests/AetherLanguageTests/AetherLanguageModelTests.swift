@@ -72,6 +72,19 @@ struct AetherLanguageModelTests {
         }
     }
 
+    @Test func belowTheCoreAIFloorEveryBundleIsUnsupportedOS() async throws {
+        let good = try TemporaryBundle()
+        defer { good.remove() }
+        let empty = FileManager.default.temporaryDirectory.appendingPathComponent("no-bundle-\(UUID().uuidString)")
+        for bundle in [good.url, empty] {
+            let model = AetherLanguageModel(bundle: bundle, platform: .macos, coreAIAvailable: false)
+            #expect(model.availability == .unavailable(.unsupportedOS) && model.contextLength == 0)
+            do { try await model.prewarm(); Issue.record("loaded below the Core AI floor") }
+            catch AetherLanguageError.unavailable(let reason) { #expect(reason == .unsupportedOS) }
+        }
+        #expect(AetherLanguageModel(bundle: good.url, platform: .macos, coreAIAvailable: true).availability == .available)
+    }
+
     @Test func unavailableModelsRefuseRequestsWithTheirReason() async throws {
         let model = AetherLanguageModel(bundle: URL(filePath: "/nonexistent"), availability: .unavailable(.unsupportedOS),
                                         supportsReasoning: false, contextLength: 0) { Issue.record("loaded"); throw CancellationError() }

@@ -83,23 +83,10 @@ not on the session actor.
 
 ## Where the protocol lives, and the deployment floor
 
-`AetherLanguageRuntime` must build at a floor below macOS 27 (macOS 14 is the facade's target) once the
-package's `platforms` drop. SwiftPM has no per-target deployment floor. When the package floor drops, every Core AI
-declaration needs `@available(macOS 27, iOS 27, *)`, and the facade needs a runtime `#available` check before it opens
-the Core AI backend. That's the deployment-floor piece's work. This seam only has to avoid making it harder:
-- **Not AetherKit.** AetherKit is the obvious home and already holds `LanguageModelManifest`, but it uses `Mutex` from
-  `Synchronization`, which needs macOS 15. Lowering AetherKit is real work of its own (gating `GPUAdmission`,
-  `SharedGPULease` and `ResourceCoordinator`, or replacing their locks). Putting the protocol there would tie the facade's
-  launch on macOS 14 to that work.
-- **No Core AI or Metal types in its surface,** and none in its imports. The facade holds an `any LanguageBackend`
-  with no availability annotation, and reports "unsupported OS" when no conforming backend is available.
-- **Checked while the floor is still 27:** `Scripts/check-floor.sh` typechecks the target's sources on
-  their own at macOS 14.0 and iOS 17.0 (`swiftc -typecheck -target arm64-apple-macos14.0`, and the iOS equivalent when
-  the SDK is installed). CI runs it before the release suite. The deployment-floor piece then turns that into a real
-  build.
-- **Known risk, outside this piece:** `AetherCoreAI` links `CoreAI` with `linkedFramework`. If that stays a strong
-  load command, a facade binary won't launch on macOS 14 at all, whatever the protocol does. The deployment-floor work
-  owns the fix, likely `-weak_framework CoreAI` plus availability gating of the Core AI targets.
+`AetherLanguageRuntime` builds at the package floor, macOS 14 and iOS 17, with no availability annotations: it has no
+Core AI or Metal types in its surface or its imports. The facade holds an `any LanguageBackend` and reports "unsupported
+OS" when no conforming backend is available. The [deployment floor](deployment-floor.md) gates the Core AI targets at OS
+27 and checks that a facade binary links `CoreAI` weakly and launches on macOS 14.
 
 ## `LanguageBackend`
 
@@ -492,7 +479,7 @@ The user confirmed the first four on 2026-10-27; the rest are the lead's answers
 
 - **Facade default:** greedy. Apps opt into sampling per request. The seam's default is greedy too, and the token
   identity above holds for it.
-- **Floor:** macOS 14 and iOS 17. The strong `CoreAI` link belongs to the deployment-floor work.
+- **Floor:** macOS 14 and iOS 17, the package floor ([deployment floor](deployment-floor.md)).
 - **Images through the facade:** none in 0.0.3, so commit 6 stays after the decoder rework.
 - **Log-probabilities:** none for now. The per-token callback takes a struct (`LanguageGeneratedToken`), so they can be
   added without breaking it.

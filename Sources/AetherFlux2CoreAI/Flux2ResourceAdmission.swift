@@ -4,6 +4,7 @@ import AetherFlux2
 import AetherKit
 
 /// A caller-qualified maximum estimate for one exact model stream and metadata pair.
+@available(macOS 27, iOS 27, *)
 public struct Flux2ModelResourceEstimate: Sendable {
     let identity: String
     let residentBytes: UInt64
@@ -20,6 +21,7 @@ public struct Flux2ModelResourceEstimate: Sendable {
 /// peak) and each native call's scratch. Estimates must cover every shape up to `maximumImageTokens`
 /// (generated plus reference tokens). Unknown model bytes and larger shapes refuse before loading.
 /// This is admission of estimates, not a measured footprint or allocator enforcement.
+@available(macOS 27, iOS 27, *)
 public struct Flux2ResourceAdmission: Sendable {
     public let coordinator: ResourceCoordinator
     public let operationBytes: UInt64
@@ -55,6 +57,7 @@ public struct Flux2ResourceAdmission: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BudgetedFlux2Factory: Flux2ModelFactory {
     let base: any Flux2ModelFactory
     let resources: Flux2ResourceAdmission

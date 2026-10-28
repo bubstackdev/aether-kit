@@ -1,6 +1,7 @@
 import Accelerate
 
 /// Reading a step's logits for the sampler. Pure, so CPU tests check it exactly.
+@available(macOS 27, iOS 27, *)
 enum LanguageLogitsRow {
     /// The last row of [1, rows, count] fp16 logits as Float. Exact: every fp16 value, NaN and the infinities included,
     /// is representable as a Float. A contiguous row converts with vImage into a new array instead of element by element

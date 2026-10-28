@@ -17,6 +17,7 @@ import AetherKit
 /// at once, later admissions are refused, an idle reload is cancelled (an in-progress load
 /// finishes, then is dropped), and a request inside its reload fails with `closed` when the reload
 /// returns. So close never waits behind the GPU queue, at most for one model load.
+@available(macOS 27, iOS 27, *)
 final class LanguageRequestAdmission {
     private var pending: [ObjectIdentifier: GPUAdmissionAttempt] = [:]
     private(set) var withdrawn = false
