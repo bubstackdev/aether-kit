@@ -1,0 +1,68 @@
+{
+ "captured": {
+  "selfChamferBaseline": 0.0014202422097406111,
+  "codesCosine": 0.999999575401371,
+  "codesMaxRelErr": 0.0020578338529378343,
+  "vertexToRefVertexP99": 0.0013121754226214962,
+  "vertexToRefVertexMax": 0.0026126497591950544,
+  "signedVolume": 0.08783773332834244,
+  "watertight": true,
+  "refGridMax": 28659.8984375,
+  "refGridAboveFp16Max": 0
+ },
+ "chair": {
+  "selfChamferBaseline": 0.0014217355294604487,
+  "codesCosine": 0.9999995630997178,
+  "codesMaxRelErr": 0.0016908431211502383,
+  "vertexToRefVertexP99": 0.0014955985715706807,
+  "vertexToRefVertexMax": 0.0026620633742557866,
+  "signedVolume": 0.06456026434898376,
+  "watertight": true,
+  "refGridMax": 3261.2216796875,
+  "refGridAboveFp16Max": 0
+ },
+ "hamburger": {
+  "selfChamferBaseline": 0.0016049534226860046,
+  "codesCosine": 0.9999992568608798,
+  "codesMaxRelErr": 0.002326590655209387,
+  "vertexToRefVertexP99": 0.0012534951855955579,
+  "vertexToRefVertexMax": 0.005719152118955443,
+  "signedVolume": 0.08188783377408981,
+  "watertight": true,
+  "refGridMax": 108673.1328125,
+  "refGridAboveFp16Max": 45
+ },
+ "poly_fox": {
+  "selfChamferBaseline": 0.0014931775511652832,
+  "codesCosine": 0.9999996207536428,
+  "codesMaxRelErr": 0.0013138264951744157,
+  "vertexToRefVertexP99": 0.0011922554948061177,
+  "vertexToRefVertexMax": 0.0027121338085290153,
+  "signedVolume": 0.1009015217423439,
+  "watertight": true,
+  "refGridMax": 10153.1591796875,
+  "refGridAboveFp16Max": 0
+ },
+ "robot": {
+  "selfChamferBaseline": 0.001617196263649663,
+  "codesCosine": 0.9999995643216304,
+  "codesMaxRelErr": 0.001990959582135291,
+  "vertexToRefVertexP99": 0.0011371144817984569,
+  "vertexToRefVertexMax": 0.0023266120531727033,
+  "signedVolume": 0.25477325916290283,
+  "watertight": true,
+  "refGridMax": 8110.66845703125,
+  "refGridAboveFp16Max": 0
+ },
+ "teapot": {
+  "selfChamferBaseline": 0.0014041248596980275,
+  "codesCosine": 0.9999995626232808,
+  "codesMaxRelErr": 0.0014672205061748466,
+  "vertexToRefVertexP99": 0.001312262142472393,
+  "vertexToRefVertexMax": 0.0027524426166321,
+  "signedVolume": 0.09725990891456604,
+  "watertight": true,
+  "refGridMax": 11859.970703125,
+  "refGridAboveFp16Max": 0
+ }
+}

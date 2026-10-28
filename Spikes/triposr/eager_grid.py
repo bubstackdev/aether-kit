@@ -3,6 +3,7 @@
 usage: eager_grid.py <tsr-source-dir> <export-dir> <results-dir> [res]
 """
 import sys
+import os
 import time
 import types
 from pathlib import Path
@@ -18,7 +19,8 @@ from tsr.system import TSR  # noqa: E402
 E, R = Path(sys.argv[2]), Path(sys.argv[3])
 res = int(sys.argv[4]) if len(sys.argv) > 4 else 256
 R.mkdir(parents=True, exist_ok=True)
-snap = next((Path.home() / ".cache/huggingface/hub/models--stabilityai--TripoSR/snapshots").iterdir())
+hub = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
+snap = next((hub / "models--stabilityai--TripoSR/snapshots").iterdir())
 model = TSR.from_pretrained(str(snap), config_name="config.yaml", weight_name="model.ckpt").eval()
 codes = torch.from_numpy(np.load(E / "ref-scene-codes.npy"))
 lin = torch.linspace(0, 1, res) * 2 * 0.87 - 0.87
