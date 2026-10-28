@@ -619,9 +619,9 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
     }
     // Every recorded entry decodes and is within the bar; an unmeasured identity has no estimate.
     for entry in try H3MeasuredResources.bundled() { try entry.validate() }
-    // The recorded entry for the qualified tiled-encoder profile (memory gate, both orientations, T2VA and FL2VA).
+    // The recorded entry for the qualified tiled-encoder profile in its Kit-owned home (memory gate, both orientations, T2VA and FL2VA).
     let recorded = try H3MeasuredResources.bundled(
-        executionIdentity: "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8", deviceArchitecture: "h17c")
+        executionIdentity: "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8", deviceArchitecture: "h17c")
     #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
     #expect(recorded.stagePeakBytes.values.max()! + H3MeasuredResources.marginBytes + recorded.operationBytes <= H3MeasuredResources.memoryBarBytes)
     #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"])

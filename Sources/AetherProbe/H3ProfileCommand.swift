@@ -10,11 +10,11 @@ import Metal
 /// Raw tensor directory: `manifest.json` names every little-endian tensor file with its dtype, shape and SHA-256, so
 /// the CPU oracle (`Scripts/prepare-h3-profile-oracle.py`) and the comparison script read exactly these bytes.
 @available(macOS 27, iOS 27, *)
-private struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
+struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
 @available(macOS 27, iOS 27, *)
-private struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
+struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
 @available(macOS 27, iOS 27, *)
-private final class H3RawDirectory {
+final class H3RawDirectory {
     let url: URL
     var tensors: [String: H3RawEntry] = [:]
     var fields: [String: String] = [:]
@@ -437,6 +437,12 @@ extension H3ProfileCommand {
     }
 }
 
+@available(macOS 27, iOS 27, *)
+extension H3ProfileCommand {
+    /// The dump's keyframe (FL2VA dumps), if any.
+    static func dumpKeyframe(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? { try firstFrame(dump, geometry: geometry) }
+}
+
 /// The dump's keyframe (FL2VA dumps), if any.
 @available(macOS 27, iOS 27, *)
 private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? {
@@ -474,7 +480,7 @@ private actor H3StageClock {
 /// selected steps: input latents, packed (block 0's input), blocks 0 and 49, block 48's output (`context49`, block
 /// 49's input), heads and updated latents.
 @available(macOS 27, iOS 27, *)
-private actor H3TrajectoryRecorder {
+actor H3TrajectoryRecorder {
     struct Summary { let hashes: Int; let mismatches: [String]? }
     private let out: H3RawDirectory?
     private let steps: Set<Int>?

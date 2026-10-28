@@ -1,0 +1,448 @@
+{
+  "schema": 1,
+  "kind": "h3-session-lifecycle-qualification",
+  "date": "2026-10-28",
+  "passed": true,
+  "build": "4c32d7c (v0.0.3/h3-memory after merging main; the memory gate's pinned probe)",
+  "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+  "canvas": "288x288x22, Turbo8, seed 1043",
+  "command": "aether-probe qualify-h3-session-lifecycle PROFILE DUMP NEW_DIR [--scenarios=...] under with-gpu-lock.sh",
+  "host": "busy (one-minute load 50-133; an unrelated transcode saturated the CPU); timings are not a reference",
+  "gpuLock": [
+    "2026-10-28 02:30:08 acquired pid=13056 h3-promotion: lifecycle qualifying t2va part1",
+    "2026-10-28 02:35:31 released pid=13056 h3-promotion: lifecycle qualifying t2va part1 rc=0",
+    "2026-10-28 02:35:31 acquired pid=16530 h3-promotion: lifecycle qualifying t2va part2",
+    "2026-10-28 02:45:46 released pid=16530 h3-promotion: lifecycle qualifying t2va part2 rc=0",
+    "2026-10-28 02:46:30 acquired pid=22001 h3-promotion: lifecycle qualifying fl2va all",
+    "2026-10-28 02:53:02 released pid=22001 h3-promotion: lifecycle qualifying fl2va all rc=0"
+  ],
+  "totals": {
+    "checks": 49,
+    "passed": 49
+  },
+  "validationRuns": "2026-10-27 on the pre-merge build: FL2VA 15/15 and T2VA 34/34 (the same scenarios)",
+  "runs": {
+    "t2va-part1": {
+      "scope": "T2VA: conditioner and denoiser cancellations",
+      "passed": true,
+      "checks": [
+        {
+          "scenario": "baseline",
+          "name": "baselineCompletes",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "throwsCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "inFlightCallIsTheTargetStage",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "inFlightCallJoinsBeforeTheError",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "noNativeCallAfterCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "stateReturnsToReady",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-conditioner",
+          "name": "recoveryMatchesBaseline",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "throwsCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "inFlightCallIsTheTargetStage",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "inFlightCallJoinsBeforeTheError",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "noNativeCallAfterCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "stateReturnsToReady",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-denoiser",
+          "name": "recoveryMatchesBaseline",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        }
+      ],
+      "journals": {
+        "cancel-conditioner": [
+          "conditioner#8:begin",
+          "conditioner#8:end",
+          "conditioner#9:begin",
+          "conditioner#9:end",
+          "conditioner#10:begin",
+          "== cancelRequested",
+          "conditioner#10:end",
+          "== cancellationReturned"
+        ],
+        "cancel-denoiser": [
+          "body#58:begin",
+          "body#58:end",
+          "body#59:begin",
+          "body#59:end",
+          "body#60:begin",
+          "== cancelRequested",
+          "body#60:end",
+          "== cancellationReturned"
+        ]
+      },
+      "memoryAfterUnload": {}
+    },
+    "t2va-part2": {
+      "scope": "T2VA: video-tile and audio cancellations, unload, reopen",
+      "passed": true,
+      "checks": [
+        {
+          "scenario": "baseline",
+          "name": "baselineCompletes",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "throwsCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "inFlightCallIsTheTargetStage",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "inFlightCallJoinsBeforeTheError",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "noNativeCallAfterCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "stateReturnsToReady",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-videoTile",
+          "name": "recoveryMatchesBaseline",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "throwsCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "inFlightCallIsTheTargetStage",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "inFlightCallJoinsBeforeTheError",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "noNativeCallAfterCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "stateReturnsToReady",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-audio",
+          "name": "recoveryMatchesBaseline",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "unload",
+          "name": "activeRenderCompletesAndMatches",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "unload",
+          "name": "activeRenderContinuesAfterUnloadRequest",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "everyCallJoinsBeforeUnloadReturns",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "noNativeCallAfterUnload",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "stateClosed",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "generateAfterUnloadRejected",
+          "passed": true
+        },
+        {
+          "scenario": "reopen",
+          "name": "reopenedMatchesBaseline",
+          "passed": true,
+          "detail": "frames 6c455e03fb3c pcm cf2cca500779 hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "reopen",
+          "name": "settledGrowthWithin512MiB",
+          "passed": true
+        }
+      ],
+      "journals": {
+        "cancel-audio": [
+          "videoTile#2:begin",
+          "videoTile#2:end",
+          "videoTile#3:begin",
+          "videoTile#3:end",
+          "audio#0:begin",
+          "== cancelRequested",
+          "audio#0:end",
+          "== cancellationReturned"
+        ],
+        "cancel-videoTile": [
+          "heads#7:begin",
+          "heads#7:end",
+          "videoTile#0:begin",
+          "videoTile#0:end",
+          "videoTile#1:begin",
+          "== cancelRequested",
+          "videoTile#1:end",
+          "== cancellationReturned"
+        ],
+        "unload": [
+          "videoTile#1:end",
+          "videoTile#2:begin",
+          "videoTile#2:end",
+          "videoTile#3:begin",
+          "videoTile#3:end",
+          "audio#0:begin",
+          "audio#0:end",
+          "== unloadReturned"
+        ]
+      },
+      "memoryAfterUnload": {
+        "afterFirstUnload": [
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 637732544,
+            "residentBytes": 287965184
+          },
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 272582336,
+            "residentBytes": 287965184
+          },
+          {
+            "metalAllocatedBytes": 1769472,
+            "physicalFootprintBytes": 272369344,
+            "residentBytes": 287719424
+          }
+        ],
+        "afterReopenedUnload": [
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 645056192,
+            "residentBytes": 295419904
+          },
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 279905984,
+            "residentBytes": 295403520
+          },
+          {
+            "metalAllocatedBytes": 1769472,
+            "physicalFootprintBytes": 279725736,
+            "residentBytes": 295157760
+          }
+        ]
+      }
+    },
+    "fl2va-all": {
+      "scope": "FL2VA: keyframe cancellation, unload, reopen",
+      "passed": true,
+      "checks": [
+        {
+          "scenario": "baseline",
+          "name": "baselineCompletes",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "throwsCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "inFlightCallIsTheTargetStage",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "inFlightCallJoinsBeforeTheError",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "noNativeCallAfterCancellation",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "stateReturnsToReady",
+          "passed": true
+        },
+        {
+          "scenario": "cancel-keyframe",
+          "name": "recoveryMatchesBaseline",
+          "passed": true,
+          "detail": "frames 347c07d1c924 pcm cbb1d846fd2c hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "unload",
+          "name": "activeRenderCompletesAndMatches",
+          "passed": true,
+          "detail": "frames 347c07d1c924 pcm cbb1d846fd2c hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "unload",
+          "name": "activeRenderContinuesAfterUnloadRequest",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "everyCallJoinsBeforeUnloadReturns",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "noNativeCallAfterUnload",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "stateClosed",
+          "passed": true
+        },
+        {
+          "scenario": "unload",
+          "name": "generateAfterUnloadRejected",
+          "passed": true
+        },
+        {
+          "scenario": "reopen",
+          "name": "reopenedMatchesBaseline",
+          "passed": true,
+          "detail": "frames 347c07d1c924 pcm cbb1d846fd2c hashes 457 mismatches 0"
+        },
+        {
+          "scenario": "reopen",
+          "name": "settledGrowthWithin512MiB",
+          "passed": true
+        }
+      ],
+      "journals": {
+        "cancel-keyframe": [
+          "conditioner#48:begin",
+          "conditioner#48:end",
+          "conditioner#49:begin",
+          "conditioner#49:end",
+          "keyframe#0:begin",
+          "== cancelRequested",
+          "keyframe#0:end",
+          "== cancellationReturned"
+        ],
+        "unload": [
+          "videoTile#1:end",
+          "videoTile#2:begin",
+          "videoTile#2:end",
+          "videoTile#3:begin",
+          "videoTile#3:end",
+          "audio#0:begin",
+          "audio#0:end",
+          "== unloadReturned"
+        ]
+      },
+      "memoryAfterUnload": {
+        "afterFirstUnload": [
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 601359992,
+            "residentBytes": 312606720
+          },
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 236209784,
+            "residentBytes": 312606720
+          },
+          {
+            "metalAllocatedBytes": 1769472,
+            "physicalFootprintBytes": 236013176,
+            "residentBytes": 312328192
+          }
+        ],
+        "afterReopenedUnload": [
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 607503992,
+            "residentBytes": 318193664
+          },
+          {
+            "metalAllocatedBytes": 402325504,
+            "physicalFootprintBytes": 242353784,
+            "residentBytes": 318177280
+          },
+          {
+            "metalAllocatedBytes": 1769472,
+            "physicalFootprintBytes": 242222712,
+            "residentBytes": 317898752
+          }
+        ]
+      }
+    }
+  },
+  "note": "A first launch at 02:29:27 passed malformed arguments (a shell word-splitting mistake) and exited at once without any native work; the runs above are the relaunch."
+}
