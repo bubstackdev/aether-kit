@@ -94,7 +94,7 @@ private func writeFixture(id: String = "fixture1", references: Bool = false) thr
     try ordered.accept(.step(index: 0, total: 2, latents: latents))
     try ordered.accept(.step(index: 1, total: 2, latents: latents))
     try ordered.accept(.decoded)
-    let pixels = try ordered.finish(image, ended: .now, total: 0.1, expectedPixels: nil)
+    let pixels = try ordered.finish(image, ended: .now, total: 0.1, expectedPixels: nil).pixels
     #expect(ordered.row.passed && Set(ordered.row.stages.keys) == ["conditioning", "denoiserSetup", "step0", "step1", "decode", "completion"])
     #expect(ordered.row.stepLatentsSHA256.count == 2 && memory.snapshot.samples > 0)
     // A step before the denoisers, a wrong token count, and pixels that differ from the first iteration are refused.
@@ -110,7 +110,11 @@ private func writeFixture(id: String = "fixture1", references: Bool = false) thr
         try repeated.accept(event)
     }
     #expect(throws: AetherError.self) { try repeated.finish(image, ended: .now, total: 0.1, expectedPixels: String(repeating: "0", count: 64)) }
-    #expect(try repeated.finish(image, ended: .now, total: 0.1, expectedPixels: pixels) == pixels)
+    #expect(throws: AetherError.self) {
+        try repeated.finish(image, ended: .now, total: 0.1, expectedPixels: pixels, expectedConditioning: String(repeating: "0", count: 64))
+    }
+    let conditioningHash = repeated.row.conditioningSHA256
+    #expect(try repeated.finish(image, ended: .now, total: 0.1, expectedPixels: pixels, expectedConditioning: conditioningHash).pixels == pixels)
 }
 
 @Test func flux2BenchmarkStatisticsAndSSIM() throws {

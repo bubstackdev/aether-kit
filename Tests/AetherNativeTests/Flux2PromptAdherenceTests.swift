@@ -18,7 +18,8 @@ import Testing
 ///    `contact-sheet.html` for a subjective review.
 ///
 /// Kit passes if its score on the paired images is no lower than the reference's by more than the plan's margin, and
-/// the judge answers the control questions (expected no) correctly at least `minimumControlAccuracy` of the time.
+/// the judge answers the control questions (expected no) correctly at least `minimumControlAccuracy` of the time, and
+/// gives at most `maximumUnclearAnswers` answers that are neither yes nor no.
 /// Both phases need `AETHER_FLUX2_FIXTURES`; generation also needs `AETHER_FLUX2_BUNDLE`. Run each alone under the
 /// shared GPU lock.
 private struct AdherencePlan: Codable {
@@ -27,6 +28,8 @@ private struct AdherencePlan: Codable {
     let textToImageFixture: String
     let marginPercentagePoints: Double
     let minimumControlAccuracy: Double
+    /// Answers that are neither yes nor no; more than this fails the run. Absent in plans before it was added: 0.
+    let maximumUnclearAnswers: Int?
     let extraSeeds: [UInt64]
     let questionSuffix: String
     let maximumAnswerTokens: Int
@@ -174,7 +177,9 @@ func flux2PromptAdherenceJudge() async throws {
             perPrompt[prompt.case, default: [:]][source] = Double(positives.filter { $0.yes == true }.count) / Double(max(1, positives.count))
         }
     }
+    let maximumUnclear = plan.maximumUnclearAnswers ?? 0
     let passed = paired >= reference - plan.marginPercentagePoints / 100 && controlAccuracy >= plan.minimumControlAccuracy
+        && unclear <= maximumUnclear
     struct Report: Encodable {
         let kind: String; let plan: String; let fixture: String; let bundleFingerprint: String; let judge: String
         let kitPairedScore: Double; let referenceScore: Double; let kitExtraSeedScore: Double
@@ -196,6 +201,7 @@ func flux2PromptAdherenceJudge() async throws {
     print(String(format: "flux2 adherence: Kit paired %.3f, reference %.3f, Kit extra seeds %.3f, control accuracy %.3f, unclear %d",
                  paired, reference, seeds, controlAccuracy, unclear))
     #expect(controlAccuracy >= plan.minimumControlAccuracy, "the judge answered yes to control questions")
+    #expect(unclear <= maximumUnclear, "the judge gave \(unclear) answers that are neither yes nor no")
     #expect(paired >= reference - plan.marginPercentagePoints / 100, "Kit's adherence is below the reference's beyond the margin")
 }
 

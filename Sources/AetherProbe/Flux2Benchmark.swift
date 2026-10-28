@@ -177,8 +177,10 @@ final class Flux2BenchmarkJournal: Sendable {
         }
     }
 
-    /// Completes the row; `expectedPixels` (the case's first iteration) must match exactly: generation is deterministic.
-    func finish(_ image: GeneratedImage, ended: ContinuousClock.Instant, total: Double, expectedPixels: String?) throws -> String {
+    /// Completes the row; `expectedPixels` and `expectedConditioning` (the case's first iteration) must match exactly:
+    /// encoding and generation are deterministic. Returns this iteration's pixel and conditioning hashes.
+    func finish(_ image: GeneratedImage, ended: ContinuousClock.Instant, total: Double, expectedPixels: String?,
+                expectedConditioning: String? = nil) throws -> (pixels: String, conditioning: String?) {
         try state.withLock { value in
             value.row.totalSeconds = total
             guard value.phase == "completion" else { throw AetherError.invalidTensor("benchmark generation incomplete") }
@@ -186,6 +188,9 @@ final class Flux2BenchmarkJournal: Sendable {
             let hash = floatHash(image.pixelsCHW.values)
             value.row.pixelsSHA256 = hash
             if let expectedPixels, expectedPixels != hash { throw AetherError.invalidTensor("benchmark pixels differ between iterations") }
+            if let expectedConditioning, expectedConditioning != value.row.conditioningSHA256 {
+                throw AetherError.invalidTensor("benchmark conditioning differs between iterations")
+            }
             let sample = memory.snapshot
             value.row.memorySamples = sample.samples
             value.row.sampledPeakMemory = sample.peak
@@ -193,7 +198,7 @@ final class Flux2BenchmarkJournal: Sendable {
                 throw AetherError.unsupported("benchmark memory sampling failed: \(sample.error ?? "no samples")")
             }
             value.row.passed = true
-            return hash
+            return (hash, value.row.conditioningSHA256)
         }
     }
 

@@ -288,15 +288,18 @@ for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27
 `flux2PromptAdherenceGenerate` and `flux2PromptAdherenceJudge` (opt-in, in `AetherNativeTests`) score whether images
 show what their prompt asks for, against the plan [`Benchmarks/flux2-prompt-adherence.json`](../Benchmarks/flux2-prompt-adherence.json).
 The plan breaks each of the ten text-to-image fixture prompts into two to five yes/no questions (38 in all), plus one
-control question per prompt whose answer should be no. A local Qwen3-VL-4B judge (the one-function bundle,
-Apache-2.0) answers every question about each image, greedily, from a one-image chat.
+control question per prompt whose answer should be no. The judge is `huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c`, an
+abliterated fine-tune of Qwen3-VL-4B-Instruct, not the stock model (the local one-function bundle, Apache-2.0). It
+answers every question about each image, greedily, from a one-image chat.
 
 - **Paired comparison:** Kit's image uses the fixture's own prompt, size, steps and initial noise, so it pairs with the
   float32 Diffusers reference image. Kit passes if its score is no lower than the reference's by more than 3
-  percentage points, a margin fixed in the plan before the run. Three extra seeds per prompt (Kit's own noise, Kit
+  percentage points, a margin fixed in the plan before the run. With 38 positive questions, that lets Kit trail the
+  reference by at most one question (2.6 points); two (5.3 points) fail. Three extra seeds per prompt (Kit's own noise, Kit
   only) show the spread across seeds.
 - **Judge check:** the control questions must be answered no at least 90% of the time, so a judge that agrees with
-  everything fails the run.
+  everything fails the run. Any answer that is neither yes nor no also fails it (`maximumUnclearAnswers: 0`). That cap
+  was added to the plan after the 2026-10-27 run, which had none; the run's record carries the earlier plan's hash.
 
 M5 Max, macOS 27.0.1, bundle `d27cefc4…`, fixture `ffc4b136…`. Generation took 212 s for 40 images (one GPU hold of
 3.7 min) and judging 311 s for 50 images and 240 questions (a hold of 5.7 min):

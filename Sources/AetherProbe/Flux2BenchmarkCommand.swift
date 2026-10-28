@@ -65,7 +65,7 @@ struct Flux2BenchmarkReport: Encodable {
     var timingScope = "Application-stage wall clock, not GPU kernel timing. Encoded: conditioning includes balanced cleanup and text-encoder load, call and discard; references include the VAE encoder's load, calls and release. denoiserSetup includes segment acquisition and validation, which is quick because Core AI opens models lazily: the first native call after a (re)open specializes the model, so in balanced mode step0 carries the denoisers' reload cost on every iteration. Steps include native calls, host copies and Euler updates; decode includes decoder loading when needed, copies and image validation. Stage timings exclude observers (hashing, order checks); total includes them. Preflight, stream verification, one-time setup, SSIM, report IO and unload are outside timed generation."
     let modelVerificationScope = "Model streams hashed before iterations; postflight rechecks source, executable, plan, fixtures and asset declarations. Files must remain immutable during execution."
     let memoryScope = "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Counters overlap and must not be summed; brief peaks may be missed."
-    let correctness = "Every iteration of a case must reproduce its first iteration's pixels exactly. Provided-profile cases must reach the plan's SSIM against the fixture image on the first measured iteration; encoded cases record it (the whole pipeline is not gated in parity either)."
+    let correctness = "Every iteration of a case must reproduce its first iteration's conditioning and pixels exactly. Provided-profile cases must reach the plan's SSIM against the fixture image on the first measured iteration; encoded cases record it (the whole pipeline is not gated in parity either)."
     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
 }
 
@@ -244,7 +244,7 @@ enum Flux2BenchmarkCommand {
             }
             let conditioning = plan.profile == .provided ? try Flux2Conditioning(provided: workload.text) : nil
             let referenceTokens = workload.references.reduce(0) { $0 + $1.tokens }
-            var firstPixels: String?
+            var firstPixels: String?, firstConditioning: String?
             for index in 0..<(plan.warmupIterations + plan.measuredIterations) {
                 try Task.checkCancellation()
                 let role = index < plan.warmupIterations ? "warmup" : "measured"
@@ -277,8 +277,10 @@ enum Flux2BenchmarkCommand {
                     memory.sample()
                     sampler.cancel()
                     await sampler.value
-                    let pixels = try rows.finish(image, ended: ended, total: AetherProbe.seconds(started.duration(to: ended)), expectedPixels: firstPixels)
-                    firstPixels = firstPixels ?? pixels
+                    let hashes = try rows.finish(image, ended: ended, total: AetherProbe.seconds(started.duration(to: ended)),
+                                                 expectedPixels: firstPixels, expectedConditioning: firstConditioning)
+                    firstPixels = firstPixels ?? hashes.pixels
+                    firstConditioning = firstConditioning ?? hashes.conditioning
                     if role == "measured", ordinal == 0 {
                         box.value.ssimAgainstFixture[item.id] = flux2SSIM(flux2UnitHWC(image.pixelsCHW), workload.image,
                                                                        width: workload.width, height: workload.height)

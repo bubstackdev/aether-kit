@@ -4,6 +4,7 @@
   "textToImageFixture": "ffc4b1365159e40c",
   "marginPercentagePoints": 3,
   "minimumControlAccuracy": 0.9,
+  "maximumUnclearAnswers": 0,
   "extraSeeds": [101, 202, 303],
   "questionSuffix": " Answer with yes or no.",
   "maximumAnswerTokens": 4,
