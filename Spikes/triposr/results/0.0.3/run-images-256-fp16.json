@@ -1,0 +1,122 @@
+{
+ "tag": "fp16",
+ "res": 256,
+ "slab": 16,
+ "loadSeconds": 0.9497052079532295,
+ "images": {
+  "captured": {
+   "sceneSeconds": {
+    "first": 0.09193033305928111,
+    "warmMedian": 0.05885345791466534
+   },
+   "gridSeconds": {
+    "field65536": 1.210703292163089,
+    "field262144": 2.3515000420156866,
+    "slab": 0.16664174990728498
+   },
+   "infiniteDensities": 0,
+   "marchingCubesSeconds": 0.1456664581783116,
+   "vertexColorSeconds": 0.012457166099920869,
+   "totalSeconds": 0.38361883210018277,
+   "mesh": {
+    "vertices": 47174,
+    "faces": 94348
+   }
+  },
+  "chair": {
+   "sceneSeconds": {
+    "first": 0.07544145919382572,
+    "warmMedian": 0.059229624923318624
+   },
+   "gridSeconds": {
+    "field65536": 1.2148694170173258,
+    "field262144": 2.4281897500623018,
+    "slab": 0.1619979168754071
+   },
+   "infiniteDensities": 0,
+   "marchingCubesSeconds": 0.13554591708816588,
+   "vertexColorSeconds": 0.012450417038053274,
+   "totalSeconds": 0.3692238759249449,
+   "mesh": {
+    "vertices": 41952,
+    "faces": 83908
+   }
+  },
+  "hamburger": {
+   "sceneSeconds": {
+    "first": 0.07856229203753173,
+    "warmMedian": 0.059177250135689974
+   },
+   "gridSeconds": {
+    "field65536": 1.2048413748852909,
+    "field262144": 2.359621458919719,
+    "slab": 0.1676468749064952
+   },
+   "infiniteDensities": 46,
+   "marchingCubesSeconds": 0.13468587514944375,
+   "vertexColorSeconds": 0.012629874981939793,
+   "totalSeconds": 0.3741398751735687,
+   "mesh": {
+    "vertices": 55426,
+    "faces": 110832
+   }
+  },
+  "poly_fox": {
+   "sceneSeconds": {
+    "first": 0.08009383385069668,
+    "warmMedian": 0.05864125001244247
+   },
+   "gridSeconds": {
+    "field65536": 1.2081065410748124,
+    "field262144": 2.3785929589066654,
+    "slab": 0.16367483395151794
+   },
+   "infiniteDensities": 0,
+   "marchingCubesSeconds": 0.1401935419999063,
+   "vertexColorSeconds": 0.006675750017166138,
+   "totalSeconds": 0.36918537598103285,
+   "mesh": {
+    "vertices": 59712,
+    "faces": 119424
+   }
+  },
+  "robot": {
+   "sceneSeconds": {
+    "first": 0.07850379217416048,
+    "warmMedian": 0.058726207818835974
+   },
+   "gridSeconds": {
+    "field65536": 1.1988259160425514,
+    "field262144": 2.309460249962285,
+    "slab": 0.1594954589381814
+   },
+   "infiniteDensities": 0,
+   "marchingCubesSeconds": 0.14102800004184246,
+   "vertexColorSeconds": 0.019926417153328657,
+   "totalSeconds": 0.3791760839521885,
+   "mesh": {
+    "vertices": 80682,
+    "faces": 161356
+   }
+  },
+  "teapot": {
+   "sceneSeconds": {
+    "first": 0.07895408384501934,
+    "warmMedian": 0.05992754199542105
+   },
+   "gridSeconds": {
+    "field65536": 1.2056996668688953,
+    "field262144": 2.3311354159377515,
+    "slab": 0.16032833303324878
+   },
+   "infiniteDensities": 0,
+   "marchingCubesSeconds": 0.14149041706696153,
+   "vertexColorSeconds": 0.012550625018775463,
+   "totalSeconds": 0.3742969171144068,
+   "mesh": {
+    "vertices": 40814,
+    "faces": 81632
+   }
+  }
+ }
+}
