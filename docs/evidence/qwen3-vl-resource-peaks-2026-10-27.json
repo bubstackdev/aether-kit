@@ -1,0 +1,207 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-resource-peaks",
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not",
+  "test": "visionLanguageResourcePeaks (AETHER_NATIVE_VL_RESOURCES=1, release): VisionLanguageSession.open(bundle:gpu:resources:) with a 48 GiB coordinator; windows for open, a first and a warm text request, the first image request at each of the five grids, a warm image request and unload; Metal currentAllocatedSize and phys_footprint sampled every 50 ms on a separate thread",
+  "transient": "a window's sampled peak above both its starting and its ending value: memory a request or encode uses and gives back (what scratch reserves); what it leaves behind persists and is covered by the residency estimate",
+  "profileAtRunTime": "the resident estimates of docs/qwen3-vl-resource-admission.md (4B 11,600 + 2,200 MiB, 2B 6,300 + 2,000 MiB) and the design's first scratch proposals (512/256 and 256/256 MiB); the test now carries the scratch figures set from these runs (256/128 and 128/128). Reservations while open count residency only, so the recorded values do not depend on the scratch figures",
+  "models": {
+    "vl-4b": {
+      "file": "qwen3-vl-resource-peaks-2026-10-27-vl-4b.json",
+      "bundle": "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+      "reservedWhileOpenMiB": 13800,
+      "reservedAfterUnloadMiB": 0,
+      "largestRequestMetalTransientMiB": 67,
+      "largestRequestFootprintTransientMiB": 62,
+      "windows": [
+        {
+          "phase": "before open",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 82,
+          "metalAfterMiB": 0,
+          "samples": 22
+        },
+        {
+          "phase": "open (encoder and decoder, load and specialization)",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 2,
+          "metalAfterMiB": 1028,
+          "samples": 348
+        },
+        {
+          "phase": "first text request",
+          "metalTransientMiB": 18,
+          "footprintTransientMiB": 23,
+          "metalAfterMiB": 9620,
+          "samples": 302
+        },
+        {
+          "phase": "warm text request",
+          "metalTransientMiB": 7,
+          "footprintTransientMiB": 6,
+          "metalAfterMiB": 9723,
+          "samples": 13
+        },
+        {
+          "phase": "image request, grid 44x44",
+          "metalTransientMiB": 67,
+          "footprintTransientMiB": 62,
+          "metalAfterMiB": 11001,
+          "samples": 24
+        },
+        {
+          "phase": "image request, grid 36x48",
+          "metalTransientMiB": 40,
+          "footprintTransientMiB": 43,
+          "metalAfterMiB": 11879,
+          "samples": 24
+        },
+        {
+          "phase": "image request, grid 48x36",
+          "metalTransientMiB": 51,
+          "footprintTransientMiB": 52,
+          "metalAfterMiB": 12793,
+          "samples": 24
+        },
+        {
+          "phase": "image request, grid 32x56",
+          "metalTransientMiB": 14,
+          "footprintTransientMiB": 16,
+          "metalAfterMiB": 13708,
+          "samples": 23
+        },
+        {
+          "phase": "image request, grid 56x32",
+          "metalTransientMiB": 1,
+          "footprintTransientMiB": 44,
+          "metalAfterMiB": 14622,
+          "samples": 23
+        },
+        {
+          "phase": "warm image request",
+          "metalTransientMiB": 14,
+          "footprintTransientMiB": 42,
+          "metalAfterMiB": 14734,
+          "samples": 23
+        },
+        {
+          "phase": "unload",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 0,
+          "metalAfterMiB": 353,
+          "samples": 7
+        }
+      ]
+    },
+    "vl-2b": {
+      "file": "qwen3-vl-resource-peaks-2026-10-27-vl-2b.json",
+      "bundle": "qwen3-vl-2b-one-function-bundle-macos",
+      "reservedWhileOpenMiB": 8300,
+      "reservedAfterUnloadMiB": 0,
+      "largestRequestMetalTransientMiB": 38,
+      "largestRequestFootprintTransientMiB": 52,
+      "windows": [
+        {
+          "phase": "before open",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 45,
+          "metalAfterMiB": 0,
+          "samples": 18
+        },
+        {
+          "phase": "open (encoder and decoder, load and specialization)",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 0,
+          "metalAfterMiB": 900,
+          "samples": 113
+        },
+        {
+          "phase": "first text request",
+          "metalTransientMiB": 1,
+          "footprintTransientMiB": 15,
+          "metalAfterMiB": 4898,
+          "samples": 63
+        },
+        {
+          "phase": "warm text request",
+          "metalTransientMiB": 32,
+          "footprintTransientMiB": 30,
+          "metalAfterMiB": 4959,
+          "samples": 6
+        },
+        {
+          "phase": "image request, grid 44x44",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 52,
+          "metalAfterMiB": 6168,
+          "samples": 17
+        },
+        {
+          "phase": "image request, grid 36x48",
+          "metalTransientMiB": 32,
+          "footprintTransientMiB": 30,
+          "metalAfterMiB": 6993,
+          "samples": 17
+        },
+        {
+          "phase": "image request, grid 48x36",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 34,
+          "metalAfterMiB": 7847,
+          "samples": 17
+        },
+        {
+          "phase": "image request, grid 32x56",
+          "metalTransientMiB": 38,
+          "footprintTransientMiB": 34,
+          "metalAfterMiB": 8701,
+          "samples": 17
+        },
+        {
+          "phase": "image request, grid 56x32",
+          "metalTransientMiB": 3,
+          "footprintTransientMiB": 31,
+          "metalAfterMiB": 9555,
+          "samples": 17
+        },
+        {
+          "phase": "warm image request",
+          "metalTransientMiB": 5,
+          "footprintTransientMiB": 35,
+          "metalAfterMiB": 9622,
+          "samples": 16
+        },
+        {
+          "phase": "unload",
+          "metalTransientMiB": 0,
+          "footprintTransientMiB": 0,
+          "metalAfterMiB": 351,
+          "samples": 5
+        }
+      ]
+    }
+  },
+  "scratchEstimatesMiB": {
+    "vl-4b": {
+      "decoder": 256,
+      "encoder": 128
+    },
+    "vl-2b": {
+      "decoder": 128,
+      "encoder": 128
+    }
+  },
+  "files": {
+    "qwen3-vl-resource-peaks-2026-10-27-vl-2b.json": "7497b8d9a5cc18914e890340fd60625654113822e7fc5c57dc8349203ed11273",
+    "qwen3-vl-resource-peaks-2026-10-27-vl-4b.json": "95c4149d79f9a405ac3027839dc6b264bcc2ebff195a835a454f541f29ad3358"
+  },
+  "sourceSHA256": {
+    "Sources/AetherLanguageCoreAI/LanguageResourceAdmission.swift": "a0bedc0c813fde90d0f2492c1dbd88cf2cb7c4d27793794bd0bdf5d339e511b9",
+    "Sources/AetherLanguageCoreAI/LanguageGenerationSession.swift": "d11b938b2f39ae8fff5f90bc54c12c41202afbc606bc39cffeb26207d9f98005",
+    "Sources/AetherLanguageCoreAI/VisionLanguageSession.swift": "c07d1e3e682c11fec3c8b487c48939014f946de6e5a5acba1ba6071a3e6c35a6",
+    "Tests/AetherNativeTests/VisionLanguageResourceTests.swift": "c3f2a07574c6c8535c25d5bac9dc96c623a439ac28fd117efe8746bbde52c869"
+  }
+}

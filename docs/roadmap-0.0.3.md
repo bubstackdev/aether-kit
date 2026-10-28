@@ -13,13 +13,13 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 | Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Done, no change needed: the footprint falls under 0.3 GB within 2 s of unload. The 8.1 GiB Metal counter that remains is not held memory, and 2048 stays opt-in (`.extended`) ([measurement](kokoro-speech.md#memory-after-unload-003)). |
 | H3 second specialization | Denoising adds about 2.7 GiB from step 1, when the two-timestep body joins the one-timestep one. | Done: modulation inputs are padded to one cardinality per render, so the second specialization never forms. Steady denoising falls to about 10.9 GiB on T2VA (13.5 before) and the qualified boundary hashes replay exactly. An unexplained step-0 transient (up to 16.12 GiB, seen only in padded gate renders) is covered by measured admission at 16.56 GiB, higher than the unpadded build's 15.26 GiB; the 2026-10-28 gate on the final build passed with spike capture on, and the transient did not recur ([guide](h3-integration.md#denoiser-memory-one-modulation-shape-per-render-2026-10-27)). |
 | Qwen3-VL-4B export | The converter needs about 33 GB. The [design](qwen3-vl-single-decoder.md#export-memory) found the cause is not per-ExportedProgram copies but about five copies at the self-check. | Done: 16.3 GB peak for the VL-4B ([design](qwen3-vl-single-decoder.md#export-memory)). |
-| Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache), so it likely wires two copies of the text weights when reference images are used. | Measure it; if confirmed, one function as in the [Qwen3-VL design](qwen3-vl-single-decoder.md). |
+| Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's 0.0.2 two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache). Read, not yet measured: Krea loads a function on first use, and balanced residency opens and releases the encoder around each request, so only one copy is wired; two only in resident residency with text and reference requests in one session. Every open still reads the whole compiled file into the page cache. The asset comes from the prototype's exporter (`krea2_export.py`, outside Kit), and `encodeWithImages` takes an `n`-row image input like the 0.0.2 `withImage`. | Parked, lower priority. If resident use matters: measure, then either route text through `encodeWithImages` (one zero image row, the size-1 dimension risk) or re-export one function upstream. |
 | FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Done, no Kit fix: the cycling test shows the macOS allocator's large-block cache, which stops growing after three cycles, not a Kit or Core AI leak ([FLUX.2](flux2-klein.md#memory-after-unload-003), [Krea](krea-generation.md#memory-after-unload-003)). |
 
 ### Speed
 
 - **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference. The re-gate ran on a busy host (an unrelated transcode saturated the CPU), so the quiet reference stays open until a window when that pipeline is paused. Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
-- **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap.
+- **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap. Re-measured, and exact host fixes cut part of it ([guide](language-generation.md#time-to-first-token)). The split-attention re-export is a no-go under the current Core AI; see the [report](spikes/split-attention-2026-10.md).
 
 ### Coverage and iPhone
 
@@ -34,7 +34,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 ### Safety and correctness
 
 - **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`. Done ([guide](flux2-klein.md#chat-template-in-the-fingerprint-003)).
-- **Resource admission** for the Qwen3-VL encoder and decoder.
+- **Resource admission** for the Qwen3-VL encoder and decoder: [design](qwen3-vl-resource-admission.md), prompted by a VL-4B plus Krea crash under memory pressure.
 - **GPU lease:** reclaim pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
 - **FLUX.2 evidence:**
   - native reports should record both fixture IDs (done);
@@ -50,7 +50,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Infrastructure
 
-- The `stream` Sendable warnings.
+- The `stream` Sendable warnings. Done: 14 warnings to 0. `SerialComputeStream` in AetherCoreAI is now the one `@unchecked Sendable` boundary, a workaround that goes once Core AI annotates its stream ([details](h3-integration.md#native-block-binding-checkpoint)).
 
 ### Spikes
 
