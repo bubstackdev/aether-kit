@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "kind": "h3-turbo4-and-decode-tiling",
+  "date": "2026-10-28",
+  "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+  "build": "9a5cc3e (v0.0.3/h3-memory after the floor merge)",
+  "turbo4": {
+    "status": "experimental; outside measured admission (its execution identity, h3.profile/1:5af39db5…:turbo4, has no measured entry) and without a CPU trajectory gate",
+    "renders": {
+      "t2va": {
+        "seconds": 226.8,
+        "gpuLock": "2026-10-27 23:59:32-2026-10-28 00:03:19"
+      },
+      "fl2va": {
+        "seconds": 242.3,
+        "gpuLock": "2026-10-28 00:03:19-00:07:22"
+      }
+    },
+    "turbo8Reference": {
+      "t2va": "the qualified T2VA replay under 5af39db5",
+      "fl2va": "the qualified FL2VA replay on the padded build (profile c49d8dbf, path-only identical content)"
+    },
+    "audit": {
+      "t2va": {
+        "passed": true,
+        "failedChecks": [],
+        "frames": {
+          "meanRange": [
+            70.7,
+            98.55
+          ],
+          "spreadRange": [
+            49.33,
+            63.99
+          ],
+          "saturatedShare": 0.02391,
+          "temporalDifference": {
+            "min": 1.313,
+            "median": 7.219,
+            "max": 10.714
+          },
+          "lumaJumpsAbove25": 0
+        },
+        "audio": {
+          "sampleRate": 32000,
+          "channels": 2,
+          "samples": 165600,
+          "seconds": 5.175,
+          "peakDBFS": [
+            -26.71,
+            -23.16
+          ],
+          "rmsDBFS": [
+            -53.22,
+            -53.12
+          ],
+          "silentWindowShare": 0.6822,
+          "channelCorrelation": 0.6294
+        },
+        "versusTurbo8": {
+          "framePSNR": {
+            "min": 12.0001,
+            "median": 13.4916,
+            "mean": 13.4502
+          },
+          "frameLumaSSIM": {
+            "min": 0.3425,
+            "median": 0.4182,
+            "mean": 0.4125
+          },
+          "audioCorrelation": [
+            0.2384,
+            0.198
+          ],
+          "audioDifferenceRMSDBFS": [
+            -51.39,
+            -51.06
+          ],
+          "audioRMSDBFS": {
+            "render": [
+              -53.22,
+              -53.12
+            ],
+            "reference": [
+              -53.21,
+              -53.11
+            ]
+          }
+        }
+      },
+      "fl2va": {
+        "passed": true,
+        "failedChecks": [],
+        "frames": {
+          "meanRange": [
+            113.25,
+            121.4
+          ],
+          "spreadRange": [
+            62.88,
+            71.79
+          ],
+          "saturatedShare": 0.02306,
+          "temporalDifference": {
+            "min": 1.467,
+            "median": 4.07,
+            "max": 9.05
+          },
+          "lumaJumpsAbove25": 0
+        },
+        "audio": {
+          "sampleRate": 32000,
+          "channels": 2,
+          "samples": 165600,
+          "seconds": 5.175,
+          "peakDBFS": [
+            -8.36,
+            -9.89
+          ],
+          "rmsDBFS": [
+            -44.22,
+            -45.06
+          ],
+          "silentWindowShare": 0.686,
+          "channelCorrelation": 0.4994
+        },
+        "versusTurbo8": {
+          "framePSNR": {
+            "min": 12.3261,
+            "median": 14.6074,
+            "mean": 15.1494
+          },
+          "frameLumaSSIM": {
+            "min": 0.4132,
+            "median": 0.483,
+            "mean": 0.4925
+          },
+          "audioCorrelation": [
+            0.3315,
+            0.3148
+          ],
+          "audioDifferenceRMSDBFS": [
+            -41.65,
+            -41.92
+          ],
+          "audioRMSDBFS": {
+            "render": [
+              -44.22,
+              -45.06
+            ],
+            "reference": [
+              -42.01,
+              -42.18
+            ]
+          }
+        }
+      }
+    },
+    "note": "Turbo4 and Turbo8 follow different sampling schedules from the same seed and prompt, so frame PSNR (12-15 dB) and luma SSIM (0.41-0.49) measure how different the two clips are, not Turbo4's quality: both show a coherent paper bird in the same scene, in a different pose. Quality is the user's subjective review of the side-by-side clips.",
+    "reviewClips": "review-{t2va,fl2va}-turbo4-vs-turbo8/reference-left.mp4 (Turbo8 left, Turbo4 right, Turbo4 audio) on the Scratch data directory"
+  },
+  "decodeTiling": {
+    "command": "aether-probe h3-profile-decode PROFILE DUMP RENDER NEW_DIR on the T2VA 960x544x124 render, plus a 10 s `sample` of the process during the tile loop",
+    "gpuLock": "2026-10-28 00:13-00:14",
+    "seconds": {
+      "extract": 0.01,
+      "gpu": 30.577,
+      "rgb": 0.434,
+      "stitch": 3.13,
+      "tileFirst": 5.192,
+      "tileWarmMean": 0.244,
+      "total": 34.168
+    },
+    "tiles": 105,
+    "reading": "34.2 s in all: the first tile 5.2 s (tile-graph load and specialization), 104 warm tiles at 0.244 s each (25.4 s), spatial and temporal stitching 3.1 s, RGB8 conversion 0.4 s, extraction 0.01 s. In the sampled window the decoding task spent about 11% of its time in Kit host work (floatValues, tensor copies and finiteness checks, stitching) and the rest waiting on the GPU, while MPSGraph's parallel encoders kept several CPU threads busy encoding each tile call. Decode is GPU- and per-call-bound, not host-bound.",
+    "hostFixEstimate": "overlapping each tile's stitching with the next tile's GPU call could save at most about 4 s of 34 s (about 1% of a render)",
+    "recommendation": "no host fix in 0.0.3; in 0.0.4, cut per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the 5.2 s first-tile load"
+  }
+}
