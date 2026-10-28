@@ -46,7 +46,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 - Native cancellation of the text encoder. Done: cancel returns in about 0.17 s during the native call, and in up to about 0.9 s (about 3.8 s on a process's first request) if it lands during a balanced session's function load; Core AI interrupts neither ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
 - iOS. Moved to 0.0.4 by user decision (2026-10-28).
-- A quiet benchmark. The harness (`aether-probe benchmark-flux2`, two pinned plans) is in place and its `prepare` passes; the measured run waits for a quiet window ([harness](flux2-klein.md#benchmark-harness-003)).
+- A quiet benchmark. Done (2026-10-28; one quiet run, 5 iterations per case): both pinned plans pass with every iteration exact. With balanced residency a 512² image takes about 2.6 s encoded and 1.0–1.2 s with provided conditioning, and a 1024² image 5.8 s and 4.4 s ([results](flux2-klein.md#benchmark-harness-003)).
 - Prompt adherence. Done: Kit matches the float32 reference at the ceiling (38/38 on both, 114/114 over three extra seeds) under a local judge (Huihui-Qwen3-VL-4B-Instruct-abliterated, a fine-tune of Qwen3-VL-4B); a harder question set would be needed to resolve small losses ([measurement](flux2-klein.md#prompt-adherence-003)).
 
 ### Infrastructure
