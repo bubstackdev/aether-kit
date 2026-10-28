@@ -476,7 +476,15 @@ available memory.
 registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
 registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
 4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
-an iPhone grants without the increased-memory-limit entitlement, so its run may end in a refusal or a jetsam kill.
+an iPhone grants by default, so the app requests the increased memory limit
+(`com.apple.developer.kernel.increased-memory-limit`, in `LanguageDeviceProbe.entitlements`). That capability needs an
+explicit App ID with it enabled; a wildcard App ID can't carry it. Explicit App IDs are unique across teams, so outside
+the owner's team, first change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to an ID in your own team. Then either
+register that ID with the capability in your developer account, or let Xcode register it: select your team for the
+target in the generated project (the spec sets none) and build once with automatic signing. The team selection lives in
+the generated, git-ignored `.xcodeproj`, so the next `xcodegen generate` resets it. The report's
+`availableMemoryMiBAtStart` shows whether the larger limit applies. Without it, the VL-2B run may end in a refusal or a
+jetsam kill.
 
 ## Evidence and limits
 
