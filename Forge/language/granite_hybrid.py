@@ -88,13 +88,21 @@ class Mamba(torch.nn.Module):
         g = g * torch.rsqrt(g.pow(2).mean(-1, keepdim=True) + self.eps) * self.norm_weight.float()
         return self.out_proj(g.to(dtype)[None])
 
-    def chunk(self, x, positions, conv_state, ssm_state, layer: int):
-        """The submission as one SSD chunk. x [1, q, hidden]; positions [q] (masks from position data, F-P2-6)."""
+    def chunk(self, x, positions, conv_state, ssm_state, layer: int, valid=None):
+        """The submission as one SSD chunk. x [1, q, hidden]; positions [q] (masks from position data, F-P2-6).
+        With `valid` (bool [q], a valid prefix then padding), padded tokens get dt = 0, so they leave the SSM state
+        unchanged, and the conv state keeps the last valid inputs."""
         q = x.shape[1]
         z, xbc, dt = self.project(x)
         old = conv_state[layer, 0]                                                     # [conv_dim, kernel - 1]
         joined = torch.cat((old, xbc.transpose(0, 1).to(old.dtype)), dim=1)            # [conv_dim, q + kernel - 1]
-        conv_state[layer:layer + 1] = joined[:, -(self.kernel - 1):][None, None]
+        if valid is None:
+            conv_state[layer:layer + 1] = joined[:, -(self.kernel - 1):][None, None]
+        else:
+            # The last kernel - 1 valid inputs sit at joined columns n..n + kernel - 2 (n valid tokens).
+            n = valid.to(torch.int32).sum()
+            tail = n + torch.cumsum(torch.ones(self.kernel - 1, dtype=torch.int32), 0, dtype=torch.int32) - 1
+            conv_state[layer:layer + 1] = torch.index_select(joined, 1, tail)[None, None]
         w = self.conv_weight.to(joined.dtype)
         conv = sum(joined[:, j:j + q] * w[:, j:j + 1] for j in range(self.kernel)).float()
         if self.conv_bias is not None:
@@ -104,10 +112,16 @@ class Mamba(torch.nn.Module):
         B = xbc[:, self.inner:self.inner + self.d_state]                               # [q, N]
         C = xbc[:, self.inner + self.d_state:]                                         # [q, N]
         dt = F.softplus(dt.float() + self.dt_bias.float())                             # [q, H]
+        if valid is not None:
+            dt = torch.where(valid[:, None], dt, 0.0)
         acum = torch.cumsum(dt * -torch.exp(self.A_log.float()), dim=0)                # [q, H], decreasing
         dx = (dt[:, :, None] * xs).permute(1, 0, 2)                                    # [H, q, P]
         # Intra-chunk: y_t += sum_{s<=t} exp(acum_t - acum_s) (C_t . B_s) dt_s x_s.
         causal = positions[:, None] >= positions[None, :]                              # [t, s]
+        if valid is not None:
+            # Padding (position -1) would count as earlier than every token; its dx is 0, but exp(acum_t - acum_s)
+            # can overflow to inf for it, and inf * 0 is NaN.
+            causal = causal & valid[None, :]
         decay = torch.exp(torch.where(causal[None], acum.transpose(0, 1)[:, :, None] - acum.transpose(0, 1)[:, None, :], NEG))
         y = torch.bmm(decay * (C @ B.transpose(0, 1))[None], dx)                       # [H, q, P]
         # Carried state: y_t += exp(acum_t) C_t . h0.
@@ -213,13 +227,20 @@ class GraniteHybridDecoder(torch.nn.Module):
         self.residual_multiplier = float(cfg["residual_multiplier"])
         self.logits_scaling = float(cfg["logits_scaling"])
 
-    def forward(self, input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state, recurrent: bool = False):
+    def forward(self, input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state, recurrent: bool = False,
+                padded: bool = False):
+        """`padded`: a fixed-width submission whose tail may be padding, marked by cache position -1 (a valid prefix
+        of at least one token). Padding changes no state, its keys are hidden, and the logits are the last valid row's;
+        its keyUpdate/valueUpdate rows are returned but must not be written."""
         q_len = input_ids.shape[1]
         x = self.embed(input_ids) * self.embedding_multiplier
         positions = cache_positions[0]
+        valid = positions >= 0 if padded else None
         key_positions = torch.cumsum(torch.ones_like(key_cache[0, 0, 0, :, 0], dtype=torch.int32), 0, dtype=torch.int32) - 1
         cache_visible = key_positions[None, :] < positions[:1, None]
         chunk_visible = positions[None, :] <= positions[:, None]
+        if padded:
+            chunk_visible = chunk_visible & valid[None, :]
         visible = torch.cat((cache_visible.expand(q_len, -1), chunk_visible), dim=1)  # [q, capacity + q]
         visible = torch.where(visible, 0.0, -30000.0).to(x.dtype)[None, None]         # [1, 1, q, capacity + q], additive (see Attention)
         keys, values = [], []
@@ -227,14 +248,15 @@ class GraniteHybridDecoder(torch.nn.Module):
             h = layer.input_norm(x)
             if layer.kind == "mamba":
                 h = (layer.mixer.recurrent(h, conv_state, ssm_state, slot) if recurrent
-                     else layer.mixer.chunk(h, positions, conv_state, ssm_state, slot))
+                     else layer.mixer.chunk(h, positions, conv_state, ssm_state, slot, valid))
             else:
                 h, k, v = layer.mixer(h, key_cache, value_cache, slot, visible)
                 keys.append(k)
                 values.append(v)
             x = x + h * self.residual_multiplier
             x = x + layer.mlp(layer.post_norm(x)) * self.residual_multiplier
-        logits = F.linear(self.norm(x[:, -1:]), self.embed.weight) / self.logits_scaling
+        last = x[:, -1:] if not padded else torch.index_select(x, 1, valid.to(torch.int32).sum().reshape(1) - 1)
+        logits = F.linear(self.norm(last), self.embed.weight) / self.logits_scaling
         return logits, torch.stack(keys), torch.stack(values)
 
     def empty_state(self, capacity: int):
@@ -268,6 +290,17 @@ class Main(torch.nn.Module):
         return self.inner(input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state)
 
 
+class PaddedMain(torch.nn.Module):
+    """`main` at a fixed width: the SSD chunk form with a padded tail (cache position -1)."""
+
+    def __init__(self, inner: GraniteHybridDecoder) -> None:
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state):
+        return self.inner(input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state, padded=True)
+
+
 class Decode(torch.nn.Module):
     """`decode`: q = 1 with the direct recurrence."""
 
@@ -277,6 +310,17 @@ class Decode(torch.nn.Module):
 
     def forward(self, input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state):
         return self.inner(input_ids, cache_positions, key_cache, value_cache, conv_state, ssm_state, recurrent=True)
+
+
+def padded_example(module: GraniteHybridDecoder, width: int):
+    """(example, dynamic shapes) for `PaddedMain`: q fixed at `width`, a padded tail in the example, capacity dynamic."""
+    cap_dim = torch.export.Dim("capacity", min=2, max=module.max_capacity)
+    kc, vc, cs, ss = module.empty_state(56)
+    start, n = 16, max(1, width - 3)
+    positions = torch.full((1, width), -1, dtype=torch.int32)
+    positions[0, :n] = torch.arange(start, start + n, dtype=torch.int32)
+    example = (torch.arange(width, dtype=torch.int32)[None] + 100, positions, kc, vc, cs, ss)
+    return example, (None, None, {3: cap_dim}, {3: cap_dim}, None, None)
 
 
 def examples(module: GraniteHybridDecoder, max_len: int):

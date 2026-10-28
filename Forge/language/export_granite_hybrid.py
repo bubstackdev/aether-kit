@@ -31,7 +31,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from export_qwen3 import drop_identity_copies  # noqa: E402
-from granite_hybrid import Decode, GraniteHybridDecoder, Main, examples, load_weights, read_config, state_order_violations  # noqa: E402
+from granite_hybrid import (Decode, GraniteHybridDecoder, Main, PaddedMain, examples, load_weights, padded_example,  # noqa: E402
+                            read_config, state_order_violations)
 
 INPUTS = ["input_ids", "cache_positions", "keyCache", "valueCache"]
 STATES = ["convState", "ssmState"]
@@ -88,11 +89,13 @@ def plan(prompt: int, widths: list[int], decode: int) -> list[tuple[int, int]]:
     return out + [(prompt + j, 1) for j in range(decode)]
 
 
-def self_check(asset: Path, module: GraniteHybridDecoder, decode_fn: bool, vocab: int) -> dict:
+def self_check(asset: Path, module: GraniteHybridDecoder, decode_fn: bool, vocab: int, width: int | None = None) -> dict:
+    """With `width` (a fixed-width `main`), prompt chunks are `width` wide with the tail padded, and one-token steps
+    go through `decode` when exported, else through `main` with one valid token."""
     import coreai.runtime as rt
 
     rng = np.random.default_rng(7)
-    steps = plan(23, [8, 4, 1, 2], 4)
+    steps = plan(23, [width] if width else [8, 4, 1, 2], 4)
     total = steps[-1][0] + 1
     tokens = rng.integers(min(1000, vocab // 2), vocab, total).astype(np.int32)
     capacity = 64
@@ -118,15 +121,18 @@ def self_check(asset: Path, module: GraniteHybridDecoder, decode_fn: bool, vocab
         got = []
         for start, n in steps:
             fn = decode if decode is not None and n == 1 and start > 0 else main
-            feed = {"input_ids": rt.NDArray(tokens[None, start:start + n].copy()),
-                    "cache_positions": rt.NDArray(np.arange(start, start + n, dtype=np.int32)[None]),
+            ids, positions = tokens[None, start:start + n].copy(), np.arange(start, start + n, dtype=np.int32)[None]
+            if width and fn is main:                                       # pad to the fixed width (position -1)
+                ids = np.concatenate((ids, np.zeros((1, width - n), np.int32)), axis=1)
+                positions = np.concatenate((positions, np.full((1, width - n), -1, np.int32)), axis=1)
+            feed = {"input_ids": rt.NDArray(ids), "cache_positions": rt.NDArray(positions),
                     "keyCache": rt.NDArray(kc), "valueCache": rt.NDArray(vc)}
             r = await fn(feed, states)
             logits = r["logits"].numpy()
             if logits.shape[1] != 1:
                 raise SystemExit(f"logits must be last-row only, got {logits.shape}")
-            kc[:, :, :, start:start + n] = r["keyUpdate"].numpy()
-            vc[:, :, :, start:start + n] = r["valueUpdate"].numpy()
+            kc[:, :, :, start:start + n] = r["keyUpdate"].numpy()[:, :, :, :n]   # valid rows only
+            vc[:, :, :, start:start + n] = r["valueUpdate"].numpy()[:, :, :, :n]
             got.append((logits[0, -1].astype(np.float32), kc.astype(np.float32).copy(),
                         states["convState"].numpy().astype(np.float32).copy(), states["ssmState"].numpy().copy()))
         return got
@@ -159,6 +165,8 @@ def main() -> None:
     parser.add_argument("--decode", action="store_true", help="also export the q = 1 `decode` function (C2)")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-prefill-chunk", type=int, default=512)
+    parser.add_argument("--static-width", type=int,
+                        help="export `main` at this fixed width with a padded tail (no symbolic q; see granite_hybrid.py)")
     parser.add_argument("--max-capacity", type=int, default=16384)
     parser.add_argument("--source-repository", default="")
     parser.add_argument("--source-revision", default="")
@@ -190,7 +198,9 @@ def main() -> None:
     args.output.mkdir(parents=True)
     asset = args.output / "model.aimodel"
     main_ex, main_dyn, dec_ex, dec_dyn = examples(module, args.max_prefill_chunk)
-    entries = [("main", Main(module), main_ex, main_dyn)]
+    if args.static_width:
+        main_ex, main_dyn = padded_example(module, args.static_width)
+    entries = [("main", PaddedMain(module) if args.static_width else Main(module), main_ex, main_dyn)]
     if args.decode:
         entries.append(("decode", Decode(module), dec_ex, dec_dyn))
     converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
@@ -220,7 +230,7 @@ def main() -> None:
 
     report = {
         "schema": 1,
-        "recipe": "granite-hybrid-bucketed-v1" + ("-decode" if args.decode else ""),
+        "recipe": "granite-hybrid-bucketed-v1" + (f"-static{args.static_width}" if args.static_width else "") + ("-decode" if args.decode else ""),
         "contract": "hybrid",
         "functions": [name for name, *_ in entries],
         "exportedAt": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -228,7 +238,8 @@ def main() -> None:
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "coreai-torch", "coreai-core")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "dtype": "float16 weights and KV, float32 ssmState",
-        "exportBounds": {"maximumPrefillChunk": args.max_prefill_chunk, "maximumCacheCapacity": args.max_capacity},
+        "exportBounds": {"maximumPrefillChunk": args.static_width or args.max_prefill_chunk, "maximumCacheCapacity": args.max_capacity},
+        "staticWidth": args.static_width,
         "droppedIdentityCopies": dropped,
         "strippedShapeAsserts": asserts,
         "stateOrderLint": lint,
@@ -252,7 +263,7 @@ def main() -> None:
         print("[export] self-check skipped: qualify natively", file=sys.stderr)
         return
     stage("self-check")
-    check = self_check(asset, module, args.decode, cfg["vocab_size"])
+    check = self_check(asset, module, args.decode, cfg["vocab_size"], args.static_width)
     report["selfCheck"] = check
     report_path.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"passed": check["passed"], "steps": check["steps"]}, indent=1))

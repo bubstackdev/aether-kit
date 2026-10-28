@@ -32,6 +32,9 @@ let decodeContexts = (option("--decode-contexts") ?? "256,2048").split(separator
 // --capacity N: allocate the KV caches at N rows once (one capacity, so a run touches few shapes); default: Kit's
 // 256-row growth, a new shape per capacity step.
 let fixedCapacity = option("--capacity").map { Int($0)! }
+// --static-width W: `main` takes exactly W tokens; shorter submissions are padded (cache position -1), and only the
+// valid KV rows are written. Prompts go in W-wide chunks, never split into smaller widths.
+let staticWidth = option("--static-width").map { Int($0)! }
 // --widths 4,2,1: the `widths` phase submits these widths in order from position 0, printing before each one.
 let probeWidths = (option("--widths") ?? "4,2,1,1").split(separator: ",").map { Int($0)! }
 let phases = Set((option("--phases") ?? "memory,numerics,long,ttft,decode").split(separator: ",").map(String.init))
@@ -164,13 +167,20 @@ final class Session {
         try grow(to: position + tokens.count)
         let shape = [kvLayers, 1, kvHeads, capacity, headDim]
         let strides = [kvHeads * capacity * headDim, kvHeads * capacity * headDim, capacity * headDim, headDim, 1]
+        let viaDecode = tokens.count == 1 && (position > 0 || decodeOnly) && decodeFunction != nil
+        let f = viaDecode ? decodeFunction! : mainFunction
+        var ids = tokens, positions = (position..<(position + tokens.count)).map(Int32.init)
+        if let staticWidth, !viaDecode {
+            precondition(tokens.count <= staticWidth)
+            ids += [Int32](repeating: 0, count: staticWidth - tokens.count)
+            positions += [Int32](repeating: -1, count: staticWidth - tokens.count)
+        }
         let inputs: [String: InferenceFunction.AsyncValue] = [
-            "input_ids": .init(NDArray(scalars: tokens, shape: [1, tokens.count])),
-            "cache_positions": .init(NDArray(scalars: (position..<(position + tokens.count)).map(Int32.init), shape: [1, tokens.count])),
+            "input_ids": .init(NDArray(scalars: ids, shape: [1, ids.count])),
+            "cache_positions": .init(NDArray(scalars: positions, shape: [1, positions.count])),
             "keyCache": .init(unsafeBuffer: keys!, scalarType: .float16, shape: shape, strides: strides, interleaveLayout: nil),
             "valueCache": .init(unsafeBuffer: values!, scalarType: .float16, shape: shape, strides: strides, interleaveLayout: nil),
         ]
-        let f = tokens.count == 1 && (position > 0 || decodeOnly) ? (decodeFunction ?? mainFunction) : mainFunction
         let outputs = try encode(f, inputs: inputs, index: 0, views: InferenceFunction.AsyncMutableViews())
         await stream.currentWorkCompleted()
         for (name, buffer) in [("keyUpdate", keys!), ("valueUpdate", values!)] {
@@ -179,7 +189,7 @@ final class Session {
             update.view(as: Float16.self).withUnsafePointer { p, s, st in
                 for r in 0..<(s[0] * s[2]) {
                     let (l, h) = (r / s[2], r % s[2])
-                    for t in 0..<s[3] {
+                    for t in 0..<tokens.count {                      // valid rows only (a padded tail is dropped)
                         let src = l * st[0] + h * st[2] + t * st[3], dst = (r * capacity + position + t) * headDim
                         for d in 0..<s[4] { cache[dst + d] = p[src + d * st[4]] }
                     }
@@ -204,6 +214,7 @@ final class Session {
 }
 
 func plan(_ count: Int) -> [Int] {
+    if let staticWidth { return Array(repeating: staticWidth, count: count / staticWidth) + (count % staticWidth > 0 ? [count % staticWidth] : []) }
     var widths = Array(repeating: chunk, count: count / chunk), rest = count % chunk, bit = chunk / 2
     while rest > 0 { if rest >= bit { widths.append(bit); rest -= bit }; bit /= 2 }
     return widths
