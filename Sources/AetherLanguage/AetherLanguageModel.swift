@@ -1,3 +1,4 @@
+import AetherAssets
 import AetherKit
 import AetherLanguageRuntime
 import AetherLanguageTokenizers
@@ -30,6 +31,9 @@ public struct AetherLanguageModel: Sendable {
     }
 
     public let bundle: URL
+    /// The store installation this model was opened from (``init(installation:platform:)``). Its read lease lives as long
+    /// as this model, its copies and the sessions using it, so the store can't remove or replace the files meanwhile.
+    public let installation: AssetReadLease?
     /// Whether this model can serve requests here, from the registration alone (no hashing, no loading).
     public let availability: Availability
     /// Whether the registration declares a thinking mode (``AetherGenerationOptions/Reasoning``).
@@ -53,19 +57,39 @@ public struct AetherLanguageModel: Sendable {
         self.init(bundle: bundle, platform: platform, coreAIAvailable: Self.coreAIAvailable)
     }
 
+    /// A model in a `LocalAssetStore` installation, typically one `ModelPreparation` produced
+    /// (docs/model-preparation.md). Acquiring the lease verified every installed byte; the model holds it for its
+    /// lifetime. An installation of anything other than a language bundle is unavailable (`bundleInvalid`).
+    public init(installation: AssetReadLease, platform: LanguageModelManifest.Platform = Self.currentPlatform) {
+        self.init(installation: installation, platform: platform, coreAIAvailable: Self.coreAIAvailable)
+    }
+
+    init(installation: AssetReadLease, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool) {
+        self.init(bundle: installation.directory, platform: platform, coreAIAvailable: coreAIAvailable, installation: installation)
+    }
+
     /// The backend choice with the OS check injected, so CPU tests on OS 27 reach the unsupported-OS branch.
-    init(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool) {
-        let readiness = Self.readiness(bundle: bundle, platform: platform, coreAIAvailable: coreAIAvailable)
+    init(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool, installation: AssetReadLease? = nil) {
+        var readiness = Self.readiness(bundle: bundle, platform: platform, coreAIAvailable: coreAIAvailable)
+        if let installation, installation.manifest.executionContract != Self.installationContract,
+           readiness.availability != .unavailable(.unsupportedOS) {
+            readiness.availability = .unavailable(.bundleInvalid(
+                "installation \(installation.installationID) is \(installation.manifest.executionContract), not a language bundle"))
+        }
         self.init(bundle: bundle, availability: readiness.availability, supportsReasoning: readiness.manifest?.supportsReasoning ?? false,
-                  contextLength: readiness.manifest?.maximumContextLength ?? 0) {
+                  contextLength: readiness.manifest?.maximumContextLength ?? 0, installation: installation) {
             try await Self.loadCoreAI(bundle: bundle, platform: platform)
         }
     }
 
+    /// The execution contract of ``LanguageModelManifest/installationManifest(in:)``.
+    static let installationContract = "aether.language-bundle/1"
+
     /// A model over any backend (CPU tests drive the engine with a fake one).
     init(bundle: URL, availability: Availability, supportsReasoning: Bool, contextLength: Int,
-         loader: @escaping LanguageModelResources.Loader) {
+         installation: AssetReadLease? = nil, loader: @escaping LanguageModelResources.Loader) {
         self.bundle = bundle
+        self.installation = installation
         self.availability = availability
         self.supportsReasoning = supportsReasoning
         self.contextLength = contextLength

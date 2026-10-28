@@ -182,7 +182,7 @@ whether retrying can help.
 4. The Hugging Face resolver (`ModelSource.huggingFace`) and `ModelPreparation.huggingFaceAuthorization(token:)`. Done.
 5. `BackgroundTransport` and `handleEvents(identifier:completionHandler:)`. Done; the session itself is qualified on a
    device (below), since a background session needs an app.
-6. `AetherLanguageModel(installation:)` with the lease held.
+6. `AetherLanguageModel(installation:)` with the lease held. Done.
 7. The guide and the qualification evidence.
 
 ## Open questions

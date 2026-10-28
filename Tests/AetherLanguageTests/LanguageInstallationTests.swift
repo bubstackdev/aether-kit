@@ -111,4 +111,36 @@ struct LanguageInstallationTests {
         let lease = try await store.acquire(id)
         #expect(try LanguageModelManifest.installationManifest(in: lease.directory) == manifest)
     }
+
+    @Test func aModelOpenedFromAnInstallationHoldsItsLease() async throws {
+        let bundle = try HashedBundle(registerTokenizerFiles: true)
+        let storeRoot = FileManager.default.temporaryDirectory.appendingPathComponent("language-store-\(UUID().uuidString)")
+        defer { bundle.remove(); try? FileManager.default.removeItem(at: storeRoot) }
+        let store = try LocalAssetStore(root: storeRoot)
+        let id = try await store.install(LanguageModelManifest.installationManifest(in: bundle.url), from: bundle.url)
+        do {
+            let model = AetherLanguageModel(installation: try await store.acquire(id), platform: .macos, coreAIAvailable: true)
+            #expect(model.availability == AetherLanguageModel(bundle: bundle.url, platform: .macos, coreAIAvailable: true).availability)
+            #expect(model.installation?.installationID == id && model.bundle == model.installation?.directory)
+            let copy = model
+            #expect(throws: AssetStoreError.busy) { try store.remove(id) }
+            withExtendedLifetime(copy) {}
+        }
+        try store.remove(id)  // the last copy is gone, and so is the lease
+    }
+
+    @Test func anInstallationOfAnotherFamilyIsUnavailable() async throws {
+        let bundle = try HashedBundle(registerTokenizerFiles: true)
+        let storeRoot = FileManager.default.temporaryDirectory.appendingPathComponent("language-store-\(UUID().uuidString)")
+        defer { bundle.remove(); try? FileManager.default.removeItem(at: storeRoot) }
+        let language = try LanguageModelManifest.installationManifest(in: bundle.url)
+        let foreign = try AssetManifest(assetIdentity: language.assetIdentity, executionContract: "kokoro.speech-bundle/1",
+                                        files: language.files)
+        let store = try LocalAssetStore(root: storeRoot)
+        let id = try await store.install(foreign, from: bundle.url)
+        let model = AetherLanguageModel(installation: try await store.acquire(id), platform: .macos, coreAIAvailable: true)
+        guard case .unavailable(.bundleInvalid) = model.availability else {
+            Issue.record("expected bundleInvalid, got \(model.availability)"); return
+        }
+    }
 }

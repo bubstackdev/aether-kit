@@ -26,7 +26,7 @@ extension LanguageModelManifest {
             files += try tokenizerFiles(manifest, in: root)
             let registrationHash = files[0].sha256
             return try AssetManifest(assetIdentity: "aether-language/1:" + registrationHash,
-                                     executionContract: "aether.language-bundle/1", files: files)
+                                     executionContract: AetherLanguageModel.installationContract, files: files)
         } catch let error as AssetStoreError {
             throw AetherError.invalidModel("\(error)")
         }
