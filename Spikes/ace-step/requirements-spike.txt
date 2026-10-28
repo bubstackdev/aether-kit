@@ -1,0 +1,13 @@
+# The ACE-Step spike's venv: these exact packages on top of Forge's locked environment, which already supplies torch,
+# coreai-torch, transformers, diffusers, numpy, sympy and loguru. Installed without dependency resolution, so nothing in
+# Forge's set changes (vector-quantize-pytorch would otherwise accept any torch >= 2.4):
+#   uv venv --python 3.12 /Volumes/Scratch/aether/spikes/ace-step/venv
+#   echo "<repo>/Forge/.venv/lib/python3.12/site-packages" > /Volumes/Scratch/aether/spikes/ace-step/venv/lib/python3.12/site-packages/forge.pth
+#   uv pip install --python /Volumes/Scratch/aether/spikes/ace-step/venv/bin/python --no-deps -r Spikes/ace-step/requirements-spike.txt
+# Only the turbo model file's `from vector_quantize_pytorch import ResidualFSQ` needs these; the FSQ tokenizer's output
+# is discarded for text-to-music (is_covers = 0), but its weights load with the model.
+vector-quantize-pytorch==1.32.0   # MIT
+einops==0.8.2                     # MIT
+einx==0.4.3                       # MIT
+torch-einops-utils==0.2.0         # MIT
+frozendict==2.4.7                 # LGPL-3.0; einx's dependency, development-time only, never part of AetherKit

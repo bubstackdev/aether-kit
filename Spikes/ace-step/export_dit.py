@@ -1,13 +1,15 @@
 """Throwaway spike: export one ACE-Step 1.5 turbo DiT velocity step (decoder only, 24 layers, 2048-d) to Core AI.
 
 Inputs (static): xt [1, T, 64] noisy latent, t [1] timestep, context [1, T, 128] (source latents ‖ chunk mask),
-encoder [1, L, 2048] packed condition (lyric ‖ timbre ‖ text after the condition encoder). Output: v [1, T, 64].
+encoder [1, L, 2048] packed condition (lyric ‖ timbre ‖ text after the condition encoder), encoder_mask [1, L]
+(1 for condition rows, 0 for padding; 0.0.3: real conditions are shorter than L and padded). Output: v [1, T, 64].
 The upstream modeling file (MIT, from the model repo) is imported from the snapshot; only decoder.* weights load.
 Writes an eager fp32 reference output for fixed random inputs.
 
 usage: export_dit.py <out-dir> [--frames 1500] [--enc 512] [--dtype float16] [--skip-export]
 """
 import argparse
+import os
 import importlib.util
 import json
 import sys
@@ -28,7 +30,8 @@ ap.add_argument("--skip-ref", action="store_true")
 a = ap.parse_args()
 out = Path(a.out)
 out.mkdir(parents=True, exist_ok=True)
-snap = next((Path.home() / ".cache/huggingface/hub/models--ACE-Step--Ace-Step1.5/snapshots").iterdir())
+hub = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
+snap = next((hub / "models--ACE-Step--Ace-Step1.5/snapshots").iterdir())
 mdir = snap / "acestep-v15-turbo"
 
 
@@ -61,11 +64,10 @@ class Step(torch.nn.Module):
         super().__init__()
         self.d = d
 
-    def forward(self, xt, t, context, encoder):
+    def forward(self, xt, t, context, encoder, encoder_mask):
         ones = torch.ones(xt.shape[:2], dtype=xt.dtype)
-        enc_ones = torch.ones(encoder.shape[:2], dtype=xt.dtype)
         return self.d(hidden_states=xt, timestep=t, timestep_r=t, attention_mask=ones,
-                      encoder_hidden_states=encoder, encoder_attention_mask=enc_ones, context_latents=context,
+                      encoder_hidden_states=encoder, encoder_attention_mask=encoder_mask > 0.5, context_latents=context,
                       use_cache=False)[0]
 
 
@@ -73,8 +75,8 @@ T, L = a.frames, a.enc
 rng = np.random.default_rng(0)
 inputs = [rng.standard_normal((1, T, 64)).astype(np.float32), np.array([0.6], np.float32),
           np.concatenate([0.3 * rng.standard_normal((1, T, 64)), np.ones((1, T, 64))], -1).astype(np.float32),
-          (0.5 * rng.standard_normal((1, L, 2048))).astype(np.float32)]
-names = ["xt", "t", "context", "encoder"]
+          (0.5 * rng.standard_normal((1, L, 2048))).astype(np.float32), np.ones((1, L), np.float32)]
+names = ["xt", "t", "context", "encoder", "encoder_mask"]
 for n, x in zip(names, inputs):
     np.save(out / f"dit-ref-{n}-{T}x{L}.npy", x)
 step = Step(dit)

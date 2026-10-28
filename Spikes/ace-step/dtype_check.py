@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import export_dit as X  # noqa: E402  (builds the decoder; --skip-export skips conversion)
 
 ref = np.load(E / f"dit-ref-v-{T}x{L}.npy").astype(np.float64).ravel()
-feeds = [np.load(E / f"dit-ref-{n}-{T}x{L}.npy") for n in ("xt", "t", "context", "encoder")]
+feeds = [np.load(E / f"dit-ref-{n}-{T}x{L}.npy") for n in ("xt", "t", "context", "encoder", "encoder_mask")]
 for dt in (torch.bfloat16, torch.float16):
     step = X.Step(X.dit).to(dt)
     with torch.no_grad():

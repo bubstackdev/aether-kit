@@ -38,7 +38,7 @@ async def run(name):
         audio_seconds = frames / 25
     else:
         shape = name.split("-")[1]
-        feeds = {n: np.load(E / f"dit-ref-{n}-{shape}.npy") for n in ("xt", "t", "context", "encoder")}
+        feeds = {n: np.load(E / f"dit-ref-{n}-{shape}.npy") for n in ("xt", "t", "context", "encoder", "encoder_mask")}
         ref, key = np.load(E / f"dit-ref-v-{shape}.npy"), "v"
         audio_seconds = int(shape.split("x")[0]) / 25
     feed = {k: rt.NDArray(v.astype(dt)) for k, v in feeds.items()}
