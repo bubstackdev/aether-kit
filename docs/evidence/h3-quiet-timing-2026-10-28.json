@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "kind": "h3-quiet-host-timing",
+  "date": "2026-10-28",
+  "command": "run-quiet-timing.sh: aether-probe h3-memory-render PROFILE DUMP OUT --spike-capture=12.5, one render per task, each its own GPU-lock hold",
+  "script": {
+    "path": "run-quiet-timing.sh",
+    "sha256": "8e33d14cf2c8183bd94286f9aea74077c848e944f71999032ff5a3fb64a24c72",
+    "guard": {
+      "oneMinuteLoadBelow": 10.0,
+      "memorystatusAtLeast": 70,
+      "dataFreeGBAtLeast": 40
+    },
+    "note": "The script gained task selection (TASKS) between the first window and the T2VA re-run, and its summary was later changed to sum raw phase durations; the guard and the render command did not change. The hash is the script in its final form. This record's stage times are summed from the raw phases by the record writer, not taken from the run summaries."
+  },
+  "build": {
+    "commit": "bd048e4bba8e185221e143dcd4e4f4d8248ea42a",
+    "probe": ".build/release/aether-probe",
+    "probeSHA256": "c94f6e7dbe4b84e0da856196f0ce0821311cd8916a615a05df85583cf597c03a",
+    "backing": "the probe was built from this commit (origin/main) before the runs; the branch's later commits change docs only (git diff bd048e4 -- Sources Package.swift: 0 lines), so the probe hash identifies the measured build"
+  },
+  "dumps": {
+    "t2va": {
+      "path": "dump-t2va-qualified-5af39db5",
+      "manifestSHA256": "c8df8d581d12b5b7b6bb897347d908daa2fccf6a9506553062330dd7acfa4113",
+      "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+      "width": "960",
+      "height": "544",
+      "frames": "124",
+      "recipe": "turbo8",
+      "seed": "1043",
+      "steps": "8",
+      "rows": "19333",
+      "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7"
+    },
+    "fl2va": {
+      "path": "dump-fl2va-qualified-5af39db5",
+      "manifestSHA256": "91a5bc5c9dc15bc92d694a67b0ec2bb8e8c19058e7f523d0561345c5ebe8e0d9",
+      "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+      "width": "960",
+      "height": "544",
+      "frames": "124",
+      "recipe": "turbo8",
+      "seed": "1043",
+      "steps": "8",
+      "rows": "19843",
+      "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7"
+    }
+  },
+  "host": "M5 Max, Core AI architecture h17c. The user's AV1 transcode was paused. No other GPU work overlapped a render (the lock serialized it; other agents' short GPU jobs ran between renders). FL2VA started beside one compile at 100% CPU.",
+  "windows": {
+    "fl2va": "07:30:34-07:36:23, right after the first T2VA run",
+    "t2va": "07:41:41-07:47:46, a re-run in a second window after the FLUX benchmark",
+    "note": "The T2VA reference and FL2VA ran in different windows, so the step comparison between them crosses windows."
+  },
+  "fl2va": {
+    "conditionerSeconds": 19.0,
+    "firstFrameEncoderSeconds": 4.8,
+    "denoisingSeconds": 288.5,
+    "stepSeconds": [
+      36.3,
+      35.4,
+      36.0,
+      36.0,
+      36.1,
+      36.1,
+      36.2,
+      36.3
+    ],
+    "videoDecodeSeconds": 29.8,
+    "audioDecodeSeconds": 0.7,
+    "totalStageSeconds": 342.8,
+    "spikeCaptured": "no",
+    "denoisingMetalPeakGiB": 11.844,
+    "timeline": {
+      "path": "quiet-timing-2026-10-28/render-fl2va-960x544/memory.json",
+      "sha256": "a20a0d57c94c7d9c43aa6afdc51bad8d7787911adc7923658bdaf812e9d05f5c"
+    },
+    "dump": {
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-memory-0.0.3/dump-fl2va-qualified-5af39db5",
+      "width": "960",
+      "height": "544",
+      "frames": "124"
+    },
+    "oneMinuteLoad": {
+      "min": 1.34,
+      "max": 3.85,
+      "samples": 35
+    },
+    "status": "quiet reference"
+  },
+  "gpuLock": [
+    "2026-10-28 07:23:50 acquired pid=46181 h3-quiet-timing: t2va 960x544x124",
+    "2026-10-28 07:30:17 released pid=46181 h3-quiet-timing: t2va 960x544x124 rc=0",
+    "2026-10-28 07:30:34 acquired pid=50907 h3-quiet-timing: fl2va 960x544x124",
+    "2026-10-28 07:36:23 released pid=50907 h3-quiet-timing: fl2va 960x544x124 rc=0",
+    "2026-10-28 07:41:41 acquired pid=53514 h3-quiet-timing: t2va 960x544x124",
+    "2026-10-28 07:47:46 released pid=53514 h3-quiet-timing: t2va 960x544x124 rc=0"
+  ],
+  "scope": "Wall time per session stage from the session's own events, summed from raw phase durations; one run per task, not a benchmark distribution.",
+  "t2va": {
+    "conditionerSeconds": 18.8,
+    "firstFrameEncoderSeconds": null,
+    "denoisingSeconds": 307.9,
+    "stepSeconds": [
+      39.8,
+      36.3,
+      37.9,
+      38.1,
+      38.1,
+      38.5,
+      39.2,
+      39.9
+    ],
+    "videoDecodeSeconds": 30.8,
+    "audioDecodeSeconds": 0.7,
+    "totalStageSeconds": 358.2,
+    "spikeCaptured": "no",
+    "denoisingMetalPeakGiB": 11.127,
+    "timeline": {
+      "path": "quiet-timing-2026-10-28-t2va-rerun/render-t2va-960x544/memory.json",
+      "sha256": "4ee0c4459cdb50d9b2c82a79b6c1ad01b5b6a150f4a631f26477185967e7d913"
+    },
+    "dump": {
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-memory-0.0.3/dump-t2va-qualified-5af39db5",
+      "width": "960",
+      "height": "544",
+      "frames": "124"
+    },
+    "oneMinuteLoad": {
+      "min": 0.89,
+      "max": 2.64,
+      "samples": 37
+    },
+    "status": "quiet reference (re-run, second window)"
+  },
+  "t2vaFirstRun": {
+    "conditionerSeconds": 20.3,
+    "firstFrameEncoderSeconds": null,
+    "denoisingSeconds": 327.3,
+    "stepSeconds": [
+      38.2,
+      44.6,
+      41.5,
+      40.6,
+      40.6,
+      40.8,
+      40.5,
+      40.5
+    ],
+    "videoDecodeSeconds": 31.8,
+    "audioDecodeSeconds": 0.7,
+    "totalStageSeconds": 380.1,
+    "spikeCaptured": "no",
+    "denoisingMetalPeakGiB": 11.127,
+    "timeline": {
+      "path": "quiet-timing-2026-10-28/render-t2va-960x544/memory.json",
+      "sha256": "70748c77dd4b038c9340b505e6270a5a3ae9f5f63c9ad111569482d0e15090f0"
+    },
+    "dump": {
+      "dump": "/Volumes/Scratch/aether/aether-kit-h3-memory-0.0.3/dump-t2va-qualified-5af39db5",
+      "width": "960",
+      "height": "544",
+      "frames": "124"
+    },
+    "oneMinuteLoad": {
+      "min": 3.26,
+      "max": 10.7,
+      "samples": 39
+    },
+    "status": "side note, not the reference: partly perturbed. Load was 9.3 at its start (it passed the < 10 guard) and peaked at 10.7 at 2.4 min, while another session's TripoSR job (268% CPU), Atelier Studio and an index build were running. The guard alone does not make a run quiet."
+  },
+  "note": "One run per task. The T2VA re-run's steps are slower than FL2VA's although FL2VA denoises more rows; the two ran in different windows and with n = 1 the cause is not known."
+}
