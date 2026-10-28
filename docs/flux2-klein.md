@@ -243,13 +243,35 @@ the CPU.
 | Fixture | Mode | Cases |
 | --- | --- | --- |
 | `ffc4b1365159e40c` (text to image) | `--text-to-image` | 10 prompts, 512² to 1344×768, incl. French/Japanese text |
-| `caf92bb7d83d685c` (reference images) | default; the pipeline with `image=[…]`, references are the Lanczos-resized `fox-512` and `lighthouse-512` outputs of the 2026-10-26 text-to-image fixture, unchanged | 2 cases, one and two references |
+| `80a86a512315fa94` (reference images) | default; the pipeline with `image=[…]`, references are the Lanczos-resized `fox-512` and `lighthouse-512` outputs of the CPU text-to-image fixture `ffc4b136…` | 2 cases, one and two references |
 
 Both record token ids/mask, float32 text rows, packed initial noise, per-step latents/timestep/velocity, final latent
 and float32 image; the reference fixture also records encoder input pixels, the appended reference tokens and the
 transformer position ids. Neither uses the Core AI bundle or AetherKit code.
 
-They replace the 2026-10-26 fixtures `6a8a53d8f3b30817` and `079a8fba9d596a3b`, which ran the pipeline on MPS (text
+**Reference fixture regenerated from the CPU pictures (0.0.3).** The reference fixture used to take its two source
+pictures from the 2026-10-26 MPS text-to-image fixture `6a8a53d8…`. `80a86a51…` takes them from the CPU fixture
+`ffc4b136…`, so every FLUX.2 reference now traces to CPU float32 computation. It replaces `caf92bb7d83d685c`, which the
+records up to 0.0.3's encoder cancellation used. Everything that doesn't depend on the pictures is byte-identical to
+`caf92bb7…`: `cases.jsonl`, token ids, mask, text rows, noise, position ids and the first step's latents. The reference
+pixels and PNGs, and everything computed from them, differ. Generation took 5.3 minutes on the CPU at an 18.5 GiB peak
+RSS ([fixture document](evidence/flux2-klein-reference-fixture-80a86a512315fa94.json),
+[log](evidence/flux2-klein-reference-fixture-t2i-pictures-log-2026-10-27.log)). `AetherFlux2Tests` passes 28/28 with
+the bundle and both fixture paths set; `samplerArithmeticMatchesTheIndependentReference` re-hashes every file and replays
+the Euler steps bit for bit. Native parity of the two reference cases on `d27cefc4…` passes **23/23 checks** at the
+unchanged bars, with values close to `caf92bb7…`'s:
+
+| Check (bar) | `caf92bb7…` | `80a86a51…` |
+| --- | --- | --- |
+| Velocity cosine, minimum (≥ 0.999) | 0.999443 | 0.999430 |
+| Decoder PSNR, minimum (≥ 35 dB) | 87.95 dB | 88.07 dB |
+| Reference latent cosine, minimum (≥ 0.999) | 1.000000 | 1.000000 |
+| Image-path SSIM (≥ 0.94) | 0.998520 / 0.987723 | 0.998569 / 0.987759 |
+
+See the [report](evidence/flux2-reference-fixture-80a86a51-native-parity-2026-10-27.json) and
+[log](evidence/flux2-reference-fixture-80a86a51-native-parity-2026-10-27.log).
+
+`ffc4b136…` and `caf92bb7…` replaced the 2026-10-26 fixtures `6a8a53d8f3b30817` and `079a8fba9d596a3b`, which ran the pipeline on MPS (text
 encoder on CPU). The CPU-computed inputs are byte-identical to those fixtures for all 12 cases: token ids, mask, text
 rows, noise and timesteps, plus reference pixels, PNGs and position ids. The MPS-computed outputs move by at most
 1.1·10⁻⁴ relative L2 per tensor (velocity cosine ≥ 0.999999994). A second CPU run reproduces every file byte for byte.
@@ -334,7 +356,7 @@ See the [report](evidence/flux2-reference-encoder-cancellation-2026-10-27.json),
 [log](evidence/flux2-reference-encoder-cancellation-2026-10-27.log) and
 [event journal](evidence/flux2-reference-encoder-cancellation-events-2026-10-27.jsonl). Run it with the text encoder
 command above plus
-`AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c`.
+`AETHER_FLUX2_REFERENCE_FIXTURES` set to the reference fixture directory (`80a86a51…` today).
 
 ### Memory after unload (0.0.3)
 
@@ -514,10 +536,12 @@ Regenerate the references (CPU only, no GPU lock; about 30 GiB peak RSS):
 CKPT=~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294
 uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py --text-to-image $CKPT NEW_T2I_DIR
 uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py $CKPT \
-  .../oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 NEW_REFERENCE_DIR
+  ~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c NEW_REFERENCE_DIR
 ```
 
-Reference mode reads the fox-512 and lighthouse-512 source pictures from the 2026-10-26 text-to-image fixture directory, so keep that directory: it is an input of regeneration, not only a superseded record. Its two PNGs are hashed in [its fixture document](evidence/flux2-klein-t2i-fixture-6a8a53d8f3b30817.json). Moving them to the CPU text-to-image fixture would change the reference fixture's inputs and ID, so it waits for the next intentional regeneration.
+Reference mode reads the fox-512 and lighthouse-512 source pictures from the CPU text-to-image fixture directory, so
+keep that directory: it is an input of regeneration, not only a record. The 2026-10-26 MPS fixture `6a8a53d8…` is no
+longer an input.
 
 Run the native gate (one suite at a time, under the shared lock):
 
@@ -525,7 +549,7 @@ Run the native gate (one suite at a time, under the shared lock):
 AETHER_NATIVE_FLUX2_QUALIFICATION=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
-AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_REFERENCE_FIXTURES=/Volumes/Scratch/aether/flux2-klein-4b/oracle-reference-cpu-t2i-pictures-2026-10-27/fixtures/80a86a512315fa94 \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test -c release --filter flux2NativeParity
 ```
@@ -555,7 +579,7 @@ directory, plus the bundle and fixture paths) is modeled on Krea's native sessio
 AETHER_NATIVE_FLUX2_LIFECYCLE=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
-AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_REFERENCE_FIXTURES=/Volumes/Scratch/aether/flux2-klein-4b/oracle-reference-cpu-t2i-pictures-2026-10-27/fixtures/80a86a512315fa94 \
 AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
 ```
