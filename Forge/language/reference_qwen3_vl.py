@@ -64,13 +64,15 @@ def main() -> None:
     parser.add_argument("--forced-tokens", type=int, default=32)
     parser.add_argument("--max-pixels", type=int, default=None,
                         help="processor pixel cap (size.longest_edge), mirroring Kit's maximumPixels")
+    parser.add_argument("--exif-transpose", action="store_true",
+                        help="decode as Transformers' load_image does: ImageOps.exif_transpose, then convert('RGB')")
     parser.add_argument("--grids", default=None,
                         help="fixed patch grids HxW, comma-separated: snap each image to the nearest aspect grid")
     args = parser.parse_args()
     grids = [tuple(int(v) for v in g.split("x")) for g in args.grids.split(",")] if args.grids else None
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
-    from PIL import Image
+    from PIL import Image, ImageOps
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
     config = json.loads((args.checkpoint / "config.json").read_text())
@@ -93,7 +95,8 @@ def main() -> None:
         image_path = Path(image_path)
         copied = args.output / f"{name}{image_path.suffix.lower()}"
         shutil.copyfile(image_path, copied)
-        image = Image.open(image_path).convert("RGB")
+        image = Image.open(image_path)
+        image = (ImageOps.exif_transpose(image) if args.exif_transpose else image).convert("RGB")
         snapped = None
         if grids:
             import transformers.models.qwen2_vl.image_processing_qwen2_vl_fast as fast
@@ -181,7 +184,9 @@ def main() -> None:
         "imageGrids": [list(g) for g in grids] if grids else None,
         "gridSnapping": ("nearest aspect ratio in log space, first listed wins a tie; the processor's smart_resize "
                          "replaced by the grid's pixel size") if grids else None,
-        "imageDecoding": "PIL Image.open(...).convert('RGB'), no EXIF transpose (the photos carry orientation 1 or none)",
+        "imageDecoding": ("PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)"
+                          if args.exif_transpose else
+                          "PIL Image.open(...).convert('RGB'), no EXIF transpose (the photos carry orientation 1 or none)"),
         "cases": cases,
     }
     (args.output / "reference.json").write_text(json.dumps(record, indent=2) + "\n")

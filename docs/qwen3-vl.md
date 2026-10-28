@@ -112,9 +112,12 @@ black, where the reference's `convert("RGB")` drops alpha and keeps the stored c
 transparent regions differ (opaque images are unaffected). `VisionRGBImageTests` checks channel
 order, colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
 EXIF orientation is applied **before** grid snapping, so a
-rotated portrait snaps by its displayed aspect ratio. Parity is not exercised for rotated photos:
-every reference photo carries orientation 1 (or none), and the reference decodes without an EXIF
-transpose.
+rotated portrait snaps by its displayed aspect ratio. The transform is exact: tagged lossless images decode to their
+stored pixels moved where each orientation puts them, byte for byte, for all eight orientations (CPU). Rotated photos
+are qualified against upstream fed as Transformers' `load_image` feeds it (`exif_transpose`, then `convert("RGB")`):
+four lossless variants of the Kit-decoded photos, stored rotated and tagged with orientation 6, 8 or 3, give the
+unrotated images' grids, pixels, forced rows and greedy tokens exactly, on the reference and through Kit's same-decode
+run ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)).
 
 ## Dynamic shapes are a correctness hazard for the encoder
 

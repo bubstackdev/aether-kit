@@ -107,4 +107,63 @@ struct VisionRGBImageTests {
             #expect(zip(pixel, colours[name]!).allSatisfy { abs(Int($0) - Int($1)) <= 8 }, "orientation \(orientation): \(pixel) is not \(name)")
         }
     }
+
+    /// The stored pixel shown at displayed (x, y) under EXIF `orientation`, for a stored image of `width` x `height`.
+    private static func storedPixel(orientation: Int, x: Int, y: Int, width: Int, height: Int) -> (x: Int, y: Int) {
+        switch orientation {
+        case 2: (width - 1 - x, y)
+        case 3: (width - 1 - x, height - 1 - y)
+        case 4: (x, height - 1 - y)
+        case 5: (y, x)
+        case 6: (y, height - 1 - x)
+        case 7: (width - 1 - y, height - 1 - x)
+        case 8: (width - 1 - y, x)
+        default: (x, y)
+        }
+    }
+
+    /// The orientation transform is exact: a lossless PNG of seeded random pixels, tagged with each orientation, decodes
+    /// to precisely the stored pixels moved where the orientation puts them, byte for byte. So the full-size thumbnail path
+    /// used for rotated files moves pixels and never resamples them, at an odd photo-like size.
+    @Test(arguments: 1...8) func exifOrientationMovesPixelsWithoutResampling(orientation: Int) throws {
+        let width = 1201, height = 797
+        var state: UInt64 = 0x9E37_79B9_7F4A_7C15 &+ UInt64(orientation)
+        var rgba = [UInt8](repeating: 255, count: width * height * 4)
+        for i in 0..<(width * height) {
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            rgba[4 * i] = UInt8(truncatingIfNeeded: state >> 24)
+            rgba[4 * i + 1] = UInt8(truncatingIfNeeded: state >> 32)
+            rgba[4 * i + 2] = UInt8(truncatingIfNeeded: state >> 40)
+        }
+        let url = try Self.write(rgba, width: width, height: height, space: Self.sRGB,
+                                 properties: [kCGImagePropertyOrientation: orientation])
+        defer { Self.remove(url) }
+        let image = try VisionRGBImage(contentsOf: url)
+        let swapped = orientation >= 5
+        #expect(image.width == (swapped ? height : width) && image.height == (swapped ? width : height))
+        var mismatches = 0
+        for y in 0..<image.height {
+            for x in 0..<image.width {
+                let source = Self.storedPixel(orientation: orientation, x: x, y: y, width: width, height: height)
+                let s = 4 * (source.y * width + source.x), d = 3 * (y * image.width + x)
+                if image.rgb[d] != rgba[s] || image.rgb[d + 1] != rgba[s + 1] || image.rgb[d + 2] != rgba[s + 2] { mismatches += 1 }
+            }
+        }
+        #expect(mismatches == 0, "orientation \(orientation): \(mismatches) pixels differ from an exact transform")
+    }
+
+    /// A rotated file snaps by its displayed aspect ratio: a landscape-stored image tagged as rotated 90° (orientation 6
+    /// or 8) is a portrait, and snaps to the portrait grid rather than the landscape one.
+    @Test(arguments: [6, 8]) func rotatedFileSnapsToItsDisplayedGrid(orientation: Int) throws {
+        let url = try Self.write([UInt8](repeating: 128, count: 896 * 512 * 4), width: 896, height: 512, space: Self.sRGB,
+                                 properties: [kCGImagePropertyOrientation: orientation])
+        defer { Self.remove(url) }
+        let image = try VisionRGBImage(contentsOf: url)
+        var configuration = Qwen3VLImagePreprocessor.Configuration()
+        configuration.imageGrids = [.init(height: 44, width: 44), .init(height: 36, width: 48), .init(height: 48, width: 36),
+                                    .init(height: 32, width: 56), .init(height: 56, width: 32)]
+        let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
+                                                             configuration: configuration)
+        #expect(processed.grid == (1, 56, 32))
+    }
 }
