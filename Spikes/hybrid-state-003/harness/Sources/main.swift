@@ -258,11 +258,19 @@ func assetIdentity() -> [String: String] {
     }
     return out
 }
+/// An argument as recorded: a path under the home folder starts at `~` (no user name), other absolute paths keep their
+/// last two components.
+func redactedPath(_ argument: String) -> String {
+    guard argument.hasPrefix("/") else { return argument }
+    let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
+    let path = URL(fileURLWithPath: argument).standardizedFileURL.path
+    if path == home || path.hasPrefix(home + "/") { return "~" + path.dropFirst(home.count) }
+    return URL(fileURLWithPath: path).pathComponents.suffix(2).joined(separator: "/")
+}
 func loadAverage() -> [Double] { var l = [Double](repeating: 0, count: 3); _ = getloadavg(&l, 3); return l }
 
 var report: [String: Any] = ["asset": assetURL.lastPathComponent,
-                             "argv": CommandLine.arguments.dropFirst().map {   // absolute paths reduced to their last two components
-                                 $0.hasPrefix("/") ? URL(fileURLWithPath: $0).pathComponents.suffix(2).joined(separator: "/") : $0 },
+                             "argv": CommandLine.arguments.dropFirst().map(redactedPath),
                              "assetIdentity": assetIdentity(), "fixedCapacity": fixedCapacity ?? NSNull(),
                              "staticWidth": staticWidth ?? NSNull(), "loadAverageAtStart": loadAverage(),
                              "startedAt": ISO8601DateFormatter().string(from: Date()), "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
