@@ -50,7 +50,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Infrastructure
 
-- The `stream` Sendable warnings.
+- The `stream` Sendable warnings. Done: 14 warnings to 0. `SerialComputeStream` in AetherCoreAI is now the one `@unchecked Sendable` boundary, a workaround that goes once Core AI annotates its stream ([details](h3-integration.md#native-block-binding-checkpoint)).
 
 ### Spikes
 
