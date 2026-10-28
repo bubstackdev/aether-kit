@@ -14,8 +14,20 @@ import acestep_port as port  # noqa: E402
 source, model_dir = Path(sys.argv[1]), Path(sys.argv[2])
 sys.path.insert(0, str(source))
 from acestep import constants  # noqa: E402
-from acestep.core.generation.handler.metadata_utils import MetadataMixin  # noqa: E402
-from acestep.core.generation.handler.prompt_utils import PromptMixin  # noqa: E402
+
+
+def load(name):
+    """One handler module by file: the handler package's __init__ imports every mixin (soundfile, MLX, the pipeline)."""
+    import importlib.util
+    path = source / "acestep/core/generation/handler" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"handler_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+MetadataMixin = load("metadata_utils").MetadataMixin
+PromptMixin = load("prompt_utils").PromptMixin
 
 
 class Handler(PromptMixin, MetadataMixin):
