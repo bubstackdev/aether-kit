@@ -457,6 +457,10 @@ Natively, the tiled encoder's output is **byte-identical** to the whole-frame gr
 
 The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below). Since 2026-10-27 a render uses one specialization, and the current gate is in [one modulation shape per render](#denoiser-memory-one-modulation-shape-per-render-2026-10-27).
 
+**Diagnostic: spike capture.** `aether-probe h3-memory-render PROFILE DUMP NEW_DIR --spike-capture=GiB` (and `qualify-h3-memory.py --spike-capture GIB`, which passes it to every render and lists the triggers in the gate record) watches the 20 ms Metal samples. The first time a denoising sample exceeds the given level, it writes `trigger.json` (phase, time, Metal and footprint), a 1 s `sample` of every thread's stack, `vmmap --summary` and `footprint` for the process into `NEW_DIR.spike/`, about 120 KB. It is off by default and fires at most once per render. `sample` suspends the process's threads while it reads them, so step timing inside a captured window is not representative; memory is. Instruments is not used: even a Blank template with only Metal Resource Events writes GPU-counter files at about 2 GB per minute.
+
+`--carry-peaks RECORD…` makes the measured entry also cover the per-stage peaks of earlier gate records, each cited in the new record (`carriedStagePeaks`), so a transient one gate saw is not dropped by the next.
+
 ### Measured admission
 
 The gate writes a measured entry: per stage, the largest sample of max(Metal, footprint), plus the session's carried CPU state. The carried state is sized from the clip's tensors (192 MiB). The entry is bundled as `AetherH3/Resources/h3-measured-resources.json`. `H3ProfileEngine.measuredAdmission(profile:recipe:coordinator:)` turns it into an `H3ResourceAdmission`:
