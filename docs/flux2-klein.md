@@ -314,7 +314,8 @@ M5 Max, macOS 27.0.1, bundle `d27cefc4…`, fixture `ffc4b136…`. Generation to
 Kit passes, with no unclear answers. The result is at the ceiling, though: these prompts and questions don't
 separate Kit from the reference, so the test shows no adherence loss on this set but can't measure a small one. A
 harder set (counts, spatial relations, rendered text, attribute binding) would be needed for that. The run writes a
-`contact-sheet.html` beside the images, with every answer under its image, for a subjective review. See the
+`contact-sheet.html` beside the images, with every answer under its image, for a subjective review. The user reviewed
+the contact sheet on 2026-10-28 and judged that Kit's images follow the prompts as well as the reference's. See the
 [report](evidence/flux2-prompt-adherence-2026-10-27.json).
 
 ```sh
@@ -775,8 +776,9 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 ### Not yet qualified
 
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
-- A subjective review across more prompts and seeds, and a harder adherence set: the fixture prompts score at the
-  ceiling ([Prompt adherence](#prompt-adherence-003)).
+- A subjective review across more prompts and seeds than the fixture set (the user's 2026-10-28 review covered the
+  adherence contact sheet), and a harder adherence set: the fixture prompts score at the ceiling
+  ([Prompt adherence](#prompt-adherence-003)).
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.
 - Per-stage memory peaks (the benchmark records per-iteration peaks), and a resident-residency benchmark plan.
 - Device-resident carries, or a GPU sampling loop.
