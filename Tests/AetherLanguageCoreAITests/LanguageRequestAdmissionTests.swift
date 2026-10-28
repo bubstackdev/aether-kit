@@ -24,10 +24,12 @@ private actor FakeSession {
         reloads += 1
     }
 
-    /// A request; `spends` marks the budget spent by its end.
-    func request(spends: Bool = false, work: @Sendable () async -> Void = {}) async throws {
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.spent }, reload: { try await self.reload() })
-        defer { grant?.release() }
+    /// A request; `spends` marks the budget spent by its end, and `scratch` reserves its scratch.
+    func request(spends: Bool = false, scratch: () throws -> ResourceReservation? = { nil },
+                 work: @Sendable () async -> Void = {}) async throws {
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: scratch, reloadNeeded: { self.spent },
+                                                 reload: { try await self.reload() })
+        defer { admitted.release() }
         await work()
         if spends { spent = true }
         startIdleReloadIfNeeded()
@@ -216,6 +218,26 @@ struct LanguageRequestAdmissionTests {
             #expect(await session.reloads == 1)
             #expect(gpu.snapshot.running == 0 && gpu.snapshot.queued == 0)
         }
+    }
+
+    /// A request's scratch is reserved under its grant before a reload in front: a refusal costs no load and releases
+    /// the grant, and an admitted request holds its scratch until it ends.
+    @Test(.timeLimit(.minutes(1))) func scratchIsReservedBeforeAReloadInFront() async throws {
+        let gpu = try GPUAdmission(maximumConcurrent: 1, waiting: .queue())
+        let coordinator = try ResourceCoordinator(capacityBytes: 10)
+        let session = FakeSession(gpu: gpu.owner("language"))
+        await session.spend()
+        await #expect(throws: ResourceAdmissionError.self) {
+            try await session.request(scratch: { try coordinator.reserve(bytes: 11) })
+        }
+        #expect(await session.reloads == 0)
+        #expect(gpu.snapshot.running == 0 && coordinator.snapshot.reservedBytes == 0)
+        let held = Mutex<UInt64>(0)
+        try await session.request(scratch: { try coordinator.reserve(bytes: 4) },
+                                  work: { held.withLock { $0 = coordinator.snapshot.reservedBytes } })
+        #expect(await session.reloads == 1)
+        #expect(held.withLock { $0 } == 4 && coordinator.snapshot.reservedBytes == 0)
+        #expect(gpu.snapshot.running == 0)
     }
 
     /// No idle reload starts once the session is closing.

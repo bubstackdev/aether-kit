@@ -144,6 +144,27 @@ let result = try await session.generate(request) { token in
   ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
 - **Next:** the facade's tokenizer, templates and structured output.
 
+## Resource admission
+
+`LanguageGenerationSession.open(bundle:…, resources:)` and `VisionLanguageSession.open(bundle:…, resources:)` take an
+opt-in `LanguageResourceAdmission`: caller estimates (`LanguageModelResourceEstimate`, keyed by the registration's
+model hash) reserved against a host-selected `ResourceCoordinator`, as Krea and FLUX.2 do.
+- **Residency** is reserved before the model loads (after the open grant, with `gpu:`), held while it is loaded,
+  across memory-budget reloads, and released on unload or a failed load. For a decoder it covers the weights, the KV
+  caches at the registered context and the memory budget's growth allowance.
+- **Scratch** is reserved after each request's grant (and each image encode's) and released when its native work
+  joins. A request's is reserved before a memory-budget reload, so a refusal never costs a model load.
+- **Refusals before native work:** model bytes without an estimate and a registered context above the profile's (a
+  bundle's before its files are hashed), and a request with more image tokens than the profile allows, summed over its
+  images (every image is preprocessed and the total checked before the first encode).
+- **Opening is admitted.** With `gpu:`, the model's load and its functions' specialization run under a grant, so a
+  session never specializes beside another owner's GPU work.
+- **Per process.** The ledger cannot see other processes, and it leaves out the page cache a model's compiled file is
+  read into at open.
+
+Measured estimates for the Qwen3-VL bundles, and why the feature exists, are in
+[Qwen3-VL resource admission](qwen3-vl-resource-admission.md).
+
 ## Step contracts
 
 The session detects the contract from the `main` function signature
@@ -339,8 +360,8 @@ model's retention (`LanguageMemoryBudget`):
   looks like an outlier counts from the third.
 Set-aside requests are counted in `foreignMemoryRequests` and `foreignMemoryBytes`.
 Sharing a `GPUAdmission` between a host's sessions keeps their admitted GPU work out of
-each other's windows; loading and releasing are not admitted, so another session's load
-inside a window is caught only by the outlier rule. Without `gpu:`, the accounting
+each other's windows; opening is admitted too, but releasing is not, so another session's
+release inside a window is caught only by the net-decrease rule. Without `gpu:`, the accounting
 assumes no concurrent Metal work beyond what those rules catch. Before a model's rate is
 known, a foreign load inside a window counts and can cause one unnecessary reload; this
 errs towards reloading, because uncounted retention would grow without bound.
