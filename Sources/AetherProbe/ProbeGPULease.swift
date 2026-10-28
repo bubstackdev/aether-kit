@@ -31,7 +31,7 @@ enum ProbeGPULease {
         case "h3-memory-encoder":
             return count == 6 && Int(arguments[2]) != nil && Int(arguments[3]) != nil
         case "qualify-h3-session-lifecycle":
-            return count == 4
+            do { _ = try H3SessionLifecycleCommand.scenarios(arguments); return true } catch { return false }
         case "qualify-h3", "qualify-h3-lifecycle":
             return count == 5 && mode(at: 4, gpu: ["--run"])
         case "qualify-h3-phases":

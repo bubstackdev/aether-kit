@@ -16,15 +16,28 @@ import Synchronization
 ///
 /// An FL2VA dump runs baseline, cancel-keyframe (the first keyframe-encoder call) with recovery, and unload. Every
 /// recovery and post-unload render must equal the baseline: all trajectory hashes, the frames and the PCM.
+/// `--scenarios=NAME,...` runs the baseline plus only the named scenarios, so a long run can be split into shorter GPU
+/// holds.
 enum H3SessionLifecycleCommand {
-    static let usage = "use qualify-h3-session-lifecycle PROFILE.json DUMP NEW_DIRECTORY"
+    static let usage = "use qualify-h3-session-lifecycle PROFILE.json DUMP NEW_DIRECTORY [--scenarios=NAME,...]"
 
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "qualify-h3-session-lifecycle" else { return false }
-        guard arguments.count == 4 else { throw AetherError.invalidRequest(usage) }
+        let selected = try scenarios(arguments)
         try await execute(profile: URL(fileURLWithPath: arguments[1]), dump: URL(fileURLWithPath: arguments[2]),
-                          output: URL(fileURLWithPath: arguments[3]))
+                          output: URL(fileURLWithPath: arguments[3]), selected: selected)
         return true
+    }
+
+    /// Every scenario name; `nil` selects them all.
+    static let scenarioNames: Set<String> = ["cancel-conditioner", "cancel-denoiser", "cancel-videoTile", "cancel-audio", "cancel-keyframe",
+                                             "unload", "reopen"]
+    static func scenarios(_ arguments: [String]) throws -> Set<String>? {
+        guard arguments.count == 4 || (arguments.count == 5 && arguments[4].hasPrefix("--scenarios=")) else { throw AetherError.invalidRequest(usage) }
+        guard arguments.count == 5 else { return nil }
+        let names = arguments[4].dropFirst("--scenarios=".count).split(separator: ",").map(String.init)
+        guard !names.isEmpty, Set(names).isSubset(of: scenarioNames) else { throw AetherError.invalidRequest(usage) }
+        return Set(names)
     }
 
     /// The cancellation scenarios: the graph role and its call index at which cancellation is requested.
@@ -34,7 +47,8 @@ enum H3SessionLifecycleCommand {
                ("cancel-audio", "audio", 0)]
     }
 
-    static func execute(profile url: URL, dump: URL, output: URL) async throws {
+    static func execute(profile url: URL, dump: URL, output: URL, selected: Set<String>? = nil) async throws {
+        func runs(_ name: String) -> Bool { selected?.contains(name) ?? true }
         let profile = try H3Profile(url: url)
         guard try H3RawDirectory.field(dump, "profile_sha256") == profile.manifestSHA256 else { throw AetherError.invalidModel("dump was made for another profile") }
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
@@ -94,7 +108,7 @@ enum H3SessionLifecycleCommand {
         report.record("baseline", ["frames": baseline.frames, "pcm": baseline.pcm, "trajectoryHashes": String(baseline.trajectoryHashes)])
         report.check("baselineCompletes", "baseline", baseline.trajectoryHashes > 0)
 
-        for scenario in cancellations(keyframe: first != nil) {
+        for scenario in cancellations(keyframe: first != nil) where runs(scenario.name) {
             journal.reset()
             var cancelled = false, otherError: String?
             do {
@@ -114,6 +128,13 @@ enum H3SessionLifecycleCommand {
         }
 
         // Unload while body call 60 is in flight: the active render completes, then every stage is released.
+        guard runs("unload") || runs("reopen") else {
+            await session.unload()
+            let failures = report.finish(); print(output.path)
+            guard failures.isEmpty else { throw AetherError.invalidModel("H3 session lifecycle failed: \(failures.joined(separator: ", "))") }
+            return
+        }
+        if runs("unload") {
         journal.reset()
         let unloading = Mutex<Task<Void, Never>?>(nil)
         let active = try await render(session, capture: false, cancelAt: ("body", 60)) { _ in
@@ -129,8 +150,16 @@ enum H3SessionLifecycleCommand {
         do { _ = try await session.generate(request) } catch AetherError.sessionClosed { rejected = true } catch {}
         report.check("generateAfterUnloadRejected", "unload", rejected)
         report.journal("unload", journal.entries)
+        } else {
+            await session.unload()
+        }
         let firstSettled = await settle(device: device)
         report.memory("afterFirstUnload", firstSettled)
+        guard runs("reopen") else {
+            let failures = report.finish(); print(output.path)
+            guard failures.isEmpty else { throw AetherError.invalidModel("H3 session lifecycle failed: \(failures.joined(separator: ", "))") }
+            return
+        }
 
         // A new session over new stages renders the same bytes, and settles to the same memory.
         journal.reset()

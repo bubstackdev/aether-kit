@@ -54,4 +54,11 @@ private func call(_ graph: String, _ index: Int, _ phase: H3NativeCall.Phase) ->
     #expect(try await H3SessionLifecycleCommand.run(["other"]) == false)
     #expect(H3SessionLifecycleCommand.cancellations(keyframe: false).map(\.graph) == ["conditioner", "body", "videoTile", "audio"])
     #expect(H3SessionLifecycleCommand.cancellations(keyframe: true).map(\.graph) == ["keyframe"])
+    #expect(try H3SessionLifecycleCommand.scenarios(["qualify-h3-session-lifecycle", "p", "d", "o"]) == nil)
+    #expect(try H3SessionLifecycleCommand.scenarios(["qualify-h3-session-lifecycle", "p", "d", "o", "--scenarios=cancel-audio,unload"]) == ["cancel-audio", "unload"])
+    #expect(ProbeGPULease.usesGPU(["qualify-h3-session-lifecycle", "p", "d", "o", "--scenarios=reopen"]))
+    for bad in ["--scenarios=", "--scenarios=cancel-everything", "--other"] {
+        #expect(throws: AetherError.self) { _ = try H3SessionLifecycleCommand.scenarios(["qualify-h3-session-lifecycle", "p", "d", "o", bad]) }
+        #expect(!ProbeGPULease.usesGPU(["qualify-h3-session-lifecycle", "p", "d", "o", bad]))
+    }
 }
