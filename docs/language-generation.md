@@ -227,6 +227,44 @@ or a short text run beside a Qwen3-VL image) is one chunk of its own length,
 and a chunk never steps back into an image span. `languageOverlappedPrefillMatchesOtherPlans`
 (opt-in) checks this on every model against a whole-prompt chunk and 1-token steps.
 
+### Time to first token
+
+The bounded shape set costs time to first token on long prompts
+([evidence](evidence/language-time-to-first-token-2026-10-27.json), `languageTimeToFirstToken`, opt-in). These are warm
+medians on one M5 Max, a shared host, for one-token requests, in milliseconds. The running export of the 0.6B was made for
+the comparison; there is no running export of the 4B:
+
+| Prompt tokens | 0.6B bucketed (C = 64) | 0.6B running | 0.6B bucketed, C = 512 | 4B bucketed (C = 64) | 4B bucketed, C = 512 |
+| --- | --- | --- | --- | --- | --- |
+| 64 | 14 | 14 | 25 | 31 | 39 |
+| 256 | 46 | 17 | 25 | 121 | 66 |
+| 1,024 | 216 | 40 | 86 | 530 | 280 |
+| 2,048 | 496 | 83 | 187 | 1,178 | 604 |
+
+**Where the time goes.** Almost all of it is in the native steps: a 2,048-token prompt is 32 submissions at C = 64, and
+each one reads every weight and concatenates the whole cache, where the running contract's four 512-token submissions
+do far less.
+- **Cache growth,** the host's largest share, took 83 ms (0.6B) and 133 ms (4B) at 2,048 tokens before these changes.
+  That's bound by first touches of each newly allocated buffer, since a bucketed request starts again at 256 rows.
+- **Update-row copies and input building** took under 20 ms before these changes.
+
+Growth now zeroes only each row's unwritten tail, copies rows in parallel, and copies a step's update rows one row at a
+time instead of one token at a time. All three write the same bytes, and replies are identical. The default-width
+figures above are with these changes (before: 554 and 1,383 ms at 2,048 tokens, partly host noise).
+
+**Rejected.** Reusing large buffers across growths and requests cut growth by 57 ms (0.6B) and 68 ms (4B) at 2,048
+tokens, but Core AI's encode rose by 51 and 58 ms, so time to first token didn't improve
+([probe](evidence/language-ttft-buffer-reuse-probe-2026-10-27.json)). Core AI pays for an input buffer larger than its
+view, as for the strided views above.
+
+**What would close the gap** isn't exact, so it isn't done:
+- **A wider chunk for long prompts.** C = 512 halves the 4B's time at 2,048 tokens. But it retains more memory per request
+  (see [Native memory retention](#native-memory-retention)), and a different prefill plan can flip a greedy near-tie.
+- **An export whose attention reads the cache and the chunk separately,** instead of concatenating them every chunk.
+  It is a no-go under the current Core AI: a second function wires a second copy of the weights, split attention in
+  `main` halves decode, and a `torch.cond` between the two hangs the GPU compile
+  ([spike report](spikes/split-attention-2026-10.md)).
+
 ## Cache allocation
 
 The registered context is an admission maximum. Allocation starts at 256 tokens
