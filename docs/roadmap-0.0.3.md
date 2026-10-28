@@ -28,6 +28,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
   - multi-image M-RoPE;
   - parity on rotated photos;
   - alpha handling, which differs from upstream: PIL keeps the stored RGB, while Kit composites over black.
+  - Plan for all three: [Qwen3-VL coverage plan](qwen3-vl-coverage-plan.md).
 - **Quantization:** quantized Qwen3-VL and language decoders.
 - **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases.
 - **H3 promotion:** media audit and per-stage lifecycle qualification before the experimental label is dropped, plus a durable home for the qualified profile. Measured admission covers more profiles and Macs as they're measured.
