@@ -50,8 +50,23 @@ private struct OverlapComparison: Codable {
     var firstDivergence: Int?
     var greedy: [Int] = []
     var nearTie: OverlapNearTie?
+    /// At a divergence, reported and never gating: each plan's own row there (the default plan's teacher-forced row,
+    /// the other plan's prefill of the prompt and prefix), as [Kit's top-1, top-2] tokens and top-1 minus top-2 probability.
+    var kitRowsAtDivergence: [String: KitRow]?
     var acceptedAtNearTie = false
     var passed = false
+}
+
+private struct KitRow: Codable {
+    var topTwo: [Int] = []
+    var margin = 0.0
+    init(_ logits: [Float]) {
+        let order = logits.indices.sorted { logits[$0] > logits[$1] }
+        let top = Double(logits[order[0]])
+        let denominator = logits.reduce(0.0) { $0 + exp(Double($1) - top) }
+        topTwo = [order[0], order[1]]
+        margin = (1 - exp(Double(logits[order[1]]) - top)) / denominator
+    }
 }
 
 /// An upstream text reference: row r of `logits` follows prompt + forcedTokens[:r].
@@ -173,6 +188,11 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     cosine: cosine(logits["default"]!, logits[name]!),
                     argmaxEqual: argmax(logits["default"]!) == argmax(logits[name]!), greedyIdentical: a == b,
                     firstDivergence: zip(a, b).enumerated().first { $0.element.0 != $0.element.1 }?.offset, greedy: b)
+                if let d = comparison.firstDivergence {
+                    let own = try await session.teacherForcedLogits(prompt: prompt, continuation: Array(a.prefix(d)))[d]
+                    let other = try await session.prefillLogits(prompt: prompt + a.prefix(d), chunkSize: chunk)
+                    comparison.kitRowsAtDivergence = ["default": KitRow(own), name: KitRow(other)]
+                }
                 if comparison.rule == "plan-rounding", let d = comparison.firstDivergence, let reference = references[model.name],
                    reference.record.promptTokens == prompt, d < reference.record.forcedLogits.rows,
                    Array(reference.record.forcedTokens.prefix(d)) == Array(a.prefix(d)) {
