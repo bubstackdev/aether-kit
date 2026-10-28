@@ -1,0 +1,297 @@
+{
+  "bundleFingerprint" : "82331b58b1b6231cb9961f61a69eb3178178c16dcaf0bf8ea4982e127da051f9",
+  "bundleVerified" : true,
+  "cases" : [
+    {
+      "audioSHA256" : "906d82e5ec952c93e99bc3d003a3cb757b003a9cf1be564f4bf88dcbde20b687",
+      "audioSeconds" : 2.45,
+      "decoderFrames" : 128,
+      "firstSynthesisSeconds" : 1.3444843340000001,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24334838505555467,
+        "log_mel_mean_abs" : 0.003512241264556211,
+        "max_abs" : 0.006678957148440492,
+        "rel_l2" : 0.007292234085535701,
+        "snr_db" : 42.74278797306552
+      },
+      "footprintMiBAfter" : 406.3612976074219,
+      "framesMatch" : true,
+      "metalMiBAfter" : 401.453125,
+      "name" : "short-af_heart",
+      "native" : {
+        "log_mel_max_abs" : 0.14363529000346897,
+        "log_mel_mean_abs" : 0.003644448522311158,
+        "max_abs" : 0.0066489726305007935,
+        "rel_l2" : 0.007901495683335555,
+        "snr_db" : 42.04581385637654
+      },
+      "passed" : true,
+      "phonemeCount" : 29,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522321048234,
+        "log_mel_mean_abs" : 6.255074787703969e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.00014539690593281068,
+        "snr_db" : 76.74889670456085
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0021163522320848394,
+        "log_mel_mean_abs" : 6.255074787702922e-05,
+        "max_abs" : 0.00010015442967414856,
+        "rel_l2" : 0.000145396905932807,
+        "snr_db" : 76.74889670456108
+      },
+      "tokensMatch" : true,
+      "voice" : "af_heart",
+      "warmRealTimeFactor" : 0.11273707469387755,
+      "warmSynthesisSeconds" : 0.276205833
+    },
+    {
+      "audioSHA256" : "c3be50b8c5cdf7cefc41aeea86a0f9321a7ae2537beb52a098c30e39c514d5c3",
+      "audioSeconds" : 6.175,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 0.91276925,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.24576312898540253,
+        "log_mel_mean_abs" : 0.009674276652978991,
+        "max_abs" : 0.019450740779215894,
+        "rel_l2" : 0.025312769690085935,
+        "snr_db" : 31.933206646174497
+      },
+      "footprintMiBAfter" : 800.7834014892578,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1010.8125,
+      "name" : "sentence-am_michael",
+      "native" : {
+        "log_mel_max_abs" : 0.34404096615769797,
+        "log_mel_mean_abs" : 0.010535542862905572,
+        "max_abs" : 0.0176134891808033,
+        "rel_l2" : 0.023718427289426497,
+        "snr_db" : 32.498282227039034
+      },
+      "passed" : true,
+      "phonemeCount" : 89,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.029485985679192694,
+        "log_mel_mean_abs" : 5.6795730316948254e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564733113,
+        "snr_db" : 74.54028282538422
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.02948598567919314,
+        "log_mel_mean_abs" : 5.6795730316928996e-05,
+        "max_abs" : 0.0004371628165245056,
+        "rel_l2" : 0.00018749334564732308,
+        "snr_db" : 74.5402828253846
+      },
+      "tokensMatch" : true,
+      "voice" : "am_michael",
+      "warmRealTimeFactor" : 0.053064467044534415,
+      "warmSynthesisSeconds" : 0.327673084
+    },
+    {
+      "audioSHA256" : "1345243c69c24059d92af9ccb4de79223b249e220cf474ce5e678a8d0c67595a",
+      "audioSeconds" : 4.5,
+      "decoderFrames" : 256,
+      "firstSynthesisSeconds" : 0.328228667,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.18049163423601255,
+        "log_mel_mean_abs" : 0.005954439999561048,
+        "max_abs" : 0.04953707827592006,
+        "rel_l2" : 0.0215376501079146,
+        "snr_db" : 33.33603365385049
+      },
+      "footprintMiBAfter" : 786.4552764892578,
+      "framesMatch" : true,
+      "metalMiBAfter" : 1010.8125,
+      "name" : "speed-bf_emma",
+      "native" : {
+        "log_mel_max_abs" : 0.40221985026944473,
+        "log_mel_mean_abs" : 0.006828383473631375,
+        "max_abs" : 0.07103364169597626,
+        "rel_l2" : 0.033009269481165164,
+        "snr_db" : 29.62728173624107
+      },
+      "passed" : true,
+      "phonemeCount" : 78,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478036095,
+        "log_mel_mean_abs" : 8.43060265519897e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.19087982465899e-06,
+        "snr_db" : 102.86435938394794
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0012729328478977564,
+        "log_mel_mean_abs" : 8.43060265522708e-06,
+        "max_abs" : 6.516784196719527e-06,
+        "rel_l2" : 7.190879824658948e-06,
+        "snr_db" : 102.86435938394797
+      },
+      "tokensMatch" : true,
+      "voice" : "bf_emma",
+      "warmRealTimeFactor" : 0.08545206488888889,
+      "warmSynthesisSeconds" : 0.384534292
+    },
+    {
+      "audioSHA256" : "e489eee66a39df5433f9c6d80bb34127a7dca076d806928aaa101b8b6570d172",
+      "audioSeconds" : 22.825,
+      "decoderFrames" : 1024,
+      "firstSynthesisSeconds" : 2.383756334,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.8828283406266391,
+        "log_mel_mean_abs" : 0.013856211500365754,
+        "max_abs" : 0.04082368257079569,
+        "rel_l2" : 0.022876218044047412,
+        "snr_db" : 32.81231545279292
+      },
+      "footprintMiBAfter" : 3753.408836364746,
+      "framesMatch" : true,
+      "metalMiBAfter" : 4142.40625,
+      "name" : "long-af_bella",
+      "native" : {
+        "log_mel_max_abs" : 0.4966844442948841,
+        "log_mel_mean_abs" : 0.01344098690856201,
+        "max_abs" : 0.044031561352312565,
+        "rel_l2" : 0.02200287468694076,
+        "snr_db" : 33.15041149345042
+      },
+      "passed" : true,
+      "phonemeCount" : 335,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378795409,
+        "log_mel_mean_abs" : 0.00012779412385802201,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.000728168349763995,
+        "snr_db" : 62.75536403678558
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.12324378378796297,
+        "log_mel_mean_abs" : 0.00012779412385808533,
+        "max_abs" : 0.003464728593826294,
+        "rel_l2" : 0.0007281683497638353,
+        "snr_db" : 62.75536403678749
+      },
+      "tokensMatch" : true,
+      "voice" : "af_bella",
+      "warmRealTimeFactor" : 0.10283774733844468,
+      "warmSynthesisSeconds" : 2.347271583
+    },
+    {
+      "audioSHA256" : "ba3a5da9d225c9a66cfc9ff2621370ac92b8f77d8bb344527da705c2ac0c6d8f",
+      "audioSeconds" : 10.475,
+      "decoderFrames" : 512,
+      "firstSynthesisSeconds" : 1.278111458,
+      "float64Floor" : {
+        "log_mel_max_abs" : 0.8313654677102345,
+        "log_mel_mean_abs" : 0.015467179833966728,
+        "max_abs" : 0.1858774681484335,
+        "rel_l2" : 0.05418146068869571,
+        "snr_db" : 25.32298581828691
+      },
+      "footprintMiBAfter" : 3194.3153381347656,
+      "framesMatch" : true,
+      "metalMiBAfter" : 4831.59375,
+      "name" : "medium-am_adam",
+      "native" : {
+        "log_mel_max_abs" : 0.7007055587492286,
+        "log_mel_mean_abs" : 0.017641436509673033,
+        "max_abs" : 0.09918050467967987,
+        "rel_l2" : 0.05796773834712965,
+        "snr_db" : 24.73627287218519
+      },
+      "passed" : false,
+      "phonemeCount" : 164,
+      "pythonSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0011714831551827842,
+        "log_mel_mean_abs" : 3.213380188483932e-05,
+        "max_abs" : 0.0001131296157836914,
+        "rel_l2" : 5.683977745916362e-05,
+        "snr_db" : 84.90695262208574
+      },
+      "repeatIdentical" : true,
+      "swiftSensitivityFloor" : {
+        "log_mel_max_abs" : 0.0011714831551756788,
+        "log_mel_mean_abs" : 3.2133801884867866e-05,
+        "max_abs" : 0.0001131296157836914,
+        "rel_l2" : 5.683977745916108e-05,
+        "snr_db" : 84.90695262208612
+      },
+      "tokensMatch" : true,
+      "voice" : "am_adam",
+      "warmRealTimeFactor" : 0.06350162692124105,
+      "warmSynthesisSeconds" : 0.665179542
+    }
+  ],
+  "compute" : "durations=cpuOnly decoder=preferGPU",
+  "decoderBuckets" : [
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "decoderPrecision" : "float32",
+  "failures" : [
+    "medium-am_adam: waveform rel L2 0.05796773834712965 exceeds 0.05"
+  ],
+  "host" : {
+    "activeProcessors" : "18",
+    "memoryGiB" : "64",
+    "model" : "Mac17,6",
+    "os" : "Version 27.0.1 (Build 26A434)"
+  },
+  "lifecycle" : {
+    "activeCompletedAfterUnload" : true,
+    "activeMatchesBaseline" : true,
+    "cancellationError" : "CancellationError",
+    "recoveryMatchesBaseline" : true,
+    "rejectedAfterUnload" : true,
+    "stateAfterCancellation" : "ready",
+    "unloadClosedWhileActive" : true
+  },
+  "loadAndVerifySeconds" : 0.187664875,
+  "memoryMiB" : {
+    "footprintAfterUnload" : 1156.3142166137695,
+    "footprintBeforeUnload" : 3189.0965881347656,
+    "metalAfterUnload" : 1043.8125,
+    "metalBeforeUnload" : 4111.59375
+  },
+  "novelShapes" : [
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.121532167,
+      "frames" : 66,
+      "phonemes" : 13,
+      "repeatSeconds" : 0.112053875
+    },
+    {
+      "decoderFrames" : 128,
+      "firstSeconds" : 0.156293709,
+      "frames" : 103,
+      "phonemes" : 35,
+      "repeatSeconds" : 0.156594375
+    },
+    {
+      "decoderFrames" : 256,
+      "firstSeconds" : 0.448021083,
+      "frames" : 146,
+      "phonemes" : 54,
+      "repeatSeconds" : 0.414634833
+    }
+  ],
+  "passed" : false,
+  "references" : "639e2d09022d23082e82ce7e5fe1f4083ca3d284277577040f4e1b1b17eb1c66",
+  "tolerances" : {
+    "maximumLogMelMean" : 0.03,
+    "maximumRelativeL2" : 0.05,
+    "precisionFloorMultiple" : 4
+  }
+}

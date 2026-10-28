@@ -192,6 +192,23 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 - **Memory.** Peak footprint was 2.1 GB with bucket 512 in use, leaving 1.3 GB of the budget. Bucket 1024 exhausted the budget: the app had 2.7 GB available before that case and was killed.
 - **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented. Parity at bucket 512 on the device and other iPhone models remain unverified.
 
+**Prepared for the next device run (0.0.3).** No device has run these yet.
+
+- **A bucket-512 reference case.** `reference_kokoro.py` adds `medium-af_bella`: two sentences, 442 frames, float64
+  floor rel L2 0.022. The four earlier cases regenerate with byte-identical audio. On the Mac, native parity passes all
+  five cases, with the new one at rel L2 0.027 and log-mel 0.015
+  ([references](evidence/kokoro-references-bucket512-2026-10-27.json),
+  [report](evidence/kokoro-native-bucket512-2026-10-27.json)). A first choice, `medium-am_adam` (419 frames), was
+  rejected: its own float32-versus-float64 upstream floor is 0.054, above the 0.05 bound, and Kit measured 0.058
+  ([report](evidence/kokoro-native-bucket512-am_adam-rejected-2026-10-27.json)). Staged with `--frame-cap 512`, the
+  device run covers the four cases up to bucket 512 and checks that the 913-frame case is refused before decoding.
+- **The float16 Neural Engine retest.** `stage_device_assets.py BUNDLE REFERENCES --decoder-only FP16_BUNDLE` stages
+  only two decoders: the float32 one and the reduced-precision one from an `export_kokoro.py --decoder-precision
+  float16` bundle (30 s and 1.5 GiB on the CPU). KokoroDeviceProbe then runs both through `ModelSession` with
+  `preferGPU` on the same synthetic inputs at bucket 256, bypassing the session's float32-only rule. It records
+  timings and the float16 output's distance from float32. If iOS still places the float16 regions on the Neural
+  Engine and aborts, the process dies, and its last progress line shows where.
+
 ## Reduced-precision decoders
 
 **0.0.2 ships the float32 decoder only.** The `--decoder-precision` export flags are experimental, and every reduced-precision decoder fails qualification. `export_kokoro.py --decoder-precision` produces three alternative decoders, recorded in the bundle contract as `decoderPrecision` (AetherSpeech refuses to open any bundle whose decoder is not float32):
