@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "description": "FLUX.2 [klein] prompt adherence: each prompt's elements as yes/no questions for a local Qwen3-VL judge. Kit's image and the float32 Diffusers reference image share the fixture's prompt, size, steps and initial noise; Kit passes if its positive-question score is no lower than the reference's by more than marginPercentagePoints. Extra seeds run on Kit only, with Kit's own seeded noise, to show seed spread. Each prompt also has one control question whose expected answer is no, to check the judge does not answer yes to everything.",
+  "textToImageFixture": "ffc4b1365159e40c",
+  "marginPercentagePoints": 3,
+  "minimumControlAccuracy": 0.9,
+  "maximumUnclearAnswers": 0,
+  "extraSeeds": [101, 202, 303],
+  "questionSuffix": " Answer with yes or no.",
+  "maximumAnswerTokens": 4,
+  "prompts": [
+    {"case": "lighthouse-512", "questions": [
+      "Does the image show a lighthouse?",
+      "Is the scene at dusk or twilight?",
+      "Does the image look like a watercolor painting?"],
+     "control": "Does the image show a car?"},
+    {"case": "red-circle-512", "questions": [
+      "Does the image show a circle?",
+      "Is the circle red?",
+      "Is the background white?"],
+     "control": "Does the image show a blue square?"},
+    {"case": "fox-512", "questions": [
+      "Does the image show a fox?",
+      "Is the fox red or orange?",
+      "Is there snow on the ground?",
+      "Is the scene lit by a low sun, as at sunrise?",
+      "Does the image look like a wildlife photograph?"],
+     "control": "Does the image show a cat?"},
+    {"case": "ramen-576x448", "questions": [
+      "Does the image show a bowl of noodles?",
+      "Is the bowl on a wooden table?",
+      "Is the photo taken from directly above?"],
+     "control": "Does the image show a pizza?"},
+    {"case": "cafe-512", "questions": [
+      "Does the image show a cup of coffee?",
+      "Is the cup on a wooden table?"],
+     "control": "Does the image show a dog?"},
+    {"case": "cat-1024", "questions": [
+      "Does the image show a cat?",
+      "Is the cat a tabby?",
+      "Is the cat wearing glasses?",
+      "Is the cat sitting on books?",
+      "Is the scene in a library?"],
+     "control": "Does the image show a parrot?"},
+    {"case": "harbor-768", "questions": [
+      "Does the image show a harbor with boats?",
+      "Do the boats have colorful hulls?",
+      "Is the light warm, as at golden hour?",
+      "Is the water calm with small ripples?"],
+     "control": "Is there snow in the image?"},
+    {"case": "street-1024x576", "questions": [
+      "Does the image show a city street?",
+      "Is it night?",
+      "Are there neon signs?",
+      "Is the street wet, with reflections on the ground?"],
+     "control": "Does the image show a desert?"},
+    {"case": "desk-1024x768", "questions": [
+      "Does the image show a wooden desk?",
+      "Is there a window?",
+      "Is there a brass lamp?",
+      "Is there an open notebook?",
+      "Is there a mug?"],
+     "control": "Does the image show a bicycle?"},
+    {"case": "canyon-1344x768", "questions": [
+      "Does the image show a canyon?",
+      "Are the rock walls red and layered?",
+      "Is there a river?",
+      "Is the scene at sunset?"],
+     "control": "Does the image show a city?"}
+  ]
+}

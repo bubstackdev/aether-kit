@@ -43,6 +43,8 @@ enum ProbeGPULease {
             return count == 9 && (arguments[8] == "--capture" || (["--run", "--lifecycle"].contains(arguments[8]) && arguments[6] != "-"))
         case "benchmark-krea":
             return count == 6 && mode(at: 5, gpu: ["--run"])
+        case "benchmark-flux2":
+            return count == 8 && mode(at: 7, gpu: ["--run"])
         default:
             return false
         }
