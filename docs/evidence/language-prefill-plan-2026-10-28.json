@@ -38,7 +38,7 @@
   "models": {
    "qwen3-0.6b": {
     "file": "overlap-qwen3-0.6b.json",
-    "sha256": "c69fa50867e09d60bb55513d898a372ce6e981ce0b0fb4208e959c2a6152ef94",
+    "sha256": "6b6dd77bc2c4a7fcf5ecb78d8e2046d8331099d850a1d9a9fab413a1c31073ff",
     "passed": true,
     "promptTokens": 453,
     "submissions": {
@@ -100,7 +100,22 @@
         576
        ]
       },
-      "kitRowsAtDivergence": null,
+      "kitRowsAtDivergence": {
+       "1-token steps": {
+        "margin": 0.0045251552939796595,
+        "topTwo": [
+         1096,
+         576
+        ]
+       },
+       "default": {
+        "margin": 0,
+        "topTwo": [
+         576,
+         1096
+        ]
+       }
+      },
       "passed": true
      },
      {
@@ -143,7 +158,22 @@
         576
        ]
       },
-      "kitRowsAtDivergence": null,
+      "kitRowsAtDivergence": {
+       "0.0.2 width": {
+        "margin": 0.0045308009241233245,
+        "topTwo": [
+         1096,
+         576
+        ]
+       },
+       "default": {
+        "margin": 0,
+        "topTwo": [
+         576,
+         1096
+        ]
+       }
+      },
       "passed": true
      }
     ],
@@ -202,8 +232,124 @@
     "imageCases": [],
     "imageGreedyIdentical": null
    },
+   "writer-1021": {
+    "file": "overlap-writer-r92.json",
+    "sha256": "8d52f51ae3cdf6069457815bfe985c8832814aa3842a3419bdc8c32769f96f47",
+    "passed": false,
+    "promptTokens": 1021,
+    "submissions": {
+     "0.0.2 width": 16,
+     "1-token steps": 1021,
+     "default": 4,
+     "single chunk": 2
+    },
+    "comparisons": [
+     {
+      "plan": "single chunk",
+      "rule": "step-back",
+      "cosine": 0.9999949804811294,
+      "argmaxEqual": true,
+      "greedyIdentical": true,
+      "firstDivergence": null,
+      "acceptedAtNearTie": false,
+      "nearTie": null,
+      "kitRowsAtDivergence": null,
+      "passed": true
+     },
+     {
+      "plan": "1-token steps",
+      "rule": "plan-rounding",
+      "cosine": 0.9999896946089469,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "nearTie": {
+       "marginSource": "qwen3-4b-instruct-2507-abliterated-reference-1021 forced row 2",
+       "row": 2,
+       "rowCosines": [
+        0.9999896946089469,
+        0.9999963558996371,
+        0.9999956224692457
+       ],
+       "tokens": [
+        1075,
+        498
+       ],
+       "upstreamMargin": 0.007907602025856678,
+       "upstreamTopTwo": [
+        498,
+        1075
+       ]
+      },
+      "kitRowsAtDivergence": {
+       "1-token steps": {
+        "margin": 0,
+        "topTwo": [
+         498,
+         1075
+        ]
+       },
+       "default": {
+        "margin": 0.007683570955224337,
+        "topTwo": [
+         1075,
+         498
+        ]
+       }
+      },
+      "passed": false
+     },
+     {
+      "plan": "0.0.2 width",
+      "rule": "plan-rounding",
+      "cosine": 0.999969312171291,
+      "argmaxEqual": true,
+      "greedyIdentical": false,
+      "firstDivergence": 2,
+      "acceptedAtNearTie": false,
+      "nearTie": {
+       "marginSource": "qwen3-4b-instruct-2507-abliterated-reference-1021 forced row 2",
+       "row": 2,
+       "rowCosines": [
+        0.999969312171291,
+        0.9999891176330911,
+        0.9999859963771006
+       ],
+       "tokens": [
+        1075,
+        498
+       ],
+       "upstreamMargin": 0.007907602025856678,
+       "upstreamTopTwo": [
+        498,
+        1075
+       ]
+      },
+      "kitRowsAtDivergence": {
+       "0.0.2 width": {
+        "margin": 0.007696554032657095,
+        "topTwo": [
+         1075,
+         498
+        ]
+       },
+       "default": {
+        "margin": 0.007683570955224337,
+        "topTwo": [
+         1075,
+         498
+        ]
+       }
+      },
+      "passed": false
+     }
+    ],
+    "imageCases": [],
+    "imageGreedyIdentical": null
+   },
    "vl-2b": {
-    "file": "overlap-vl-2b-quick.json",
+    "file": "overlap-vl-2b.json",
     "sha256": "22d3c8b35ab9fbd74adf45b081b6b06d104cea7094c1ccebfb8859c7d9388432",
     "passed": true,
     "promptTokens": 449,
@@ -307,7 +453,7 @@
    },
    "vl-4b": {
     "file": "overlap-vl-4b.json",
-    "sha256": "aa92bf63e4484876c6a2dbce713a431c9af4a94801fcdb7ce0cf0bde8c2ee0fc",
+    "sha256": "bfebcb792315389244a353b57d56e8cb97d66191b8be870ef54d2778740f3412",
     "passed": false,
     "promptTokens": 449,
     "submissions": {
@@ -351,8 +497,27 @@
       "argmaxEqual": true,
       "greedyIdentical": false,
       "firstDivergence": 4,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
+      "acceptedAtNearTie": true,
+      "nearTie": {
+       "marginSource": "qwen3-vl-4b-abliterated-reference-text-long forced row 4",
+       "row": 4,
+       "rowCosines": [
+        0.9999953764364249,
+        0.9999990453497406,
+        0.9999986096982525,
+        0.9999983749255835,
+        0.9999993894554715
+       ],
+       "tokens": [
+        3129,
+        3982
+       ],
+       "upstreamMargin": 0.005737241062050351,
+       "upstreamTopTwo": [
+        3982,
+        3129
+       ]
+      },
       "kitRowsAtDivergence": {
        "1-token steps": {
         "margin": 0.010443472383753805,
@@ -369,7 +534,7 @@
         ]
        }
       },
-      "passed": false
+      "passed": true
      },
      {
       "plan": "0.0.2 width",
@@ -378,8 +543,27 @@
       "argmaxEqual": true,
       "greedyIdentical": false,
       "firstDivergence": 4,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
+      "acceptedAtNearTie": true,
+      "nearTie": {
+       "marginSource": "qwen3-vl-4b-abliterated-reference-text-long forced row 4",
+       "row": 4,
+       "rowCosines": [
+        0.999996828206825,
+        0.9999995940200794,
+        0.9999990751519515,
+        0.9999984095912445,
+        0.9999989111720412
+       ],
+       "tokens": [
+        3129,
+        3982
+       ],
+       "upstreamMargin": 0.005737241062050351,
+       "upstreamTopTwo": [
+        3982,
+        3129
+       ]
+      },
       "kitRowsAtDivergence": {
        "0.0.2 width": {
         "margin": 0.010443573791622782,
@@ -396,7 +580,7 @@
         ]
        }
       },
-      "passed": false
+      "passed": true
      }
     ],
     "imageCases": [
@@ -452,88 +636,6 @@
      }
     ],
     "imageGreedyIdentical": true
-   },
-   "writer-1021": {
-    "file": "overlap-writer-r92.json",
-    "sha256": "4d2367468d18867011e80fd45c29a84ba14074a5e3bc43177ad31344dda7a56d",
-    "passed": false,
-    "promptTokens": 1021,
-    "submissions": {
-     "0.0.2 width": 16,
-     "1-token steps": 1021,
-     "default": 4,
-     "single chunk": 2
-    },
-    "comparisons": [
-     {
-      "plan": "single chunk",
-      "rule": "step-back",
-      "cosine": 0.9999949804811294,
-      "argmaxEqual": true,
-      "greedyIdentical": true,
-      "firstDivergence": null,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
-      "kitRowsAtDivergence": null,
-      "passed": true
-     },
-     {
-      "plan": "1-token steps",
-      "rule": "plan-rounding",
-      "cosine": 0.9999896946089469,
-      "argmaxEqual": true,
-      "greedyIdentical": false,
-      "firstDivergence": 2,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
-      "kitRowsAtDivergence": {
-       "1-token steps": {
-        "margin": 0,
-        "topTwo": [
-         498,
-         1075
-        ]
-       },
-       "default": {
-        "margin": 0.007683570955224337,
-        "topTwo": [
-         1075,
-         498
-        ]
-       }
-      },
-      "passed": false
-     },
-     {
-      "plan": "0.0.2 width",
-      "rule": "plan-rounding",
-      "cosine": 0.999969312171291,
-      "argmaxEqual": true,
-      "greedyIdentical": false,
-      "firstDivergence": 2,
-      "acceptedAtNearTie": false,
-      "nearTie": null,
-      "kitRowsAtDivergence": {
-       "0.0.2 width": {
-        "margin": 0.007696554032657095,
-        "topTwo": [
-         1075,
-         498
-        ]
-       },
-       "default": {
-        "margin": 0.007683570955224337,
-        "topTwo": [
-         1075,
-         498
-        ]
-       }
-      },
-      "passed": false
-     }
-    ],
-    "imageCases": [],
-    "imageGreedyIdentical": null
    }
   }
  },
@@ -555,7 +657,12 @@
    "longRunSteps": 1024,
    "longRunModelReloads": 0,
    "longRunDistinctStepShapes": 6,
-   "longRunAllocatedCapacity": 1280
+   "longRunAllocatedCapacity": 1280,
+   "greedyDivergenceRow": {
+    "row": 58,
+    "referenceMargin": 0.0001476034895491756,
+    "nativeRankInReference": 1
+   }
   },
   "0.6b-long": {
    "file": "decode-0.6b-long.json",
@@ -574,7 +681,12 @@
    "longRunSteps": 1024,
    "longRunModelReloads": 0,
    "longRunDistinctStepShapes": 6,
-   "longRunAllocatedCapacity": 1536
+   "longRunAllocatedCapacity": 1536,
+   "greedyDivergenceRow": {
+    "row": 16,
+    "referenceMargin": 0.0014245069308876624,
+    "nativeRankInReference": 1
+   }
   },
   "writer-short": {
    "file": "decode-writer-short.json",
@@ -613,6 +725,54 @@
    "longRunModelReloads": 0,
    "longRunDistinctStepShapes": 6,
    "longRunAllocatedCapacity": 1536
+  },
+  "writer-1021": {
+   "file": "decode-writer-1021.json",
+   "sha256": "a36d7e814397a89f7b96461d72b933669a450dc3de618d19cd25358b20bef99f",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "14f43dbe75fd5c1463cce9061b5be43908a4ce97ce5fcaf68d16f9ec63db266a",
+    "reference.json": "69922e27f0a82914a001021f0c0a9033377e73c486cd865897658006a9359b73"
+   },
+   "forcedRows": 32,
+   "forcedMinimumCosine": 0.9999953085067737,
+   "forcedArgmaxMismatches": 1,
+   "forcedNearTies": 1,
+   "greedyFirstDivergence": 2,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 2048,
+   "greedyDivergenceRow": {
+    "row": 2,
+    "referenceMargin": 0.007907602025856678,
+    "nativeRankInReference": 1
+   }
+  },
+  "vl-4b-text": {
+   "file": "decode-vl-4b-text.json",
+   "sha256": "701af3a5ccb3da3a4172d8475fd51edf14d0bef41898c6de11c344a5bb935a30",
+   "passed": true,
+   "tolerance": "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)",
+   "referenceSHA256": {
+    "forced-logits.f32": "8d2cff4c1c193a05cff77472bb4040f2045e5e719a77a7ecd6476cea145e451d",
+    "reference.json": "20a9d5df78c98555693929eb8a10a6f289680aea6dbdbceb131891a703c7b3d7"
+   },
+   "forcedRows": 32,
+   "forcedMinimumCosine": 0.9998944895792019,
+   "forcedArgmaxMismatches": 1,
+   "forcedNearTies": 1,
+   "greedyFirstDivergence": 4,
+   "longRunSteps": 1024,
+   "longRunModelReloads": 0,
+   "longRunDistinctStepShapes": 6,
+   "longRunAllocatedCapacity": 1536,
+   "greedyDivergenceRow": {
+    "row": 4,
+    "referenceMargin": 0.005737241062050351,
+    "nativeRankInReference": 1
+   }
   }
  },
  "visionUpstreamParity": {
@@ -2131,5 +2291,251 @@
    }
   }
  },
- "passed": null
+ "nearTieReferences": {
+  "vl-4b-text-449": {
+   "directory": "qwen3-vl-4b-abliterated-reference-text-long",
+   "command": "Forge/language/reference_qwen3_vl_text.py --text 'The lighthouse keeper paints the railing a calm teal. ' --repeat 40",
+   "source": {
+    "repository": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+    "revision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+    "license": "apache-2.0",
+    "baseModel": "Qwen/Qwen3-VL-4B-Instruct"
+   },
+   "versions": {
+    "torch": "2.11.0",
+    "transformers": "4.57.3"
+   },
+   "oracle": "transformers Qwen3VLForConditionalGeneration + AutoProcessor chat template, float32, CPU, no images",
+   "promptTokens": 449,
+   "forcedTokens": [
+    2132,
+    4977,
+    1075,
+    498,
+    3982,
+    11504,
+    279,
+    1852,
+    11652,
+    1959,
+    353,
+    2073,
+    785,
+    326,
+    57909,
+    53416,
+    56848,
+    279,
+    91830,
+    264,
+    19300,
+    94607,
+    1987,
+    9,
+    1959,
+    916,
+    323,
+    916,
+    11,
+    220,
+    19,
+    15
+   ],
+   "greedyTokens": [
+    2132,
+    4977,
+    1075,
+    498,
+    3982,
+    11504,
+    279,
+    1852,
+    11652,
+    1959,
+    353,
+    2073,
+    785,
+    326,
+    57909,
+    53416,
+    56848,
+    279,
+    91830,
+    264,
+    19300,
+    94607,
+    1987,
+    9,
+    1959,
+    916,
+    323,
+    916,
+    11,
+    220,
+    19,
+    15,
+    3039,
+    304,
+    264,
+    2802,
+    382,
+    1986,
+    1410,
+    387,
+    46864,
+    1959,
+    8365,
+    369,
+    24654,
+    11,
+    36290,
+    11
+   ],
+   "files": {
+    "reference.json": "20a9d5df78c98555693929eb8a10a6f289680aea6dbdbceb131891a703c7b3d7",
+    "forced-logits.f32": "8d2cff4c1c193a05cff77472bb4040f2045e5e719a77a7ecd6476cea145e451d"
+   },
+   "eagerPortVsReference": null,
+   "peakRSSBytes": 22155870208,
+   "seconds": 19.27
+  },
+  "writer-1021": {
+   "directory": "qwen3-4b-instruct-2507-abliterated-reference-1021",
+   "command": "Forge/language/reference_qwen3.py --prompt 'The lighthouse keeper paints the railing a calm teal. ' --prompt-repeat 92",
+   "source": {
+    "repository": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+    "revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+    "license": "apache-2.0",
+    "baseModel": "Qwen/Qwen3-4B-Instruct-2507"
+   },
+   "versions": {
+    "torch": "2.11.0",
+    "transformers": "4.57.3"
+   },
+   "oracle": "transformers AutoModelForCausalLM, float32, CPU",
+   "promptTokens": 1021,
+   "forcedTokens": [
+    2132,
+    4977,
+    498,
+    3003,
+    11504,
+    279,
+    1852,
+    11652,
+    5248,
+    3039,
+    1447,
+    334,
+    1,
+    785,
+    326,
+    57909,
+    53416,
+    56848,
+    279,
+    91830,
+    264,
+    19300,
+    94607,
+    1189,
+    56177,
+    1986,
+    53415,
+    13230,
+    2987,
+    1447,
+    12,
+    362
+   ],
+   "greedyTokens": [
+    2132,
+    4977,
+    498,
+    3003,
+    11504,
+    279,
+    1852,
+    11652,
+    5248,
+    3039,
+    1447,
+    334,
+    1,
+    785,
+    326,
+    57909,
+    53416,
+    56848,
+    279,
+    91830,
+    264,
+    19300,
+    94607,
+    1189,
+    56177,
+    1986,
+    53415,
+    13230,
+    2987,
+    1447,
+    12,
+    362,
+    12591,
+    311,
+    45932,
+    279,
+    1917,
+    476,
+    279,
+    16232,
+    320,
+    65272,
+    311,
+    20001,
+    279,
+    36290,
+    11,
+    29301,
+    11,
+    476,
+    38855,
+    315,
+    279,
+    326,
+    57909,
+    53416,
+    1326,
+    12,
+    362,
+    66373,
+    292,
+    5754,
+    311,
+    55359
+   ],
+   "files": {
+    "reference.json": "69922e27f0a82914a001021f0c0a9033377e73c486cd865897658006a9359b73",
+    "forced-logits.f32": "14f43dbe75fd5c1463cce9061b5be43908a4ce97ce5fcaf68d16f9ec63db266a"
+   },
+   "eagerPortVsReference": {
+    "running": {
+     "minCosine": 1.0,
+     "maxAbs": 0.000175,
+     "argmaxEqualRows": 32,
+     "rows": 32
+    },
+    "bucketed": {
+     "minCosine": 1.0,
+     "maxAbs": 0.000478,
+     "argmaxEqualRows": 32,
+     "rows": 32
+    }
+   },
+   "peakRSSBytes": 24969199616,
+   "seconds": 148.89
+  }
+ },
+ "passed": false,
+ "status": "Every run passes except the plan gate on two prompts (writer 1,021 tokens, VL-4B 449-token text): their flips are upstream near-ties (margins 0.00791 and 0.00574) and both prompts pass upstream parity, but the gate's step-back rule has no near-tie allowance and its row-agreement bar (0.99999) is missed at 1,021 tokens; whether to change those rules is open"
 }
