@@ -60,6 +60,11 @@ def main():
     ap.add_argument("--recipe", default="turbo8")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--spike-capture", type=float, metavar="GIB",
+                    help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
+                         "denoising sample's Metal allocation exceeds GIB (written beside the render as render-*.spike/)")
+    ap.add_argument("--carry-peaks", nargs="*", type=Path, default=[], metavar="RECORD",
+                    help="earlier gate records whose per-stage peaks the measured entry must also cover (each is cited in the record)")
     ap.add_argument("--record", help="also write the gate record to docs/evidence/RECORD (a new file name); the measured entry cites it")
     args = ap.parse_args()
     root = Path(__file__).resolve().parent.parent
@@ -104,7 +109,7 @@ def main():
             dump = [str(probe), "h3-profile-dump", str(args.profile), str(args.prompt), width, height, str(args.frames), str(args.seed), args.recipe,
                     str(work / f"dump-{stem}")] + ([str(keyframes[canvas])] if task == "fl2va" else [])
             render = [str(args.gpu_lock), f"h3-memory-gate: {stem}", str(probe), "h3-memory-render", str(args.profile), str(work / f"dump-{stem}"),
-                      str(work / f"render-{stem}")]
+                      str(work / f"render-{stem}")] + ([f"--spike-capture={args.spike_capture}"] if args.spike_capture else [])
             for name, command, budget in ((f"dump-{stem}", dump, 600), (f"render-{stem}", render, 7200)):
                 record_path = work / "controllers" / f"{name}.json"
                 if record_path.exists():
@@ -185,6 +190,29 @@ def main():
         operation = max(operation, carried)
     if len(identities) != 1 or len(architectures) != 1:
         failures.append(f"renders disagree on identity/device: {identities} {architectures}")
+    # Peaks observed by earlier gates that this entry must still cover (for example a transient this gate did not see).
+    # Only a passed gate on the same device architecture can be carried; each carried record is pinned by its SHA-256.
+    carried_peaks, carried_records = [], []
+    for record_path in args.carry_peaks:
+        earlier = json.loads(record_path.read_text())
+        earlier_device = earlier["measuredResources"]["device_architecture"]
+        if not earlier.get("passed"):
+            failures.append(f"carried record {record_path.name} did not pass")
+        if earlier_device not in architectures:
+            failures.append(f"carried record {record_path.name} is for device {earlier_device}, not {architectures}")
+        carried_records.append(dict(record=record_path.name, sha256=sha(record_path), passed=earlier.get("passed"), deviceArchitecture=earlier_device,
+                                    executionIdentity=earlier["measuredResources"]["execution_identity"]))
+        for render_name, render in earlier["renders"].items():
+            for k, v in render["stages"].items():
+                if v["residentPeakBytes"] > stage_peaks.get(k, 0):
+                    carried_peaks.append(dict(stage=k, bytes=v["residentPeakBytes"], render=render_name, record=record_path.name,
+                                              recordSHA256=sha(record_path),
+                                              executionIdentity=earlier["measuredResources"]["execution_identity"], replaced=stage_peaks.get(k, 0)))
+                    stage_peaks[k] = v["residentPeakBytes"]
+    spikes = {}
+    for task, canvas, path in runs:
+        trigger = path.parent.with_name(path.parent.name + ".spike") / "trigger.json"
+        spikes[f"{task}-{canvas}"] = json.loads(trigger.read_text()) if trigger.exists() else None
     worst = max(stage_peaks.values()) + MARGIN + operation
     if worst > BAR:
         failures.append(f"admission estimate {worst / (1 << 30):.2f} GiB (largest stage + margin + operation) exceeds the 18 GiB bar")
@@ -198,6 +226,8 @@ def main():
                  # The entry cites the record this run writes: docs/evidence/RECORD, or the work directory's gate.json.
                  evidence=f"docs/evidence/{args.record}" if args.record else str(work / "gate.json"))
     gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
+                spikeCapture=dict(thresholdGiB=args.spike_capture, triggers=spikes) if args.spike_capture else None,
+                carriedRecords=carried_records, carriedStagePeaks=carried_peaks,
                 memoryBarBytes=BAR, memoryBar="Metal allocation peak over a complete render must not exceed 18 GiB, for every task and canvas",
                 marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, controllers=records,
                 pinsDigest=digest, pinsUnchanged=pins_unchanged, filesSHA256=pins, scriptSHA256=sha(Path(__file__).resolve()),

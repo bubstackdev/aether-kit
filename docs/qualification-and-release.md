@@ -47,6 +47,8 @@ The first language model must exercise multi-turn state, prefill/decode, stop/EO
 
 H3 stays experimental until repeated native runs, subjective audio/video quality, memory behavior, cancellation and cache-hit timings are accepted. Retain the QKV regression and full media audit. Earlier base50 partial runs are not completed benchmarks.
 
+- [ ] **H3 measured entry:** re-gate (`Scripts/qualify-h3-memory.py`) if any path the bundled entry's gate record pins has changed since that record: the probe binary, `Package.swift`, the profile, prompt and keyframes, and every file under `Sources/AetherKit`, `AetherCoreAI`, `AetherH3`, `AetherH3CoreAI` and `AetherProbe`. Nothing checks this automatically: the pins are a point-in-time record, and at run time Kit checks only the execution identity, device architecture and the 18 GiB bar. Treat the source pins and `Package.swift` as the trigger; the probe binary's pin is informational, because a rebuilt binary never matches byte for byte and the probe also links targets the gate does not pin.
+
 ## Release sequence
 
 1. Working local Swift package and sandboxed Krea example, with a chosen runtime and no lab-only runtime paths.
