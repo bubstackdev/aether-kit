@@ -54,36 +54,69 @@ gaps.
 
 **Why.** The lease serializes GPU work, but a model stays loaded, with its wired pages and Metal allocations, after its
 holder's turn ends. Two cooperating processes can therefore take turns correctly and still hold more memory together
-than the host has. On Kit 0.0.2, Atelier's VL-4B describer (in its own helper process) beside a Krea 1024×1024 render
-did that and both processes died inside MPSGraph at memorystatus level 44
+than the host has. On Kit 0.0.2, Atelier's VL-4B describer, in its own helper process, beside a Krea 1024×1024 render
+did that, and both processes died inside MPSGraph at memorystatus level 44
 ([analysis](qwen3-vl-resource-admission.md#the-crash)). An in-process `ResourceCoordinator` cannot see the other
 process.
 
+**Requirement.** It must work for a process that holds no GPU grant. Atelier runs language requests in a separate
+`atelier-language` helper, which loads and keeps models without taking the lease for the load. So declared residency
+has its own lock and never depends on holding the lease.
+
 **Declared residency.**
-1. **The record.** While a process has models loaded, it keeps one file per process in a sibling directory,
-   `<lease path>.residency/` (`/tmp/atelier-gpu.lock.residency/<pid>.json`): its pid, its process start time (so a reused
-   pid is not mistaken for it), a label, and the bytes it has reserved for loaded models, which for Kit is its
-   coordinator's reserved total. The file is written to a temporary name and renamed into place, updated when the total
-   changes, and removed when the last model unloads. The lease directory itself is created and removed every turn, so
-   the record cannot live inside it.
-2. **The check.** Before loading a model, a process reads every record, ignores (and may delete) any whose pid is not
-   alive with the recorded start time, adds its own reservation and the new model's estimate, and refuses or waits when
-   the sum exceeds the host's agreed capacity (for example a fraction of physical memory, configured once per host).
-3. **Under the lease.** The check and the record's update happen while the process holds the lease, so two processes
-   never check and load at the same time. Kit's language sessions now load under their GPU grant, as Krea, FLUX and H3
-   do, so a lease-backed `GPUAdmission` gives this ordering.
-4. **Advisory.** A process that doesn't take part is invisible to it, as with the lease today. The capacity is an agreed
-   number, not a measurement: it bounds what cooperating processes reserve, not what the host has free.
+1. **Records.** Each participating process keeps one file in a sibling directory of the lease,
+   `<lease path>.residency/<pid>.json` (by default `/tmp/atelier-gpu.lock.residency/`). It holds:
+   - the pid, and the process's start time, so a reused pid is not mistaken for it;
+   - a label, for messages;
+   - the bytes it has reserved for loaded models plus any load in progress (for Kit, its coordinator's reserved
+     total);
+   - when it was last updated.
 
-**Pid-less leases, in the same change.** The record's liveness rule (pid plus start time) and the change window make it
-the moment to settle the [open item above](#open-item-pid-less-leases): for example, a lease directory with no readable
-`pid` older than an agreed age (seconds, since the pid is written right after `mkdir`) may be reclaimed under the
-existing `.reclaim` flock. Every implementation (Atelier's `SharedGPULock`, the wrappers and Kit) has to adopt the same
-rule at once, which is why the two belong in one agreed change.
+   The lease directory is created and removed every turn, so the records cannot live inside it.
+2. **One short lock, not the lease.** Every read-check-write of the records happens under an exclusive `flock` on
+   `<lease path>.residency.lock`. It is a regular file of this user's with mode 0600, checked as the `.reclaim` file is.
+   It is held for milliseconds: no model load or GPU work happens under it. A helper with no GPU grant takes it the
+   same way as a lease holder.
+3. **Before a load:**
+   1. Take the residency lock.
+   2. Read every record. Delete any whose pid is not alive with the recorded start time.
+   3. Sum the others' bytes, the process's own and the new model's estimate.
+   4. Over the agreed capacity: release the lock and refuse, or poll (as a waiting lease acquisition does) until
+      others unload. Otherwise write the process's record with the new total, to a temporary name and renamed into
+      place.
+   5. Release the lock, then load.
 
-**What it needs from Atelier.** Agreement on the directory and record format, the capacity rule, the pid-less age, and
-that `atelier-language` and Krea's process both write records. Kit would then implement it in `SharedGPULease` and have
-`GPUAdmission` publish its sessions' `ResourceCoordinator` total.
+   The reservation is declared before the load, so a second process checking while the first is still loading
+   already counts it.
+4. **After a failed load, and at unload:** under the lock, lower the record's total, and remove the file when it
+   reaches zero. A process that dies leaves its record, which the next reader deletes once the pid is gone.
+5. **Capacity.** One agreed rule for the host, so every process computes the same number: for example physical memory
+   minus a fixed reserve for the system and apps. It bounds what cooperating processes declare; it is not a
+   measurement of free memory.
+6. **Advisory.** A process that doesn't take part is invisible, as with the lease today. A sandboxed app's temporary
+   directory is private ([Sandboxed apps](#sandboxed-apps)), so this, like the lease, is for unsandboxed hosts.
+
+**How it composes with the lease.** The two are independent. Declared residency answers "is there room to load"; the
+lease answers "whose turn is it on the GPU". A process that does both takes the residency lock first, briefly, and then
+waits for the lease. It never holds the residency lock while waiting for the lease, so neither can deadlock the other.
+
+**Pid-less leases, in the same change.** The records' liveness rule (pid plus start time) and the shared change window
+make this the moment to settle the [open item above](#open-item-pid-less-leases):
+- A holder writes `start` (its process start time) beside `pid` in the lease directory.
+- A lease directory with no readable `pid` older than an agreed age may be reclaimed under the existing `.reclaim`
+  flock. The pid is written right after `mkdir`, so a few seconds is enough.
+- A lease whose `start` doesn't match the live process with that pid is stale too.
+
+Every implementation (Atelier's `SharedGPULock`, the wrappers and Kit) has to adopt the same rules at once, which is
+why the two belong in one agreed change.
+
+**What it needs from Atelier:**
+- agreement on the directory, the record format, the lock file, the capacity rule and the pid-less age;
+- `atelier-language` and the Krea process both writing records.
+
+Kit would then implement the records in `AetherKit`. A `ResourceCoordinator` could be bound to them, so a Kit session's
+reservations (`LanguageResourceAdmission`, Krea's, FLUX.2's) publish themselves. The lease's `start` file and the
+pid-less reclaim would go in `SharedGPULease`.
 
 ## Kit tools take the lease by default
 

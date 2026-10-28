@@ -127,12 +127,15 @@ From the one-function bundles' memory by phase and budget runs
 `ResourceCoordinator` is per process, and Atelier runs each writer or describer request in its own helper process
 (`atelier-language`), separate from Krea. So the in-process ledger does not prevent the case that crashed. Kit's part
 here is a proposal for the shared lease protocol, written up with the pid-less lease item as one change for Atelier to
-agree on: [declared residency](gpu-lease.md#proposal-declared-residency-and-pid-less-leases). In short, every
-cooperating process records the bytes it has reserved for loaded models in a per-process file beside
-`/tmp/atelier-gpu.lock`, and checks the host's total before loading, while holding the lease, so two processes never
-check and load at the same time. Item 1 is what makes that possible: loads now run under the grant. A host-pressure
-check (`kern.memorystatus_level` or a memory-pressure dispatch source) is no substitute: it is racy and sees pressure
-only after it has built up. Not implemented.
+agree on: [declared residency](gpu-lease.md#proposal-declared-residency-and-pid-less-leases). In short:
+- every cooperating process records the bytes it has reserved for loaded models in a per-process file beside
+  `/tmp/atelier-gpu.lock`;
+- before loading, it checks the host's total under a short lock of its own, not the lease, so a helper that holds no
+  GPU grant (Atelier's `atelier-language`) takes part the same way;
+- the reservation is declared before the load, so two processes checking at once can't both fit into the same room.
+
+A host-pressure check (`kern.memorystatus_level` or a memory-pressure dispatch source) is no substitute: it is racy
+and sees pressure only after it has built up. Not implemented.
 
 ## Reproduction
 
