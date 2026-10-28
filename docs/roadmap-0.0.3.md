@@ -34,12 +34,13 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Safety and correctness
 
-- **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`.
+- **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`. Done ([guide](flux2-klein.md#chat-template-in-the-fingerprint-003)).
 - **Resource admission** for the Qwen3-VL encoder and decoder.
 - **GPU lease:** reclaim pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
 - **FLUX.2 evidence:**
-  - native reports should record both fixture IDs;
-  - move reference-mode regeneration onto the CPU text-to-image pictures at the next intentional regeneration.
+  - native reports should record both fixture IDs (done);
+  - move reference-mode regeneration onto the CPU text-to-image pictures at the next intentional regeneration;
+  - native cancellation of the reference encoder. Done: about 0.21–0.25 s, one image's encoder call ([measurement](flux2-klein.md#reference-encoder-cancellation-003)).
 
 ### FLUX.2
 

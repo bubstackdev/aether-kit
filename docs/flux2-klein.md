@@ -192,7 +192,9 @@ do {
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
   `unload()` rejects new work, waits for the active operation and closes permanently. Cancelling while the prompt is
   being encoded returns in about 0.17 s on an M5 Max: the rest of the encoder's one native call, then its discard
-  ([Text encoder cancellation](#text-encoder-cancellation-003)).
+  ([Text encoder cancellation](#text-encoder-cancellation-003)). While references are being encoded it returns in
+  about 0.21–0.25 s, the rest of one image's encoder call, and later images are never submitted
+  ([Reference encoder cancellation](#reference-encoder-cancellation-003)).
 - **Prepared values:** `Flux2PreparedPrompt` (7.5 MiB fp16 rows + bundle fingerprint) and `Flux2PreparedReferences`
   (float32 packed latents + reference fingerprint) hold no native models; another bundle refuses them before loading.
 - **Admission:** optional `Flux2ResourceAdmission` reserves caller-qualified estimates (operation storage, per-model
@@ -300,6 +302,39 @@ AETHER_FLUX2_ENCODER_CANCEL_OUTPUT=/new/output/dir \
 ```
 
 `AETHER_FLUX2_ENCODER_CANCEL_TRIALS` sets the number of trials of each kind (default 3).
+
+### Reference encoder cancellation (0.0.3)
+
+With `AETHER_FLUX2_REFERENCE_FIXTURES` also set, `flux2NativeEncoderCancellation` does the same for the VAE encoder that
+encodes reference images. It uses the two-reference case `fox-lighthouse-ref2` (256×256 and 192×256 references) from
+`caf92bb7…` on a balanced session, which opens the encoder for each preparation and releases it afterwards. Three
+`prepare(references:)` requests are cancelled during the first image's native call, and three during the encoder's
+open. One `generate(prompt:references:)` request is cancelled during the encoder's native call. 102/102 checks for the
+whole test, same Mac and bundle:
+
+| Measurement | Result |
+| --- | --- |
+| Encoder open | 1.5–1.9 ms |
+| Encoder function load (first call after the open) | about 20 ms |
+| Encoder native call, per image (encoder opened for the preparation) | 209–255 ms |
+| Cancel during the first image's call, until `prepare` throws | 210–251 ms (3 trials) |
+| Cancel during the call, until `generate` throws | 213 ms |
+| Cancel during the open, until `prepare` throws | 22–23 ms (3 trials) |
+
+As with the text encoder, Core AI ran every cancelled call to completion and returned its outputs. The latency is the
+rest of the one in-flight image's call plus the encoder's discard (5–11 ms). Kit checks cancellation between images, so
+the second image is never submitted. In the open trials the 1.5 ms open had already finished when the cancel arrived, and the
+first image's request had started loading the encoder's function (about 20 ms, a synchronous Core AI load that is not
+interruptible). Kit's check after the load and before the native call then threw, so no encoder call ran. The encoder's
+discard took 2 ms. Each trial also checks that the call returns before cancellation does, that the encoder is discarded before
+the request returns, that no native call starts after the cancel, and that the session returns to ready. The next
+request reproduces the uncancelled result exactly: the same prepared latents for `prepare`, and the same pixels for
+`generate`. The baseline's latents match the reference fixture at cosine 0.999999999998. No library change was needed.
+See the [report](evidence/flux2-reference-encoder-cancellation-2026-10-27.json),
+[log](evidence/flux2-reference-encoder-cancellation-2026-10-27.log) and
+[event journal](evidence/flux2-reference-encoder-cancellation-events-2026-10-27.jsonl). Run it with the text encoder
+command above plus
+`AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c`.
 
 ### Memory after unload (0.0.3)
 
@@ -594,8 +629,6 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 
 ### Not yet qualified
 
-- Native cancellation of the reference encoder. Its run-failure and cancellation discard paths are covered by scripted
-  CPU tests only. The text encoder's is qualified natively ([above](#text-encoder-cancellation-003)).
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
 - Prompt adherence (T3) and a subjective review across more prompts and seeds.
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.
