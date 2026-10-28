@@ -56,7 +56,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 ### Spikes
 
 Each spike ends in a go/no-go report. All three start from a 0.0.2 feasibility report, which recommends going ahead and ends with what it leaves open for 0.0.3:
-- a hybrid recurrent-state language model (Granite 4.0-H): [report](spikes/hybrid-state-2026-10.md), go, at about 190 tok/s on the M5 Max with fixed-shape decode; the first open item is how its state contract fits the bucketed decode contract that shipped;
+- a hybrid recurrent-state language model (Granite 4.0-H): [0.0.2 report](spikes/hybrid-state-2026-10.md), go, at about 190 tok/s on the M5 Max with fixed-shape decode. The 0.0.3 [go/no-go](spikes/hybrid-state-0.0.3.md) is a go on a static-width step contract: one `main` at width 64 (797 MiB wired, about 130 tok/s) or with a q = 1 `decode` (1,446 MiB, about 165–180 tok/s), both matching the fp32 reference. The dynamic-q contracts that mirror the bucketed one are a no-go under the current Core AI;
 - ACE-Step music generation: [report](spikes/ace-step-2026-10.md), a conditional go for ACE-Step 1.5 text-to-music on Mac, gated on an 8-step fp16 trajectory check from real prompts;
 - TripoSR image-to-3D: [report](spikes/triposr-2026-10.md), go for image to OBJ and USDZ at 256³, about 2.5 s per mesh.
 
