@@ -10,9 +10,14 @@
 
 It is not product work: Forge gains the exporter, but Kit's runtime is unchanged.
 
-**Verdict: go, on a static-width step contract (S1 or S2 below).** The dynamic-q contracts that mirror today's bucketed language contract are a **no-go under the current Core AI**:
+**Verdict: go, on a static-width step contract (S1 or S2 below).** As exported in this spike, the dynamic-q contracts that mirror today's bucketed language contract failed on the GPU:
 - with one function (C1), the GPU aborts at q = 1;
 - with a separate decode function (C2), the dynamic-q `main` doesn't specialize on the GPU at full depth.
+
+**The cause is our export, not Core AI** (follow-up bug hunt, 2026-10-28). `main` carries the same dynamic q on two inputs, `input_ids` [1, q] and `cache_positions` [1, q]. torch knows the two are equal, but coreai-torch emits two independent dynamic dimensions, so every q-dependent shape becomes a broadcast between two unrelated symbols, nesting one level per layer.
+- **Fix:** pass the chunk's start position as a [1, 1] scalar and build the positions in the graph.
+- **Result:** both failures go away (see [Contracts tried](#contracts-tried)).
+- **Why the verdict stands:** that start-scalar dynamic contract is measured but not parity-qualified, so the 0.0.3 verdict stays on the static-width contract, which is. Re-qualifying the dynamic one is planned for 0.0.4.
 
 Both static-width layouts open in seconds and match the float32 reference. On a quiet M5 Max:
 
@@ -28,7 +33,7 @@ Both static-width layouts open in seconds and match the float32 reference. On a 
 
 S2 is the one-weight-copy choice. S1 costs another 0.63 GiB wired (649 MiB) for 26–32% faster decode at capacity 8,448 and 36% at 1,280.
 
-The GPU defects that rule out the dynamic contracts, and the cpu_only ones found on the way, are below as Apple Feedback candidates. Every workaround in the code is labelled a workaround, not a fix.
+The GPU failures of the dynamic contracts, and the cpu_only defects found on the way, are listed in [the defects section](#core-ai-defects-and-apple-feedback-candidates) with what remains for Apple. Every workaround in the code is labelled a workaround, not a fix.
 
 ## Setup
 
@@ -77,8 +82,9 @@ Attention keeps the 0.0.2 bucketed KV contract in every layout: read-only `keyCa
 
 | Layout | Functions | GPU outcome (full 32 layers) |
 |---|---|---|
-| C1 | `main`, dynamic q | **No-go.** At q = 1, `main` aborts once the stack has 4 or more Mamba layers. Separately, the full graph didn't open in 6 min on a busy host. |
-| C2 | `main` dynamic q + `decode` (q = 1, recurrence) | **No-go.** The separate `decode` avoids the q = 1 abort (8 layers: decode 4.9 ms warm), but `main` doesn't specialize at full depth: 16 layers open in 16 s (loadSeconds 16.22), 24 don't open in 3 min, and 32 don't open in 15 min at load 5. |
+| C1 | `main`, dynamic q, positions [1, q] | **Failed as exported.** At q = 1, `main` aborts once the stack has 4 or more Mamba layers. Separately, the full graph didn't open in 6 min on a busy host. The cause is the two q-carrying inputs (defect 1). |
+| C2 | `main` dynamic q + `decode` (q = 1, recurrence), positions [1, q] | **Failed as exported.** The separate `decode` avoids the q = 1 abort (8 layers: decode 4.9 ms warm), but `main` doesn't specialize at full depth: 16 layers open in 16 s (loadSeconds 16.22), 24 don't open in 3 min, and 32 don't open in 15 min at load 5. Also caused by the two q-carrying inputs (defect 2). |
+| C2, start scalar | as C2, with `cache_positions` a [1, 1] start and the positions built in the graph | **Opens and runs** (bug-j's measurements; real dimensions, random weights). It isn't parity-qualified in 0.0.3; that re-qualification is planned for 0.0.4. |
 | `decode` only | static q = 1 | Opens and runs in 2 s at 32 layers, so the blow-up is in the dynamic-q `main`. |
 | **S1** | `main` at width 64 (padded tail) + `decode` | **Go:** opens in 2–3 s and qualifies (table above). |
 | **S2** | `main` at width 64 only; decode is a padded 64-wide call | **Go:** opens in 1–2 s and qualifies. |
@@ -126,24 +132,34 @@ S1's remaining gap to the baseline is probably the dynamic-capacity attention an
 - the static layouts open and run their first calls in 2–4 s on a quiet host;
 - each new KV capacity is a new specialization of the attention shapes, which is cheap here but should be measured per registration.
 
-The dynamic-q graphs are the problem (next section). For a hybrid, a Kit contract with many symbolic shapes isn't viable on this Core AI.
+The dynamic-q exports were the problem, because of how their positions input was declared (next section), not dynamic shapes as such.
 
-## Core AI defects (Apple Feedback candidates)
+## Core AI defects and Apple Feedback candidates
 
-Each has a repro in `Spikes/hybrid-state-003/`. The code works around them; none is fixed.
+Each has a repro in `Spikes/hybrid-state-003/`. A follow-up bug hunt on 2026-10-28 traced defects 1 and 2 to this spike's export, and found that defects 3 and 4 don't reproduce on the coreai-core wheel's newer bundled runtime. Each item says what remains for Apple.
 
-1. **GPU: a dynamic-q graph aborts at q = 1.**
-   - **Error:** `MPSNDArrayMatrixMultiplication.mm:212: failed assertion 'K dimension is inconsistently defined...'`.
-   - **Graph:** a Mamba-2 stack in SSD chunk form with 4 or more layers, each updating two states in place, plus one attention layer.
-   - **Shapes:** q = 4 and q = 2 run; with 3 Mamba layers, q = 1 runs too (`results/scale-L4.json`); cpu_only runs every q.
-   - **Repro:** `q1_repro.py --layers mmmam` (torch and coreai-torch only, random weights), run with `q1-repro.swift`.
-   - **A second abort:** the 3-layer standalone variant (`mmam`) instead aborts at q = 4 with `GPUMemrefOps.mm:164: failed assertion 'Failed to resolve dynamic dimensions for memref.alloc'`.
-2. **GPU: a deep dynamic-q graph doesn't specialize.**
-   - **Symptom:** `AIModel(contentsOf:options:)` with GPU preference runs for over 15 min at load 5. Every sample is in MPSGraph's `ShapeFunctionCanonicalizationPass` → `mpsx::shape_equation::performShapeEquationGeneration` → `z3_solver::simplifyShapeEquationsWithZ3` → `Z3ToMLIRGenerator::generateShapeFunctionFromZ3` → `generateIte` → `generateCondition`, recursing at least 20 deep.
-   - **Depth:** 16 layers open in 16 s (loadSeconds 16.22, `results/depth-L16d.json`); 24 layers don't open in 180 s (`results/gpu-probe-outcomes.json`). With static width at all 32 layers, the dynamic KV capacity alone specializes in seconds.
-   - **Repro:** `export_scaled.py --checkpoint <snapshot> --layers real:4:28 --decode`, run with the harness's `widths` phase. It needs the checkpoint for its `config.json` only; the weights are random.
-   - **Probable cause:** compile also prints `FAILED: Input has no defining op (block argument)` twice, the 0.0.2 report's unexplained `staticq` message. The q-dependent shape expressions (Min/Max stride terms that torch can't prove either) probably compound per layer.
-3. **cpu_only: a 2-D float additive SDPA mask computes wrong attention, silently** (the most serious of these, because it gives wrong output with no error). Run `mask_repro.py --save <dir>` (and `--mha`) for the attention-only assets; `mask-repro-gpu.swift <dir>` runs them on the GPU, or with `--cpu` on cpu_only. Output: `results/mask-repro-cpu.txt` and `results/mask-repro-gpu.txt`.
+1. **GPU: a dynamic-q graph aborts at q = 1. The trigger is our export; not an Apple candidate as filed.**
+   - **Cause:** bug-h's minimal pair isolates it. With an extra, unused `positions` [1, q] input that becomes the shape source of q, a stack with 5 or more layers aborts at q = 1. Without that input, the same stack runs. An MPSGraph robustness bug may still sit underneath, but Kit avoids it by giving q a single carrier (the start-scalar export in defect 2).
+   - **As first observed in this spike:**
+     - **Error:** `MPSNDArrayMatrixMultiplication.mm:212: failed assertion 'K dimension is inconsistently defined...'`.
+     - **Graph:** a Mamba-2 stack in SSD chunk form with 4 or more layers, each updating two states in place, plus one attention layer.
+     - **Shapes:** q = 4 and q = 2 run; with 3 Mamba layers, q = 1 runs too (`results/scale-L4.json`); cpu_only runs every q.
+     - **Repro:** `q1_repro.py --layers mmmam` (torch and coreai-torch only, random weights), run with `q1-repro.swift`.
+     - **A second abort:** the 3-layer standalone variant (`mmam`) instead aborts at q = 4 with `GPUMemrefOps.mm:164: failed assertion 'Failed to resolve dynamic dimensions for memref.alloc'`.
+2. **GPU: a deep dynamic-q graph doesn't specialize. The cause is our export; a narrower MPSGraph slowdown remains for Apple.**
+   - **Cause (bug-j):**
+     - `main` takes the same dynamic q on `input_ids` [1, q] and `cache_positions` [1, q]. torch ties them (one shared Dim, and it takes q's size from the positions), but coreai-torch emits two independent dynamic dimensions.
+     - Every q-dependent shape expression then becomes a broadcast between two unrelated symbols, nesting one level per layer. That nesting is the `generateIte` / `generateCondition` recursion in the samples below.
+   - **Fix tested (bug-j):** pass `cache_positions` as a [1, 1] start scalar and build the positions in the graph (start + arange(q)), with the model otherwise unchanged.
+     - **Real-dimension 32-layer C2** (dynamic-q `main` + `decode`, `expectFrequentReshapes`): it opens in **7.52 s**, against more than 15 min. Widths 4, 2, 8, 64, 256 and 3 all run with finite logits, and warm calls take 32–39 ms.
+     - **Tiny-dimension 24-layer version:** it opens in 2.43 s, matches eager fp32, and runs q = 1 twice with no K-dimension abort.
+   - **Remaining Apple candidate (bug-j):** MPSGraph open time grows exponentially for a single-input stack of cat, then a dynamic-end slice, then a residual add: 12 layers 0.77 s, 14 layers 2.73 s, 16 layers 9.80 s, 18 layers over 30 s. That is a separate, narrower defect than the one this spike first reported.
+   - **As first observed in this spike:**
+     - **Symptom:** `AIModel(contentsOf:options:)` with GPU preference runs for over 15 min at load 5. Every sample is in MPSGraph's `ShapeFunctionCanonicalizationPass` → `mpsx::shape_equation::performShapeEquationGeneration` → `z3_solver::simplifyShapeEquationsWithZ3` → `Z3ToMLIRGenerator::generateShapeFunctionFromZ3` → `generateIte` → `generateCondition`, recursing at least 20 deep.
+     - **Depth:** 16 layers open in 16 s (loadSeconds 16.22, `results/depth-L16d.json`); 24 layers don't open in 180 s (`results/gpu-probe-outcomes.json`). With static width at all 32 layers, the dynamic KV capacity alone specializes in seconds.
+     - **Repro:** `export_scaled.py --checkpoint <snapshot> --layers real:4:28 --decode`, run with the harness's `widths` phase. It needs the checkpoint for its `config.json` only; the weights are random.
+     - **First guess at the time** (superseded by the cause above): compile also prints `FAILED: Input has no defining op (block argument)` twice, the 0.0.2 report's unexplained `staticq` message. The q-dependent shape expressions (Min/Max stride terms that torch can't prove either) probably compound per layer.
+3. **cpu_only: a 2-D float additive SDPA mask computes wrong attention, silently** (the most serious of these, because it gives wrong output with no error). It's an Apple defect in the OS cpu_only path, present in macOS 27.0.1 (26A434). bug-d found that the coreai-core wheel's newer bundled runtime doesn't reproduce it, so it may already be fixed upstream. Run `mask_repro.py --save <dir>` (and `--mha`) for the attention-only assets; `mask-repro-gpu.swift <dir>` runs them on the GPU, or with `--cpu` on cpu_only. Output: `results/mask-repro-cpu.txt` and `results/mask-repro-gpu.txt`.
    - **cpu_only:** WRONG for the 2-D float mask over explicitly repeated KV heads with GQA (12/4, cosine 0.376), and for any 2-D float mask in plain multi-head attention (12/12, cosine 0.239, with or without `enable_gqa`).
    - **GPU:** all 24 variants are correct: {GQA, MHA} × {bool, float} × {2-D, 4-D} × {`enable_gqa`, explicit repeat} × {with a state, without}.
    - **No shipped graph is affected.** Forge's exporters use bool masks (Qwen3, Qwen3-VL text, FLUX.2's text encoder), no mask (Qwen3-VL vision, H3's conditioner), or 4-D masks (Kokoro's ALBERT).
@@ -165,18 +181,20 @@ Each has a repro in `Spikes/hybrid-state-003/`. The code works around them; none
      | 12/12; float; 4-D; repeat | OK | OK |
 
      Each row was run with and without an in-place state update, which makes 24 variants on each compute unit. The verdicts and cosines are the same either way, so the state plays no part in defect 3 (it does in defect 4).
-4. **cpu_only: `inferenceFailed` with state mutation plus a bool mask or `enable_gqa`.**
+4. **cpu_only: `inferenceFailed` with state mutation plus a bool mask or `enable_gqa`.** It's an Apple defect in the OS cpu_only path, present in macOS 27.0.1. bug-e found that the bundled runtime doesn't reproduce it; it may be fixed upstream.
    - **Graph:** the 4-layer random Granite hybrid, whose Mamba layers mutate the states.
    - **Fails:** SDPA with `enable_gqa` (any mask form) or with a bool mask (2-D or 4-D) raises `(loc: unknown, error: inferenceFailed(-1))`.
    - **Runs:** the same graph with the states passed as plain inputs. Float masks without `enable_gqa` also run, but only the 4-D one is correct (defect 3).
    - **Workaround in `granite_hybrid.py`:** a 4-D float mask over KV heads repeated in the graph.
    - **Repro:** `mask_repro.py <dir> granite` (no checkpoint). Output: `results/mask-repro-granite-cpu.txt`.
-5. **cpu_only: `inferenceFailed` on a static-q (> 1) SSD-chunk `main` with mutated states,** padded or not. The dynamic-q graph runs. Repro: `export_granite_hybrid.py --tiny --static-width 8 --output <dir>`, without `--no-self-check`, so its cpu_only self-check raises. No checkpoint is needed. Static-width exports therefore skip the Forge self-check and qualify natively.
+5. **cpu_only: `inferenceFailed` with a static q > 1 and dynamic KV.**
+   - **Not about states:** first observed here on a static-q SSD-chunk `main` with mutated states, padded or not, while the dynamic-q graph runs. The states don't matter. bug-k found that a single fp16 SDPA with a static q > 1 over dynamic-capacity KV fails on the OS cpu_only path regardless of states, and runs on the bundled runtime and on the GPU.
+   - **Repro and consequence:** `export_granite_hybrid.py --tiny --static-width 8 --output <dir>`, without `--no-self-check`, so its cpu_only self-check raises. No checkpoint is needed. Static-width exports therefore skip the Forge self-check and qualify natively.
 6. **cpu_only: a `torch.cond` abort.** The `torch.cond` abort from the [split-attention spike](split-attention-2026-10.md) is a separate defect, already recorded there.
 
 ## Caveats
 
-- **Native-only qualification.** The static-width graphs can't run on cpu_only (defect 5). Their accuracy rests on the GPU runs against the fp32 reference, plus the CPU proof of the padded maths in eager.
+- **Native-only qualification.** The static-width graphs can't run on the OS cpu_only path in macOS 27.0.1 (defect 5). Their accuracy rests on the GPU runs against the fp32 reference, plus the CPU proof of the padded maths in eager.
 - **Quiet-host, few runs.**
   - The timings are two interleaved rounds on a quiet host.
   - The chat numerics are single runs per layout. The drift ran in both timing rounds, with identical cosines.
@@ -222,7 +240,7 @@ The 0.0.2 report's state-role design stands, with these changes:
 - The iPhone hasn't been run.
 - Quantized weights haven't been tried. F-36 keeps `in_proj` at ≥ 8 bits.
 - The T3 task gates and the prototype's 19-case T2 fixtures haven't been run. This spike's numerics cover 3 chat cases, plus drift to 8,192 tokens.
-- Re-test the dynamic contracts when Core AI fixes defects 1 and 2, because they would let the bucketed contract carry hybrids unchanged.
+- **0.0.4: re-qualify a start-scalar dynamic contract.** Positions go in as a [1, 1] start (defect 2), and the dynamic-q `main` is measured and parity-qualified like S1 and S2. That would let hybrids use the bucketed planner without padding.
 
 ## Reproduce
 
@@ -246,8 +264,8 @@ swift build -c release --package-path Spikes/hybrid-state-003/harness
 CPU proof of the padded prefill: `Forge/.venv/bin/python -I Spikes/hybrid-state-003/padded_exactness.py --checkpoint <snapshot> --reference <dir> --output <json>`.
 
 Defect repros:
-- `q1_repro.py` and `q1-repro.swift` (defect 1);
-- `export_scaled.py` and the harness's `widths` phase (defects 1 and 2);
+- `q1_repro.py` and `q1-repro.swift` (defect 1 as first observed: both carry q on two inputs);
+- `export_scaled.py` and the harness's `widths` phase (defects 1 and 2 as first observed);
 - `mask_repro.py` and `mask-repro-gpu.swift` (defects 3 and 4).
 
 The results are in `Spikes/hybrid-state-003/results/`. `gpu-probe-outcomes.json` records the runs that ended in an abort or a timeout, and `c1-c2-self-check.json` holds the C1 and C2 cpu_only self-checks against eager fp16 (logits cosine ≥ 0.99992, min 0.999929; conv state ≥ 0.99988, min 0.999885; SSM state ≥ 0.9999, min 0.999902). `tiny-c1-c2-self-check.json` holds the same checks on the random tiny model (all ≥ 0.999997). Every harness JSON in `results/` predates the harness's run-identity fields (`argv`, `assetIdentity`, `fixedCapacity`, `staticWidth`, load averages). For those runs, the capacity, width and options are in `run_rounds.sh` and the hold scripts' commands, and the load averages are in `hold-windows-and-load.txt`.
