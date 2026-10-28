@@ -9,12 +9,6 @@
   "command": "aether-probe qualify-h3-session-lifecycle PROFILE DUMP NEW_DIR [--scenarios=...] under with-gpu-lock.sh",
   "host": "busy (one-minute load 50-133; an unrelated transcode saturated the CPU); timings are not a reference",
   "gpuLock": [
-    "2026-10-28 02:29:27 acquired pid=12663 h3-promotion: lifecycle qualifying t2va part1 cancel-conditioner,cancel-denoiser",
-    "2026-10-28 02:29:27 released pid=12663 h3-promotion: lifecycle qualifying t2va part1 cancel-conditioner,cancel-denoiser  rc=1",
-    "2026-10-28 02:29:27 acquired pid=12678 h3-promotion: lifecycle qualifying t2va part2 cancel-videoTile,cancel-audio,unload,reopen",
-    "2026-10-28 02:29:27 released pid=12678 h3-promotion: lifecycle qualifying t2va part2 cancel-videoTile,cancel-audio,unload,reopen  rc=1",
-    "2026-10-28 02:29:27 acquired pid=12697 h3-promotion: lifecycle qualifying fl2va all -",
-    "2026-10-28 02:29:27 released pid=12697 h3-promotion: lifecycle qualifying fl2va all -  rc=1",
     "2026-10-28 02:30:08 acquired pid=13056 h3-promotion: lifecycle qualifying t2va part1",
     "2026-10-28 02:35:31 released pid=13056 h3-promotion: lifecycle qualifying t2va part1 rc=0",
     "2026-10-28 02:35:31 acquired pid=16530 h3-promotion: lifecycle qualifying t2va part2",
@@ -449,5 +443,6 @@
         ]
       }
     }
-  }
+  },
+  "note": "A first launch at 02:29:27 passed malformed arguments (a shell word-splitting mistake) and exited at once without any native work; the runs above are the relaunch."
 }
