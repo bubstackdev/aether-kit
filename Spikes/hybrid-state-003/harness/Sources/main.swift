@@ -31,6 +31,8 @@ let decodeContexts = (option("--decode-contexts") ?? "256,2048").split(separator
 // --capacity N: allocate the KV caches at N rows once (one capacity, so a run touches few shapes); default: Kit's
 // 256-row growth, a new shape per capacity step.
 let fixedCapacity = option("--capacity").map { Int($0)! }
+// --widths 4,2,1: the `widths` phase submits these widths in order from position 0, printing before each one.
+let probeWidths = (option("--widths") ?? "4,2,1,1").split(separator: ",").map { Int($0)! }
 let phases = Set((option("--phases") ?? "memory,numerics,long,ttft,decode").split(separator: ",").map(String.init))
 guard args.count == 3 else {
     print("usage: hybrid-step <asset> <reference dir> <out.json> [--decode] [--cpu] [--chunk N] [--rounds N] [--phases …]")
@@ -235,6 +237,24 @@ func median(_ v: [Double]) -> Double { let s = v.sorted(); return s.isEmpty ? 0 
 var report: [String: Any] = ["asset": assetURL.lastPathComponent, "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
                              "chunk": chunk, "loadSeconds": loadSeconds, "device": AIModel.deviceArchitectureName,
                              "stateNames": states.map(\.name)]
+
+// MARK: submission widths, one by one
+
+if phases.contains("widths") {
+    let s = Session()
+    var results: [[String: Any]] = []
+    for width in probeWidths {
+        let function = width == 1 && s.position > 0 && useDecode ? "decode" : "main"
+        print("[widths] q \(width) at position \(s.position) via \(function)…")
+        let t0 = clock.now
+        let logits = try await s.step((0..<width).map { Int32(100 + s.position + $0) })
+        let ms = seconds(t0.duration(to: clock.now)) * 1e3
+        let finite = logits.allSatisfy { $0.isFinite }
+        print(String(format: "[widths] q %d done in %.1f ms, logits finite %@", width, ms, finite ? "yes" : "no"))
+        results.append(["width": width, "function": function, "ms": ms, "finite": finite])
+    }
+    report["widths"] = results
+}
 
 // MARK: cold specialization per shape
 
