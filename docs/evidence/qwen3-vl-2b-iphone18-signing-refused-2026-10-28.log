@@ -1,0 +1,3 @@
+Examples/LanguageDevice/LanguageDeviceProbe.xcodeproj: error: Provisioning profile "iOS Team Provisioning Profile: *" doesn't include the Increased Memory Limit capability. (in target 'LanguageDeviceProbe' from project 'LanguageDeviceProbe')
+Examples/LanguageDevice/LanguageDeviceProbe.xcodeproj: error: Provisioning profile "iOS Team Provisioning Profile: *" doesn't include the com.apple.developer.kernel.increased-memory-limit entitlement. (in target 'LanguageDeviceProbe' from project 'LanguageDeviceProbe')
+** BUILD FAILED **
