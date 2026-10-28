@@ -96,10 +96,10 @@ From the one-function bundles' memory by phase and budget runs
 
 | | VL-4B decoder | VL-4B encoder | VL-2B decoder | VL-2B encoder |
 | --- | --- | --- | --- | --- |
-| Weights wired, or Metal at first use | 8,443 | 992 open + 1,133 first grid | 3,578 | 872 open + 1,116 first grid |
+| Weights wired, or Metal at first use | 8,443 | 992 open + 1,133 first grid | 3,578 | 872 open + 1,115 first grid |
 | KV caches at the registered 4,096 tokens | 576 | – | 448 | – |
 | Memory-budget allowance (default) | 2,048 | – | 2,048 | – |
-| Largest growth of one warm request | about 500 | – | about 200 | – |
+| Largest growth of one warm request (budget run) | 416 | – | 67 | – |
 | **Resident estimate** | **11,600** | **2,200** | **6,300** | **2,000** |
 | Largest sampled transient of a request (Metal / footprint) | 67 / 62 | (inside the image request) | 38 / 52 | (inside the image request) |
 | **Scratch estimate** | **256** | **128** | **128** | **128** |
@@ -173,7 +173,7 @@ with nothing heavy alongside. All three rounds completed and the guard never tri
 | First image request | 10.2 GiB | 1.7 GiB | 75 |
 | Krea renders (three) | 35.1–35.6 GiB | 14.8–15.7 GiB | 51–54 |
 | Image requests beside a resident Krea | 35.2–35.3 GiB | 14.8 GiB | 66–69 |
-| After unload | 1.7 GiB | 1.6 GiB | 70 |
+| After unload (values at the end, not peaks) | 1.7 GiB | 1.6 GiB | 70 |
 
 - **The describer stays inside its reservation.** The coordinator held 13,800 MiB for the session throughout; the
   describer's own Metal was 10.2 GiB after its first image request (one grid; further grids add views, not
