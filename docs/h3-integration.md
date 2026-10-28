@@ -169,8 +169,8 @@ Preparation performs no native acquisition. It reports whether all per-block CPU
 
 ```sh
 H3_PYTHON=<the 2026-10-18 prototype forge interpreter; not provided>
-H3_LAB=/Users/zakkeown/Code/atelier/lab/minimax-h3-lab
-H3_PROTOTYPE=/Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype
+H3_LAB=<minimax-h3-lab checkout>
+H3_PROTOTYPE=<aether-prototype checkout>
 H3_BUNDLE=/private/tmp/aether-h3-qkv-ready/render/bundle.json
 H3_PHASES=/private/tmp/aether-h3-qkv-ready/phase/bundle.json
 H3_PROBE="$PWD/.build/arm64-apple-macosx/release/aether-probe"
@@ -316,12 +316,13 @@ The shared CPU-tested control loop carries both modalities through all eight ind
 `qualify-h3-denoising` separates CPU-only preparation, explicitly unqualified capture, and context-aware qualification:
 
 ```sh
+H3_PROTOTYPE=<aether-prototype checkout>
 python3 -B Scripts/qualify-h3-denoising.py \
   --bundle /private/tmp/aether-h3-qkv-ready/render/bundle.json \
   --phases /private/tmp/aether-h3-qkv-ready/phase/bundle.json \
   --cpu-record /private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json \
   --chain .local/h3-backbone-cpu-references-01/chain.json \
-  --modulations /Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/.local/h3-diagnostic/models \
+  --modulations "$H3_PROTOTYPE/.local/h3-diagnostic/models" \
   --output NEW_PREPARATION_DIRECTORY --prepare-only
 ```
 
