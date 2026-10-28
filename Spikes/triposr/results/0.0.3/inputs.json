@@ -1,0 +1,55 @@
+{
+ "source": "VAST-AI-Research/TripoSR @ 107cefdc244c examples/ (MIT repository; images used in scratch only, not committed)",
+ "sourceTarballSHA256": "0234adecd6f8dbacd7fd091123651c8dd662d618c9afff676ba933d92e98d19a",
+ "checkpoint": {
+  "repo": "stabilityai/TripoSR",
+  "revision": "5b521936b01fbe1890f6f9baed0254ab6351c04a",
+  "model.ckpt sha256": "429e2c6b22a0923967459de24d67f05962b235f79cde6b032aa7ed2ffcd970ee"
+ },
+ "dinoConfig": {
+  "repo": "facebook/dino-vitb16",
+  "revision": "f205d5d8e640a89a2b8ef0369670dfc37cc07fc2",
+  "files": [
+   "config.json",
+   "preprocessor_config.json"
+  ]
+ },
+ "images": {
+  "captured": {
+   "file": "captured.jpeg",
+   "sha256": "c6eb2768703a0e3d6034daa7fd5e0b286450b1077a90f36da8110749bb1cb8a8",
+   "foreground": "Vision foreground-instance mask",
+   "inputSHA256": "0059dbc6a072a20823e6b7ca917f2cc0930c170293d8c2f754ba0ce4a3f9258a"
+  },
+  "chair": {
+   "file": "chair.png",
+   "sha256": "2503c12a74419d91a4c6c9f1affc48fee6e2b8b9091956ca6211e91ada57b5bf",
+   "foreground": "existing alpha kept",
+   "inputSHA256": "1811c404fe6a4e8e59a368b1bd8cd679d2b79391b7e5643317b08c57cdb815ec"
+  },
+  "hamburger": {
+   "file": "hamburger.png",
+   "sha256": "2f16cb1f2bb932ae643cd4acc09bb6ecb51c84eca32dd5a7c71ea4980b40b51a",
+   "foreground": "existing alpha kept",
+   "inputSHA256": "1157d483f46eb3c30173b0a87efc01d2ae9128903a99ee2de5537ab35c1ece09"
+  },
+  "robot": {
+   "file": "robot.png",
+   "sha256": "092ee61f1729ac9ed516c8d031d071f44dfa6e79f6ece04f32c988721b2b657a",
+   "foreground": "existing alpha kept",
+   "inputSHA256": "edc76ac419a120c8ee3714bc3843edacd08832c4cec07d6eb9b3ceeed7d2364a"
+  },
+  "teapot": {
+   "file": "teapot.png",
+   "sha256": "66b0b8f7dd759e97d20665999885e0548f96c95dadee6bf9762ccd877c596b8c",
+   "foreground": "Vision foreground-instance mask",
+   "inputSHA256": "d27a780b51bd569af1d70c779c81ab6d4e039c5da374c0e10137c1b6e24165f5"
+  },
+  "poly_fox": {
+   "file": "poly_fox.png",
+   "sha256": "255b3fe96ec357d8744343849f8d7cb39156988520c7ca0264edc6689d6e31ca",
+   "foreground": "Vision foreground-instance mask",
+   "inputSHA256": "dc849b2e390e23b820480487c2ed055ab96a743e399256618145172a0dddfd65"
+  }
+ }
+}

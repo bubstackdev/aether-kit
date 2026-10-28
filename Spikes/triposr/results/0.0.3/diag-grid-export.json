@@ -1,0 +1,39 @@
+{
+ "slab": {
+  "res": 256,
+  "planes": 16,
+  "first": 128
+ },
+ "eager": {
+  "fp32MatmulVsEinsumMaxRelErr": 0.0,
+  "einsumFp32VsGridSample": {
+   "maxRelErr": 5.168064944882644e-06,
+   "occupancyIoU": 1.0
+  },
+  "einsumFp16VsGridSample": {
+   "occupancyIoU": 0.9960037367656217,
+   "nonfinite": 0
+  }
+ },
+ "exports": {
+  "einsum": {
+   "exported": true
+  },
+  "planes0": {
+   "exported": true
+  },
+  "matmul": {
+   "exported": true
+  },
+  "bmm": {
+   "exported": false,
+   "error": "RuntimeError",
+   "detail": "see current operation: %83 = \"coreai.broadcast_in_dims\"(%82, %4, %3) : (tensor<1x40x256x256xf16>, tensor<3xui32>, tensor<3xsi32>) -> tensor<40x256x256xf16>"
+  },
+  "broadcast-matmul": {
+   "exported": false,
+   "error": "RuntimeError",
+   "detail": "see current operation: %83 = \"coreai.broadcast_in_dims\"(%82, %4, %3) : (tensor<1x40x256x256xf16>, tensor<3xui32>, tensor<3xsi32>) -> tensor<40x256x256xf16>"
+  }
+ }
+}

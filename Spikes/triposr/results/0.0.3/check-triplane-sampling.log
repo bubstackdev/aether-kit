@@ -1,0 +1,3 @@
+Field vs grid_sample over 64x64x8: max relative error 2.73e-16
+GridField vs grid_sample over 64x64x8: max relative error 2.73e-16
+both samplers match grid_sample
