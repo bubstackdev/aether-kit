@@ -3,6 +3,7 @@ import AetherFlux2
 import AetherKit
 
 /// Declared and runtime tensor contracts of the klein export, checked before every native call.
+@available(macOS 27, iOS 27, *)
 enum Flux2Contracts {
     static let hidden = 3072
     static let conditionRows = 17

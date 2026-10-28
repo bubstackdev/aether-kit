@@ -1,6 +1,7 @@
 import CoreAI
 
 /// A model value's declared storage. Dynamic dimensions are reported unchanged.
+@available(macOS 27, iOS 27, *)
 public struct ModelValueDescription: Sendable, Codable, Equatable {
     public let kind: String
     public let scalarType: String?
@@ -24,6 +25,7 @@ public struct ModelValueDescription: Sendable, Codable, Equatable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 public struct ModelFunctionDescription: Sendable, Codable, Equatable {
     public let name: String
     public let inputs: [String: ModelValueDescription]

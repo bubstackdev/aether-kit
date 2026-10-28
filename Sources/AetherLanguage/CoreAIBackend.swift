@@ -4,8 +4,7 @@ import AetherLanguageTokenizers
 import Foundation
 
 extension AetherLanguageModel {
-    /// Whether the Core AI backend can run on this OS. The package floor is still macOS 27 and iOS 27, so this is always
-    /// true today; it becomes a real check once the floor drops to macOS 14 and iOS 17 (see the facade design note).
+    /// Whether the Core AI backend can run on this OS. The package floor is macOS 14 and iOS 17; Core AI needs 27.
     static var coreAIAvailable: Bool {
         if #available(macOS 27, iOS 27, *) { true } else { false }
     }

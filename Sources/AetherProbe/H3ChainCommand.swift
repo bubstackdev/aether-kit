@@ -6,6 +6,7 @@ import Foundation
 import Metal
 import Synchronization
 
+@available(macOS 27, iOS 27, *)
 private struct H3ChainLimits: Encodable {
     var captureNativeSubmissions = 6
     var qualificationNativeSubmissions = 38
@@ -20,6 +21,7 @@ private struct H3ChainLimits: Encodable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 final class H3ChainTrace: Sendable {
     private struct State {
         var events: [String] = []
@@ -50,6 +52,7 @@ final class H3ChainTrace: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct H3ChainOutput: Encodable, Sendable {
     let block: Int
     let name = "hidden_out"
@@ -60,12 +63,14 @@ private struct H3ChainOutput: Encodable, Sendable {
     let inputSHA256: String
     let comparison: H3ReferenceComparison?
 }
+@available(macOS 27, iOS 27, *)
 private struct H3ChainRun: Encodable {
     let name: String
     let cycle: Int
     let role: String
     let outputs: [H3ChainOutput]
 }
+@available(macOS 27, iOS 27, *)
 private struct H3ChainCancellation: Encodable {
     let name: String
     let cycle: Int
@@ -73,6 +78,7 @@ private struct H3ChainCancellation: Encodable {
     let events: [String]
     let passed: Bool
 }
+@available(macOS 27, iOS 27, *)
 private struct H3ChainReport: Encodable {
     let schema = 1
     var scope = "Three corrected production blocks at 19333 rows and both captured T2VA cardinalities; independent per-block CPU checks at captured native contexts, not independent CPU chain/trajectory parity or full generation"
@@ -102,6 +108,7 @@ private struct H3ChainReport: Encodable {
 
 /// Holds only metadata. The native backend waits for each callback and does not
 /// accumulate fifty CPU snapshots while this consumer hashes/checks/saves one.
+@available(macOS 27, iOS 27, *)
 private actor H3ChainOutputRecorder {
     let item: H3ChainProbePlan.Case
     let directory: URL
@@ -149,6 +156,7 @@ private actor H3ChainOutputRecorder {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3ChainCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "qualify-h3-chain" else { return false }
