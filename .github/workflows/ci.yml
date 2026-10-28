@@ -38,12 +38,12 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
-          shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-floor.sh
+          shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-floor.sh Scripts/launch-floor-consumer.sh
 
   sdk:
     name: Release contracts and consumers
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
@@ -77,9 +77,18 @@ jobs:
           key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
-      - name: Language facade dependencies below the Core AI floor
+      - name: Package floor (macOS 14 / iOS 17)
         run: |
-          sh Scripts/check-floor.sh 2>&1 | tee "$RUNNER_TEMP/aether-ci/floor.log"
+          sh Scripts/check-floor.sh "$RUNNER_TEMP/floor-stage" 2>&1 | tee "$RUNNER_TEMP/aether-ci/floor.log"
+          # A tarball keeps the executable bits that artifact upload would drop.
+          tar -C "$RUNNER_TEMP/floor-stage" -cf "$RUNNER_TEMP/floor-consumer.tar" .
+      - name: Upload the floor consumer for the macOS 14 launch
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: floor-consumer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/floor-consumer.tar
+          if-no-files-found: error
+          retention-days: 3
       - name: Weight-free Release contracts
         run: |
           sh Scripts/check-cpu.sh --force-resolved-versions \
@@ -104,10 +113,33 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  floor-launch:
+    name: Launch at the macOS 14 floor
+    needs: sdk
+    # GitHub-hosted macOS 14 (Apple silicon) has no CoreAI framework, so the floor consumer built by the sdk job only
+    # launches if CoreAI is weak-linked. (There is no iOS 17 simulator launch: CoreAI isn't in the iOS Simulator SDK, so
+    # nothing that links the facade builds for the simulator; docs/deployment-floor.md.)
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download the floor consumer
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: floor-consumer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}
+      - name: Launch it and require unsupportedOS
+        run: |
+          mkdir -p "$RUNNER_TEMP/floor-stage"
+          tar -C "$RUNNER_TEMP/floor-stage" -xf "$RUNNER_TEMP/floor-consumer.tar"
+          sh Scripts/launch-floor-consumer.sh "$RUNNER_TEMP/floor-stage"
+
   required:
     name: CI passed
     if: ${{ always() }}
-    needs: [workflows, sdk]
+    needs: [workflows, sdk, floor-launch]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -115,7 +147,9 @@ jobs:
         env:
           WORKFLOW_RESULT: ${{ needs.workflows.result }}
           SDK_RESULT: ${{ needs.sdk.result }}
+          FLOOR_RESULT: ${{ needs.floor-launch.result }}
         run: |
           echo "Workflow validation: $WORKFLOW_RESULT"
           echo "Release contracts and consumers: $SDK_RESULT"
-          [[ "$WORKFLOW_RESULT" == success && "$SDK_RESULT" == success ]]
+          echo "Launch at the floor: $FLOOR_RESULT"
+          [[ "$WORKFLOW_RESULT" == success && "$SDK_RESULT" == success && "$FLOOR_RESULT" == success ]]

@@ -5,6 +5,7 @@ import Foundation
 /// aether-probe takes the shared GPU lease itself for every well-formed command that runs native GPU work, before
 /// dispatching it, and holds it until the command returns. Malformed GPU commands take nothing, so a typo prints its
 /// usage error at once instead of waiting for the lease. See docs/gpu-lease.md for the `AETHER_GPU_LEASE*` overrides.
+@available(macOS 27, iOS 27, *)
 enum ProbeGPULease {
     /// The argument shapes of GPU commands, mirroring each command's own usage check (`arguments[0]` is the command).
     /// Commands not listed here are CPU-only.

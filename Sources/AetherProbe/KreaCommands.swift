@@ -6,6 +6,7 @@ import CryptoKit
 import Foundation
 import Synchronization
 
+@available(macOS 27, iOS 27, *)
 enum KreaCommands {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard let command = arguments.first, ["render-krea", "parity-krea"].contains(command) else { return false }
@@ -126,6 +127,7 @@ enum KreaCommands {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct ParityCase: Decodable {
     let id: String
     let prompt: String
@@ -138,6 +140,7 @@ private struct ParityCase: Decodable {
     struct Files: Decodable { let ids: String; let mask: String; let noise: String; let text: String }
 }
 
+@available(macOS 27, iOS 27, *)
 struct ReferenceHashes {
     let text: String?
     let steps: [String]
@@ -159,6 +162,7 @@ struct ReferenceHashes {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct ParityEvent: Codable, Sendable {
     let event: String
     var step: Int? = nil
@@ -167,6 +171,7 @@ struct ParityEvent: Codable, Sendable {
     var selectionIdentity: String? = nil
 }
 
+@available(macOS 27, iOS 27, *)
 private struct ParityReport: Codable {
     var passed = false
     let mode: String
@@ -184,6 +189,7 @@ private struct ParityReport: Codable {
     var error: String? = nil
 }
 
+@available(macOS 27, iOS 27, *)
 final class ParityJournal: Sendable {
     private struct State: Sendable {
         var events: [ParityEvent] = []
@@ -250,12 +256,15 @@ final class ParityJournal: Sendable {
 }
 
 // Apple silicon is little-endian; these are the fixture's float32 byte hashes.
+@available(macOS 27, iOS 27, *)
 func floatHash(_ values: [Float]) -> String {
     values.withUnsafeBytes { byteHash(Data($0)) }
 }
 
+@available(macOS 27, iOS 27, *)
 private func byteHash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
+@available(macOS 27, iOS 27, *)
 private func integers(_ url: URL) throws -> [Int32] {
     let data = try Data(contentsOf: url)
     guard data.count.isMultiple(of: 4) else { throw AetherError.invalidRequest("partial 32-bit fixture") }
@@ -264,8 +273,10 @@ private func integers(_ url: URL) throws -> [Int32] {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private func floats(_ url: URL) throws -> [Float] { try integers(url).map { Float(bitPattern: UInt32(bitPattern: $0)) } }
 
+@available(macOS 27, iOS 27, *)
 private func fixtureFile(_ relative: String, root: URL) throws -> URL {
     let canonicalRoot = root.standardizedFileURL.resolvingSymlinksInPath()
     let url = root.appendingPathComponent(relative).standardizedFileURL.resolvingSymlinksInPath()
@@ -276,4 +287,5 @@ private func fixtureFile(_ relative: String, root: URL) throws -> URL {
     return url
 }
 
+@available(macOS 27, iOS 27, *)
 private func log(_ message: String) { FileHandle.standardError.write(Data((message + "\n").utf8)) }

@@ -9,9 +9,12 @@ import Foundation
 import Metal
 import Synchronization
 
+@available(macOS 27, iOS 27, *)
 enum BenchmarkProfile: String, Codable, Sendable { case encoded, provided }
+@available(macOS 27, iOS 27, *)
 enum BenchmarkResidency: String, Codable, Sendable { case balanced, resident }
 
+@available(macOS 27, iOS 27, *)
 struct KreaBenchmarkPlan: Codable, Sendable {
     let schema: Int
     let bundleFingerprint: String
@@ -40,6 +43,7 @@ struct KreaBenchmarkPlan: Codable, Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkCase: Codable, Sendable {
     let id: String
     let prompt: String
@@ -54,6 +58,7 @@ struct BenchmarkCase: Codable, Sendable {
     } }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkExpected: Sendable {
     let conditioning: String
     let steps: [String]
@@ -92,6 +97,7 @@ struct BenchmarkExpected: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkMemory: Codable, Sendable {
     var physicalFootprintBytes: UInt64
     var residentBytes: UInt64
@@ -123,6 +129,7 @@ struct BenchmarkMemory: Codable, Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 final class BenchmarkMemorySampler: Sendable {
     struct State: Sendable {
         var samples = 0
@@ -144,6 +151,7 @@ final class BenchmarkMemorySampler: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkIteration: Codable, Sendable {
     let caseID: String
     let role: String
@@ -164,6 +172,7 @@ struct BenchmarkIteration: Codable, Sendable {
 
 // Stage clocks stop on callback entry and resume after validation, preventing
 // reference hashing from being charged to the following pipeline stage.
+@available(macOS 27, iOS 27, *)
 final class BenchmarkIterationJournal: Sendable {
     struct State: Sendable {
         var row: BenchmarkIteration
@@ -265,11 +274,13 @@ final class BenchmarkIterationJournal: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkConditioner: Sendable {
     let encode: @Sendable () async throws -> KreaConditioning
     let unload: @Sendable () async -> Void
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkConditioningSetup: Codable, Sendable {
     let caseID: String
     let secondsIncludingLoadHashAndUnload: Double
@@ -277,6 +288,7 @@ struct BenchmarkConditioningSetup: Codable, Sendable {
     let excludedFromIterationTimings: Bool
 }
 
+@available(macOS 27, iOS 27, *)
 enum BenchmarkConditioningPreparation {
     static func prepare(caseID: String, expected: String,
                         makeEncoder: @Sendable () async throws -> BenchmarkConditioner) async throws
@@ -301,11 +313,13 @@ enum BenchmarkConditioningPreparation {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkOperation: Sendable {
     let generate: @Sendable (@escaping @Sendable (KreaGenerationEvent) throws -> Void) async throws -> GeneratedImage
     let unload: @Sendable () async -> Void
 }
 
+@available(macOS 27, iOS 27, *)
 enum BenchmarkLoop {
     static func run(item: BenchmarkCase, expected: BenchmarkExpected, warmups: Int, measurements: Int,
                     profile: BenchmarkProfile = .encoded, operation: BenchmarkOperation, readMemory: @escaping @Sendable () throws -> BenchmarkMemory,
@@ -352,6 +366,7 @@ enum BenchmarkLoop {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkStatistics: Codable, Sendable {
     let count: Int
     let minimum: Double
@@ -381,10 +396,13 @@ struct BenchmarkStatistics: Codable, Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 func benchmarkIsHash(_ value: String) -> Bool {
     value.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
 }
+@available(macOS 27, iOS 27, *)
 func benchmarkHash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+@available(macOS 27, iOS 27, *)
 func benchmarkFileHash(_ url: URL) throws -> String {
     let file = try FileHandle(forReadingFrom: url)
     defer { try? file.close() }

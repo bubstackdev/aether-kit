@@ -167,7 +167,7 @@ See the [summary](evidence/unload-cycling-2026-10-27.json).
 ```sh
 AETHER_NATIVE_UNLOAD_CYCLING=kokoro AETHER_NATIVE_UNLOAD_KOKORO_CAP=extended AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
 AETHER_KOKORO_BUNDLE=~/.cache/huggingface/aether-kit/kokoro-82m/coreai-fp32-buckets-2026-10-26 \
-~/.cache/aether-kit/with-gpu-lock.sh "kokoro unload cycling" swift test -c release --filter kokoroUnloadCycling
+~/.cache/aether-kit/with-gpu-lock.sh "kokoro unload cycling" swift test --triple arm64-apple-macosx27.0 -c release --filter kokoroUnloadCycling
 ```
 
 ## iPhone

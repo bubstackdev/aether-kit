@@ -4,6 +4,7 @@ import AetherKrea
 
 /// Experimental resident encoder using the prototype's `encode` entry point.
 /// Native qualification is pending. Concurrent requests fail with `sessionBusy`.
+@available(macOS 27, iOS 27, *)
 public struct KreaTextEncoder: Sendable {
     private let session: ModelSession
 
