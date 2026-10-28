@@ -345,7 +345,7 @@ public actor LanguageGenerationSession {
     public func teacherForcedLogits(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens,
                                     continuation: [Int]) async throws -> [[Float]] {
         let plan = try imagePlan(prompt, imageTokens: imageTokens)
-        try begin(prompt: plan.ids + continuation, reserve: 0, chunkSize: nil)
+        try begin(prompt: plan.ids + continuation, reserve: 0, chunkSize: nil, prefillTokens: plan.ids.count)
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
@@ -457,7 +457,7 @@ public actor LanguageGenerationSession {
 
     public func teacherForcedLogits(prompt: [Int], continuation: [Int]) async throws -> [[Float]] {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
-        try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
+        try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil, prefillTokens: prompt.count)
         defer { lifecycle.finish() }
         let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
                                                  reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
@@ -471,7 +471,18 @@ public actor LanguageGenerationSession {
         return rows
     }
 
-    private func begin(prompt: [Int], reserve: Int, chunkSize: Int?) throws {
+    /// A 0.0.2 two-function (`withImage`) asset keeps the 0.0.2 prefill plan for every request: the fixed width and the
+    /// cache growing in steps from the initial capacity. The 0.0.3 plan was qualified on text and one-function assets.
+    private var keepsFixedPrefillPlan: Bool { acceptsImages && !imagesThroughMain }
+
+    /// The width a prefill uses when the request names none (nil: the contract's default by prompt length).
+    private func prefillWidth(_ requested: Int?) -> Int? {
+        requested ?? (keepsFixedPrefillPlan ? contract.fixedPrefillChunk : nil)
+    }
+
+    /// `prefillTokens`: the tokens the prefill submits (the prompt, without a teacher-forced continuation), which the
+    /// bucketed cache is sized for before the prefill (default: the whole `prompt`; none for a two-function asset).
+    private func begin(prompt: [Int], reserve: Int, chunkSize: Int?, prefillTokens: Int? = nil) throws {
         try Task.checkCancellation()
         try lifecycle.admit()
         guard !prompt.isEmpty, prompt.allSatisfy({ $0 >= 0 && $0 < vocabularySize }),
@@ -487,15 +498,24 @@ public actor LanguageGenerationSession {
         materializedTokens = 0
         promptRope = []
         ropeDelta = 0
-        // A bucketed request restarts at the initial capacity rather than keeping a previous long
+        // A bucketed request starts at its prefill's capacity rather than keeping a previous long
         // request's caches (memory, and the zeroing below, follow the allocation).
-        let start = LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
-                                                      resets: !contract.cachesAreStates)
+        let start: Int
+        do {
+            start = try LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
+                                                          resets: !contract.cachesAreStates,
+                                                          prefillTokens: keepsFixedPrefillPlan ? 0 : prefillTokens ?? prompt.count,
+                                                          maximum: capacity)
+        } catch {
+            lifecycle.finish()
+            throw error
+        }
         if start != allocatedCapacity {
             var shape = keyDescriptor.shape
             shape[3] = start
             let kd = keyTemplate.resolvingDynamicDimensions(shape)
             let vd = valueTemplate.resolvingDynamicDimensions(shape)
+            do { try requireAvailableMemory(for: kd, vd) } catch { lifecycle.finish(); throw error }
             guard let kb = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
                   let vb = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared) else {
                 lifecycle.finish()
@@ -514,7 +534,7 @@ public actor LanguageGenerationSession {
     /// (`LanguageStepContract.prefillChunks`).
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
         var last: [Float] = []
-        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: prefillWidth(chunkSize), maximumChunk: prefillLimit) {
             last = try await step(tokens: prompt[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init), position: chunk.offset,
                                   observer: observer)
         }
@@ -836,13 +856,7 @@ public actor LanguageGenerationSession {
               valueDescriptor.preferredStrides == LanguageCachePlan.strides(valueDescriptor.shape),
               kd.preferredStrides == LanguageCachePlan.strides(shape), vd.preferredStrides == LanguageCachePlan.strides(shape)
         else { throw LanguageGenerationError.invalid("Growing KV caches require contiguous row-major storage") }
-        #if os(iOS)
-        let available = UInt64(max(0, os_proc_available_memory()))
-        let required = UInt64(kd.minimumByteCount) + UInt64(vd.minimumByteCount) + 64 * 1024 * 1024
-        guard required <= available else {
-            throw LanguageGenerationError.memoryBudget(requiredBytes: required, availableBytes: available)
-        }
-        #endif
+        try requireAvailableMemory(for: kd, vd)
         guard let newKeys = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
               let newValues = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared)
         else { throw LanguageGenerationError.invalid("Could not grow KV caches") }
@@ -856,6 +870,17 @@ public actor LanguageGenerationSession {
         keys = newKeys; values = newValues; keyDescriptor = kd; valueDescriptor = vd
         allocatedCapacity = next
         growthCount += 1
+    }
+
+    /// On iOS, refuses a KV allocation the app's remaining memory cannot hold (with 64 MiB to spare).
+    private func requireAvailableMemory(for keys: NDArrayDescriptor, _ values: NDArrayDescriptor) throws {
+        #if os(iOS)
+        let available = UInt64(max(0, os_proc_available_memory()))
+        let required = UInt64(keys.minimumByteCount) + UInt64(values.minimumByteCount) + 64 * 1024 * 1024
+        guard required <= available else {
+            throw LanguageGenerationError.memoryBudget(requiredBytes: required, availableBytes: available)
+        }
+        #endif
     }
 
     private func elapsed(_ start: ContinuousClock.Instant) -> Double {

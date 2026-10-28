@@ -123,6 +123,15 @@ From the one-function bundles' memory by phase and budget runs
   memory, so a host comparing it with Metal's figure sees the gap.
 - **Checked natively.** The same test opens each bundle with the profile and GPU admission: the coordinator holds
   13,800 MiB (4B) and 8,300 MiB (2B) while the session is open and nothing after unload.
+- **Re-measured with the 0.0.3 prefill plan** (image prompts of 449-539 tokens now prefill in 256-token chunks, with
+  the cache sized for the prompt first; [evidence](evidence/language-prefill-plan-2026-10-28.json)). The estimates
+  still hold, unchanged:
+  - largest growth of one warm request in the budget run: 208 MiB (4B) and 120 MiB (2B), against 416 and 67 above, so
+    the resident estimates still cover weights, KV caches, the budget allowance and one request (4B 11,275 of 11,600
+    MiB, 2B 6,194 of 6,300);
+  - largest sampled transient of a request, Metal / footprint: 76 / 76 MiB (4B) and 62 / 63 MiB (2B), against 67 / 62
+    and 38 / 52 above. The scratch estimates (256 and 128 MiB) are still at least twice the largest sample;
+  - the budget run kept the 4B within 13,059 MiB (bound 13,314), inside the 13,800 MiB profile.
 - **For comparison:** the 0.0.2 VL-4B would need about 20 GiB for the decoder alone. With Krea's 32 GiB floor, a
   48 GiB coordinator on this Mac refuses the 0.0.2 pair and admits the one-function describer beside Krea.
 

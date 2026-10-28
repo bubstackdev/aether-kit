@@ -124,6 +124,19 @@ struct LanguageStepContractTests {
         #expect(plan(1, nil, 512) == [[0, 1]])
         #expect(plan(12, nil, 512) == [[0, 12]])
         #expect(plan(c, nil, 512) == [[0, c]])
+        // The default width follows the prompt's length: 64 up to 256 tokens (the 0.0.2 plan), 256 above.
+        #expect(c == 64 && LanguageStepContract.longPromptPrefillChunk == 256 && LanguageStepContract.longPromptThreshold == 256)
+        #expect(plan(255, nil, 512) == [[0, 64], [64, 64], [128, 64], [191, 64]])
+        #expect(plan(256, nil, 512) == [[0, 64], [64, 64], [128, 64], [192, 64]])
+        #expect(plan(257, nil, 512) == [[0, 256], [1, 256]])
+        #expect(plan(449, nil, 512) == [[0, 256], [193, 256]])
+        #expect(plan(2048, nil, 512).map { $0[0] } == [0, 256, 512, 768, 1024, 1280, 1536, 1792])
+        // A request's own width, and the export bound, still win.
+        #expect(plan(449, 64, 512).count == 8)
+        #expect(plan(300, nil, 128) == [[0, 128], [128, 128], [172, 128]])
+        #expect(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: 256) == 64)
+        #expect(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: 257) == 256)
+        #expect(LanguageStepContract.runningPositions.defaultPrefillChunk(promptCount: 4096) == nil)
         // Multiples of the width tile exactly; otherwise the last chunk covers the last C tokens.
         #expect(plan(130, 64, 512) == [[0, 64], [64, 64], [66, 64]])
         #expect(plan(449, 256, 512) == [[0, 256], [193, 256]])
@@ -135,8 +148,8 @@ struct LanguageStepContractTests {
         // in the last chunk, and use one width (or one chunk of the run's length).
         for bound in [512, 128, 48] {
             for request in [nil, 1, 7, 64, 512] as [Int?] {
-                let width = min(request ?? c, bound)
                 for count in 1...2048 {
+                    let width = min(request ?? (count > LanguageStepContract.longPromptThreshold ? 256 : c), bound)
                     let chunks = bucketed.prefillChunks(promptCount: count, requestedChunk: request, maximumChunk: bound)
                     #expect(chunks.first?.offset == 0)
                     #expect(chunks.last.map { $0.offset + $0.count } == count)
@@ -188,33 +201,56 @@ struct LanguageStepContractTests {
     /// Over a full 16K context, the bucketed shapes are bounded by the prefill sizes times the
     /// capacity steps, however many tokens are decoded; decoding adds exactly one shape per
     /// 256 tokens it crosses (the running ladder would instead attend up to twice the length).
+    /// The prefill runs at the prompt's capacity, so its early chunks attend over rows not yet
+    /// written (masked); decoding never attends over more than a granularity step of slack.
     @Test func bucketedShapeVocabularyIsBoundedAndGrowsWithLength() throws {
         let prompt = LanguageStepContract.bucketedPositions.prefillChunks(promptCount: 1000, requestedChunk: nil, maximumChunk: 512)
             .map { (position: $0.offset, count: $0.count) }
         let decode = (1000..<16384).map { (position: $0, count: 1) }
         var promptShapes = Set<[Int]>(), shapes = Set<[Int]>()
-        var capacity = 0
+        // The request starts at its prefill's capacity.
+        var capacity = try LanguageCachePlan.requestCapacity(allocated: 256, initial: 256, resets: true, prefillTokens: 1000,
+                                                             maximum: 16384)
         var decodeShapes = 0
         var worstSlack = 0
         for (index, step) in (prompt + decode).enumerated() {
             // Caches only grow within a request.
             capacity = max(capacity, try LanguageCachePlan.bucketedCapacity(needed: step.position + step.count, maximum: 16384))
-            worstSlack = max(worstSlack, capacity - (step.position + step.count))
-            if index < prompt.count { promptShapes.insert([step.count, capacity]) }
+            if index < prompt.count { promptShapes.insert([step.count, capacity]) } else {
+                worstSlack = max(worstSlack, capacity - (step.position + step.count))
+            }
             if shapes.insert([step.count, capacity]).inserted && index >= prompt.count { decodeShapes += 1 }
         }
         #expect(decode.last.map { $0.position + $0.count } == 16384)
         #expect(decodeShapes == (16384 - 1024) / LanguageCachePlan.bucketedGranularity + 1)
-        // One prefill width, at each capacity the prompt crosses.
-        #expect(promptShapes.count == 1000 / LanguageCachePlan.bucketedGranularity + 1)
+        // One prefill width at one capacity: a single prefill shape.
+        #expect(promptShapes == [[256, 1024]])
         #expect(shapes.count == decodeShapes + promptShapes.count)
         #expect(worstSlack < LanguageCachePlan.bucketedGranularity)
     }
 
-    @Test func requestsRestartAtTheInitialCapacityOnlyForBucketed() {
-        #expect(LanguageCachePlan.requestCapacity(allocated: 2048, initial: 256, resets: true) == 256)
-        #expect(LanguageCachePlan.requestCapacity(allocated: 256, initial: 256, resets: true) == 256)
-        #expect(LanguageCachePlan.requestCapacity(allocated: 2048, initial: 256, resets: false) == 2048)
+    @Test func bucketedRequestsStartAtTheirPrefillCapacity() throws {
+        let capacity = { (allocated: Int, initial: Int, resets: Bool, prefill: Int, maximum: Int) in
+            try LanguageCachePlan.requestCapacity(allocated: allocated, initial: initial, resets: resets, prefillTokens: prefill,
+                                                  maximum: maximum)
+        }
+        // A prompt within the initial capacity starts there, whatever the previous request left (the 0.0.2 plan).
+        #expect(try capacity(2048, 256, true, 12, 4096) == 256)
+        #expect(try capacity(256, 256, true, 256, 4096) == 256)
+        // A longer prompt starts at its own rows rounded up to the granularity, never at a previous request's larger capacity.
+        #expect(try capacity(256, 256, true, 257, 4096) == 512)
+        #expect(try capacity(256, 256, true, 2048, 4096) == 2048)
+        #expect(try capacity(4096, 256, true, 1000, 4096) == 1024)
+        // A larger initial capacity is kept; the maximum caps the last step; a running session keeps its allocation.
+        #expect(try capacity(1024, 1024, true, 300, 4096) == 1024)
+        #expect(try capacity(256, 256, true, 2000, 2000) == 2000)
+        #expect(try capacity(2048, 256, false, 12, 4096) == 2048)
+        // No prefill tokens: the 0.0.2 start, the initial capacity (a two-function asset's plan).
+        #expect(try capacity(2048, 256, true, 0, 4096) == 256)
+        #expect(try capacity(2048, 128, true, 0, 4096) == 128)
+        #expect(LanguageStepContract.bucketedPositions.fixedPrefillChunk == 64)
+        #expect(LanguageStepContract.runningPositions.fixedPrefillChunk == nil)
+        #expect(throws: LanguageGenerationError.contextLimit(limit: 2048)) { try capacity(256, 256, true, 2049, 2048) }
     }
 
     @Test func commitAdvancesOnlyAfterTheCacheWrite() async throws {
