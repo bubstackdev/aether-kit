@@ -18,7 +18,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Speed
 
-- **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference. The re-gate ran on a busy host (an unrelated transcode saturated the CPU), so the quiet reference stays open until a window when that pipeline is paused. Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
+- **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference (done 2026-10-28: about 358 s for T2VA and 343 s for FL2VA at 960×544×124, Turbo8; [guide](h3-integration.md#quiet-host-timing-reference-2026-10-28)). Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
 - **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap. Re-measured, and exact host fixes cut part of it ([guide](language-generation.md#time-to-first-token)). The split-attention re-export is a no-go under the current Core AI; see the [report](spikes/split-attention-2026-10.md).
 
 ### Coverage and iPhone
