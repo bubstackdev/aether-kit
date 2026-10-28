@@ -191,7 +191,8 @@ do {
 - **Lifecycle:** one operation at a time (`sessionBusy` otherwise); cancellation is cooperative between native calls
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
   `unload()` rejects new work, waits for the active operation and closes permanently. Cancelling while the prompt is
-  being encoded returns in about 0.17 s on an M5 Max: the rest of the encoder's one native call, then its discard
+  being encoded returns in about 0.17 s on an M5 Max during the encoder's native call, and in up to about 0.9 s if
+  it lands while a balanced session is loading the encoder's function, which Core AI can't interrupt
   ([Text encoder cancellation](#text-encoder-cancellation-003)). While references are being encoded it returns in
   about 0.18–0.21 s, the rest of one image's encoder call, and later images are never submitted
   ([Reference encoder cancellation](#reference-encoder-cancellation-003)).
@@ -290,10 +291,12 @@ open; nothing gates or delays native work. M5 Max, macOS 27.0.1, `preferGPU`, bu
 | Measurement | Result |
 | --- | --- |
 | Encoder open (`AIModel(contentsOf:)`) | 1.6–3.7 ms |
+| Encoder function load, balanced (every request) | 0.5–0.9 s (3.8 s the first time in the process) |
 | Encoder native call, balanced (opened per request) | 124–166 ms |
 | Encoder native call, resident (retained) | 119–128 ms |
 | Cancel during the native call, until `generate` throws | 172–179 ms (3 trials), 175 ms with admission; 138 ms resident |
 | Cancel during the open, until `generate` throws | 0.4–1.3 ms (3 trials) |
+| Cancel arriving during the function load, until `generate` throws | 603 ms (1 trial, in the 2026-10-28 rerun) |
 
 Core AI does not interrupt a submitted call when the Swift task is cancelled. In every trial the cancelled call ran to
 completion and returned its outputs, and Kit's own check after the joined call threw `CancellationError`. The latency
@@ -303,6 +306,16 @@ specializes it: 0.59 s in the parity run, and longer still on a bundle that has 
 Cancelling during the open costs almost nothing: the open is short, and `CoreAIBackend.load` checks cancellation after it
 and drops the model, so it never reaches the native call.
 
+**Correction (2026-10-28): the function load is the longer window.** With balanced residency every prompt request opens
+the encoder and loads its `encode` function before the native call. That load is a synchronous Core AI call that can't
+be interrupted, and it takes 0.5–0.9 s (3.8 s the first time in the process), several times the native call. A cancel
+that arrives during the load waits for it to finish; Kit's check before the native call then throws, so no call runs.
+In the 80a86a51 rerun one open trial landed there and returned in 603 ms. The first runs never cancelled inside that
+window, so they missed it. The worst case for a balanced session is therefore the rest of the function load (up to
+about 0.9 s on this Mac, more on a process's first request) plus the discard, not the 0.17 s of one native call. A
+resident session keeps the loaded function across requests, so only its first prompt pays the load
+([rerun report](evidence/flux2-encoder-cancellation-80a86a51-2026-10-28.json)).
+
 Checks in each trial: the request throws `CancellationError`; the encoder's native call returns before cancellation
 does; the encoder is discarded before the request returns; no native call starts after the cancel; the session returns
 to ready; and the next prompt request reproduces the uncancelled baseline pixels exactly. With
@@ -310,8 +323,8 @@ to ready; and the next prompt request reproduces the uncancelled baseline pixels
 its baseline, no GPU grant is running or queued, and a fail-fast admission succeeds at once. Every model instance is
 closed exactly once, and every native call returns.
 
-Splitting the encoder into chunked calls is the only way to make cancellation take effect sooner, and it would need a
-re-export and a new qualification. At about 0.17 s that is not worth it, so the encoder stays one call. See the
+Splitting the encoder into chunked calls would shorten only the native-call window, and it would need a re-export and a
+new qualification. It does nothing for the function load, so the encoder stays one call. See the
 [report](evidence/flux2-encoder-cancellation-2026-10-27.json), [log](evidence/flux2-encoder-cancellation-2026-10-27.log)
 and [event journal](evidence/flux2-encoder-cancellation-events-2026-10-27.jsonl).
 
