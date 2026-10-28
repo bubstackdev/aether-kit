@@ -1,6 +1,6 @@
 # GitHub CI
 
-The [CI workflow](../.github/workflows/ci.yml) runs on pull requests targeting `main`, pushes to `main`, merge-queue checks, and manual dispatch. Branch pushes with an open PR do not create a second run. New commits cancel the previous run for that PR; each `main` push gets its own run.
+The [CI workflow](../.github/workflows/ci.yml) runs on pull requests targeting `main`, pushes to `main`, merge-queue checks, and manual dispatch. Branch pushes with an open PR do not create a second run. New commits cancel the previous run for that PR, and a new `main` push cancels an earlier `main` run that is still going: PRs must be up to date with `main` to merge, so every `main` commit is a tree its PR already passed (a documentation-only PR's tree gets its full run there), and the newest one is the one worth checking. A superseded `main` run skips **CI passed** rather than failing it.
 
 A pull request that changes only documentation (`docs/`, top-level Markdown, `LICENSE`, `NOTICE`), spikes (`Spikes/`) or Forge (`Forge/`) skips the Swift jobs: the package doesn't build those files and its weight-free tests don't read them. The **Change scope** job decides this from the PR's merge commit, and **CI passed** still reports, so no required check is left pending. Every other change, and every `main` push, merge-queue check and manual run, runs every job.
 
