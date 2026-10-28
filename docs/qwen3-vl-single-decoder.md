@@ -12,7 +12,9 @@ Both Qwen3-VL bundles were re-exported with the contract proposed below and qual
 [evidence](evidence/qwen3-vl-one-function-2026-10-27.json)):
 - **Wired memory.** The 4B decoder wires 8,414 MiB of mapped-file pages at its first request and nothing more
   at the first image request (two functions: 16,086 MiB). Its compiled cache is 15.0 GiB (22.5 GiB), and the
-  budget test's warm level is 10,847 MiB (19,566 MiB). The 2B: 6,065 MiB warm (10,113 MiB).
+  budget test's warm level is 10,847 MiB (19,566 MiB). The 2B: 6,065 MiB warm (10,113 MiB). Metal after all five
+  grids' image requests is 15,344 MiB (15.0 GiB) on the 4B and 9,842 MiB (9.6 GiB) on the 2B, against the
+  [expected](#expected-saving) "about 14" and "about 9" GiB.
 - **Parity.** Every 0.0.2 gate passes again on the same references, and the 64-token replies of the old and new
   bundles are identical, token for token, for a text and an image prompt on both models.
 - **Prefill: one change to the design.** Sending each image as one submission (as proposed below) made the
@@ -146,12 +148,13 @@ closed. The registration script and the export report record the new recipe.
 
 | | VL-4B today | VL-4B, one function | VL-2B today | VL-2B, one function |
 | --- | --- | --- | --- | --- |
-| Decoder wired after a one-image request | 16.3 GiB | about 8.4 GiB | not measured (Metal 8.1 GiB) | about 4 GiB |
+| Host wired memory added by the decoder after a one-image request | 16.3 GiB (8,598 + 8,132 MiB of first-use host-wired deltas) | about 8.4 GiB | not measured (Metal 8.1 GiB) | about 4 GiB |
 | Compiled cache, read into the page cache at open | 22.5 GiB | about 15 GiB | about 9 GiB | about 6 GiB |
-| Metal allocated, all five grids used | 22.9 GiB | about 14 GiB | 13.2 GiB | about 9 GiB |
+| Metal allocated, all five grids used | 22.4 GiB | about 14 GiB | 12.9 GiB | about 9 GiB |
 
 The one-function figures are projections from the toy's rule and today's per-function measurements
-([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)): one function's first use wired 8.4 GiB on the 4B.
+([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)): one function's first use raised host wired memory by 8.4 GiB on the 4B (8,598 MiB; the
+process's own mapped-file pages were 8,414 MiB, 8.2 GiB, which is also what the one-function export wires).
 
 ## Export memory
 
