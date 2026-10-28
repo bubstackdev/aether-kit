@@ -2,7 +2,7 @@
   "schema": 1,
   "entries": [
     {
-      "execution_identity": "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8",
+      "execution_identity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -12,12 +12,12 @@
       "stage_peak_bytes": {
         "encoding": 2162936400,
         "encodingKeyframe": 2201501696,
-        "denoising": 15089254400,
-        "decodingVideo": 8757398408,
-        "decodingAudio": 2001750584
+        "denoising": 17307844608,
+        "decodingVideo": 9064205408,
+        "decodingAudio": 2020690464
       },
       "operation_bytes": 201326592,
-      "evidence": "docs/evidence/h3-memory-gate-padded-2026-10-27.json"
+      "evidence": "docs/evidence/h3-memory-gate-2026-10-28.json"
     }
   ]
 }
