@@ -86,25 +86,46 @@
     }
   },
   "forcedRowsVsReference": {
-    "sky": {
-      "plan": "pad64 then recurrent decode",
+    "sky/recurrent": {
+      "plan": "pad64 prefill, then recurrent decode (S1)",
       "rows": 32,
       "minCosine": 0.9999999999853865,
       "maxAbs": 0.00010609626770019531,
       "argmaxEqual": 32
     },
-    "code": {
-      "plan": "pad64 then recurrent decode",
+    "sky/padded64": {
+      "plan": "pad64 prefill, then padded 64-wide one-token decode (S2)",
+      "rows": 32,
+      "minCosine": 0.9999999999437829,
+      "maxAbs": 0.00012302398681640625,
+      "argmaxEqual": 32
+    },
+    "code/recurrent": {
+      "plan": "pad64 prefill, then recurrent decode (S1)",
       "rows": 32,
       "minCosine": 0.9999999999565844,
       "maxAbs": 0.0001068115234375,
       "argmaxEqual": 32
     },
-    "list": {
-      "plan": "pad64 then recurrent decode",
+    "code/padded64": {
+      "plan": "pad64 prefill, then padded 64-wide one-token decode (S2)",
+      "rows": 32,
+      "minCosine": 0.9999999999217052,
+      "maxAbs": 0.00012302398681640625,
+      "argmaxEqual": 32
+    },
+    "list/recurrent": {
+      "plan": "pad64 prefill, then recurrent decode (S1)",
       "rows": 32,
       "minCosine": 0.9999999999429473,
       "maxAbs": 0.00011968612670898438,
+      "argmaxEqual": 32
+    },
+    "list/padded64": {
+      "plan": "pad64 prefill, then padded 64-wide one-token decode (S2)",
+      "rows": 32,
+      "minCosine": 0.999999999979674,
+      "maxAbs": 0.00010138750076293945,
       "argmaxEqual": 32
     }
   }

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Hybrid-state 0.0.3 spike: an 8,192-token drift reference from Forge's eager float32 port.
 
-Upstream's one-token path takes about 0.15 s per token on the CPU, so the upstream long reference
+Upstream's one-token path takes about 0.07-0.15 s per token on the CPU, so the upstream long reference
 (reference_granite_hybrid.py) stops at 4,096 tokens. This feeds the same document further through the port in 64-token
-chunks; the port matches upstream to about 6e-5 over the upstream rows. Writes a reference directory with only the
-`long` section (no chat cases), which the harness reads with `--phases long`.
+chunks; the port matches upstream to 4.9e-5 (maxAbs) over the upstream rows (results/reference-port-check.json).
+Writes a reference directory with only the `long` section (no chat cases), which the harness reads with
+`--phases long`.
 
     Forge/.venv/bin/python -I Spikes/hybrid-state-003/port_long.py --checkpoint <snapshot> --output <new dir> [--tokens 8192]
 """

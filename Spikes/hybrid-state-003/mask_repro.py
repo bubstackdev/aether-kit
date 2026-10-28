@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Minimal repro: Core AI cpu_only SDPA mask handling in a graph that also mutates a state.
+"""Minimal repros: Core AI cpu_only SDPA mask defects (docs/spikes/hybrid-state-0.0.3.md, defects 3 and 4).
 
-One function: q/k/v from an input by fixed random projections, keys and values = [cache input ‖ chunk], SDPA with a
-mask built from position data, plus one in-place state update (`state[0:1] = state[0:1] * 0.5 + x.sum()`), which is
-what triggers the defects. Each mask form is exported with and without the state and run cpu_only against eager
-float32. No checkpoint; seconds of CPU.
+Default (defect 3, attention only): q/k/v from an input by fixed random projections, keys and values =
+[cache input ‖ chunk], SDPA with a mask built from position data, optionally with one in-place state update
+(`state[0:1] = state[0:1] * 0.5 + x.sum()`). Each mask form is exported with and without the state and run cpu_only
+against eager float32. The state makes no difference here: a 2-D float additive mask is wrong either way
+(results/mask-repro-cpu.txt). No checkpoint; seconds of CPU.
 
     Forge/.venv/bin/python -I Spikes/hybrid-state-003/mask_repro.py <scratch dir> [granite] [--mha] [--gpu] [--save DIR]
 
 Prints, per form: OK (cosine >= 0.999), WRONG (runs, cosine below), or FAIL (the call raises).
 
-`granite` runs the inferenceFailed repro instead, which needs a larger graph: the four-layer random-weight Granite
+`granite` runs the defect 4 repro instead (inferenceFailed), which needs a larger graph with mutated states: the four-layer random-weight Granite
 hybrid from export_granite_hybrid.py (three Mamba layers that mutate both states, one attention layer), one call of
 8 tokens, with the attention's mask form swapped. The control passes the same states as plain inputs (no mutation).
 """
@@ -169,7 +170,7 @@ def granite(form: str, mutate: bool, scratch: Path) -> str:
         out = F.scaled_dot_product_attention(q, keys, values, attn_mask=mask, scale=self.scale, enable_gqa=gqa)
         return self.o_proj(out.transpose(1, 2).reshape(1, q_len, -1)), k, v
 
-    def still(self, x, positions, conv_state, ssm_state, layer):                          # control: reads, no writes
+    def still(self, x, positions, conv_state, ssm_state, layer, valid=None):                        # control: reads, no writes
         z, xbc, dt = self.project(x)
         return self.out_proj((z + conv_state[layer, 0, :self.inner, 0].float() + ssm_state[layer, 0, 0, 0, 0]).to(x.dtype)[None])
 

@@ -48,10 +48,11 @@ reference audio are distributed; the model card attributes CC BY 3.0 (Koniwa)
 and CC BY 4.0 (SIWIS) training audio. AetherSpeech includes no
 grapheme-to-phoneme code and no espeak-ng (GPL-3.0); see docs/kokoro-speech.md.
 
-The Granite 4.0-H hybrid decoder in Forge/language/granite_hybrid.py (development
-tooling, not part of any product) follows the GraniteMoeHybrid architecture as
+The Granite 4.0-H hybrid decoder in Forge/language/granite_hybrid.py and the reduced
+SSD stack in Spikes/hybrid-state-003/q1_repro.py (development tooling and a defect
+repro, not part of any product) follow the GraniteMoeHybrid architecture as
 implemented in Transformers 4.57.3 (https://github.com/huggingface/transformers),
 Apache License 2.0, copyright The HuggingFace Team and IBM: layer structure,
-multipliers and the Mamba-2 SSD maths. It is written for AetherKit, not copied.
-Its checkpoint, ibm-granite/granite-4.0-h-350m at revision
+multipliers and the Mamba-2 SSD maths. They are written for AetherKit, not copied.
+The checkpoint, ibm-granite/granite-4.0-h-350m at revision
 3b17b717b8f2f5d305b0a92c1491e239aeda19c8, is Apache-2.0 and is not distributed.

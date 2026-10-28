@@ -1,0 +1,11 @@
+1. Port against upstream (max |logits difference| over the rows each plan produces)
+   whole prompt                         rows  1  max |diff| 3.58e-07
+   chunks 8,8,8,8,5                     rows  5  max |diff| 3.58e-07
+   16 then 21 x 1, SSD form             rows 22  max |diff| 4.77e-07
+   16 then 21 x 1, recurrence           rows 22  max |diff| 4.77e-07
+   37 x 1, recurrence                   rows 37  max |diff| 4.77e-07
+   padded width 8 (8,8,8,8,5+3 pad)     rows  5  max |diff| 1.79e-07
+   padded width 16 (16,16,5+11 pad)     rows  3  max |diff| 1.79e-07
+2. Padded-source overflow (A_log = log 60, dt_bias = 4)
+   as written (padded sources masked)         logits finite in every submission; max |diff| against unpadded 1.19e-07
+   before the fix (padded sources unmasked)   non-finite logits from submission 3 of 3 on

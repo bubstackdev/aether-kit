@@ -26,14 +26,14 @@ Both static-width layouts open in seconds and match the float32 reference. On a 
 | 128-token greedy | identical on all 3 cases | identical on all 3 cases |
 | Drift to 4,096 and 8,192 tokens | cosine ≥ 0.999992, 16/16 argmax at each length | the same |
 
-S2 is the one-weight-copy choice. S1 costs another 0.65 GiB wired for about 25–35% faster decode.
+S2 is the one-weight-copy choice. S1 costs another 0.63 GiB wired (649 MiB) for 26–32% faster decode at capacity 8,448 and 36% at 1,280.
 
 The GPU defects that rule out the dynamic contracts, and the cpu_only ones found on the way, are below as Apple Feedback candidates. Every workaround in the code is labelled a workaround, not a fix.
 
 ## Setup
 
 - **Device:** Apple M5 Max, 64 GB, macOS 27.0.1 (26A434). torch 2.11.0, coreai-torch 0.4.2, coreai-core 1.0.0b2 (Forge's locked environment). Every GPU job ran under `with-gpu-lock.sh`.
-- **Host load:** the qualifying runs (S1, S2 and the baseline, 2026-10-28 10:59–11:03) were on a quiet host, load average 1.3–2.2. The earlier probes ran while the host was CPU-saturated (load 60–125, a transcode). Their only timing claims are whether a graph opened within a cap; the C2 timeout was repeated at load 5.
+- **Host load:** the qualifying runs (S1, S2 and the baseline, 2026-10-28 10:59–11:03) were on a quiet host, 1-minute load average 1.3–2.2 (`results/hold-windows-and-load.txt`). The earlier probes ran while the host was CPU-saturated (load 60–125, a transcode). Their only timing claims are whether a graph opened within a cap; the C2 timeout was repeated at load 5.
 - **Checkpoint:** `ibm-granite/granite-4.0-h-350m` at revision `3b17b717b8f2f5d305b0a92c1491e239aeda19c8`, Apache-2.0, ungated. It was read in place, read-only, from an existing local cache; nothing was downloaded. SHA-256:
 
   | File | SHA-256 |
@@ -61,12 +61,13 @@ The GPU defects that rule out the dynamic contracts, and the cpu_only ones found
 - **`Forge/language/reference_granite_hybrid.py`:** the fp32 CPU reference from upstream Transformers (`GraniteMoeHybridForCausalLM`, 4.57.3), independent of the port.
   - **Chat cases:** three chat-rendered cases, each with a 128-token greedy continuation and 32 teacher-forced rows.
   - **Long context:** a 4,096-token document (this repository's docs) fed one token at a time through upstream's recurrent decode path, with rows every 256 tokens. Upstream builds its hybrid cache only inside `generate`, so the script creates it explicitly; without it, each call would see no context.
-  - **Port check:** the eager float32 port matches upstream to maxAbs 1.2e-4 on the chat rows and 4.9e-5 on the long rows, with argmax equal on every row.
+  - **Port check:** the eager float32 port matches upstream to maxAbs 1.2e-4 on the chat rows and 4.9e-5 on the long rows, with argmax equal on every row (`results/reference-port-check.json`).
 - **`Spikes/hybrid-state-003/port_long.py`:** extends the drift reference to 8,192 tokens through the eager port, because upstream's one-token path takes about 0.07–0.15 s per token on the CPU.
 - **Prefill plans are exact.**
-  - On a random 4-layer model against upstream, max |Δ| is ≤ 4.8e-7 for whole-prompt, uneven-chunk, chunk-then-recurrent, all-recurrent and padded fixed-width plans.
+  - On a random 4-layer model against upstream, max |Δ| is ≤ 4.8e-7 for whole-prompt, uneven-chunk, chunk-then-recurrent, all-recurrent and padded fixed-width plans (`tiny_vs_upstream.py`, `results/tiny-vs-upstream.txt`).
+  - The same script forces the padded-source overflow, with large decay rates (A_log = log 60, dt_bias = 4). Before the fix, the padded submission's logits are non-finite. After it, they are finite and within 1.2e-7 of the unpadded plan.
   - On the real weights in float32 (`padded_exactness.py`, `results/padded-exactness-cpu.json`), the three chat prompts and a 1,000-token document prefix were each fed as one whole submission and compared with three other plans: the dynamic plan, padded 64-wide chunks and padded 16-wide chunks. Every plan matches to rounding: last-row logits within 9e-5, conv state within 2.1e-4, SSM state within 5e-6 relative. The padded plans are as close as the dynamic one.
-  - Padded 64-wide prefill followed by the one-token recurrence matches the fp32 reference's teacher-forced rows: cosine ≥ 0.99999999994, maxAbs ≤ 1.2e-4, and 32/32 argmax on each case.
+  - Padded 64-wide prefill matches the fp32 reference's teacher-forced rows (cosine ≥ 0.99999999992, maxAbs ≤ 1.3e-4, 32/32 argmax on each case) with either decode: one token at a time through the recurrence (S1's `decode`), or as a padded 64-wide submission with one valid token (S2).
 
 ## Contracts tried
 
@@ -77,7 +78,7 @@ Attention keeps the 0.0.2 bucketed KV contract in every layout: read-only `keyCa
 | Layout | Functions | GPU outcome (full 32 layers) |
 |---|---|---|
 | C1 | `main`, dynamic q | **No-go.** At q = 1, `main` aborts once the stack has 4 or more Mamba layers. Separately, the full graph didn't open in 6 min on a busy host. |
-| C2 | `main` dynamic q + `decode` (q = 1, recurrence) | **No-go.** The separate `decode` avoids the q = 1 abort (8 layers: decode 4.9 ms warm), but `main` doesn't specialize at full depth: 16 layers open in 17 s, 24 don't open in 3 min, and 32 don't open in 15 min at load 5. |
+| C2 | `main` dynamic q + `decode` (q = 1, recurrence) | **No-go.** The separate `decode` avoids the q = 1 abort (8 layers: decode 4.9 ms warm), but `main` doesn't specialize at full depth: 16 layers open in 16 s (loadSeconds 16.22), 24 don't open in 3 min, and 32 don't open in 15 min at load 5. |
 | `decode` only | static q = 1 | Opens and runs in 2 s at 32 layers, so the blow-up is in the dynamic-q `main`. |
 | **S1** | `main` at width 64 (padded tail) + `decode` | **Go:** opens in 2–3 s and qualifies (table above). |
 | **S2** | `main` at width 64 only; decode is a padded 64-wide call | **Go:** opens in 1–2 s and qualifies. |
@@ -105,17 +106,17 @@ No drift is visible.
 |---|---|---|---|
 | 64 | 1 | 9.3–9.4 ms (cold 17 ms) | 9.1–9.5 ms (cold 17 ms) |
 | 256 | 4 | 32–36 ms | 32–33 ms |
-| 1,024 | 16 | 124–128 ms | 125–128 ms |
+| 1,024 | 16 | 124–128 ms | 124–128 ms |
 | 2,048 | 32 | 248–255 ms | 247–252 ms |
 
-For scale, the bucketed Qwen3-0.6B takes 496 ms at 2,048 tokens ([language guide](../language-generation.md#time-to-first-token)). The prefill is cheaper per submission here because 28 of the 32 layers carry no growing cache.
+For scale, at the same 64-token width the bucketed Qwen3-0.6B took 496 ms at 2,048 tokens ([0.0.3 record](../evidence/language-time-to-first-token-2026-10-27.json)), against the hybrid's 248–255 ms at W = 64. Since #64, main prefills the bucketed 0.6B in 256-token chunks with the cache sized up front, at 147–155 ms ([language guide](../language-generation.md#time-to-first-token)). A wider hybrid width is the next step (see [Open](#open)), not measured here.
 
 **Decode:**
 - **S1:** 163–166 tok/s after 256 and after 2,048 tokens at capacity 8,448; 182 tok/s at capacity 1,280.
 - **S2:** 126–129 and 134 tok/s.
 - **Baseline:** 209–210 tok/s.
 
-S1's remaining gap to the baseline is the dynamic-capacity attention and the host's update-row copies, against the baseline's in-graph one-hot writes.
+S1's remaining gap to the baseline is probably the dynamic-capacity attention and the host's update-row copies, against the baseline's in-graph one-hot writes.
 
 **Memory:**
 - **S1** wires 799 MiB after its first `main` call and 1,446 MiB once `decode` has run: a second copy of the weights ([Qwen3-VL measurement](../qwen3-vl-single-decoder.md#what-core-ai-does-with-two-entry-points));
@@ -134,15 +135,15 @@ Each has a repro in `Spikes/hybrid-state-003/`. The code works around them; none
 1. **GPU: a dynamic-q graph aborts at q = 1.**
    - **Error:** `MPSNDArrayMatrixMultiplication.mm:212: failed assertion 'K dimension is inconsistently defined...'`.
    - **Graph:** a Mamba-2 stack in SSD chunk form with 4 or more layers, each updating two states in place, plus one attention layer.
-   - **Shapes:** q = 4 and q = 2 run; 3 layers run q = 1; cpu_only runs every q.
+   - **Shapes:** q = 4 and q = 2 run; with 3 Mamba layers, q = 1 runs too (`results/scale-L4.json`); cpu_only runs every q.
    - **Repro:** `q1_repro.py --layers mmmam` (torch and coreai-torch only, random weights), run with `q1-repro.swift`.
    - **A second abort:** the 3-layer standalone variant (`mmam`) instead aborts at q = 4 with `GPUMemrefOps.mm:164: failed assertion 'Failed to resolve dynamic dimensions for memref.alloc'`.
 2. **GPU: a deep dynamic-q graph doesn't specialize.**
    - **Symptom:** `AIModel(contentsOf:options:)` with GPU preference runs for over 15 min at load 5. Every sample is in MPSGraph's `ShapeFunctionCanonicalizationPass` → `mpsx::shape_equation::performShapeEquationGeneration` → `z3_solver::simplifyShapeEquationsWithZ3` → `Z3ToMLIRGenerator::generateShapeFunctionFromZ3` → `generateIte` → `generateCondition`, recursing at least 20 deep.
-   - **Depth:** 16 layers open in 17 s; 24 layers don't open in 3 min.
-   - **Repro:** `export_scaled.py --layers real:4:28 --decode`, run with the harness's `widths` phase.
+   - **Depth:** 16 layers open in 16 s (loadSeconds 16.22, `results/depth-L16d.json`); 24 layers don't open in 180 s (`results/gpu-probe-outcomes.json`). With static width at all 32 layers, the dynamic KV capacity alone specializes in seconds.
+   - **Repro:** `export_scaled.py --checkpoint <snapshot> --layers real:4:28 --decode`, run with the harness's `widths` phase. It needs the checkpoint for its `config.json` only; the weights are random.
    - **Probable cause:** compile also prints `FAILED: Input has no defining op (block argument)` twice, the 0.0.2 report's unexplained `staticq` message. The q-dependent shape expressions (Min/Max stride terms that torch can't prove either) probably compound per layer.
-3. **cpu_only: a 2-D float additive SDPA mask computes wrong attention, silently** (the most serious of these, because it gives wrong output with no error). Run `mask_repro.py` for the attention-only matrix; `mask-repro-gpu.swift` runs the same assets on the GPU.
+3. **cpu_only: a 2-D float additive SDPA mask computes wrong attention, silently** (the most serious of these, because it gives wrong output with no error). Run `mask_repro.py --save <dir>` (and `--mha`) for the attention-only assets; `mask-repro-gpu.swift <dir>` runs them on the GPU, or with `--cpu` on cpu_only. Output: `results/mask-repro-cpu.txt` and `results/mask-repro-gpu.txt`.
    - **cpu_only:** WRONG for the 2-D float mask over explicitly repeated KV heads with GQA (12/4, cosine 0.376), and for any 2-D float mask in plain multi-head attention (12/12, cosine 0.239, with or without `enable_gqa`).
    - **GPU:** all 24 variants are correct: {GQA, MHA} × {bool, float} × {2-D, 4-D} × {`enable_gqa`, explicit repeat} × {with a state, without}.
    - **No shipped graph is affected.** Forge's exporters use bool masks (Qwen3, Qwen3-VL text, FLUX.2's text encoder), no mask (Qwen3-VL vision, H3's conditioner), or 4-D masks (Kokoro's ALBERT).
@@ -163,14 +164,14 @@ Each has a repro in `Spikes/hybrid-state-003/`. The code works around them; none
      | 12/12; float; 2-D; `enable_gqa` | **WRONG 0.2388** | OK |
      | 12/12; float; 4-D; repeat | OK | OK |
 
-     Each row was run with and without an in-place state update, which makes 24 variants on each compute unit; the verdicts were the same either way.
+     Each row was run with and without an in-place state update, which makes 24 variants on each compute unit. The verdicts and cosines are the same either way, so the state plays no part in defect 3 (it does in defect 4).
 4. **cpu_only: `inferenceFailed` with state mutation plus a bool mask or `enable_gqa`.**
    - **Graph:** the 4-layer random Granite hybrid, whose Mamba layers mutate the states.
    - **Fails:** SDPA with `enable_gqa` (any mask form) or with a bool mask (2-D or 4-D) raises `(loc: unknown, error: inferenceFailed(-1))`.
    - **Runs:** the same graph with the states passed as plain inputs. Float masks without `enable_gqa` also run, but only the 4-D one is correct (defect 3).
    - **Workaround in `granite_hybrid.py`:** a 4-D float mask over KV heads repeated in the graph.
-   - **Repro:** `mask_repro.py <dir> granite`.
-5. **cpu_only: `inferenceFailed` on a static-q (> 1) SSD-chunk `main` with mutated states,** padded or not. The dynamic-q graph runs. Static-width exports therefore skip the Forge self-check (`--no-self-check`) and qualify natively.
+   - **Repro:** `mask_repro.py <dir> granite` (no checkpoint). Output: `results/mask-repro-granite-cpu.txt`.
+5. **cpu_only: `inferenceFailed` on a static-q (> 1) SSD-chunk `main` with mutated states,** padded or not. The dynamic-q graph runs. Repro: `export_granite_hybrid.py --tiny --static-width 8 --output <dir>`, without `--no-self-check`, so its cpu_only self-check raises. No checkpoint is needed. Static-width exports therefore skip the Forge self-check and qualify natively.
 6. **cpu_only: a `torch.cond` abort.** The `torch.cond` abort from the [split-attention spike](split-attention-2026-10.md) is a separate defect, already recorded there.
 
 ## Caveats
@@ -216,9 +217,10 @@ The 0.0.2 report's state-role design stands, with these changes:
 
 ## Open
 
+- **Next step: wider widths.** Measure W = 128 and 256. Each submission costs about the same fixed amount here too, so a wider W should cut time to first token on long prompts, as #64's 256-wide chunks did for Qwen. It pads more, and S2's padded decode grows with W. That's the S1/S2 trade-off to re-measure at each width.
+
 - The iPhone hasn't been run.
 - Quantized weights haven't been tried. F-36 keeps `in_proj` at ≥ 8 bits.
-- Widths other than 64 haven't been measured. A wider W cuts submissions but pads more.
 - The T3 task gates and the prototype's 19-case T2 fixtures haven't been run. This spike's numerics cover 3 chat cases, plus drift to 8,192 tokens.
 - Re-test the dynamic contracts when Core AI fixes defects 1 and 2, because they would let the bucketed contract carry hybrids unchanged.
 
@@ -237,6 +239,8 @@ swift build -c release --package-path Spikes/hybrid-state-003/harness
 ~/.cache/aether-kit/with-gpu-lock.sh hybrid Spikes/hybrid-state-003/harness/.build/release/hybrid-step \
     <asset> <reference dir> <out.json> [--decode] --static-width 64 --capacity 8448 \
     --phases memory,numerics,long,ttft,decode
+~/.cache/aether-kit/with-gpu-lock.sh hybrid-rounds Spikes/hybrid-state-003/run_rounds.sh \
+    <dir with s1/ s2/ baseline/> <reference dir> <port-long dir> <out dir>    # the two interleaved rounds + 8k drift
 ```
 
 CPU proof of the padded prefill: `Forge/.venv/bin/python -I Spikes/hybrid-state-003/padded_exactness.py --checkpoint <snapshot> --reference <dir> --output <json>`.
@@ -246,4 +250,4 @@ Defect repros:
 - `export_scaled.py` and the harness's `widths` phase (defects 1 and 2);
 - `mask_repro.py` and `mask-repro-gpu.swift` (defects 3 and 4).
 
-The results are in `Spikes/hybrid-state-003/results/`. `gpu-probe-outcomes.json` records the runs that ended in an abort or a timeout.
+The results are in `Spikes/hybrid-state-003/results/`. `gpu-probe-outcomes.json` records the runs that ended in an abort or a timeout, and `c1-c2-self-check.json` holds the C1 and C2 cpu_only self-checks (logits cosine ≥ 0.99993, states ≥ 0.9999). Every harness JSON in `results/` predates the harness's run-identity fields (`argv`, `assetIdentity`, `fixedCapacity`, `staticWidth`, load averages). For those runs, the capacity, width and options are in `run_rounds.sh` and the hold scripts' commands, and the load averages are in `hold-windows-and-load.txt`.

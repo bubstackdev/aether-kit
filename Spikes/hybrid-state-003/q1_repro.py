@@ -11,6 +11,9 @@ aborts the process:
 with 4 or more Mamba layers (3 run). cpu_only runs every q. Run the asset with q1-repro.swift (under the GPU lock).
 
     Forge/.venv/bin/python -I Spikes/hybrid-state-003/q1_repro.py --layers mmmam --output <new .aimodel>
+
+The Mamba-2 SSD chunk maths re-implements, in reduced form, Transformers' GraniteMoeHybrid (Apache-2.0, copyright the
+HuggingFace Team and IBM); see NOTICE.
 """
 
 from __future__ import annotations

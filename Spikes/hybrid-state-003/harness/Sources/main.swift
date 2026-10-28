@@ -246,7 +246,26 @@ func readRows(_ file: String, rows: Int) throws -> [[Float]] {
 func ints(_ any: Any?) -> [Int32] { (any as! [Any]).map { Int32(($0 as! NSNumber).intValue) } }
 func median(_ v: [Double]) -> Double { let s = v.sorted(); return s.isEmpty ? 0 : s[s.count / 2] }
 
-var report: [String: Any] = ["asset": assetURL.lastPathComponent, "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
+/// The asset's identity without hashing its weights: Core AI's own `<function>.hash` digests (hex) and the small
+/// `metadata.json` (text).
+func assetIdentity() -> [String: String] {
+    var out: [String: String] = [:]
+    let files = (try? FileManager.default.contentsOfDirectory(atPath: assetURL.path)) ?? []
+    for name in files.sorted() where name.hasSuffix(".hash") || name == "metadata.json" {
+        guard let data = try? Data(contentsOf: assetURL.appendingPathComponent(name)) else { continue }
+        out[name] = name.hasSuffix(".hash") ? data.map { String(format: "%02x", $0) }.joined()   // binary digest, as hex
+                                            : String(decoding: data, as: UTF8.self)
+    }
+    return out
+}
+func loadAverage() -> [Double] { var l = [Double](repeating: 0, count: 3); _ = getloadavg(&l, 3); return l }
+
+var report: [String: Any] = ["asset": assetURL.lastPathComponent,
+                             "argv": CommandLine.arguments.dropFirst().map {   // absolute paths reduced to their last two components
+                                 $0.hasPrefix("/") ? URL(fileURLWithPath: $0).pathComponents.suffix(2).joined(separator: "/") : $0 },
+                             "assetIdentity": assetIdentity(), "fixedCapacity": fixedCapacity ?? NSNull(),
+                             "staticWidth": staticWidth ?? NSNull(), "loadAverageAtStart": loadAverage(),
+                             "startedAt": ISO8601DateFormatter().string(from: Date()), "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
                              "chunk": chunk, "loadSeconds": loadSeconds, "device": AIModel.deviceArchitectureName,
                              "stateNames": states.map(\.name)]
 
@@ -414,4 +433,5 @@ if phases.contains("decode") {
 
 phase("end")
 report["memory"] = memory
+report["loadAverageAtEnd"] = loadAverage()
 try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: outURL)

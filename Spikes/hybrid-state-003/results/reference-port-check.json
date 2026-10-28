@@ -1,0 +1,94 @@
+{
+  "source": "reference_granite_hybrid.py output (reference.json), trimmed: no token arrays or logits",
+  "oracle": "transformers GraniteMoeHybridForCausalLM, float32, CPU",
+  "versions": {
+    "torch": "2.11.0",
+    "transformers": "4.57.3"
+  },
+  "checkpoint": {
+    "repository": "ibm-granite/granite-4.0-h-350m",
+    "revision": "3b17b717b8f2f5d305b0a92c1491e239aeda19c8",
+    "license": "apache-2.0"
+  },
+  "checkpointSHA256": {
+    "chat_template.jinja": "9524df67b77a7b25a2dfee898f75b316a157eb9d855b51e32aeac79d7c8a83ce",
+    "config.json": "c11be93f2e5f83096042b19c3df3b0d982819b63c5378e0b6a82c4fdbe017fac",
+    "generation_config.json": "7c04cb9d2ba771f7528fba5a7104999cdaf7566d02b5fbd58472829f62716177",
+    "merges.txt": "b6fe424e334903f7fb84d3a106d9730455f4744b9fe3c21ee136d97a00e72502",
+    "model.safetensors": "5e8e1b9957216467f080a186b13ef8886f23a6da273f55b8287f41de54faafc7",
+    "special_tokens_map.json": "c08676c49fd7969a3130f72be6d4bf34da66aa484a6e21dffe359893a1bd5f2e",
+    "tokenizer.json": "e2bad66439538cb4d5a7580680932432ed9ece9d3b8577e675512bdf11599253",
+    "tokenizer_config.json": "a5ec5daab12ba090a90f3dd169c8f9c275557013a87b9c1258dc7cb497a35c86",
+    "vocab.json": "8af71076de8b0b626eed0f4c984faf0a7c062479164b2a31308a948524d4f69c"
+  },
+  "cases": {
+    "sky": {
+      "promptTokens": 51,
+      "greedyTokens": 128,
+      "forcedRows": 32,
+      "forcedLogitsSHA256": "eee5b20c5d55a590729c60a16ca3e89b52735395ae735760a3835b70ddcfee66"
+    },
+    "code": {
+      "promptTokens": 50,
+      "greedyTokens": 128,
+      "forcedRows": 32,
+      "forcedLogitsSHA256": "7011fb5f05c4d18995599f956709e294e8291b5068855ac846c62833daad67e2"
+    },
+    "list": {
+      "promptTokens": 46,
+      "greedyTokens": 128,
+      "forcedRows": 32,
+      "forcedLogitsSHA256": "651513849da4aebfab7cfbefa8ad271cb5188a7722218b4e798d3c10d1c731c5"
+    }
+  },
+  "long": {
+    "tokens": 4096,
+    "rows": [
+      255,
+      511,
+      767,
+      1023,
+      1279,
+      1535,
+      1791,
+      2047,
+      2303,
+      2559,
+      2815,
+      3071,
+      3327,
+      3583,
+      3839,
+      4095
+    ],
+    "path": "prompt tokens[:16] in one call, then one token per call (upstream recurrent decode)",
+    "sha256": "28b01aa006e76ce4d752107e55a04578b925f543db8a58c63cdeea53cef4faca"
+  },
+  "eagerPortVsReference": {
+    "sky": {
+      "minCosine": 1.0,
+      "maxAbs": 0.000122,
+      "argmaxEqualRows": 32,
+      "rows": 32
+    },
+    "code": {
+      "minCosine": 1.0,
+      "maxAbs": 0.000115,
+      "argmaxEqualRows": 32,
+      "rows": 32
+    },
+    "list": {
+      "minCosine": 1.0,
+      "maxAbs": 0.000118,
+      "argmaxEqualRows": 32,
+      "rows": 32
+    },
+    "long": {
+      "minCosine": 1.0,
+      "maxAbs": 4.9e-05,
+      "argmaxEqualRows": 16,
+      "rows": 16
+    }
+  },
+  "portPlan": "64-token chunks, then the remainder in powers of two, then one token per call (recurrent form)"
+}
