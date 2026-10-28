@@ -620,11 +620,14 @@ The first T2VA run is kept in the record as a side note only. Its load was 9.3 a
 | --- | ---: | ---: |
 | T2VA 960×544 (standalone) | 13.49 / 13.69 | 10.93 / 11.13 |
 | T2VA 544×960 (gate) | — | 10.93 / 11.13 |
-| FL2VA, both orientations (gate) | 13.80 / 14.00 (chained gate) | 11.17 / 11.84 |
+| FL2VA, both orientations (gate) | — / 14.00 (chained gate, 2026-10-26; no unpadded plateau recorded) | 11.17 / 11.84 |
 | 960×544×22, 3,693 rows | 3.83 / 3.87 | 3.35 / 3.38 |
 | 288×288×22, 690 rows | 1.99 / 2.00 | 1.90 / 1.90 |
 
-The saving scales at about 0.133 MiB per packed row. FL2VA's 11.84 GiB peak is at step 0, as before. The video-decode stage's footprint, mostly denoiser memory not yet reclaimed, falls from 11.07 to 8.16 GiB.
+The saving scales at about 0.133 MiB per packed row. FL2VA's 11.84 GiB peak is at step 0, as before. The video-decode stage's footprint peak, mostly denoiser memory not yet reclaimed, falls from 11.07 GiB in the
+2026-10-26 chained gate ([record](evidence/h3-memory-gate-chained-2026-10-26.json)) to 8.16 GiB in the 2026-10-27
+padded gate ([record](evidence/h3-memory-gate-padded-2026-10-27.json)), and is 8.45 GiB in the 2026-10-28 gate of
+record ([record](evidence/h3-memory-gate-review-2026-10-28.json)).
 
 **Step time.** The extra table rows cost nothing measurable. Single T2VA 960×544 renders on a shared host: the current build took 384.0 s of denoising (median of steps 1–7: 47.7 s) and the padded build 380.8 s (47.4 s). Steps 1–7 use the same specialization in both builds, and the padded build no longer specializes again at step 1.
 
