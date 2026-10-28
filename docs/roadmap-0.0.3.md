@@ -18,7 +18,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Speed
 
-- **H3:** check Turbo4's quality (it's already exported), fused attention, video-decode tiling (about 40 s today), and a quiet-host timing reference.
+- **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference from the re-gate's renders. Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
 - **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap.
 
 ### Coverage and iPhone
