@@ -23,6 +23,7 @@
 ///   load reach the limit, every further outlier counts until the next reload. An outlier is above
 ///   half the limit, so at most two are set aside per load (enough for another session's load and
 ///   a second event), and a leak that always looks like an outlier counts from the third.
+@available(macOS 27, iOS 27, *)
 struct LanguageMemoryBudget: Sendable, Equatable {
     enum Disposition: Sendable, Equatable { case warming, foreign, counted }
 

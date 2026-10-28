@@ -8,6 +8,7 @@ import Metal
 /// Internal runtime-input function. Its actor and one-call admission retain all
 /// shared storage through joined completion. Variable shapes are checked against
 /// the real native descriptor on every call, before any buffer mutation.
+@available(macOS 27, iOS 27, *)
 actor NativeH3Function {
     private let model: AIModel
     private let function: InferenceFunction
@@ -78,6 +79,7 @@ actor NativeH3Function {
 }
 
 /// The same pre-dispatch descriptor and byte-admission gate is usable in CPU tests.
+@available(macOS 27, iOS 27, *)
 public enum H3RuntimeBindings {
     public static func validate(_ descriptor: ModelFunctionDescription, inputs: [String: H3TensorSpec], outputs: [String: H3TensorSpec]) throws {
         guard descriptor.states.isEmpty, !inputs.isEmpty, (1...2).contains(outputs.count),
@@ -96,6 +98,7 @@ public enum H3RuntimeBindings {
         }
     }
 }
+@available(macOS 27, iOS 27, *)
 private extension H3ScalarType {
     var native: NDArray.ScalarType {
         switch self { case .bfloat16: .bfloat16; case .float32: .float32; case .int32: .int32 }

@@ -1,5 +1,6 @@
 /// One image's vision-encoder output, ready for the decoder's image submission (`main` of a one-function
 /// asset, or a 0.0.2 asset's `withImage`).
+@available(macOS 27, iOS 27, *)
 public struct LanguageImageFeatures: Sendable {
     /// Patch grid (temporal groups, rows, columns) the encoder saw.
     public let grid: (t: Int, h: Int, w: Int)
@@ -32,6 +33,7 @@ public struct LanguageImageFeatures: Sendable {
 }
 
 /// The special tokens that mark an image in a rendered Qwen3-VL prompt.
+@available(macOS 27, iOS 27, *)
 public struct LanguageImageTokens: Sendable, Equatable {
     public let visionStart: Int
     public let imagePad: Int
@@ -48,6 +50,7 @@ public struct LanguageImageTokens: Sendable, Equatable {
 /// `<|vision_start|><|image_pad|><|vision_end|>` placeholder per image (tokenization stays the
 /// consumer's responsibility) and supplies the images' features in the same order. Kit expands
 /// each placeholder's single pad token to the image's token count.
+@available(macOS 27, iOS 27, *)
 public struct LanguageVisionPrompt: Sendable {
     public let renderedTokenIDs: [Int]
     public let images: [LanguageImageFeatures]
@@ -59,6 +62,7 @@ public struct LanguageVisionPrompt: Sendable {
 }
 
 /// Pure planning for an image prompt, shared by the session and CPU tests.
+@available(macOS 27, iOS 27, *)
 struct LanguagePromptPlan {
     struct ImageSpan { let start: Int; let count: Int; let image: Int }
     /// Expanded token ids (each image's pads repeated to its token count).

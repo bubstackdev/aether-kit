@@ -3,6 +3,7 @@ import AetherH3CoreAI
 import Synchronization
 
 /// Records native ownership boundaries without delaying a submitted GPU stream.
+@available(macOS 27, iOS 27, *)
 final class H3DenoisingLifecycleTrace: Sendable {
     private struct State {
         var events: [String] = []

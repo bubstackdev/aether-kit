@@ -50,7 +50,12 @@ public struct AetherLanguageModel: Sendable {
     }
 
     public init(bundle: URL, platform: LanguageModelManifest.Platform = Self.currentPlatform) {
-        let readiness = Self.readiness(bundle: bundle, platform: platform)
+        self.init(bundle: bundle, platform: platform, coreAIAvailable: Self.coreAIAvailable)
+    }
+
+    /// The backend choice with the OS check injected, so CPU tests on OS 27 reach the unsupported-OS branch.
+    init(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool) {
+        let readiness = Self.readiness(bundle: bundle, platform: platform, coreAIAvailable: coreAIAvailable)
         self.init(bundle: bundle, availability: readiness.availability, supportsReasoning: readiness.manifest?.supportsReasoning ?? false,
                   contextLength: readiness.manifest?.maximumContextLength ?? 0) {
             try await Self.loadCoreAI(bundle: bundle, platform: platform)
@@ -73,9 +78,11 @@ public struct AetherLanguageModel: Sendable {
     /// Releases the backend and tokenizer. Waits for a running request; later requests load the model again.
     public func unload() async { await resources.unload() }
 
-    /// The registration's structural checks, the OS and the template, with no hashing.
-    static func readiness(bundle: URL, platform: LanguageModelManifest.Platform)
+    /// The OS, then the registration's structural checks and the template, with no hashing. The OS comes first: below
+    /// macOS 27 or iOS 27 no backend runs, whatever the bundle holds.
+    static func readiness(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool)
         -> (availability: Availability, manifest: LanguageModelManifest?) {
+        guard coreAIAvailable else { return (.unavailable(.unsupportedOS), nil) }
         guard FileManager.default.fileExists(atPath: bundle.appendingPathComponent("language-model.json").path) else {
             return (.unavailable(.bundleMissing), nil)
         }
@@ -88,7 +95,6 @@ public struct AetherLanguageModel: Sendable {
         catch AetherError.invalidModel(let reason) where reason.contains("missing") { return (.unavailable(.bundleMissing), manifest) }
         catch { return (.unavailable(.bundleInvalid(String(describing: error))), manifest) }
         guard (try? LanguageTokenizer.template(in: tokenizer)) != nil else { return (.unavailable(.unsupportedTemplate), manifest) }
-        guard Self.coreAIAvailable else { return (.unavailable(.unsupportedOS), manifest) }
         return (.available, manifest)
     }
 }

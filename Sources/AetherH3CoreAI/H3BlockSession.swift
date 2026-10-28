@@ -4,6 +4,7 @@ import AetherCoreAI
 
 /// Diagnostic boundaries for submitted work and resource ownership. Completion
 /// means the stream has been joined, not that cancellation preempted the GPU.
+@available(macOS 27, iOS 27, *)
 public enum H3BlockEvent: String, Sendable, Codable {
     case nativeSubmitted, nativeCompleted, slotReleased, unloadStarted, unloaded
 }
@@ -11,6 +12,7 @@ public enum H3BlockEvent: String, Sendable, Codable {
 /// Experimental fixed-input, explicit-weight block session for qualification.
 /// Owns verified immutable shared buffers and one native function. It does not
 /// implement a generation trajectory or reuse Krea's fp16 host-copy path.
+@available(macOS 27, iOS 27, *)
 public actor H3BlockSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -54,9 +56,11 @@ public actor H3BlockSession {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 protocol H3BlockBackend: Sendable { func run() async throws -> H3TensorData }
 
 /// Public descriptor gate, usable without loading a native model in CPU tests.
+@available(macOS 27, iOS 27, *)
 public enum H3BlockBindings {
     public static func validate(_ function: ModelFunctionDescription, probe: H3BlockProbePlan.Case) throws {
         guard function.name == probe.model.function, function.states.isEmpty,

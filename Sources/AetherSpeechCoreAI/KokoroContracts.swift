@@ -3,6 +3,7 @@ import AetherKit
 import AetherSpeech
 
 /// Declared signatures of the two exported graphs. Dynamic dimensions are reported as negative.
+@available(macOS 27, iOS 27, *)
 enum KokoroContracts {
     static let prosodyChannels = 640
     static let textChannels = 512

@@ -1,16 +1,19 @@
 import AetherKit
 import AetherH3
 
+@available(macOS 27, iOS 27, *)
 public struct H3ChainEvent: Sendable {
     public let block: Int?
     public let event: H3BlockEvent
     public init(block: Int? = nil, event: H3BlockEvent) { self.block = block; self.event = event }
 }
 
+@available(macOS 27, iOS 27, *)
 public typealias H3ChainOutputHandler = @Sendable (Int, H3TensorData) async throws -> Void
 
 /// Experimental bounded chain session. Fixed inputs restart each run; intermediate
 /// values pass through distinct Metal ping-pong buffers, without host narrowing.
+@available(macOS 27, iOS 27, *)
 public actor H3ChainSession {
     public typealias State = H3BlockSession.State
     public private(set) var state: State = .ready
@@ -59,10 +62,12 @@ public actor H3ChainSession {
         observer?(H3ChainEvent(event: .unloaded))
     }
 }
+@available(macOS 27, iOS 27, *)
 protocol H3ChainBackend: Sendable {
     func run() async throws -> [H3TensorData]
     func run(onOutput: @escaping H3ChainOutputHandler) async throws
 }
+@available(macOS 27, iOS 27, *)
 extension H3ChainBackend {
     func run(onOutput: @escaping H3ChainOutputHandler) async throws {
         for (index, value) in try await run().enumerated() {

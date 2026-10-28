@@ -47,7 +47,7 @@ switches over `KreaGenerationEvent` are unaffected: `conditioningReady` follows 
 
 ## Evidence
 
-CPU (`swift test`; native suites stay env-gated):
+CPU (`swift test --triple arm64-apple-macosx27.0`; native suites stay env-gated):
 - smart resize against 100+ reference-processor sizes (`grids.json`);
 - patch tables against forge for every recorded grid;
 - the oracle fixture `krea2-reference` `c4f6229db52d11b9`, 6 cases with 1–4 images: pixel tensors **bit-exact** (SHA-256),
