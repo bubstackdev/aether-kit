@@ -453,7 +453,7 @@ Natively, the tiled encoder's output is **byte-identical** to the whole-frame gr
 | Audio decode | 1.03 / 1.89 | 1.03 / 1.92 |
 | **Whole render, Metal** | **13.49** | **13.80** |
 
-The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below); releasing it is a follow-up.
+The video-decode footprint is mostly the denoiser's memory that has not yet been reclaimed. Denoising rises by about 2.7 GiB from step 1, when the two-timestep body specialization joins the one-timestep one. That costs memory but not time (see below). Since 2026-10-27 a render uses one specialization, and the current gate is in [one modulation shape per render](#denoiser-memory-one-modulation-shape-per-render-2026-10-27).
 
 ### Measured admission
 
@@ -463,7 +463,7 @@ The gate writes a measured entry: per stage, the largest sample of max(Metal, fo
 - The operation reserves the carried state.
 - Pixel and frame limits are those measured, at most 124 frames. Admission is keyed by pixel count, so any canvas up to 522,240 px (960×544) is admitted on the 960×544 numbers. That is conservative: the measured canvas is the largest allowed, and both measured orientations peak identically.
 
-`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The recorded entry's worst case is 15.07 GiB. Before a run reserves anything, admission checks that the operation plus the largest stage the request needs fits the coordinator's capacity. Once the operation is reserved, it checks that the largest stage fits what is still available. Either check refuses the run before any stage loads. A request needing a stage the entry lacks is also refused up front: the first-frame encoder for FL2VA, the audio decoder when audio is produced. Stages are still reserved one at a time, so if other holders take the budget mid-run, a later stage can still be refused (CPU-tested).
+`H3MeasuredResources` refuses any entry whose largest stage plus margin and operation exceeds 18 GiB. The bundled entry's worst case is 14.49 GiB (the 2026-10-27 gate below; 15.07 GiB at first, 15.26 GiB on the chained build). Before a run reserves anything, admission checks that the operation plus the largest stage the request needs fits the coordinator's capacity. Once the operation is reserved, it checks that the largest stage fits what is still available. Either check refuses the run before any stage loads. A request needing a stage the entry lacks is also refused up front: the first-frame encoder for FL2VA, the audio decoder when audio is produced. Stages are still reserved one at a time, so if other holders take the budget mid-run, a later stage can still be refused (CPU-tested).
 
 Pass the admission to `H3VideoSession(stages:resources:gpu:)` together with the host's `GPUAdmission` owner. The operation and every stage reservation are then taken only after the GPU grant, and a generation waiting for the GPU holds no reservation (CPU-tested).
 
@@ -531,7 +531,7 @@ A replay built from the landed tree on e4e41a6 also reproduces all 457 T2VA hash
 
 - **Weight streaming is already hidden.** The next block's weights are prefetched into the spare bank while the GPU runs: 150–230 ms warm, about 560 ms on the first pass, which also hashes each file. Keeping more weights resident would therefore buy nothing.
 - **No guidance pass.** Each step runs 50 blocks and one heads call.
-- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render.
+- **The second body specialization costs memory, not time.** From step 1 the two-timestep shape joins the one-timestep one; a first call at the other cardinality takes under 0.3 s extra, once per render. It is avoided since 2026-10-27 (see below).
 - **`expectFrequentReshapes = false` is rejected.** It gave no speedup, changed the output bytes and added 2.07 GiB of Metal.
 - **The removable cost was the host round trip per block:** about 100 ms copying each 208 MB output to the host, and about 5 ms copying it back.
 
@@ -571,3 +571,27 @@ Per-step denoising times:
 - FL2VA: 43.6–44.3 s.
 
 Graphs open lazily inside their stage, so each stage's time includes its own load and specialization. Under steady load, the FL2VA step 0 (44.0 s) equals the later steps (median 44.1 s). So inside denoising, the body graph's load and specialization, text refinement and first-pass weight hashing add no measurable time: denoising is compute. The conditioner and video-decode rows include their graph loads. A quiet-host reference remains to be measured.
+
+## Denoiser memory: one modulation shape per render (2026-10-27)
+
+**Cause.** The body graph's `temb` input is the block's AdaLN table, `[6, 3k, 5376]`, and the heads graph's is the timestep embedding, `[k, 2688]`. Both are exported with k dynamic in 1…3, where k is the step's number of distinct row timesteps. T2VA has k = 1 at step 0, where video and audio both start at t = 1.0, and k = 2 from step 1, where the shift-12 and shift-3 schedules diverge. FL2VA has 2 and then 3, because keyframe rows use max(t, 0.999). Core AI specializes a reshape-enabled function once per input shape and keeps every specialization until the model is released, so the change at step 1 left a second body specialization resident: the 2.57 GiB rise in the chained gate's T2VA render.
+
+**Workaround.** `H3ModulationPadding` pads every step's tables and embedding to the trajectory's largest k by repeating existing rows, so a render uses one body and one heads specialization. This works around Core AI's per-shape retention; it does not fix it. The padding is exact: the block reads its table only through `index_select` on the AdaLN indices (below 3k) and the heads read embedding rows only through the timestep indices (below k), so the appended rows are never selected. No re-export is needed. Two alternatives were rejected: reopening the body after step 0 gave the same plateau but cost 12 s of re-specialization at step 1 even at 288×288, and exporting a fixed cardinality is equivalent but needs a re-export.
+
+**Exactness.** Replays of both qualified captures on the padded build reproduce all 457 boundary hashes each (`replay_mismatches` 0 for T2VA and FL2VA), from dumps regenerated identical to the gate dumps.
+
+**Memory.** Denoising Metal, plateau / peak in GiB, T2VA 960×544×124 unless named:
+
+| Render | Current build | Padded |
+| --- | ---: | ---: |
+| T2VA 960×544 (standalone) | 13.49 / 13.69 | 10.93 / 11.13 |
+| T2VA 544×960 (gate) | — | 10.93 / 11.13 |
+| FL2VA, both orientations (gate) | 13.80 / 14.00 (chained gate) | 11.17 / 11.84 |
+| 960×544×22, 3,693 rows | 3.83 / 3.87 | 3.35 / 3.38 |
+| 288×288×22, 690 rows | 1.99 / 2.00 | 1.90 / 1.90 |
+
+The saving scales at about 0.133 MiB per packed row. FL2VA's 11.84 GiB peak is at step 0, as before. The video-decode stage's footprint, mostly denoiser memory not yet reclaimed, falls from 11.07 to 8.16 GiB.
+
+**Step time.** The extra table rows cost nothing measurable. Single T2VA 960×544 renders on a shared host: the current build took 384.0 s of denoising (median of steps 1–7: 47.7 s) and the padded build 380.8 s (47.4 s). Steps 1–7 use the same specialization in both builds, and the padded build no longer specializes again at step 1.
+
+**Memory gate and an unexplained step-0 transient.** [The gate](evidence/h3-memory-gate-padded-2026-10-27.json) passes: T2VA 960×544 peaks at 14.05 GiB, the other three renders at 11.13–11.84 GiB, and the admission worst case is 14.49 GiB (15.26 GiB on the chained build). The bundled measured entry is updated to match. The 14.05 GiB is a transient: both gate renders of T2VA 960×544 showed a rise in step 0 that was released within about 5 s. [The first](evidence/h3-memory-gate-padded-transient-2026-10-27.json) reached 16.12 GiB twice while its footprint stayed near 11.1 GiB, so the memory was allocated but not touched. The second reached 14.05 GiB once. It did not appear in a standalone repeat of the same render, in a render with a fresh, empty Core AI compiled cache, in the gate's other three renders or in the current-build render, so it is not cold specialization, and its cause is unknown. The gate keeps the second render, so measured admission covers its peak. See the [record](evidence/h3-second-specialization-2026-10-27.json) for every render's step times and peaks.

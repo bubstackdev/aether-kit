@@ -10,14 +10,14 @@
       ],
       "maximum_frames": 124,
       "stage_peak_bytes": {
-        "encoding": 2161707600,
+        "encoding": 2162936400,
         "encodingKeyframe": 2201501696,
-        "denoising": 15914209096,
-        "decodingVideo": 11881401368,
-        "decodingAudio": 1983187512
+        "denoising": 15089254400,
+        "decodingVideo": 8757398408,
+        "decodingAudio": 2001750584
       },
       "operation_bytes": 201326592,
-      "evidence": "docs/evidence/h3-memory-gate-chained-2026-10-26.json"
+      "evidence": "docs/evidence/h3-memory-gate-padded-2026-10-27.json"
     }
   ]
 }
