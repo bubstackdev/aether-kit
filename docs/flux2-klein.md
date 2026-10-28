@@ -2,8 +2,8 @@
 
 Status: experimental, 2026-10-27 (0.0.2). The products, the qualified local bundle, independent float32 Diffusers
 references on CPU and opt-in native parity and lifecycle gates are in place. Results and their scope are in
-[Verification](#verification). There is no iOS execution or published bundle yet. A benchmark harness is in place; its
-quiet-window run is pending ([Benchmark harness](#benchmark-harness-003)).
+[Verification](#verification). There is no iOS execution or published bundle yet. The quiet-window benchmark ran on 2026-10-28
+([Benchmark harness](#benchmark-harness-003)).
 
 **Qualified bundle:** 0.0.2 qualifies the bundle with fingerprint `a48aaf07…` (reference fingerprint `a69abb8e…`),
 produced from the pinned checkpoint by `Forge/flux2` in this repository ([Producing the bundle](#producing-the-bundle)).
@@ -347,8 +347,40 @@ prompt, size, steps and noise. Each case gets 2 warm-ups and 5 measured iteratio
 
 A short harness smoke ran on a busy host (one warm-up, three measured iterations, `fox-512` and `fox-watercolor-ref1`;
 1.6 min of GPU-lock time). It completed with identical pixels across iterations and SSIM 0.990/0.999 (provided) and
-0.901/0.966 (encoded) against the fixtures. Its timings are not benchmark results. The measured run waits for a quiet
-window: with 4 cases × 7 iterations × 2 profiles at about 1.5–7 s each, it holds the GPU for about 6–8 minutes.
+0.901/0.966 (encoded) against the fixtures. Its timings are not benchmark results.
+
+**Quiet-window run (2026-10-28).** Both plans ran in one GPU-lock hold of 3 min 2 s, from a release `aether-probe`
+built from main `bd048e4`. The user's CPU-saturating transcode was paused, and no other GPU job overlapped the hold. The
+1-minute load was 3.74 at the start and 1.71 at the end; the run refuses to start at 10 or more. Both plans pass: every
+iteration of every case reproduced its first iteration's conditioning and pixels exactly, and every provided case
+cleared SSIM 0.94 against its fixture. Seconds per image, application-stage wall clock with observers excluded; median
+(range) of 5 measured iterations after 2 warm-ups, on one balanced `preferGPU` session per case:
+
+| Case | Encoded | Provided | Encoded: conditioning, step 0, steps 1–3, decode | Peak Metal (encoded / provided) |
+| --- | --- | --- | --- | --- |
+| `fox-512` | 2.58 (2.57–2.59) | 1.03 (1.01–1.05) | 0.62, 1.18, 0.21 each, 0.14 | 7.1 / 7.0 GiB |
+| `lighthouse-512` | 2.59 (2.57–2.65) | 1.22 (1.04–1.23) | 0.63, 1.19, 0.21 each, 0.14 | 7.1 / 7.0 GiB |
+| `cat-1024` | 5.75 (5.62–5.76) | 4.43 (4.41–4.46) | 0.67, 1.83, 0.85–0.88, 0.63 | 13.5 / 13.4 GiB |
+| `fox-watercolor-ref1` (one reference) | 2.95 (2.93–3.02) | 1.50 (1.49–1.51) | 0.63, 1.22, 0.26–0.27, 0.14 | 7.5 / 8.5 GiB |
+
+- **Where balanced time goes.** In the encoded profile, each iteration pays the text encoder's load, call and discard
+  (about 0.62–0.67 s, in conditioning), and step 0 carries the denoisers' reload: about 1.0 s more than a later step at
+  512², because balanced residency releases the denoisers around the encoder. The provided profile skips the encoder,
+  so its step 0 costs what a later step does (0.22–0.26 s at 512² without a reference, 0.91 s at 1024²).
+- **One reference** adds about 0.05 s (encoded) to 0.1 s (provided) per step at 512². It was prepared once, outside iteration timing, in 0.17 s
+  (provided). In the encoded profile its encoder runs every iteration.
+- **First image in the process:** 21.4 s for the encoded `fox-512` (7.1 s conditioning and 13.1 s step 0, while Core AI
+  specialized the encoder and denoisers). Later cases' first images were 2.2–5.6 s.
+- **Peak physical footprint:** 3.0–4.0 GiB at 512² and 9.2–10.0 GiB at 1024². Sampled every 50 ms, so brief peaks can
+  be missed.
+- **Not covered:** resident residency, which would avoid the per-iteration reloads; other Macs; iOS.
+- **Thermal state:** 0 throughout the encoded plan, and 1 (fair) by the end of the provided plan. `lighthouse-512`'s
+  provided steps were slower than `fox-512`'s at the same size (0.26 against 0.23 s), for no recorded reason; its
+  encoded steps were not.
+
+See the [summary](evidence/flux2-benchmark-quiet-2026-10-28.json) and the full
+[encoded](evidence/flux2-benchmark-quiet-encoded-2026-10-28.json) and
+[provided](evidence/flux2-benchmark-quiet-provided-2026-10-28.json) reports.
 
 ### Text encoder cancellation (0.0.3)
 
@@ -741,5 +773,5 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 - A subjective review across more prompts and seeds, and a harder adherence set: the fixture prompts score at the
   ceiling ([Prompt adherence](#prompt-adherence-003)).
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.
-- The benchmark run in a quiet window ([Benchmark harness](#benchmark-harness-003)), and per-stage memory peaks.
+- Per-stage memory peaks (the benchmark records per-iteration peaks), and a resident-residency benchmark plan.
 - Device-resident carries, or a GPU sampling loop.
