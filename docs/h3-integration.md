@@ -582,18 +582,22 @@ Graphs open lazily inside their stage, so each stage's time includes its own loa
 
 ### Quiet-host timing reference (2026-10-28)
 
-The reference for this Mac (M5 Max, Core AI architecture h17c): one complete `H3VideoSession` render per task through `aether-probe h3-memory-render`, at 960×544 and 124 frames, Turbo8, profile `5af39db5…`, build `bd048e4`. The user's transcode was paused and other agents' GPU and heavy-CPU work held; a script refused to start a render unless the one-minute load was under 10 ([record](evidence/h3-quiet-timing-2026-10-28.json)).
+The reference for this Mac (M5 Max, Core AI architecture h17c): one complete `H3VideoSession` render per task through `aether-probe h3-memory-render`, at 960×544 and 124 frames, Turbo8, seed 1043, profile `5af39db5…`, build `bd048e4`. The user's transcode was paused. No other GPU work overlapped a render (the lock serialized it; other agents' short GPU jobs ran between renders). A script refused to start a render unless the one-minute load was under 10, memorystatus at least 70 and at least 40 GiB free ([record](evidence/h3-quiet-timing-2026-10-28.json)).
 
-| Stage, wall seconds | T2VA (load 0.9–2.6) | FL2VA (load 1.3–3.9) |
+The two references come from different windows: FL2VA ran 07:30–07:36, right after a first T2VA run, and started beside one compile at 100% CPU; the T2VA reference is a re-run at 07:41–07:47, after the FLUX benchmark.
+
+| Stage, wall seconds | T2VA (re-run, load 0.9–2.6) | FL2VA (load 1.3–3.9) |
 | --- | ---: | ---: |
 | Conditioner (graph load + 50 streamed layers) | 18.8 | 19.0 |
 | First-frame encoder, tiled | — | 4.8 |
-| Denoising, 8 steps | 307.8 | 288.4 |
+| Denoising, 8 steps | 307.9 | 288.5 |
 | Video decode | 30.8 | 29.8 |
 | Audio decode | 0.7 | 0.7 |
-| **Total of the stages** | **358.1** | **342.7** |
+| **Total of the stages** | **358.2** | **342.8** |
 
-Steps took 36.3–39.9 s for T2VA and 35.4–36.3 s for FL2VA. T2VA's steps are slower although FL2VA denoises more rows; with one run per task the cause is not known. This is one run per task, not a benchmark distribution. A first T2VA run in the same window is kept in the record as a side note only: its load reached 10.7 at the start, while another session's TripoSR job, Atelier Studio and an index build were still running, and its steps took 38.2–44.6 s (total 380.1 s).
+Times are sums of the session's raw phase durations, rounded at the end. Steps took 36.3–39.9 s for T2VA and 35.4–36.3 s for FL2VA. T2VA's steps are slower although FL2VA denoises more rows; the comparison crosses windows, and with one run per task the cause is not known. This is one run per task, not a benchmark distribution.
+
+The first T2VA run is kept in the record as a side note only. Its load was 9.3 at the start, so it passed the guard, and peaked at 10.7 at 2.4 min, while another session's TripoSR job, Atelier Studio and an index build were still running; its steps took 38.2–44.6 s (total 380.1 s). The load guard alone does not make a run quiet.
 
 ## Denoiser memory: one modulation shape per render (2026-10-27)
 
