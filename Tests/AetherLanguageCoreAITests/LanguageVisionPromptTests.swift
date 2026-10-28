@@ -102,6 +102,26 @@ struct LanguageVisionPromptTests {
         #expect(submissions.last.map { $0.start + $0.count } == plan.ids.count)
     }
 
+    /// Without a requested width, a 0.0.2 two-function prompt keeps the 0.0.2 plan: every text run in 64-token chunks
+    /// whatever the prompt's length (a 100-token run is two chunks, the second stepping back), while a one-function
+    /// prompt takes the width of its length (256 above 256 tokens).
+    @Test func twoFunctionTextRunsKeepTheFixedWidth() throws {
+        let image = try features(grid: [1, 32, 32])          // 256 tokens
+        let rendered = Array(1...99) + [tokens.visionStart, tokens.imagePad, tokens.visionEnd] + Array(300...309)
+        let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: [image]), tokens: tokens)
+        #expect(plan.ids.count == 367)
+        let submissions = plan.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512)
+        #expect(submissions.map(\.count) == [64, 64, 256, 11])
+        #expect(submissions.map(\.start) == [0, 36, 100, 356])
+        #expect(submissions.map(\.image) == [nil, nil, 0, nil])
+        // A short image prompt: the same 64-token text chunks, and its one-function plan uses 64 too.
+        let small = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: Array(1...99) + [tokens.visionStart,
+            tokens.imagePad, tokens.visionEnd], images: [try features(grid: [1, 8, 8])]), tokens: tokens)
+        #expect(small.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.count) == [64, 64, 16, 1])
+        #expect(small.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).allSatisfy { $0.count == 64 })
+        #expect(plan.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.offset) == [0, 111])
+    }
+
     /// A one-function decoder prefills the whole prompt in uniform chunks; each chunk's image rows are its own image
     /// tokens' rows, zero for text, including a chunk that straddles the image's edge or steps back into it.
     @Test func uniformChunksCarryAlignedImageRows() throws {

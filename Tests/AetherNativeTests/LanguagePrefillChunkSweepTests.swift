@@ -6,16 +6,18 @@ import Metal
 import Testing
 
 /// Opt-in sweep for choosing the bucketed prefill width C on a text bundle. For each C, on a fresh session without a
-/// memory budget: Metal retained per warm request (a 449-token prompt repeated, then alternating with a 12-token one),
-/// and the median time to first token for each prompt; then, on a fresh session at the default budget, the reloads over
-/// 60 of the long requests. Every request generates 8 tokens.
+/// memory budget: Metal retained per warm request (a long prompt, 449 tokens by default, repeated, then alternating
+/// with a 12-token one), and the median time to first token for each prompt; then, on a fresh session at the default
+/// budget, the reloads over 60 of the long requests. Every request generates 8 tokens. A width of `default` passes no
+/// chunk size (the session's plan for each prompt's length).
 ///
 /// AETHER_NATIVE_LANGUAGE_CHUNK_SWEEP=1
 /// AETHER_CHUNK_SWEEP_BUNDLE=<text bundle>
 /// AETHER_CHUNK_SWEEP_OUTPUT=<report .json>
-/// AETHER_CHUNK_SWEEP_WIDTHS=<default 32,64,128,256>
+/// AETHER_CHUNK_SWEEP_WIDTHS=<default 32,64,128,256; `default` for the session's own plan>
+/// AETHER_CHUNK_SWEEP_LONG_REPEATS=<sentences in the long prompt, default 40 (449 tokens on Qwen3)>
 private struct ChunkRow: Codable {
-    var chunk = 0
+    var chunk = 0                          // 0: the session's default plan
     var retainedPerLongRequestMiB = 0.0
     var retainedPerMixedRequestMiB = 0.0
     var medianTimeToFirstTokenLongSeconds = 0.0
@@ -53,13 +55,16 @@ func languagePrefillChunkSweep() async throws {
         let bundle = URL(filePath: try #require(nativeEnvironment["AETHER_CHUNK_SWEEP_BUNDLE"]))
         report.bundle = bundle.lastPathComponent
         let tokenizer = try await LanguageTokenizer.open(bundle: bundle)
-        let long = try tokenizer.render([.user(String(repeating: "The lighthouse keeper paints the railing a calm teal. ", count: 40))]).tokenIDs
+        let repeats = Int(nativeEnvironment["AETHER_CHUNK_SWEEP_LONG_REPEATS"] ?? "") ?? 40
+        let long = try tokenizer.render([.user(String(repeating: "The lighthouse keeper paints the railing a calm teal. ",
+                                                             count: repeats))]).tokenIDs
         let short = try tokenizer.render([.user("Name three colours.")]).tokenIDs
         report.promptTokens = ["long": long.count, "short": short.count]
-        let widths = (nativeEnvironment["AETHER_CHUNK_SWEEP_WIDTHS"] ?? "32,64,128,256").split(separator: ",").compactMap { Int($0) }
+        let widths = (nativeEnvironment["AETHER_CHUNK_SWEEP_WIDTHS"] ?? "32,64,128,256").split(separator: ",")
+            .map { $0 == "default" ? nil : Int($0) }
         for width in widths {
             var row = ChunkRow()
-            row.chunk = width
+            row.chunk = width ?? 0
             let session = try await LanguageGenerationSession.open(bundle: bundle, platform: .macos, memoryGrowthBudgetBytes: nil)
             row.longReply = try await session.generate(prompt: long, maximumTokens: 8, prefillChunkSize: width).tokens
             row.shortReply = try await session.generate(prompt: short, maximumTokens: 8, prefillChunkSize: width).tokens

@@ -177,15 +177,18 @@ struct LanguagePromptPlan {
         return (embeddings, deepstack)
     }
 
-    /// Prefill submissions for a 0.0.2 two-function decoder: text runs in the contract's prefill chunks (bucketed:
-    /// one fixed width, the last chunk stepping back within the run), each image span as one `withImage`
+    /// Prefill submissions for a 0.0.2 two-function decoder, as in 0.0.2 (the 0.0.3 width by prompt length is not
+    /// applied to it): text runs in the contract's prefill chunks (bucketed: the fixed width of 64, the last chunk
+    /// stepping back within the run), each image span as one `withImage`
     /// submission (an image never straddles submissions).
     func submissions(contract: LanguageStepContract, requestedChunk: Int?, maximumChunk: Int?) -> [(start: Int, count: Int, image: Int?)] {
         var out: [(start: Int, count: Int, image: Int?)] = []
         var cursor = 0
+        // The 0.0.2 plan: one fixed width for every text run, whatever the prompt's length.
+        let width = requestedChunk ?? contract.fixedPrefillChunk
         func text(until end: Int) {
             guard end > cursor else { return }
-            for chunk in contract.prefillChunks(promptCount: end - cursor, requestedChunk: requestedChunk, maximumChunk: maximumChunk) {
+            for chunk in contract.prefillChunks(promptCount: end - cursor, requestedChunk: width, maximumChunk: maximumChunk) {
                 out.append((cursor + chunk.offset, chunk.count, nil))
             }
             cursor = end
