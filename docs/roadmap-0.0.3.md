@@ -13,7 +13,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 | Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Done, no change needed: the footprint falls under 0.3 GB within 2 s of unload. The 8.1 GiB Metal counter that remains is not held memory, and 2048 stays opt-in (`.extended`) ([measurement](kokoro-speech.md#memory-after-unload-003)). |
 | H3 second specialization | Denoising adds about 2.7 GiB from step 1, when the two-timestep body joins the one-timestep one. | Release or avoid it. |
 | Qwen3-VL-4B export | The converter needs about 33 GB. The [design](qwen3-vl-single-decoder.md#export-memory) found the cause is not per-ExportedProgram copies but about five copies at the self-check. | Done: 16.3 GB peak for the VL-4B ([design](qwen3-vl-single-decoder.md#export-memory)). |
-| Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache), so it likely wires two copies of the text weights when reference images are used. | Measure it; if confirmed, one function as in the [Qwen3-VL design](qwen3-vl-single-decoder.md). |
+| Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's 0.0.2 two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache). Read, not yet measured: Krea loads a function on first use, and balanced residency opens and releases the encoder around each request, so only one copy is wired; two only in resident residency with text and reference requests in one session. Every open still reads the whole compiled file into the page cache. The asset comes from the prototype's exporter (`krea2_export.py`, outside Kit), and `encodeWithImages` takes an `n`-row image input like the 0.0.2 `withImage`. | Parked, lower priority. If resident use matters: measure, then either route text through `encodeWithImages` (one zero image row, the size-1 dimension risk) or re-export one function upstream. |
 | FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Done, no Kit fix: the cycling test shows the macOS allocator's large-block cache, which stops growing after three cycles, not a Kit or Core AI leak ([FLUX.2](flux2-klein.md#memory-after-unload-003), [Krea](krea-generation.md#memory-after-unload-003)). |
 
 ### Speed
@@ -35,7 +35,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 ### Safety and correctness
 
 - **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`.
-- **Resource admission** for the Qwen3-VL encoder and decoder.
+- **Resource admission** for the Qwen3-VL encoder and decoder: [design](qwen3-vl-resource-admission.md), prompted by a VL-4B plus Krea crash under memory pressure.
 - **GPU lease:** reclaim pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
 - **FLUX.2 evidence:**
   - native reports should record both fixture IDs;
