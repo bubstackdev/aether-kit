@@ -7,6 +7,7 @@ import Darwin
 import Foundation
 import Metal
 
+@available(macOS 27, iOS 27, *)
 struct Flux2BenchmarkPreparedCase: Codable, Sendable {
     let id: String
     let fixtureCase: String
@@ -19,12 +20,14 @@ struct Flux2BenchmarkPreparedCase: Codable, Sendable {
     let noiseSHA256: String
 }
 
+@available(macOS 27, iOS 27, *)
 struct Flux2BenchmarkSetup: Codable, Sendable {
     let caseID: String
     let referencesPreparedSeconds: Double
     let excludedFromIterationTimings: Bool
 }
 
+@available(macOS 27, iOS 27, *)
 struct Flux2BenchmarkReport: Encodable {
     let schema = 1
     let purpose = "Opt-in FLUX.2 [klein] generation benchmark"
@@ -66,11 +69,13 @@ struct Flux2BenchmarkReport: Encodable {
     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
 }
 
+@available(macOS 27, iOS 27, *)
 final class Flux2BenchmarkReportBox {
     var value: Flux2BenchmarkReport
     init(_ value: Flux2BenchmarkReport) { self.value = value }
 }
 
+@available(macOS 27, iOS 27, *)
 enum Flux2BenchmarkCommand {
     static let usage = "use benchmark-flux2 BUNDLE T2I_FIXTURE REFERENCE_FIXTURE|- PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run"
 

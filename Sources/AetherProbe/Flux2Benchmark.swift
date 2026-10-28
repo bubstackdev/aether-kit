@@ -11,6 +11,7 @@ import Synchronization
 /// A pinned FLUX.2 [klein] benchmark plan (`Benchmarks/flux2-baseline.json`). Workloads come from the independent
 /// CPU fixtures: each case names a fixture case, whose prompt, size, steps, initial noise, text rows and reference
 /// images are used as recorded, so every iteration is comparable with the float32 Diffusers image.
+@available(macOS 27, iOS 27, *)
 struct Flux2BenchmarkPlan: Codable, Sendable {
     struct Case: Codable, Sendable {
         let id: String
@@ -48,6 +49,7 @@ struct Flux2BenchmarkPlan: Codable, Sendable {
 }
 
 /// One fixture case as the benchmark needs it; every file is checked against the fixture document.
+@available(macOS 27, iOS 27, *)
 struct Flux2BenchmarkWorkload: Sendable {
     let id: String
     let fixtureCase: String
@@ -108,6 +110,7 @@ struct Flux2BenchmarkWorkload: Sendable {
 
 /// Per-iteration stage clock over `Flux2GenerationEvent`s. Observer time (hashing, checks) is excluded from stages and
 /// included in the total, as in the Krea harness.
+@available(macOS 27, iOS 27, *)
 final class Flux2BenchmarkJournal: Sendable {
     struct State: Sendable {
         var row: BenchmarkIteration
@@ -207,6 +210,7 @@ final class Flux2BenchmarkJournal: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 extension BenchmarkStatistics {
     /// FLUX.2 measured-iteration statistics: every stage, total, observer time, pipeline time and the summed steps.
     static func flux2(_ rows: [BenchmarkIteration], caseID: String, steps: Int) -> [String: Self] {
@@ -226,6 +230,7 @@ extension BenchmarkStatistics {
 
 /// SSIM on BT.601 luma of two `[H,W,3]` images on [0, 1]: 11×11 Gaussian window (σ 1.5), K = 0.01/0.03, valid region
 /// only. The same metric as the native parity suite's (the prototype's `diffusion_fixtures.ssim`).
+@available(macOS 27, iOS 27, *)
 func flux2SSIM(_ a: [Float], _ b: [Float], width: Int, height: Int) -> Double {
     guard a.count == width * height * 3, b.count == a.count, width >= 11, height >= 11 else { return -1 }
     func luma(_ v: [Float]) -> [Double] {
@@ -256,6 +261,7 @@ func flux2SSIM(_ a: [Float], _ b: [Float], width: Int, height: Int) -> Double {
 }
 
 /// `[3,H,W]` on [−1, 1] → `[H,W,3]` on [0, 1], clamped as the reference pipeline post-processes.
+@available(macOS 27, iOS 27, *)
 func flux2UnitHWC(_ pixels: FloatTensor) -> [Float] {
     let h = pixels.shape[1], w = pixels.shape[2], plane = h * w
     var out = [Float](repeating: 0, count: plane * 3)
