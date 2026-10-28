@@ -190,9 +190,32 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 
 - **Parity and speed.** Frames match exactly and parity holds within the Mac limits, running 12–16× faster than real time. The first utterance takes 5.5 s, including model load and the first specialization; a later bucket's first use takes 0.7–1.1 s.
 - **Memory.** Peak footprint was 2.1 GB with bucket 512 in use, leaving 1.3 GB of the budget. Bucket 1024 exhausted the budget: the app had 2.7 GB available before that case and was killed.
-- **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented. Parity at bucket 512 on the device and other iPhone models remain unverified.
+- **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented.
 
-**Prepared for the next device run (0.0.3).** No device has run these yet.
+**Second iPhone, bucket 512 (2026-10-28).** An iPhone18,2 (iPhone 17 Pro Max, iOS 27.2, 11.4 GB; 3,368 MiB available
+to the app at launch, the same as the iPhone19,4) ran the same float32 bundle with the bucket-512 reference set and the
+512 cap ([record](evidence/kokoro-iphone18-bucket512-2026-10-28.json),
+[batch summary](evidence/iphone-batch-2026-10-28.json)). All cases pass with frames and tokens exact:
+
+| Case | Bucket | Rel. L2 (bound) | Log-mel mean | Warm synthesis | Warm RTF |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| short-af_heart | 128 | 0.0102 (0.029) | 0.0040 | 0.24 s | 0.097 |
+| speed-bf_emma | 256 | 0.0331 (0.050) | 0.0070 | 0.50 s | 0.110 |
+| sentence-am_michael | 256 | 0.0268 (0.050) | 0.0110 | 0.49 s | 0.080 |
+| medium-af_bella | 512 | 0.0254 (0.050) | 0.0150 | 1.01 s | 0.091 |
+| long-af_bella (913 frames) | — | refused above the 512 cap before decoding | | | |
+
+- **Bucket 512 on a device:** `medium-af_bella` passes at 0.0254 (Mac: 0.027), closing the 0.0.2 gap.
+- **Memory:** peak footprint 2,144 MiB, with at least 1,292 MiB still available; 1,094 MiB of footprint remained after
+  `unload()` in the same process.
+- **First utterance:** 7.0 s, including load and the first specialization.
+- **The float16 Neural Engine retest still aborts on iOS 27.2.** The decoder-only mode ran the float32 decoder at
+  bucket 256, then opened the float16-compute decoder, whose first call aborted the process in MPSGraph:
+  `ANERegion.mm:445: failed assertion 'ANE inference operation failed'` (`Code=-19`), the same failure the Mac hit at
+  `ANERegion.mm:414` on macOS 27.0.1 ([log](evidence/kokoro-iphone18-fp16-ane-abort-2026-10-28.log)). No float16 timing
+  or accuracy was obtained, and the float32 decoder stays the only shipped one.
+
+**Prepared for that run (0.0.3).**
 
 - **A bucket-512 reference case.** `reference_kokoro.py` adds `medium-af_bella`: two sentences, 442 frames, float64
   floor rel L2 0.022. The four earlier cases regenerate with byte-identical audio: each `audio.f32` hashes the same as

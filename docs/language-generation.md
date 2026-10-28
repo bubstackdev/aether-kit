@@ -473,7 +473,7 @@ Expected: once both shapes have run, alternating between them allocates nothing 
 without `expectFrequentReshapes`. Observed: every shape change retains memory until the
 model is released. The Feedback is the user's to file.
 
-## On-device host (prepared, 0.0.3)
+## On-device host (0.0.3)
 
 `Examples/LanguageDevice` is an XcodeGen app, LanguageDeviceProbe. It opens a staged bundle with `platform: .ios` and
 checks it against the float32 Transformers reference, printing one JSON report with timings, footprint and the app's
@@ -487,7 +487,7 @@ available memory.
 `Forge/language/stage_device_assets.py text|vision BUNDLE REFERENCE` copies the model asset(s) and tokenizer, and
 registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
 registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
-4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
+4.29 GB. The VL-2B's weights exceed the app memory
 an iPhone grants by default, so the app requests the increased memory limit
 (`com.apple.developer.kernel.increased-memory-limit`, in `LanguageDeviceProbe.entitlements`). That capability needs an
 explicit App ID with it enabled; a wildcard App ID can't carry it. Explicit App IDs are unique across teams, so outside
@@ -497,6 +497,19 @@ target in the generated project (the spec sets none) and build once with automat
 the generated, git-ignored `.xcodeproj`, so the next `xcodegen generate` resets it. The report's
 `availableMemoryMiBAtStart` shows whether the larger limit applies. Without it, the VL-2B run may end in a refusal or a
 jetsam kill.
+
+**First device run (2026-10-28),** on an iPhone18,2 (iPhone 17 Pro Max, iOS 27.2), 3,368 MiB available to the app at
+launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
+- **Qwen3-0.6B passes.** 64 teacher-forced rows at a minimum cosine of 0.9999987 against the float32 reference, with
+  one argmax difference at an accepted near-tie. Greedy output first diverges at token 58, at a reference margin of
+  0.00015, which the gate accepts. Opening (load and verification) took 4.6 s, and time to first token for the
+  33-token prompt was 0.037 s. Peak footprint was 219 MiB, and 174 MiB after unload
+  ([report](evidence/language-iphone18-qwen3-0.6b-2026-10-28.json)). The 0.6B needs no increased memory limit, so that
+  run was signed with an empty entitlements file passed on the command line; the wildcard profile can't carry the
+  capability.
+- **Qwen3-VL-2B didn't run.** Signing refused the app with its entitlement, because no profile for its App ID carries
+  the increased memory limit yet ([log](evidence/qwen3-vl-2b-iphone18-signing-refused-2026-10-28.log)). It runs once
+  that App ID is registered as described above.
 
 ## Evidence and limits
 

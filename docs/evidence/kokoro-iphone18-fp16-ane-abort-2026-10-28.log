@@ -1,0 +1,8 @@
+KOKORO_DEVICE_PROGRESS opening float32 decoder footprint=15MiB peak=15MiB available=3361MiB
+KOKORO_DEVICE_PROGRESS float32 decode 0 footprint=28MiB peak=56MiB available=3348MiB
+KOKORO_DEVICE_PROGRESS float32 decode 1 footprint=336MiB peak=547MiB available=3040MiB
+KOKORO_DEVICE_PROGRESS float32 decode 2 footprint=510MiB peak=564MiB available=2866MiB
+KOKORO_DEVICE_PROGRESS opening reduced decoder footprint=248MiB peak=564MiB available=3128MiB
+KOKORO_DEVICE_PROGRESS reduced decode 0 footprint=201MiB peak=564MiB available=3175MiB
+/Library/Caches/com.apple.xbs/641A7960-E6C2-4BDE-A521-82E9D70DD1AF/TemporaryDirectory.dXEFPp/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShadersGraph/Runtimes/MPSRuntime/Operations/RegionOps/ANERegion.mm:445: failed assertion `ANE inference operation failed. Error Domain=com.apple.metalperformanceshadersgraph Code=-19 "ANE inference operation failed due to unknown error. Model: 0x10daf7a20, model UUID: 3E7EA85B-1002-42A0-B68C-11A0FEA44FF7, inferenceCount: 0, failureCount: 0." UserInfo={NSLocalizedDescription=ANE inference operation failed due to unknown error. Model: 0x10daf7a20, model UUID: 3E7EA85B-1002-42A0-B68C-11A0FEA44FF7, inferenceCount: 0, failureCount: 0.}'
+App terminated due to signal 6.
