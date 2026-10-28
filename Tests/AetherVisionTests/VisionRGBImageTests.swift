@@ -59,17 +59,40 @@ struct VisionRGBImageTests {
         #expect(try VisionRGBImage(contentsOf: url).rgb == [0, 0, 0, 64, 64, 64, 128, 128, 128, 255, 255, 255])
     }
 
-    /// Alpha is composited over black. This differs from the reference's PIL `convert("RGB")`, which drops alpha and keeps
-    /// the stored colour (documented in docs/qwen3-vl.md); opaque pixels are unaffected.
-    @Test func alphaIsCompositedOverBlack() throws {
+    /// By default alpha is dropped and each pixel's stored colour kept, as the reference's PIL `convert("RGB")` does;
+    /// `.composite` draws over an opaque colour, and over black reproduces Kit 0.0.2's decoding.
+    @Test func alphaIsDroppedByDefaultAndCompositedOnRequest() throws {
         let url = try Self.write([255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 0, 10, 20, 30, 255], width: 2, height: 2,
                                  space: Self.sRGB, alpha: .last)
         defer { Self.remove(url) }
-        let rgb = try VisionRGBImage(contentsOf: url).rgb
-        #expect(Array(rgb[0..<3]) == [255, 0, 0])
-        #expect(rgb[3] == 0 && abs(Int(rgb[4]) - 128) <= 1 && rgb[5] == 0)
-        #expect(Array(rgb[6..<9]) == [0, 0, 0])
-        #expect(Array(rgb[9..<12]) == [10, 20, 30])
+        #expect(try VisionRGBImage(contentsOf: url).rgb == [255, 0, 0, 0, 255, 0, 0, 0, 255, 10, 20, 30])
+        let black = try VisionRGBImage(contentsOf: url, alpha: .composite(red: 0, green: 0, blue: 0)).rgb
+        #expect(Array(black[0..<3]) == [255, 0, 0])
+        #expect(black[3] == 0 && abs(Int(black[4]) - 128) <= 1 && black[5] == 0)
+        #expect(Array(black[6..<9]) == [0, 0, 0])
+        #expect(Array(black[9..<12]) == [10, 20, 30])
+        let white = try VisionRGBImage(contentsOf: url, alpha: .composite(red: 255, green: 255, blue: 255)).rgb
+        #expect(Array(white[6..<9]) == [255, 255, 255])
+        #expect(abs(Int(white[3]) - 127) <= 1 && white[4] == 255 && abs(Int(white[5]) - 127) <= 1)
+    }
+
+    /// The default matches upstream byte for byte on PNGs with transparent pixels in every layout an app may pass:
+    /// 8-bit RGBA, 8-bit grey plus alpha, a palette with a transparency table and 16-bit RGBA. The expected bytes are
+    /// Transformers' `load_image` of the same files (`Forge/language/write_alpha_fixtures.py`).
+    @Test func defaultAlphaMatchesUpstreamOnEveryLayout() throws {
+        struct Expected: Decodable {
+            struct Fixture: Decodable { let file: String; let upstreamRGB: [UInt8] }
+            let size: [Int]
+            let fixtures: [String: Fixture]
+        }
+        let directory = try #require(Bundle.module.url(forResource: "alpha", withExtension: nil, subdirectory: "Fixtures"))
+        let expected = try JSONDecoder().decode(Expected.self, from: Data(contentsOf: directory.appendingPathComponent("expected.json")))
+        #expect(expected.fixtures.count == 4)
+        for (name, fixture) in expected.fixtures.sorted(by: { $0.key < $1.key }) {
+            let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(fixture.file))
+            #expect(image.width == expected.size[0] && image.height == expected.size[1], "\(name)")
+            #expect(image.rgb == fixture.upstreamRGB, "\(name): \(image.rgb) is not upstream's \(fixture.upstreamRGB)")
+        }
     }
 
     /// Every EXIF orientation, mirrored ones included, is applied: the decoded size is the displayed size, and each quadrant of a 32x16 image (red, green
@@ -165,5 +188,39 @@ struct VisionRGBImageTests {
         let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
                                                              configuration: configuration)
         #expect(processed.grid == (1, 56, 32))
+    }
+
+    /// Kit orients by moving pixels; for opaque images that equals ImageIO's own oriented decode (a full-size thumbnail
+    /// with its transform), byte for byte, for every orientation.
+    @Test(arguments: 2...8) func orientationEqualsImageIOsTransform(orientation: Int) throws {
+        let width = 37, height = 23
+        var rgba = [UInt8](repeating: 255, count: width * height * 4)
+        for i in 0..<(width * height) { rgba[4 * i] = UInt8(i % 251); rgba[4 * i + 1] = UInt8((i * 7) % 253); rgba[4 * i + 2] = UInt8((i * 13) % 255) }
+        let url = try Self.write(rgba, width: width, height: height, space: Self.sRGB, properties: [kCGImagePropertyOrientation: orientation])
+        defer { Self.remove(url) }
+        let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+        let thumbnail = try #require(CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: max(width, height)] as CFDictionary))
+        #expect(try VisionRGBImage(contentsOf: url) == VisionRGBImage(cgImage: thumbnail))
+    }
+
+    /// A rotated file with transparent pixels keeps their stored colours: Kit orients after dropping alpha from the
+    /// full-size decode, where ImageIO's oriented thumbnail would have premultiplied them away.
+    @Test(arguments: [3, 6, 8]) func rotatedTransparentPixelsKeepTheirStoredColour(orientation: Int) throws {
+        let width = 5, height = 3
+        var rgba = [UInt8](repeating: 0, count: width * height * 4)
+        for i in 0..<(width * height) { rgba[4 * i] = UInt8(40 + i); rgba[4 * i + 1] = UInt8(90 + i); rgba[4 * i + 2] = UInt8(200 - i); rgba[4 * i + 3] = UInt8((i % 3) * 120) }
+        let url = try Self.write(rgba, width: width, height: height, space: Self.sRGB, alpha: .last,
+                                 properties: [kCGImagePropertyOrientation: orientation])
+        defer { Self.remove(url) }
+        let image = try VisionRGBImage(contentsOf: url)
+        for y in 0..<image.height {
+            for x in 0..<image.width {
+                let source = Self.storedPixel(orientation: orientation, x: x, y: y, width: width, height: height)
+                let s = 4 * (source.y * width + source.x), d = 3 * (y * image.width + x)
+                #expect(Array(image.rgb[d..<(d + 3)]) == Array(rgba[s..<(s + 3)]), "orientation \(orientation) at (\(x), \(y))")
+            }
+        }
     }
 }

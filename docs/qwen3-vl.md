@@ -107,10 +107,14 @@ within the pixel bounds, identical to the reference for 46 sizes). Then antialia
 PIL-style coefficients; within one level of torchvision's uint8 path, ≥ 95 % identical bytes),
 (x/255 − 0.5)/0.5, the frame repeated twice, merge-window patchify. Decoding uses ImageIO,
 applies EXIF orientation, and draws in the image's own RGB colour space (no colour management,
-like the reference's PIL decoding); grayscale expands to equal channels. Alpha is composited over
-black, where the reference's `convert("RGB")` drops alpha and keeps the stored colour, so
-transparent regions differ (opaque images are unaffected). `VisionRGBImageTests` checks channel
-order, colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
+like the reference's PIL decoding); grayscale expands to equal channels. Alpha is dropped and each pixel's stored
+colour kept, as the reference's `convert("RGB")` does (`VisionAlphaPolicy.dropAlpha`, the default since 0.0.3): exact
+for straight-alpha 8- and 16-bit images, which is how ImageIO returns PNG; a source that arrives premultiplied has lost
+its transparent pixels' stored colour, so those become black. `.composite(red:green:blue:)` draws over a colour
+instead; over black it reproduces 0.0.2's decoding. Kit's bytes equal upstream's on PNG fixtures in four layouts, and a
+transparent scene passes the same-decode run ([evidence](evidence/qwen3-vl-alpha-2026-10-27.json)). Krea's reference
+images still drop alpha onto black, following the prototype's oracle. `VisionRGBImageTests` checks channel order,
+colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
 EXIF orientation is applied **before** grid snapping, so a
 rotated portrait snaps by its displayed aspect ratio. The transform is exact: tagged lossless images decode to their
 stored pixels moved where each orientation puts them, byte for byte, for all eight orientations (CPU). Rotated photos
@@ -368,8 +372,7 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
   model says about a photo; the 4B named a different place for the market photo. The model is
-  qualified on identical decodes; the decoder difference is measured, not removed. Images with
-  transparency also differ: Kit composites alpha over black, PIL drops it.
+  qualified on identical decodes; the decoder difference is measured, not removed.
 
 - **Aspect ratio is stretched to the nearest grid.** No padding: an image between two grids is
   stretched by up to about 15 %, and panoramas or tall strips beyond 16:9 more. More grids (for

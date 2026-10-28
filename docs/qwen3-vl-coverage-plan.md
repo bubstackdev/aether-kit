@@ -1,7 +1,7 @@
 # Qwen3-VL coverage: multi-image prompts, rotated photos and alpha (0.0.3 plan)
 
-Status: plan, 2026-10-27. Rotated photos are done ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)); alpha and
-multi-image are next, in that order (the lead chose to match upstream for alpha). These are the three Qwen3-VL coverage items in the
+Status: plan, 2026-10-27. Rotated photos ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)) and alpha
+([evidence](evidence/qwen3-vl-alpha-2026-10-27.json); the lead chose to match upstream) are done; multi-image is next. These are the three Qwen3-VL coverage items in the
 [0.0.3 roadmap](roadmap-0.0.3.md#coverage-and-iphone). Each is CPU work first, then one native run under the GPU lock
 against a new upstream reference.
 
