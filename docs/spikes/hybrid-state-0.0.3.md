@@ -63,7 +63,10 @@ The GPU defects that rule out the dynamic contracts, and the cpu_only ones found
   - **Long context:** a 4,096-token document (this repository's docs) fed one token at a time through upstream's recurrent decode path, with rows every 256 tokens. Upstream builds its hybrid cache only inside `generate`, so the script creates it explicitly; without it, each call would see no context.
   - **Port check:** the eager float32 port matches upstream to maxAbs 1.2e-4 on the chat rows and 4.9e-5 on the long rows, with argmax equal on every row.
 - **`Spikes/hybrid-state-003/port_long.py`:** extends the drift reference to 8,192 tokens through the eager port, because upstream's one-token path takes about 0.07–0.15 s per token on the CPU.
-- **Prefill plans are exact.** On a random 4-layer model against upstream, max |Δ| is ≤ 4.8e-7 for whole-prompt, uneven-chunk, chunk-then-recurrent, all-recurrent and padded fixed-width plans. On the real weights, padded against plain prefill differs by at most 4.6e-5.
+- **Prefill plans are exact.**
+  - On a random 4-layer model against upstream, max |Δ| is ≤ 4.8e-7 for whole-prompt, uneven-chunk, chunk-then-recurrent, all-recurrent and padded fixed-width plans.
+  - On the real weights in float32 (`padded_exactness.py`, `results/padded-exactness-cpu.json`), the three chat prompts and a 1,000-token document prefix were each fed as one whole submission and compared with three other plans: the dynamic plan, padded 64-wide chunks and padded 16-wide chunks. Every plan matches to rounding: last-row logits within 9e-5, conv state within 2.1e-4, SSM state within 5e-6 relative. The padded plans are as close as the dynamic one.
+  - Padded 64-wide prefill followed by the one-token recurrence matches the fp32 reference's teacher-forced rows: cosine ≥ 0.99999999994, maxAbs ≤ 1.2e-4, and 32/32 argmax on each case.
 
 ## Contracts tried
 
@@ -80,7 +83,7 @@ Attention keeps the 0.0.2 bucketed KV contract in every layout: read-only `keyCa
 | **S2** | `main` at width 64 only; decode is a padded 64-wide call | **Go:** opens in 1–2 s and qualifies. |
 | Baseline | 0.0.2 `static-lean` rebuilt on the port: KV states fixed at 1,024 rows and blended in-graph, q = 1 | 209–210 tok/s, 796 MiB wired. Not Kit-compatible (fixed KV, one token per call); it anchors the 0.0.2 number on today's quiet host. |
 
-Static width works for every layer, so KV capacity stays the only dynamic dimension, and that one only appears in attention. For a hybrid the KV cache is small (4 attention layers: about 32 MiB at 8,192 rows), so a fixed capacity per registration is the natural choice, with no growth ladder. All the S1 and S2 timings use one capacity per run.
+Static width works for every layer, so KV capacity stays the only dynamic dimension, and that one only appears in attention. That remaining dynamic capacity was fine at full depth: S1 and S2 specialize in seconds with it. For a hybrid the KV cache is small (4 attention layers: about 32 MiB at 8,192 rows), so a fixed capacity per registration is the natural choice, with no growth ladder. All the S1 and S2 timings use one capacity per run.
 
 ## Results
 
@@ -170,6 +173,21 @@ Each has a repro in `Spikes/hybrid-state-003/`. The code works around them; none
 5. **cpu_only: `inferenceFailed` on a static-q (> 1) SSD-chunk `main` with mutated states,** padded or not. The dynamic-q graph runs. Static-width exports therefore skip the Forge self-check (`--no-self-check`) and qualify natively.
 6. **cpu_only: a `torch.cond` abort.** The `torch.cond` abort from the [split-attention spike](split-attention-2026-10.md) is a separate defect, already recorded there.
 
+## Caveats
+
+- **Native-only qualification.** The static-width graphs can't run on cpu_only (defect 5). Their accuracy rests on the GPU runs against the fp32 reference, plus the CPU proof of the padded maths in eager.
+- **Quiet-host, few runs.**
+  - The timings are two interleaved rounds on a quiet host.
+  - The chat numerics are single runs per layout. The drift ran in both timing rounds, with identical cosines.
+  - The baseline and capacity comparisons are single runs of 2–6 rounds of 256 steps each.
+- **Random weights in the scaling variants.** The depth probes (4–32 layers) and the standalone repros use random weights at the real dimensions. They show compile and abort behaviour only, not accuracy.
+- **What the product still needs:**
+  - the Kit runtime contract below;
+  - a registration format declaring the width, the capacity and the S1/S2 choice;
+  - iPhone runs;
+  - the T2 and T3 qualification fixtures;
+  - specialization-time checks per registered capacity.
+
 ## Proposed Kit contract
 
 The 0.0.2 report's state-role design stands, with these changes:
@@ -220,6 +238,8 @@ swift build -c release --package-path Spikes/hybrid-state-003/harness
     <asset> <reference dir> <out.json> [--decode] --static-width 64 --capacity 8448 \
     --phases memory,numerics,long,ttft,decode
 ```
+
+CPU proof of the padded prefill: `Forge/.venv/bin/python -I Spikes/hybrid-state-003/padded_exactness.py --checkpoint <snapshot> --reference <dir> --output <json>`.
 
 Defect repros:
 - `q1_repro.py` and `q1-repro.swift` (defect 1);

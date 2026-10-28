@@ -1,8 +1,10 @@
 """Granite 4.0-H dense hybrid decoder (Mamba-2 + NoPE attention) for Aether Kit language exports.
 
 Development tooling only; never required by SDK consumers. Written for AetherKit from the checkpoint's config and the
-GraniteMoeHybrid architecture (upstream reference: Transformers `GraniteMoeHybridForCausalLM`, used only by
-`reference_granite_hybrid.py`). Dense checkpoints only (`num_local_experts == 0`).
+GraniteMoeHybrid architecture. The layer structure, μP multipliers and Mamba-2 SSD maths follow Transformers'
+`GraniteMoeHybridForCausalLM` (4.57.3; Apache-2.0, copyright the HuggingFace Team and IBM), which
+`reference_granite_hybrid.py` also runs as the independent reference; see NOTICE. Dense checkpoints only
+(`num_local_experts == 0`).
 
 Step contract (`hybrid`, 0.0.3 spike): the 0.0.2 bucketed KV contract for the attention layers plus in-place
 recurrent state for the Mamba layers.

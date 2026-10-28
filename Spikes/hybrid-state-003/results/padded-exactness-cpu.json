@@ -1,0 +1,111 @@
+{
+  "plans": {
+    "sky": {
+      "tokens": 51,
+      "dynamic": {
+        "logitsMaxAbs": 4.38690185546875e-05,
+        "convStateMaxAbs": 8.368492126464844e-05,
+        "ssmStateMaxAbs": 5.9604644775390625e-06,
+        "ssmStateRelative": 1.3742505871050525e-06
+      },
+      "pad64": {
+        "logitsMaxAbs": 4.363059997558594e-05,
+        "convStateMaxAbs": 4.38690185546875e-05,
+        "ssmStateMaxAbs": 2.86102294921875e-06,
+        "ssmStateRelative": 8.086175853350142e-07
+      },
+      "pad16": {
+        "logitsMaxAbs": 5.340576171875e-05,
+        "convStateMaxAbs": 8.106231689453125e-05,
+        "ssmStateMaxAbs": 4.76837158203125e-06,
+        "ssmStateRelative": 1.5484205277971341e-06
+      }
+    },
+    "code": {
+      "tokens": 50,
+      "dynamic": {
+        "logitsMaxAbs": 8.869171142578125e-05,
+        "convStateMaxAbs": 4.7206878662109375e-05,
+        "ssmStateMaxAbs": 2.86102294921875e-06,
+        "ssmStateRelative": 1.3906353615311673e-06
+      },
+      "pad64": {
+        "logitsMaxAbs": 5.7220458984375e-05,
+        "convStateMaxAbs": 4.9233436584472656e-05,
+        "ssmStateMaxAbs": 4.265457391738892e-06,
+        "ssmStateRelative": 1.225579126185039e-06
+      },
+      "pad16": {
+        "logitsMaxAbs": 8.106231689453125e-05,
+        "convStateMaxAbs": 5.9604644775390625e-05,
+        "ssmStateMaxAbs": 3.814697265625e-06,
+        "ssmStateRelative": 1.4973468296375358e-06
+      }
+    },
+    "list": {
+      "tokens": 46,
+      "dynamic": {
+        "logitsMaxAbs": 7.534027099609375e-05,
+        "convStateMaxAbs": 7.021427154541016e-05,
+        "ssmStateMaxAbs": 4.0531158447265625e-06,
+        "ssmStateRelative": 1.3757967280980665e-06
+      },
+      "pad64": {
+        "logitsMaxAbs": 5.221366882324219e-05,
+        "convStateMaxAbs": 6.42538070678711e-05,
+        "ssmStateMaxAbs": 2.771615982055664e-06,
+        "ssmStateRelative": 1.3394854931902955e-06
+      },
+      "pad16": {
+        "logitsMaxAbs": 6.899237632751465e-05,
+        "convStateMaxAbs": 7.05718994140625e-05,
+        "ssmStateMaxAbs": 4.76837158203125e-06,
+        "ssmStateRelative": 1.5882009165579802e-06
+      }
+    },
+    "document-1000": {
+      "tokens": 1000,
+      "dynamic": {
+        "logitsMaxAbs": 5.53131103515625e-05,
+        "convStateMaxAbs": 0.00019550323486328125,
+        "ssmStateMaxAbs": 2.288818359375e-05,
+        "ssmStateRelative": 4.888588136964245e-06
+      },
+      "pad64": {
+        "logitsMaxAbs": 5.14984130859375e-05,
+        "convStateMaxAbs": 0.00018215179443359375,
+        "ssmStateMaxAbs": 2.2172927856445312e-05,
+        "ssmStateRelative": 4.8567067096882965e-06
+      },
+      "pad16": {
+        "logitsMaxAbs": 3.62396240234375e-05,
+        "convStateMaxAbs": 0.00020599365234375,
+        "ssmStateMaxAbs": 2.193450927734375e-05,
+        "ssmStateRelative": 4.784914835909149e-06
+      }
+    }
+  },
+  "forcedRowsVsReference": {
+    "sky": {
+      "plan": "pad64 then recurrent decode",
+      "rows": 32,
+      "minCosine": 0.9999999999853865,
+      "maxAbs": 0.00010609626770019531,
+      "argmaxEqual": 32
+    },
+    "code": {
+      "plan": "pad64 then recurrent decode",
+      "rows": 32,
+      "minCosine": 0.9999999999565844,
+      "maxAbs": 0.0001068115234375,
+      "argmaxEqual": 32
+    },
+    "list": {
+      "plan": "pad64 then recurrent decode",
+      "rows": 32,
+      "minCosine": 0.9999999999429473,
+      "maxAbs": 0.00011968612670898438,
+      "argmaxEqual": 32
+    }
+  }
+}
