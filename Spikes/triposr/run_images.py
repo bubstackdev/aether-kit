@@ -83,6 +83,10 @@ async def main():
             o = await grid_fn({"scene_codes": codes_in, "xs": xs, "zs": rt.NDArray(lin[k:k + a.slab].astype(dt))})
             slab[:, :, k:k + a.slab] = o["density"].numpy().astype(np.float32)
         rep["gridSeconds"]["slab"] = time.perf_counter() - t
+        # exp(...) in fp16 overflows above 65,504 deep inside dense objects (fp32 references reach about 1e5); an inf
+        # there makes marching cubes interpolate NaN vertices, so clamp to fp16's largest finite value.
+        rep["infiniteDensities"] = int(np.isinf(slab).sum())
+        slab = np.minimum(slab, np.finfo(np.float16).max)
         dens = slab.reshape(-1)
         np.save(R / f"{stem}-grid-slab.npy", dens.astype(np.float16))
 

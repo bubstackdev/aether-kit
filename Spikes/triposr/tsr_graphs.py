@@ -93,9 +93,18 @@ class GridField(torch.nn.Module):
         padded = F.pad(planes, (1, 1, 1, 1))                          # [3, C, H + 2, W + 2]
         # x and y share the grid coordinates; each axis is weighted along the plane dimension it indexes.
         x_w, y_h, y_w, z_h = self.weights(xs, W), self.weights(xs, H), self.weights(xs, W), self.weights(zs, H)
-        f0 = torch.einsum("jv,cvu,iu->ijc", y_h, padded[0], x_w)       # plane (x → W, y → H): [R, R, C]
-        f1 = torch.einsum("kv,cvu,iu->ikc", z_h, padded[1], x_w)       # plane (x → W, z → H): [R, S, C]
-        f2 = torch.einsum("kv,cvu,ju->jkc", z_h, padded[2], y_w)       # plane (y → W, z → H): [R, S, C]
+
+        def sample(plane, rows, cols):                                  # [C, H+2, W+2] → [len(cols), len(rows), C]
+            # Two linear layers with the hat weights as the weight matrix. coreai-torch 0.4.2 miscompiles the
+            # equivalent einsum ("jv,cvu,iu->ijc": wrong values, no error), and a broadcast matmul or an expanded bmm
+            # fails its optimizer (diag_grid.py).
+            t = F.linear(plane.transpose(1, 2), rows)                   # [C, W+2, Nrows]
+            t = F.linear(t.transpose(1, 2), cols)                       # [C, Nrows, Ncols]
+            return t.permute(2, 1, 0)
+
+        f0 = sample(padded[0], y_h, x_w)                                # plane (x → W, y → H): [R, R, C]
+        f1 = sample(padded[1], z_h, x_w)                                # plane (x → W, z → H): [R, S, C]
+        f2 = sample(padded[2], z_h, y_w)                                # plane (y → W, z → H): [R, S, C]
         R, S = xs.shape[0], zs.shape[0]
         h = torch.cat([f0[:, :, None, :].expand(R, R, S, C), f1[:, None, :, :].expand(R, R, S, C),
                        f2[None, :, :, :].expand(R, R, S, C)], dim=-1)   # [R, R, S, 3C]
