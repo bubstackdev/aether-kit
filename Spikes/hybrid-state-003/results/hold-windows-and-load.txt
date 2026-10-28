@@ -1,0 +1,110 @@
+# GPU lock windows of this spike's holds (from the shared lock log) and the 1-, 5- and 15-minute load averages
+# printed by each run (hold logs); paths removed.
+
+2026-10-28 01:41:55 acquired seam granite hybrid hold 1 (mask gpu repro + round 1, ~8 min)
+2026-10-28 01:51:32 released seam granite hybrid hold 1 (mask gpu repro + round 1, ~8 min) rc=143
+2026-10-28 01:58:30 acquired seam granite compile-cost (capped 2x6 min)
+2026-10-28 02:10:31 released seam granite compile-cost (capped 2x6 min) rc=0
+2026-10-28 02:25:25 acquired seam granite open-time probe (capped 2x3 min)
+2026-10-28 02:25:35 released seam granite open-time probe (capped 2x3 min) rc=0
+2026-10-28 07:22:16 acquired seam granite open-time vs depth (capped 4 min each, stops at first timeout)
+2026-10-28 07:22:21 released seam granite open-time vs depth (capped 4 min each, stops at first timeout) rc=0
+2026-10-28 07:50:31 acquired seam granite q=1 bisection (7 runs, 90 s cap each)
+2026-10-28 07:52:11 released seam granite q=1 bisection (7 runs, 90 s cap each) rc=0
+2026-10-28 07:53:53 acquired seam granite C2 open at depth (L16d 5 min + C2 15 min)
+2026-10-28 08:09:10 released seam granite C2 open at depth (L16d 5 min + C2 15 min) rc=0
+2026-10-28 10:52:14 acquired seam granite cliff: L24d, C2 decode-only, q1 repro (caps 3+3+1+1 min)
+2026-10-28 10:55:17 released seam granite cliff: L24d, C2 decode-only, q1 repro (caps 3+3+1+1 min) rc=0
+2026-10-28 10:59:03 acquired seam granite static-width S1/S2 (open 3 min + numerics 5 min each)
+2026-10-28 10:59:18 released seam granite static-width S1/S2 (open 3 min + numerics 5 min each) rc=134
+2026-10-28 11:00:21 acquired seam granite static-width S1/S2 rerun (NaN fix)
+2026-10-28 11:00:33 released seam granite static-width S1/S2 rerun (NaN fix) rc=0
+2026-10-28 11:01:14 acquired seam granite timing+drift rounds (S1/S2/baseline x2 + 8k drift; 6 min cap per run)
+2026-10-28 11:02:14 released seam granite timing+drift rounds (S1/S2/baseline x2 + 8k drift; 6 min cap per run) rc=0
+2026-10-28 11:02:38 acquired seam granite decode at capacity 1280 (~1 min)
+2026-10-28 11:02:58 released seam granite decode at capacity 1280 (~1 min) rc=0
+
+## hold-compile
+== compile c1, load { 59.38 96.88 109.47 }
+[timeout] killed after 360s
+== compile c2, load { 114.76 111.12 112.09 }
+[timeout] killed after 360s
+## hold-open
+== open tiny-c1, load { 122.98 112.16 108.12 }
+== open baseline, load { 121.22 111.98 108.07 }
+## hold-scale
+== open L4
+[result] L4 rc=0 wall=2s load { 20.42 77.76 96.29 }
+== open L8
+[result] L8 rc=134 wall=3s load { 19.19 76.55 95.76 }
+## hold-bisect
+== L8d
+[result] L8d rc=0 wall=5s
+== C2
+[timeout] C2 killed after 90s
+[result] C2 rc=143 wall=90s
+== L8-q2
+[result] L8-q2 rc=0 wall=1s
+== L8-q1
+[result] L8-q1 rc=134 wall=0s
+== K4
+[result] K4 rc=134 wall=1s
+== K5
+[result] K5 rc=134 wall=1s
+== K6
+[result] K6 rc=134 wall=2s
+## hold-depth
+== L16d (cap 300s), load { 5.50 4.50 13.63 }
+[result] L16d rc=0 wall=17s load { 4.84 4.41 13.38 }
+== C2 (cap 900s), load { 4.84 4.41 13.38 }
+[timeout] C2 killed after 900s
+[result] C2 rc=143 wall=900s load { 10.72 5.21 7.60 }
+## hold-cliff
+== L24d (cap 180s), load { 2.86 3.27 2.97 }
+[timeout] L24d killed after 180s
+[result] L24d rc=143 wall=180s
+== C2dec (cap 180s), load { 1.48 2.43 2.66 }
+[result] C2dec rc=0 wall=2s
+== q1-mmmam (cap 60s), load { 1.44 2.40 2.65 }
+[result] q1-mmmam rc=134 wall=1s
+== q1-mmam (cap 60s), load { 1.44 2.40 2.65 }
+[result] q1-mmam rc=134 wall=0s
+## hold-static
+== s1-widths (cap 180s), load { 1.67 1.91 2.37 }
+[result] s1-widths rc=0 wall=4s
+== s1-numerics (cap 300s), load { 1.78 1.93 2.37 }
+[result] s1-numerics rc=134 wall=4s
+== s2-widths (cap 180s), load { 1.78 1.93 2.37 }
+[result] s2-widths rc=0 wall=1s
+== s2-numerics (cap 300s), load { 1.71 1.91 2.36 }
+[result] s2-numerics rc=134 wall=5s
+## hold-static2
+== s1-widths (cap 180s), load { 1.66 1.85 2.31 }
+[result] s1-widths rc=0 wall=3s
+== s1-numerics (cap 300s), load { 1.61 1.84 2.30 }
+[result] s1-numerics rc=0 wall=3s
+== s2-widths (cap 180s), load { 1.61 1.84 2.30 }
+[result] s2-widths rc=0 wall=2s
+== s2-numerics (cap 300s), load { 1.56 1.82 2.29 }
+[result] s2-numerics rc=0 wall=4s
+## hold-rounds
+== s1-r1, load { 1.28 1.72 2.23 }
+[result] s1-r1 rc=0 wall=11s
+== s2-r1, load { 1.53 1.76 2.23 }
+[result] s2-r1 rc=0 wall=12s
+== baseline-r1, load { 1.75 1.80 2.24 }
+[result] baseline-r1 rc=0 wall=6s
+== baseline-r2, load { 1.85 1.82 2.25 }
+[result] baseline-r2 rc=0 wall=5s
+== s2-r2, load { 1.94 1.84 2.25 }
+[result] s2-r2 rc=0 wall=12s
+== s1-r2, load { 2.09 1.88 2.26 }
+[result] s1-r2 rc=0 wall=11s
+== s1-long8k, load { 2.15 1.90 2.26 }
+[result] s1-long8k rc=0 wall=2s
+== s2-long8k, load { 2.15 1.90 2.26 }
+[result] s2-long8k rc=0 wall=1s
+## hold-cap (printed to the terminal)
+== s1 capacity 1280, load { 2.05 1.90 2.25 }
+== s2 capacity 1280, load { 1.97 1.89 2.24 }
+== baseline, load { 1.91 1.88 2.23 }

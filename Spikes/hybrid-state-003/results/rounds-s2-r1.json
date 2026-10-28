@@ -1,0 +1,192 @@
+{
+  "asset" : "model.aimodel",
+  "chunk" : 64,
+  "compute" : "preferGPU",
+  "decode" : {
+    "256" : {
+      "rounds" : [
+        128.8085632963348,
+        128.36215791164011
+      ],
+      "tokPerSecMedian" : 128.8085632963348
+    },
+    "2048" : {
+      "rounds" : [
+        128.10794683059018,
+        127.44061522211879
+      ],
+      "tokPerSecMedian" : 128.10794683059018
+    }
+  },
+  "decodeFunction" : false,
+  "device" : "h17c",
+  "loadSeconds" : 0.11020050000000001,
+  "long" : {
+    "prefillSeconds" : 0.50734312500000001,
+    "rows" : [
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999977742633261,
+        "nearTie" : false,
+        "row" : 255
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999933570993815,
+        "nearTie" : false,
+        "row" : 511
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999893803157924,
+        "nearTie" : false,
+        "row" : 767
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999934974808902,
+        "nearTie" : false,
+        "row" : 1023
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994436446982,
+        "nearTie" : true,
+        "row" : 1279
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994777899848,
+        "nearTie" : false,
+        "row" : 1535
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999993043962532,
+        "nearTie" : false,
+        "row" : 1791
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999993530177866,
+        "nearTie" : false,
+        "row" : 2047
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999866702198847,
+        "nearTie" : false,
+        "row" : 2303
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999219109807058,
+        "nearTie" : false,
+        "row" : 2559
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999972818756999,
+        "nearTie" : false,
+        "row" : 2815
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999996621381382,
+        "nearTie" : false,
+        "row" : 3071
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999988047324839,
+        "nearTie" : false,
+        "row" : 3327
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999994375035461,
+        "nearTie" : true,
+        "row" : 3583
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999996399293212,
+        "nearTie" : false,
+        "row" : 3839
+      },
+      {
+        "argmaxEqual" : true,
+        "cosine" : 0.99999989439917381,
+        "nearTie" : true,
+        "row" : 4095
+      }
+    ],
+    "tokens" : 4096
+  },
+  "memory" : [
+    {
+      "cleanMiB" : 0,
+      "metalMiB" : 0,
+      "phase" : "before open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 852,
+      "metalMiB" : 0,
+      "phase" : "open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 1313,
+      "metalMiB" : 1025,
+      "phase" : "after main q 4",
+      "wiredMiB" : 797
+    },
+    {
+      "cleanMiB" : 1313,
+      "metalMiB" : 1026,
+      "phase" : "after first one-token step",
+      "wiredMiB" : 797
+    },
+    {
+      "cleanMiB" : 1311,
+      "metalMiB" : 993,
+      "phase" : "end",
+      "wiredMiB" : 797
+    }
+  ],
+  "stateNames" : [
+    "convState",
+    "ssmState"
+  ],
+  "timeToFirstToken" : {
+    "64" : {
+      "coldMs" : 17.611917000000002,
+      "growMedianMs" : 1.3498749999999999,
+      "medianMs" : 9.0936660000000007,
+      "minMs" : 8.9195000000000011,
+      "submissions" : 1
+    },
+    "256" : {
+      "coldMs" : 33.097082999999998,
+      "growMedianMs" : 1.360417,
+      "medianMs" : 32.292332999999999,
+      "minMs" : 32.144832999999998,
+      "submissions" : 4
+    },
+    "1024" : {
+      "coldMs" : 124.41199999999999,
+      "growMedianMs" : 1.391208,
+      "medianMs" : 124.47458399999999,
+      "minMs" : 123.732167,
+      "submissions" : 16
+    },
+    "2048" : {
+      "coldMs" : 247.521458,
+      "growMedianMs" : 1.3420420000000002,
+      "medianMs" : 246.975167,
+      "minMs" : 245.767584,
+      "submissions" : 32
+    }
+  }
+}

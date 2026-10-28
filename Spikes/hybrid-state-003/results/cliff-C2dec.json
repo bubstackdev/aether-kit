@@ -1,0 +1,52 @@
+{
+  "asset" : "model.aimodel",
+  "chunk" : 64,
+  "compute" : "preferGPU",
+  "decodeFunction" : true,
+  "device" : "h17c",
+  "loadSeconds" : 1.686585,
+  "memory" : [
+    {
+      "cleanMiB" : 0,
+      "metalMiB" : 0,
+      "phase" : "before open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 864,
+      "metalMiB" : 0,
+      "phase" : "open",
+      "wiredMiB" : 0
+    },
+    {
+      "cleanMiB" : 1310,
+      "metalMiB" : 838,
+      "phase" : "end",
+      "wiredMiB" : 797
+    }
+  ],
+  "stateNames" : [
+    "convState",
+    "ssmState"
+  ],
+  "widths" : [
+    {
+      "finite" : true,
+      "function" : "main",
+      "ms" : 146.08854199999999,
+      "width" : 1
+    },
+    {
+      "finite" : true,
+      "function" : "decode",
+      "ms" : 12.209792,
+      "width" : 1
+    },
+    {
+      "finite" : true,
+      "function" : "decode",
+      "ms" : 6.5606249999999999,
+      "width" : 1
+    }
+  ]
+}

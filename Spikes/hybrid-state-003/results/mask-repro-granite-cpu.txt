@@ -1,0 +1,10 @@
+# Forge/.venv/bin/python -I Spikes/hybrid-state-003/mask_repro.py <scratch> granite (cpu_only), 2026-10-28T17:20Z; torch 2.11.0, coreai-torch 0.4.2, coreai-core 1.0.0b2
+# runs = no error (this mode checks for failure only)
+bool2d_gqa   states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+bool4d_gqa   states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+float2d_gqa  states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+float4d_gqa  states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+bool2d       states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+bool4d       states as inputs: runs                                     states mutated: FAIL ((loc: unknown, error: inferenceFailed(-1)))
+float2d      states as inputs: runs                                     states mutated: runs
+float4d      states as inputs: runs                                     states mutated: runs

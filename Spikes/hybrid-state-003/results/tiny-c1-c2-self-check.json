@@ -1,0 +1,427 @@
+{
+  "source": "export_granite_hybrid.py --tiny [--decode] cpu_only self-check (random four-layer model), re-run 2026-10-28",
+  "bar": "cosine >= 0.99 for logits, KV rows and both states; argmax equal or a near tie",
+  "C1": {
+    "recipe": "granite-hybrid-bucketed-v1",
+    "functions": [
+      "main"
+    ],
+    "versions": {
+      "torch": "2.11.0",
+      "coreai-torch": "0.4.2",
+      "coreai-core": "1.0.0b2"
+    },
+    "passed": true,
+    "minLogitsCosine": 0.999998,
+    "minConvStateCosine": 0.999998,
+    "minSsmStateCosine": 0.999997,
+    "plan": [
+      [
+        0,
+        8
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        13,
+        2
+      ],
+      [
+        15,
+        2
+      ],
+      [
+        17,
+        2
+      ],
+      [
+        19,
+        2
+      ],
+      [
+        21,
+        2
+      ],
+      [
+        23,
+        1
+      ],
+      [
+        24,
+        1
+      ],
+      [
+        25,
+        1
+      ],
+      [
+        26,
+        1
+      ]
+    ],
+    "steps": [
+      {
+        "start": 0,
+        "tokens": 8,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.2e-05
+      },
+      {
+        "start": 8,
+        "tokens": 4,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999999,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.3e-05
+      },
+      {
+        "start": 12,
+        "tokens": 1,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999997,
+        "ssmStateMaxAbs": 4.2e-05
+      },
+      {
+        "start": 13,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2e-05
+      },
+      {
+        "start": 15,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999999,
+        "ssmStateMaxAbs": 3.9e-05
+      },
+      {
+        "start": 17,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.3e-05
+      },
+      {
+        "start": 19,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.9e-05
+      },
+      {
+        "start": 21,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.7e-05
+      },
+      {
+        "start": 23,
+        "tokens": 1,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 5.8e-05
+      },
+      {
+        "start": 24,
+        "tokens": 1,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 4.8e-05
+      },
+      {
+        "start": 25,
+        "tokens": 1,
+        "function": "main",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3e-05
+      },
+      {
+        "start": 26,
+        "tokens": 1,
+        "function": "main",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3.6e-05
+      }
+    ]
+  },
+  "C2": {
+    "recipe": "granite-hybrid-bucketed-v1-decode",
+    "functions": [
+      "main",
+      "decode"
+    ],
+    "versions": {
+      "torch": "2.11.0",
+      "coreai-torch": "0.4.2",
+      "coreai-core": "1.0.0b2"
+    },
+    "passed": true,
+    "minLogitsCosine": 0.999998,
+    "minConvStateCosine": 0.999998,
+    "minSsmStateCosine": 0.999998,
+    "plan": [
+      [
+        0,
+        8
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        13,
+        2
+      ],
+      [
+        15,
+        2
+      ],
+      [
+        17,
+        2
+      ],
+      [
+        19,
+        2
+      ],
+      [
+        21,
+        2
+      ],
+      [
+        23,
+        1
+      ],
+      [
+        24,
+        1
+      ],
+      [
+        25,
+        1
+      ],
+      [
+        26,
+        1
+      ]
+    ],
+    "steps": [
+      {
+        "start": 0,
+        "tokens": 8,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.2e-05
+      },
+      {
+        "start": 8,
+        "tokens": 4,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999999,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.3e-05
+      },
+      {
+        "start": 12,
+        "tokens": 1,
+        "function": "decode",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 4.4e-05
+      },
+      {
+        "start": 13,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2e-05
+      },
+      {
+        "start": 15,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 4.1e-05
+      },
+      {
+        "start": 17,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.6e-05
+      },
+      {
+        "start": 19,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3e-05
+      },
+      {
+        "start": 21,
+        "tokens": 2,
+        "function": "main",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 2.7e-05
+      },
+      {
+        "start": 23,
+        "tokens": 1,
+        "function": "decode",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 5.7e-05
+      },
+      {
+        "start": 24,
+        "tokens": 1,
+        "function": "decode",
+        "cosine": 0.999998,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3.8e-05
+      },
+      {
+        "start": 25,
+        "tokens": 1,
+        "function": "decode",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3e-05
+      },
+      {
+        "start": 26,
+        "tokens": 1,
+        "function": "decode",
+        "cosine": 0.999999,
+        "argmaxEqual": true,
+        "nearTie": true,
+        "keyCosine": 0.999999,
+        "convStateCosine": 0.999998,
+        "ssmStateCosine": 0.999998,
+        "ssmStateMaxAbs": 3.6e-05
+      }
+    ]
+  }
+}
