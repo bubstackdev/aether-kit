@@ -1,6 +1,8 @@
 {
  "criteria": "Core AI <= bf16 on final-latent relL2, STFT distance and log-mel (1 - cosine), every prompt",
  "candidate": "coreai",
+ "referencesDirectory": "references-all",
+ "candidatesDirectory": "coreai-all",
  "prompts": {
   "folk-ballad-vocal": {
    "bf16": {
@@ -101,6 +103,11 @@
     "snrDB": 14.097024917602539,
     "stftDistance": 0.8932132613013294,
     "logMelCosine": 0.9803687908059076
+   },
+   "files": {
+    "folk-ballad-vocal.npz": "2b5d494dc78a464b10d55175f4f23ae13a792c0a7dff3e34f83aecc6a8fbd034",
+    "folk-ballad-vocal-coreai.npz": "621c29fe6f63dd60a0b92b3c61884c7764f7504db9819c0af9148a663f3b7afb",
+    "folk-ballad-vocal-decoded.npz": "9908cd4202cae04d9df74a50fdce6eabbffed8004be17fe3a6ce24a3e88019d1"
    }
   },
   "indie-pop-vocal": {
@@ -202,6 +209,11 @@
     "snrDB": 14.914421081542969,
     "stftDistance": 0.6918191859386368,
     "logMelCosine": 0.9813753359888128
+   },
+   "files": {
+    "indie-pop-vocal.npz": "456cb40bb38f7670a28f77d6193b6266dd7256fab6b8bd3a9aa489278624c9cc",
+    "indie-pop-vocal-coreai.npz": "98833a6bb615a6f10393d6f1966836d1044377c316d972ad52c3a263d224cbd4",
+    "indie-pop-vocal-decoded.npz": "4e76c46829df5686b6acde5a4c7d3735ead5effa10cdfafa42f36f337b50da6a"
    }
   },
   "lofi-instrumental": {
@@ -303,6 +315,11 @@
     "snrDB": -0.6773579120635986,
     "stftDistance": 0.7454066116670838,
     "logMelCosine": 0.977886475314194
+   },
+   "files": {
+    "lofi-instrumental.npz": "bd6bfb5b9247a1d55a172bf7261d9a0cdb9b8696828f0e5bc1e8e61c39ae7136",
+    "lofi-instrumental-coreai.npz": "c6a9c334584f214ee6440af7932c2105f8dcaaf1f422407ee8c2f3f2a58ee359",
+    "lofi-instrumental-decoded.npz": "f96276b07100db405d95b9750ae417097ac12b64eed175f9bd44494a6eb88339"
    }
   },
   "orchestral-instrumental": {
@@ -404,6 +421,11 @@
     "snrDB": 27.859289169311523,
     "stftDistance": 0.5561327838456228,
     "logMelCosine": 0.981545863645149
+   },
+   "files": {
+    "orchestral-instrumental.npz": "43156dd337907587d48f74cefc2db04f15ea9071c6f6201796e20e006d081e19",
+    "orchestral-instrumental-coreai.npz": "734fd2bee07e83ae6ee6fdb44386829ff9beb2c59e49ade3ec2d4ac5d29086d2",
+    "orchestral-instrumental-decoded.npz": "e659e10840afe2716b21eea4ec32492efea1f51dfcd9d9505fb18d3c8347a623"
    }
   }
  },

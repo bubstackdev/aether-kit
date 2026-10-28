@@ -6,3 +6,6 @@
 10:57  load averages: 1.36 2.00 2.45
 10:58  load averages: 1.54 1.95 2.41
 # the earlier instrumental holds (09:15-09:22) ran alongside the vocal reference job (heavy CPU); their timings aren't used
+# uptime around the go-configuration hold (11:09, the tiler alone and go_pipeline_coreai.py)
+11:09  load averages: 3.40 2.08 2.13 (before)
+11:09  load averages: 5.52 2.60 2.31 (after)

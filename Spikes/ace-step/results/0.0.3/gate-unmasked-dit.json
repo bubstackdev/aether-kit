@@ -1,6 +1,8 @@
 {
  "criteria": "Core AI <= bf16 on final-latent relL2, STFT distance and log-mel (1 - cosine), every prompt",
  "candidate": "coreai",
+ "referencesDirectory": "references-all",
+ "candidatesDirectory": "coreai-unmasked",
  "prompts": {
   "lofi-instrumental": {
    "bf16": {
@@ -91,7 +93,11 @@
     "logMel": false
    },
    "pass": false,
-   "audioDecodedBy": "eager fp32 VAE for fp32 and bf16, the fp16 VAE export for Core AI"
+   "audioDecodedBy": "eager fp32 VAE for fp32 and bf16, the fp16 VAE export for Core AI",
+   "files": {
+    "lofi-instrumental.npz": "bd6bfb5b9247a1d55a172bf7261d9a0cdb9b8696828f0e5bc1e8e61c39ae7136",
+    "lofi-instrumental-coreai.npz": "8e0cbd0417d2b317244565d6d8c004db488816f0aafd24f9f6f97f44328ebf95"
+   }
   },
   "orchestral-instrumental": {
    "bf16": {
@@ -182,7 +188,11 @@
     "logMel": false
    },
    "pass": false,
-   "audioDecodedBy": "eager fp32 VAE for fp32 and bf16, the fp16 VAE export for Core AI"
+   "audioDecodedBy": "eager fp32 VAE for fp32 and bf16, the fp16 VAE export for Core AI",
+   "files": {
+    "orchestral-instrumental.npz": "43156dd337907587d48f74cefc2db04f15ea9071c6f6201796e20e006d081e19",
+    "orchestral-instrumental-coreai.npz": "bccac0143c06b281f14688a035d7aaf6bc326a13286b2e15e4fbde6e6f183b89"
+   }
   }
  },
  "gate": "fail"

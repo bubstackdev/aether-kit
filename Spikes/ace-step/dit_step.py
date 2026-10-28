@@ -3,7 +3,7 @@
 The upstream DiT discards its `encoder_attention_mask` argument: its forward rebuilds the cross-attention mask from the
 self-attention mask, which is all ones for text-to-music. Upstream never pads a single request's conditions, so it
 doesn't matter there, but a static-shape export pads them to L, and unmasked padding rows take softmax weight (eager:
-step-0 velocity cosine 0.67 against the unpadded step, diag_dit_mask.py). Step therefore hands every layer an additive
+step-0 velocity cosine 0.660 against the unpadded step on the lo-fi prompt, diag_dit_mask.py). Step therefore hands every layer an additive
 cross-attention mask built from `encoder_mask` (0 for condition rows, the dtype's most negative value for padding),
 through a forward pre-hook on each layer, so a padded step equals the unpadded one.
 """

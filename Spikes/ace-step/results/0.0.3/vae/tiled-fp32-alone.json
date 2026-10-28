@@ -1,0 +1,38 @@
+{
+ "window": "vae-dec-250-fp32",
+ "full": null,
+ "prompts": {
+  "folk-ballad-vocal": {
+   "tiled": {
+    "32": {
+     "windows": 7,
+     "seconds": 1.321719333063811
+    }
+   }
+  },
+  "indie-pop-vocal": {
+   "tiled": {
+    "32": {
+     "windows": 7,
+     "seconds": 1.2854495409410447
+    }
+   }
+  },
+  "lofi-instrumental": {
+   "tiled": {
+    "32": {
+     "windows": 7,
+     "seconds": 1.2986329160630703
+    }
+   }
+  },
+  "orchestral-instrumental": {
+   "tiled": {
+    "32": {
+     "windows": 7,
+     "seconds": 1.3616584159899503
+    }
+   }
+  }
+ }
+}

@@ -96,3 +96,11 @@ vae-dec-250-fp32.aimodel exported in 1.1s
        24.83 real        25.69 user        13.53 sys
          16125214720  maximum resident set size
          12918943768  peak memory footprint
+== tiled-fp32-alone
+        5.50 real         0.56 user         0.69 sys
+           758693888  maximum resident set size
+          2083833464  peak memory footprint
+== go-pipeline
+        9.00 real         1.73 user         1.82 sys
+          8394833920  maximum resident set size
+          2682378504  peak memory footprint

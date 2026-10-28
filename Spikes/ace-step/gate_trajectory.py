@@ -16,6 +16,7 @@ one VAE (<id>-decoded.npz), the audio metrics use those decodes, so they judge t
 measured on its own (vaeFp16OnFp32Latents) and the Core AI run's own audio is recorded (asRunAudio). Everything is recorded so a near miss can be judged; the WAVs are
 there for listening.
 """
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -78,7 +79,8 @@ def candidate(xt, x0, audio, ref, ref_audio):
 
 def main(references: Path, coreai: Path, out: Path, suffix: str = "coreai"):
     summary = {"criteria": "Core AI <= bf16 on final-latent relL2, STFT distance and log-mel (1 - cosine), every prompt",
-               "candidate": suffix, "prompts": {}}
+               "candidate": suffix, "referencesDirectory": references.name, "candidatesDirectory": coreai.name,
+               "prompts": {}}
     passed = True
     for path in sorted(references.glob("*.npz")):
         if not (coreai / f"{path.stem}-{suffix}.npz").exists():
@@ -102,6 +104,8 @@ def main(references: Path, coreai: Path, out: Path, suffix: str = "coreai"):
         else:
             ref_audio, bf16_audio, core_audio = ref["fp32_audio"], ref["bf16_audio"], ours["coreai_audio"]
             entry["audioDecodedBy"] = "eager fp32 VAE for fp32 and bf16, the fp16 VAE export for Core AI"
+        entry["files"] = {f.name: hashlib.sha256(f.read_bytes()).hexdigest() for f in
+                          (path, coreai / f"{path.stem}-{suffix}.npz", decoded_path) if f.exists()}
         bf16 = candidate(ref["bf16_xt"], ref["bf16_x0"], bf16_audio, ref, ref_audio)
         core = candidate(ours["coreai_xt"], ours["coreai_x0"], core_audio, ref, ref_audio)
         checks = {"finalRelL2": core["finalRelL2"] <= bf16["finalRelL2"],

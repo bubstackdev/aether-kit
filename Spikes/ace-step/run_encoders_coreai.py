@@ -15,6 +15,8 @@ Runs under the GPU lock. For each <id>.npz from reference_trajectory.py:
   6. tiled decoding: the end-to-end final latents decoded by the window asset (default vae-dec-250-fp16) with each
      overlap, a linear crossfade across the overlap, against one decode of the whole 60 s by the long window asset.
 Writes encoders-run.json.
+The host packing follows pack_sequences in the pinned model file (ACE-Step/Ace-Step1.5 @ 19671f4,
+modeling_acestep_v15_turbo.py), Copyright (c) 2026 ACEStep, used under the MIT License; see LICENSE-ACE-Step-1.5.
 """
 import argparse
 import asyncio

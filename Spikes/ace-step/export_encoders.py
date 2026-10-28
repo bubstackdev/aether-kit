@@ -13,7 +13,11 @@ Left on the host, so they need no export:
   - the timbre embedding: with no reference audio the timbre encoder sees the fixed silence reference, so its single
     output row is a constant (saved as timbre-silence.npy, computed in fp32);
   - packing (pack_sequences): valid lyric rows, then the timbre row, then valid caption rows, padded to the DiT's L.
-Heavy CPU: estimated 4–8 GB RSS per export; run one at a time.
+Heavy CPU: measured 5.0 GB (text) and 8.4 GB (condition) RSS; run one at a time.
+
+The packing order follows pack_sequences and the condition encoder's forward in the pinned model file
+(ACE-Step/Ace-Step1.5 @ 19671f4, modeling_acestep_v15_turbo.py), Copyright (c) 2026 ACEStep, used under the MIT
+License; see LICENSE-ACE-Step-1.5.
 """
 import argparse
 import importlib.util

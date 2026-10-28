@@ -4,9 +4,9 @@
 
 **Verdict: go** for ACE-Step 1.5 text-to-music on Mac, without the 5 Hz LM: an fp16 DiT and fp16 text and condition encoders, with the **VAE in fp32**, decoded in 10 s tiles. On four fixed 60 s prompts (two instrumental, two with lyrics), the Core AI fp16 trajectory is closer to the eager fp32 reference than the authors' own bf16 is, on every gate measure and every prompt, both with the reference's conditions and end to end through Core AI's own encoders. Two conditions come with it:
 - **Kit must mask the padded condition sequence itself.** Upstream's DiT ignores its cross-attention mask, which is harmless for its unpadded single requests but not for a static-shape export padded to a fixed length. Unmasked, the trajectory is unrelated to upstream's (final latents relative L2 about 1.0), and the 0.0.2 step check couldn't have caught it.
-- **The fp16 VAE isn't good enough.** Its waveform is 58–61 dB from the fp32 VAE's, but it lays a noise floor around −73 to −77 dBFS over bins the music leaves near-silent, and that fails the gate's log-spectral bars against bf16 on every prompt. The fp32 VAE in 10 s tiles costs about 1.3 s per minute of audio and 1.8 GB.
+- **The fp16 VAE isn't good enough.** Its waveform is 58–61 dB from the fp32 VAE's, but it lays a noise floor around −73 to −77 dBFS over bins the music leaves near-silent, and that fails the gate's log-spectral bars against bf16 on every prompt. The fp32 VAE in 10 s tiles costs about 1.3 s per minute of audio, and the tiler alone peaks at a 2.1 GB footprint.
 
-Every figure is from a single run, and the timings come from a lightly loaded shared host.
+Every figure is from a single run, and the timings come from a lightly loaded shared host (one-minute load 1.1–5.5, `host-load.log`). Export sizes come from `du` and are binary (GiB, MiB); RSS and footprints come from `/usr/bin/time -l` and are decimal (GB).
 
 ## 0.0.3 decision (2026-10-28)
 
@@ -20,16 +20,16 @@ Every figure is from a single run, and the timings come from a lightly loaded sh
   - 8 turbo steps at shift 3, the DiT run with `use_cache=False` as the export runs it;
   - on the first prompt, the ported loop matches the pinned model's own `generate_audio` to relative L2 1.0e-5.
 - **Exports**, all fp16 unless named:
-  - the DiT velocity step at T = 1,500 frames (60 s) and L = 512 condition rows, through `dit_step.Step` (2.9 GB);
-  - the Qwen3-Embedding text encoder at 256 tokens (1.1 GB);
-  - the condition encoder's text projector and lyric encoder at 256 × 512 (0.78 GB);
-  - the VAE decoder at 250 frames (10 s) and 1,500 frames, each in fp16 (161 MB) and fp32 (322 MB).
+  - the DiT velocity step at T = 1,500 frames (60 s) and L = 512 condition rows, through `dit_step.Step` (2.9 GiB);
+  - the Qwen3-Embedding text encoder at 256 tokens (1.1 GiB);
+  - the condition encoder's text projector and lyric encoder at 256 × 512 (777 MiB);
+  - the VAE decoder at 250 frames (10 s) and 1,500 frames, each in fp16 (161 MiB) and fp32 (322 MiB).
   - The silence-timbre row is a constant (no reference audio for text-to-music), and the lyric embeddings are a table lookup, so both stay on the host, as does the packing.
 - **Core AI runs**, under `with-gpu-lock.sh`:
   - `run_trajectory_coreai.py`: the trajectory from the reference's conditions, which judges the DiT alone;
   - `run_encoders_coreai.py`: the text and condition encoders, host packing, then the trajectory end to end, plus tiled decoding;
   - `decode_latents_coreai.py`: every trajectory's latents decoded by one VAE.
-  - The final runs used one hold, 10:55:17–10:55:59. The VAE measurements used two more, 10:56:38–10:58:21. Host load was 1.1–2.4 with no heavy job alongside (`host-load.log`).
+  - The final runs used one hold, 10:55:17–10:55:59. The VAE measurements used two more, 10:56:38–10:58:21, and the go-configuration measurements a fourth, 11:09:03–11:09:18. Host load was 1.1–2.4 with no heavy job alongside (`host-load.log`).
 
 ### The gate
 
@@ -44,7 +44,7 @@ Every trajectory's latents are decoded by the same Core AI fp32 VAE, which is 1.
 
 | Prompt | Final latents rel. L2, Core AI / bf16 | STFT distance, Core AI / bf16 | Log-mel cosine, Core AI / bf16 | SNR dB, Core AI / bf16 |
 | --- | --- | --- | --- | --- |
-| lofi-instrumental | **0.307** / 0.437 | **0.258** / 0.485 | **0.99547** / 0.98159 | −0.7 / −0.8 |
+| lofi-instrumental | **0.307** / 0.437 | **0.258** / 0.485 | **0.99547** / 0.98159 | −0.68 / −0.80 |
 | orchestral-instrumental | **0.034** / 0.114 | **0.052** / 0.179 | **0.99983** / 0.99835 | 27.9 / 16.9 |
 | indie-pop-vocal | **0.063** / 0.204 | **0.069** / 0.257 | **0.99983** / 0.99719 | 14.9 / 9.0 |
 | folk-ballad-vocal | **0.108** / 0.243 | **0.141** / 0.306 | **0.99918** / 0.99606 | 14.1 / 8.0 |
@@ -56,8 +56,8 @@ Every trajectory's latents are decoded by the same Core AI fp32 VAE, which is 1.
 
 Again every prompt beats bf16 on every measure.
 
-- The encoders are close: the text encoder's hidden states have cosine ≥ 0.9999981 (relative L2 ≤ 0.0019) against eager fp32, and the packed condition sequence has cosine ≥ 0.9999983 (≤ 0.0018), with the same rows and mask (`encoders-run.json`).
-- **The lo-fi prompt is a sensitive one.** Its trajectory amplifies small differences: bf16 ends 0.437 away and Core AI 0.307, both at about −0.7 dB SNR. So the two outputs are different takes of the same prompt, not near-copies of the fp32 audio. The other three prompts stay close.
+- The encoders are close: the text encoder's hidden states have cosine ≥ 0.9999981 (relative L2 ≤ 0.002) against eager fp32, and the packed condition sequence has cosine ≥ 0.9999982 (relative L2 ≤ 0.0019), with the same rows and mask (`encoders-run.json`).
+- **The lo-fi prompt is a sensitive one.** Its trajectory amplifies small differences: bf16 ends 0.437 away and Core AI 0.307, at SNRs of −0.80 dB and −0.68 dB. So the two outputs are different takes of the same prompt, not near-copies of the fp32 audio. The other three prompts stay close.
 - A 20 s excerpt of Core AI against fp32 for this prompt and for the indie-pop prompt is staged for a listening check.
 
 ### The padding mask: upstream ignores it, Kit must apply it
@@ -70,6 +70,7 @@ Again every prompt beats bf16 on every measure.
   - Eager, the masked padded step is 1.7e-5 from the unpadded one.
   - The masked Core AI step 0 has cosine 0.982 against the unpadded fp32 step (`dit-mask-coreai.json`).
   - Kit's port must keep this mask, or export exact condition lengths.
+- **Upstream's batched generation does pad.** At the pinned pipeline, caption and lyric tokens are padded to the batch's longest (`conditioning_text.py`, lines 154–160), and the diffusion handler documents `encoder_attention_mask` as unused (`diffusion.py`, line 57). In a batch of different-length prompts, the shorter ones attend padding upstream too. This was read in the code, not run. Single requests, which the gate's reference is, aren't padded.
 - **The 0.0.2 step check couldn't have caught this:** it used random inputs with an all-ones mask. On those inputs the masked export still gives the 0.0.2 figure (relative L2 0.051, cosine 0.9987).
 
 ### A reference bug, and which references were redone
@@ -87,27 +88,33 @@ Again every prompt beats bf16 on every measure.
 | fp32, one 60 s window | 1.06 s | 9.6 GB |
 | fp16, one 10 s window | 0.065 s | 0.94 GB |
 | fp32, one 10 s window | 0.18 s | 1.8 GB |
-| **fp32, 10 s tiles, 32-frame overlap (7 windows)** | **1.27–1.30 s** | **1.8 GB per window** |
+| **fp32, 10 s tiles, 32-frame overlap (7 windows)** | **1.27–1.36 s** | **2.1 GB, the tiler alone** |
 
 - **fp16's error** (`vae/noise-floor.json`): on the fp32 latents, the fp16 VAE's waveform is 58.0–60.6 dB SNR from the fp32 VAE's, with the residual at −72.7 to −76.5 dBFS RMS. But it exceeds the fp32 signal in 25–41% of time-frequency bins: the high, near-silent bins that a log-spectral measure weighs like loud ones.
 - **Against the gate**, the Core AI trajectory decoded by the fp16 VAE (`asRunAudio` in the gate records) fails against bf16 on every prompt. For example, the STFT distance is 0.556 against bf16's 0.179 on orchestral and 0.893 against 0.306 on folk.
 - Whether that floor is audible at normal levels wasn't checked. The fp32 VAE removes the question for about 0.9 s more per minute of audio.
-- **Tiling** (open item 4): 10 s windows with a 32-frame (1.28 s) overlap and a linear crossfade are 53.9–64.0 dB from one fp32 60 s window, with STFT distance ≤ 0.001 (`vae/tiled-fp32.json`).
+- **Tiling** (open item 4): 10 s windows with a 32-frame (1.28 s) overlap and a linear crossfade are 53.9–64.0 dB from one fp32 60 s window, with STFT distance ≤ 0.0013 (`vae/tiled-fp32.json`).
   - A 16-frame overlap gives 49.7–53.5 dB; 64 frames give 59.9–64.0 dB for one more window.
-  - Tiles bound the VAE's memory, a fifth of the one-window decode, and let a song of any length decode in pieces.
+  - Tiles bound the VAE's memory, and let a song of any length decode in pieces. The tiler alone, without the one-window comparison decode, took 1.29–1.36 s per 60 s at a 2.08 GB footprint, about a fifth of the one-window decode's (`vae/tiled-fp32-alone.json`, `time-excerpts.log`). The tile timings in the table range over both runs.
 
 ### Time and memory (60 s of audio, warm)
+
+**The go configuration in one process** (`go_pipeline_coreai.py`: fp16 text and condition encoders, the masked fp16 DiT, the fp32 VAE in 10 s tiles, nothing else loaded; `go-pipeline.json`):
+- **Per prompt, wall clock from token IDs to audio:** 1.80–2.07 s. That's the text encoder 10–52 ms, the condition encoder 12–22 ms, the DiT's 8 steps 0.42–0.51 s and the tiled VAE 1.31–1.52 s. Host load was 3.4–5.5 during this hold.
+- **It computes what the gate judged:** every prompt's final latents equal the earlier end-to-end run's exactly, and its tiled audio is 53.9–63.9 dB from that run's one-window fp32 decode.
+- **Process peak footprint 2.68 GB, maximum RSS 8.39 GB** (`time-excerpts.log`). The footprint is below the four assets' 5.1 GiB on disk (`data-footprint.log`) because the assets' weights are file-backed pages, which RSS counts and the footprint doesn't. Kit's admission measurement is port work.
+
+**Per stage, from the gate's runs** (load 1.1–2.4):
 
 | Stage | Time | Source |
 | --- | --- | --- |
 | Text encoder (256 tokens) | 20–41 ms | `encoders-run.json` |
 | Condition encoder | 18–19 ms | `encoders-run.json` |
-| DiT, 8 steps | 0.39–0.44 s, 49 ms per warm step | `coreai-run.json` |
+| DiT, 8 steps | 0.39–0.44 s: 49 ms per step, except folk's first step at 95 ms, the process's first call | `coreai-run.json` |
 | VAE, fp32 tiles | 1.27–1.30 s | `vae/tiled-fp32.json` |
-| **Sum of the separately timed stages** | **about 1.7–1.8 s** | |
 
-- **Loads**, with cached specialization: the DiT 0.48–2.0 s, the text encoder 0.9 s, the condition encoder 0.5 s, a VAE 0.1–0.2 s.
-- **Memory:** the process holding every asset (text and condition encoders, DiT, two fp16 VAEs) peaked at a 6.3 GB footprint, and the DiT-plus-VAE trajectory process at 4.8 GB. These are process figures from `/usr/bin/time -l`, not Kit's admission.
+- **Loads**, with cached specialization: the DiT 0.48–2.0 s, the text encoder 0.29–0.90 s, the condition encoder 0.16–0.50 s, a VAE 0.07–0.31 s.
+- **Earlier process footprints, a different configuration:** 6.3 GB for the process holding every asset of the gate's end-to-end run (two fp16 VAEs, one of them the 60 s window), and 4.8 GB for the DiT-plus-fp16-VAE trajectory process.
 - Kit-side resident measurement, encoder K/V reuse across steps (open item 3) and longer DiT shapes remain port work.
 
 ### Costs on the CPU side (for whoever reruns this)
@@ -124,28 +131,28 @@ Again every prompt beats bf16 on every measure.
 
 1. **The gate:** passed, with fp16 for the DiT and the encoders, and fp32 for the VAE.
 2. **The front of the pipeline:** the text and condition encoders export and run at cosine ≥ 0.9999981 against eager fp32. The conditioning port matches upstream, and the pipeline code is MIT.
-3. **Encoder K/V reuse:** not measured. With 49 ms per step it doesn't decide the go.
+3. **Encoder K/V reuse:** not measured. At about 50 ms per step it doesn't decide the go.
 4. **Full-song decoding:** 10 s fp32 tiles with a 32-frame overlap and a linear crossfade.
-5. **Resident memory:** a 4.8–6.3 GB process footprint for the full fp16 pipeline. Kit's own measurement is port work.
+5. **Resident memory:** the go configuration's process peaked at a 2.68 GB footprint and 8.39 GB RSS. Kit's own measurement is port work.
 
 ### Evidence (0.0.3)
 
 - **Code** (`Spikes/ace-step/`):
   - conditioning: `acestep_port.py` and `check_port.py`;
-  - references: `reference_trajectory.py`;
+  - references: `reference_trajectory.py` and `merge_references.py`;
   - exports: `export_dit.py` with `dit_step.py`, `export_encoders.py`, `export_vae.py`;
-  - Core AI runs: `run_trajectory_coreai.py`, `gpu_run_trajectory.sh`, `run_encoders_coreai.py`, `decode_latents_coreai.py`, `tiled_vae_coreai.py`, `time_vae.py`;
+  - Core AI runs: `run_trajectory_coreai.py`, `gpu_run_trajectory.sh`, `run_encoders_coreai.py`, `decode_latents_coreai.py`, `tiled_vae_coreai.py`, `time_vae.py`, `go_pipeline_coreai.py`;
   - judging: `gate_trajectory.py`, `vae_noise_floor.py`;
   - the mask diagnosis: `diag_dit_mask.py`.
 - **Results** (`Spikes/ace-step/results/0.0.3/`):
   - `gate-coreai.json`, `gate-e2e.json` and `gate-unmasked-dit.json`;
-  - `coreai-run.json`, `encoders-run.json` and `decoded.json`;
+  - `coreai-run.json`, `encoders-run.json`, `decoded.json` and `go-pipeline.json`;
   - `dit-mask-eager.json` and `dit-mask-coreai.json`;
   - `references-instrumentals.json`, `references-vocal.json`, `references-fp32-redo.json` and `references-provenance.json`;
-  - `vae/` (timings, tiling, the noise floor);
+  - `vae/` (timings, tiling with and without the comparison decode, the noise floor);
   - `time-excerpts.log` (`/usr/bin/time -l` for every job);
   - `gpu-lock.log`, `host-load.log` and `data-footprint.log`.
-- **Not committed:** weights, exports, latents and audio stay in the spike data directory, 17 GB with the earlier unmasked DiT and runs. That includes the listening pairs.
+- **Not committed:** weights, exports, latents and audio stay in the spike data directory, 17 GiB with the earlier unmasked DiT and runs (`data-footprint.log`). That includes the listening pairs.
 
 ### Reproducing (0.0.3)
 
@@ -153,8 +160,9 @@ With `HF_HUB_CACHE` pointing at a cache holding the pinned snapshot, and the spi
 1. `check_port.py <pipeline source> <snapshot>/acestep-v15-turbo`.
 2. `reference_trajectory.py <references>`. It is heavy (about 40 GB, and 21–25 min per bf16 trajectory); `--only` and `--skip-bf16` split it.
 3. `export_dit.py`, `export_encoders.py --only text`, then `--only condition`, and `export_vae.py --frames 250|1500 [--dtype float32]`, one at a time. The DiT export is about 16 GB.
-4. Under the GPU lock: `run_trajectory_coreai.py`, `run_encoders_coreai.py` and `decode_latents_coreai.py`, then `time_vae.py` and `tiled_vae_coreai.py`.
-5. `gate_trajectory.py <references> <coreai> gate.json coreai|e2e`, then `vae_noise_floor.py`.
+4. `merge_references.py <references-all> --first <dir> <id> … --redo <bf16 dir> <fp32 dir> <id> …`. It assembles the four references the gate reads (here, lofi and indie first; orchestral and folk redone) and writes `provenance.json`.
+5. Under the GPU lock, reading `<references-all>`: `run_trajectory_coreai.py`, `run_encoders_coreai.py` and `decode_latents_coreai.py`; then `time_vae.py`, `tiled_vae_coreai.py` (also `--no-full`) and `go_pipeline_coreai.py`.
+6. `gate_trajectory.py <references-all> <coreai> gate.json coreai|e2e`, which records each input file's SHA-256, then `vae_noise_floor.py`.
 
 ## 0.0.2 feasibility result (runs on 2026-10-26)
 

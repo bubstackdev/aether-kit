@@ -17,3 +17,6 @@
 2026-10-28 10:57:33 waiting  pid=44401 spikes: ace-step VAE tiling and footprint
 2026-10-28 10:57:33 acquired pid=44404 spikes: ace-step VAE tiling and footprint
 2026-10-28 10:58:21 released pid=44404 spikes: ace-step VAE tiling and footprint rc=0
+2026-10-28 11:09:03 waiting  pid=47737 spikes: ace-step tiler alone + go configuration
+2026-10-28 11:09:03 acquired pid=47739 spikes: ace-step tiler alone + go configuration
+2026-10-28 11:09:18 released pid=47739 spikes: ace-step tiler alone + go configuration rc=0
