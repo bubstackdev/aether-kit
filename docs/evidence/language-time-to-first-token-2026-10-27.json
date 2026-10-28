@@ -1,0 +1,1448 @@
+{
+  "after": {
+    "qwen3-0.6b": {
+      "cold": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001005,
+            "host": 0.167079333,
+            "submissions": 16,
+            "timeToFirstToken": 0.168084333,
+            "wall": 0.168238208,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0018683770000000005,
+            "host": 0.37472579,
+            "submissions": 32,
+            "timeToFirstToken": 0.376594167,
+            "wall": 0.378038333,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00024958399999999996,
+            "host": 0.043767208,
+            "submissions": 4,
+            "timeToFirstToken": 0.044016792,
+            "wall": 0.044158584,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 8.0833e-05,
+            "host": 0.083796417,
+            "submissions": 1,
+            "timeToFirstToken": 0.08387725,
+            "wall": 0.085503583,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "running": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.021332499999999997,
+            "host": 0.034581042,
+            "submissions": 2,
+            "timeToFirstToken": 0.055913542,
+            "wall": 0.056074458,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.053558875000000006,
+            "host": 0.04678766699999999,
+            "submissions": 4,
+            "timeToFirstToken": 0.100346542,
+            "wall": 0.100894084,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.004587125,
+            "host": 0.012710957999999998,
+            "submissions": 1,
+            "timeToFirstToken": 0.017298083,
+            "wall": 0.017459958,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 0.001421917,
+            "host": 1.331961416,
+            "submissions": 1,
+            "timeToFirstToken": 1.333383333,
+            "wall": 1.335014375,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "contracts": {
+        "bucketed": "bucketed-positions",
+        "running": "running-positions"
+      },
+      "device": "h17c",
+      "firstTokensAgree": true,
+      "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+      "lengths": [
+        64,
+        256,
+        1024,
+        2048
+      ],
+      "warm": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0011598720000000002,
+            "host": 0.21469629499999998,
+            "submissions": 16,
+            "timeToFirstToken": 0.215856167,
+            "wall": 0.216004125,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.002377125,
+            "host": 0.49333695800000005,
+            "submissions": 32,
+            "timeToFirstToken": 0.495714083,
+            "wall": 0.497814166,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000238708,
+            "host": 0.04608675,
+            "submissions": 4,
+            "timeToFirstToken": 0.046325458,
+            "wall": 0.046501125,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 7.0416e-05,
+            "host": 0.013674709,
+            "submissions": 1,
+            "timeToFirstToken": 0.013745125,
+            "wall": 0.015948167,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "running": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.017437584,
+            "host": 0.022405082,
+            "submissions": 2,
+            "timeToFirstToken": 0.039842666,
+            "wall": 0.041150375,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.042336458,
+            "host": 0.040618167000000004,
+            "submissions": 4,
+            "timeToFirstToken": 0.082954625,
+            "wall": 0.084187166,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.003204584,
+            "host": 0.013601708,
+            "submissions": 1,
+            "timeToFirstToken": 0.016806292,
+            "wall": 0.018111458,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 0.000682041,
+            "host": 0.013508376,
+            "submissions": 1,
+            "timeToFirstToken": 0.014190417,
+            "wall": 0.015513125,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "widths": {
+        "bucketed@128": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000603625,
+            "host": 0.133596125,
+            "submissions": 8,
+            "timeToFirstToken": 0.13419975,
+            "wall": 0.134357,
+            "widths": [
+              128
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0012178749999999998,
+            "host": 0.319803125,
+            "submissions": 16,
+            "timeToFirstToken": 0.321021,
+            "wall": 0.322914083,
+            "widths": [
+              128
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000127458,
+            "host": 0.034240792000000006,
+            "submissions": 2,
+            "timeToFirstToken": 0.03436825,
+            "wall": 0.034558083,
+            "widths": [
+              128
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 5.4875e-05,
+            "host": 0.020003375,
+            "submissions": 1,
+            "timeToFirstToken": 0.02005825,
+            "wall": 0.023200417,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@256": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000257708,
+            "host": 0.096470417,
+            "submissions": 4,
+            "timeToFirstToken": 0.096728125,
+            "wall": 0.096888125,
+            "widths": [
+              256
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.000707791,
+            "host": 0.243489501,
+            "submissions": 8,
+            "timeToFirstToken": 0.244197292,
+            "wall": 0.246231416,
+            "widths": [
+              256
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 7.4791e-05,
+            "host": 0.024225708999999998,
+            "submissions": 1,
+            "timeToFirstToken": 0.0243005,
+            "wall": 0.024474125,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 7.4625e-05,
+            "host": 0.025182375000000003,
+            "submissions": 1,
+            "timeToFirstToken": 0.025257,
+            "wall": 0.0270515,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@512": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000164458,
+            "host": 0.08626704199999999,
+            "submissions": 2,
+            "timeToFirstToken": 0.0864315,
+            "wall": 0.086599209,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0005320009999999999,
+            "host": 0.186126415,
+            "submissions": 4,
+            "timeToFirstToken": 0.186658416,
+            "wall": 0.18902925,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 9.5875e-05,
+            "host": 0.024987084,
+            "submissions": 1,
+            "timeToFirstToken": 0.025082959,
+            "wall": 0.025270416,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 9.2542e-05,
+            "host": 0.024870041,
+            "submissions": 1,
+            "timeToFirstToken": 0.024962583,
+            "wall": 0.026922041,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@64": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0010952919999999999,
+            "host": 0.222848083,
+            "submissions": 16,
+            "timeToFirstToken": 0.223943375,
+            "wall": 0.224123,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0023509549999999996,
+            "host": 0.502153753,
+            "submissions": 32,
+            "timeToFirstToken": 0.504504708,
+            "wall": 0.506455917,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00031262499999999997,
+            "host": 0.044272208,
+            "submissions": 4,
+            "timeToFirstToken": 0.044584833,
+            "wall": 0.04472875,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 5.4417e-05,
+            "host": 0.013416166,
+            "submissions": 1,
+            "timeToFirstToken": 0.013470583,
+            "wall": 0.01546,
+            "widths": [
+              64
+            ]
+          }
+        }
+      }
+    },
+    "qwen3-4b-writer": {
+      "cold": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0015058760000000002,
+            "host": 0.487057874,
+            "submissions": 16,
+            "timeToFirstToken": 0.48856375,
+            "wall": 0.488731958,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.0038900019999999996,
+            "host": 1.0769567480000002,
+            "submissions": 32,
+            "timeToFirstToken": 1.08084675,
+            "wall": 1.083221,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000314291,
+            "host": 0.110721709,
+            "submissions": 4,
+            "timeToFirstToken": 0.111036,
+            "wall": 0.112514667,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 0.000128833,
+            "host": 13.208193625,
+            "submissions": 1,
+            "timeToFirstToken": 13.208322458,
+            "wall": 13.210416792,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "contracts": {
+        "bucketed": "bucketed-positions"
+      },
+      "device": "h17c",
+      "firstTokensAgree": true,
+      "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+      "lengths": [
+        64,
+        256,
+        1024,
+        2048
+      ],
+      "warm": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0026212910000000004,
+            "host": 0.527720709,
+            "submissions": 16,
+            "timeToFirstToken": 0.530342,
+            "wall": 0.530651875,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.003509293,
+            "host": 1.174512124,
+            "submissions": 32,
+            "timeToFirstToken": 1.178021417,
+            "wall": 1.181442458,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00040274900000000004,
+            "host": 0.120633792,
+            "submissions": 4,
+            "timeToFirstToken": 0.121036541,
+            "wall": 0.121291208,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 9.975e-05,
+            "host": 0.031121958,
+            "submissions": 1,
+            "timeToFirstToken": 0.031221708,
+            "wall": 0.034433,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "widths": {
+        "bucketed@128": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0012985019999999998,
+            "host": 0.35349362300000003,
+            "submissions": 8,
+            "timeToFirstToken": 0.354792125,
+            "wall": 0.355050625,
+            "widths": [
+              128
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.001857206,
+            "host": 0.8100206270000001,
+            "submissions": 16,
+            "timeToFirstToken": 0.811877833,
+            "wall": 0.815257166,
+            "widths": [
+              128
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00019712499999999998,
+            "host": 0.074449292,
+            "submissions": 2,
+            "timeToFirstToken": 0.074646417,
+            "wall": 0.07517075,
+            "widths": [
+              128
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 0.000105208,
+            "host": 0.037175751,
+            "submissions": 1,
+            "timeToFirstToken": 0.037280959,
+            "wall": 0.040399125,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@256": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0013770420000000002,
+            "host": 0.302963958,
+            "submissions": 4,
+            "timeToFirstToken": 0.304341,
+            "wall": 0.304595875,
+            "widths": [
+              256
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.001082959,
+            "host": 0.680374124,
+            "submissions": 8,
+            "timeToFirstToken": 0.681457083,
+            "wall": 0.684749542,
+            "widths": [
+              256
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 9.6e-05,
+            "host": 0.063514625,
+            "submissions": 1,
+            "timeToFirstToken": 0.063610625,
+            "wall": 0.063919875,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 0.0001365,
+            "host": 0.039519458,
+            "submissions": 1,
+            "timeToFirstToken": 0.039655958,
+            "wall": 0.04259575,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@512": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000603708,
+            "host": 0.278906209,
+            "submissions": 2,
+            "timeToFirstToken": 0.279509917,
+            "wall": 0.2797625,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.001847333,
+            "host": 0.601858333,
+            "submissions": 4,
+            "timeToFirstToken": 0.603705666,
+            "wall": 0.610206084,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 9.8583e-05,
+            "host": 0.065494792,
+            "submissions": 1,
+            "timeToFirstToken": 0.065593375,
+            "wall": 0.066244791,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 9.0916e-05,
+            "host": 0.039069125999999996,
+            "submissions": 1,
+            "timeToFirstToken": 0.039160042,
+            "wall": 0.042328291,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@64": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001594165,
+            "host": 0.51865996,
+            "submissions": 16,
+            "timeToFirstToken": 0.520254125,
+            "wall": 0.520564167,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.004119331,
+            "host": 1.159565086,
+            "submissions": 32,
+            "timeToFirstToken": 1.163684417,
+            "wall": 1.166505625,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000390292,
+            "host": 0.117532499,
+            "submissions": 4,
+            "timeToFirstToken": 0.117922791,
+            "wall": 0.118227584,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 7.4292e-05,
+            "host": 0.030815,
+            "submissions": 1,
+            "timeToFirstToken": 0.030889292,
+            "wall": 0.034041417,
+            "widths": [
+              64
+            ]
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "qwen3-0.6b bucketed": "existing 0.0.2 export",
+    "qwen3-0.6b running": "exported for this measurement with Forge/language/export_qwen3.py --contract running (40 s, 7.6 GB peak RSS, self-check passed)",
+    "qwen3-4b-writer bucketed": "existing export; no running export of the 4B exists (its export is a heavy CPU job, pending the lead's go-ahead)"
+  },
+  "before": {
+    "qwen3-0.6b": {
+      "cold": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0011498769999999999,
+            "host": 0.212231207,
+            "submissions": 16,
+            "timeToFirstToken": 0.213381084,
+            "wall": 0.213524,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.002042499,
+            "host": 0.44736204300000004,
+            "submissions": 32,
+            "timeToFirstToken": 0.449404542,
+            "wall": 0.451264,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000324126,
+            "host": 0.050512249,
+            "submissions": 4,
+            "timeToFirstToken": 0.050836375,
+            "wall": 0.051013792,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 0.000276459,
+            "host": 0.081796916,
+            "submissions": 1,
+            "timeToFirstToken": 0.082073375,
+            "wall": 0.084292791,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "running": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.01902175,
+            "host": 0.043089709000000004,
+            "submissions": 2,
+            "timeToFirstToken": 0.062111459,
+            "wall": 0.062255167,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.045879916,
+            "host": 0.056822625999999994,
+            "submissions": 4,
+            "timeToFirstToken": 0.102702542,
+            "wall": 0.103243125,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00592575,
+            "host": 0.015788332999999998,
+            "submissions": 1,
+            "timeToFirstToken": 0.021714083,
+            "wall": 0.021855125,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 0.002467625,
+            "host": 0.184133458,
+            "submissions": 1,
+            "timeToFirstToken": 0.186601083,
+            "wall": 0.188281458,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "contracts": {
+        "bucketed": "bucketed-positions",
+        "running": "running-positions"
+      },
+      "device": "h17c",
+      "firstTokensAgree": true,
+      "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+      "lengths": [
+        64,
+        256,
+        1024,
+        2048
+      ],
+      "warm": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0011582510000000001,
+            "host": 0.241656665,
+            "submissions": 16,
+            "timeToFirstToken": 0.242814916,
+            "wall": 0.24301,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0025028329999999994,
+            "host": 0.55199275,
+            "submissions": 32,
+            "timeToFirstToken": 0.554495583,
+            "wall": 0.55674125,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.00025937599999999996,
+            "host": 0.051480083,
+            "submissions": 4,
+            "timeToFirstToken": 0.051739459,
+            "wall": 0.051906792,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 8.5583e-05,
+            "host": 0.016878292,
+            "submissions": 1,
+            "timeToFirstToken": 0.016963875,
+            "wall": 0.019215125,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "running": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.013489292,
+            "host": 0.027962624,
+            "submissions": 2,
+            "timeToFirstToken": 0.041451916,
+            "wall": 0.043167333,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.043063041999999996,
+            "host": 0.042013124,
+            "submissions": 4,
+            "timeToFirstToken": 0.085076166,
+            "wall": 0.086213542,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.003255333,
+            "host": 0.016196167,
+            "submissions": 1,
+            "timeToFirstToken": 0.0194515,
+            "wall": 0.020985666,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 0.000821292,
+            "host": 0.015957332999999997,
+            "submissions": 1,
+            "timeToFirstToken": 0.016778625,
+            "wall": 0.018145,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "widths": {
+        "bucketed@128": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000656625,
+            "host": 0.14388741700000002,
+            "submissions": 8,
+            "timeToFirstToken": 0.144544042,
+            "wall": 0.144732458,
+            "widths": [
+              128
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.001218376,
+            "host": 0.36669641599999997,
+            "submissions": 16,
+            "timeToFirstToken": 0.367914792,
+            "wall": 0.370144666,
+            "widths": [
+              128
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000170251,
+            "host": 0.034497415999999996,
+            "submissions": 2,
+            "timeToFirstToken": 0.034667667,
+            "wall": 0.035116917,
+            "widths": [
+              128
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 7.4875e-05,
+            "host": 0.021477000000000003,
+            "submissions": 1,
+            "timeToFirstToken": 0.021551875,
+            "wall": 0.023422167,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@256": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.00035670900000000003,
+            "host": 0.106657458,
+            "submissions": 4,
+            "timeToFirstToken": 0.107014167,
+            "wall": 0.107216875,
+            "widths": [
+              256
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0006539590000000001,
+            "host": 0.291512082,
+            "submissions": 8,
+            "timeToFirstToken": 0.292166041,
+            "wall": 0.294089916,
+            "widths": [
+              256
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 9.475e-05,
+            "host": 0.0253405,
+            "submissions": 1,
+            "timeToFirstToken": 0.02543525,
+            "wall": 0.025603375,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 3.9417e-05,
+            "host": 0.02700075,
+            "submissions": 1,
+            "timeToFirstToken": 0.027040167,
+            "wall": 0.02930475,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@512": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.000197667,
+            "host": 0.09060283300000001,
+            "submissions": 2,
+            "timeToFirstToken": 0.0908005,
+            "wall": 0.09098075,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0006847089999999999,
+            "host": 0.208226332,
+            "submissions": 4,
+            "timeToFirstToken": 0.208911041,
+            "wall": 0.210832875,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 8.3625e-05,
+            "host": 0.028294416,
+            "submissions": 1,
+            "timeToFirstToken": 0.028378041,
+            "wall": 0.028540417,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 8.0833e-05,
+            "host": 0.027259667,
+            "submissions": 1,
+            "timeToFirstToken": 0.0273405,
+            "wall": 0.0298235,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@64": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0011301660000000002,
+            "host": 0.23289658400000002,
+            "submissions": 16,
+            "timeToFirstToken": 0.23402675,
+            "wall": 0.2342195,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 79,
+            "gpu": 0.0022364150000000007,
+            "host": 0.551171126,
+            "submissions": 32,
+            "timeToFirstToken": 0.553407541,
+            "wall": 0.555725417,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000340832,
+            "host": 0.048521668000000004,
+            "submissions": 4,
+            "timeToFirstToken": 0.0488625,
+            "wall": 0.049040292,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 389,
+            "gpu": 6.4542e-05,
+            "host": 0.014338499999999999,
+            "submissions": 1,
+            "timeToFirstToken": 0.014403042,
+            "wall": 0.016788667,
+            "widths": [
+              64
+            ]
+          }
+        }
+      }
+    },
+    "qwen3-4b-writer": {
+      "cold": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.0017202930000000003,
+            "host": 0.48786445700000003,
+            "submissions": 16,
+            "timeToFirstToken": 0.48958475,
+            "wall": 0.489782584,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.0032769550000000002,
+            "host": 1.23080842,
+            "submissions": 32,
+            "timeToFirstToken": 1.234085375,
+            "wall": 1.236652208,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000337333,
+            "host": 0.11518858300000001,
+            "submissions": 4,
+            "timeToFirstToken": 0.115525916,
+            "wall": 0.117184375,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 8.4792e-05,
+            "host": 8.676247749000002,
+            "submissions": 1,
+            "timeToFirstToken": 8.676332541,
+            "wall": 8.679510417,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "contracts": {
+        "bucketed": "bucketed-positions"
+      },
+      "device": "h17c",
+      "firstTokensAgree": true,
+      "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+      "lengths": [
+        64,
+        256,
+        1024,
+        2048
+      ],
+      "warm": {
+        "bucketed": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001784793,
+            "host": 0.627340874,
+            "submissions": 16,
+            "timeToFirstToken": 0.629125667,
+            "wall": 0.6293755,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.004337372,
+            "host": 1.3781777940000002,
+            "submissions": 32,
+            "timeToFirstToken": 1.3825151660000001,
+            "wall": 1.386613541,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000434417,
+            "host": 0.130386666,
+            "submissions": 4,
+            "timeToFirstToken": 0.130821083,
+            "wall": 0.131206292,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 9.7708e-05,
+            "host": 0.03346225,
+            "submissions": 1,
+            "timeToFirstToken": 0.033559958,
+            "wall": 0.036997834,
+            "widths": [
+              64
+            ]
+          }
+        }
+      },
+      "widths": {
+        "bucketed@128": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001574876,
+            "host": 0.359918999,
+            "submissions": 8,
+            "timeToFirstToken": 0.361493875,
+            "wall": 0.361748958,
+            "widths": [
+              128
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.002814791,
+            "host": 0.8287063339999999,
+            "submissions": 16,
+            "timeToFirstToken": 0.831521125,
+            "wall": 0.834723291,
+            "widths": [
+              128
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000196167,
+            "host": 0.073930166,
+            "submissions": 2,
+            "timeToFirstToken": 0.074126333,
+            "wall": 0.074374959,
+            "widths": [
+              128
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 9.15e-05,
+            "host": 0.038362957999999996,
+            "submissions": 1,
+            "timeToFirstToken": 0.038454458,
+            "wall": 0.043668625,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@256": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001120251,
+            "host": 0.31435853999999996,
+            "submissions": 4,
+            "timeToFirstToken": 0.315478791,
+            "wall": 0.315793625,
+            "widths": [
+              256
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.0017869179999999998,
+            "host": 0.753648165,
+            "submissions": 8,
+            "timeToFirstToken": 0.755435083,
+            "wall": 0.759601708,
+            "widths": [
+              256
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000121667,
+            "host": 0.063444,
+            "submissions": 1,
+            "timeToFirstToken": 0.063565667,
+            "wall": 0.064906459,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 7.2208e-05,
+            "host": 0.040824751,
+            "submissions": 1,
+            "timeToFirstToken": 0.040896959,
+            "wall": 0.04425925,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@512": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.00041366600000000003,
+            "host": 0.2929435,
+            "submissions": 2,
+            "timeToFirstToken": 0.293357166,
+            "wall": 0.293610083,
+            "widths": [
+              512
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.00137254,
+            "host": 0.640175543,
+            "submissions": 4,
+            "timeToFirstToken": 0.641548083,
+            "wall": 0.644519917,
+            "widths": [
+              512
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.000120625,
+            "host": 0.06629937500000001,
+            "submissions": 1,
+            "timeToFirstToken": 0.06642,
+            "wall": 0.06672775,
+            "widths": [
+              256
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 0.0001165,
+            "host": 0.040689791,
+            "submissions": 1,
+            "timeToFirstToken": 0.040806291,
+            "wall": 0.043871125,
+            "widths": [
+              64
+            ]
+          }
+        },
+        "bucketed@64": {
+          "1024": {
+            "firstToken": 198,
+            "gpu": 0.001615291,
+            "host": 0.554017042,
+            "submissions": 16,
+            "timeToFirstToken": 0.555632333,
+            "wall": 0.555959583,
+            "widths": [
+              64
+            ]
+          },
+          "2048": {
+            "firstToken": 83,
+            "gpu": 0.004122504000000001,
+            "host": 1.193657079,
+            "submissions": 32,
+            "timeToFirstToken": 1.197779583,
+            "wall": 1.201546208,
+            "widths": [
+              64
+            ]
+          },
+          "256": {
+            "firstToken": 311,
+            "gpu": 0.0004595,
+            "host": 0.12427675,
+            "submissions": 4,
+            "timeToFirstToken": 0.12473625,
+            "wall": 0.1249825,
+            "widths": [
+              64
+            ]
+          },
+          "64": {
+            "firstToken": 258,
+            "gpu": 0.00010025,
+            "host": 0.031448041999999995,
+            "submissions": 1,
+            "timeToFirstToken": 0.031548292,
+            "wall": 0.0348465,
+            "widths": [
+              64
+            ]
+          }
+        }
+      }
+    }
+  },
+  "date": "2026-10-27",
+  "device": "M5 Max (h17c), shared host (GPU jobs serialized by the lock, other host work not)",
+  "kind": "language-time-to-first-token",
+  "stepBreakdownMilliseconds": {
+    "before": {
+      "0.6b bucketed 2048": {
+        "cacheGrowth": 82.9,
+        "encode": 397.9,
+        "inputs": 6.1,
+        "join": 2.4,
+        "logits": 0.9,
+        "ttft": 500.5,
+        "updateRows": 7.0
+      },
+      "0.6b running 2048": {
+        "encode": 26.6,
+        "inputs": 1.1,
+        "join": 51.3,
+        "logits": 0.2,
+        "ttft": 79.6
+      },
+      "4b bucketed 2048": {
+        "cacheGrowth": 132.8,
+        "encode": 970.1,
+        "inputs": 7.2,
+        "join": 1.7,
+        "logits": 1.4,
+        "ttft": 1129.2,
+        "updateRows": 11.4
+      }
+    },
+    "cacheGrowthSplit": {
+      "0.6b 2048": {
+        "allocate": 3.1,
+        "relayout": 79.4
+      },
+      "4b 2048": {
+        "allocate": 0.5,
+        "relayout": 124.8
+      },
+      "note": "relayout is bound by first-touch page faults on the newly allocated buffers, not by the copy"
+    },
+    "method": "temporary timers around each phase of LanguageGenerationSession.step (not committed); one warm request each; 'encode' includes the GPU work, which Core AI performs inside the synchronous encode for bucketed steps",
+    "rejectedBufferPooling": {
+      "0.6b 2048": {
+        "cacheGrowth": 26.1,
+        "encode": 524.7,
+        "ttft": 584.2
+      },
+      "4b 1024": {
+        "cacheGrowth": 8.5,
+        "encode": 646.6,
+        "ttft": 667.4
+      },
+      "4b 2048": {
+        "cacheGrowth": 57.4,
+        "encode": 1105.9,
+        "ttft": 1192.8
+      },
+      "note": "prototype (reverted): two large buffers reused across growths and requests, viewed at the needed capacity. Growth fell to 26 ms (0.6B) and 57 ms (4B) at 2048, but encode rose by as much or more (4B 1024: 444-497 -> 647 ms): Core AI pays for an input buffer larger than its view, like the strided views the guide records. Not adopted."
+    }
+  },
+  "test": "Tests/AetherNativeTests/LanguageTimeToFirstTokenTests.swift (AETHER_NATIVE_LANGUAGE_TTFT=1, release); one-token requests on a fixed synthetic prompt pattern, no recycling, no memory budget; warm = median of 5 interleaved rounds",
+  "tokenIdentityAfter": {
+    "qwen3-0.6b": "languageBucketedDecodeQualification: 64-token greedy continuation, 1,024-step long run and teacher-forced row metrics identical to the 0.0.3 baseline",
+    "qwen3-4b-writer": "languageChatBundleRendersGeneratesAndDecodes: three replies identical"
+  }
+}

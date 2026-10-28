@@ -27,6 +27,12 @@ enum ProbeGPULease {
             return count >= 6 && ["--graphs", "--render"].contains(arguments[5])
         case "h3-profile-decode":
             return count == 5 || count == 7
+        case "h3-memory-render":
+            return (try? H3MemoryDiagnosis.RenderOptions(arguments)) != nil
+        case "h3-memory-encoder":
+            return count == 6 && Int(arguments[2]) != nil && Int(arguments[3]) != nil
+        case "qualify-h3-session-lifecycle":
+            do { _ = try H3SessionLifecycleCommand.scenarios(arguments); return true } catch { return false }
         case "qualify-h3", "qualify-h3-lifecycle":
             return count == 5 && mode(at: 4, gpu: ["--run"])
         case "qualify-h3-phases":
@@ -37,6 +43,8 @@ enum ProbeGPULease {
             return count == 9 && (arguments[8] == "--capture" || (["--run", "--lifecycle"].contains(arguments[8]) && arguments[6] != "-"))
         case "benchmark-krea":
             return count == 6 && mode(at: 5, gpu: ["--run"])
+        case "benchmark-flux2":
+            return count == 8 && mode(at: 7, gpu: ["--run"])
         default:
             return false
         }

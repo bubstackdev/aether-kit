@@ -80,6 +80,31 @@ private struct LayerKernel: H3ConditionerKernel {
 
 // MARK: Packing and denoising
 
+@Test func h3ModulationPaddingAppendsCopiesThatTheAdaLNSelectionNeverReads() throws {
+    // [6, 3, 4] (k = 1) padded to k = 2: each slice keeps its rows and repeats them; selecting any tag < 3 from the
+    // padded table returns the original row, which is why padding leaves block outputs unchanged.
+    let values = (0..<(6 * 3 * 4)).map { Float($0) }
+    let table = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [6, 3, 4]), bytes: bf16(values))
+    let padded = try H3ModulationPadding.table(table, cardinality: 2)
+    #expect(padded.spec.shape == [6, 6, 4])
+    let p = try padded.floatValues()
+    for slice in 0..<6 { for row in 0..<6 { for d in 0..<4 {
+        #expect(p[(slice * 6 + row) * 4 + d] == values[(slice * 3 + row % 3) * 4 + d])
+    } } }
+    // Already at the target, the tensor is returned unchanged; a larger cardinality than the target is refused.
+    let unchanged = try H3ModulationPadding.table(padded, cardinality: 2)
+    #expect(unchanged.bytes == padded.bytes)
+    #expect(throws: AetherError.self) { _ = try H3ModulationPadding.table(padded, cardinality: 1) }
+    #expect(throws: AetherError.self) {
+        _ = try H3ModulationPadding.table(try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [6, 4, 4]), bytes: Data(count: 6 * 4 * 4 * 2)), cardinality: 2)
+    }
+    // Embedding [2, 3] -> [3, 3]: rows 0, 1, then a copy of row 0.
+    let embedding = try h3Tensor([2, 3], [1, 2, 3, 4, 5, 6])
+    let wide = try H3ModulationPadding.embedding(embedding, cardinality: 3)
+    let wideValues = try wide.floatValues()
+    #expect(wide.spec.shape == [3, 3] && wideValues == [1, 2, 3, 4, 5, 6, 1, 2, 3])
+}
+
 @Test func h3PackingGatherIsTheInversePermutationOfTheLayoutRows() throws {
     let layout = try H3Layout(geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true), textTags: Array(repeating: 1, count: 5))
     let gather = try H3Packing.gather(layout)
@@ -93,6 +118,8 @@ private struct LayerKernel: H3ConditionerKernel {
 private struct TrajectoryKernels: H3DenoiserKernels {
     let calls: Calls
     let layout: H3Layout
+    /// The trajectory's largest timestep cardinality: every step's table and embedding arrive padded to it.
+    var cardinality = 2
     func refine(_ text: H3TensorData) async throws -> H3TensorData {
         await calls.add("refine")
         return try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, text.spec.shape[1], 5376]), bytes: Data(count: text.spec.shape[1] * 5376 * 2))
@@ -107,12 +134,14 @@ private struct TrajectoryKernels: H3DenoiserKernels {
         let step = Int(try table.floatValues()[0])
         await calls.add("block \(step).\(index)")
         #expect(cos.spec.shape == [layout.rows, 96] && sin.spec.shape == [layout.rows, 96] && tags.spec.shape == [layout.rows])
+        #expect(table.spec.shape == [6, 3 * cardinality, 5376])
         return hidden
     }
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
         let step = try temb.floatValues()[0]
         await calls.add("heads \(Int(step))")
+        #expect(temb.spec.shape == [cardinality, 2688])
         #expect(videoIndices.bytes == layout.videoIndices.withUnsafeBytes { Data($0) })
         return (try h3Tensor(video.shape, [Float](repeating: step + 1, count: video.byteCount / 4)),
                 try h3Tensor(audio.shape, [Float](repeating: -step - 1, count: audio.byteCount / 4)))
@@ -186,8 +215,9 @@ private struct ChainedKernels: H3DenoiserKernels {
     func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
         Issue.record("the denoiser must run a step's blocks through blocks(...)"); return hidden
     }
-    func blocks(hidden: H3TensorData, tables: [H3TensorFile], tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
+    func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
+        #expect(cardinality == inner.cardinality)
         let step = Int(try tables[0].read().floatValues()[0])
         await calls.add("blocks \(step) x\(tables.count) readback=\(onBlock != nil)")
         for index in tables.indices { try await onBlock?(index, hidden) }

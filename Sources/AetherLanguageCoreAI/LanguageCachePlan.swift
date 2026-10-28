@@ -79,6 +79,14 @@ enum LanguageCachePlan {
                                     into cache: UnsafeMutablePointer<Scalar>, rows: Int, capacity: Int, width: Int,
                                     start: Int, count: Int) {
         precondition(rows > 0 && width > 0 && count > 0 && start >= 0 && start + count <= capacity)
+        if elementStride == 1, count == 1 || tokenStride == width {
+            // Each row's tokens are contiguous on both sides (always so for one token, as in decode): one copy per row
+            // instead of one per token.
+            for row in 0..<rows {
+                (cache + (row * capacity + start) * width).update(from: update + row * rowStride, count: count * width)
+            }
+            return
+        }
         for row in 0..<rows {
             for token in 0..<count {
                 let source = update + row * rowStride + token * tokenStride
@@ -91,12 +99,24 @@ enum LanguageCachePlan {
             }
         }
     }
-    static func copyPrefix(from source: UnsafeRawPointer, to destination: UnsafeMutableRawPointer,
-                           rows: Int, oldCapacity: Int, newCapacity: Int, validTokens: Int, tokenBytes: Int) {
+    /// A grown cache in one pass: each row's first `validTokens` from `source`, zeros for the rest of its new capacity,
+    /// and zeros past the last row (`destinationBytes`). Every byte is the same as zeroing the whole buffer and then
+    /// copying the prefixes, without writing the copied bytes twice; large caches are split across cores by rows.
+    static func relayout(from source: UnsafeRawPointer, to destination: UnsafeMutableRawPointer, destinationBytes: Int,
+                         rows: Int, oldCapacity: Int, newCapacity: Int, validTokens: Int, tokenBytes: Int) {
         precondition(rows > 0 && tokenBytes > 0 && validTokens >= 0 && validTokens <= oldCapacity && oldCapacity <= newCapacity)
-        for row in 0..<rows {
-            destination.advanced(by: row * newCapacity * tokenBytes).copyMemory(
-                from: source.advanced(by: row * oldCapacity * tokenBytes), byteCount: validTokens * tokenBytes)
+        let rowBytes = newCapacity * tokenBytes
+        precondition(destinationBytes >= rows * rowBytes)
+        nonisolated(unsafe) let source = source, destination = destination
+        let blocks = rows * rowBytes >= 8 << 20 ? min(rows, ProcessInfo.processInfo.activeProcessorCount) : 1
+        DispatchQueue.concurrentPerform(iterations: blocks) { block in
+            for row in stride(from: block, to: rows, by: blocks) {
+                let target = destination.advanced(by: row * rowBytes)
+                target.copyMemory(from: source.advanced(by: row * oldCapacity * tokenBytes), byteCount: validTokens * tokenBytes)
+                target.advanced(by: validTokens * tokenBytes).initializeMemory(as: UInt8.self, repeating: 0,
+                                                                               count: (newCapacity - validTokens) * tokenBytes)
+            }
         }
+        destination.advanced(by: rows * rowBytes).initializeMemory(as: UInt8.self, repeating: 0, count: destinationBytes - rows * rowBytes)
     }
 }

@@ -2,7 +2,7 @@
   "schema": 1,
   "entries": [
     {
-      "execution_identity": "h3.profile/1:c49d8dbffaf8b9bc441652b071a4005b51ada08309d3c581087810a0ea7924a7:turbo8",
+      "execution_identity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -10,14 +10,14 @@
       ],
       "maximum_frames": 124,
       "stage_peak_bytes": {
-        "encoding": 2161707600,
+        "encoding": 2162936400,
         "encodingKeyframe": 2201501696,
-        "denoising": 15914209096,
-        "decodingVideo": 11881401368,
-        "decodingAudio": 1983187512
+        "denoising": 17307844608,
+        "decodingVideo": 9077197896,
+        "decodingAudio": 2023590384
       },
       "operation_bytes": 201326592,
-      "evidence": "docs/evidence/h3-memory-gate-chained-2026-10-26.json"
+      "evidence": "docs/evidence/h3-memory-gate-review-2026-10-28.json"
     }
   ]
 }

@@ -47,6 +47,14 @@ defer { lease.release() }
 
 A lease directory without a readable `pid` is never reclaimed. Either a holder is between `mkdir` and its pid write, or a holder was killed in that window and abandoned it. Age-based reclaim would need every implementation (Atelier, the wrappers, Kit) to agree on a rule, which would change the shared protocol, so it isn't implemented. Kit no longer creates such leases on release. Waiting Kit tools report a pid-less lease explicitly, repeat the report every minute, and say how to clear it: if no GPU job is running, remove the directory by hand. The proposed wrapper logs it the same way.
 
+### Proposal: declared residency and pid-less leases
+
+The lease serializes GPU work, not memory: models stay loaded between turns, so cooperating processes can together hold
+more than the Mac has. The [shared residency proposal](shared-residency-proposal.md) adds per-process residency records
+beside the lease, read and written under their own short lock so a helper without a GPU grant (Atelier's
+`atelier-language`) takes part, and settles the pid-less item above in the same change. Proposed for Atelier and Kit to
+agree on, as a coordinated future change (not 0.0.3 work); not implemented.
+
 ## Kit tools take the lease by default
 
 `aether-probe` takes the lease itself before any well-formed GPU command and holds it until the command returns. It releases the lease explicitly on the error path, because `exit` skips deinit. A malformed GPU command (wrong argument count, an unparsable number, an unknown mode or compute policy) takes no lease, so its usage error prints at once instead of after a wait.
@@ -56,13 +64,13 @@ GPU commands:
 - `inspect`, `smoke`
 - `render-krea`, `render-krea-batch`, `parity-krea`
 - `h3-profile-run`, `h3-profile-decode`
-- `benchmark-krea` and the `qualify-h3*` commands, in every mode except `--prepare-only`
+- `benchmark-krea`, `benchmark-flux2` and the `qualify-h3*` commands, in every mode except `--prepare-only`
 
 `doctor`, `verify-krea`, `prepare-krea`, `h3-profile-dump` and `h3-weights-bench` are CPU-only and take nothing. While another process holds the lease, the probe waits and prints a line to standard error naming the holder, when it changes and every minute.
 
 The two other tool paths:
 
-- **`Scripts/benchmark-krea.sh`:** `run` relies on the probe's lease. The build step needs no lease.
+- **`Scripts/benchmark-krea.sh` and `Scripts/benchmark-flux2.sh`:** `run` relies on the probe's lease. The build step needs no lease.
 - **Opt-in native suites (`AetherNativeTests`):** each enabled native test, including the FLUX.2 parity and lifecycle qualifications, holds a grant from a test-local `GPUAdmission` whose backend is the lease. The tests take turns in-process and exclude other processes. The CPU suite never enables them.
 
 These environment variables override the default, in both the probe and the native suites (`SharedGPULease.ToolPolicy`):
@@ -94,7 +102,8 @@ What each session holds a grant for:
 
 - **`KreaGenerationSession` and `Flux2GenerationSession`:** each operation (prepare, generate, refine, image encode). The grant is taken before any model opens and released after the operation's native work has joined.
 - **`H3VideoSession`:** each generation, from before its first stage until every stage is released.
-- **`LanguageGenerationSession`:** each request, after validation, until its submissions have joined. Model loading isn't admitted.
+- **`LanguageGenerationSession`:** its opening (the model's load and its functions' specialization), and each request, after validation, until its submissions have joined.
+- **`VisionLanguageSession`:** the encoder's opening and the decoder's, each under its own grant; each image's encode; and each decoder request.
 
 Sessions created without `gpu:` behave as before. Admission composes with `ResourceCoordinator`. The coordinator answers whether memory is available, admission answers whose turn it is, and either can refuse. With admission, a session takes its operation reservation only after its grant, so a request waiting for the GPU never holds capacity the running request needs. `unload()` withdraws an operation that is still waiting for admission; it ends with the session's closed error, so unload never waits behind the GPU queue. An operation that already holds its grant is waited for as before.
 

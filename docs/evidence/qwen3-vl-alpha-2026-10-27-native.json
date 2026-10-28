@@ -1,0 +1,63 @@
+{
+  "cases" : [
+    {
+      "encodeSeconds" : 0.315759959,
+      "forcedArgmaxMismatches" : 0,
+      "forcedMinimumCosine" : 0.9999981904391716,
+      "forcedMismatchesAtNearTies" : 0,
+      "forcedRows" : 17,
+      "greedyAccepted" : true,
+      "greedyTokens" : [
+        785,
+        2168,
+        5610,
+        264,
+        24932,
+        21495,
+        11,
+        264,
+        13753,
+        9334,
+        11,
+        323,
+        458,
+        18575,
+        21495,
+        13
+      ],
+      "imageTokens" : 484,
+      "name" : "scene-448-transparent",
+      "preprocessing" : "swift",
+      "promptTokens" : 508,
+      "referenceGreedyTokens" : [
+        785,
+        2168,
+        5610,
+        264,
+        24932,
+        21495,
+        11,
+        264,
+        13753,
+        9334,
+        11,
+        323,
+        458,
+        18575,
+        21495,
+        13,
+        151645
+      ],
+      "swiftGridMatches" : true,
+      "swiftPixelCosine" : 1.0000000002334386,
+      "timeToFirstTokenSeconds" : 0.337361042
+    }
+  ],
+  "device" : "h17c",
+  "gate" : "reference pixels (model parity): per forced row cosine >= 0.995 against the float32 upstream reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1, native token in the reference top-5), greedy identical up to the reference end (its final stop token excluded) or first diverging at such a near-tie. Kit preprocessing on the same decode (end to end): grid equal, pixel cosine >= 0.9999 against the reference processor (resampler only), then the model-parity rule. Kit preprocessing on an independent decode (decoder sanity): grid equal and pixel cosine >= 0.999 against the reference processor; logits and tokens reported (logitsWithinDecoderBand: forced rows cosine >= 0.98 on every case)",
+  "hostLoad" : "Shared host; timings are single observations",
+  "imagesThroughMain" : true,
+  "inputs" : "same-decode",
+  "passed" : true,
+  "stage" : "complete"
+}

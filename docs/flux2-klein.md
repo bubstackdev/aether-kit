@@ -2,7 +2,8 @@
 
 Status: experimental, 2026-10-27 (0.0.2). The products, the qualified local bundle, independent float32 Diffusers
 references on CPU and opt-in native parity and lifecycle gates are in place. Results and their scope are in
-[Verification](#verification). There is no iOS execution, benchmark protocol or published bundle yet.
+[Verification](#verification). There is no iOS execution or published bundle yet. A benchmark harness is in place; its
+quiet-window run is pending ([Benchmark harness](#benchmark-harness-003)).
 
 **Qualified bundle:** 0.0.2 qualifies the bundle with fingerprint `a48aaf07…` (reference fingerprint `a69abb8e…`),
 produced from the pinned checkpoint by `Forge/flux2` in this repository ([Producing the bundle](#producing-the-bundle)).
@@ -81,8 +82,8 @@ O=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27
 Forge/.venv/bin/python -I Forge/flux2/check_flux2_graphs.py --workdir $O/graph-check-real --checkpoint $C   # optional, about 26 GiB RSS
 Forge/.venv/bin/python -I Forge/flux2/export_flux2.py --checkpoint $C --output $O/export
 python3 Scripts/finalize-flux2-bundle.py $O/export $C $O/bundle
-# against the f28ef0e8 export, kept at macos-any-gpu as the historical reference
-Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py ~/.cache/huggingface/aether-kit/flux2-klein-4b/macos-any-gpu $O/bundle
+# optional: compare the contract with an earlier bundle you keep (REFERENCE_BUNDLE)
+Forge/.venv/bin/python -I Forge/flux2/check_flux2_contract.py REFERENCE_BUNDLE $O/bundle
 ```
 
 - `flux2_graphs.py` holds the six graphs. The text encoder is Qwen3 layers 0–26 with the pipeline's taps, fp16, q/k/v
@@ -109,7 +110,7 @@ fragment + target + per-asset placement + provenance file hashes + license) and 
 byte-reproducible, so a re-export changes model hashes and fingerprints.
 
 **The 2026-10-27 export** (`forge-export-2026-10-27/bundle`, `a48aaf07…`; `d27cefc4…` since 0.0.3) is the qualified bundle. Its contract
-equals `f28ef0e8…`'s exactly: every function signature, the segment split, `metadata.json`, all 111 compared
+equals `f28ef0e8…`'s exactly (the superseded export, since deleted locally; the [contract diff](evidence/flux2-forge-export-contract-diff-2026-10-27.txt) is the record): every function signature, the segment split, `metadata.json`, all 111 compared
 `aether.json` fields (the quantization notes included) and the tokenizer files. The internal graphs differ: LayerNorm
 and GroupNorm lower to Core AI composites, the VAE decoder upsamples by nearest-neighbour interpolation where the
 prototype used conv + pixel shuffle, and the q/k norm feeds the rotary product in float32 without an fp16 round trip.
@@ -191,8 +192,12 @@ do {
 - **Lifecycle:** one operation at a time (`sessionBusy` otherwise); cancellation is cooperative between native calls
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
   `unload()` rejects new work, waits for the active operation and closes permanently. Cancelling while the prompt is
-  being encoded returns in about 0.17 s on an M5 Max: the rest of the encoder's one native call, then its discard
-  ([Text encoder cancellation](#text-encoder-cancellation-003)).
+  being encoded returns in about 0.17 s on an M5 Max during the encoder's native call, and in up to about 0.9 s
+  (about 3.8 s on a process's first request) if it lands while a balanced session is loading the encoder's function,
+  which Core AI can't interrupt
+  ([Text encoder cancellation](#text-encoder-cancellation-003)). While references are being encoded it returns in
+  about 0.18–0.21 s, the rest of one image's encoder call, and later images are never submitted
+  ([Reference encoder cancellation](#reference-encoder-cancellation-003)).
 - **Prepared values:** `Flux2PreparedPrompt` (7.5 MiB fp16 rows + bundle fingerprint) and `Flux2PreparedReferences`
   (float32 packed latents + reference fingerprint) hold no native models; another bundle refuses them before loading.
 - **Admission:** optional `Flux2ResourceAdmission` reserves caller-qualified estimates (operation storage, per-model
@@ -241,13 +246,35 @@ the CPU.
 | Fixture | Mode | Cases |
 | --- | --- | --- |
 | `ffc4b1365159e40c` (text to image) | `--text-to-image` | 10 prompts, 512² to 1344×768, incl. French/Japanese text |
-| `caf92bb7d83d685c` (reference images) | default; the pipeline with `image=[…]`, references are the Lanczos-resized `fox-512` and `lighthouse-512` outputs of the 2026-10-26 text-to-image fixture, unchanged | 2 cases, one and two references |
+| `80a86a512315fa94` (reference images) | default; the pipeline with `image=[…]`, references are the Lanczos-resized `fox-512` and `lighthouse-512` outputs of the CPU text-to-image fixture `ffc4b136…` | 2 cases, one and two references |
 
 Both record token ids/mask, float32 text rows, packed initial noise, per-step latents/timestep/velocity, final latent
 and float32 image; the reference fixture also records encoder input pixels, the appended reference tokens and the
 transformer position ids. Neither uses the Core AI bundle or AetherKit code.
 
-They replace the 2026-10-26 fixtures `6a8a53d8f3b30817` and `079a8fba9d596a3b`, which ran the pipeline on MPS (text
+**Reference fixture regenerated from the CPU pictures (0.0.3).** The reference fixture used to take its two source
+pictures from the 2026-10-26 MPS text-to-image fixture `6a8a53d8…`. `80a86a51…` takes them from the CPU fixture
+`ffc4b136…`, so every FLUX.2 reference now traces to CPU float32 computation. It replaces `caf92bb7d83d685c`, which the
+records up to 0.0.3's encoder cancellation used. Everything that doesn't depend on the pictures is byte-identical to
+`caf92bb7…`: `cases.jsonl`, token ids, mask, text rows, noise, position ids and the first step's latents. The reference
+pixels and PNGs, and everything computed from them, differ. Generation took 5.3 minutes on the CPU at an 18.5 GiB peak
+RSS ([fixture document](evidence/flux2-klein-reference-fixture-80a86a512315fa94.json),
+[log](evidence/flux2-klein-reference-fixture-t2i-pictures-log-2026-10-27.log)). `AetherFlux2Tests` passes 28/28 with
+the bundle and both fixture paths set; `samplerArithmeticMatchesTheIndependentReference` re-hashes every file and replays
+the Euler steps bit for bit. Native parity of the two reference cases on `d27cefc4…` passes **23/23 checks** at the
+unchanged bars, with values close to `caf92bb7…`'s:
+
+| Check (bar) | `caf92bb7…` | `80a86a51…` |
+| --- | --- | --- |
+| Velocity cosine, minimum (≥ 0.999) | 0.999443 | 0.999430 |
+| Decoder PSNR, minimum (≥ 35 dB) | 87.95 dB | 88.07 dB |
+| Reference latent cosine, minimum (≥ 0.999) | 1.000000 | 1.000000 |
+| Image-path SSIM (≥ 0.94) | 0.998520 / 0.987723 | 0.998569 / 0.987759 |
+
+See the [report](evidence/flux2-reference-fixture-80a86a51-native-parity-2026-10-27.json) and
+[log](evidence/flux2-reference-fixture-80a86a51-native-parity-2026-10-27.log).
+
+`ffc4b136…` and `caf92bb7…` replaced the 2026-10-26 fixtures `6a8a53d8f3b30817` and `079a8fba9d596a3b`, which ran the pipeline on MPS (text
 encoder on CPU). The CPU-computed inputs are byte-identical to those fixtures for all 12 cases: token ids, mask, text
 rows, noise and timesteps, plus reference pixels, PNGs and position ids. The MPS-computed outputs move by at most
 1.1·10⁻⁴ relative L2 per tensor (velocity cosine ≥ 0.999999994). A second CPU run reproduces every file byte for byte.
@@ -255,6 +282,73 @@ Generation took 14 minutes on 6 threads at a 30.1 GiB peak RSS for the ten text-
 for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27.json)). The weight-free fixture tests
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
+
+### Prompt adherence (0.0.3)
+
+`flux2PromptAdherenceGenerate` and `flux2PromptAdherenceJudge` (opt-in, in `AetherNativeTests`) score whether images
+show what their prompt asks for, against the plan [`Benchmarks/flux2-prompt-adherence.json`](../Benchmarks/flux2-prompt-adherence.json).
+The plan breaks each of the ten text-to-image fixture prompts into two to five yes/no questions (38 in all), plus one
+control question per prompt whose answer should be no. The judge is `huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c`, an
+abliterated fine-tune of Qwen3-VL-4B-Instruct, not the stock model (the local one-function bundle, Apache-2.0). It
+answers every question about each image, greedily, from a one-image chat.
+
+- **Paired comparison:** Kit's image uses the fixture's own prompt, size, steps and initial noise, so it pairs with the
+  float32 Diffusers reference image. Kit passes if its score is no lower than the reference's by more than 3
+  percentage points, a margin fixed in the plan before the run. With 38 positive questions, that lets Kit trail the
+  reference by at most one question (2.6 points); two (5.3 points) fail. Three extra seeds per prompt (Kit's own noise, Kit
+  only) show the spread across seeds.
+- **Judge check:** the control questions must be answered no at least 90% of the time, so a judge that agrees with
+  everything fails the run. Any answer that is neither yes nor no also fails it (`maximumUnclearAnswers: 0`). That cap
+  was added to the plan after the 2026-10-27 run, which had none; the run's record carries the earlier plan's hash.
+
+M5 Max, macOS 27.0.1, bundle `d27cefc4…`, fixture `ffc4b136…`. Generation took 212 s for 40 images (one GPU hold of
+3.7 min) and judging 311 s for 50 images and 240 questions (a hold of 5.7 min):
+
+| Images | Positive questions answered yes |
+| --- | ---: |
+| Kit, paired with the reference | 38/38 (100%) |
+| Float32 Diffusers reference | 38/38 (100%) |
+| Kit, three extra seeds | 114/114 (100%) |
+| Control questions answered no | 50/50 (100%) |
+
+Kit passes, with no unclear answers. The result is at the ceiling, though: these prompts and questions don't
+separate Kit from the reference, so the test shows no adherence loss on this set but can't measure a small one. A
+harder set (counts, spatial relations, rendered text, attribute binding) would be needed for that. The run writes a
+`contact-sheet.html` beside the images, with every answer under its image, for a subjective review. See the
+[report](evidence/flux2-prompt-adherence-2026-10-27.json).
+
+```sh
+C=~/.cache/huggingface/aether-kit
+AETHER_NATIVE_FLUX2_ADHERENCE=generate AETHER_FLUX2_BUNDLE=$C/flux2-klein-4b/forge-export-2026-10-27/bundle \
+AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence generate" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceGenerate
+AETHER_NATIVE_FLUX2_ADHERENCE=judge AETHER_FLUX2_ADHERENCE_JUDGE=$C/qwen3-vl-4b-abliterated-one-function-bundle-macos \
+AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence judge" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceJudge
+```
+
+### Benchmark harness (0.0.3)
+
+`aether-probe benchmark-flux2` (wrapper: `Scripts/benchmark-flux2.sh prepare|run NEW_DIR [PLAN]`) follows the Krea
+harness ([Krea benchmarks](krea-benchmarks.md)). The plans [`flux2-baseline.json`](../Benchmarks/flux2-baseline.json)
+(encoded) and [`flux2-provided.json`](../Benchmarks/flux2-provided.json) pin the bundle fingerprint and both fixtures.
+They run `fox-512`, `lighthouse-512`, `cat-1024` and the one-reference `fox-watercolor-ref1`, each with the fixture's
+prompt, size, steps and noise. Each case gets 2 warm-ups and 5 measured iterations on one balanced `preferGPU` session.
+
+- **Profiles:** `encoded` encodes the prompt and references on every iteration. `provided` uses the fixture's text rows,
+  and prepares references once per case outside iteration timing.
+- **What it records:** per-stage timings (conditioning, references, denoiser setup, each step, decode) with observer
+  time excluded, sampled memory peaks, and the usual executable, source and plan identities with postflight rechecks.
+- **Correctness:** every iteration must reproduce its case's first-iteration pixels exactly. A provided-profile case
+  must reach SSIM 0.94 against the fixture image on its first measured iteration; the encoded profile records it only,
+  as parity does for the whole pipeline.
+- **Prepare:** reads the plan, the fixtures (every file hash-checked) and the tokenizer, and checks the bundle's token
+  IDs against each fixture's, all without the GPU. `prepare` passes for both plans.
+
+A short harness smoke ran on a busy host (one warm-up, three measured iterations, `fox-512` and `fox-watercolor-ref1`;
+1.6 min of GPU-lock time). It completed with identical pixels across iterations and SSIM 0.990/0.999 (provided) and
+0.901/0.966 (encoded) against the fixtures. Its timings are not benchmark results. The measured run waits for a quiet
+window: with 4 cases × 7 iterations × 2 profiles at about 1.5–7 s each, it holds the GPU for about 6–8 minutes.
 
 ### Text encoder cancellation (0.0.3)
 
@@ -266,10 +360,12 @@ open; nothing gates or delays native work. M5 Max, macOS 27.0.1, `preferGPU`, bu
 | Measurement | Result |
 | --- | --- |
 | Encoder open (`AIModel(contentsOf:)`) | 1.6–3.7 ms |
+| Encoder function load, balanced (every request) | 0.5–0.9 s (3.8 s the first time in the process) |
 | Encoder native call, balanced (opened per request) | 124–166 ms |
 | Encoder native call, resident (retained) | 119–128 ms |
 | Cancel during the native call, until `generate` throws | 172–179 ms (3 trials), 175 ms with admission; 138 ms resident |
 | Cancel during the open, until `generate` throws | 0.4–1.3 ms (3 trials) |
+| Cancel arriving during the function load, until `generate` throws | 603 ms (1 trial, in the 2026-10-28 rerun) |
 
 Core AI does not interrupt a submitted call when the Swift task is cancelled. In every trial the cancelled call ran to
 completion and returned its outputs, and Kit's own check after the joined call threw `CancellationError`. The latency
@@ -279,6 +375,16 @@ specializes it: 0.59 s in the parity run, and longer still on a bundle that has 
 Cancelling during the open costs almost nothing: the open is short, and `CoreAIBackend.load` checks cancellation after it
 and drops the model, so it never reaches the native call.
 
+**Correction (2026-10-28): the function load is the longer window.** With balanced residency every prompt request opens
+the encoder and loads its `encode` function before the native call. That load is a synchronous Core AI call that can't
+be interrupted, and it takes 0.5–0.9 s (3.8 s the first time in the process), several times the native call. A cancel
+that arrives during the load waits for it to finish; Kit's check before the native call then throws, so no call runs.
+In the 80a86a51 rerun one open trial landed there and returned in 603 ms. The first runs never cancelled inside that
+window, so they missed it. The worst case for a balanced session is therefore the rest of the function load (up to
+about 0.9 s on this Mac, more on a process's first request) plus the discard, not the 0.17 s of one native call. A
+resident session keeps the loaded function across requests, so only its first prompt pays the load
+([rerun report](evidence/flux2-encoder-cancellation-80a86a51-2026-10-28.json)).
+
 Checks in each trial: the request throws `CancellationError`; the encoder's native call returns before cancellation
 does; the encoder is discarded before the request returns; no native call starts after the cancel; the session returns
 to ready; and the next prompt request reproduces the uncancelled baseline pixels exactly. With
@@ -286,8 +392,8 @@ to ready; and the next prompt request reproduces the uncancelled baseline pixels
 its baseline, no GPU grant is running or queued, and a fail-fast admission succeeds at once. Every model instance is
 closed exactly once, and every native call returns.
 
-Splitting the encoder into chunked calls is the only way to make cancellation take effect sooner, and it would need a
-re-export and a new qualification. At about 0.17 s that is not worth it, so the encoder stays one call. See the
+Splitting the encoder into chunked calls would shorten only the native-call window, and it would need a re-export and a
+new qualification. It does nothing for the function load, so the encoder stays one call. See the
 [report](evidence/flux2-encoder-cancellation-2026-10-27.json), [log](evidence/flux2-encoder-cancellation-2026-10-27.log)
 and [event journal](evidence/flux2-encoder-cancellation-events-2026-10-27.jsonl).
 
@@ -300,6 +406,41 @@ AETHER_FLUX2_ENCODER_CANCEL_OUTPUT=/new/output/dir \
 ```
 
 `AETHER_FLUX2_ENCODER_CANCEL_TRIALS` sets the number of trials of each kind (default 3).
+
+### Reference encoder cancellation (0.0.3)
+
+With `AETHER_FLUX2_REFERENCE_FIXTURES` also set, `flux2NativeEncoderCancellation` does the same for the VAE encoder that
+encodes reference images. It uses the two-reference case `fox-lighthouse-ref2` (256×256 and 192×256 references) on a
+balanced session, which opens the encoder for each preparation and releases it afterwards. Three
+`prepare(references:)` requests are cancelled during the first image's native call, and three as the encoder's open
+completes. One `generate(prompt:references:)` request is cancelled during the encoder's native call. On the reference
+fixture `80a86a51…`, the whole test passes 102/102 checks, on the same Mac and bundle:
+
+| Measurement | Result |
+| --- | --- |
+| Encoder open | 1.2–2.3 ms |
+| Encoder function load (first call after the open) | 16–20 ms (94 ms the first time in the process) |
+| Encoder native call, per image, across all 22 calls (encoder opened for the preparation) | 160–217 ms |
+| Cancel during the first image's call, until `prepare` throws | 190–208 ms (3 trials) |
+| Cancel during the call, until `generate` throws | 184 ms |
+| Cancel requested at the open (arrives during the function load), until `prepare` throws | 17–18 ms (3 trials) |
+
+As with the text encoder, Core AI ran every cancelled call to completion and returned its outputs. The latency is the
+rest of the one in-flight image's call plus the encoder's discard (4–5 ms). Kit checks cancellation between images, so
+the second image is never submitted. In the open trials the open (about 1.5 ms) had finished by the time the cancel
+arrived, and the first image's request had started loading the encoder's function: a synchronous Core AI load that
+can't be interrupted. Kit's check after the load and before the native call then threw, so no encoder call ran. The
+encoder's discard took 1.3–1.5 ms. Each trial also checks that the call returns before cancellation does, that the
+encoder is discarded before the request returns, that no native call starts after the cancel, and that the session
+returns to ready. The next request reproduces the uncancelled result exactly: the same prepared latents for `prepare`,
+and the same pixels for `generate`. The baseline's latents match the reference fixture at cosine 0.999999999998. No
+library change was needed. See the [report](evidence/flux2-encoder-cancellation-80a86a51-2026-10-28.json),
+[log](evidence/flux2-encoder-cancellation-80a86a51-2026-10-28.log) and
+[event journal](evidence/flux2-encoder-cancellation-80a86a51-events-2026-10-28.jsonl).
+
+An earlier run on the superseded fixture `caf92bb7…` passed the same 102 checks, with calls cancelled in 210–251 ms
+([report](evidence/flux2-reference-encoder-cancellation-2026-10-27.json)). Run it with the text encoder command above
+plus `AETHER_FLUX2_REFERENCE_FIXTURES` set to the reference fixture directory (`80a86a51…` today).
 
 ### Memory after unload (0.0.3)
 
@@ -479,10 +620,12 @@ Regenerate the references (CPU only, no GPU lock; about 30 GiB peak RSS):
 CKPT=~/Library/Caches/aether/forge-checkpoints/models--black-forest-labs--FLUX.2-klein-4B/snapshots/e7b7dc27f91deacad38e78976d1f2b499d76a294
 uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py --text-to-image $CKPT NEW_T2I_DIR
 uv run --frozen --project Forge python -I Scripts/prepare-flux2-reference-fixtures.py $CKPT \
-  .../oracle-t2i-2026-10-26/fixtures/6a8a53d8f3b30817 NEW_REFERENCE_DIR
+  ~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c NEW_REFERENCE_DIR
 ```
 
-Reference mode reads the fox-512 and lighthouse-512 source pictures from the 2026-10-26 text-to-image fixture directory, so keep that directory: it is an input of regeneration, not only a superseded record. Its two PNGs are hashed in [its fixture document](evidence/flux2-klein-t2i-fixture-6a8a53d8f3b30817.json). Moving them to the CPU text-to-image fixture would change the reference fixture's inputs and ID, so it waits for the next intentional regeneration.
+Reference mode reads the fox-512 and lighthouse-512 source pictures from the CPU text-to-image fixture directory, so
+keep that directory: it is an input of regeneration, not only a record. The 2026-10-26 MPS fixture `6a8a53d8…` is no
+longer an input.
 
 Run the native gate (one suite at a time, under the shared lock):
 
@@ -490,7 +633,7 @@ Run the native gate (one suite at a time, under the shared lock):
 AETHER_NATIVE_FLUX2_QUALIFICATION=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
-AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_REFERENCE_FIXTURES=/Volumes/Scratch/aether/flux2-klein-4b/oracle-reference-cpu-t2i-pictures-2026-10-27/fixtures/80a86a512315fa94 \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeParity
 ```
@@ -520,7 +663,7 @@ directory, plus the bundle and fixture paths) is modeled on Krea's native sessio
 AETHER_NATIVE_FLUX2_LIFECYCLE=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
-AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
+AETHER_FLUX2_REFERENCE_FIXTURES=/Volumes/Scratch/aether/flux2-klein-4b/oracle-reference-cpu-t2i-pictures-2026-10-27/fixtures/80a86a512315fa94 \
 AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
 ~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeLifecycle
 ```
@@ -594,10 +737,9 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 
 ### Not yet qualified
 
-- Native cancellation of the reference encoder. Its run-failure and cancellation discard paths are covered by scripted
-  CPU tests only. The text encoder's is qualified natively ([above](#text-encoder-cancellation-003)).
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
-- Prompt adherence (T3) and a subjective review across more prompts and seeds.
+- A subjective review across more prompts and seeds, and a harder adherence set: the fixture prompts score at the
+  ceiling ([Prompt adherence](#prompt-adherence-003)).
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.
-- Benchmarking under a quiet, controlled protocol, and per-stage memory peaks.
+- The benchmark run in a quiet window ([Benchmark harness](#benchmark-harness-003)), and per-stage memory peaks.
 - Device-resident carries, or a GPU sampling loop.
