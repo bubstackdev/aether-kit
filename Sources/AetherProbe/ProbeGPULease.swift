@@ -28,7 +28,7 @@ enum ProbeGPULease {
         case "h3-profile-decode":
             return count == 5 || count == 7
         case "h3-memory-render":
-            return count == 4 || (count == 5 && arguments[4].hasPrefix("--spike-capture="))
+            return (try? H3MemoryDiagnosis.RenderOptions(arguments)) != nil
         case "h3-memory-encoder":
             return count == 6 && Int(arguments[2]) != nil && Int(arguments[3]) != nil
         case "qualify-h3-session-lifecycle":

@@ -135,22 +135,22 @@ public enum H3Packing {
 /// (`tags` < 3k) and the heads read `temb` rows only through `indices` (< k), so the appended rows, copies of existing
 /// rows, are never selected, and the qualified boundary hashes replay unchanged.
 @available(macOS 27, iOS 27, *)
-public enum H3ModulationPadding {
+enum H3ModulationPadding {
     /// A block's AdaLN table `[6, 3k, D]` bf16 -> `[6, 3 cardinality, D]`, each slice's rows followed by copies of them.
-    public static func table(_ table: H3TensorData, cardinality: Int) throws -> H3TensorData {
+    static func table(_ table: H3TensorData, cardinality: Int) throws -> H3TensorData {
         guard table.spec.shape.count == 3, table.spec.shape[0] == 6, table.spec.shape[1] % 3 == 0 else {
             throw AetherError.invalidTensor("H3 modulation table must be [6, 3k, D]")
         }
         return try repeatingRows(table, slices: 6, cardinality: cardinality, rowsPerTimestep: 3)
     }
     /// A step's timestep embedding `[k, C]` -> `[cardinality, C]`, its rows followed by copies of them.
-    public static func embedding(_ embedding: H3TensorData, cardinality: Int) throws -> H3TensorData {
+    static func embedding(_ embedding: H3TensorData, cardinality: Int) throws -> H3TensorData {
         guard embedding.spec.shape.count == 2 else { throw AetherError.invalidTensor("H3 timestep embedding must be [k, C]") }
         return try repeatingRows(embedding, slices: 1, cardinality: cardinality, rowsPerTimestep: 1)
     }
     private static func repeatingRows(_ tensor: H3TensorData, slices: Int, cardinality: Int, rowsPerTimestep: Int) throws -> H3TensorData {
         let shape = tensor.spec.shape, axis = shape.count - 2, rows = shape[axis]
-        guard rows <= rowsPerTimestep * cardinality else { throw AetherError.invalidTensor("H3 modulation cardinality exceeds the padding target") }
+        guard rows > 0, rows <= rowsPerTimestep * cardinality else { throw AetherError.invalidTensor("H3 modulation cardinality exceeds the padding target") }
         if rows == rowsPerTimestep * cardinality { return tensor }
         let rowBytes = tensor.spec.byteCount / (slices * rows), target = rowsPerTimestep * cardinality
         var bytes = Data(capacity: slices * target * rowBytes)

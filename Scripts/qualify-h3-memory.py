@@ -191,13 +191,22 @@ def main():
     if len(identities) != 1 or len(architectures) != 1:
         failures.append(f"renders disagree on identity/device: {identities} {architectures}")
     # Peaks observed by earlier gates that this entry must still cover (for example a transient this gate did not see).
-    carried_peaks = []
+    # Only a passed gate on the same device architecture can be carried; each carried record is pinned by its SHA-256.
+    carried_peaks, carried_records = [], []
     for record_path in args.carry_peaks:
         earlier = json.loads(record_path.read_text())
+        earlier_device = earlier["measuredResources"]["device_architecture"]
+        if not earlier.get("passed"):
+            failures.append(f"carried record {record_path.name} did not pass")
+        if earlier_device not in architectures:
+            failures.append(f"carried record {record_path.name} is for device {earlier_device}, not {architectures}")
+        carried_records.append(dict(record=record_path.name, sha256=sha(record_path), passed=earlier.get("passed"), deviceArchitecture=earlier_device,
+                                    executionIdentity=earlier["measuredResources"]["execution_identity"]))
         for render_name, render in earlier["renders"].items():
             for k, v in render["stages"].items():
                 if v["residentPeakBytes"] > stage_peaks.get(k, 0):
                     carried_peaks.append(dict(stage=k, bytes=v["residentPeakBytes"], render=render_name, record=record_path.name,
+                                              recordSHA256=sha(record_path),
                                               executionIdentity=earlier["measuredResources"]["execution_identity"], replaced=stage_peaks.get(k, 0)))
                     stage_peaks[k] = v["residentPeakBytes"]
     spikes = {}
@@ -218,7 +227,7 @@ def main():
                  evidence=f"docs/evidence/{args.record}" if args.record else str(work / "gate.json"))
     gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
                 spikeCapture=dict(thresholdGiB=args.spike_capture, triggers=spikes) if args.spike_capture else None,
-                carriedStagePeaks=carried_peaks,
+                carriedRecords=carried_records, carriedStagePeaks=carried_peaks,
                 memoryBarBytes=BAR, memoryBar="Metal allocation peak over a complete render must not exceed 18 GiB, for every task and canvas",
                 marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, controllers=records,
                 pinsDigest=digest, pinsUnchanged=pins_unchanged, filesSHA256=pins, scriptSHA256=sha(Path(__file__).resolve()),

@@ -49,6 +49,14 @@ private func call(_ graph: String, _ index: Int, _ phase: H3NativeCall.Phase) ->
     #expect(ProbeGPULease.usesGPU(["qualify-h3-session-lifecycle", "p", "d", "o"]))
     #expect(ProbeGPULease.usesGPU(["h3-memory-render", "p", "d", "o"]) && ProbeGPULease.usesGPU(["h3-memory-render", "p", "d", "o", "--spike-capture=12"]))
     #expect(ProbeGPULease.usesGPU(["h3-memory-encoder", "p", "288", "288", "k.png", "o"]))
+    // h3-memory-render takes the lease exactly when its own parser accepts the arguments: the flag anywhere, and a
+    // malformed flag fails before any wait for the lease.
+    #expect(ProbeGPULease.usesGPU(["h3-memory-render", "p", "--spike-capture=12", "d", "o"]))
+    for bad in [["h3-memory-render", "p", "d", "o", "--spike-capture=x"], ["h3-memory-render", "p", "d", "o", "--spike-capture=0"],
+                ["h3-memory-render", "p", "d", "o", "extra"]] {
+        #expect(!ProbeGPULease.usesGPU(bad), "\(bad)")
+        #expect(throws: AetherError.self) { _ = try H3MemoryDiagnosis.RenderOptions(bad) }
+    }
     #expect(!ProbeGPULease.usesGPU(["qualify-h3-session-lifecycle", "p", "d"]) && !ProbeGPULease.usesGPU(["h3-memory-render", "p", "d", "o", "--x"]))
     await #expect(throws: AetherError.self) { try await H3SessionLifecycleCommand.run(["qualify-h3-session-lifecycle", "p", "d"]) }
     #expect(try await H3SessionLifecycleCommand.run(["other"]) == false)
