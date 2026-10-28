@@ -84,6 +84,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **Quantization:** quantized Qwen3-VL and language decoders, moved from 0.0.3. It is the biggest unknown on the list, and was deferred by user decision.
 - **An MLX backend for older OSes,** as an optional separate product, by user decision (2026-10-28). The [spike](spikes/mlx-backend-2026-10.md) is a conditional go on three conditions: the lower floor (done in 0.0.3), mlx-swift core only (mlx-swift-lm's swift-syntax range conflicts with Kit's pin), and the Metal toolchain in CI. It also needs its own manifest kind, since it loads Hugging Face safetensors.
 - **FLUX.2 on iOS,** moved from 0.0.3 by user decision (2026-10-28).
+- **iOS open-time memory check,** calibrated from a measured on-device peak (needs the VL-2B run with the entitlement). On an iPhone18,2 at the default limit, an over-budget VL-2B aborted inside Core AI's compiler instead of being refused ([on-device host](language-generation.md#on-device-host-003)).
 - **H3 fused attention,** moved from 0.0.3: re-exporting the body graph gives a new profile identity, which resets H3's qualification evidence.
 
 ## Open questions

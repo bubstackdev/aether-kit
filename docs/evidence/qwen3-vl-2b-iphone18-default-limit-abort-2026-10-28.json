@@ -8,7 +8,7 @@
     "availableMemoryMiBAtStart": "3,368 (measured at launch in items A and C; the probe printed nothing before it aborted)"
   },
   "build": "Examples/LanguageDevice (vision mode, one case photo-dog-portrait), the Qwen3-VL-2B one-function bundle registered for iOS (model fdda4278…, 4.29 GB staged); CODE_SIGN_ENTITLEMENTS pointed at an empty entitlements file on the command line, so the app ran at the default memory limit",
-  "outcome": "The process aborted 8.7 s after launch, before the probe's first progress line (\"session opened\"): `libc++abi: terminating due to uncaught exception of type std::bad_alloc`, SIGABRT. The allocation that failed was MetalPerformanceShadersGraph's, during model specialization on Core AI's compiler queue (runtime canonicalization folding a transpose into a constant). It was neither a jetsam kill (the device logged no JetsamEvent for it) nor a refusal by Kit; the probe opens the session without resource admission. Kit cannot catch it: the abort happens inside Core AI's compiler.",
+  "outcome": "The process aborted 8.7 s after launch, before the probe's first progress line (\"session opened\"): `libc++abi: terminating due to uncaught exception of type std::bad_alloc`, SIGABRT. The failed allocation was MetalPerformanceShadersGraph's, while MPSGraph's runtime canonicalization folded a transpose during Core AI's model specialization (on Core AI's compiler queue). It was neither a jetsam kill nor a refusal by Kit; the probe opens the session without resource admission. Kit cannot catch it: the abort happens inside Core AI's compiler.",
   "crashReport": {
     "exception": {
       "codes": "0x0000000000000000, 0x0000000000000000",
@@ -61,5 +61,12 @@
     ],
     "note": "Excerpt of the device crash report (bug_type 309). Identifiers (incident and crash-reporter keys, signing team, boot session, USB and device fields) are omitted."
   },
-  "related": "During item C (11:22), the system jetsammed two background processes (vm-compressor-thrashing and highwater); the probe was not among them."
+  "related": "During item C (11:22), the system jetsammed two background processes (vm-compressor-thrashing and highwater); the probe was not among them.",
+  "timing": {
+    "processLaunch": "2026-10-28 11:29:01.1446 -0600 (crash report procLaunch)",
+    "crashCapture": "2026-10-28 11:29:09.9509 -0600 (crash report captureTime)",
+    "processLifetimeSeconds": 8.73,
+    "lifetimeSource": "(procExitAbsTime - procStartAbsTime) / 24 MHz mach time base, from the crash report"
+  },
+  "jetsam": "No JetsamEvent named the probe as killed. The device's JetsamEvent reports for 2026-10-28 are from 06:47 and 11:22; none falls between this launch (11:29:01) and the crash (11:29:10), and the 11:22 one, during item C, killed two background processes and left the probe running."
 }

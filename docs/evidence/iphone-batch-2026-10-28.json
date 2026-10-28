@@ -132,7 +132,7 @@
       "item": "D2. Qwen3-VL-2B, the same bundle, without the entitlement (empty entitlements file on the command line, as for C)",
       "host": "Examples/LanguageDevice (vision, case photo-dog-portrait)",
       "result": "aborted while opening: std::bad_alloc in Core AI's model specialization",
-      "detail": "The process aborted 8.7 s after launch, before the session finished opening: an uncaught std::bad_alloc from MetalPerformanceShadersGraph during specialization (runtime canonicalization), SIGABRT. Not a jetsam kill (no JetsamEvent was logged for it) and not a Kit refusal (the probe opens without resource admission). The default limit leaves the app 3,368 MiB at launch; the bundle's decoder and vision assets total 4.29 GB.",
+      "detail": "The process aborted 8.7 s after launch, before the session finished opening: an uncaught std::bad_alloc from MetalPerformanceShadersGraph while MPSGraph's runtime canonicalization folded a transpose during Core AI's model specialization, SIGABRT. Not a jetsam kill (no JetsamEvent named the probe) and not a Kit refusal (the probe opens without resource admission). The default limit leaves the app 3,368 MiB at launch; the bundle's decoder and vision assets total 4.29 GB. Launch and crash timestamps are in the crash excerpt.",
       "report": "qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json"
     }
   ],

@@ -192,7 +192,7 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 - **Memory.** Peak footprint was 2.1 GB with bucket 512 in use, leaving 1.3 GB of the budget. Bucket 1024 exhausted the budget: the app had 2.7 GB available before that case and was killed.
 - **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented.
 
-**Second iPhone, bucket 512 (2026-10-28).** An iPhone18,2 (iPhone 17 Pro Max, iOS 27.2, 11.4 GB; 3,368 MiB available
+**Second iPhone, bucket 512 (2026-10-28).** An iPhone18,2 (iPhone 17 Pro Max, iOS 27.2, 11.4 GiB; 3,368 MiB available
 to the app at launch, the same as the iPhone19,4) ran the same float32 bundle with the bucket-512 reference set and the
 512 cap ([record](evidence/kokoro-iphone18-bucket512-2026-10-28.json),
 [batch summary](evidence/iphone-batch-2026-10-28.json)). All cases pass with frames and tokens exact:

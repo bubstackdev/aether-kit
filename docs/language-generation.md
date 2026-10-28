@@ -513,10 +513,15 @@ launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
   registered as described above.
 - **Qwen3-VL-2B without the entitlement aborts while opening.** Built like the 0.6B, at the default limit (3,368 MiB at
   launch, against 4.29 GB of model assets), the process aborted 8.7 s after launch, before the session had opened: an
-  uncaught `std::bad_alloc` from MetalPerformanceShadersGraph while Core AI specialized a model. It wasn't a jetsam
-  kill, and it wasn't a refusal by Kit; Kit can't catch it, because the abort happens inside Core AI's compiler
+  uncaught `std::bad_alloc` from MetalPerformanceShadersGraph, while MPSGraph's runtime canonicalization folded a
+  transpose during Core AI's model specialization. It wasn't a jetsam kill, and it wasn't a refusal by Kit; Kit can't catch it, because the abort happens inside Core AI's compiler
   ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). Without the increased memory
   limit, the VL-2B doesn't run on this iPhone.
+
+**Sizing admission on iOS.** The resource estimates `LanguageResourceAdmission` uses ([design](qwen3-vl-resource-admission.md))
+are Mac measurements. An iOS host should size its `ResourceCoordinator` from `os_proc_available_memory()` at launch,
+not from the Mac's figures. Without that, a model over the app's budget isn't refused before it loads: it can abort
+inside Core AI's compiler instead of failing cleanly, as the VL-2B run above did.
 
 ## Evidence and limits
 
