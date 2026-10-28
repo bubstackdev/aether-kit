@@ -43,7 +43,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### FLUX.2
 
-- Native cancellation of the text encoder.
+- Native cancellation of the text encoder. Done: cancel returns in about 0.17 s, bounded by one encoder call plus its discard; Core AI does not interrupt a submitted call ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
 - iOS.
 - A quiet benchmark.
 - Prompt adherence.
