@@ -56,13 +56,13 @@ GPU commands:
 - `inspect`, `smoke`
 - `render-krea`, `render-krea-batch`, `parity-krea`
 - `h3-profile-run`, `h3-profile-decode`
-- `benchmark-krea` and the `qualify-h3*` commands, in every mode except `--prepare-only`
+- `benchmark-krea`, `benchmark-flux2` and the `qualify-h3*` commands, in every mode except `--prepare-only`
 
 `doctor`, `verify-krea`, `prepare-krea`, `h3-profile-dump` and `h3-weights-bench` are CPU-only and take nothing. While another process holds the lease, the probe waits and prints a line to standard error naming the holder, when it changes and every minute.
 
 The two other tool paths:
 
-- **`Scripts/benchmark-krea.sh`:** `run` relies on the probe's lease. The build step needs no lease.
+- **`Scripts/benchmark-krea.sh` and `Scripts/benchmark-flux2.sh`:** `run` relies on the probe's lease. The build step needs no lease.
 - **Opt-in native suites (`AetherNativeTests`):** each enabled native test, including the FLUX.2 parity and lifecycle qualifications, holds a grant from a test-local `GPUAdmission` whose backend is the lease. The tests take turns in-process and exclude other processes. The CPU suite never enables them.
 
 These environment variables override the default, in both the probe and the native suites (`SharedGPULease.ToolPolicy`):

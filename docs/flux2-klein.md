@@ -2,7 +2,8 @@
 
 Status: experimental, 2026-10-27 (0.0.2). The products, the qualified local bundle, independent float32 Diffusers
 references on CPU and opt-in native parity and lifecycle gates are in place. Results and their scope are in
-[Verification](#verification). There is no iOS execution, benchmark protocol or published bundle yet.
+[Verification](#verification). There is no iOS execution or published bundle yet. A benchmark harness is in place; its
+quiet-window run is pending ([Benchmark harness](#benchmark-harness-003)).
 
 **Qualified bundle:** 0.0.2 qualifies the bundle with fingerprint `a48aaf07…` (reference fingerprint `a69abb8e…`),
 produced from the pinned checkpoint by `Forge/flux2` in this repository ([Producing the bundle](#producing-the-bundle)).
@@ -281,6 +282,73 @@ Generation took 14 minutes on 6 threads at a 30.1 GiB peak RSS for the ten text-
 for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27.json)). The weight-free fixture tests
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
+
+### Prompt adherence (0.0.3)
+
+`flux2PromptAdherenceGenerate` and `flux2PromptAdherenceJudge` (opt-in, in `AetherNativeTests`) score whether images
+show what their prompt asks for, against the plan [`Benchmarks/flux2-prompt-adherence.json`](../Benchmarks/flux2-prompt-adherence.json).
+The plan breaks each of the ten text-to-image fixture prompts into two to five yes/no questions (38 in all), plus one
+control question per prompt whose answer should be no. The judge is `huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c`, an
+abliterated fine-tune of Qwen3-VL-4B-Instruct, not the stock model (the local one-function bundle, Apache-2.0). It
+answers every question about each image, greedily, from a one-image chat.
+
+- **Paired comparison:** Kit's image uses the fixture's own prompt, size, steps and initial noise, so it pairs with the
+  float32 Diffusers reference image. Kit passes if its score is no lower than the reference's by more than 3
+  percentage points, a margin fixed in the plan before the run. With 38 positive questions, that lets Kit trail the
+  reference by at most one question (2.6 points); two (5.3 points) fail. Three extra seeds per prompt (Kit's own noise, Kit
+  only) show the spread across seeds.
+- **Judge check:** the control questions must be answered no at least 90% of the time, so a judge that agrees with
+  everything fails the run. Any answer that is neither yes nor no also fails it (`maximumUnclearAnswers: 0`). That cap
+  was added to the plan after the 2026-10-27 run, which had none; the run's record carries the earlier plan's hash.
+
+M5 Max, macOS 27.0.1, bundle `d27cefc4…`, fixture `ffc4b136…`. Generation took 212 s for 40 images (one GPU hold of
+3.7 min) and judging 311 s for 50 images and 240 questions (a hold of 5.7 min):
+
+| Images | Positive questions answered yes |
+| --- | ---: |
+| Kit, paired with the reference | 38/38 (100%) |
+| Float32 Diffusers reference | 38/38 (100%) |
+| Kit, three extra seeds | 114/114 (100%) |
+| Control questions answered no | 50/50 (100%) |
+
+Kit passes, with no unclear answers. The result is at the ceiling, though: these prompts and questions don't
+separate Kit from the reference, so the test shows no adherence loss on this set but can't measure a small one. A
+harder set (counts, spatial relations, rendered text, attribute binding) would be needed for that. The run writes a
+`contact-sheet.html` beside the images, with every answer under its image, for a subjective review. See the
+[report](evidence/flux2-prompt-adherence-2026-10-27.json).
+
+```sh
+C=~/.cache/huggingface/aether-kit
+AETHER_NATIVE_FLUX2_ADHERENCE=generate AETHER_FLUX2_BUNDLE=$C/flux2-klein-4b/forge-export-2026-10-27/bundle \
+AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence generate" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceGenerate
+AETHER_NATIVE_FLUX2_ADHERENCE=judge AETHER_FLUX2_ADHERENCE_JUDGE=$C/qwen3-vl-4b-abliterated-one-function-bundle-macos \
+AETHER_FLUX2_FIXTURES=$C/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c AETHER_FLUX2_ADHERENCE_OUTPUT=/new/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 adherence judge" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2PromptAdherenceJudge
+```
+
+### Benchmark harness (0.0.3)
+
+`aether-probe benchmark-flux2` (wrapper: `Scripts/benchmark-flux2.sh prepare|run NEW_DIR [PLAN]`) follows the Krea
+harness ([Krea benchmarks](krea-benchmarks.md)). The plans [`flux2-baseline.json`](../Benchmarks/flux2-baseline.json)
+(encoded) and [`flux2-provided.json`](../Benchmarks/flux2-provided.json) pin the bundle fingerprint and both fixtures.
+They run `fox-512`, `lighthouse-512`, `cat-1024` and the one-reference `fox-watercolor-ref1`, each with the fixture's
+prompt, size, steps and noise. Each case gets 2 warm-ups and 5 measured iterations on one balanced `preferGPU` session.
+
+- **Profiles:** `encoded` encodes the prompt and references on every iteration. `provided` uses the fixture's text rows,
+  and prepares references once per case outside iteration timing.
+- **What it records:** per-stage timings (conditioning, references, denoiser setup, each step, decode) with observer
+  time excluded, sampled memory peaks, and the usual executable, source and plan identities with postflight rechecks.
+- **Correctness:** every iteration must reproduce its case's first-iteration pixels exactly. A provided-profile case
+  must reach SSIM 0.94 against the fixture image on its first measured iteration; the encoded profile records it only,
+  as parity does for the whole pipeline.
+- **Prepare:** reads the plan, the fixtures (every file hash-checked) and the tokenizer, and checks the bundle's token
+  IDs against each fixture's, all without the GPU. `prepare` passes for both plans.
+
+A short harness smoke ran on a busy host (one warm-up, three measured iterations, `fox-512` and `fox-watercolor-ref1`;
+1.6 min of GPU-lock time). It completed with identical pixels across iterations and SSIM 0.990/0.999 (provided) and
+0.901/0.966 (encoded) against the fixtures. Its timings are not benchmark results. The measured run waits for a quiet
+window: with 4 cases × 7 iterations × 2 profiles at about 1.5–7 s each, it holds the GPU for about 6–8 minutes.
 
 ### Text encoder cancellation (0.0.3)
 
@@ -670,7 +738,8 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 ### Not yet qualified
 
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
-- Prompt adherence (T3) and a subjective review across more prompts and seeds.
+- A subjective review across more prompts and seeds, and a harder adherence set: the fixture prompts score at the
+  ceiling ([Prompt adherence](#prompt-adherence-003)).
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.
-- Benchmarking under a quiet, controlled protocol, and per-stage memory peaks.
+- The benchmark run in a quiet window ([Benchmark harness](#benchmark-harness-003)), and per-stage memory peaks.
 - Device-resident carries, or a GPU sampling loop.
