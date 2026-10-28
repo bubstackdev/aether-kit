@@ -16,6 +16,10 @@ protocol VisionLanguageDecoding: Sendable {
     func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int, prefillChunkSize: Int?,
                   onToken: (@Sendable (Int) async throws -> Void)?, observer: LanguageGenerationSession.Observer?) async throws
         -> LanguageGenerationSession.Reply
+    func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int, sampling: LanguageSampling,
+                  constraint: (any LanguageLogitsProcessor)?, prefillChunkSize: Int?, observer: LanguageGenerationSession.Observer?,
+                  onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?) async throws
+        -> LanguageGenerationResult
     func withdrawPendingAdmission() async
     func unload() async
     /// The decoder's cache and reload statistics; nil for decoders without them.
@@ -25,6 +29,21 @@ protocol VisionLanguageDecoding: Sendable {
 @available(macOS 27, iOS 27, *)
 extension VisionLanguageDecoding {
     func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics? { nil }
+
+    /// For decoders that only decode greedily (CPU-test fakes): the default request without delivery, through the
+    /// greedy entry point.
+    func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int, sampling: LanguageSampling,
+                  constraint: (any LanguageLogitsProcessor)?, prefillChunkSize: Int?, observer: LanguageGenerationSession.Observer?,
+                  onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)?) async throws
+        -> LanguageGenerationResult {
+        guard sampling == .greedy, constraint == nil, onToken == nil else {
+            throw LanguageGenerationError.invalid("This decoder only decodes greedily, without a constraint or delivery")
+        }
+        let reply: LanguageGenerationSession.Reply = try await generate(prompt: prompt, imageTokens: imageTokens,
+            maximumTokens: maximumTokens, prefillChunkSize: prefillChunkSize, onToken: nil, observer: observer)
+        return LanguageGenerationResult(tokens: reply.tokens, stopReason: LanguageStopReason(rawValue: reply.stopReason) ?? .outputLimit,
+                                        seed: nil, timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds, totalSeconds: reply.totalSeconds)
+    }
 }
 
 @available(macOS 27, iOS 27, *)
@@ -41,7 +60,8 @@ extension LanguageGenerationSession: VisionLanguageDecoding {
 /// order. Each image snaps to the registration's fixed patch grid nearest its aspect ratio, is
 /// resized to it exactly (antialiased bicubic, like the reference processor) and normalized,
 /// encoded by that grid's static-shape encoder function, and spliced into the bucketed decoder's
-/// prefill. Decoding is greedy.
+/// prefill. Decoding is greedy unless a request asks for sampling or a constraint, which work as for a text
+/// request (``LanguageSampling``, ``LanguageLogitsProcessor``).
 ///
 /// One request at a time; overlap fails with `busy`. With `gpu`, the encode phase and the
 /// decoder's request are each admitted. `unload()` first withdraws a request still waiting for
@@ -159,6 +179,33 @@ public actor VisionLanguageSession {
         try Task.checkCancellation()
         try lifecycle.admit()
         defer { lifecycle.finish() }
+        let prompt = try await encode(renderedTokenIDs: renderedTokenIDs, images: images)
+        return try await language.generate(prompt: prompt, imageTokens: imageTokens, maximumTokens: maximumTokens,
+                                           prefillChunkSize: prefillChunkSize, onToken: onToken, observer: nil)
+    }
+
+    /// Generation from a rendered prompt and its images with sampling and a constraint, as a text request has them
+    /// (``LanguageGenerationRequest``). `.greedy` without a constraint gives the greedy entry point's tokens. The
+    /// sampler and the processor see the expanded prompt (each image's pad token repeated to its token count).
+    public func generate(renderedTokenIDs: [Int], images: [VisionRGBImage], maximumTokens: Int = 256,
+                         sampling: LanguageSampling, constraint: (any LanguageLogitsProcessor)? = nil, prefillChunkSize: Int? = nil,
+                         onToken: (@Sendable (LanguageGeneratedToken) async throws -> LanguageTokenDisposition)? = nil) async throws
+        -> LanguageGenerationResult {
+        try Task.checkCancellation()
+        try lifecycle.admit()
+        defer { lifecycle.finish() }
+        let prompt = try await encode(renderedTokenIDs: renderedTokenIDs, images: images)
+        return try await language.generate(prompt: prompt, imageTokens: imageTokens, maximumTokens: maximumTokens, sampling: sampling,
+                                           constraint: constraint, prefillChunkSize: prefillChunkSize, observer: nil, onToken: onToken)
+    }
+
+    private var imageTokens: LanguageImageTokens {
+        LanguageImageTokens(visionStart: registration.visionStartTokenID, imagePad: registration.imageTokenID,
+                            visionEnd: registration.visionEndTokenID)
+    }
+
+    /// Preprocesses and encodes each image (each encode admitted on its own) for an admitted request.
+    private func encode(renderedTokenIDs: [Int], images: [VisionRGBImage]) async throws -> LanguageVisionPrompt {
         var features: [LanguageImageFeatures] = []
         for image in images {
             try Task.checkCancellation()
@@ -173,11 +220,7 @@ public actor VisionLanguageSession {
             features.append(encoded)
         }
         guard !closeRequested else { throw LanguageGenerationError.closed }
-        let tokens = LanguageImageTokens(visionStart: registration.visionStartTokenID, imagePad: registration.imageTokenID,
-                                         visionEnd: registration.visionEndTokenID)
-        return try await language.generate(prompt: LanguageVisionPrompt(renderedTokenIDs: renderedTokenIDs, images: features),
-                                           imageTokens: tokens, maximumTokens: maximumTokens, prefillChunkSize: prefillChunkSize,
-                                           onToken: onToken, observer: nil)
+        return LanguageVisionPrompt(renderedTokenIDs: renderedTokenIDs, images: features)
     }
 
     /// The decoder's cache statistics, including its model reloads and the memory its requests

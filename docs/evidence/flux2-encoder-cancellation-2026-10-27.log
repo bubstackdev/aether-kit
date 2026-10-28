@@ -1,0 +1,97 @@
+Building for production...
+Build complete! (1.39 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test flux2NativeEncoderCancellation() started.
+native qualification: baseline
+flux2 record baselineSSIM baseline: 0.9011426785053704
+native qualification: repeat1
+flux2 check repeatIsExact repeat1: 1.0 (bar 1.0) pass
+native qualification: repeat2
+flux2 check repeatIsExact repeat2: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation1
+flux2 check cancellationThrows encoderCallCancellation1: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation encoderCallCancellation1: 1.0 (bar 1.0) pass
+flux2 record nativeCallRanToCompletion encoderCallCancellation1: 1.0
+flux2 check encoderDiscardedBeforeReturn encoderCallCancellation1: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation encoderCallCancellation1: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderCallCancellation1: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation1Recovery
+flux2 check recoveryIsExact encoderCallCancellation1Recovery: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation2
+flux2 check cancellationThrows encoderCallCancellation2: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation encoderCallCancellation2: 1.0 (bar 1.0) pass
+flux2 record nativeCallRanToCompletion encoderCallCancellation2: 1.0
+flux2 check encoderDiscardedBeforeReturn encoderCallCancellation2: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation encoderCallCancellation2: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderCallCancellation2: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation2Recovery
+flux2 check recoveryIsExact encoderCallCancellation2Recovery: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation3
+flux2 check cancellationThrows encoderCallCancellation3: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation encoderCallCancellation3: 1.0 (bar 1.0) pass
+flux2 record nativeCallRanToCompletion encoderCallCancellation3: 1.0
+flux2 check encoderDiscardedBeforeReturn encoderCallCancellation3: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation encoderCallCancellation3: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderCallCancellation3: 1.0 (bar 1.0) pass
+native qualification: encoderCallCancellation3Recovery
+flux2 check recoveryIsExact encoderCallCancellation3Recovery: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation1
+flux2 check cancellationThrows encoderOpenCancellation1: 1.0 (bar 1.0) pass
+flux2 record openCompletedAfterCancel encoderOpenCancellation1: 0.0
+flux2 check noNativeCallAfterCancellation encoderOpenCancellation1: 1.0 (bar 1.0) pass
+flux2 check encoderDiscarded encoderOpenCancellation1: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderOpenCancellation1: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation1Recovery
+flux2 check recoveryIsExact encoderOpenCancellation1Recovery: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation2
+flux2 check cancellationThrows encoderOpenCancellation2: 1.0 (bar 1.0) pass
+flux2 record openCompletedAfterCancel encoderOpenCancellation2: 0.0
+flux2 check noNativeCallAfterCancellation encoderOpenCancellation2: 1.0 (bar 1.0) pass
+flux2 check encoderDiscarded encoderOpenCancellation2: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderOpenCancellation2: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation2Recovery
+flux2 check recoveryIsExact encoderOpenCancellation2Recovery: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation3
+flux2 check cancellationThrows encoderOpenCancellation3: 1.0 (bar 1.0) pass
+flux2 record openCompletedAfterCancel encoderOpenCancellation3: 0.0
+flux2 check noNativeCallAfterCancellation encoderOpenCancellation3: 1.0 (bar 1.0) pass
+flux2 check encoderDiscarded encoderOpenCancellation3: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady encoderOpenCancellation3: 1.0 (bar 1.0) pass
+native qualification: encoderOpenCancellation3Recovery
+flux2 check recoveryIsExact encoderOpenCancellation3Recovery: 1.0 (bar 1.0) pass
+native qualification: residentBaseline
+flux2 check residentBaselineIsExact residentBaseline: 1.0 (bar 1.0) pass
+native qualification: residentRepeat
+native qualification: residentEncoderCallCancellation
+flux2 check cancellationThrows residentEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation residentEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 record nativeCallRanToCompletion residentEncoderCallCancellation: 1.0
+flux2 check encoderDiscardedBeforeReturn residentEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation residentEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady residentEncoderCallCancellation: 1.0 (bar 1.0) pass
+native qualification: residentEncoderCallCancellationRecovery
+flux2 check recoveryIsExact residentEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check residentRecoveryOpensANewEncoder residentEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+native qualification: admittedBaseline
+flux2 check admittedBaselineIsExact admittedBaseline: 1.0 (bar 1.0) pass
+flux2 check admittedRetainsDenoisersAndDecoder admittedBaseline: 1.0 (bar 1.0) pass
+native qualification: admittedEncoderCallCancellation
+flux2 check cancellationThrows admittedEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check nativeReturnPrecedesCancellation admittedEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 record nativeCallRanToCompletion admittedEncoderCallCancellation: 1.0
+flux2 check encoderDiscardedBeforeReturn admittedEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check noNativeCallAfterCancellation admittedEncoderCallCancellation: 1.0 (bar 1.0) pass
+flux2 check stateReturnsToReady admittedEncoderCallCancellation: 1.0 (bar 1.0) pass
+native qualification: admittedEncoderCallCancellationRecovery
+flux2 check recoveryIsExact admittedEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check noReservationLeakedByCancellation admittedEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check noGPUGrantLeakedByCancellation admittedEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check gpuAdmissionImmediatelyAvailable admittedEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+flux2 check unloadReleasesAllReservations admittedEncoderCallCancellationRecovery: 1.0 (bar 1.0) pass
+native qualification: summary
+flux2 check everyInstanceClosedOnce summary: 1.0 (bar 1.0) pass
+flux2 check everyNativeCallReturned summary: 1.0 (bar 1.0) pass
+✔ Test flux2NativeEncoderCancellation() passed after 63.780 seconds.
+✔ Test run with 1 test in 0 suites passed after 63.787 seconds.

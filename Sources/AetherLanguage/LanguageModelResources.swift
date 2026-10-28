@@ -34,6 +34,8 @@ actor LanguageModelResources {
     private let availability: AetherLanguageModel.Availability
     private let loader: Loader
     private var loading: Task<LoadedLanguageModel, any Error>?
+    /// The loaded model's tokens indexed for JSON constraints, built on the first structured request.
+    private var vocabulary: LanguageJSONVocabulary?
     private var running = false
     private var waiting: [(id: Int, continuation: CheckedContinuation<Void, any Error>)] = []
     private var nextWaiter = 0
@@ -67,6 +69,14 @@ actor LanguageModelResources {
         return try await body(model)
     }
 
+    /// The JSON-constraint index of the loaded model's vocabulary (one per load; `excluded` is the same every time).
+    func jsonVocabulary(_ model: LoadedLanguageModel, excluded: Set<Int>) -> LanguageJSONVocabulary {
+        if let vocabulary { return vocabulary }
+        let built = LanguageJSONVocabulary(bytes: model.codec.bytes, headRows: model.backend.vocabularySize, excluded: excluded)
+        vocabulary = built
+        return built
+    }
+
     /// Waits for a running request, then releases the backend and tokenizer.
     func unload() async {
         // Unload must happen even when its task is cancelled, so it waits uncancellably.
@@ -74,6 +84,7 @@ actor LanguageModelResources {
         defer { release() }
         guard let loading else { return }
         self.loading = nil
+        vocabulary = nil
         if let model = try? await loading.value { await model.backend.unload() }
     }
 

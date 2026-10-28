@@ -15,6 +15,11 @@ public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
     case insufficientMemory
     /// The request is malformed (for example reasoning asked of a model without it).
     case invalidRequest(String)
+    /// A generable type's schema uses something the JSON-schema constraint doesn't support (for example a `pattern`).
+    /// Such a request is refused rather than run unconstrained.
+    case unsupportedSchema(String)
+    /// The constrained reply didn't decode into the requested type (for example it reached the output limit first).
+    case decodingFailure(String)
 
     public var description: String {
         switch self {
@@ -26,6 +31,8 @@ public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
         case .closed: "The language model was unloaded"
         case .insufficientMemory: "Not enough memory to continue generating"
         case .invalidRequest(let reason): "Invalid request: \(reason)"
+        case .unsupportedSchema(let reason): "Unsupported schema: \(reason)"
+        case .decodingFailure(let reason): "The reply did not decode: \(reason)"
         }
     }
 }
