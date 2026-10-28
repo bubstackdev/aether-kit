@@ -20,7 +20,6 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 - **H3:** check Turbo4's quality (it's already exported), fused attention, video-decode tiling (about 40 s today), and a quiet-host timing reference.
 - **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap.
-- **Language time to first token:** a split-attention re-export, in which the cache and the current chunk are read separately and their softmax partials are merged, plus requalification of every language and Qwen3-VL bundle.
 
 ### Coverage and iPhone
 
@@ -40,7 +39,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 - **FLUX.2 evidence:**
   - native reports should record both fixture IDs (done);
   - move reference-mode regeneration onto the CPU text-to-image pictures (done: fixture `80a86a51…`, native parity 23/23, [guide](flux2-klein.md#independent-references));
-  - native cancellation of the reference encoder. Done: about 0.21–0.25 s, one image's encoder call ([measurement](flux2-klein.md#reference-encoder-cancellation-003)).
+  - native cancellation of the reference encoder. Done: about 0.18–0.21 s, one image's encoder call ([measurement](flux2-klein.md#reference-encoder-cancellation-003)).
 
 ### FLUX.2
 
@@ -87,4 +86,4 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 
 - The order of the backlog items.
 - Whether an older-OS backend goes ahead, after the MLX spike.
-- The reference models the two apps choose, and therefore what iPhone and quantization qualification covers.
+- The reference models the two apps choose, and therefore what iPhone and quantization (0.0.4) qualification covers.
