@@ -296,7 +296,7 @@ AETHER_NATIVE_FLUX2_ENCODER_CANCEL=1 \
 AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_ENCODER_CANCEL_OUTPUT=/new/output/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 encoder cancellation" swift test -c release --filter flux2NativeEncoderCancellation
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 encoder cancellation" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeEncoderCancellation
 ```
 
 `AETHER_FLUX2_ENCODER_CANCEL_TRIALS` sets the number of trials of each kind (default 3).
