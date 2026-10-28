@@ -191,8 +191,9 @@ do {
 - **Lifecycle:** one operation at a time (`sessionBusy` otherwise); cancellation is cooperative between native calls
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
   `unload()` rejects new work, waits for the active operation and closes permanently. Cancelling while the prompt is
-  being encoded returns in about 0.17 s on an M5 Max during the encoder's native call, and in up to about 0.9 s if
-  it lands while a balanced session is loading the encoder's function, which Core AI can't interrupt
+  being encoded returns in about 0.17 s on an M5 Max during the encoder's native call, and in up to about 0.9 s
+  (about 3.8 s on a process's first request) if it lands while a balanced session is loading the encoder's function,
+  which Core AI can't interrupt
   ([Text encoder cancellation](#text-encoder-cancellation-003)). While references are being encoded it returns in
   about 0.18–0.21 s, the rest of one image's encoder call, and later images are never submitted
   ([Reference encoder cancellation](#reference-encoder-cancellation-003)).
@@ -349,9 +350,9 @@ fixture `80a86a51…`, the whole test passes 102/102 checks, on the same Mac and
 
 | Measurement | Result |
 | --- | --- |
-| Encoder open | 1.3–2.3 ms |
+| Encoder open | 1.2–2.3 ms |
 | Encoder function load (first call after the open) | 16–20 ms (94 ms the first time in the process) |
-| Encoder native call, per image (encoder opened for the preparation) | 183–217 ms |
+| Encoder native call, per image, across all 22 calls (encoder opened for the preparation) | 160–217 ms |
 | Cancel during the first image's call, until `prepare` throws | 190–208 ms (3 trials) |
 | Cancel during the call, until `generate` throws | 184 ms |
 | Cancel requested at the open (arrives during the function load), until `prepare` throws | 17–18 ms (3 trials) |
