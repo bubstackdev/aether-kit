@@ -233,7 +233,9 @@ takes longer to encode: it pays for an input buffer larger than its view, as for
 - **A wider chunk for long prompts.** C = 512 halves the 4B's time at 2,048 tokens. But it retains more memory per request
   (see [Native memory retention](#native-memory-retention)), and a different prefill plan can flip a greedy near-tie.
 - **An export whose attention reads the cache and the chunk separately,** instead of concatenating them every chunk.
-  That needs a re-export and requalification.
+  It is a no-go under the current Core AI: a second function wires a second copy of the weights, split attention in
+  `main` halves decode, and a `torch.cond` between the two hangs the GPU compile
+  ([spike report](spikes/split-attention-2026-10.md)).
 
 ## Cache allocation
 

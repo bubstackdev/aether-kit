@@ -19,7 +19,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 ### Speed
 
 - **H3:** check Turbo4's quality (it's already exported), fused attention, video-decode tiling (about 40 s today), and a quiet-host timing reference.
-- **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap.
+- **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap. Re-measured, and exact host fixes cut part of it ([guide](language-generation.md#time-to-first-token)). The split-attention re-export is a no-go under the current Core AI; see the [report](spikes/split-attention-2026-10.md).
 
 ### Coverage and iPhone
 
