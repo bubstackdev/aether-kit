@@ -1,0 +1,1018 @@
+{
+  "bundle" : {
+    "fingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66"
+  },
+  "checkCount" : 102,
+  "checks" : [
+    {
+      "bar" : 1,
+      "case" : "repeat1",
+      "name" : "repeatIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "repeat2",
+      "name" : "repeatIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation1Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation2Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderCallCancellation3Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation1",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation1",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation1",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation1",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation1Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation2",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation2",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation2",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation2",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation2Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation3",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation3",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation3",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation3",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "encoderOpenCancellation3Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentBaseline",
+      "name" : "residentBaselineIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellation",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellation",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellation",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellation",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellation",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellationRecovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "residentEncoderCallCancellationRecovery",
+      "name" : "residentRecoveryOpensANewEncoder",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedBaseline",
+      "name" : "admittedBaselineIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedBaseline",
+      "name" : "admittedRetainsDenoisersAndDecoder",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellationRecovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellationRecovery",
+      "name" : "noReservationLeakedByCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellationRecovery",
+      "name" : "noGPUGrantLeakedByCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellationRecovery",
+      "name" : "gpuAdmissionImmediatelyAvailable",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "admittedEncoderCallCancellationRecovery",
+      "name" : "unloadReleasesAllReservations",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceLatentCosine",
+      "passed" : true,
+      "value" : 0.9999999999981648
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceBaseline",
+      "name" : "baselineEncodesBothImages",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "secondImageNeverSubmitted",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation1Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "secondImageNeverSubmitted",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation2Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "secondImageNeverSubmitted",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceCallCancellation3Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation1",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation1",
+      "name" : "noEncoderCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation1",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation1",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation1Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation2",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation2",
+      "name" : "noEncoderCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation2",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation2",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation2Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation3",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation3",
+      "name" : "noEncoderCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation3",
+      "name" : "encoderDiscarded",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation3",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceOpenCancellation3Recovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "cancellationThrows",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "nativeReturnPrecedesCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "secondImageNeverSubmitted",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "encoderDiscardedBeforeReturn",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "noNativeCallAfterCancellation",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellation",
+      "name" : "stateReturnsToReady",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "referenceGenerateCancellationRecovery",
+      "name" : "recoveryIsExact",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "summary",
+      "name" : "everyInstanceClosedOnce",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "summary",
+      "name" : "everyNativeCallReturned",
+      "passed" : true,
+      "value" : 1
+    }
+  ],
+  "elapsedSeconds" : "71.1",
+  "fixtures" : {
+    "case" : "fox-512",
+    "reference" : "80a86a512315fa94",
+    "t2i" : "ffc4b1365159e40c"
+  },
+  "kind" : "flux2-native-encoder-cancellation",
+  "limits" : [
+    "Native boundaries bracket the awaited function.run; GPU queues are not instrumented.",
+    "Cancellation is requested 2 ms after the encoder's native call begins, or right after its open begins.",
+    "Admission estimates are logical test values, not measured memory."
+  ],
+  "passed" : true,
+  "phases" : [
+
+  ],
+  "records" : [
+    {
+      "case" : "baseline",
+      "name" : "baselineSSIM",
+      "value" : 0.90114267850537044
+    },
+    {
+      "case" : "encoderCallCancellation1",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "encoderCallCancellation2",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "encoderCallCancellation3",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "encoderOpenCancellation1",
+      "name" : "openCompletedAfterCancel",
+      "value" : 0
+    },
+    {
+      "case" : "encoderOpenCancellation2",
+      "name" : "openCompletedAfterCancel",
+      "value" : 1
+    },
+    {
+      "case" : "encoderOpenCancellation3",
+      "name" : "openCompletedAfterCancel",
+      "value" : 0
+    },
+    {
+      "case" : "residentEncoderCallCancellation",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "referenceCallCancellation1",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "referenceCallCancellation2",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "referenceCallCancellation3",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    },
+    {
+      "case" : "referenceOpenCancellation1",
+      "name" : "openCompletedAfterCancel",
+      "value" : 1
+    },
+    {
+      "case" : "referenceOpenCancellation2",
+      "name" : "openCompletedAfterCancel",
+      "value" : 1
+    },
+    {
+      "case" : "referenceOpenCancellation3",
+      "name" : "openCompletedAfterCancel",
+      "value" : 1
+    },
+    {
+      "case" : "referenceGenerateCancellation",
+      "name" : "nativeCallRanToCompletion",
+      "value" : 1
+    }
+  ],
+  "schema" : 1,
+  "timings" : [
+    {
+      "case" : "baseline",
+      "name" : "encoderOpen",
+      "seconds" : 0.0059662915300577879
+    },
+    {
+      "case" : "baseline",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.16033062501810491
+    },
+    {
+      "case" : "repeat1",
+      "name" : "encoderOpen",
+      "seconds" : 0.0021087916102260351
+    },
+    {
+      "case" : "repeat1",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.12804383342154324
+    },
+    {
+      "case" : "repeat2",
+      "name" : "encoderOpen",
+      "seconds" : 0.0018489581998437643
+    },
+    {
+      "case" : "repeat2",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.13768658344633877
+    },
+    {
+      "case" : "encoderCallCancellation1",
+      "name" : "cancellationLatency",
+      "seconds" : 0.15406875009648502
+    },
+    {
+      "case" : "encoderCallCancellation1",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.11384045844897628
+    },
+    {
+      "case" : "encoderCallCancellation2",
+      "name" : "cancellationLatency",
+      "seconds" : 0.1598702915944159
+    },
+    {
+      "case" : "encoderCallCancellation2",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.1153032083529979
+    },
+    {
+      "case" : "encoderCallCancellation3",
+      "name" : "cancellationLatency",
+      "seconds" : 0.16162445838563144
+    },
+    {
+      "case" : "encoderCallCancellation3",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.11724549997597933
+    },
+    {
+      "case" : "encoderOpenCancellation1",
+      "name" : "cancellationLatency",
+      "seconds" : 0.0010834999848157167
+    },
+    {
+      "case" : "encoderOpenCancellation1",
+      "name" : "encoderOpenUntilReturnOrCancel",
+      "seconds" : 0.0016516249161213636
+    },
+    {
+      "case" : "encoderOpenCancellation2",
+      "name" : "cancellationLatency",
+      "seconds" : 0.60258087492547929
+    },
+    {
+      "case" : "encoderOpenCancellation2",
+      "name" : "encoderOpenUntilReturnOrCancel",
+      "seconds" : 0.0016159166116267443
+    },
+    {
+      "case" : "encoderOpenCancellation3",
+      "name" : "cancellationLatency",
+      "seconds" : 0.0016730416100472212
+    },
+    {
+      "case" : "encoderOpenCancellation3",
+      "name" : "encoderOpenUntilReturnOrCancel",
+      "seconds" : 0.0017349165864288807
+    },
+    {
+      "case" : "residentBaseline",
+      "name" : "encoderOpen",
+      "seconds" : 0.0015929166693240404
+    },
+    {
+      "case" : "residentBaseline",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.11631762492470443
+    },
+    {
+      "case" : "residentRepeat",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.10622125002555549
+    },
+    {
+      "case" : "residentEncoderCallCancellation",
+      "name" : "cancellationLatency",
+      "seconds" : 0.12250495818443596
+    },
+    {
+      "case" : "residentEncoderCallCancellation",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.078896708320826292
+    },
+    {
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "cancellationLatency",
+      "seconds" : 0.1570291668176651
+    },
+    {
+      "case" : "admittedEncoderCallCancellation",
+      "name" : "encoderNativeCall",
+      "seconds" : 0.11220020824111998
+    },
+    {
+      "case" : "referenceBaseline",
+      "name" : "referenceEncoderOpen",
+      "seconds" : 0.0022967082913964987
+    },
+    {
+      "case" : "referenceBaseline",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.21697479160502553
+    },
+    {
+      "case" : "referenceBaseline",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.2074642083607614
+    },
+    {
+      "case" : "referenceCallCancellation1",
+      "name" : "cancellationLatency",
+      "seconds" : 0.20812650001607835
+    },
+    {
+      "case" : "referenceCallCancellation1",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.20815845835022628
+    },
+    {
+      "case" : "referenceCallCancellation2",
+      "name" : "cancellationLatency",
+      "seconds" : 0.1902401668485254
+    },
+    {
+      "case" : "referenceCallCancellation2",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.18912037485279143
+    },
+    {
+      "case" : "referenceCallCancellation3",
+      "name" : "cancellationLatency",
+      "seconds" : 0.19125450006686151
+    },
+    {
+      "case" : "referenceCallCancellation3",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.19055454176850617
+    },
+    {
+      "case" : "referenceOpenCancellation1",
+      "name" : "cancellationLatency",
+      "seconds" : 0.018001041607931256
+    },
+    {
+      "case" : "referenceOpenCancellation2",
+      "name" : "cancellationLatency",
+      "seconds" : 0.018309833249077201
+    },
+    {
+      "case" : "referenceOpenCancellation3",
+      "name" : "cancellationLatency",
+      "seconds" : 0.017354374984279275
+    },
+    {
+      "case" : "referenceGenerateCancellation",
+      "name" : "cancellationLatency",
+      "seconds" : 0.18381399987265468
+    },
+    {
+      "case" : "referenceGenerateCancellation",
+      "name" : "referenceEncoderNativeCall",
+      "seconds" : 0.18331424985080957
+    }
+  ]
+}

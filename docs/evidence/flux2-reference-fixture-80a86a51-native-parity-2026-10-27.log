@@ -1,0 +1,35 @@
+Building for production...
+Build complete! (4.23 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test flux2NativeParityAgainstIndependentReferences() started.
+flux2 check tokenIDs fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine fox-watercolor-ref1: 0.9999724661524734 (bar 0.999) pass
+flux2 check tokenIDs fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check textRealRowCosine fox-lighthouse-ref2: 0.9999724207852319 (bar 0.999) pass
+flux2 check referencePositions fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check timesteps fox-watercolor-ref1: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] fox-watercolor-ref1: 0.9998322406329856 (bar 0.999) pass
+flux2 check velocityCosine[1] fox-watercolor-ref1: 0.9997942152890302 (bar 0.999) pass
+flux2 check velocityCosine[2] fox-watercolor-ref1: 0.9998157085557288 (bar 0.999) pass
+flux2 check velocityCosine[3] fox-watercolor-ref1: 0.999834127034355 (bar 0.999) pass
+flux2 check referencePositions fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check timesteps fox-lighthouse-ref2: 1.0 (bar 1.0) pass
+flux2 check velocityCosine[0] fox-lighthouse-ref2: 0.9994296037596675 (bar 0.999) pass
+flux2 check velocityCosine[1] fox-lighthouse-ref2: 0.9994503968534754 (bar 0.999) pass
+flux2 check velocityCosine[2] fox-lighthouse-ref2: 0.9997747529876448 (bar 0.999) pass
+flux2 check velocityCosine[3] fox-lighthouse-ref2: 0.9997730169069449 (bar 0.999) pass
+flux2 check decoderPSNR fox-watercolor-ref1: 89.6792332563848 (bar 35.0) pass
+flux2 check decoderPSNR fox-lighthouse-ref2: 88.07310829046402 (bar 35.0) pass
+flux2 check referenceLatentCosine[0] fox-watercolor-ref1: 0.9999999999981093 (bar 0.999) pass
+flux2 check referenceLatentCosine[0] fox-lighthouse-ref2: 0.9999999999981093 (bar 0.999) pass
+flux2 check referenceLatentCosine[1] fox-lighthouse-ref2: 0.999999999998285 (bar 0.999) pass
+flux2 check imagePathSSIM fox-watercolor-ref1: 0.9985690124029852 (bar 0.94) pass
+flux2 record imagePathPSNR fox-watercolor-ref1: 45.62587491031931
+flux2 record wholePipelineSSIM fox-watercolor-ref1: 0.9662873150534691
+flux2 check imagePathSSIM fox-lighthouse-ref2: 0.9877593199476093 (bar 0.94) pass
+flux2 record imagePathPSNR fox-lighthouse-ref2: 33.02092585482044
+flux2 record wholePipelineSSIM fox-lighthouse-ref2: 0.8674044426482374
+✔ Test flux2NativeParityAgainstIndependentReferences() passed after 49.720 seconds.
+✔ Test run with 1 test in 0 suites passed after 49.720 seconds.
