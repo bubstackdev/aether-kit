@@ -44,6 +44,7 @@ struct AetherProbe {
               aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json]
               aether-probe parity-krea BUNDLE LAB FIXTURES SHAPE.json OUTPUT_DIRECTORY provided|encoded
               aether-probe benchmark-krea BUNDLE PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
+              aether-probe benchmark-flux2 BUNDLE T2I_FIXTURE REFERENCE_FIXTURE|- PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
 
             smoke expects Forge's float32 affine fixture: y = x * 2 + 1, shape [1, 4].
             inspect specializes/loads the model; it is not a static file inspection.
@@ -51,7 +52,7 @@ struct AetherProbe {
             verify-krea hashes all six model streams and can read tens of GB.
 
             GPU commands (inspect, smoke, render-krea, render-krea-batch, parity-krea, h3-profile-run,
-            h3-profile-decode, and the qualify-h3* and benchmark-krea modes other than --prepare-only) take the
+            h3-profile-decode, and the qualify-h3*, benchmark-krea and benchmark-flux2 modes other than --prepare-only) take the
             shared GPU lease /tmp/atelier-gpu.lock themselves, waiting while Atelier or another tool holds it.
             Malformed commands print their usage error without waiting.
               AETHER_GPU_LEASE=off              do not take the lease (special cases only)
@@ -70,6 +71,7 @@ struct AetherProbe {
         if try await H3LifecycleCommand.run(arguments) { return }
         if try await H3ChainCommand.run(arguments) { return }
         if try await KreaBenchmarkCommand.run(arguments) { return }
+        if try await Flux2BenchmarkCommand.run(arguments) { return }
         if try await KreaBatchCommand.run(arguments) { return }
         if try await KreaCommands.run(arguments) { return }
         if command == "doctor", arguments.count == 1 {

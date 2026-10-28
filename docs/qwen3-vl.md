@@ -31,8 +31,10 @@ patch grids (`imageGrids`), plus `exportBounds` with a `maximumImageChunk` cover
 `Forge/language/register_qwen3_vl_bundle.py` writes one for an assembled bundle, listing every tokenizer file (`tokenizerFiles`) so `verifyTokenizer` checks the exact set. Each image
 snaps to the grid nearest its aspect ratio, is resized to that grid exactly, encoded once by
 that grid's static-shape function, and spliced into the decoder. Decoding is greedy by default; the sampling
-entry point takes a `LanguageSampling` and a constraint as a text request does ([sampling](language-generation.md)). One request at a time; overlap fails with `busy`. With a `gpu:` owner, the
-encode phase and the decoder's request are each admitted. `unload()` first withdraws a request
+entry point takes a `LanguageSampling` and a constraint as a text request does ([sampling](language-generation.md)). One request at a time; overlap fails with `busy`. With a `gpu:` owner, opening each model (the
+encoder, then the decoder: load and specialization), the encode phase and the decoder's request are each admitted.
+With `resources:` (`LanguageResourceAdmission`), the encoder's and decoder's residency is reserved while they are
+open and each encode's and request's scratch while it runs ([resource admission](qwen3-vl-resource-admission.md)). `unload()` first withdraws a request
 still waiting for either admission (it fails with `closed`), so close never waits behind another
 owner's GPU work; an admitted request finishes first, then both models are released. A
 registration without grids is refused (no dynamic-shape encoder is opened), as is a grid that is
@@ -390,8 +392,10 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
 - **Aspect ratio is stretched to the nearest grid.** No padding: an image between two grids is
   stretched by up to about 15 %, and panoramas or tall strips beyond 16:9 more. More grids (for
   example 2:1) can be added to the export and registration without code changes.
-- **No resource admission** for the encoder and the decoder yet (GPU admission only).
-- **Coverage still missing:** several images on the 4B (the 2B is qualified), iPhone qualification (vision asset release after
+- **Resource admission is per process.** `LanguageResourceAdmission` reserves the encoder's and decoder's memory
+  against a host's `ResourceCoordinator`, but a describer in its own process (as Atelier runs it) is invisible to a
+  Krea process's ledger. The cross-process case waits for the [shared-protocol proposal](shared-residency-proposal.md).
+- **Coverage still missing:** iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
 - The encoder stays loaded for the session's lifetime.
 - **Text export memory.** The 0.0.2 export of the 4B text tower peaked at 31.7 GB of RSS (it was run on

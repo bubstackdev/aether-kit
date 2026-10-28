@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-krea-coexistence",
+  "date": "2026-10-28",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "hostMemoryGiB": 64,
+  "test": "visionLanguageBesideKreaGuarded: one process and one GPUAdmission; only the describer reserves in the ResourceCoordinator (48 GiB), since the Krea session is built without a KreaResourceAdmission. Under the shared GPU lock, quiet host, no heavy CPU job alongside",
+  "describer": "qwen3-vl-4b-abliterated-one-function-bundle-macos with the measured profile (decoder 11,600 + encoder 2,200 MiB resident)",
+  "krea": "krea-2-turbo-realism macos-any-gpu, 1024x1024 renders",
+  "passed": true,
+  "run": {
+    "bundles": [
+      "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+      "krea-2-turbo-realism"
+    ],
+    "completedRounds": 3,
+    "device": "h17c",
+    "guardRule": "stop at the next step if memorystatus level < 25 or free memory < 0 MiB",
+    "reservedPeakMiB": 13800,
+    "rounds": 3,
+    "windows": [
+      {
+        "footprintAfterMiB": 62,
+        "footprintBeforeMiB": 9,
+        "footprintPeakMiB": 132,
+        "metalAfterMiB": 0,
+        "metalBeforeMiB": 0,
+        "metalPeakMiB": 0,
+        "minimumFreeMiB": 9841,
+        "minimumMemorystatusLevel": 89,
+        "phase": "before open",
+        "samples": 21
+      },
+      {
+        "footprintAfterMiB": 1114,
+        "footprintBeforeMiB": 62,
+        "footprintPeakMiB": 1114,
+        "metalAfterMiB": 1028,
+        "metalBeforeMiB": 0,
+        "metalPeakMiB": 1028,
+        "minimumFreeMiB": 132,
+        "minimumMemorystatusLevel": 87,
+        "phase": "describer open",
+        "reservedMiB": 13800,
+        "samples": 108
+      },
+      {
+        "footprintAfterMiB": 1679,
+        "footprintBeforeMiB": 1114,
+        "footprintPeakMiB": 1752,
+        "metalAfterMiB": 10473,
+        "metalBeforeMiB": 1028,
+        "metalPeakMiB": 10482,
+        "minimumFreeMiB": 126,
+        "minimumMemorystatusLevel": 75,
+        "phase": "round 1: describer image request",
+        "reservedMiB": 13800,
+        "samples": 221
+      },
+      {
+        "footprintAfterMiB": 14842,
+        "footprintBeforeMiB": 1679,
+        "footprintPeakMiB": 15184,
+        "metalAfterMiB": 35945,
+        "metalBeforeMiB": 10473,
+        "metalPeakMiB": 35947,
+        "minimumFreeMiB": 103,
+        "minimumMemorystatusLevel": 54,
+        "phase": "round 1: Krea 1024x1024 render",
+        "reservedMiB": 13800,
+        "samples": 1729
+      },
+      {
+        "footprintAfterMiB": 13970,
+        "footprintBeforeMiB": 14842,
+        "footprintPeakMiB": 15184,
+        "metalAfterMiB": 35889,
+        "metalBeforeMiB": 35945,
+        "metalPeakMiB": 36000,
+        "minimumFreeMiB": 738,
+        "minimumMemorystatusLevel": 66,
+        "phase": "round 2: describer image request",
+        "reservedMiB": 13800,
+        "samples": 54
+      },
+      {
+        "footprintAfterMiB": 14701,
+        "footprintBeforeMiB": 13970,
+        "footprintPeakMiB": 15877,
+        "metalAfterMiB": 36071,
+        "metalBeforeMiB": 35889,
+        "metalPeakMiB": 36368,
+        "minimumFreeMiB": 105,
+        "minimumMemorystatusLevel": 51,
+        "phase": "round 2: Krea 1024x1024 render",
+        "reservedMiB": 13800,
+        "samples": 1565
+      },
+      {
+        "footprintAfterMiB": 13930,
+        "footprintBeforeMiB": 14701,
+        "footprintPeakMiB": 15104,
+        "metalAfterMiB": 36007,
+        "metalBeforeMiB": 36071,
+        "metalPeakMiB": 36116,
+        "minimumFreeMiB": 450,
+        "minimumMemorystatusLevel": 69,
+        "phase": "round 3: describer image request",
+        "reservedMiB": 13800,
+        "samples": 56
+      },
+      {
+        "footprintAfterMiB": 14981,
+        "footprintBeforeMiB": 13930,
+        "footprintPeakMiB": 16034,
+        "metalAfterMiB": 36129,
+        "metalBeforeMiB": 36007,
+        "metalPeakMiB": 36486,
+        "minimumFreeMiB": 121,
+        "minimumMemorystatusLevel": 54,
+        "phase": "round 3: Krea 1024x1024 render",
+        "reservedMiB": 13800,
+        "samples": 1517
+      },
+      {
+        "footprintAfterMiB": 1624,
+        "footprintBeforeMiB": 14981,
+        "footprintPeakMiB": 14981,
+        "metalAfterMiB": 1745,
+        "metalBeforeMiB": 36129,
+        "metalPeakMiB": 36129,
+        "minimumFreeMiB": 153,
+        "minimumMemorystatusLevel": 70,
+        "phase": "unloaded",
+        "reservedMiB": 0,
+        "samples": 15
+      }
+    ]
+  },
+  "earlierAttempt": {
+    "note": "Same test with the then-default free-memory floor of 4 GiB: it stopped after the describer opened, because free pages fell to 133 MiB while memorystatus stayed at 87 (opening reads the 15 GiB compiled decoder into the page cache). Free pages are not a pressure signal here; the floor is now off by default and the guard is memorystatus.",
+    "report": {
+      "abortedBecause": "free memory 2685 MiB below 4096 MiB",
+      "bundles": [
+        "qwen3-vl-4b-abliterated-one-function-bundle-macos",
+        "krea-2-turbo-realism"
+      ],
+      "completedRounds": 0,
+      "device": "h17c",
+      "guardRule": "stop at the next step if memorystatus level < 25 or free memory < 4096 MiB",
+      "reservedPeakMiB": 13800,
+      "rounds": 3,
+      "windows": [
+        {
+          "footprintAfterMiB": 49,
+          "footprintBeforeMiB": 9,
+          "footprintPeakMiB": 126,
+          "metalAfterMiB": 0,
+          "metalBeforeMiB": 0,
+          "metalPeakMiB": 0,
+          "minimumFreeMiB": 6652,
+          "minimumMemorystatusLevel": 89,
+          "phase": "before open",
+          "samples": 19
+        },
+        {
+          "footprintAfterMiB": 1113,
+          "footprintBeforeMiB": 49,
+          "footprintPeakMiB": 1115,
+          "metalAfterMiB": 1028,
+          "metalBeforeMiB": 0,
+          "metalPeakMiB": 1028,
+          "minimumFreeMiB": 133,
+          "minimumMemorystatusLevel": 87,
+          "phase": "describer open",
+          "reservedMiB": 13800,
+          "samples": 296
+        },
+        {
+          "footprintAfterMiB": 1103,
+          "footprintBeforeMiB": 1113,
+          "footprintPeakMiB": 1174,
+          "metalAfterMiB": 0,
+          "metalBeforeMiB": 1028,
+          "metalPeakMiB": 1028,
+          "minimumFreeMiB": 133,
+          "minimumMemorystatusLevel": 87,
+          "phase": "unloaded",
+          "reservedMiB": 0,
+          "samples": 17
+        }
+      ]
+    }
+  },
+  "guard": "memorystatus level 25 (AETHER_VL_COEXISTENCE_MIN_LEVEL=25): the test's default of 60 would have stopped this run, since renders reached 51-54"
+}

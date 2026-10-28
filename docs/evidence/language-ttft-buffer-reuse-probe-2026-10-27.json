@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "kind": "language-ttft-buffer-reuse-probe",
+  "date": "2026-10-27",
+  "device": "Apple M5 Max",
+  "hostLoad": "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are observations",
+  "what": "A temporary in-session probe split one bucketed one-token request at 2,048 prompt tokens, C = 64, into encode (encode calls, which run the GPU work synchronously), cache growth, input building, join, logits read and update-row copies, in milliseconds. Numbers transcribed from the probe's printed output; the probe is not committed. Two consecutive runs: this PR's growth path (the one-pass LanguageCachePlan.relayout, allocating a new buffer at each 256-row step), then a prototype on top of it that reused large KV buffers across growths and requests.",
+  "runs": {
+    "relayoutGrowth": {
+      "qwen3-0.6b": {
+        "ttft": 575.3,
+        "encode": 473.9,
+        "grow": 82.6,
+        "inputs": 6.0,
+        "join": 2.4,
+        "logits": 1.0,
+        "updates": 6.2
+      },
+      "qwen3-4b-writer": {
+        "ttft": 1206.7,
+        "encode": 1048.1,
+        "grow": 125.3,
+        "inputs": 8.6,
+        "join": 4.9,
+        "logits": 1.5,
+        "updates": 12.4
+      }
+    },
+    "reusedBuffers": {
+      "qwen3-0.6b": {
+        "ttft": 584.2,
+        "encode": 524.7,
+        "grow": 26.1,
+        "inputs": 8.8,
+        "join": 6.8,
+        "logits": 1.0,
+        "updates": 7.2
+      },
+      "qwen3-4b-writer": {
+        "ttft": 1192.8,
+        "encode": 1105.9,
+        "grow": 57.4,
+        "inputs": 7.6,
+        "join": 4.3,
+        "logits": 1.3,
+        "updates": 11.3
+      }
+    }
+  },
+  "reading": "Reusing buffers cut growth by 57 ms (0.6B) and 68 ms (4B) but encode rose by 51 ms and 58 ms, so time to first token did not improve (+9 ms and -14 ms, within host noise). The reused buffer is larger than the view Core AI is given, which it pays for at encode. Rejected.",
+  "runKeys": {
+    "relayoutGrowth": "this PR's growth path (new buffer per 256-row step, one-pass relayout); not the pre-PR zero-then-copy path",
+    "reusedBuffers": "the rejected prototype: relayout into reused, larger KV buffers"
+  }
+}

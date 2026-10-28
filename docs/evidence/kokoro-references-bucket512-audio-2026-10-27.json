@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "purpose": "Old (reference-2026-10-26) and regenerated (reference-bucket512-af_bella-2026-10-27) Kokoro reference audio: the SHA-256 of each audio.f32 file and the audio_sha256 each case.json records. case_sha256 in references.json covers the metrics too, so it changes with timings; the audio hashes are the comparison.",
+  "cases": [
+    {
+      "case": "short-af_heart",
+      "new": {
+        "audioFileSHA256": "dd7df356a17cf041f95670d0c4e608c2b1c3c59628d122c55183d7ec8416c28f",
+        "caseAudioSHA256": "dd7df356a17cf041f95670d0c4e608c2b1c3c59628d122c55183d7ec8416c28f"
+      },
+      "old": {
+        "audioFileSHA256": "dd7df356a17cf041f95670d0c4e608c2b1c3c59628d122c55183d7ec8416c28f",
+        "caseAudioSHA256": "dd7df356a17cf041f95670d0c4e608c2b1c3c59628d122c55183d7ec8416c28f"
+      },
+      "audioIdentical": true,
+      "caseJSONDifferences": [
+        "upstream_cpu_seconds"
+      ]
+    },
+    {
+      "case": "sentence-am_michael",
+      "new": {
+        "audioFileSHA256": "232b3c1dc17d71acb5fdf9da0182ef712f5a90c20f06a1f2ec543a1e6e229442",
+        "caseAudioSHA256": "232b3c1dc17d71acb5fdf9da0182ef712f5a90c20f06a1f2ec543a1e6e229442"
+      },
+      "old": {
+        "audioFileSHA256": "232b3c1dc17d71acb5fdf9da0182ef712f5a90c20f06a1f2ec543a1e6e229442",
+        "caseAudioSHA256": "232b3c1dc17d71acb5fdf9da0182ef712f5a90c20f06a1f2ec543a1e6e229442"
+      },
+      "audioIdentical": true,
+      "caseJSONDifferences": [
+        "upstream_cpu_seconds"
+      ]
+    },
+    {
+      "case": "speed-bf_emma",
+      "new": {
+        "audioFileSHA256": "9f15f75b060bd3c365b2861f9a59c092ded5fc5e1d06feaabf9f387a434a4292",
+        "caseAudioSHA256": "9f15f75b060bd3c365b2861f9a59c092ded5fc5e1d06feaabf9f387a434a4292"
+      },
+      "old": {
+        "audioFileSHA256": "9f15f75b060bd3c365b2861f9a59c092ded5fc5e1d06feaabf9f387a434a4292",
+        "caseAudioSHA256": "9f15f75b060bd3c365b2861f9a59c092ded5fc5e1d06feaabf9f387a434a4292"
+      },
+      "audioIdentical": true,
+      "caseJSONDifferences": [
+        "upstream_cpu_seconds"
+      ]
+    },
+    {
+      "case": "long-af_bella",
+      "new": {
+        "audioFileSHA256": "125b4f47199084949c75adce754f6708d678c94fdb60e0f978b0c95c40f4d7ab",
+        "caseAudioSHA256": "125b4f47199084949c75adce754f6708d678c94fdb60e0f978b0c95c40f4d7ab"
+      },
+      "old": {
+        "audioFileSHA256": "125b4f47199084949c75adce754f6708d678c94fdb60e0f978b0c95c40f4d7ab",
+        "caseAudioSHA256": "125b4f47199084949c75adce754f6708d678c94fdb60e0f978b0c95c40f4d7ab"
+      },
+      "audioIdentical": true,
+      "caseJSONDifferences": [
+        "upstream_cpu_seconds"
+      ]
+    },
+    {
+      "case": "medium-af_bella",
+      "new": {
+        "audioFileSHA256": "d10e577a20f38b270a02a589a630552256a423048a910ad28ce5c071e9651a82",
+        "caseAudioSHA256": "d10e577a20f38b270a02a589a630552256a423048a910ad28ce5c071e9651a82"
+      }
+    }
+  ]
+}
