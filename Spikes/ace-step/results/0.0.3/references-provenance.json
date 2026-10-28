@@ -1,0 +1,53 @@
+{
+ "rule": "fp32 and bf16 valid for each process's first prompt; later prompts take fp32 from the --skip-bf16 rerun",
+ "references": {
+  "lofi-instrumental": {
+   "fp32": "references",
+   "bf16": "references",
+   "sourceSHA256": "bd6bfb5b9247a1d55a172bf7261d9a0cdb9b8696828f0e5bc1e8e61c39ae7136",
+   "mergedSHA256": "bd6bfb5b9247a1d55a172bf7261d9a0cdb9b8696828f0e5bc1e8e61c39ae7136"
+  },
+  "indie-pop-vocal": {
+   "fp32": "references-vocal",
+   "bf16": "references-vocal",
+   "sourceSHA256": "456cb40bb38f7670a28f77d6193b6266dd7256fab6b8bd3a9aa489278624c9cc",
+   "mergedSHA256": "456cb40bb38f7670a28f77d6193b6266dd7256fab6b8bd3a9aa489278624c9cc"
+  },
+  "orchestral-instrumental": {
+   "fp32": "references-fp32-redo",
+   "bf16": "references",
+   "sharedArraysIdentical": {
+    "encoder": true,
+    "encoder_mask": true,
+    "context": true,
+    "noise": true,
+    "text_ids": true,
+    "lyric_ids": true,
+    "text_hidden": true,
+    "lyric_hidden": true
+   },
+   "oldFp32FinalRelL2FromCorrected": 0.10516040027141571,
+   "bf16SourceSHA256": "531a22a85b9b8d093edf09ea26021e318034dcc12daf940095db6de9efa7d1ea",
+   "fp32SourceSHA256": "08321920729e1a8e6ff63457be6cd6ee420eef4e134c79aba60a0141bbc67854",
+   "mergedSHA256": "43156dd337907587d48f74cefc2db04f15ea9071c6f6201796e20e006d081e19"
+  },
+  "folk-ballad-vocal": {
+   "fp32": "references-fp32-redo",
+   "bf16": "references-vocal",
+   "sharedArraysIdentical": {
+    "encoder": true,
+    "encoder_mask": true,
+    "context": true,
+    "noise": true,
+    "text_ids": true,
+    "lyric_ids": true,
+    "text_hidden": true,
+    "lyric_hidden": true
+   },
+   "oldFp32FinalRelL2FromCorrected": 0.23439103364944458,
+   "bf16SourceSHA256": "ec6395ec3450cb68d0f57c4b5f7c761ae4189a77cc072bb958e78de2759f3c50",
+   "fp32SourceSHA256": "0cc84cc2c469dea3605543a6b223fc5db2d9d5d09d512b69dce705073eab29ba",
+   "mergedSHA256": "2b5d494dc78a464b10d55175f4f23ae13a792c0a7dff3e34f83aecc6a8fbd034"
+  }
+ }
+}

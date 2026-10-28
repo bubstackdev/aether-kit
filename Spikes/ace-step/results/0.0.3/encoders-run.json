@@ -1,0 +1,232 @@
+{
+ "text": 256,
+ "lyric": 512,
+ "dit": "dit-1500x512-fp16",
+ "vae": "vae-dec-1500-fp16",
+ "tileVae": "vae-dec-250-fp16",
+ "load": {
+  "text-encoder-256-fp16": 0.8975495409686118,
+  "condition-256x512-fp16": 0.4976685419678688,
+  "dit-1500x512-fp16": 0.47637991583906114,
+  "vae-dec-1500-fp16": 0.10078474995680153,
+  "vae-dec-250-fp16": 0.1191829580347985
+ },
+ "prompts": {
+  "folk-ballad-vocal": {
+   "textSeconds": 0.04120687488466501,
+   "textHidden": {
+    "cosine": 0.9999982901196465,
+    "relL2": 0.0018495917320251465
+   },
+   "lyricEmbeds": {
+    "relL2": 6.379838435321972e-09
+   },
+   "conditionSeconds": 0.018238540971651673,
+   "conditionRows": {
+    "ours": 131,
+    "reference": 131
+   },
+   "encoder": {
+    "cosine": 0.9999983914301583,
+    "relL2": 0.0017955456860363483,
+    "maskEqual": true
+   },
+   "ditSeconds": 0.41236841538921,
+   "vaeSeconds": 0.4197042500600219,
+   "tiled": {
+    "0": {
+     "windows": 6,
+     "seconds": 0.39972304087132215,
+     "snrDBVsOneWindow": 26.196224237619866,
+     "maxAbsDiff": 0.3819580078125
+    },
+    "8": {
+     "windows": 7,
+     "seconds": 0.4600086249411106,
+     "snrDBVsOneWindow": 42.58469636537353,
+     "maxAbsDiff": 0.03829377889633179
+    },
+    "16": {
+     "windows": 7,
+     "seconds": 0.4598373749759048,
+     "snrDBVsOneWindow": 49.77064385788405,
+     "maxAbsDiff": 0.015090405941009521
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 0.4597799591720104,
+     "snrDBVsOneWindow": 55.94109410719609,
+     "maxAbsDiff": 0.007417404092848301
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 0.5252615830395371,
+     "snrDBVsOneWindow": 59.58752651135004,
+     "maxAbsDiff": 0.006587618961930275
+    }
+   }
+  },
+  "indie-pop-vocal": {
+   "textSeconds": 0.020396749954670668,
+   "textHidden": {
+    "cosine": 0.9999983201130354,
+    "relL2": 0.0018329693702980876
+   },
+   "lyricEmbeds": {
+    "relL2": 7.234319365778674e-09
+   },
+   "conditionSeconds": 0.018332250183448195,
+   "conditionRows": {
+    "ours": 126,
+    "reference": 126
+   },
+   "encoder": {
+    "cosine": 0.9999984955551229,
+    "relL2": 0.0017348884139209986,
+    "maskEqual": true
+   },
+   "ditSeconds": 0.40990808280184865,
+   "vaeSeconds": 0.44251645798794925,
+   "tiled": {
+    "0": {
+     "windows": 6,
+     "seconds": 0.393682167166844,
+     "snrDBVsOneWindow": 26.201109197151204,
+     "maxAbsDiff": 0.738525390625
+    },
+    "8": {
+     "windows": 7,
+     "seconds": 0.4597011669538915,
+     "snrDBVsOneWindow": 41.818346231558785,
+     "maxAbsDiff": 0.09749267995357513
+    },
+    "16": {
+     "windows": 7,
+     "seconds": 0.45935054193250835,
+     "snrDBVsOneWindow": 50.809961522967384,
+     "maxAbsDiff": 0.06556135416030884
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 0.46178041701205075,
+     "snrDBVsOneWindow": 54.00020704581869,
+     "maxAbsDiff": 0.03460189700126648
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 0.5253487920854241,
+     "snrDBVsOneWindow": 60.14138503017283,
+     "maxAbsDiff": 0.013010978698730469
+    }
+   }
+  },
+  "lofi-instrumental": {
+   "textSeconds": 0.020612167194485664,
+   "textHidden": {
+    "cosine": 0.99999813341521,
+    "relL2": 0.0019325304310768843
+   },
+   "lyricEmbeds": {
+    "relL2": 0.0
+   },
+   "conditionSeconds": 0.01845891703851521,
+   "conditionRows": {
+    "ours": 93,
+    "reference": 93
+   },
+   "encoder": {
+    "cosine": 0.9999982909272639,
+    "relL2": 0.0018488396890461445,
+    "maskEqual": true
+   },
+   "ditSeconds": 0.4110975400544703,
+   "vaeSeconds": 0.4419959159567952,
+   "tiled": {
+    "0": {
+     "windows": 6,
+     "seconds": 0.3965964999515563,
+     "snrDBVsOneWindow": 32.834101703896145,
+     "maxAbsDiff": 0.292724609375
+    },
+    "8": {
+     "windows": 7,
+     "seconds": 0.4644697499461472,
+     "snrDBVsOneWindow": 49.10708420849914,
+     "maxAbsDiff": 0.07989674061536789
+    },
+    "16": {
+     "windows": 7,
+     "seconds": 0.46588249993510544,
+     "snrDBVsOneWindow": 53.315823172877685,
+     "maxAbsDiff": 0.020803868770599365
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 0.4630026249215007,
+     "snrDBVsOneWindow": 63.12800776137922,
+     "maxAbsDiff": 0.0053787678480148315
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 0.5303239589557052,
+     "snrDBVsOneWindow": 63.13800787459353,
+     "maxAbsDiff": 0.004782497882843018
+    }
+   }
+  },
+  "orchestral-instrumental": {
+   "textSeconds": 0.022958290996029973,
+   "textHidden": {
+    "cosine": 0.9999983485512733,
+    "relL2": 0.0018178796162828803
+   },
+   "lyricEmbeds": {
+    "relL2": 0.0
+   },
+   "conditionSeconds": 0.018775207921862602,
+   "conditionRows": {
+    "ours": 90,
+    "reference": 90
+   },
+   "encoder": {
+    "cosine": 0.9999984649651266,
+    "relL2": 0.0017538199899718165,
+    "maskEqual": true
+   },
+   "ditSeconds": 0.4207888348028064,
+   "vaeSeconds": 0.44878700003027916,
+   "tiled": {
+    "0": {
+     "windows": 6,
+     "seconds": 0.39829170797020197,
+     "snrDBVsOneWindow": 24.964175038427825,
+     "maxAbsDiff": 0.72119140625
+    },
+    "8": {
+     "windows": 7,
+     "seconds": 0.46741516701877117,
+     "snrDBVsOneWindow": 43.385600961634836,
+     "maxAbsDiff": 0.1075909435749054
+    },
+    "16": {
+     "windows": 7,
+     "seconds": 0.4701252500526607,
+     "snrDBVsOneWindow": 50.19940916344333,
+     "maxAbsDiff": 0.045217618346214294
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 0.46895241597667336,
+     "snrDBVsOneWindow": 53.78031720195202,
+     "maxAbsDiff": 0.03592124581336975
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 0.5376935000531375,
+     "snrDBVsOneWindow": 61.77037503114556,
+     "maxAbsDiff": 0.004573941230773926
+    }
+   }
+  }
+ }
+}

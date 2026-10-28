@@ -1,0 +1,22 @@
+{
+ "coreaiVsEagerUnpadded": {
+  "relL2": 0.1918899565935135,
+  "cosine": 0.9816079334079556
+ },
+ "coreaiVsEagerPadded": {
+  "relL2": 0.863993227481842,
+  "cosine": 0.6614001068601058
+ },
+ "coreaiVsEagerUnmasked": {
+  "relL2": 0.863993227481842,
+  "cosine": 0.6614001068601058
+ },
+ "coreaiVsEagerMasked": {
+  "relL2": 0.19189196825027466,
+  "cosine": 0.981607547128151
+ },
+ "randomInputsAllOnesMask": {
+  "relL2": 0.05086419731378555,
+  "cosine": 0.9987072430233402
+ }
+}

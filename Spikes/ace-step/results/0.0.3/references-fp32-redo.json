@@ -1,0 +1,18 @@
+{
+ "snapshot": "19671f406d603126926c1b7e2adc169acbcade22",
+ "frames": 1500,
+ "shift": 3.0,
+ "encoderLength": 512,
+ "prompts": {
+  "orchestral-instrumental": {
+   "conditionTokens": 90,
+   "conditionSeconds": 0.9058680534362793,
+   "fp32TrajectorySeconds": 12.325882196426392
+  },
+  "folk-ballad-vocal": {
+   "conditionTokens": 131,
+   "conditionSeconds": 1.5241107940673828,
+   "fp32TrajectorySeconds": 12.5552978515625
+  }
+ }
+}
