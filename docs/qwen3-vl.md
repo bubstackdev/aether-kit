@@ -375,7 +375,7 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
   example 2:1) can be added to the export and registration without code changes.
 - **Resource admission is per process.** `LanguageResourceAdmission` reserves the encoder's and decoder's memory
   against a host's `ResourceCoordinator`, but a describer in its own process (as Atelier runs it) is invisible to a
-  Krea process's ledger. The cross-process case waits for the [shared-protocol proposal](gpu-lease.md#proposal-declared-residency-and-pid-less-leases).
+  Krea process's ledger. The cross-process case waits for the [shared-protocol proposal](shared-residency-proposal.md).
 - **Coverage still missing:** a multi-image M-RoPE fixture (several images use the same path,
   but only single-image prompts are qualified), iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).

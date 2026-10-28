@@ -127,7 +127,7 @@ From the one-function bundles' memory by phase and budget runs
 `ResourceCoordinator` is per process, and Atelier runs each writer or describer request in its own helper process
 (`atelier-language`), separate from Krea. So the in-process ledger does not prevent the case that crashed. Kit's part
 here is a proposal for the shared lease protocol, written up with the pid-less lease item as one change for Atelier to
-agree on: [declared residency](gpu-lease.md#proposal-declared-residency-and-pid-less-leases). In short:
+agree on: [declared residency](shared-residency-proposal.md). In short:
 - every cooperating process records the bytes it has reserved for loaded models in a per-process file beside
   `/tmp/atelier-gpu.lock`;
 - before loading, it checks the host's total under a short lock of its own, not the lease, so a helper that holds no
