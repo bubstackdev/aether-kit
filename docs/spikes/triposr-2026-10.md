@@ -2,7 +2,7 @@
 
 **Status: 0.0.3 go/no-go result (runs on 2026-10-28).** This is the TripoSR decision for the [0.0.3 roadmap](../roadmap-0.0.3.md#spikes). The [0.0.3 decision](#003-decision-2026-10-28) section answers what the 0.0.2 feasibility result left open; the [0.0.2 feasibility result](#002-feasibility-result-runs-on-2026-10-26) follows it, kept as it was.
 
-**Verdict: go.** On six real images through Kit-style preprocessing, Core AI fp16 matches eager fp32 on every gate criterion: occupancy IoU 0.996–0.998 at 256³ (bar 0.98), Chamfer distance 0.14–0.16% of the bounding-box diagonal (bar 1%, and at the sampling noise floor), 0.37–0.38 s from image to coloured mesh after load (bar about 3 s), and a self-authored USDZ that passes `usdchecker --arkit`. The gather-free grid function cut the density grid from 1.20 s to 0.16–0.17 s, but only after replacing an `einsum` that Core AI miscompiles silently. iPhone is outside this decision.
+**Verdict: go.** On six real images through Kit-style preprocessing, Core AI fp16 matches eager fp32 on every gate criterion: occupancy IoU 0.996–0.998 at 256³ (bar 0.98), Chamfer distance 0.14–0.16% of the bounding-box diagonal (bar 1%, and at the sampling noise floor), 0.37–0.38 s from image to coloured mesh after load (bar about 3 s; the sum of separately timed stages), and a self-authored USDZ that passes `usdchecker --arkit`. Every figure is from a single run. The gather-free grid function cut the density grid from 1.20 s to 0.16–0.17 s, but only after replacing an `einsum` that Core AI miscompiles silently. iPhone is outside this decision.
 
 ## 0.0.3 decision (2026-10-28)
 
@@ -17,13 +17,13 @@
   - Eager and Core AI read the same `.npy` inputs, so the comparison is of the model only.
 - **Exports (fp16, static shapes):** `scene` (800 MB), `field` at 65,536 and at 262,144 points, and `grid-256x16`, the gather-free density over 16 z-planes of the 256³ grid (each about 0.1 MB). Each export took 0.3–2.9 s, at up to 3.85 GB peak RSS.
 - **References:** eager fp32 on the CPU, through upstream's own `renderer.query_triplane` (`grid_sample`): scene codes, the 256³ density grid, and the marching-cubes mesh at threshold 25 (`reference_images.py`). Per image, 2.3–2.6 s for the scene codes and 4.7–6.2 s for the grid on a shared host.
-- **Core AI run:** one GPU hold of 27 s under `with-gpu-lock.sh` (`gpu_run_images.sh`, 08:09:10–08:09:37), on a lightly loaded shared host (one-minute load about 5–8). Peak RSS 3.72 GB, footprint 3.86 GB.
+- **Core AI run:** one GPU hold of 27 s under `with-gpu-lock.sh` (`gpu_run_images.sh`, 08:09:10–08:09:37), on a lightly loaded shared host: one-minute load 5.1 before the lock wait and 7.8 right after the hold (`host-load.log`). Peak RSS 3.72 GB, footprint 3.86 GB.
 
 ### The gate
 
 | Image | IoU, field 65,536 | IoU, field 262,144 | IoU, slab grid | Chamfer / diagonal | Image to coloured mesh |
 | --- | --- | --- | --- | --- | --- |
-| captured (Vision mask) | 0.9968 | 0.9968 | 0.9968 | 0.142% | 0.384 s |
+| captured (Vision mask) | 0.9968 | 0.9968 | 0.9968 | 0.143% | 0.384 s |
 | chair | 0.9964 | 0.9964 | 0.9965 | 0.143% | 0.369 s |
 | hamburger | 0.9964 | 0.9964 | 0.9967 | 0.161% | 0.374 s |
 | poly_fox (Vision mask) | 0.9965 | 0.9965 | 0.9968 | 0.150% | 0.369 s |
@@ -36,20 +36,20 @@ All six pass, and so does the USDZ check below ([gate record](../../Spikes/tripo
 - **IoU** is occupancy at threshold 25 over the 256³ grid, against the eager fp32 grid.
 - **Chamfer** is the mean of both directions' nearest-neighbour distances over 100,000 surface samples per mesh. It sits at the metric's own floor: two different samplings of the *same* eager mesh give 0.140–0.162% (`mesh_metrics.py`). So the bar can't tell these meshes from the reference; the vertex distances below are the sharper measure.
 - **Vertices** land within 0.15% of the diagonal of an eager vertex at the 99th percentile, and within 0.57% at worst (hamburger). Vertex counts are within 0.25% of the eager meshes' (40,814–80,682).
-- **Scene codes:** cosine ≥ 0.9999993 against eager fp32, max relative error ≤ 2.3e-3.
+- **Scene codes:** cosine ≥ 0.9999992 against eager fp32, max relative error ≤ 2.4e-3.
 - **Faces** wind outward: every mesh is watertight with a positive signed volume.
-- **Time** is image to coloured mesh after load: warm scene codes (59–60 ms), the slab grid (159–168 ms), marching cubes on the CPU (135–146 ms, PyMCubes) and vertex colours through `field` (7–20 ms). It excludes background removal and the resize, which weren't timed, and the first scene call (75–92 ms). Loading the four assets took 0.95 s with their specializations already cached.
+- **Time** is image to coloured mesh after load, summed from separately timed stages of one run: warm scene codes (59–60 ms), the slab grid (159–168 ms), marching cubes on the CPU (135–146 ms, PyMCubes) and vertex colours through `field` (7–20 ms). It excludes background removal and the resize, which weren't timed, and the first scene call (75–92 ms). Loading the four assets took 0.95 s with their specializations already cached.
 
 ### The grid: about 7× faster, after working around a Core AI miscompile
 
 - **Times for the 256³ grid:** `field` in chunks of 65,536 takes 1.20–1.21 s (256 calls), and in chunks of 262,144 it is slower, at 2.31–2.43 s (64 calls). The gather-free slab function takes 0.16–0.17 s (16 calls). That's the 0.0.2 report's open item 3: the grid is no longer most of the time.
-- **The miscompile.** The slab function first sampled each plane with one `einsum` (`"jv,cvu,iu->ijc"`). It ran correctly in eager, at fp32 (5e-6 from the reference) and fp16 (IoU 0.996), but the Core AI export returned unrelated values, with no error: occupancy IoU 0.001–0.003 on all six images, and the infinite densities this produced gave marching cubes NaN vertices.
+- **The miscompile.** The slab function first sampled each plane with one `einsum` (`"jv,cvu,iu->ijc"`). It ran correctly in eager: on one slab of the chair's grid, max relative error 5.2e-6 against upstream's `grid_sample` at fp32 and IoU 0.996 at fp16 (`diag-grid-export.json`). But the Core AI export returned unrelated values, with no error: slab-grid occupancy IoU 0.001–0.003 on all six images, with 426–6,322 non-finite densities each, which gave marching cubes NaN vertices (`einsum-grid-iou.json`, `run-images-256-fp16-einsum-grid.json`).
   - `diag_grid.py` narrows it down: the einsum alone, exported as its own function, has cosine −0.0003 against eager.
   - The same interpolation as two `F.linear` calls (the hat-function weights as the weight matrix) exports correctly: cosine 0.99998 and IoU 0.996 on the same slab.
-  - Two other spellings, a broadcast `matmul` and a `bmm` over an expanded batch, fail coreai-torch's optimizer instead (`broadcast_in_dims`: result and operand ranks differ).
-  - `tsr_graphs.GridField` now uses the linear form, and `check_triplane_sampling.py` still matches `grid_sample` to 3e-16.
+  - Two other spellings, a broadcast `matmul` and a `bmm` over an expanded batch, fail coreai-torch's optimizer instead: `coreai.broadcast_in_dims` from `tensor<1x40x256x256xf16>` to `tensor<40x256x256xf16>`, whose operand and result ranks differ (`diag-grid-export.json`).
+  - `tsr_graphs.GridField` now uses the linear form, and `check_triplane_sampling.py` still matches `grid_sample` to 2.7e-16 (`check-triplane-sampling.log`).
   - This is an Apple Feedback candidate (coreai-torch 0.4.2 on macOS 27.0.1). `diag_grid.py --export` then `--run` reproduces it with any scene codes. Kit's port must check its grid function against eager on real inputs; a silent miscompile looks like a modelling bug.
-- **fp16 overflow.** The density is `exp(…)`, and deep inside dense objects fp32 reaches about 1.1e5, above fp16's 65,504. On the hamburger 46 grid points overflowed to infinity, the eager grid has 45 points above that limit, and occupancy is unaffected. Marching cubes would turn the infinities into NaN vertices, so `run_images.py` clamps them to 65,504; Kit's extraction must do the same, or compute the `exp` in fp32.
+- **fp16 overflow.** The density is `exp(…)`, and deep inside dense objects the eager fp32 grid reaches 108,673 on the hamburger, above fp16's 65,504; 45 of its points exceed that limit, and no other image's do (`mesh-metrics.json`). Core AI's grid overflowed to infinity at 46 points there (`run-images-256-fp16.json`), and occupancy is unaffected. Marching cubes would turn the infinities into NaN vertices, so `run_images.py` clamps them to 65,504; Kit's extraction must do the same, or compute the `exp` in fp32.
 
 ### USDZ
 
@@ -61,7 +61,7 @@ All six pass, and so does the USDZ check below ([gate record](../../Spikes/tripo
 
 It converts the stage to usdc with `usdcat`, then packages it as a stored zip whose entry data starts on a 64-byte boundary. It does the packaging itself because `usdzip` doesn't exist on iOS.
 
-The teapot (1.26 MB, 0.16 s) and the plush toy (1.46 MB, 0.19 s) both pass `usdchecker --arkit` ("Success!"). That closes the 0.0.2 report's open item 4. A Kit port still needs a Swift writer (the stage is a few hundred lines of text plus usdc conversion; whether Kit can write usdc without `usdcat` on iOS is the port's question).
+The teapot (1,258,071 bytes) and the plush toy (1,461,497 bytes) both pass `usdchecker --arkit` ("Success!"). Writing each took 0.14 s and 0.17 s, with a heavy CPU job running alongside (`write-usdz.log`, the two `usdchecker` logs). That closes the 0.0.2 report's open item 4. A Kit port still needs a Swift writer (the stage is a few hundred lines of text plus usdc conversion; whether Kit can write usdc without `usdcat` on iOS is the port's question).
 
 ### What the 0.0.2 open items came to
 
@@ -89,17 +89,19 @@ The 0.0.2 estimate (about 1.5–2 engineer-weeks) stands, with two items now che
   - checks: `check_triplane_sampling.py` and `diag_grid.py`.
 - **Results** (`Spikes/triposr/results/0.0.3/`):
   - `gate.json` and `mesh-metrics.json`;
-  - `run-images-256-fp16.json`, the GPU run, and `run-images-256-fp16-einsum-grid.json`, the first run with the miscompiled grid (its field timings are on a busier host);
+  - `run-images-256-fp16.json`, the GPU run, and `run-images-256-fp16-einsum-grid.json`, the first run, with the miscompiled grid;
   - `references.json`;
-  - `diag-grid-run.json`;
-  - the two `usdchecker` logs;
+  - `diag-grid-run.json` (the GPU comparison) and `diag-grid-export.json` (the eager checks and the two export failures);
+  - `einsum-grid-iou.json`: the first run's IoUs and non-finite counts, from `gate_triposr.py --iou-only`;
+  - `write-usdz.log` and the two `usdchecker` logs;
+  - `check-triplane-sampling.log`, `gpu-lock.log` (this spike's lock lines), `host-load.log` and `data-footprint.log`;
   - `inputs.json`: image and checkpoint hashes;
   - `/usr/bin/time` excerpts for the exports, references and GPU run.
 - **GPU lock:**
   - `spikes: triposr images`, 07:49:17–07:49:58 (the einsum grid);
   - `spikes: triposr grid diagnosis`, 07:53:18–07:53:20;
   - `spikes: triposr images (linear grid)`, 08:09:10–08:09:37.
-- **Data:** weights, inputs, exports, grids and meshes are under the spike data directory on the Scratch volume (about 3.6 GB), not committed.
+- **Data:** weights, inputs, exports, grids and meshes are under the spike data directory on the Scratch volume (4.5 GB without the venv, `data-footprint.log`), not committed.
 
 ### Reproducing (0.0.3)
 
@@ -111,6 +113,7 @@ With `HF_HUB_CACHE` pointing at a cache holding the two pinned snapshots, and th
 5. `gpu_run_images.sh` under the lock, with `SPIKE_ASSETS` set to the data directory that holds `triposr/{exports,inputs}` and the venv.
 6. `gate_triposr.py <references> <results> gate.json --usdz-log <log>` after `write_usdz.py` and `usdchecker --arkit`.
 7. `mesh_metrics.py`.
+8. For the miscompile: `diag_grid.py <src> <codes.npy> <dir> --export --ref-grid <stem>-ref-grid.npy`, then `--run` under the GPU lock.
 
 ## 0.0.2 feasibility result (runs on 2026-10-26)
 

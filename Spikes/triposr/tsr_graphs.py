@@ -7,6 +7,10 @@ the field queries, anything with its `decoder`, `renderer.cfg.radius` and `rende
 
 Core AI can't lower grid_sample, which upstream's renderer uses; both field queries reproduce it exactly
 (check_triplane_sampling.py).
+
+Scene follows TripoSR's tsr/system.py and the field queries reproduce its renderer's query_triplane
+(VAST-AI-Research/TripoSR @ 107cefdc244c), Copyright (c) 2024 Tripo AI & Stability AI, used under the MIT License; see
+LICENSE-TripoSR.
 """
 import torch
 import torch.nn.functional as F

@@ -1,0 +1,18 @@
+# spike data (weights, inputs, exports, references, grids, meshes), du -sh, paths relative to the spike data directory
+1.6G	hf/models--stabilityai--TripoSR
+ 12K	hf/models--facebook--dino-vitb16
+ 63M	triposr/src
+ 19M	triposr/inputs
+5.2M	triposr/masked
+807M	triposr/exports
+406M	triposr/references
+630M	triposr/results
+1.0G	triposr/results-einsum
+ 18M	triposr/diag
+ 18M	triposr/diag-export
+2.6M	triposr/usdz
+4.5G	total
+108K	triposr/exports/field-262144-fp16.aimodel
+108K	triposr/exports/field-fp16.aimodel
+104K	triposr/exports/grid-256x16-fp16.aimodel
+800M	triposr/exports/scene-fp16.aimodel

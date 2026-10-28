@@ -10,6 +10,8 @@ usage: mesh_metrics.py <references-dir> <results-dir> <out.json>
                         Core AI fp16 scene codes against eager fp32
   signedVolume, watertight
                         a positive signed volume on a closed mesh means outward-facing (counter-clockwise) faces
+  refGridMax, refGridAboveFp16Max
+                        the eager fp32 grid's largest density and how many points exceed fp16's 65,504
 """
 import json
 import sys
@@ -40,11 +42,13 @@ for path in sorted(res.glob("*-mesh.npz")):
     triangles = ours["vertices"][ours["faces"]]
     signed_volume = float(np.einsum("ij,ij->i", triangles[:, 0], np.cross(triangles[:, 1], triangles[:, 2])).sum() / 6)
     mesh = trimesh.Trimesh(vertices=ours["vertices"], faces=ours["faces"], process=False)
+    ref_grid = np.load(refs / f"{stem}-ref-grid.npy")
     out[stem] = {"selfChamferBaseline": float(baseline),
                  "codesCosine": float((codes * ref_codes).sum() / np.linalg.norm(codes) / np.linalg.norm(ref_codes)),
                  "codesMaxRelErr": float(np.abs(codes - ref_codes).max() / np.abs(ref_codes).max()),
                  "vertexToRefVertexP99": float(np.percentile(distance, 99) / diagonal),
                  "vertexToRefVertexMax": float(distance.max() / diagonal),
-                 "signedVolume": signed_volume, "watertight": bool(mesh.is_watertight)}
+                 "signedVolume": signed_volume, "watertight": bool(mesh.is_watertight),
+                 "refGridMax": float(ref_grid.max()), "refGridAboveFp16Max": int((ref_grid > 65504).sum())}
     print(stem, json.dumps(out[stem]))
 out_path.write_text(json.dumps(out, indent=1) + "\n")
