@@ -1,8 +1,35 @@
 # Model preparation
 
-Status: proposed, 2026-10-28. This is the first piece of the 0.0.4 release gate, app readiness
+Status: implemented, 2026-10-28, with weight-free CPU tests; real-network and on-device qualification are pending
+([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)). The user decided the four choices below on 2026-10-28. Type
-names are illustrative until the API has run in the sample app.
+names may still change once the API has run in the sample app.
+
+## Quick start
+
+```swift
+import AetherAssets
+import AetherLanguage
+
+// An entry Kit's tools wrote for the bundle (aether-probe catalog-entry), shipped in the app.
+let entry = try JSONDecoder().decode(ModelCatalogEntry.self, from: entryData)
+let store = try LocalAssetStore(root: applicationSupport.appendingPathComponent("Models"))
+let preparation = ModelPreparation(store: store, transport: .urlSession)
+
+if case .installed = try preparation.status(entry) {} else {
+    for await event in preparation.prepare(entry) {
+        switch event {
+        case let .downloading(_, _, _, done, total): show(progress: Double(done) / Double(total))
+        case let .failed(error): show(error, canRetry: error.isRetryable); return
+        default: break
+        }
+    }
+}
+let model = AetherLanguageModel(installation: try await store.acquire(entry.installationID))
+```
+
+For downloads that should continue while an iOS app is suspended, use `BackgroundTransport(identifier:)` instead of
+`.urlSession`, and forward the app's background-session events (see [Transport](#transport)).
 
 ## What exists
 
