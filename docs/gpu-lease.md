@@ -53,7 +53,7 @@ The lease serializes GPU work, not memory: models stay loaded between turns, so 
 more than the Mac has. The [shared residency proposal](shared-residency-proposal.md) adds per-process residency records
 beside the lease, read and written under their own short lock so a helper without a GPU grant (Atelier's
 `atelier-language`) takes part, and settles the pid-less item above in the same change. Proposed for Atelier and Kit to
-agree on; not implemented.
+agree on, as a coordinated future change (not 0.0.3 work); not implemented.
 
 ## Kit tools take the lease by default
 
