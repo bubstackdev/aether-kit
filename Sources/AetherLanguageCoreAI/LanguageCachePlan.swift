@@ -40,10 +40,17 @@ enum LanguageCachePlan {
         return position + count
     }
 
-    /// Capacity a new request starts from: bucketed sessions return to the initial capacity
-    /// (their per-step cost follows the allocation they attend over); running sessions keep theirs.
-    static func requestCapacity(allocated: Int, initial: Int, resets: Bool) -> Int {
-        resets ? min(allocated, initial) : allocated
+    /// Capacity a new request starts from. Running sessions keep theirs. Bucketed sessions allocate the prefill's
+    /// capacity at once: the `prefillTokens` rows rounded up to the granularity, and at least the initial capacity
+    /// (their per-step cost follows the allocation they attend over, so a request never keeps a previous long
+    /// request's). Every prefill chunk then submits one (count, capacity) shape instead of one per capacity step it
+    /// crosses: Core AI retains memory on every shape change, and growing the cache step by step also re-copies it.
+    /// Decoding grows it in steps from there, as before; a prompt within the initial capacity starts there, as before.
+    /// `prefillTokens` 0 keeps the 0.0.2 start, the initial capacity (a 0.0.2 two-function asset's plan).
+    static func requestCapacity(allocated: Int, initial: Int, resets: Bool, prefillTokens: Int, maximum: Int) throws -> Int {
+        guard resets else { return allocated }
+        guard prefillTokens > 0 else { return min(allocated, initial) }
+        return max(min(allocated, initial), try bucketedCapacity(needed: prefillTokens, maximum: maximum))
     }
 
     /// Writes a bucketed step's `[layers, batch, heads, count, width]` update (any strides) into a
