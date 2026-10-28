@@ -30,7 +30,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
   - alpha handling: done; Kit now drops alpha like upstream by default (`VisionAlphaPolicy`), where 0.0.2 composited over black.
   - Plan and evidence for all three: [Qwen3-VL coverage plan](qwen3-vl-coverage-plan.md).
 - **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases. Retested on iOS 27.2: it still aborts on the Neural Engine at the first float16 call, so float32 stays the only shipped decoder ([log](evidence/kokoro-iphone18-fp16-ane-abort-2026-10-28.log)).
-- **H3 promotion:** media audit and per-stage lifecycle qualification (both done 2026-10-28; the subjective review is with the user) before the experimental label is dropped, plus a durable home for the qualified profile (a Kit-owned clone since 2026-10-27; profile paths relative to `bundle.json` are a follow-up). Measured admission covers more profiles and Macs as they're measured.
+- **H3 promotion:** done 2026-10-28. Media audit and per-stage lifecycle qualification passed, and the user's subjective audio and video review passed, so H3 is Preview from 0.0.3. The qualified profile has a durable Kit-owned home (a clone since 2026-10-27); profile paths relative to `bundle.json` are a follow-up. Measured admission covers more profiles and Macs as they're measured.
 
 ### Safety and correctness
 
@@ -86,6 +86,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **FLUX.2 on iOS,** moved from 0.0.3 by user decision (2026-10-28).
 - **Hybrid language models: re-qualify a start-scalar dynamic-q contract** ([0.0.3 spike](spikes/hybrid-state-0.0.3.md#core-ai-defects-and-apple-feedback-candidates)). Positions go in as a [1, 1] start, which removes the two-carrier export cause of the 0.0.3 GPU failures. It is measured but not parity-qualified, and it would let hybrids use the bucketed planner without padding.
 - **iOS open-time memory check,** calibrated from a measured on-device peak (needs the VL-2B run with the entitlement). On an iPhone18,2 at the default limit, an over-budget VL-2B aborted inside Core AI's compiler instead of being refused ([on-device host](language-generation.md#on-device-host-003)).
+- **Turbo4 qualification** (user's side-by-side review 2026-10-28: worth qualifying). Turbo4 stays outside measured admission in 0.0.3.
 - **H3 fused attention,** moved from 0.0.3: re-exporting the body graph gives a new profile identity, which resets H3's qualification evidence.
 
 ## Open questions

@@ -125,7 +125,7 @@ public struct H3VideoStages: Sendable {
     }
 }
 
-/// Experimental end-to-end H3 session over injected stages: prompt encoding, seeded
+/// End-to-end H3 session (Preview since 0.0.3) over injected stages: prompt encoding, seeded
 /// latents, denoising, windowed video decoding and optional audio decoding, strictly in
 /// sequence so at most one heavyweight stage is resident. One call at a time; cancellation
 /// is observed between stages, steps (by the denoiser) and decoder windows, and every

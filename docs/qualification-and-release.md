@@ -45,7 +45,7 @@ Krea is the proposed first supported model. Qualify dynamic shapes beyond the ex
 
 The first language model must exercise multi-turn state, prefill/decode, stop/EOS behavior, context bounds, Unicode streaming, cancellation and optional structured-output capability. Do not imply every engine/model supports every feature.
 
-H3 stays experimental until repeated native runs, subjective audio/video quality, memory behavior, cancellation and cache-hit timings are accepted. Retain the QKV regression and full media audit. Earlier base50 partial runs are not completed benchmarks.
+H3 stays experimental until repeated native runs, subjective audio/video quality, memory behavior, cancellation and cache-hit timings are accepted. **Accepted 2026-10-28; H3 is Preview from 0.0.3** (evidence in the [0.0.3 release notes](release-notes/0.0.3.md#h3-promotion-to-preview)). Retain the QKV regression and full media audit. Earlier base50 partial runs are not completed benchmarks.
 
 - [ ] **H3 measured entry:** re-gate (`Scripts/qualify-h3-memory.py`) if any path the bundled entry's gate record pins has changed since that record: the probe binary, `Package.swift`, the profile, prompt and keyframes, and every file under `Sources/AetherKit`, `AetherCoreAI`, `AetherH3`, `AetherH3CoreAI` and `AetherProbe`. Nothing checks this automatically: the pins are a point-in-time record, and at run time Kit checks only the execution identity, device architecture and the 18 GiB bar. Treat the source pins and `Package.swift` as the trigger; the probe binary's pin is informational, because a rebuilt binary never matches byte for byte and the probe also links targets the gate does not pin.
 
