@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "bundleFingerprint": "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+  "textToImageFixture": "ffc4b1365159e40c",
+  "referenceFixture": "80a86a512315fa94",
+  "warmupIterations": 2,
+  "measuredIterations": 5,
+  "profile": "encoded",
+  "residency": "balanced",
+  "minimumProvidedSSIM": 0.94,
+  "cases": [
+    {"id": "fox-512", "fixture": "t2i", "fixtureCase": "fox-512"},
+    {"id": "lighthouse-512", "fixture": "t2i", "fixtureCase": "lighthouse-512"},
+    {"id": "cat-1024", "fixture": "t2i", "fixtureCase": "cat-1024"},
+    {"id": "fox-watercolor-ref1", "fixture": "reference", "fixtureCase": "fox-watercolor-ref1"}
+  ]
+}
