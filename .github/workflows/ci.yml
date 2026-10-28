@@ -13,7 +13,8 @@ permissions:
   contents: read
 
 # Replace stale PR builds, and stale main builds: a PR must be up to date to merge, so each main push is a tree its PR
-# already passed, and the newest main push supersedes the older ones. Merge-queue and manual runs each run in full.
+# already passed (a documentation-only PR's tree gets its full run on main), and the newest main push supersedes the
+# older ones. Merge-queue and manual runs are never cancelled by a newer run.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || (github.event_name == 'push' && github.ref) || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
@@ -235,7 +236,8 @@ jobs:
 
   required:
     name: CI passed
-    if: ${{ always() }}
+    # A main run superseded by a newer push skips the gate instead of failing it; every other cancellation still fails.
+    if: ${{ always() && !(github.event_name == 'push' && cancelled()) }}
     needs: [changes, workflows, floor-macos, floor-ios, contracts, floor-launch]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
