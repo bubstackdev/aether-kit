@@ -121,7 +121,8 @@ stored pixels moved where each orientation puts them, byte for byte, for all eig
 are qualified against upstream fed as Transformers' `load_image` feeds it (`exif_transpose`, then `convert("RGB")`):
 four lossless variants of the Kit-decoded photos, stored rotated and tagged with orientation 6, 8 or 3, give the
 unrotated images' grids, pixels, forced rows and greedy tokens exactly, on the reference and through Kit's same-decode
-run ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)).
+run ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)). That includes the 4:3 market photo's divergence
+from upstream at token 16, a reference near-tie (margin 0.012) that its unrotated run shows too.
 
 ## Dynamic shapes are a correctness hazard for the encoder
 
@@ -221,13 +222,13 @@ change.)
 component-level Kit run token for token on all five cases, and closes on `unload()`.
 
 **Several images** ([evidence](evidence/qwen3-vl-multi-image-2026-10-27.json), VL-2B). Three prompts against
-upstream with several images each, one case per reference process (13.6 GB peak each): the portrait and the fruit
-stall (48×36 and 32×56, 880 image tokens), three images (the two photos and the 448×448 scene, 1,348 tokens), and the
+upstream with several images each, one case per reference process (14.3 GB peak each): the portrait and the fruit
+stall (48×36 and 32×56, 880 image tokens), three images (the portrait, the 4:3 market photo and the 448×448 scene, 1,348 tokens), and the
 two photos with a sentence between them. On the CPU, the prompt plan's expansion and M-RoPE positions equal the
 processor's ids and the model's rope index for every token (`LanguageVisionPromptTests.severalImagesMatchUpstream`):
-each image starts its span at the position after the previous text and the following text resumes at max(t, h, w)
-past the span's start, with no temporal offset between images. Natively, model parity passes on all three (forced-row
-cosine ≥ 0.99979, no argmax differences, greedy identical), and so does Kit preprocessing on the same decode (pixel
+each image starts its span at the position after the previous text and the following text resumes at max(t, h, w) of the
+merged grid past the span's start, with no temporal offset between images. Natively, model parity passes on all three (forced-row
+cosine ≥ 0.99978, no argmax differences, greedy identical), and so does Kit preprocessing on the same decode (pixel
 cosine ≥ 0.9999998 and equal grids per image, forced-row cosine ≥ 0.99994, greedy identical). The overlapped-prefill
 check adds a two-image prompt whose 64-token chunks cross every image edge: default chunks, 512-token chunks and
 1-token steps give identical greedy output. The 4B is not yet qualified with several images.
