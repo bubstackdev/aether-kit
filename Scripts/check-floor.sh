@@ -13,16 +13,21 @@ cd "$(dirname "$0")/.."
 stage=${1:-}
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/.build/swift-module-cache"
-swiftpm_flags="--build-system ${AETHER_BUILD_SYSTEM:-swiftbuild} --disable-sandbox --cache-path $PWD/.build/cache --config-path $PWD/.build/config --security-path $PWD/.build/security"
+# swiftpm <subcommand> [arguments]: SwiftPM with check.sh's build engine and in-checkout caches.
+swiftpm() {
+    subcommand=$1
+    shift
+    swift "$subcommand" --build-system "${AETHER_BUILD_SYSTEM:-swiftbuild}" --disable-sandbox --cache-path "$PWD/.build/cache" \
+        --config-path "$PWD/.build/config" --security-path "$PWD/.build/security" "$@"
+}
 
 python3 -I Scripts/annotate-floor.py --check
 
-# shellcheck disable=SC2086
-swift build $swiftpm_flags
+swiftpm build
 echo "Every product builds at macOS 14.0"
 
 if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
-    libraries=$(swift package $swiftpm_flags dump-package | python3 -I -c '
+    libraries=$(swiftpm package dump-package | python3 -I -c '
 import json, sys
 print("\n".join(p["name"] for p in json.load(sys.stdin)["products"] if "library" in p["type"]))')
     for scheme in $libraries; do
@@ -65,16 +70,14 @@ stage_binary() {
     mkdir -p "$3"
     cp "$1" "$3/"
     if otool -L "$1" | grep -q '@rpath/libswiftCompatibilitySpan.dylib'; then
-        span=$(ls -d "$(dirname "$(xcrun --find swift)")"/../lib/swift-*/"$2"/libswiftCompatibilitySpan.dylib | tail -1)
+        span=$(find "$(dirname "$(xcrun --find swift)")/../lib" -path "*/swift-*/$2/libswiftCompatibilitySpan.dylib" | sort | tail -1)
         cp "$span" "$3/"
     fi
 }
 
 consumer=Examples/FloorConsumer
-# shellcheck disable=SC2086
-swift build $swiftpm_flags --package-path "$consumer" --force-resolved-versions -c release
-# shellcheck disable=SC2086
-macos_binary="$(swift build $swiftpm_flags --package-path "$consumer" -c release --show-bin-path)/AetherFloorConsumer"
+swiftpm build --package-path "$consumer" --force-resolved-versions -c release
+macos_binary="$(swiftpm build --package-path "$consumer" -c release --show-bin-path)/AetherFloorConsumer"
 check_binary "$macos_binary" 14.0 macOS
 "$macos_binary"
 [ -z "$stage" ] || stage_binary "$macos_binary" macosx "$stage/macos"
