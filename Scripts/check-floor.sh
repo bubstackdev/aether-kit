@@ -16,7 +16,9 @@ part=all
 case ${1:-} in
     --macos) part=macos; shift ;;
     --ios) part=ios; shift ;;
+    -*) echo "usage: $0 [--macos | --ios] [STAGE_DIR]" >&2; exit 2 ;;
 esac
+[ $# -le 1 ] || { echo "usage: $0 [--macos | --ios] [STAGE_DIR]" >&2; exit 2; }
 stage=${1:-}
 ios_sdk=false
 if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
@@ -46,7 +48,8 @@ if [ "$part" != macos ] && [ "$ios_sdk" = true ]; then
 import json, sys
 print("\n".join(p["name"] for p in json.load(sys.stdin)["products"] if "library" in p["type"]))')
     for scheme in $libraries; do
-        xcodebuild -quiet -scheme "$scheme" -destination generic/platform=iOS -derivedDataPath .build/floor-ios build
+        xcodebuild -quiet -scheme "$scheme" -destination generic/platform=iOS -derivedDataPath .build/floor-ios \
+            -onlyUsePackageVersionsFromResolvedFile build
     done
     echo "Every library product builds at iOS 17.0"
 elif [ "$part" = all ]; then
@@ -101,6 +104,6 @@ fi
 
 if [ "$part" != macos ] && [ "$ios_sdk" = true ]; then
     (cd "$consumer" && xcodebuild -quiet -scheme AetherFloorConsumer -destination generic/platform=iOS \
-        -configuration Release -derivedDataPath ../../.build/floor-consumer-ios build)
+        -configuration Release -derivedDataPath ../../.build/floor-consumer-ios -onlyUsePackageVersionsFromResolvedFile build)
     check_binary .build/floor-consumer-ios/Build/Products/Release-iphoneos/AetherFloorConsumer 17.0 iOS
 fi

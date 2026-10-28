@@ -43,7 +43,8 @@ jobs:
           swift=true
           if [[ $EVENT == pull_request ]]; then
             # A pull_request checkout is the PR's merge commit, whose first parent is the base branch.
-            changed=$(git diff --name-only HEAD^1 HEAD)
+            # --no-renames lists a moved file's old path too, so moving a file out of the package can't look like a docs change.
+            changed=$(git diff --name-only --no-renames HEAD^1 HEAD)
             echo "$changed"
             if [[ -n $changed ]] && ! grep -qvE '^(docs/|Spikes/|Forge/|[^/]+\.md$|LICENSE$|NOTICE$)' <<<"$changed"; then
               swift=false
@@ -70,7 +71,7 @@ jobs:
           shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-ci-host.sh Scripts/check-floor.sh \
             Scripts/launch-floor-consumer.sh
 
-  # The four Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
+  # The three Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
   floor-macos:
     name: Package floor (macOS 14)
     needs: changes
@@ -158,7 +159,7 @@ jobs:
           retention-days: 14
 
   contracts:
-    name: Release contracts
+    name: Release contracts and consumers
     needs: changes
     if: ${{ needs.changes.outputs.swift == 'true' }}
     runs-on: xcode-27
@@ -191,42 +192,6 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
           # Swift Testing adds this suffix to the requested xUnit filename.
           test -s "$RUNNER_TEMP/aether-ci/tests-swift-testing.xml"
-      - name: Preserve diagnostics and test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ci-diagnostics-contracts-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/aether-ci/
-          if-no-files-found: warn
-          retention-days: 14
-
-  consumers:
-    name: Independent consumers
-    needs: changes
-    if: ${{ needs.changes.outputs.swift == 'true' }}
-    runs-on: xcode-27
-    timeout-minutes: 30
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
-      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
-      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Verify Apple silicon and the supported toolchain
-        run: |
-          mkdir -p "$RUNNER_TEMP/aether-ci"
-          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
-      - name: Cache dependency repositories
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .build/cache/repositories
-            ~/Library/Caches/org.swift.swiftpm/repositories
-          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
       - name: Independent foundation consumer
         run: |
           swift run --package-path Examples/Foundations --force-resolved-versions -c release \
@@ -235,11 +200,11 @@ jobs:
         run: |
           swift run --package-path Examples/LocalPackage --force-resolved-versions -c release \
             2>&1 | tee "$RUNNER_TEMP/aether-ci/sdk-consumer.log"
-      - name: Preserve diagnostics
+      - name: Preserve diagnostics and test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ci-diagnostics-consumers-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ci-diagnostics-contracts-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/aether-ci/
           if-no-files-found: warn
           retention-days: 14
@@ -270,7 +235,7 @@ jobs:
   required:
     name: CI passed
     if: ${{ always() }}
-    needs: [changes, workflows, floor-macos, floor-ios, contracts, consumers, floor-launch]
+    needs: [changes, workflows, floor-macos, floor-ios, contracts, floor-launch]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -282,19 +247,17 @@ jobs:
           FLOOR_MACOS_RESULT: ${{ needs.floor-macos.result }}
           FLOOR_IOS_RESULT: ${{ needs.floor-ios.result }}
           CONTRACTS_RESULT: ${{ needs.contracts.result }}
-          CONSUMERS_RESULT: ${{ needs.consumers.result }}
           FLOOR_RESULT: ${{ needs.floor-launch.result }}
         run: |
           echo "Change scope: $CHANGES_RESULT (Swift jobs: $SWIFT)"
           echo "Workflow validation: $WORKFLOW_RESULT"
           echo "Package floor (macOS 14): $FLOOR_MACOS_RESULT"
           echo "Package floor (iOS 17): $FLOOR_IOS_RESULT"
-          echo "Release contracts: $CONTRACTS_RESULT"
-          echo "Independent consumers: $CONSUMERS_RESULT"
+          echo "Release contracts and consumers: $CONTRACTS_RESULT"
           echo "Launch at the floor: $FLOOR_RESULT"
           [[ "$CHANGES_RESULT" == success && "$WORKFLOW_RESULT" == success ]]
           # The Swift jobs must all succeed, or, only for a documentation-only pull request, all be skipped.
           if [[ "$SWIFT" == false ]]; then expected=skipped; else expected=success; fi
-          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$CONSUMERS_RESULT" "$FLOOR_RESULT"; do
+          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$FLOOR_RESULT"; do
             [[ "$result" == "$expected" ]]
           done
