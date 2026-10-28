@@ -2,14 +2,17 @@ import AetherKit
 
 /// A loaded stateless model as seen by staged generation pipelines. `ModelSession` conforms; tests
 /// substitute scripted models. Package-internal so family modules share one admission decorator.
+@available(macOS 27, iOS 27, *)
 package protocol StagedModel: Sendable {
     var functions: [ModelFunctionDescription] { get }
     func runTensors(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue]
     func unload() async
 }
 
+@available(macOS 27, iOS 27, *)
 extension ModelSession: StagedModel {}
 
+@available(macOS 27, iOS 27, *)
 package func signature(_ model: any StagedModel, named name: String) throws -> ModelFunctionDescription {
     guard let value = model.functions.first(where: { $0.name == name }) else {
         throw AetherError.invalidModel("missing function '\(name)'")
@@ -20,6 +23,7 @@ package func signature(_ model: any StagedModel, named name: String) throws -> M
 /// Reserves a model's residency before `open` and its per-call scratch before each native
 /// submission, holding scratch until the submitted call joins. Residency is released only after
 /// joined unload. These are reservations of caller estimates, not measured memory.
+@available(macOS 27, iOS 27, *)
 package func openBudgeted(
     coordinator: ResourceCoordinator, residentBytes: UInt64, runScratchBytes: UInt64,
     open: () async throws -> any StagedModel
@@ -39,6 +43,7 @@ package func openBudgeted(
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private actor BudgetedStagedModel: StagedModel {
     nonisolated let functions: [ModelFunctionDescription]
     private var model: (any StagedModel)?

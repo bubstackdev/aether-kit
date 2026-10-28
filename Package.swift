@@ -1,9 +1,14 @@
 // swift-tools-version: 6.4
+import CompilerPluginSupport
 import PackageDescription
 
+// The floor is macOS 14 / iOS 17, so apps can link the language facade there; it reports "unsupported OS" below 27.
+// Every target that uses Core AI is gated at macOS 27 / iOS 27 declaration by declaration (Scripts/annotate-floor.py),
+// and CoreAI links weakly because every reference to it is availability-gated. Tests build with
+// `--triple arm64-apple-macosx27.0` (docs/deployment-floor.md).
 let package = Package(
     name: "AetherKit",
-    platforms: [.macOS("27.0"), .iOS("27.0")],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherAssets", targets: ["AetherAssets"]),
@@ -12,6 +17,7 @@ let package = Package(
         .library(name: "AetherLanguageRuntime", targets: ["AetherLanguageRuntime"]),
         .library(name: "AetherLanguage", targets: ["AetherLanguage"]),
         .library(name: "AetherLanguageFoundationModels", targets: ["AetherLanguageFoundationModels"]),
+        .library(name: "AetherLanguageMacros", targets: ["AetherLanguageMacros"]),
         .library(name: "AetherLanguageTokenizers", targets: ["AetherLanguageTokenizers"]),
         .library(name: "AetherVision", targets: ["AetherVision"]),
         .library(name: "AetherH3CoreAI", targets: ["AetherH3CoreAI"]),
@@ -29,6 +35,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/huggingface/swift-transformers", exact: "1.1.0"),
+        // The @AetherGenerable macro's compiler plugin only (it runs on the build host); pinned to the Swift 6.4 toolchain's.
+        .package(url: "https://github.com/swiftlang/swift-syntax", exact: "604.0.0"),
     ],
     targets: [
         .target(name: "AetherKit"),
@@ -39,19 +47,25 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")],
             linkerSettings: [.linkedFramework("CoreAI")]
         ),
-        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit, so it can build below the
-        // Core AI floor (Scripts/check-floor.sh typechecks it at macOS 14 and iOS 17).
+        // Backend-neutral language runtime: no Core AI, Metal, Synchronization or AetherKit.
         .target(name: "AetherLanguageRuntime"),
         .target(name: "AetherLanguageCoreAI", dependencies: ["AetherKit", "AetherCoreAI", "AetherVision", "AetherLanguageRuntime"],
                 swiftSettings: [.enableExperimentalFeature("Lifetimes")]),
-        // The app-facing text facade. It must link on macOS 14 and iOS 17 once the package floor drops; it reaches Core AI
-        // only behind availability checks (docs/language-facade.md).
+        // The app-facing text facade. It links and launches on macOS 14 and iOS 17, and reaches Core AI only behind
+        // availability checks (docs/language-facade.md).
         .target(name: "AetherLanguage", dependencies: [
             "AetherKit", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherLanguageCoreAI",
         ]),
-        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. A separate product, so an
-        // app on an older OS doesn't link FoundationModels' newer API.
+        // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. FoundationModels links
+        // weakly, like CoreAI.
         .target(name: "AetherLanguageFoundationModels", dependencies: ["AetherLanguage", "AetherLanguageTokenizers"]),
+        // @AetherGenerable and @AetherGuide: a separate product, so facade users who write schemas by hand (or use
+        // FoundationModels' @Generable through the adapter) don't build swift-syntax.
+        .target(name: "AetherLanguageMacros", dependencies: ["AetherLanguage", "AetherLanguageMacrosPlugin"]),
+        .macro(name: "AetherLanguageMacrosPlugin", dependencies: [
+            .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+            .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+        ]),
         .target(name: "AetherLanguageTokenizers", dependencies: [
             "AetherKit", .product(name: "Tokenizers", package: "swift-transformers"),
         ]),
@@ -82,6 +96,11 @@ let package = Package(
         .testTarget(name: "AetherLanguageTests", dependencies: [
             "AetherLanguage", "AetherLanguageFoundationModels", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherKit",
         ]),
+        .testTarget(name: "AetherLanguageMacrosTests", dependencies: [
+            "AetherLanguageMacros", "AetherLanguageMacrosPlugin",
+            .product(name: "SwiftSyntaxMacroExpansion", package: "swift-syntax"),
+            .product(name: "SwiftSyntaxMacrosGenericTestSupport", package: "swift-syntax"),
+        ]),
         .testTarget(name: "AetherLanguageRuntimeTests", dependencies: ["AetherLanguageRuntime"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherLanguageCoreAITests", dependencies: ["AetherLanguageCoreAI", "AetherKit", "AetherVision"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherVisionTests", dependencies: ["AetherVision"], resources: [.copy("Fixtures")]),
@@ -100,7 +119,7 @@ let package = Package(
         .testTarget(name: "AetherProbeTests", dependencies: ["AetherProbe", "AetherKit", "AetherKrea", "AetherKreaCoreAI"]),
         .testTarget(name: "AetherNativeTests", dependencies: [
             "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaCoreAI", "AetherKreaTokenizers",
-            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguage", "AetherLanguageFoundationModels", "AetherLanguageCoreAI", "AetherLanguageTokenizers",
+            "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherLanguage", "AetherLanguageFoundationModels", "AetherLanguageMacros", "AetherLanguageCoreAI", "AetherLanguageTokenizers",
             "AetherSpeech", "AetherSpeechCoreAI", "AetherVision",
         ]),
     ]

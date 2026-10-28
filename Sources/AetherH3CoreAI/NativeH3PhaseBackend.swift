@@ -7,6 +7,7 @@ import Metal
 
 /// Fixed outer-phase binding. Embedded graph weights remain in their exported
 /// precision; BF16 inputs/outputs use direct shared buffers without fp16 copies.
+@available(macOS 27, iOS 27, *)
 actor NativeH3PhaseBackend: H3PhaseBackend {
     private struct Binding {
         let name: String
@@ -98,6 +99,7 @@ actor NativeH3PhaseBackend: H3PhaseBackend {
         return result
     }
 }
+@available(macOS 27, iOS 27, *)
 private extension H3ScalarType {
     var native: NDArray.ScalarType {
         switch self { case .bfloat16: .bfloat16; case .float32: .float32; case .int32: .int32 }

@@ -18,6 +18,7 @@ import Synchronization
 /// recovery and post-unload render must equal the baseline: all trajectory hashes, the frames and the PCM.
 /// `--scenarios=NAME,...` runs the baseline plus only the named scenarios, so a long run can be split into shorter GPU
 /// holds.
+@available(macOS 27, iOS 27, *)
 enum H3SessionLifecycleCommand {
     static let usage = "use qualify-h3-session-lifecycle PROFILE.json DUMP NEW_DIRECTORY [--scenarios=NAME,...]"
 
@@ -187,6 +188,7 @@ enum H3SessionLifecycleCommand {
 }
 
 /// The ordered native-call journal of one scenario.
+@available(macOS 27, iOS 27, *)
 final class H3NativeJournal: Sendable {
     enum Entry: Sendable, Equatable { case native(H3NativeCall), marker(String) }
     private let state = Mutex([Entry]())
@@ -239,6 +241,7 @@ final class H3NativeJournal: Sendable {
 }
 
 /// Runs `action` once, synchronously, when the armed graph's call begins.
+@available(macOS 27, iOS 27, *)
 final class H3NativeTrigger: Sendable {
     private let state = Mutex<(graph: String, call: Int, action: (@Sendable () -> Void)?)>(("", -1, nil))
     func arm(graph: String, call: Int, _ action: @escaping @Sendable () -> Void) { state.withLock { $0 = (graph, call, action) } }
@@ -253,11 +256,13 @@ final class H3NativeTrigger: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 struct H3RenderDigest: Sendable {
     let frames: String, pcm: String, trajectoryHashes: Int, mismatches: [String]?
     var summary: String { "frames \(frames.prefix(12)) pcm \(pcm.prefix(12)) hashes \(trajectoryHashes) mismatches \(mismatches.map { String($0.count) } ?? "-")" }
 }
 
+@available(macOS 27, iOS 27, *)
 private actor H3DigestTape {
     private var frames = Data(), pcm = Data()
     func add(frames batch: H3DecodedFrames) { for frame in batch.rgb { frames.append(contentsOf: frame) } }
@@ -268,6 +273,7 @@ private actor H3DigestTape {
 }
 
 /// Incrementally written lifecycle report.
+@available(macOS 27, iOS 27, *)
 final class H3SessionLifecycleReport: Sendable {
     private let url: URL
     private let state = Mutex([String: Any]())

@@ -8,6 +8,7 @@ import Synchronization
 /// A 20 ms memory timeline with named phases, so a peak can be attributed to model load and specialization, a call's
 /// scratch, or memory still held after release. Metal is `MTLDevice.currentAllocatedSize`; footprint is the
 /// process's physical footprint. The two overlap and cannot be added.
+@available(macOS 27, iOS 27, *)
 final class H3MemoryTimeline: Sendable {
     struct Sample: Codable, Sendable { let t: Double; let phase: String; let metal: UInt64; let footprint: UInt64; let resident: UInt64 }
     private let state = Mutex((phase: "start", samples: [Sample]()))
@@ -39,6 +40,7 @@ final class H3MemoryTimeline: Sendable {
 }
 
 /// Memory diagnosis commands (GPU; run them under the GPU lock).
+@available(macOS 27, iOS 27, *)
 enum H3MemoryDiagnosis {
     static func run(_ arguments: [String]) async throws -> Bool {
         switch arguments.first {
@@ -176,6 +178,7 @@ enum H3MemoryDiagnosis {
 /// sample (`h3-memory-render --spike-capture=GiB`). The default capture snapshots this process with `sample` (thread
 /// stacks for 1 s), `vmmap --summary` and `footprint`. `sample` suspends the threads briefly, so timing inside a captured
 /// window is not representative; memory is.
+@available(macOS 27, iOS 27, *)
 final class H3SpikeTrigger: Sendable {
     struct Event: Sendable, Equatable { let phase: String; let t: Double; let metal: UInt64; let footprint: UInt64; let secondsIntoPhase: Double }
     private let threshold: UInt64

@@ -3,6 +3,7 @@ import AetherH3
 
 /// An owned boundary snapshot. The awaited consumer may persist selected values;
 /// retaining snapshots is caller-owned memory, outside native buffer admission.
+@available(macOS 27, iOS 27, *)
 public struct H3DenoisingOutput: Sendable {
     public let stage: String
     public let step: Int
@@ -12,6 +13,7 @@ public struct H3DenoisingOutput: Sendable {
         self.stage = stage; self.step = step; self.block = block; self.tensors = tensors
     }
 }
+@available(macOS 27, iOS 27, *)
 public struct H3DenoisingExecutionEvent: Sendable {
     public let stage: String
     public let step: Int
@@ -21,10 +23,12 @@ public struct H3DenoisingExecutionEvent: Sendable {
         self.stage = stage; self.step = step; self.block = block; self.event = event
     }
 }
+@available(macOS 27, iOS 27, *)
 public typealias H3DenoisingOutputHandler = @Sendable (H3DenoisingOutput) async throws -> Void
 
 /// Experimental eight-step, provided-conditioning trajectory. No tokenizer or
 /// decoder is acquired. Every run restarts its supplied initial latent state.
+@available(macOS 27, iOS 27, *)
 public actor H3DenoisingSession {
     public typealias State = H3BlockSession.State
     public private(set) var state: State = .ready
@@ -62,6 +66,7 @@ public actor H3DenoisingSession {
         observer?(H3DenoisingExecutionEvent(stage: "session", step: -1, event: .unloaded))
     }
 }
+@available(macOS 27, iOS 27, *)
 protocol H3DenoisingBackend: Sendable {
     func run(initial: H3Latents, conditioning: H3TensorData, onOutput: @escaping H3DenoisingOutputHandler) async throws -> H3Latents
 }

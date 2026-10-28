@@ -179,6 +179,27 @@ The original export directories are compatibility symlinks. All files were hash-
 
 The full 34-test suite and all 23 native session checks were repeated successfully using these cache paths. The trace confirms every model load came from the cache, and all seven completed generations match their pre-move latent and pixel hashes exactly. Affine smoke also passed from its cached path on all three policies. See the [cache validation manifest](evidence/huggingface-cache-validation-2026-10-17.json), [cached session trace](evidence/krea-hf-cache-session-2026-10-17.json) and [test log](evidence/krea-hf-cache-tests-2026-10-17.log). Cached-run images are under `.local/native-session-hf-cache-20261017`.
 
+## Memory after unload (0.0.3)
+
+`kreaUnloadCycling` (opt-in, in `AetherNativeTests`) runs five cycles in one process. Each cycle opens a session,
+generates one 256² image in two steps from a prompt with dynamic denoisers, calls `unload()` and drops the session. It
+is the same harness as FLUX.2's ([FLUX.2 guide](flux2-klein.md#memory-after-unload-003)). Footprint 2 s after each
+unload, against a 58 MiB baseline: 398, 477, 572, 565 and 562 MiB. Metal allocation stays at 110 MiB.
+
+As with FLUX.2, the residue grows for three cycles and then stops, while live malloc memory stays within 12 MiB of the
+baseline. It is freed large allocations that the macOS allocator keeps dirty in its large-block cache. This is macOS
+allocator behaviour, bounded and reused by the next load, not a Kit or Core AI leak. As a diagnostic only, with that
+cache disabled (`MallocLargeCache=0`) the run settles 36 MiB above the baseline. After two cycles, allocation histories
+attribute 35 of the 128 MiB in those regions to the ANE compiler during Core AI's MPSGraph specialization and about
+8 MiB to Kit's own tensor copies and tokenizer configuration. The rest has no recorded allocation. Kit makes no change.
+See the [summary](evidence/unload-cycling-2026-10-27.json).
+
+```sh
+AETHER_NATIVE_UNLOAD_CYCLING=krea AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
+AETHER_KREA_BUNDLE=~/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu \
+~/.cache/aether-kit/with-gpu-lock.sh "krea unload cycling" swift test --triple arm64-apple-macosx27.0 -c release --filter kreaUnloadCycling
+```
+
 ## Verification and limits
 
 The release suite with all external CPU fixtures enabled passes 33 tests. New coverage exercises specialized selection and fallback, descriptor rejection, nonadjacent carry routing, repeated model reuse, balanced/resident encoder lifetime, partial-load cleanup and retry, shape-switch release, cancellation/unload ordering, PNG roundtrip and parity-report failure handling.

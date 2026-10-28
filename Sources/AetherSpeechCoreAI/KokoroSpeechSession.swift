@@ -5,6 +5,7 @@ import AetherSpeech
 import Synchronization
 
 /// One synthesized utterance.
+@available(macOS 27, iOS 27, *)
 public struct KokoroSpeech: Sendable {
     /// Mono float32 PCM at 24 kHz, unclipped.
     public let audio: GeneratedAudio
@@ -15,6 +16,7 @@ public struct KokoroSpeech: Sendable {
 }
 
 /// One segment of a chunked request, delivered as soon as it is decoded.
+@available(macOS 27, iOS 27, *)
 public struct KokoroSpeechChunk: Sendable {
     public let index: Int
     public let count: Int
@@ -22,6 +24,7 @@ public struct KokoroSpeechChunk: Sendable {
 }
 
 /// Events are delivered synchronously in order. Return to continue; throw to abort.
+@available(macOS 27, iOS 27, *)
 public enum KokoroSpeechEvent: Sendable {
     case framesPredicted(segment: Int, frames: [Int])
     case chunk(KokoroSpeechChunk)
@@ -35,6 +38,7 @@ public enum KokoroSpeechEvent: Sendable {
 /// plus the returned audio of every segment in the request (2.4 KB per frame). With buckets, the decoder
 /// estimate must cover the specializations of every bucket the session may use, which stay resident until
 /// unload. These are reservations of estimates, not measured memory.
+@available(macOS 27, iOS 27, *)
 public struct KokoroResourceAdmission: Sendable {
     public struct ModelEstimate: Sendable {
         let identity: String
@@ -81,6 +85,7 @@ public struct KokoroResourceAdmission: Sendable {
 /// Reserves model residency before opening and per-call scratch around native work, through the package's
 /// shared `openBudgeted` decorator. Native and test factories share this decorator, so admission ordering is
 /// exercised without weights.
+@available(macOS 27, iOS 27, *)
 struct BudgetedKokoroFactory: KokoroModelFactory {
     let base: any KokoroModelFactory
     let resources: KokoroResourceAdmission
@@ -106,6 +111,7 @@ struct BudgetedKokoroFactory: KokoroModelFactory {
 /// 12.8 s) on iOS, where the qualification iPhone's app memory budget (about 3.4 GB) admitted bucket 512
 /// (2.1 GB peak) but not bucket 1024. `extended` (2048 frames) is an explicit opt-in. Longer utterances
 /// are refused with an error naming their length and the cap; split the phonemes into shorter segments.
+@available(macOS 27, iOS 27, *)
 public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
     public static let compact = KokoroFrameCap(checked: 512)
     public static let standard = KokoroFrameCap(checked: 1024)
@@ -140,6 +146,7 @@ public struct KokoroFrameCap: Sendable, Equatable, CustomStringConvertible {
 /// Compute preference per graph. `recommended` runs the small duration graph on the CPU and the
 /// vocoder on the GPU: on macOS 27.0.1 GPU specialization of the duration graph fails inside
 /// MPSGraph (ANE region formation), while the decoder specializes and runs on the GPU.
+@available(macOS 27, iOS 27, *)
 public struct KokoroComputePlacement: Sendable, Equatable {
     public let durations: ModelComputePolicy
     public let decoder: ModelComputePolicy
@@ -162,6 +169,7 @@ public struct KokoroComputePlacement: Sendable, Equatable {
 /// Delivery is whole-utterance per segment. `synthesize(segments:)` streams at segment granularity:
 /// each segment's audio is delivered through the event callback as soon as it is decoded, so callers
 /// can start playback after the first sentence. Sub-utterance streaming would need a windowed decoder.
+@available(macOS 27, iOS 27, *)
 public actor KokoroSpeechSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     /// Segments per request; each segment's audio is retained in the result.
@@ -325,6 +333,7 @@ public actor KokoroSpeechSession {
 }
 
 /// The frame limits in force for one session; the tightest one refuses with its own explanation.
+@available(macOS 27, iOS 27, *)
 struct FrameLimits: Sendable {
     let cap: Int
     let bundle: Int
@@ -346,14 +355,18 @@ struct FrameLimits: Sendable {
 }
 
 /// A loaded Kokoro model: the package's shared staged-model protocol, which `ModelSession` and test models adopt.
+@available(macOS 27, iOS 27, *)
 typealias KokoroExecutable = StagedModel
 
+@available(macOS 27, iOS 27, *)
 protocol KokoroModelFactory: Sendable {
     func open(_ asset: KokoroModelAsset) async throws -> any KokoroExecutable
     func finish() async
 }
+@available(macOS 27, iOS 27, *)
 extension KokoroModelFactory { func finish() async {} }
 
+@available(macOS 27, iOS 27, *)
 private final class KokoroInstallationAccess: Sendable {
     private let held: Mutex<AssetReadLease?>
     init(_ installation: AssetReadLease) { held = Mutex(installation) }
@@ -361,6 +374,7 @@ private final class KokoroInstallationAccess: Sendable {
     func release() { held.withLock { $0 = nil } }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct NativeKokoroFactory: KokoroModelFactory {
     let compute: KokoroComputePlacement
     let installation: KokoroInstallationAccess?
@@ -385,6 +399,7 @@ private struct NativeKokoroFactory: KokoroModelFactory {
     func finish() async { installation?.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 private actor KokoroRunner {
     let assets: KokoroAssets
     let factory: any KokoroModelFactory

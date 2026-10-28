@@ -1,6 +1,7 @@
 import AetherKit
 import AetherH3
 
+@available(macOS 27, iOS 27, *)
 protocol H3DenoisingKernels: Sendable {
     func prepare(step: Int, latents: H3Latents, conditioning: H3TensorData) async throws -> H3TensorData
     func backbone(step: Int, hidden: H3TensorData, onOutput: @escaping H3DenoisingOutputHandler) async throws -> H3TensorData
@@ -9,6 +10,7 @@ protocol H3DenoisingKernels: Sendable {
 
 /// Shared native/CPU-test control flow. State advances only after both velocity
 /// outputs validate and the complete callback returns; requests remain immutable.
+@available(macOS 27, iOS 27, *)
 enum H3DenoisingLoop {
     static func run(initial: H3Latents, conditioning: H3TensorData, schedule: H3Schedule,
                     kernels: any H3DenoisingKernels, onOutput: @escaping H3DenoisingOutputHandler) async throws -> H3Latents {

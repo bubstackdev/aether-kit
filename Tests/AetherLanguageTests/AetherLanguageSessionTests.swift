@@ -101,7 +101,9 @@ struct AetherLanguageSessionTests {
         let a = try await session.respond(to: "q", options: .init(samplingMode: .random(top: 2, seed: 11)))
         let b = try await session.respond(to: "q", options: .init(samplingMode: .random(top: 2, seed: 11)))
         let unseeded = try await session.respond(to: "q", options: .init(samplingMode: .random(top: 2)))
-        let replay = try await session.respond(to: "q", options: .init(samplingMode: .random(top: 2, seed: try #require(unseeded.seed))))
+        // Unwrapped on its own: passed straight to `seed:` (itself optional), the check would be promoted away.
+        let seed: UInt64 = try #require(unseeded.seed, "an unseeded request reports the seed it drew")
+        let replay = try await session.respond(to: "q", options: .init(samplingMode: .random(top: 2, seed: seed)))
         #expect(a.content == b.content && a.seed == 11 && replay.content == unseeded.content)
     }
 

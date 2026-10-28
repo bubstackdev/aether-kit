@@ -9,6 +9,7 @@ import Metal
 /// then `end` once that work has joined (`failed` if encoding threw; the stream is joined first). `graph` names the
 /// graph's role ("conditioner", "text", "pack", "body", "heads", "keyframe", "videoTile", "audio"); `call` counts that
 /// graph's submissions from 0.
+@available(macOS 27, iOS 27, *)
 public struct H3NativeCall: Sendable, Equatable {
     public enum Phase: String, Sendable { case begin, end, failed }
     public let graph: String
@@ -17,12 +18,14 @@ public struct H3NativeCall: Sendable, Equatable {
     public init(graph: String, call: Int, phase: Phase) { self.graph = graph; self.call = call; self.phase = phase }
 }
 /// Opt-in observer of `H3NativeCall`s (qualification). It is called synchronously on the graph's actor and must not block.
+@available(macOS 27, iOS 27, *)
 public typealias H3NativeCallObserver = @Sendable (H3NativeCall) -> Void
 
 /// One profile graph with reusable named input/output slots. Activations are copied in; weights are read from their
 /// (in-place) files straight into their slots, hashed the first time each file is read by this graph and trusted
 /// afterwards (the files are immutable checkpoint blobs). Shapes are checked against the native descriptor before any
 /// slot changes. One call at a time; every call joins its GPU work before returning.
+@available(macOS 27, iOS 27, *)
 actor NativeH3Graph {
     enum Input: Sendable {
         case data(H3TensorData)
@@ -180,6 +183,7 @@ actor NativeH3Graph {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private extension H3ScalarType {
     var native: NDArray.ScalarType {
         switch self { case .bfloat16: .bfloat16; case .float32: .float32; case .int32: .int32 }

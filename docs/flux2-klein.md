@@ -190,7 +190,9 @@ do {
   (prototype F-P3-48/68).
 - **Lifecycle:** one operation at a time (`sessionBusy` otherwise); cancellation is cooperative between native calls
   and waits for the submitted call; failed or cancelled encoders are discarded; partial denoiser loads are closed;
-  `unload()` rejects new work, waits for the active operation and closes permanently.
+  `unload()` rejects new work, waits for the active operation and closes permanently. Cancelling while the prompt is
+  being encoded returns in about 0.17 s on an M5 Max: the rest of the encoder's one native call, then its discard
+  ([Text encoder cancellation](#text-encoder-cancellation-003)).
 - **Prepared values:** `Flux2PreparedPrompt` (7.5 MiB fp16 rows + bundle fingerprint) and `Flux2PreparedReferences`
   (float32 packed latents + reference fingerprint) hold no native models; another bundle refuses them before loading.
 - **Admission:** optional `Flux2ResourceAdmission` reserves caller-qualified estimates (operation storage, per-model
@@ -253,6 +255,85 @@ Generation took 14 minutes on 6 threads at a 30.1 GiB peak RSS for the ten text-
 for the reference cases ([record](evidence/flux2-klein-cpu-references-2026-10-27.json)). The weight-free fixture tests
 (`samplerArithmeticMatchesTheIndependentReference`, `bundleTokenizerMatchesReferenceTokenIDs`,
 `paddedPromptMatchesTheLanguageTokenizersThinkingOffRender`) pass against the new fixtures.
+
+### Text encoder cancellation (0.0.3)
+
+`flux2NativeEncoderCancellation` (opt-in, in `AetherNativeTests`) cancels prompt requests while the text encoder runs.
+It uses the `fox-512` prompt and noise with balanced residency, so each request opens the encoder, makes one native call
+over the 512-token prompt and discards the encoder. A tracked factory brackets the awaited native call and the model
+open; nothing gates or delays native work. M5 Max, macOS 27.0.1, `preferGPU`, bundle `d27cefc4…`, 57/57 checks:
+
+| Measurement | Result |
+| --- | --- |
+| Encoder open (`AIModel(contentsOf:)`) | 1.6–3.7 ms |
+| Encoder native call, balanced (opened per request) | 124–166 ms |
+| Encoder native call, resident (retained) | 119–128 ms |
+| Cancel during the native call, until `generate` throws | 172–179 ms (3 trials), 175 ms with admission; 138 ms resident |
+| Cancel during the open, until `generate` throws | 0.4–1.3 ms (3 trials) |
+
+Core AI does not interrupt a submitted call when the Swift task is cancelled. In every trial the cancelled call ran to
+completion and returned its outputs, and Kit's own check after the joined call threw `CancellationError`. The latency
+is therefore bounded by two things: the rest of that one encoder call (up to its whole duration, about 120–170 ms here),
+then the encoder's discard (47–59 ms). The process's first call to the encoder takes longer while Core AI
+specializes it: 0.59 s in the parity run, and longer still on a bundle that has never been specialized on the Mac.
+Cancelling during the open costs almost nothing: the open is short, and `CoreAIBackend.load` checks cancellation after it
+and drops the model, so it never reaches the native call.
+
+Checks in each trial: the request throws `CancellationError`; the encoder's native call returns before cancellation
+does; the encoder is discarded before the request returns; no native call starts after the cancel; the session returns
+to ready; and the next prompt request reproduces the uncancelled baseline pixels exactly. With
+`Flux2ResourceAdmission` and an in-process `GPUAdmission`, the session afterwards holds the same reservations as after
+its baseline, no GPU grant is running or queued, and a fail-fast admission succeeds at once. Every model instance is
+closed exactly once, and every native call returns.
+
+Splitting the encoder into chunked calls is the only way to make cancellation take effect sooner, and it would need a
+re-export and a new qualification. At about 0.17 s that is not worth it, so the encoder stays one call. See the
+[report](evidence/flux2-encoder-cancellation-2026-10-27.json), [log](evidence/flux2-encoder-cancellation-2026-10-27.log)
+and [event journal](evidence/flux2-encoder-cancellation-events-2026-10-27.jsonl).
+
+```sh
+AETHER_NATIVE_FLUX2_ENCODER_CANCEL=1 \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
+AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
+AETHER_FLUX2_ENCODER_CANCEL_OUTPUT=/new/output/dir \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 encoder cancellation" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeEncoderCancellation
+```
+
+`AETHER_FLUX2_ENCODER_CANCEL_TRIALS` sets the number of trials of each kind (default 3).
+
+### Memory after unload (0.0.3)
+
+`flux2UnloadCycling` (opt-in, in `AetherNativeTests`) runs five cycles in one process. Each cycle opens a session,
+generates one 256² image in four steps from a prompt, calls `unload()` and drops the session. After each unload it
+records the footprint, Metal allocation, live malloc bytes and system wired memory. Readings are taken at once, after
+2 s and after `malloc_zone_pressure_relief`. Footprint 2 s after each unload, against a 48 MiB baseline:
+
+| Cycle | 1 | 2 | 3 | 4 | 5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Footprint (MiB) | 368 | 531 | 683 | 679 | 677 |
+| Metal allocation (MiB) | 242 | 262 | 262 | 262 | 262 |
+
+The residue grows for three cycles and then stops. Live malloc memory stays within 12 MiB of the baseline. A memory
+graph after the fifth cycle holds 54 MB of live heap (41 MB at the baseline) against a 751 MB footprint. The rest is
+freed large allocations that the macOS allocator keeps dirty in its large-block cache ("Malloc Large (empty)" in
+`vmmap`), and `malloc_zone_pressure_relief` does not return them. This is macOS allocator behaviour, bounded and
+reused by the next load, not a Kit or Core AI leak. As a diagnostic only, the same run with that cache disabled
+(`MallocLargeCache=0` in the test process's environment) settles 27 MiB above the baseline from the first cycle.
+
+Allocation histories of those regions (`MallocStackLogging=full`, `malloc_history` on each one) attribute most of the
+identified bytes to the ANE compiler. It validates graph regions while MPSGraph specializes each model inside Core AI,
+on every load, even with `preferGPU`. Kit's own allocations (output tensor copies and array growth) account for about
+13 of the 365 MiB after two cycles. Reusing those buffers would not change the picture, so Kit makes no change. See the
+[summary](evidence/unload-cycling-2026-10-27.json).
+
+```sh
+AETHER_NATIVE_UNLOAD_CYCLING=flux2 AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
+AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-2026-10-27/bundle \
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 unload cycling" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2UnloadCycling
+```
+
+`AETHER_NATIVE_UNLOAD_CYCLES` changes the cycle count (default 5). `AETHER_NATIVE_UNLOAD_MEMGRAPH=1` adds memory graphs
+of the baseline and the last cycle, and `full` adds the whole allocation history for a run with `MallocStackLogging=full`.
 
 ### Chat template in the fingerprint (0.0.3)
 
@@ -411,7 +492,7 @@ AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_OUTPUT=/new/output/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test -c release --filter flux2NativeParity
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 native" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeParity
 ```
 
 `AETHER_FLUX2_CASES` selects text-to-image cases (default: the five 512²-class cases; `all` for all ten).
@@ -441,7 +522,7 @@ AETHER_FLUX2_BUNDLE=~/.cache/huggingface/aether-kit/flux2-klein-4b/forge-export-
 AETHER_FLUX2_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-t2i-cpu-2026-10-27/fixtures/ffc4b1365159e40c \
 AETHER_FLUX2_REFERENCE_FIXTURES=~/.cache/huggingface/aether-kit/flux2-klein-4b/oracle-reference-cpu-2026-10-27/fixtures/caf92bb7d83d685c \
 AETHER_FLUX2_LIFECYCLE_OUTPUT=/new/output/dir \
-~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test -c release --filter flux2NativeLifecycle
+~/.cache/aether-kit/with-gpu-lock.sh "flux2 lifecycle" swift test --triple arm64-apple-macosx27.0 -c release --filter flux2NativeLifecycle
 ```
 
 **Qualified bundle (`a48aaf07…`, 2026-10-27):** 44/44 against the CPU fixtures; see
@@ -513,8 +594,8 @@ finalized `aether.json`. See the [report](evidence/flux2-klein-native-smoke-revi
 
 ### Not yet qualified
 
-- Native cancellation of the text encoder and the reference encoder. Their run-failure and cancellation discard paths
-  are covered by scripted CPU tests only.
+- Native cancellation of the reference encoder. Its run-failure and cancellation discard paths are covered by scripted
+  CPU tests only. The text encoder's is qualified natively ([above](#text-encoder-cancellation-003)).
 - iOS: no build or run has been qualified. The prototype ran this recipe on iPhone with staged residency.
 - Prompt adherence (T3) and a subjective review across more prompts and seeds.
 - References prepared from a `CGImage`: parity used the reference's exact encoder pixels.

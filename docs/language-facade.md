@@ -1,7 +1,7 @@
 # AetherLanguage text facade
 
-Status: design approved and the seven commits implemented, 2026-10-27 ([Implementation status](#implementation-status));
-the structured-output piece is next. This is the third piece of the 0.0.3 app-facing language
+Status: design approved and implemented, 2026-10-27: the seven facade commits ([Implementation status](#implementation-status))
+and [structured output](#structured-output). This is the third piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)). It builds on the
 [runtime seam](language-runtime-seam.md) (`AetherLanguageRuntime`) and on `AetherLanguageTokenizers`. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -67,8 +67,7 @@ backend only runs on OS 27 anyway.
    request, so every turn prefills the whole conversation. Prefix reuse is a later backend option (see the seam's
    [next needs](language-runtime-seam.md#what-the-facade-will-need-next)) and doesn't change this API.
 7. **The Core AI backend is chosen at runtime behind `#available(macOS 27, iOS 27, *)`.** Below that, the model reports
-   `.unavailable(.unsupportedOS)` until another backend exists. This needs the deployment-floor work described in
-   [The floor](#the-floor).
+   `.unavailable(.unsupportedOS)` until another backend exists ([The floor](#the-floor)).
 
 ## Where the facade mirrors FoundationModels, and where it doesn't
 
@@ -222,41 +221,14 @@ One model value is shared by its sessions. It loads the backend and tokenizer on
 
 ## The floor
 
-The facade must link and launch on macOS 14 and iOS 17, and report "unsupported OS" there. Its dependencies, as they
-stand:
-
-| Target | Floor today | What it needs |
-| --- | --- | --- |
-| `AetherLanguageRuntime` | macOS 14 / iOS 17 | Nothing; typechecked there in CI |
-| `AetherKit` | macOS 15 / iOS 18 | `Mutex` from `Synchronization` in `GPUAdmission`, `SharedGPULease` and `ResourceCoordinator` (eight uses). A macOS 14 typecheck of the target fails on `Mutex` and `withLock` and on nothing else |
-| `AetherLanguageTokenizers` | `AetherKit`'s, and swift-transformers 1.1.0 (macOS 13 / iOS 16) | Only `AetherKit` |
-| `AetherLanguageCoreAI`, `AetherCoreAI` | macOS 27 / iOS 27 | Availability annotations, and `CoreAI` weak-linked |
-| FoundationModels (adapter only) | macOS 26 / iOS 26; `LanguageModel` is 27 | A separate target that apps on older OSes don't link, or a weak link |
-
-**What has to move or be gated:**
-1. **`AetherKit`'s locks.** Replace `Mutex` with `OSAllocatedUnfairLock` (macOS 13, iOS 16). It has the same
-   `withLock` shape and needs no availability annotations, which would otherwise spread through every caller.
-   `LanguageModelManifest` (CryptoKit) and `AetherError` are already fine. Nothing needs to move: the tokenizer target
-   keeps depending on `AetherKit`.
-2. **Package `platforms`.** These drop to `.macOS(.v14), .iOS(.v17)`. Every target that touches Core AI or OS 27 APIs then
-   needs `@available(macOS 27, iOS 27, *)` on its public declarations. That covers `AetherCoreAI` and the `*CoreAI`
-   targets, plus the probe and the native test targets, which can stay 27-only by being annotated as a whole.
-3. **`CoreAI` weak-linked.** It's `linkedFramework("CoreAI")` today. The floor work decides how: `-weak_framework` via
-   `linkerSettings: [.unsafeFlags]` is not allowed for a remote dependency, so this needs SwiftPM's own weak linking or a
-   build-setting route. Of everything here, it's the one item the facade can't work around.
-
-**The facade asks this of the floor work** (it doesn't do it itself):
-- package platforms at macOS 14 and iOS 17;
-- availability annotations on the Core AI targets;
-- a weak `CoreAI` link;
-- a launch check: an app linking `AetherLanguage` that runs on a macOS 14 machine or VM and reports `.unsupportedOS`.
-
-The `AetherKit` lock replacement is small and blocks the facade's own macOS 14 typecheck. It could be the facade's first
-commit or part of the floor work (a question for the lead).
+The facade links and launches on macOS 14 and iOS 17, the package floor, and reports "unsupported OS" there. The
+[deployment floor](deployment-floor.md) covers how: the Core AI targets are gated at OS 27 declaration by declaration,
+`CoreAI` and FoundationModels link weakly because every reference to them is gated, and CI launches a floor consumer of
+`AetherLanguage` on a macOS 14 runner, requiring `.unsupportedOS`.
 
 **Choosing the backend at runtime.** `AetherLanguage` depends on `AetherLanguageCoreAI` in SwiftPM, but calls it only
 inside `if #available(macOS 27, iOS 27, *)`. Otherwise `availability` is `.unavailable(.unsupportedOS)`, and requests
-throw the same reason. If the MLX spike goes ahead, its backend slots in at that branch. No `AetherLanguage` declaration
+throw the same reason. The OS is checked before the bundle, so the reason is the same whatever the bundle holds. If the MLX spike goes ahead, its backend slots in at that branch. No `AetherLanguage` declaration
 carries an availability annotation.
 
 ## Model selection and readiness in 0.0.3
@@ -271,7 +243,7 @@ writer, which takes seconds. The reasons:
 
 | Reason | When |
 | --- | --- |
-| `.unsupportedOS` | Below macOS 27 or iOS 27, with no other backend |
+| `.unsupportedOS` | Below macOS 27 or iOS 27, with no other backend (checked first) |
 | `.unsupportedPlatform` | The registration's `platform` isn't this one (a macOS export on iPhone) |
 | `.bundleMissing` | No `language-model.json`, or a listed path is absent |
 | `.bundleInvalid(String)` | The manifest doesn't parse or fails its schema checks (unknown schema version, paths escaping the bundle) |
@@ -323,43 +295,64 @@ The executor:
   support guided generation"; second probe run), while text requests still work. So the adapter needs no refusal code
   of its own.
 
-## Structured output: the next piece
+## Structured output
 
-**The seam is a runtime `LanguageLogitsProcessor`, as the runtime seam designed it.** For each request,
-`LanguageJSONSchemaConstraint`:
-- is built from a JSON Schema and the tokenizer's byte table;
-- returns from `begin(prompt:)` the bytes that can start the value;
-- advances, in `accept(_:)`, a byte-level JSON automaton by the accepted token's bytes, and returns the allowed set for
-  the next token;
-- allows only the stop IDs once the value is complete, so the existing end-of-sequence stop ends the reply.
+Implemented on `v0.0.3/structured-output`, 2026-10-27 ([evidence](evidence/language-structured-output-2026-10-27.json)).
 
-The allowed set comes from walking a trie of token byte strings with the automaton's state. That work runs during the
-GPU step, which hides up to 21 ms a token on the 4B and about 6 ms on the 0.6B; its cost is measured when it's built.
+**The seam is a runtime `LanguageLogitsProcessor`, as the runtime seam designed it.** `LanguageJSONSchemaConstraint`
+compiles the schema into a grammar and, on each call (run beside the GPU step), feeds the accepted token's bytes to a
+byte-level matcher. The matcher keeps parallel stacks for `anyOf`. The call returns the tokens whose bytes the matcher
+accepts next, and only the stop IDs once the value is complete, so the existing end-of-sequence stop ends the reply.
+- **How the allowed set is found:** by walking a trie of the vocabulary's bytes with the matcher, built once per loaded
+  model (63 ms for Qwen3).
+- **Inside a string body,** the plain-text tokens come from a precomputed set and only the rest is walked.
+- **Sets are cached** by matcher state.
+- **Cost:** on the real Qwen3 vocabulary an uncached string body costs 0.38 ms, and other positions 13–78 µs. In native
+  generation the constraint averaged 72–96 µs per call (maximum 1.3 ms), well under the step.
+- **Reasoning:** with reasoning on, the reply thinks first and is constrained once the thinking ends.
 
-**The schema subset is what FoundationModels' `@Generable` emits,** as the probe recorded:
-- objects with `properties`, `required`, `additionalProperties: false` and `x-order` (key order is fixed, which narrows
-  the automaton);
-- `string`, `integer`, `number`, `boolean`;
+**What the model may write:**
+- **One canonical layout:** `{"key": value, "key2": value}`, a space after each colon and comma and no other whitespace.
+- **Properties:** every property in `x-order`. An optional property is always written, as a value or `null`.
+- **Strings:** JSON escapes and strictly valid UTF-8 (RFC 3629).
+- **Numbers:** integers up to 18 digits; numbers with up to 9 integer and 9 fraction digits, and no exponents. Bounds are
+  checked with exact fixed-point arithmetic, so a prefix is allowed only if some completion lands in range, and the
+  reply never reaches a dead end.
+
+**The schema subset is what FoundationModels' `@Generable` emits,** as the probes recorded:
+- objects with `properties`, `required`, `additionalProperties: false` and `x-order`;
+- `string`, with `enum` (`.anyOf`) or `const` (`.constant`);
+- `integer` and `number` with `minimum` and `maximum`;
+- `boolean`;
 - `array` with `minItems` and `maxItems`;
-- `enum` for `@Guide(.anyOf)`;
-- `minimum` and `maximum`;
-- optional properties.
+- `anyOf` (enums with associated values, as `Discriminated…` objects with a `type` const);
+- definitions under `$defs`, referenced with `$ref`, recursion included.
 
-Regex guides (`pattern`) and anything outside the subset are refused at request time with `unsupportedSchema` (through
-the adapter, FoundationModels' `unsupportedGuide`). The output is never left unconstrained.
+Regex guides (`pattern`) and anything else outside the subset are refused at request time: `unsupportedSchema`, or
+through the adapter, FoundationModels' `LanguageModelError.unsupportedGenerationGuide`. The output is never left
+unconstrained.
 
-**Facade API.** `respond(to:generating:)` and `streamResponse(to:generating:)`, where `T: AetherGenerable`:
+**Facade API.**
+- `AetherLanguageSession.respond(to:generating:includeSchemaInPrompt:options:)` returns `Response<T>` for
+  `T: AetherGenerable`, which is `Decodable` plus a static `AetherGenerationSchema`.
+- With `includeSchemaInPrompt`, the default as in FoundationModels, the schema is described in the system message.
+- A reply that reaches the output limit first throws `decodingFailure`, and isn't kept in the transcript. The transcript
+  keeps a structured reply's JSON.
+- Streaming structured replies on the native facade is a 0.0.4 follow-up (partial values from an incremental JSON parser
+  over the constrained text). Through the adapter, FoundationModels' `streamResponse(generating:)` already streams
+  partially generated values from the constrained JSON.
 
-```swift
-public protocol AetherGenerable: Decodable, Sendable {
-    static var generationSchema: AetherGenerationSchema { get }   // a JSON Schema in the supported subset
-}
-```
-
-Partial snapshots for the native stream come from an incremental JSON parser over the constrained text. That's simpler
-than FoundationModels' partially generated types: `ResponseStream<T>.Snapshot` carries the partial JSON value and the
-decoded `T` once the value is complete. A Kit `@Generable` macro would generate `generationSchema` from the type's
-properties and doc comments, the counterpart of FoundationModels' macro. This design doesn't specify it further.
+**`@AetherGenerable` and `@AetherGuide`** are in the separate `AetherLanguageMacros` product, so apps that don't use the
+macro don't build swift-syntax. It's pinned exactly to 604.0.0, the Swift 6.4 toolchain's, and SwiftPM uses its
+prebuilt macro support.
+- **What it writes:** the type's `generationSchema` (the builder API above) and, for enums, `init(from:)`. Structs use
+  the synthesized `Decodable`.
+- **Parity with FoundationModels:** CPU tests pair macro types with FoundationModels `@Generable` declarations of the
+  same shape and require identical JSON Schema. That covers every guide kind; nested, optional and array properties;
+  and both kinds of enum.
+- **Count guides:** as in FoundationModels, these resolve to `[Never]` inside the attribute, so it type-checks without
+  the element type.
+- **No pattern guide yet:** the macro doesn't offer a regex guide, because the constraint doesn't support one.
 
 ## Implementation plan
 
@@ -437,8 +430,8 @@ On `v0.0.3/facade`, 2026-10-27, each commit passing `Scripts/check-cpu.sh` (503 
    `LanguageModelSession(model:)` returns the facade's replies, streaming included, and with a reasoning level on the
    0.6B.
 
-Not yet covered: a launch on macOS 14 (the floor work, after the decoder rework), iPhone, and the facade's own macOS 14
-typecheck. `AetherLanguage` imports the Core AI targets, which can't typecheck below 27 until they're annotated.
+Not yet covered here: iPhone. The floor work (`v0.0.3/floor`) then lowered the package floor to macOS 14 / iOS 17 and
+added the macOS 14 launch check ([deployment floor](deployment-floor.md)).
 
 ## Decided
 

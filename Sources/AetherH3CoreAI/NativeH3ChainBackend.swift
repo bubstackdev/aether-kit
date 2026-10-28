@@ -5,6 +5,7 @@ import CoreAI
 import Foundation
 import Metal
 
+@available(macOS 27, iOS 27, *)
 actor NativeH3ChainBackend: H3ChainBackend {
     private struct Binding {
         let name: String
@@ -182,6 +183,7 @@ actor NativeH3ChainBackend: H3ChainBackend {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private extension H3ScalarType {
     var native: NDArray.ScalarType {
         switch self { case .bfloat16: .bfloat16; case .float32: .float32; case .int32: .int32 }

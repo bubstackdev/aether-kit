@@ -10,11 +10,11 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 | --- | --- | --- |
 | Qwen3-VL decoder weights | `main` and `withImage` each wire their own copy of the text weights: +8.4 and +7.9 GiB on the 4B, and about 16 GiB for a one-image request ([evidence](evidence/qwen3-vl-memory-by-phase-2026-10-27.json)). Opening the decoder reads its 22.5 GiB compiled file into the page cache. | Done: one decoder function; the VL-4B wires 8.4 GiB for an image request ([design and outcome](qwen3-vl-single-decoder.md)). |
 | Language memory budget | A 2 GiB growth budget reloads the model to bound Core AI's per-shape-change retention ([guide](language-generation.md#native-memory-retention)). | File the Apple Feedback using the guide's reproduction, and remove the workaround once Core AI stops retaining memory. |
-| Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Release it, or keep 2048 opt-in only. |
+| Kokoro bucket 2048 | About 8.3 GB of Metal, and about 8 GB stays allocated after unload. | Done, no change needed: the footprint falls under 0.3 GB within 2 s of unload. The 8.1 GiB Metal counter that remains is not held memory, and 2048 stays opt-in (`.extended`) ([measurement](kokoro-speech.md#memory-after-unload-003)). |
 | H3 second specialization | Denoising adds about 2.7 GiB from step 1, when the two-timestep body joins the one-timestep one. | Done: modulation inputs are padded to one cardinality per render, so the second specialization never forms. Steady denoising falls to about 10.9 GiB on T2VA (13.5 before) and the qualified boundary hashes replay exactly. An unexplained step-0 transient (up to 16.12 GiB, seen only in padded gate renders) is covered by measured admission at about 16.6 GiB, higher than the unpadded build's 15.26 GiB; the re-gate before the tag records it ([guide](h3-integration.md#denoiser-memory-one-modulation-shape-per-render-2026-10-27)). |
 | Qwen3-VL-4B export | The converter needs about 33 GB. The [design](qwen3-vl-single-decoder.md#export-memory) found the cause is not per-ExportedProgram copies but about five copies at the self-check. | Done: 16.3 GB peak for the VL-4B ([design](qwen3-vl-single-decoder.md#export-memory)). |
 | Krea text encoder weights | Krea's text encoder has the Qwen3-VL decoder's two-function layout (`encode` and `encodeWithImages`; a 20.5 GiB compiled cache), so it likely wires two copies of the text weights when reference images are used. | Measure it; if confirmed, one function as in the [Qwen3-VL design](qwen3-vl-single-decoder.md). |
-| FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Add a load/unload cycling test, then fix what it finds. |
+| FLUX.2 and Krea after unload | 0.4–0.7 GB of CPU footprint remains. | Done, no Kit fix: the cycling test shows the macOS allocator's large-block cache, which stops growing after three cycles, not a Kit or Core AI leak ([FLUX.2](flux2-klein.md#memory-after-unload-003), [Krea](krea-generation.md#memory-after-unload-003)). |
 
 ### Speed
 
@@ -43,7 +43,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### FLUX.2
 
-- Native cancellation of the text encoder.
+- Native cancellation of the text encoder. Done: cancel returns in about 0.17 s, bounded by one encoder call plus its discard; Core AI does not interrupt a submitted call ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
 - iOS.
 - A quiet benchmark.
 - Prompt adherence.
@@ -68,7 +68,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 | Piece | Scope in 0.0.3 |
 | --- | --- |
 | Runtime seam | A sampler or logits hook, and a `LanguageBackend` protocol. The runtime is greedy-only today. |
-| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is 27 today. |
+| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is macOS 14 / iOS 17, with a CI launch check on macOS 14 ([deployment floor](deployment-floor.md)). |
 | `AetherLanguage` text facade | Owns the tokenizer, template, stop tokens, reasoning, sampling and UTF-8-safe streaming, building on `AetherLanguageTokenizers`. |
 | Structured output | Constrained decoding into `Decodable`, with a `@Generable`-style macro. This adds a swift-syntax dependency. |
 

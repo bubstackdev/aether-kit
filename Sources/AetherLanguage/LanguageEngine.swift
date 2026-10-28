@@ -22,6 +22,34 @@ package struct LanguageEngineReply: Sendable {
     package let reasoningTokens: Int
     package let stopReason: AetherStopReason
     package let seed: UInt64?
+    /// The JSON-schema constraint's cost, for structured requests.
+    package let constraintStatistics: LanguageJSONSchemaConstraint.Statistics?
+}
+
+/// A request for JSON matching a schema (structured output).
+package struct LanguageStructuredOutput: Sendable {
+    package let schema: AetherGenerationSchema
+    /// Also describe the schema to the model, in the system message, as FoundationModels does by default.
+    package let includeSchemaInPrompt: Bool
+
+    package init(schema: AetherGenerationSchema, includeSchemaInPrompt: Bool) {
+        self.schema = schema
+        self.includeSchemaInPrompt = includeSchemaInPrompt
+    }
+
+    /// The system-message text that describes the schema.
+    package var instruction: String {
+        "Respond with only a JSON object that matches this JSON schema:\n\(schema.json)"
+    }
+
+    /// `messages` with the schema described in the system message (added first when there's none).
+    package func messages(_ messages: [LanguageChatMessage]) -> [LanguageChatMessage] {
+        guard includeSchemaInPrompt else { return messages }
+        if let first = messages.first, first.role == .system, case .text(let text)? = first.parts.first {
+            return [.system(text + "\n\n" + instruction)] + messages.dropFirst()
+        }
+        return [.system(instruction)] + messages
+    }
 }
 
 /// The `LanguageTextStream` a request's deliveries share. Deliveries run one at a time, but in successive child tasks.
@@ -46,9 +74,16 @@ extension AetherLanguageModel {
     /// streams text deltas to `onDelta` (each awaited before the next, while the following decode step runs).
     /// `onDelta` also gets how many tokens produced the delta (tokens whose text was held back count with the delta
     /// that releases it).
+    /// With `structured`, the reply is constrained to JSON matching its schema (refused up front if the schema uses
+    /// something the constraint doesn't support).
     package func generate(messages: [LanguageChatMessage], options: AetherGenerationOptions,
+                          structured: LanguageStructuredOutput? = nil,
                           onDelta: @escaping @Sendable (LanguageTextStream.Delta, _ tokens: Int) async -> Void)
         async throws -> LanguageEngineReply {
+        let messages = structured?.messages(messages) ?? messages
+        // Compile the schema before loading anything: an unsupported one fails fast.
+        if let structured { _ = try LanguageJSONGrammar(schema: structured.schema) }
+        let resources = self.resources
         let supportsReasoning = self.supportsReasoning
         if options.reasoning == .on, !supportsReasoning {
             throw AetherLanguageError.invalidRequest("this model has no thinking mode")
@@ -76,7 +111,14 @@ extension AetherLanguageModel {
             let startsInReasoning = delimiters.map { (prompt.lastIndex(of: $0.start) ?? -1) > (prompt.lastIndex(of: $0.end) ?? -1) } ?? false
             let text = TextStreamBox(LanguageTextStream(bytes: model.codec.bytes, delimiters: delimiters,
                                                         startsInReasoning: startsInReasoning, stopSequences: options.stopSequences))
-            let request = LanguageGenerationRequest(prompt: prompt, maximumTokens: maximum, sampling: sampling)
+            var constraint: LanguageJSONSchemaConstraint?
+            if let structured {
+                let excluded = Set([delimiters?.start, delimiters?.end].compactMap { $0 })
+                let vocabulary = await resources.jsonVocabulary(model, excluded: excluded)
+                constraint = try LanguageJSONSchemaConstraint(schema: structured.schema, vocabulary: vocabulary,
+                    stopTokenIDs: model.backend.stopTokenIDs, reasoningEnd: thinking ? delimiters?.end : nil)
+            }
+            let request = LanguageGenerationRequest(prompt: prompt, maximumTokens: maximum, sampling: sampling, constraint: constraint)
             let counts = OSAllocatedUnfairLock(initialState: (pending: 0, reasoning: 0))
             let result: LanguageGenerationResult
             do {
@@ -102,7 +144,7 @@ extension AetherLanguageModel {
                 : result.stopReason == .endOfSequence ? .endOfTurn : .outputLimit
             return LanguageEngineReply(content: content, reasoning: reasoning, promptTokens: prompt.count,
                                        outputTokens: result.tokens.count, reasoningTokens: reasoningTokens, stopReason: stopReason,
-                                       seed: result.seed)
+                                       seed: result.seed, constraintStatistics: await constraint?.statistics)
         }
     }
 

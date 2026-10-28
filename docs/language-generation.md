@@ -107,8 +107,8 @@ that step fails, the in-flight delivery is cancelled and awaited.
 
 `AetherLanguageRuntime` holds what doesn't depend on Core AI: the `LanguageBackend` protocol, `LanguageSampling`, the
 constraint hook and the decode loop every backend shares ([design](language-runtime-seam.md)). It imports only the
-standard library and Foundation, so it can build below the Core AI floor (`Scripts/check-floor.sh`
-typechecks it at macOS 14 and iOS 17), and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
+standard library and Foundation, so it builds at the package floor (macOS 14 and iOS 17) without availability
+annotations, and `AetherLanguageCoreAI` re-exports it. `LanguageGenerationSession` is its Core
 AI backend:
 
 ```swift
@@ -136,8 +136,13 @@ let result = try await session.generate(request) { token in
 - **What it costs:** sampling runs on the host after each join and adds no input, shape or submission, so step shapes,
   the memory budget and GPU admission are those of greedy decoding. On the 4B writer, random modes added 0.4–1.4 ms to a
   21 ms token.
-- **Not yet:** image prompts (`VisionLanguageSession` and the image `generate`) stay greedy until the Qwen3-VL decoder
-  rework lands, and the facade's tokenizer, templates and structured output come next.
+- **Image prompts** take the same options: `VisionLanguageSession.generate(renderedTokenIDs:images:maximumTokens:sampling:constraint:...)`
+  and the image `generate(prompt:imageTokens:...:sampling:...)` run through the same decode loop and return a
+  `LanguageGenerationResult`. The repetition penalty and the processor's `begin(prompt:)` see the expanded prompt (each
+  image's pad token repeated to its token count), as Transformers' `input_ids` do. The greedy entry points are
+  unchanged, token for token, on one-function and two-function Qwen3-VL bundles
+  ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
+- **Next:** the facade's tokenizer, templates and structured output.
 
 ## Step contracts
 

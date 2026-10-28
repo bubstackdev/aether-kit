@@ -1,6 +1,7 @@
 /// Request admission and terminal close shared by the native session and CPU tests.
 /// It is owned by, and only used on, its session's actor. One request runs at a time;
 /// closing rejects new requests and waits for an active one to finish.
+@available(macOS 27, iOS 27, *)
 final class LanguageSessionLifecycle {
     private(set) var state: LanguageGenerationSession.State = .ready
     private var idle: CheckedContinuation<Void, Never>?

@@ -5,6 +5,7 @@ import AetherKreaTokenizers
 import CoreAI
 import Foundation
 
+@available(macOS 27, iOS 27, *)
 @main
 struct AetherProbe {
     static func main() async {

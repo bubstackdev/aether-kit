@@ -7,6 +7,7 @@ import Darwin
 import Foundation
 import Metal
 
+@available(macOS 27, iOS 27, *)
 struct BenchmarkPreparedCase: Codable, Sendable {
     let id: String
     let tokenIDs: [Int32]
@@ -17,6 +18,7 @@ struct BenchmarkPreparedCase: Codable, Sendable {
     let selectionIdentity: String
 }
 
+@available(macOS 27, iOS 27, *)
 struct KreaBenchmarkReport: Encodable {
     let schema = 1
     let purpose = "Opt-in Krea generation benchmark"
@@ -57,6 +59,7 @@ struct KreaBenchmarkReport: Encodable {
     let hostConditions = "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads"
 }
 
+@available(macOS 27, iOS 27, *)
 enum KreaBenchmarkCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "benchmark-krea" else { return false }

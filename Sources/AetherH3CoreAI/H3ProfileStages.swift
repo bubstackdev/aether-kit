@@ -8,11 +8,13 @@ import Foundation
 // and drops them in `release()`.
 
 /// Conditioner graph calls: one decoder layer (`hidden [1,T,5120]`, `cos`/`sin [1,T,128]` bf16 -> hidden).
+@available(macOS 27, iOS 27, *)
 protocol H3ConditionerKernel: Sendable {
     func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData
     func release() async
 }
 /// Denoiser graph calls.
+@available(macOS 27, iOS 27, *)
 protocol H3DenoiserKernels: Sendable {
     func refine(_ text: H3TensorData) async throws -> H3TensorData
     func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData
@@ -26,6 +28,7 @@ protocol H3DenoiserKernels: Sendable {
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData
     func release() async
 }
+@available(macOS 27, iOS 27, *)
 extension H3DenoiserKernels {
     /// One `block` call per block, each output returned to the host.
     func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
@@ -43,24 +46,29 @@ extension H3DenoiserKernels {
     }
 }
 /// One 256 px spatial tile of one temporal window: rows `[448, 96]` f32 -> pixels `[1,3,22,256,256]` f32.
+@available(macOS 27, iOS 27, *)
 protocol H3TileKernel: Sendable {
     func decode(_ rows: H3TensorData) async throws -> H3TensorData
     func release() async
 }
 /// Channel-major rows `[2, Na, 32]` f32 -> planar PCM `[2, 800 Na]` f32.
+@available(macOS 27, iOS 27, *)
 protocol H3AudioKernel: Sendable {
     func decode(_ rows: H3TensorData) async throws -> H3TensorData
     func release() async
 }
 
+@available(macOS 27, iOS 27, *)
 func h3Tensor(_ type: H3ScalarType, _ shape: [Int], _ values: [Int32]) throws -> H3TensorData {
     try H3TensorData(spec: H3TensorSpec(scalarType: type, shape: shape), bytes: values.withUnsafeBytes { Data($0) })
 }
+@available(macOS 27, iOS 27, *)
 func h3Tensor(_ shape: [Int], _ values: [Float]) throws -> H3TensorData {
     try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: shape), bytes: values.withUnsafeBytes { Data($0) })
 }
 
 /// Reads token embeddings in place and streams the 50 conditioner layers; returns the unnormalized tap.
+@available(macOS 27, iOS 27, *)
 actor H3ProfileConditioner: H3PromptConditioner {
     private let conditioner: H3Profile.Conditioner
     private let limits: ClosedRange<Int>
@@ -104,6 +112,7 @@ actor H3ProfileConditioner: H3PromptConditioner {
 }
 
 /// Packed-sequence helpers shared by the denoiser and its tests.
+@available(macOS 27, iOS 27, *)
 public enum H3Packing {
     /// `gather[r]` = the source row of packed row `r` in `[text; video; audio]`.
     static func gather(_ layout: H3Layout) throws -> [Int32] {
@@ -125,6 +134,7 @@ public enum H3Packing {
 /// not a fix. Padding is exact: the block reads its table only through `index_select` on the AdaLN indices
 /// (`tags` < 3k) and the heads read `temb` rows only through `indices` (< k), so the appended rows, copies of existing
 /// rows, are never selected, and the qualified boundary hashes replay unchanged.
+@available(macOS 27, iOS 27, *)
 public enum H3ModulationPadding {
     /// A block's AdaLN table `[6, 3k, D]` bf16 -> `[6, 3 cardinality, D]`, each slice's rows followed by copies of them.
     public static func table(_ table: H3TensorData, cardinality: Int) throws -> H3TensorData {
@@ -158,6 +168,7 @@ public enum H3ModulationPadding {
 
 /// One boundary of the profile denoiser's trajectory, for qualification. Every value is a tensor the trajectory
 /// already holds on the CPU at that point; observing adds no native call or readback.
+@available(macOS 27, iOS 27, *)
 public enum H3DenoiserObservation: Sendable {
     /// The refined text, once per trajectory.
     case refined(H3TensorData)
@@ -174,9 +185,11 @@ public enum H3DenoiserObservation: Sendable {
 }
 /// Opt-in observer of `H3DenoiserObservation`s (qualification). It is awaited at each boundary, and a thrown error
 /// fails the trajectory like a kernel error. Without an observer the denoiser constructs no observation.
+@available(macOS 27, iOS 27, *)
 public typealias H3DenoiserObserver = @Sendable (H3DenoiserObservation) async throws -> Void
 
 /// The Turbo trajectory over the profile: text refined once, then per step pack -> 50 blocks -> heads -> update.
+@available(macOS 27, iOS 27, *)
 actor H3ProfileDenoiser: H3Denoiser {
     nonisolated let steps: Int
     private let schedule: H3Schedule
@@ -262,6 +275,7 @@ actor H3ProfileDenoiser: H3Denoiser {
 }
 
 /// One temporal window, decoded as the source's 256 px spatial tiles and blended back.
+@available(macOS 27, iOS 27, *)
 actor H3ProfileVideoDecoder: H3WindowDecoder {
     private let kernel: any H3TileKernel
     init(kernel: any H3TileKernel) { self.kernel = kernel }
@@ -282,6 +296,7 @@ actor H3ProfileVideoDecoder: H3WindowDecoder {
     func release() async { await kernel.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 actor H3ProfileAudioDecoder: H3AudioDecoder {
     private let kernel: any H3AudioKernel
     private let hop: Int
@@ -304,6 +319,7 @@ actor H3ProfileAudioDecoder: H3AudioDecoder {
 /// First-frame encoder graph calls. `whole`: pixels `[1,3,1,H,W]` -> condition `[1,24,1,H/16,W/16]`. `tile`: one 256 px
 /// tile `[1,3,1,256,256]` -> moments `[1,48,1,16,16]`. `tail`: the stacked tile moments `[N,48,1,16,16]` (row-major
 /// over the source split) -> condition.
+@available(macOS 27, iOS 27, *)
 protocol H3KeyframeKernels: Sendable {
     func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData
     func tile(_ model: H3ModelAsset, pixels: H3TensorData) async throws -> H3TensorData
@@ -313,6 +329,7 @@ protocol H3KeyframeKernels: Sendable {
 
 /// RGB8 keyframe -> planar f32 pixels in 0...255 -> the profile's first-frame encoding for the canvas: the tiled
 /// graphs when the manifest declares them for that canvas (one tile's scratch at a time), else the whole-frame graph.
+@available(macOS 27, iOS 27, *)
 actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
     private let encoding: @Sendable (Int, Int) -> H3Profile.KeyframeEncoding?
     private let kernels: any H3KeyframeKernels
@@ -359,6 +376,7 @@ actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
 }
 
 /// Native first-frame graphs, each opened on first use and kept until `release()`.
+@available(macOS 27, iOS 27, *)
 actor NativeH3KeyframeKernels: H3KeyframeKernels {
     private var graphs: [String: NativeH3Graph] = [:]
     private let observer: H3NativeCallObserver?
@@ -385,10 +403,12 @@ actor NativeH3KeyframeKernels: H3KeyframeKernels {
 
 /// Per-call weights, double-buffered: call `i` runs from bank `i % 2` and loads call `i+1`'s weights into the other bank
 /// while its GPU work runs (see `NativeH3Graph.run(_:outputs:bank:prefetch:)`).
+@available(macOS 27, iOS 27, *)
 func h3Banked(_ parameters: [[H3TensorFile]], _ index: Int) -> (files: [String: H3TensorFile], bank: Int) {
     (Dictionary(uniqueKeysWithValues: parameters[index].map { ($0.name, $0) }), index % 2)
 }
 
+@available(macOS 27, iOS 27, *)
 actor NativeH3ConditionerKernel: H3ConditionerKernel {
     private let conditioner: H3Profile.Conditioner
     private let observer: H3NativeCallObserver?
@@ -405,6 +425,7 @@ actor NativeH3ConditionerKernel: H3ConditionerKernel {
     func release() async { graph = nil }
 }
 
+@available(macOS 27, iOS 27, *)
 actor NativeH3DenoiserKernels: H3DenoiserKernels {
     private let profile: H3Profile
     private let prepare: H3Profile.Prepare
@@ -472,6 +493,7 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
     func release() async { packing = nil; body = nil; output = nil }
 }
 
+@available(macOS 27, iOS 27, *)
 actor NativeH3TileKernel: H3TileKernel {
     private let asset: H3ModelAsset
     private let observer: H3NativeCallObserver?
@@ -485,6 +507,7 @@ actor NativeH3TileKernel: H3TileKernel {
 }
 
 /// Runs the static-length decoder for the rows' Na (the dynamic asset aborts in MPSGraph on the GPU).
+@available(macOS 27, iOS 27, *)
 actor NativeH3AudioKernel: H3AudioKernel {
     private let decoder: H3Profile.AudioDecoder
     private let observer: H3NativeCallObserver?
@@ -501,6 +524,7 @@ actor NativeH3AudioKernel: H3AudioKernel {
 
 /// Native stages for `H3VideoSession` over a complete schema-3 profile. `tokenize` turns the structured prompt into
 /// the conditioner's token ids (`AetherH3Tokenizers.H3Tokenizer.tokenIDs`).
+@available(macOS 27, iOS 27, *)
 public enum H3ProfileEngine {
     /// Includes exact profile declarations and selected schedule; no model is loaded.
     public static func resourceIdentity(profile: H3Profile, recipe: String = "turbo8") -> String {
@@ -530,6 +554,7 @@ public enum H3ProfileEngine {
 
 /// Per-graph native runs over a profile, for qualification against CPU references (each call opens what it needs and
 /// keeps it until `release()`). Inputs are the graphs' own boundary tensors; weights are bound in place.
+@available(macOS 27, iOS 27, *)
 public actor H3ProfileQualifier {
     private let profile: H3Profile
     private let conditioner: NativeH3ConditionerKernel
@@ -575,6 +600,7 @@ public actor H3ProfileQualifier {
     public func release() async { await conditioner.release(); await denoiser.release(); await tile.release(); await audio.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 extension H3Packing {
     /// Public for probes: the gather permutation of `layout` (see `H3Packing.gather`).
     public static func gatherIndices(_ layout: H3Layout) throws -> [Int32] { try gather(layout) }
