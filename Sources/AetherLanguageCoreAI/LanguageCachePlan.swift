@@ -46,9 +46,11 @@ enum LanguageCachePlan {
     /// request's). Every prefill chunk then submits one (count, capacity) shape instead of one per capacity step it
     /// crosses: Core AI retains memory on every shape change, and growing the cache step by step also re-copies it.
     /// Decoding grows it in steps from there, as before; a prompt within the initial capacity starts there, as before.
+    /// `prefillTokens` 0 keeps the 0.0.2 start, the initial capacity (a 0.0.2 two-function asset's plan).
     static func requestCapacity(allocated: Int, initial: Int, resets: Bool, prefillTokens: Int, maximum: Int) throws -> Int {
         guard resets else { return allocated }
-        return max(min(allocated, initial), try bucketedCapacity(needed: max(prefillTokens, 1), maximum: maximum))
+        guard prefillTokens > 0 else { return min(allocated, initial) }
+        return max(min(allocated, initial), try bucketedCapacity(needed: prefillTokens, maximum: maximum))
     }
 
     /// Writes a bucketed step's `[layers, batch, heads, count, width]` update (any strides) into a

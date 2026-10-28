@@ -245,6 +245,11 @@ struct LanguageStepContractTests {
         #expect(try capacity(1024, 1024, true, 300, 4096) == 1024)
         #expect(try capacity(256, 256, true, 2000, 2000) == 2000)
         #expect(try capacity(2048, 256, false, 12, 4096) == 2048)
+        // No prefill tokens: the 0.0.2 start, the initial capacity (a two-function asset's plan).
+        #expect(try capacity(2048, 256, true, 0, 4096) == 256)
+        #expect(try capacity(2048, 128, true, 0, 4096) == 128)
+        #expect(LanguageStepContract.bucketedPositions.fixedPrefillChunk == 64)
+        #expect(LanguageStepContract.runningPositions.fixedPrefillChunk == nil)
         #expect(throws: LanguageGenerationError.contextLimit(limit: 2048)) { try capacity(256, 256, true, 2049, 2048) }
     }
 

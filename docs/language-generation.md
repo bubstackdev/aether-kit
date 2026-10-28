@@ -217,7 +217,10 @@ their measurements.
 The prefill keeps every chunk at one width C and one cache capacity, so that a warm request
 changes shape as little as possible (see [Native memory retention](#native-memory-retention)):
 C is 64 for a prompt of up to 256 tokens and 256 for a longer one (0.0.3), and the cache is sized
-for the prompt before the prefill. A text run
+for the prompt before the prefill. That plan applies to text bundles and one-function Qwen3-VL
+bundles, where it was qualified; a 0.0.2 two-function Qwen3-VL bundle (`main` plus `withImage`)
+keeps the 0.0.2 plan for every request, C = 64 whatever the prompt's length and the cache growing
+in 256-row steps from the initial capacity. A text run
 that is not a multiple of C ends with a C-token chunk over its last C tokens, starting
 before rows the previous chunk already wrote. This is the same computation, not an
 approximation: the graph's cache mask admits only rows before the chunk's first position
@@ -229,23 +232,28 @@ The cost is up to C − 1 recomputed tokens per run. A run shorter than C (a sho
 or a short text run beside a Qwen3-VL image in a 0.0.2 two-function asset) is one chunk of its
 own length; a two-function asset's text chunk never steps back into an image span, while a
 one-function asset's chunks carry image rows and may (see [Qwen3-VL](qwen3-vl.md#pieces)).
-`languageOverlappedPrefillMatchesOtherPlans` (opt-in) checks this on every model against a
-whole-prompt chunk, 1-token steps and the 0.0.2 width of 64.
+`languageOverlappedPrefillMatchesOtherPlans` (opt-in) checks this on every model against the
+widest chunk the export allows (the whole prompt in one chunk up to the export's chunk bound,
+512 for the Qwen3 exports, so a 1,021-token prompt takes two), 1-token steps and the 0.0.2 width
+of 64.
 
 **Equal up to rounding is not equal.** Until 0.0.3's plan, that check's step-back rule (the
-default plan against one whole-prompt chunk) required identical greedy tokens with no near-tie
+default plan against the widest chunk) required identical greedy tokens with no near-tie
 allowance, and its plan-rounding rule (against 1-token steps and other widths) accepted a flip
 only at an upstream near-tie whose two plans' teacher-forced rows agreed at cosine >= 0.99999.
 At C = 64 the step-back rule held on every model, but by rounding luck, not by construction: at
-C = 256 the VL-4B's 449-token text prompt takes token 3129 where the whole-prompt chunk, 1-token
+C = 256 the VL-4B's 449-token text prompt takes token 3129 where the widest chunk, 1-token
 steps and the 64 width take 3982, at a row where the default plan's top two fp16 logits are
 exactly equal. And the 0.99999 row bar, set from 449-token prompts, is missed by plans of
 different kernel shapes over a 1,021-token prompt (the writer's rows agree at 0.9999897 against
 1-token steps and 0.9999693 against the 64 width). Since 0.0.3 both comparisons use one rule:
 identical greedy tokens, or a first divergence where the two plans' tokens are the upstream
 reference's top two, its top-1 minus top-2 probability is under 0.1 (the parity threshold), and
-the rows agree at the check's own last-row bar, cosine >= 0.9999. Upstream parity against the
-float32 reference still judges every plan on its own (see [Evidence and limits](#evidence-and-limits)).
+the rows agree at the check's own last-row bar, cosine >= 0.9999. The rows compared are the
+default plan's teacher-forced rows (its prefill, then 1-token steps) and, as a proxy for the other
+plan's, row r recomputed by prefilling the prompt and the first r generated tokens at that plan's
+width. Upstream parity against the float32 reference still judges every plan on its own (see
+[Evidence and limits](#evidence-and-limits)).
 
 ### Time to first token
 
@@ -304,7 +312,10 @@ cache into the larger one, so growth copies add up over a long generation (estim
 larger steps would trade per-step attention cost for fewer copies. This reduces eager allocation
 but does not promise that every registered context fits every device’s current memory
 budget (on iOS the allocation at a request's start is checked against the app's available
-memory, as growth is). A bucketed session sizes every request's cache afresh rather
+memory, as growth is). The allocation happens when the request starts, before its GPU
+admission, so a request queued behind another GPU owner already holds its whole prompt's KV
+cache while it waits; that memory is within the model's residency, whose estimate counts the KV
+caches at the registered context ([Resource admission](#resource-admission)). A bucketed session sizes every request's cache afresh rather
 than keeping a previous long request's caches; running-contract sessions keep their
 grown caches.
 
@@ -334,7 +345,8 @@ default plan and budget, the writer reloads 3 times in 60 back-to-back long requ
 is Kit-owned and unaffected).
 
 **Prefill width and capacity.** The retained amount follows the shape changed to: about 0.85
-MiB per token of prefill width on the writer at a 449-token prompt. Both parts of a bucketed
+MiB per token of prefill width on the writer at a 449-token prompt (the 0.0.2 sweep below:
+110.8 MiB at C = 128 and 215.3 MiB at C = 256, 0.87 and 0.84 MiB per token). Both parts of a bucketed
 shape count, the width q and the cache capacity: until 0.0.3 the cache grew in 256-row steps
 through the prefill, so a long prompt changed shape once per step. That made the figures below,
 measured at 449 tokens (one or two steps), understate long prompts about fourfold: the writer
@@ -488,14 +500,17 @@ jetsam kill.
 
 ## Evidence and limits
 
-Different prefill plans (a different width, a single chunk, or 1-token steps) round differently, which can flip a
+Different prefill plans (a different width, the widest chunk, or 1-token steps) round differently, which can flip a
 greedy token where upstream's top two are nearly tied (observed margins 0.0014 and 0.0115 at the 64 width,
 [evidence](evidence/language-prefill-width-2026-10-27.json)). The 0.0.3 plan was qualified again on the 0.6B, the
 writer and the one-function VL-2B and VL-4B ([evidence](evidence/language-prefill-plan-2026-10-28.json)):
 - **Short prompts** (up to 256 tokens) keep the 0.0.2 plan: the 0.6B's and the writer's short parity runs reproduce
   their earlier minimum cosines exactly (0.9999989455131314 and 0.9999987015881698), and the writer's chat replies are
   token-identical to their records.
-- **Image prompts** (449-539 tokens, all now 256 wide): every Qwen3-VL parity and session run passes, and every greedy
+- **A 0.0.2 two-function Qwen3-VL bundle keeps the 0.0.2 plan.** The VL-2B two-function bundle's model parity
+  reproduces the 64-width record's minimum cosines exactly on all five cases, and its plan check passes with identical
+  greedy output across plans (its default plan is 8 chunks of 64 at 449 tokens).
+- **Image prompts** on one-function bundles (449-539 tokens, all now 256 wide): every Qwen3-VL parity and session run passes, and every greedy
   sequence is token-identical to its 0.0.3 record.
 - **Long text prompts** pass upstream parity (0.6B 453 tokens, writer 449 and 1,021, VL-4B 449). Three greedy flips
   against other plans sit at upstream near-ties: the 0.6B at token 16 (margin 0.00142, the known one), the VL-4B at

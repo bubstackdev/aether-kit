@@ -471,8 +471,17 @@ public actor LanguageGenerationSession {
         return rows
     }
 
+    /// A 0.0.2 two-function (`withImage`) asset keeps the 0.0.2 prefill plan for every request: the fixed width and the
+    /// cache growing in steps from the initial capacity. The 0.0.3 plan was qualified on text and one-function assets.
+    private var keepsFixedPrefillPlan: Bool { acceptsImages && !imagesThroughMain }
+
+    /// The width a prefill uses when the request names none (nil: the contract's default by prompt length).
+    private func prefillWidth(_ requested: Int?) -> Int? {
+        requested ?? (keepsFixedPrefillPlan ? contract.fixedPrefillChunk : nil)
+    }
+
     /// `prefillTokens`: the tokens the prefill submits (the prompt, without a teacher-forced continuation), which the
-    /// bucketed cache is sized for before the prefill (default: the whole `prompt`).
+    /// bucketed cache is sized for before the prefill (default: the whole `prompt`; none for a two-function asset).
     private func begin(prompt: [Int], reserve: Int, chunkSize: Int?, prefillTokens: Int? = nil) throws {
         try Task.checkCancellation()
         try lifecycle.admit()
@@ -495,7 +504,8 @@ public actor LanguageGenerationSession {
         do {
             start = try LanguageCachePlan.requestCapacity(allocated: allocatedCapacity, initial: initialCapacity,
                                                           resets: !contract.cachesAreStates,
-                                                          prefillTokens: prefillTokens ?? prompt.count, maximum: capacity)
+                                                          prefillTokens: keepsFixedPrefillPlan ? 0 : prefillTokens ?? prompt.count,
+                                                          maximum: capacity)
         } catch {
             lifecycle.finish()
             throw error
@@ -524,7 +534,7 @@ public actor LanguageGenerationSession {
     /// (`LanguageStepContract.prefillChunks`).
     private func prefill(_ prompt: [Int], chunkSize: Int?, observer: Observer?) async throws -> [Float] {
         var last: [Float] = []
-        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: chunkSize, maximumChunk: prefillLimit) {
+        for chunk in contract.prefillChunks(promptCount: prompt.count, requestedChunk: prefillWidth(chunkSize), maximumChunk: prefillLimit) {
             last = try await step(tokens: prompt[chunk.offset..<(chunk.offset + chunk.count)].map(Int32.init), position: chunk.offset,
                                   observer: observer)
         }

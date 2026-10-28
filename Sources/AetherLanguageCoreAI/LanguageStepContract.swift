@@ -135,12 +135,21 @@ public enum LanguageStepContract: String, Sendable, Equatable {
 
     /// The width a prefill of `promptCount` tokens uses when the request names none: the bucketed contract's width
     /// by prompt length (``defaultBucketedPrefillChunk`` up to ``longPromptThreshold`` tokens,
-    /// ``longPromptPrefillChunk`` above), nil for the running contract (the whole prompt). A planner that splits a
-    /// prompt into runs (a 0.0.2 image prompt's text runs) resolves the width from the whole prompt once.
+    /// ``longPromptPrefillChunk`` above), nil for the running contract (the whole prompt). A 0.0.2 two-function asset
+    /// keeps ``fixedPrefillChunk`` instead (its plan was not qualified again).
     func defaultPrefillChunk(promptCount: Int) -> Int? {
         switch self {
         case .runningPositions: nil
         case .bucketedPositions: promptCount > Self.longPromptThreshold ? Self.longPromptPrefillChunk : Self.defaultBucketedPrefillChunk
+        }
+    }
+
+    /// The 0.0.2 plan's width whatever the prompt's length: ``defaultBucketedPrefillChunk`` for the bucketed contract,
+    /// nil (the whole prompt) for the running one. A 0.0.2 two-function (`withImage`) asset keeps it for every request.
+    var fixedPrefillChunk: Int? {
+        switch self {
+        case .runningPositions: nil
+        case .bucketedPositions: Self.defaultBucketedPrefillChunk
         }
     }
 
