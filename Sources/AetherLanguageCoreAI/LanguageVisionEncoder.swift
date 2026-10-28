@@ -10,6 +10,7 @@ import Metal
 /// computes wrong outputs on the GPU (cosine 0.16–0.67 against the reference; engine F-P3-26,
 /// reproduced in `docs/evidence/qwen3-vl-vision-encoder-2026-10-26.json`). A registration that
 /// requests it is refused until a qualification shows it correct.
+@available(macOS 27, iOS 27, *)
 public enum LanguageVisionSpecialization {
     /// Whether any qualification has shown reshape-optimized specialization correct for the encoder
     /// (the registration's rule, ``LanguageVisionRegistration/reshapesQualified``).
@@ -32,6 +33,7 @@ public enum LanguageVisionSpecialization {
 /// Opening refuses a grid without a static function, and a function with any dynamic dimension: a
 /// dynamic-shape export intermittently computed wrong outputs on the GPU even without
 /// `expectFrequentReshapes` (2.5 % of encodes, always the same wrong bits; docs/qwen3-vl.md).
+@available(macOS 27, iOS 27, *)
 public actor LanguageVisionEncoder {
     public struct Configuration: Sendable, Equatable {
         public let mergeSize: Int
@@ -178,6 +180,7 @@ public actor LanguageVisionEncoder {
 }
 
 /// The static per-grid encoder contract, checked before any function loads (pure; CPU-tested).
+@available(macOS 27, iOS 27, *)
 enum LanguageVisionContract {
     /// Grids must be present, distinct, positive and multiples of the merge size.
     static func requireGrids(_ grids: [Qwen3VLImagePreprocessor.Grid], mergeSize: Int) throws {

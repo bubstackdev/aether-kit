@@ -2,6 +2,7 @@ import AetherKit
 import AetherH3
 import Foundation
 
+@available(macOS 27, iOS 27, *)
 actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
     private let plan: H3DenoisingPlan
     private let observer: (@Sendable (H3DenoisingExecutionEvent) -> Void)?
@@ -83,6 +84,7 @@ actor NativeH3DenoisingBackend: H3DenoisingBackend, H3DenoisingKernels {
         return try H3Latents(video: output["video"]!, audio: output["audio"]!)
     }
 }
+@available(macOS 27, iOS 27, *)
 private actor H3DenoisingTail {
     var value: H3TensorData?
     func set(_ value: H3TensorData) { self.value = value }

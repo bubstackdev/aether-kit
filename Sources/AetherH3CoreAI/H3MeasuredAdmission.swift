@@ -2,6 +2,7 @@ import AetherKit
 import AetherH3
 @preconcurrency import CoreAI
 
+@available(macOS 27, iOS 27, *)
 extension H3ProfileEngine {
     /// The Core AI device architecture measured resource entries are keyed by.
     public static var deviceArchitecture: String { AIModel.deviceArchitectureName }

@@ -5,10 +5,12 @@ import AetherCoreAI
 import AetherKrea
 import Foundation
 
+@available(macOS 27, iOS 27, *)
 public enum KreaResidency: Sendable { case balanced, resident }
 
 /// Events are delivered synchronously in order. Return to continue; throw to abort.
 /// Latent buffers use Swift value ownership and may be retained for fixture checks.
+@available(macOS 27, iOS 27, *)
 public enum KreaGenerationEvent: Sendable {
     case conditioningReady(KreaConditioning)
     case denoisersReady(KreaDenoiserSelection)
@@ -20,6 +22,7 @@ public enum KreaGenerationEvent: Sendable {
 /// No native model or raw prompt is retained. Keep only the values you need;
 /// the session does not cache prepared prompts. Each value holds at most 30 MiB
 /// of fp16 conditioning, shared by Swift value copies until mutation.
+@available(macOS 27, iOS 27, *)
 public struct KreaPreparedPrompt: Sendable {
     public let conditioning: KreaConditioning
     public let bundleFingerprint: String
@@ -30,6 +33,7 @@ public struct KreaPreparedPrompt: Sendable {
 
 /// Experimental complete reference pipeline. All segment boundaries currently copy
 /// through owned host tensors; this is not the device-resident optimized path.
+@available(macOS 27, iOS 27, *)
 public actor KreaGenerationSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -236,14 +240,18 @@ public actor KreaGenerationSession {
 }
 
 /// A loaded Krea model: the package's shared staged-model protocol, which `ModelSession` and test models adopt.
+@available(macOS 27, iOS 27, *)
 typealias KreaExecutable = StagedModel
 
+@available(macOS 27, iOS 27, *)
 protocol KreaModelFactory: Sendable {
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable
     func finish() async
 }
+@available(macOS 27, iOS 27, *)
 extension KreaModelFactory { func finish() async {} }
 
+@available(macOS 27, iOS 27, *)
 private final class KreaInstallationAccess: Sendable {
     private let held: Mutex<AssetReadLease?>
     init(_ installation: AssetReadLease) { held = Mutex(installation) }
@@ -251,6 +259,7 @@ private final class KreaInstallationAccess: Sendable {
     func release() { held.withLock { $0 = nil } }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct NativeKreaFactory: KreaModelFactory {
     let compute: ModelComputePolicy
     let installation: KreaInstallationAccess?
@@ -267,10 +276,12 @@ private struct NativeKreaFactory: KreaModelFactory {
     func finish() async { installation?.release() }
 }
 
+@available(macOS 27, iOS 27, *)
 private enum ConditioningSource: Sendable {
     case prompt(KreaPrompt), provided(KreaConditioning), references(KreaReferencePrompt, [KreaReferencePixels])
 }
 
+@available(macOS 27, iOS 27, *)
 private actor KreaRunner {
     let assets: KreaAssets
     let factory: any KreaModelFactory
@@ -539,6 +550,7 @@ private actor KreaRunner {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private func halves(_ tensor: FloatTensor) throws -> Float16Tensor {
     try Float16Tensor(shape: tensor.shape, values: tensor.values.map(Float16.init))
 }

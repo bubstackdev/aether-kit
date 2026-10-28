@@ -4,12 +4,14 @@ import AetherVision
 import Foundation
 
 /// The encoder a ``VisionLanguageSession`` drives (``LanguageVisionEncoder``; fakes in CPU tests).
+@available(macOS 27, iOS 27, *)
 protocol VisionLanguageEncoding: Sendable {
     func encode(pixels: [Float16], grid: (t: Int, h: Int, w: Int)) async throws -> LanguageImageFeatures
     func unload() async
 }
 
 /// The decoder a ``VisionLanguageSession`` drives (``LanguageGenerationSession``; fakes in CPU tests).
+@available(macOS 27, iOS 27, *)
 protocol VisionLanguageDecoding: Sendable {
     func generate(prompt: LanguageVisionPrompt, imageTokens: LanguageImageTokens, maximumTokens: Int, prefillChunkSize: Int?,
                   onToken: (@Sendable (Int) async throws -> Void)?, observer: LanguageGenerationSession.Observer?) async throws
@@ -24,6 +26,7 @@ protocol VisionLanguageDecoding: Sendable {
     func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics?
 }
 
+@available(macOS 27, iOS 27, *)
 extension VisionLanguageDecoding {
     func decoderStatistics() async -> LanguageGenerationSession.CacheStatistics? { nil }
 
@@ -43,7 +46,9 @@ extension VisionLanguageDecoding {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 extension LanguageVisionEncoder: VisionLanguageEncoding {}
+@available(macOS 27, iOS 27, *)
 extension LanguageGenerationSession: VisionLanguageDecoding {
     func decoderStatistics() async -> CacheStatistics? { cacheStatistics() }
 }
@@ -62,6 +67,7 @@ extension LanguageGenerationSession: VisionLanguageDecoding {
 /// decoder's request are each admitted. `unload()` first withdraws a request still waiting for
 /// either admission (it fails with `closed`), so close never waits behind the GPU queue; an
 /// admitted request finishes first. Then both models are released.
+@available(macOS 27, iOS 27, *)
 public actor VisionLanguageSession {
     public typealias Reply = LanguageGenerationSession.Reply
 

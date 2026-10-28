@@ -1,6 +1,6 @@
 import CryptoKit
 import Foundation
-import Synchronization
+import os
 
 /// A Core AI asset directory inside a local bundle, with its declared content identity.
 /// `main.hash` declares the SHA-256 of `main.mlirb`; `metadata.json` is hashed on opening.
@@ -59,21 +59,22 @@ public struct DeclaredModelAsset: Sendable, Equatable {
         // `isCancelled` is documented as safe from other threads, and concurrentPerform returns
         // before the task reference expires.
         struct CallerTask: @unchecked Sendable { let task: UnsafeCurrentTask? }
-        let failures = Mutex<[Int: any Error]>([:])
+        // OSAllocatedUnfairLock rather than Mutex: Mutex needs macOS 15 and iOS 18, above the package floor.
+        let failures = OSAllocatedUnfairLock<[Int: any Error]>(uncheckedState: [:])
         withUnsafeCurrentTask { task in
             let caller = CallerTask(task: task)
             DispatchQueue.concurrentPerform(iterations: assets.count) { index in
                 do {
                     try assets[index].verify {
                         if caller.task?.isCancelled == true { throw CancellationError() }
-                        if failures.withLock({ $0.keys.contains { $0 < index } }) { throw Superseded() }
+                        if failures.withLockUnchecked({ $0.keys.contains { $0 < index } }) { throw Superseded() }
                     }
                 } catch {
-                    failures.withLock { $0[index] = error }
+                    failures.withLockUnchecked { $0[index] = error }
                 }
             }
         }
-        if let first = failures.withLock({ $0.min { $0.key < $1.key }?.value }) { throw first }
+        if let first = failures.withLockUnchecked({ $0.min { $0.key < $1.key }?.value }) { throw first }
     }
 
     /// The three portable files of this asset, relative to `root`, for an installation manifest.

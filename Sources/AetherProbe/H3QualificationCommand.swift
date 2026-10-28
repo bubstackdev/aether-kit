@@ -5,12 +5,14 @@ import Darwin
 import Foundation
 import Metal
 
+@available(macOS 27, iOS 27, *)
 private struct H3ProbeRun: Encodable {
     let name: String
     let repetition: Int
     let fullOutputSHA256: String
     let comparison: H3ReferenceComparison
 }
+@available(macOS 27, iOS 27, *)
 private struct H3ProbeReport: Encodable {
     let schema = 1
     let scope = "Corrected Turbo8 block 0 at the two captured T2VA cardinalities; sampled CPU oracle comparison, not full pipeline qualification or a benchmark"
@@ -27,6 +29,7 @@ private struct H3ProbeReport: Encodable {
     var error: String?
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3QualificationCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "qualify-h3" else { return false }

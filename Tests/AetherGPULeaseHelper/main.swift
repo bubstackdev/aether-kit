@@ -1,7 +1,7 @@
 import AetherKit
 import Darwin
 import Foundation
-import Synchronization
+import os
 
 // Test-only child process for SharedGPULeaseTests; not a product and never shipped. Every mode takes a lease on the
 // private directory it is given, never the shared /tmp path.
@@ -14,7 +14,8 @@ import Synchronization
 //                       with inherit, accept a hand-off named by AETHER_GPU_LEASE_HOLDER
 //   wait DIR SECONDS    wait up to SECONDS: print "acquired", release, exit 0; exit 3 on timeout
 //   pair DIR      take DIR and its sibling DIR.second, release DIR, print "ready", block
-private final class Held: Sendable { let lease = Mutex<SharedGPULease?>(nil) }
+// OSAllocatedUnfairLock rather than Mutex (macOS 15): this helper builds at the package floor with every executable.
+private final class Held: Sendable { let lease = OSAllocatedUnfairLock<SharedGPULease?>(uncheckedState: nil) }
 
 private func configuration(_ path: String, inherit: Bool = false) -> SharedGPULease.Configuration {
     let handedOffBy = inherit ? ProcessInfo.processInfo.environment[SharedGPULease.holderEnvironmentKey].flatMap { Int32($0) } : nil
@@ -62,7 +63,7 @@ private func run() async -> Never {
             source.setEventHandler {
                 // Long enough that a re-raised default termination would win if the lease had also handled SIGTERM.
                 usleep(300_000)
-                held.lease.withLock { $0?.release(); $0 = nil }
+                held.lease.withLockUnchecked { $0?.release(); $0 = nil }
                 exit(42)
             }
             source.resume()
@@ -72,11 +73,11 @@ private func run() async -> Never {
         }
         do {
             let lease = try SharedGPULease.tryAcquire(configuration(path))
-            held.lease.withLock { $0 = lease }
+            held.lease.withLockUnchecked { $0 = lease }
         } catch { exit(65) }
         if mode == "late" {
             signal(SIGTERM) { _ in _exit(43) }
-            held.lease.withLock { $0?.release(); $0 = nil }
+            held.lease.withLockUnchecked { $0?.release(); $0 = nil }
         }
         say("ready")
         while true { withExtendedLifetime(shutdown) { _ = sleep(60) } }
