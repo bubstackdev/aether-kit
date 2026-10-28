@@ -17,8 +17,8 @@ import Testing
 ///   probability is under 0.1 (the parity gate's threshold), and the two plans' teacher-forced rows agree at cosine
 ///   >= 0.99999 on every row up to and including the divergence. Judged only where an upstream reference with this
 ///   prompt covers the row; otherwise any divergence fails.
-/// A Qwen3-VL bundle also runs two image prompts through `VisionLanguageSession`: greedy identical across the three
-/// plans, with no near-tie allowance. A one-function decoder prefills image tokens in the same chunks as text, so the
+/// A Qwen3-VL bundle also runs three image prompts through `VisionLanguageSession`, two with one image and one with two:
+/// greedy identical across the three plans, with no near-tie allowance. A one-function decoder prefills image tokens in the same chunks as text, so the
 /// default plan's chunks cross the image span's edges in both, and the cases are chosen for the step-back tail: after
 /// a long question it lands in the text after the image; after a short one it steps back into the image span and
 /// re-covers image rows (the report records the image span and the default plan's chunk starts, and requires both).
@@ -227,10 +227,35 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     imageCase.greedyIdentical = Set(imageCase.greedy.values).count == 1
                     model.imageCases.append(imageCase)
                 }
+                // Two images in one prompt: both spans' edges and the gap between them fall wherever the chunks put them.
+                let second = try VisionRGBImage(rgb: (0..<(512 * 384)).flatMap { i -> [UInt8] in
+                    let x = i % 512, y = i / 512
+                    return [UInt8((x + y) * 127 / 893), UInt8(x * 255 / 511), UInt8(y * 255 / 383)]
+                }, width: 512, height: 384)
+                let pair = try tokenizer.render([.user("What differs between these two pictures?", images: 2)]).tokenIDs
+                var pairCase = OverlapImageCase()
+                pairCase.name = "two images"
+                let pads = pair.indices.filter { pair[$0] == registration.imageTokenID }
+                let first = pads[0], next = pads[1] + imageTokens - 1
+                pairCase.promptTokens = pair.count - 2 + 2 * imageTokens
+                pairCase.imageSpan = [first, first + imageTokens, next, next + imageTokens]
+                let width = 64, total = pairCase.promptTokens
+                pairCase.defaultChunkStarts = Array(stride(from: 0, through: total - width, by: width))
+                    + (total % width == 0 || total <= width ? [] : [total - width])
+                pairCase.chunksCrossImageEdges = pairCase.imageSpan.allSatisfy { edge in
+                    pairCase.defaultChunkStarts.contains { $0 < edge && edge < $0 + width }
+                }
+                pairCase.tailReCoversImageRows = total % width != 0 && total - width < next + imageTokens
+                for (name, chunk) in [("default", nil), ("single chunk", 512), ("1-token steps", 1)] as [(String, Int?)] {
+                    pairCase.greedy[name] = try await vl.generate(renderedTokenIDs: pair, images: [image, second], maximumTokens: 32,
+                                                                   prefillChunkSize: chunk).tokens
+                }
+                pairCase.greedyIdentical = Set(pairCase.greedy.values).count == 1
+                model.imageCases.append(pairCase)
                 await vl.unload()
-                // Each case must exercise what it is for: image edges inside chunks, and the short question's tail
-                // stepping back into the image.
-                let geometry = model.imageCases.allSatisfy(\.chunksCrossImageEdges)
+                // Each single-image case must exercise what it is for: image edges inside chunks, and the short
+                // question's tail stepping back into the image. Every case's greedy output must agree across plans.
+                let geometry = model.imageCases.filter { $0.name != "two images" }.allSatisfy(\.chunksCrossImageEdges)
                     && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows }
                     && model.imageCases.contains { $0.name == "long question" && !$0.tailReCoversImageRows }
                 model.imageGreedyIdentical = geometry && model.imageCases.allSatisfy(\.greedyIdentical)

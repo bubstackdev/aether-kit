@@ -26,7 +26,8 @@ await session.unload()
 
 The bundle's `language-model.json` carries a `vision` registration
 (`LanguageVisionRegistration`): the encoder asset and its hash, the image tokens, the
-preprocessing parameters, an image-token budget (`maximumImageTokens`) and the encoder's fixed
+preprocessing parameters, an image-token budget per image (`maximumImageTokens`; a request may carry several images, and a host's
+`LanguageResourceAdmission` caps their sum per request, checked before the first encode) and the encoder's fixed
 patch grids (`imageGrids`), plus `exportBounds` with a `maximumImageChunk` covering the budget.
 `Forge/language/register_qwen3_vl_bundle.py` writes one for an assembled bundle, listing every tokenizer file (`tokenizerFiles`) so `verifyTokenizer` checks the exact set. Each image
 snaps to the grid nearest its aspect ratio, is resized to that grid exactly, encoded once by
@@ -109,14 +110,22 @@ within the pixel bounds, identical to the reference for 46 sizes). Then antialia
 PIL-style coefficients; within one level of torchvision's uint8 path, ≥ 95 % identical bytes),
 (x/255 − 0.5)/0.5, the frame repeated twice, merge-window patchify. Decoding uses ImageIO,
 applies EXIF orientation, and draws in the image's own RGB colour space (no colour management,
-like the reference's PIL decoding); grayscale expands to equal channels. Alpha is composited over
-black, where the reference's `convert("RGB")` drops alpha and keeps the stored colour, so
-transparent regions differ (opaque images are unaffected). `VisionRGBImageTests` checks channel
-order, colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
+like the reference's PIL decoding); grayscale expands to equal channels. Alpha is dropped and each pixel's stored
+colour kept, as the reference's `convert("RGB")` does (`VisionAlphaPolicy.dropAlpha`, the default since 0.0.3): exact
+for straight-alpha 8- and 16-bit images, which is how ImageIO returns PNG; a source that arrives premultiplied has lost
+its transparent pixels' stored colour, so those become black. `.composite(red:green:blue:)` draws over a colour
+instead; over black it reproduces 0.0.2's decoding. Kit's bytes equal upstream's on PNG fixtures in four layouts, and a
+transparent scene passes the same-decode run ([evidence](evidence/qwen3-vl-alpha-2026-10-27.json)). Krea's reference
+images still drop alpha onto black, following the prototype's oracle. `VisionRGBImageTests` checks channel order,
+colour, grayscale, alpha and each EXIF orientation on the CPU with generated fixtures.
 EXIF orientation is applied **before** grid snapping, so a
-rotated portrait snaps by its displayed aspect ratio. Parity is not exercised for rotated photos:
-every reference photo carries orientation 1 (or none), and the reference decodes without an EXIF
-transpose.
+rotated portrait snaps by its displayed aspect ratio. The transform is exact: tagged lossless images decode to their
+stored pixels moved where each orientation puts them, byte for byte, for all eight orientations (CPU). Rotated photos
+are qualified against upstream fed as Transformers' `load_image` feeds it (`exif_transpose`, then `convert("RGB")`):
+four lossless variants of the Kit-decoded photos, stored rotated and tagged with orientation 6, 8 or 3, give the
+unrotated images' grids, pixels, forced rows and greedy tokens exactly, on the reference and through Kit's same-decode
+run ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)). That includes the 4:3 market photo's divergence
+from upstream at token 16, a reference near-tie (margin 0.012) that its unrotated run shows too.
 
 ## Dynamic shapes are a correctness hazard for the encoder
 
@@ -214,6 +223,23 @@ change.)
 
 **Public API.** `VisionLanguageSession.open(bundle:)` on the registered bundle reproduces the
 component-level Kit run token for token on all five cases, and closes on `unload()`.
+
+**Several images** ([VL-2B](evidence/qwen3-vl-multi-image-2026-10-27.json),
+[VL-4B](evidence/qwen3-vl-multi-image-4b-2026-10-28.json)). Three prompts against
+upstream with several images each, one case per reference process (14.2–14.3 GB peak on the 2B, 20.1–24.8 GB on the 4B): the portrait and the fruit
+stall (48×36 and 32×56, 880 image tokens), three images (the portrait, the 4:3 market photo and the 448×448 scene, 1,348 tokens), and the
+two photos with a sentence between them. On the CPU, the prompt plan's expansion and M-RoPE positions equal the
+processor's ids and the model's rope index for every token (`LanguageVisionPromptTests.severalImagesMatchUpstream`):
+each image starts its span at the position after the previous text and the following text resumes at max(t, h, w) of the
+merged grid past the span's start, with no temporal offset between images. On the 2B, model parity passes on all three (forced-row
+cosine ≥ 0.99978, no argmax differences, greedy identical), and so does Kit preprocessing on the same decode (pixel
+cosine over each prompt's images ≥ 0.9999998, per image ≥ 0.9999996, equal grids per image, forced-row cosine
+≥ 0.99994, greedy identical). The overlapped-prefill
+check adds a two-image prompt whose 64-token chunks cross every image edge: default chunks, 512-token chunks and
+1-token steps give identical greedy output. The 4B passes the same checks on the same prompts (its prompt tokens
+are the 2B's): model parity with forced-row cosine ≥ 0.99994, Kit preprocessing on the same decode with the same pixel
+cosines and grids and forced-row cosine ≥ 0.99961, no argmax differences and greedy identical in all six runs,
+and the overlapped-prefill check with the two-image prompt.
 
 ## Qwen3-VL-4B describer
 
@@ -367,8 +393,7 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
 - **JPEG decoding differs from upstream's.** Kit decodes with ImageIO, upstream with PIL
   (libjpeg-turbo). The difference is small in pixels (cosine ≥ 0.9999) and can still change what a
   model says about a photo; the 4B named a different place for the market photo. The model is
-  qualified on identical decodes; the decoder difference is measured, not removed. Images with
-  transparency also differ: Kit composites alpha over black, PIL drops it.
+  qualified on identical decodes; the decoder difference is measured, not removed.
 
 - **Aspect ratio is stretched to the nearest grid.** No padding: an image between two grids is
   stretched by up to about 15 %, and panoramas or tall strips beyond 16:9 more. More grids (for
@@ -376,9 +401,10 @@ token; 2B: 0.148 to 0.135 s, 14.4 to 12.6 ms).
 - **Resource admission is per process.** `LanguageResourceAdmission` reserves the encoder's and decoder's memory
   against a host's `ResourceCoordinator`, but a describer in its own process (as Atelier runs it) is invisible to a
   Krea process's ledger. The cross-process case waits for the [shared-protocol proposal](shared-residency-proposal.md).
-- **Coverage still missing:** a multi-image M-RoPE fixture (several images use the same path,
-  but only single-image prompts are qualified), iPhone qualification (vision asset release after
+- **Coverage still missing:** iPhone qualification (vision asset release after
   use, image-token caps, memory), and a quantized decoder (fp16 weights only today).
+- **Opaque 16-bit images** take the drawing path, which converts each 16-bit value to 8 bits where PIL takes the high
+  byte, so a pixel can differ from upstream's by one level (16-bit images with alpha are read exactly).
 - The encoder stays loaded for the session's lifetime.
 - **Text export memory.** The 0.0.2 export of the 4B text tower peaked at 31.7 GB of RSS (it was run on
   a 64 GB host with a 45 GB guard). The cause was not one copy of the weights per program (the converter

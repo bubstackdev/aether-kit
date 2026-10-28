@@ -173,7 +173,7 @@ with nothing heavy alongside. All three rounds completed and the guard never tri
 | First image request | 10.2 GiB | 1.7 GiB | 75 |
 | Krea renders (three) | 35.1–35.6 GiB | 14.8–15.7 GiB | 51–54 |
 | Image requests beside a resident Krea | 35.2–35.3 GiB | 14.8 GiB | 66–69 |
-| After unload (values at the end, not peaks) | 1.7 GiB | 1.6 GiB | 70 |
+| After unload (Metal and footprint at the end, not peaks) | 1.7 GiB | 1.6 GiB | 70 |
 
 - **The describer stays inside its reservation.** The coordinator held 13,800 MiB for the session throughout; the
   describer's own Metal was 10.2 GiB after its first image request (one grid; further grids add views, not
