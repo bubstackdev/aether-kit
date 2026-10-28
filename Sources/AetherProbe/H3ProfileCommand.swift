@@ -9,9 +9,9 @@ import Metal
 
 /// Raw tensor directory: `manifest.json` names every little-endian tensor file with its dtype, shape and SHA-256, so
 /// the CPU oracle (`Scripts/prepare-h3-profile-oracle.py`) and the comparison script read exactly these bytes.
-private struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
-private struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
-private final class H3RawDirectory {
+struct H3RawEntry: Codable { let file: String; let dtype: String; let shape: [Int]; let sha256: String }
+struct H3RawManifest<E: Encodable>: Encodable { let tensors: [String: H3RawEntry]; let fields: [String: String]; let report: E }
+final class H3RawDirectory {
     let url: URL
     var tensors: [String: H3RawEntry] = [:]
     var fields: [String: String] = [:]
@@ -425,6 +425,11 @@ extension H3ProfileCommand {
     }
 }
 
+extension H3ProfileCommand {
+    /// The dump's keyframe (FL2VA dumps), if any.
+    static func dumpKeyframe(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? { try firstFrame(dump, geometry: geometry) }
+}
+
 /// The dump's keyframe (FL2VA dumps), if any.
 private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? {
     struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
@@ -459,7 +464,7 @@ private actor H3StageClock {
 /// outputs, heads, updated latents) is hashed; `--capture` also saves the tensors the CPU references read for the
 /// selected steps: input latents, packed (block 0's input), blocks 0 and 49, block 48's output (`context49`, block
 /// 49's input), heads and updated latents.
-private actor H3TrajectoryRecorder {
+actor H3TrajectoryRecorder {
     struct Summary { let hashes: Int; let mismatches: [String]? }
     private let out: H3RawDirectory?
     private let steps: Set<Int>?

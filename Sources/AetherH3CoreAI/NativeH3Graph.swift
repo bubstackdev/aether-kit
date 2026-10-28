@@ -5,6 +5,20 @@ import CoreAI
 import Foundation
 import Metal
 
+/// One native submission of a profile graph, for qualification: `begin` right before the call's GPU work is encoded,
+/// then `end` once that work has joined (`failed` if encoding threw; the stream is joined first). `graph` names the
+/// graph's role ("conditioner", "text", "pack", "body", "heads", "keyframe", "videoTile", "audio"); `call` counts that
+/// graph's submissions from 0.
+public struct H3NativeCall: Sendable, Equatable {
+    public enum Phase: String, Sendable { case begin, end, failed }
+    public let graph: String
+    public let call: Int
+    public let phase: Phase
+    public init(graph: String, call: Int, phase: Phase) { self.graph = graph; self.call = call; self.phase = phase }
+}
+/// Opt-in observer of `H3NativeCall`s (qualification). It is called synchronously on the graph's actor and must not block.
+public typealias H3NativeCallObserver = @Sendable (H3NativeCall) -> Void
+
 /// One profile graph with reusable named input/output slots. Activations are copied in; weights are read from their
 /// (in-place) files straight into their slots, hashed the first time each file is read by this graph and trusted
 /// afterwards (the files are immutable checkpoint blobs). Shapes are checked against the native descriptor before any
@@ -38,9 +52,15 @@ actor NativeH3Graph {
     /// reentrancy at the GPU join), so streamed weights load behind the previous call's GPU work.
     private var banks: [[String: any MTLBuffer]] = [[:], [:]]
     private var bankResident: [[String: String]] = [[:], [:]]
+    private let role: String
+    private let observer: H3NativeCallObserver?
+    private var calls = 0
 
-    static func open(_ asset: H3ModelAsset) async throws -> NativeH3Graph { try await NativeH3Graph(asset) }
-    private init(_ asset: H3ModelAsset) async throws {
+    static func open(_ asset: H3ModelAsset, role: String = "", observer: H3NativeCallObserver? = nil) async throws -> NativeH3Graph {
+        try await NativeH3Graph(asset, role: role, observer: observer)
+    }
+    private init(_ asset: H3ModelAsset, role: String, observer: H3NativeCallObserver?) async throws {
+        self.role = role; self.observer = observer
         try asset.verify(); try Task.checkCancellation()
         guard let device = MTLCreateSystemDefaultDevice() else { throw AetherError.unsupported("H3 requires a Metal device") }
         var options = SpecializationOptions(preferredComputeUnitKind: .gpu); options.expectFrequentReshapes = true
@@ -132,6 +152,8 @@ actor NativeH3Graph {
         func view(_ name: String) -> InferenceFunction.AsyncMutableValue {
             InferenceFunction.AsyncMutableValue(unsafeBuffer: targets[name]!, scalarType: specs[name]!.scalarType.native, shape: specs[name]!.shape)
         }
+        let call = calls; calls += 1
+        observer?(H3NativeCall(graph: role, call: call, phase: .begin))
         do {
             var a = view(names[0])
             if names.count == 2 {
@@ -143,10 +165,11 @@ actor NativeH3Graph {
                 _ = try stream.encode(function, inputs: values, outputViews: views)
             }
         } catch {
-            await stream.currentWorkCompleted(); throw error
+            await stream.currentWorkCompleted(); observer?(H3NativeCall(graph: role, call: call, phase: .failed)); throw error
         }
         if let prefetch, prefetch.bank != bank { try? load(prefetch.files, into: prefetch.bank) }
         await stream.currentWorkCompleted()
+        observer?(H3NativeCall(graph: role, call: call, phase: .end))
         try Task.checkCancellation()
         var result: [String: H3TensorData] = [:]
         for (name, spec) in specs where name != chain?.output || chain!.readback {

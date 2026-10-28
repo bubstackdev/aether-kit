@@ -316,8 +316,8 @@ protocol H3KeyframeKernels: Sendable {
 actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
     private let encoding: @Sendable (Int, Int) -> H3Profile.KeyframeEncoding?
     private let kernels: any H3KeyframeKernels
-    init(profile: H3Profile) {
-        self.init(encoding: { try? profile.keyframeEncoding(width: $0, height: $1) }, kernels: NativeH3KeyframeKernels())
+    init(profile: H3Profile, observer: H3NativeCallObserver? = nil) {
+        self.init(encoding: { try? profile.keyframeEncoding(width: $0, height: $1) }, kernels: NativeH3KeyframeKernels(observer: observer))
     }
     init(encoding: @escaping @Sendable (Int, Int) -> H3Profile.KeyframeEncoding?, kernels: any H3KeyframeKernels) {
         self.encoding = encoding; self.kernels = kernels
@@ -361,9 +361,11 @@ actor H3ProfileKeyframeEncoder: H3KeyframeEncoder {
 /// Native first-frame graphs, each opened on first use and kept until `release()`.
 actor NativeH3KeyframeKernels: H3KeyframeKernels {
     private var graphs: [String: NativeH3Graph] = [:]
+    private let observer: H3NativeCallObserver?
+    init(observer: H3NativeCallObserver? = nil) { self.observer = observer }
     private func graph(_ model: H3ModelAsset) async throws -> NativeH3Graph {
         if let graph = graphs[model.url.path] { return graph }
-        let graph = try await NativeH3Graph.open(model); graphs[model.url.path] = graph; return graph
+        let graph = try await NativeH3Graph.open(model, role: "keyframe", observer: observer); graphs[model.url.path] = graph; return graph
     }
     func whole(_ model: H3ModelAsset, pixels: H3TensorData, condition: H3TensorSpec) async throws -> H3TensorData {
         try await graph(model).run(["pixels": .data(pixels)], outputs: ["condition": condition])["condition"]!
@@ -389,10 +391,11 @@ func h3Banked(_ parameters: [[H3TensorFile]], _ index: Int) -> (files: [String: 
 
 actor NativeH3ConditionerKernel: H3ConditionerKernel {
     private let conditioner: H3Profile.Conditioner
+    private let observer: H3NativeCallObserver?
     private var graph: NativeH3Graph?
-    init(_ conditioner: H3Profile.Conditioner) { self.conditioner = conditioner }
+    init(_ conditioner: H3Profile.Conditioner, observer: H3NativeCallObserver? = nil) { self.conditioner = conditioner; self.observer = observer }
     func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
-        if graph == nil { graph = try await NativeH3Graph.open(conditioner.layer) }
+        if graph == nil { graph = try await NativeH3Graph.open(conditioner.layer, role: "conditioner", observer: observer) }
         var inputs: [String: NativeH3Graph.Input] = ["hidden": .data(hidden), "cos": .data(cos), "sin": .data(sin)]
         for file in conditioner.parameters[index] { inputs[file.name] = .file(file) }
         // The last layer prefetches nothing: the conditioner is released after it.
@@ -406,26 +409,27 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
     private let profile: H3Profile
     private let prepare: H3Profile.Prepare
     private var packing: NativeH3Graph?, body: NativeH3Graph?, output: NativeH3Graph?
-    init(_ profile: H3Profile) throws {
+    private let observer: H3NativeCallObserver?
+    init(_ profile: H3Profile, observer: H3NativeCallObserver? = nil) throws {
         guard let prepare = profile.prepare else { throw AetherError.invalidModel("H3 profile has no prepare graphs") }
-        self.profile = profile; self.prepare = prepare
+        self.profile = profile; self.prepare = prepare; self.observer = observer
     }
     func refine(_ text: H3TensorData) async throws -> H3TensorData {
         // Once per render: the text graph is dropped right after, so its ~1.6 GB of refiner slots never co-reside with the body.
-        let graph = try await NativeH3Graph.open(prepare.text)
+        let graph = try await NativeH3Graph.open(prepare.text, role: "text", observer: observer)
         var inputs: [String: NativeH3Graph.Input] = ["text": .data(text)]
         for file in prepare.textParameters { inputs[file.name] = .file(file) }
         let spec = try H3TensorSpec(scalarType: .bfloat16, shape: [1, text.spec.shape[1], 5376])
         return try await graph.run(inputs, outputs: ["refined": spec])["refined"]!
     }
     func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
-        if packing == nil { packing = try await NativeH3Graph.open(prepare.pack) }
+        if packing == nil { packing = try await NativeH3Graph.open(prepare.pack, role: "pack", observer: observer) }
         let spec = try H3TensorSpec(scalarType: .bfloat16, shape: [1, gather.spec.shape[0], 5376])
         return try await packing!.run(["video": .data(video), "audio": .data(audio), "text": .data(text), "gather": .data(gather)],
                                       outputs: ["hidden": spec])["hidden"]!
     }
     func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
-        if body == nil { body = try await NativeH3Graph.open(profile.body) }
+        if body == nil { body = try await NativeH3Graph.open(profile.body, role: "body", observer: observer) }
         var inputs: [String: NativeH3Graph.Input] = ["hidden": .data(hidden), "temb": .data(table), "tags": .data(tags), "cos": .data(cos), "sin": .data(sin)]
         for file in profile.parameters[index] { inputs[file.name] = .file(file) }
         // Block 49 prefetches block 0 for the next step.
@@ -436,7 +440,7 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
     /// on the device (two alternating buffers), and only the last output (or every output, for `onBlock`) is read back.
     func blocks(hidden: H3TensorData, tables: [H3TensorFile], cardinality: Int, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData,
                 onBlock: (@Sendable (Int, H3TensorData) async throws -> Void)?) async throws -> H3TensorData {
-        if body == nil { body = try await NativeH3Graph.open(profile.body) }
+        if body == nil { body = try await NativeH3Graph.open(profile.body, role: "body", observer: observer) }
         var last: H3TensorData?
         for (index, table) in tables.enumerated() {
             try Task.checkCancellation()
@@ -459,7 +463,7 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
     }
     func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
                video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
-        if output == nil { output = try await NativeH3Graph.open(profile.heads) }
+        if output == nil { output = try await NativeH3Graph.open(profile.heads, role: "heads", observer: observer) }
         let result = try await output!.run(["hidden": .data(hidden), "temb": .data(temb), "indices": .data(indices),
                                             "video_indices": .data(videoIndices), "audio_indices": .data(audioIndices)],
                                            outputs: ["video": video, "audio": audio])
@@ -470,10 +474,11 @@ actor NativeH3DenoiserKernels: H3DenoiserKernels {
 
 actor NativeH3TileKernel: H3TileKernel {
     private let asset: H3ModelAsset
+    private let observer: H3NativeCallObserver?
     private var graph: NativeH3Graph?
-    init(_ asset: H3ModelAsset) { self.asset = asset }
+    init(_ asset: H3ModelAsset, observer: H3NativeCallObserver? = nil) { self.asset = asset; self.observer = observer }
     func decode(_ rows: H3TensorData) async throws -> H3TensorData {
-        if graph == nil { graph = try await NativeH3Graph.open(asset) }
+        if graph == nil { graph = try await NativeH3Graph.open(asset, role: "videoTile", observer: observer) }
         return try await graph!.run(["rows": .data(rows)], outputs: ["pixels": try H3TensorSpec(scalarType: .float32, shape: [1, 3, 22, 256, 256])])["pixels"]!
     }
     func release() async { graph = nil }
@@ -482,11 +487,12 @@ actor NativeH3TileKernel: H3TileKernel {
 /// Runs the static-length decoder for the rows' Na (the dynamic asset aborts in MPSGraph on the GPU).
 actor NativeH3AudioKernel: H3AudioKernel {
     private let decoder: H3Profile.AudioDecoder
+    private let observer: H3NativeCallObserver?
     private var graph: (latents: Int, graph: NativeH3Graph)?
-    init(_ decoder: H3Profile.AudioDecoder) { self.decoder = decoder }
+    init(_ decoder: H3Profile.AudioDecoder, observer: H3NativeCallObserver? = nil) { self.decoder = decoder; self.observer = observer }
     func decode(_ rows: H3TensorData) async throws -> H3TensorData {
         let na = rows.spec.shape[1], hop = decoder.hop
-        if graph?.latents != na { graph = nil; graph = (na, try await NativeH3Graph.open(try decoder.model(latents: na))) }
+        if graph?.latents != na { graph = nil; graph = (na, try await NativeH3Graph.open(try decoder.model(latents: na), role: "audio", observer: observer)) }
         let spec = try H3TensorSpec(scalarType: .float32, shape: [2, hop * rows.spec.shape[1]])
         return try await graph!.graph.run(["rows": .data(rows)], outputs: ["pcm": spec])["pcm"]!
     }
@@ -501,19 +507,23 @@ public enum H3ProfileEngine {
         "h3.profile/1:" + profile.manifestSHA256 + ":" + recipe
     }
 
-    /// `observer` (qualification only) receives the denoiser's boundary tensors; omit it for generation.
+    /// `observer` (qualification only) receives the denoiser's boundary tensors, and `nativeObserver` (qualification only)
+    /// every native submission of every stage's graphs; omit both for generation.
     public static func stages(profile: H3Profile, recipe: String = "turbo8",
                               tokenize: @escaping @Sendable (String) throws -> [Int32],
-                              observer: H3DenoiserObserver? = nil) throws -> H3VideoStages {
+                              observer: H3DenoiserObserver? = nil, nativeObserver: H3NativeCallObserver? = nil) throws -> H3VideoStages {
         guard profile.complete, let conditioner = profile.conditioner, let audio = profile.audioDecoder else {
             throw AetherError.invalidModel("H3 profile is incomplete: \(profile.missing.joined(separator: ", "))")
         }
         return H3VideoStages(
-            conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize, kernel: NativeH3ConditionerKernel(conditioner)),
-            keyframes: profile.keyframeEncoders.isEmpty && profile.tiledKeyframeEncoder == nil ? nil : H3ProfileKeyframeEncoder(profile: profile),
-            denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile), observer: observer),
-            video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model)),
-            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio), hop: audio.hop),
+            conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize,
+                                                  kernel: NativeH3ConditionerKernel(conditioner, observer: nativeObserver)),
+            keyframes: profile.keyframeEncoders.isEmpty && profile.tiledKeyframeEncoder == nil ? nil
+                : H3ProfileKeyframeEncoder(profile: profile, observer: nativeObserver),
+            denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile, observer: nativeObserver),
+                                            observer: observer),
+            video: H3ProfileVideoDecoder(kernel: NativeH3TileKernel(profile.videoDecoder.model, observer: nativeObserver)),
+            audio: H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(audio, observer: nativeObserver), hop: audio.hop),
             resourceIdentity: resourceIdentity(profile: profile, recipe: recipe))
     }
 }

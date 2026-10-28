@@ -26,6 +26,12 @@ enum ProbeGPULease {
             return count >= 6 && ["--graphs", "--render"].contains(arguments[5])
         case "h3-profile-decode":
             return count == 5 || count == 7
+        case "h3-memory-render":
+            return count == 4 || (count == 5 && arguments[4].hasPrefix("--spike-capture="))
+        case "h3-memory-encoder":
+            return count == 6 && Int(arguments[2]) != nil && Int(arguments[3]) != nil
+        case "qualify-h3-session-lifecycle":
+            return count == 4
         case "qualify-h3", "qualify-h3-lifecycle":
             return count == 5 && mode(at: 4, gpu: ["--run"])
         case "qualify-h3-phases":
