@@ -12,10 +12,11 @@ on:
 permissions:
   contents: read
 
-# Replace stale PR builds, but give every main push its own run.
+# Replace stale PR builds, and stale main builds: a PR must be up to date to merge, so each main push is a tree its PR
+# already passed, and the newest main push supersedes the older ones. Merge-queue and manual runs each run in full.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || (github.event_name == 'push' && github.ref) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 defaults:
   run:
