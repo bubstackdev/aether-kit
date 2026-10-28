@@ -102,6 +102,25 @@ struct LanguageVisionPromptTests {
         #expect(submissions.last.map { $0.start + $0.count } == plan.ids.count)
     }
 
+    /// Without a requested width, a two-function prompt's text runs take the width of the whole prompt's length, so a
+    /// long image prompt's 100-token text run is one chunk (at 64, chosen by the run, it would be two).
+    @Test func textRunsTakeTheWholePromptsDefaultWidth() throws {
+        let image = try features(grid: [1, 32, 32])          // 256 tokens
+        let rendered = Array(1...99) + [tokens.visionStart, tokens.imagePad, tokens.visionEnd] + Array(300...309)
+        let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: [image]), tokens: tokens)
+        #expect(plan.ids.count == 367)
+        let submissions = plan.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512)
+        #expect(submissions.map(\.count) == [100, 256, 11])
+        #expect(submissions.map(\.image) == [nil, 0, nil])
+        // A short image prompt keeps the 0.0.2 width: its 100-token text run before the image is two 64-token chunks,
+        // and its one-function plan uses 64.
+        let small = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: Array(1...99) + [tokens.visionStart,
+            tokens.imagePad, tokens.visionEnd], images: [try features(grid: [1, 8, 8])]), tokens: tokens)
+        #expect(small.submissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.count) == [64, 64, 16, 1])
+        #expect(small.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).allSatisfy { $0.count == 64 })
+        #expect(plan.uniformSubmissions(contract: .bucketedPositions, requestedChunk: nil, maximumChunk: 512).map(\.offset) == [0, 111])
+    }
+
     /// A one-function decoder prefills the whole prompt in uniform chunks; each chunk's image rows are its own image
     /// tokens' rows, zero for text, including a chunk that straddles the image's edge or steps back into it.
     @Test func uniformChunksCarryAlignedImageRows() throws {
