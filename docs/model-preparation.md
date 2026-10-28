@@ -66,9 +66,10 @@ public enum ModelSource: Codable, Sendable {
 
 ```swift
 public struct ModelPreparation: Sendable {
-    public init(store: LocalAssetStore, transport: some ModelTransport = .urlSession)
-    public func status(_ entry: ModelCatalogEntry) async throws -> PreparationStatus   // no network
-    public func prepare(_ entry: ModelCatalogEntry) -> PreparationRun
+    public init(store: LocalAssetStore, transport: any ModelTransport, headers: @escaping @Sendable (URL) -> [String: String] = { _ in [:] })
+    public func status(_ entry: ModelCatalogEntry) throws -> PreparationStatus          // no network, no hashing
+    public func prepare(_ entry: ModelCatalogEntry) -> AsyncStream<PreparationEvent>
+    public func install(_ entry: ModelCatalogEntry) async throws -> String              // prepare, result only
 }
 
 public enum PreparationStatus: Sendable {
@@ -78,13 +79,14 @@ public enum PreparationStatus: Sendable {
 }
 ```
 
-A `PreparationRun` is an `AsyncSequence` of events that ends in exactly one terminal event:
+`prepare` returns a stream of events that ends in exactly one terminal event:
 - `.checking`: free space and existing data;
-- `.downloading(file:, bytesDone:, bytesTotal:)` with an overall total. Progress is coalesced: at most a few events a
-  second, and the final count of each file is always delivered;
-- `.verifying(file:)`;
-- `.installing`, the atomic publish;
-- terminal: `.installed(installationID)`, `.failed(PreparationError)` or `.cancelled`.
+- `.downloading(path:, fileBytes:, fileTotal:, bytesDone:, bytesTotal:)`. Progress is coalesced to at most one event
+  per 100 ms, and each file's final count is always delivered;
+- `.installing(bytesDone:, bytesTotal:)`: the store's copy and hash pass, then the atomic publish;
+- terminal: `.installed(installationID:)`, `.failed(PreparationError)` or `.cancelled`.
+
+`headers` supplies per-request headers, such as a Hugging Face bearer token for a gated repository.
 
 Cancelling the consuming task cancels the run. Already downloaded bytes stay on disk for resumption.
 
@@ -93,15 +95,17 @@ Cancelling the consuming task cancels the run. Already downloaded bytes stay on 
    missing and compare them with the volume's available capacity for important usage. Refuse with
    `.insufficientSpace(needed:, available:)` before downloading anything.
 2. **Download** each missing file into a per-installation download area in the store (`downloads/<installationID>/`).
-   It's kept across launches, unlike install's temporary stage. Each file is hashed as it streams where the transport
-   allows. A file whose size or hash doesn't match the entry is deleted and reported as `.integrityMismatch(path:)`.
+   It's kept across launches, unlike install's temporary stage. Each file's size is checked when it completes. A file
+   of the wrong size is deleted and reported as `.integrityMismatch(path:)`.
 3. **Install** by handing the completed download area to `LocalAssetStore` as the source. The store's own copy and hash
-   pass stays the single point where bytes become trusted. Installing by rename instead of copy, to avoid doubling
+   pass stays the single point where bytes become trusted, and it reports progress as `.installing`. A file that
+   doesn't hash to the entry is deleted, so the next run fetches it again, and the run fails with
+   `.integrityMismatch(path:)`. Hashing once, at install, avoids a third read of multi-GB files. Installing by rename instead of copy, to avoid doubling
    disk use, is a follow-up once it has its own tests.
 4. **Clean up.** The download area is removed after a successful install. `removeAbandonedStages` also removes download
    areas for installations that already exist.
 
-Two runs for the same entry share the per-installation lock: the second waits or reports `.busy`, and never downloads
+Two runs for the same entry share a per-installation download lock: the second reports `.busy` and never downloads
 twice.
 
 ## Transport
@@ -115,11 +119,10 @@ public protocol ModelTransport: Sendable {
 ```
 
 - **`.urlSession` (foreground)** uses a data-task stream. It resumes with an HTTP `Range` request and checks the
-  response: 206 with a matching `Content-Range` appends, 200 restarts the file, anything else fails. It hashes while
-  writing.
+  response: 206 with a matching `Content-Range` appends, 200 restarts the file, anything else fails.
 - **`.background(identifier:)` (iOS, and macOS apps)** uses a background `URLSession` with download tasks, one per file,
-  so the system carries transfers on while the app is suspended. Download tasks deliver a finished temporary file, so
-  hashing happens after delivery, in step 2's verification. Interrupted tasks resume from the system's resume data.
+  so the system carries transfers on while the app is suspended. Download tasks deliver a finished temporary file,
+  which is moved into the download area. Interrupted tasks resume from the system's resume data.
   The app connects Kit to its lifecycle in one place:
   ```swift
   // UIApplicationDelegate, or SwiftUI's .backgroundTask(.urlSession(identifier))
@@ -169,7 +172,7 @@ whether retrying can help.
 
 1. The catalog entry, `LanguageModelManifest.installationManifest(in:)`, and `aether-probe catalog-entry`. Done.
 2. `ModelPreparation` with the check, the download area, install and cleanup, over the transport protocol and a local
-   test transport.
+   test transport. Done.
 3. The foreground `URLSession` transport, with range resume and streaming hashes.
 4. The Hugging Face resolver.
 5. The background transport and `handleBackgroundEvents`.

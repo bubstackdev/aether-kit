@@ -8,6 +8,8 @@ import Foundation
 public struct LocalAssetStore: Sendable {
     public let root: URL
     private let onCopiedChunk: @Sendable () throws -> Void
+    /// Per-installation download areas for model preparation (docs/model-preparation.md), kept across launches.
+    var downloads: URL { root.appendingPathComponent("downloads", isDirectory: true) }
 
     public init(root: URL) throws { try self.init(root: root, onCopiedChunk: {}) }
 
@@ -17,17 +19,27 @@ public struct LocalAssetStore: Sendable {
         guard root.isFileURL else { throw AssetStoreError.unsafePath(root.path) }
         self.root = root.standardizedFileURL.resolvingSymlinksInPath()
         try directory(self.root)
-        for name in ["locks", "staging", "installed"] { try directory(self.root.appendingPathComponent(name)) }
+        for name in ["locks", "staging", "installed", "downloads"] { try directory(self.root.appendingPathComponent(name)) }
     }
 
     /// Copies and hashes in a private stage, then atomically publishes. A retry verifies an existing
     /// installation instead of overwriting it. Cancellation waits for the worker to close its files/lock.
     public func install(_ manifest: AssetManifest, from source: URL) async throws -> String {
+        try await install(manifest, from: source, progress: { _ in })
+    }
+
+    /// `install`, reporting bytes copied and hashed so far (model preparation's progress).
+    func install(_ manifest: AssetManifest, from source: URL, progress: @escaping @Sendable (UInt64) -> Void) async throws -> String {
         try Task.checkCancellation()
         try manifest.validate()
         guard source.isFileURL else { throw AssetStoreError.unsafePath(source.path) }
-        let worker = Task.detached { try installSynchronously(manifest, from: source) }
+        let worker = Task.detached { try installSynchronously(manifest, from: source, progress: progress) }
         return try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+    }
+
+    /// Whether `installationID` is published, without verifying it (a cheap check for status reports).
+    func isInstalled(_ installationID: String) -> Bool {
+        FileManager.default.fileExists(atPath: destination(installationID).appendingPathComponent("manifest.json").path)
     }
 
     /// Acquires reader protection before reading metadata and hashing installed bytes. Keep the lease
@@ -64,7 +76,8 @@ public struct LocalAssetStore: Sendable {
 
     /// Removes recognizable unfinished stages only after acquiring their installation's exclusive lock.
     /// Active imports/readers are skipped. Unknown entries (including older UUID-only stages) are left
-    /// untouched because their ownership cannot be proven. Does not remove published installations.
+    /// untouched because their ownership cannot be proven. Does not remove published installations. Also removes
+    /// model-preparation download areas whose installation is already published.
     /// The host must keep the store root private, as for install/acquire/remove.
     @discardableResult
     public func removeAbandonedStages() throws -> Int {
@@ -95,10 +108,21 @@ public struct LocalAssetStore: Sendable {
             try FileManager.default.removeItem(at: stage)
             removed += 1
         }
+        // Download areas whose installation is already published (a crash between publishing and cleanup).
+        for name in try FileManager.default.contentsOfDirectory(atPath: downloads.path).sorted()
+            where Self.validID(name) && isInstalled(name) {
+            try Task.checkCancellation()
+            let held: StoreLock
+            do { held = try downloadLock(name) } catch AssetStoreError.busy { continue }
+            defer { withExtendedLifetime(held) {} }
+            try FileManager.default.removeItem(at: try confined(name, under: downloads))
+            removed += 1
+        }
         return removed
     }
 
-    private func installSynchronously(_ manifest: AssetManifest, from source: URL) throws -> String {
+    private func installSynchronously(_ manifest: AssetManifest, from source: URL,
+                                      progress: @escaping @Sendable (UInt64) -> Void) throws -> String {
         try Task.checkCancellation()
         let metadata = try manifest.canonicalData()
         guard metadata.count < 32 << 20 else { throw AssetStoreError.invalidManifest("installation metadata exceeds limit") }
@@ -118,12 +142,13 @@ public struct LocalAssetStore: Sendable {
         let payload = stage.appendingPathComponent("files", isDirectory: true)
         try directory(payload)
         let source = source.standardizedFileURL.resolvingSymlinksInPath()
+        var copied: UInt64 = 0
         for file in manifest.files {
             try Task.checkCancellation()
             let input = try confined(file.path, under: source)
             let output = payload.appendingPathComponent(file.path)
             try directory(output.deletingLastPathComponent())
-            try stream(file, from: input, to: output, onCopiedChunk: onCopiedChunk)
+            try stream(file, from: input, to: output, onCopiedChunk: onCopiedChunk) { copied += $0; progress(copied) }
         }
         try metadata.write(to: stage.appendingPathComponent("manifest.json"), options: .withoutOverwriting)
         try Task.checkCancellation()
@@ -132,13 +157,22 @@ public struct LocalAssetStore: Sendable {
         return id
     }
 
-    private func destination(_ id: String) -> URL { root.appendingPathComponent("installed/\(id)", isDirectory: true) }
+    func destination(_ id: String) -> URL { root.appendingPathComponent("installed/\(id)", isDirectory: true) }
 
-    private func lock(_ id: String, exclusive: Bool) throws -> StoreLock {
-        guard id.utf8.count == 64, id.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else {
-            throw AssetStoreError.invalidManifest("invalid installation identity")
-        }
+    func lock(_ id: String, exclusive: Bool) throws -> StoreLock {
+        guard Self.validID(id) else { throw AssetStoreError.invalidManifest("invalid installation identity") }
         return try StoreLock(url: root.appendingPathComponent("locks/\(id)"), exclusive: exclusive)
+    }
+
+    static func validID(_ id: String) -> Bool {
+        id.utf8.count == 64 && id.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+    }
+
+    /// Exclusive ownership of an installation's download area. Separate from the installation lock, which
+    /// `install` takes itself once the downloads are complete.
+    func downloadLock(_ id: String) throws -> StoreLock {
+        guard Self.validID(id) else { throw AssetStoreError.invalidManifest("invalid installation identity") }
+        return try StoreLock(url: root.appendingPathComponent("locks/\(id).download"), exclusive: true)
     }
 
     private func verifiedManifest(at target: URL, expectedID: String) throws -> AssetManifest {
@@ -171,7 +205,7 @@ public final class AssetReadLease: Sendable {
     }
 }
 
-private final class StoreLock: Sendable {
+final class StoreLock: Sendable {
     private let descriptor: Int32
     init(url: URL, exclusive: Bool) throws {
         let fd = open(url.path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0o600)
@@ -215,7 +249,7 @@ private func openRegular(_ url: URL) throws -> FileHandle {
 }
 
 private func stream(_ file: AssetFile, from source: URL, to destination: URL?,
-                    onCopiedChunk: @Sendable () throws -> Void = {}) throws {
+                    onCopiedChunk: @Sendable () throws -> Void = {}, copiedBytes: (UInt64) -> Void = { _ in }) throws {
     let input = try openRegular(source)
     defer { try? input.close() }
     var output: FileHandle?
@@ -235,6 +269,7 @@ private func stream(_ file: AssetFile, from source: URL, to destination: URL?,
             hash.update(data: bytes)
             try output?.write(contentsOf: bytes)
             remaining -= UInt64(bytes.count)
+            copiedBytes(UInt64(bytes.count))
         }
         try onCopiedChunk()
     }
