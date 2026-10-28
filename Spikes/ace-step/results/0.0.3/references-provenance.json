@@ -1,0 +1,30 @@
+{
+ "lofi-instrumental": "references/ (first prompt of its process: fp32 and bf16 valid)",
+ "indie-pop-vocal": "references-vocal/ (first prompt of its process: fp32 and bf16 valid)",
+ "orchestral-instrumental": "bf16 from references/, fp32 rerun in references-fp32-redo/ (the earlier fp32 used bf16-rounded weights)",
+ "folk-ballad-vocal": "bf16 from references-vocal/, fp32 rerun in references-fp32-redo/ (the earlier fp32 used bf16-rounded weights)",
+ "checks": {
+  "orchestral-instrumental": {
+   "encoder": true,
+   "encoder_mask": true,
+   "context": true,
+   "noise": true,
+   "text_ids": true,
+   "lyric_ids": true,
+   "text_hidden": true,
+   "lyric_hidden": true
+  },
+  "folk-ballad-vocal": {
+   "encoder": true,
+   "encoder_mask": true,
+   "context": true,
+   "noise": true,
+   "text_ids": true,
+   "lyric_ids": true,
+   "text_hidden": true,
+   "lyric_hidden": true
+  },
+  "orchestral-instrumental-oldFp32FinalRelL2": 0.10516040027141571,
+  "folk-ballad-vocal-oldFp32FinalRelL2": 0.23439103364944458
+ }
+}

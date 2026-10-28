@@ -1,0 +1,46 @@
+{
+ "vae32": "vae-dec-1500-fp32",
+ "vae16": "vae-dec-1500-fp16",
+ "prompts": {
+  "folk-ballad-vocal": {
+   "decoded": [
+    "bf16",
+    "coreai",
+    "e2e",
+    "fp32",
+    "fp32_vae16"
+   ],
+   "vae32VsEagerFp32Audio": 1.7070606190827675e-06
+  },
+  "indie-pop-vocal": {
+   "decoded": [
+    "bf16",
+    "coreai",
+    "e2e",
+    "fp32",
+    "fp32_vae16"
+   ],
+   "vae32VsEagerFp32Audio": 2.1507339624804445e-06
+  },
+  "lofi-instrumental": {
+   "decoded": [
+    "bf16",
+    "coreai",
+    "e2e",
+    "fp32",
+    "fp32_vae16"
+   ],
+   "vae32VsEagerFp32Audio": 1.1924787486350397e-06
+  },
+  "orchestral-instrumental": {
+   "decoded": [
+    "bf16",
+    "coreai",
+    "e2e",
+    "fp32",
+    "fp32_vae16"
+   ],
+   "vae32VsEagerFp32Audio": 2.121237912433571e-06
+  }
+ }
+}

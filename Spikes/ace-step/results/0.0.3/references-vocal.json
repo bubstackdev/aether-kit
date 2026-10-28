@@ -1,0 +1,20 @@
+{
+ "snapshot": "19671f406d603126926c1b7e2adc169acbcade22",
+ "frames": 1500,
+ "shift": 3.0,
+ "encoderLength": 512,
+ "prompts": {
+  "indie-pop-vocal": {
+   "conditionTokens": 126,
+   "conditionSeconds": 1.6373441219329834,
+   "fp32TrajectorySeconds": 24.05031394958496,
+   "bf16TrajectorySeconds": 1514.0094540119171
+  },
+  "folk-ballad-vocal": {
+   "conditionTokens": 131,
+   "conditionSeconds": 1.52347993850708,
+   "fp32TrajectorySeconds": 12.139688968658447,
+   "bf16TrajectorySeconds": 1380.3634450435638
+  }
+ }
+}

@@ -1,0 +1,19 @@
+# with-gpu-lock.sh log lines for this spike's holds (shared lock log, other holders omitted)
+2026-10-28 09:13:05 waiting  pid=6491 spikes: ace-step trajectory + encoders (instrumentals)
+2026-10-28 09:15:42 acquired pid=6851 spikes: ace-step trajectory + encoders (instrumentals)
+2026-10-28 09:16:07 released pid=6851 spikes: ace-step trajectory + encoders (instrumentals) rc=0
+2026-10-28 09:20:32 waiting  pid=7753 spikes: ace-step masked DiT (instrumentals)
+2026-10-28 09:20:32 acquired pid=7755 spikes: ace-step masked DiT (instrumentals)
+2026-10-28 09:20:51 released pid=7755 spikes: ace-step masked DiT (instrumentals) rc=0
+2026-10-28 09:22:07 waiting  pid=8123 spikes: ace-step decode with one VAE (lofi)
+2026-10-28 09:22:17 acquired pid=8159 spikes: ace-step decode with one VAE (lofi)
+2026-10-28 09:22:27 released pid=8159 spikes: ace-step decode with one VAE (lofi) rc=0
+2026-10-28 10:52:39 waiting  pid=43998 spikes: ace-step gate, all four prompts
+2026-10-28 10:55:17 acquired pid=44130 spikes: ace-step gate, all four prompts
+2026-10-28 10:55:59 released pid=44130 spikes: ace-step gate, all four prompts rc=0
+2026-10-28 10:56:38 waiting  pid=44274 spikes: ace-step VAE fp16 vs fp32 timing
+2026-10-28 10:56:38 acquired pid=44276 spikes: ace-step VAE fp16 vs fp32 timing
+2026-10-28 10:56:47 released pid=44276 spikes: ace-step VAE fp16 vs fp32 timing rc=0
+2026-10-28 10:57:33 waiting  pid=44401 spikes: ace-step VAE tiling and footprint
+2026-10-28 10:57:33 acquired pid=44404 spikes: ace-step VAE tiling and footprint
+2026-10-28 10:58:21 released pid=44404 spikes: ace-step VAE tiling and footprint rc=0

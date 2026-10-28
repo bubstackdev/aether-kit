@@ -57,7 +57,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 Each spike ends in a go/no-go report. All three start from a 0.0.2 feasibility report, which recommends going ahead and ends with what it leaves open for 0.0.3:
 - a hybrid recurrent-state language model (Granite 4.0-H): [report](spikes/hybrid-state-2026-10.md), go, at about 190 tok/s on the M5 Max with fixed-shape decode; the first open item is how its state contract fits the bucketed decode contract that shipped;
-- ACE-Step music generation: [report](spikes/ace-step-2026-10.md), a conditional go for ACE-Step 1.5 text-to-music on Mac, gated on an 8-step fp16 trajectory check from real prompts;
+- ACE-Step music generation: [report](spikes/ace-step-2026-10.md). **Decided 2026-10-28: go** for ACE-Step 1.5 text-to-music on Mac without the LM: fp16 DiT and encoders, fp32 VAE in 10 s tiles. On four real 60 s prompts the Core AI trajectory is closer to fp32 than the authors' bf16 is; Kit must mask the padded condition sequence itself, since upstream's DiT ignores the mask;
 - TripoSR image-to-3D: [report](spikes/triposr-2026-10.md), go for image to OBJ and USDZ at 256³, about 2.5 s per mesh.
 
 The scripts and compact results behind each report are under `Spikes/`.

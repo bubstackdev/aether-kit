@@ -72,7 +72,7 @@ Update the decision register when an experiment changes a recommendation. Each p
 
 ## 0.0.3 spikes (2026-10-27)
 
-The 0.0.2 feasibility reports that open the 0.0.3 [spikes](roadmap-0.0.3.md#spikes): [hybrid recurrent state (Granite 4.0-H)](spikes/hybrid-state-2026-10.md), [ACE-Step music generation](spikes/ace-step-2026-10.md) and [TripoSR image-to-3D](spikes/triposr-2026-10.md), plus the 0.0.3 [MLX older-OS backend](spikes/mlx-backend-2026-10.md) and [split-attention prefill](spikes/split-attention-2026-10.md) spikes. Each ends with what it leaves open before a go/no-go; their scripts and compact results are under `Spikes/`.
+The 0.0.2 feasibility reports that open the 0.0.3 [spikes](roadmap-0.0.3.md#spikes): [hybrid recurrent state (Granite 4.0-H)](spikes/hybrid-state-2026-10.md), [ACE-Step music generation](spikes/ace-step-2026-10.md) (decided: go) and [TripoSR image-to-3D](spikes/triposr-2026-10.md), plus the 0.0.3 [MLX older-OS backend](spikes/mlx-backend-2026-10.md) and [split-attention prefill](spikes/split-attention-2026-10.md) spikes. Each ends with what it leaves open before a go/no-go; their scripts and compact results are under `Spikes/`.
 
 ## 0.0.3 language runtime seam (2026-10-27)
 

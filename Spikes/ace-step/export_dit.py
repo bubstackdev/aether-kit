@@ -2,7 +2,8 @@
 
 Inputs (static): xt [1, T, 64] noisy latent, t [1] timestep, context [1, T, 128] (source latents ‖ chunk mask),
 encoder [1, L, 2048] packed condition (lyric ‖ timbre ‖ text after the condition encoder), encoder_mask [1, L]
-(1 for condition rows, 0 for padding; 0.0.3: real conditions are shorter than L and padded). Output: v [1, T, 64].
+(1 for condition rows, 0 for padding; 0.0.3: real conditions are shorter than L and padded, and dit_step.Step masks
+the padding in cross-attention, which the upstream DiT doesn't). Output: v [1, T, 64].
 The upstream modeling file (MIT, from the model repo) is imported from the snapshot; only decoder.* weights load.
 Writes an eager fp32 reference output for fixed random inputs.
 
@@ -59,16 +60,8 @@ del state
 print("decoder params %.2fB" % (sum(p.numel() for p in dit.parameters()) / 1e9))
 
 
-class Step(torch.nn.Module):
-    def __init__(self, d):
-        super().__init__()
-        self.d = d
-
-    def forward(self, xt, t, context, encoder, encoder_mask):
-        ones = torch.ones(xt.shape[:2], dtype=xt.dtype)
-        return self.d(hidden_states=xt, timestep=t, timestep_r=t, attention_mask=ones,
-                      encoder_hidden_states=encoder, encoder_attention_mask=encoder_mask > 0.5, context_latents=context,
-                      use_cache=False)[0]
+sys.path.insert(0, str(Path(__file__).parent))
+from dit_step import Step  # noqa: E402  (applies encoder_mask to cross-attention, which upstream discards)
 
 
 T, L = a.frames, a.enc

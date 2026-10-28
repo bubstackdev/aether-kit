@@ -1,0 +1,110 @@
+{
+ "window": "vae-dec-250-fp32",
+ "full": "vae-dec-1500-fp32",
+ "prompts": {
+  "folk-ballad-vocal": {
+   "fullSeconds": 1.0946785840205848,
+   "tiled": {
+    "16": {
+     "windows": 7,
+     "seconds": 1.272188875125721,
+     "snrDB": 49.697227478027344,
+     "stftDistance": 0.002008652564185843,
+     "logMelCosine": 0.9999965312410855
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 1.2768092919141054,
+     "snrDB": 56.2534294128418,
+     "stftDistance": 0.001209094660985806,
+     "logMelCosine": 0.9999993537710516
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 1.446085749892518,
+     "snrDB": 59.875091552734375,
+     "stftDistance": 0.0007228371146603554,
+     "logMelCosine": 0.9999997698628655
+    }
+   }
+  },
+  "indie-pop-vocal": {
+   "fullSeconds": 1.1270422919187695,
+   "tiled": {
+    "16": {
+     "windows": 7,
+     "seconds": 1.2602167080622166,
+     "snrDB": 50.85588836669922,
+     "stftDistance": 0.0013547873142929568,
+     "logMelCosine": 0.9999994590247117
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 1.2734219578560442,
+     "snrDB": 54.1873779296875,
+     "stftDistance": 0.0008102027105617824,
+     "logMelCosine": 0.999999767305503
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 1.4532530419528484,
+     "snrDB": 60.95886993408203,
+     "stftDistance": 0.0006067764001048893,
+     "logMelCosine": 0.9999997621927795
+    }
+   }
+  },
+  "lofi-instrumental": {
+   "fullSeconds": 1.1481132919434458,
+   "tiled": {
+    "16": {
+     "windows": 7,
+     "seconds": 1.2728908751159906,
+     "snrDB": 53.48675537109375,
+     "stftDistance": 0.0023484840574554268,
+     "logMelCosine": 0.999994798511408
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 1.292803875170648,
+     "snrDB": 63.967735290527344,
+     "stftDistance": 0.0007847205954397279,
+     "logMelCosine": 0.9999994570639791
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 1.4831414590589702,
+     "snrDB": 63.953285217285156,
+     "stftDistance": 0.0006132154564984252,
+     "logMelCosine": 0.9999997808796959
+    }
+   }
+  },
+  "orchestral-instrumental": {
+   "fullSeconds": 1.173032582970336,
+   "tiled": {
+    "16": {
+     "windows": 7,
+     "seconds": 1.323989124968648,
+     "snrDB": 50.263755798339844,
+     "stftDistance": 0.0015550397508294468,
+     "logMelCosine": 0.9999977281424525
+    },
+    "32": {
+     "windows": 7,
+     "seconds": 1.3015193329192698,
+     "snrDB": 53.92013931274414,
+     "stftDistance": 0.0008078903564265528,
+     "logMelCosine": 0.999998953024475
+    },
+    "64": {
+     "windows": 8,
+     "seconds": 1.500055625103414,
+     "snrDB": 62.99739456176758,
+     "stftDistance": 0.0006032129555905212,
+     "logMelCosine": 0.999999620108507
+    }
+   }
+  }
+ }
+}

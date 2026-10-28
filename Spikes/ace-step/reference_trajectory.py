@@ -18,6 +18,7 @@ plus <id>-<dtype>.wav and references.json. Heavy CPU: about 13–14 GB RSS (fp32
 encoder, VAE) and several minutes per prompt; run one at a time.
 """
 import argparse
+import copy
 import importlib.util
 import json
 import os
@@ -95,7 +96,9 @@ def write_wav(path, audio):
 
 
 def trajectory(encoder, encoder_mask, context, noise, attention_mask, dtype):
-    decoder = model.decoder.to(dtype)
+    # A copy for bf16: casting model.decoder in place and back would leave it with bf16-rounded weights, so every later
+    # "fp32" trajectory in the process would really be bf16 weights in fp32 arithmetic.
+    decoder = model.decoder if dtype == torch.float32 else copy.deepcopy(model.decoder).to(dtype)
     xt = noise.to(dtype)
     schedule = port.turbo_schedule(spec["shift"])
     xs, vs = [], []
@@ -142,12 +145,10 @@ for index, prompt in enumerate(spec["prompts"]):
         saved.update({f"{name}_xt": xs, f"{name}_vt": vs, f"{name}_x0": x0.numpy(), f"{name}_audio": audio})
         write_wav(out / f"{prompt['id']}-{name}.wav", audio)
         if dtype == torch.float32 and index == 0:
-            model.decoder.float()
             upstream = model.generate_audio(**cond.as_kwargs(), seed=prompt["seed"], shift=spec["shift"])
             ref = upstream["target_latents"].float()
             rep["upstreamGenerateAudioRelL2"] = float((x0 - ref).norm() / ref.norm())
         print(prompt["id"], name, json.dumps({k: v for k, v in rep.items()}), flush=True)
-    model.decoder.float()
     np.savez(out / f"{prompt['id']}.npz", **saved)
     report["prompts"][prompt["id"]] = rep
     (out / "references.json").write_text(json.dumps(report, indent=1))

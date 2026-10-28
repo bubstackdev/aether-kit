@@ -1,0 +1,8 @@
+# uptime around the final GPU holds (all four prompts 10:55:17-10:55:59; VAE timing 10:56:38-10:56:47; VAE tiling 10:57:33-10:58:21); no heavy CPU job ran then
+10:52  load averages: 2.39 3.12 2.92
+10:55  load averages: 1.48 2.29 2.60
+10:56  load averages: 1.35 2.14 2.53
+10:56  load averages: 1.14 2.07 2.50
+10:57  load averages: 1.36 2.00 2.45
+10:58  load averages: 1.54 1.95 2.41
+# the earlier instrumental holds (09:15-09:22) ran alongside the vocal reference job (heavy CPU); their timings aren't used
