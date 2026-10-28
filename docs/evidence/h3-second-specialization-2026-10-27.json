@@ -225,6 +225,7 @@
     "passed": true,
     "admissionWorstCaseGiB": 14.49,
     "previousAdmissionWorstCaseGiB": 15.26,
-    "previousRecord": "h3-memory-gate-chained-2026-10-26.json"
+    "previousRecord": "h3-memory-gate-chained-2026-10-26.json",
+    "admissionNote": "This gate's entry (14.49 GiB) kept only the second T2VA 960x544 render and does not cover the first render's 16.12 GiB transient; the next gate carries it (--carry-peaks), for an admitted worst case of about 16.6 GiB, higher than the unpadded build's 15.26 GiB. Padding lowers the steady plateaus and the video-decode footprint, not the admission."
   }
 }
