@@ -121,13 +121,42 @@ public enum LanguageStepContract: String, Sendable, Equatable {
         }
     }
 
-    /// The bucketed contract's prefill chunk when the request names none (within the export bound).
+    /// The bucketed contract's prefill width for a prompt of at most ``longPromptThreshold`` tokens, when the request
+    /// names none (within the export bound).
     static let defaultBucketedPrefillChunk = 64
+    /// The bucketed contract's prefill width for a longer prompt. Each submission has a fixed cost of a whole forward
+    /// pass, so a long prompt reaches its first token far sooner in fewer, wider chunks. Core AI retains memory per
+    /// shape change, sized by the shape changed to, and the session allocates a long prompt's cache before its
+    /// prefill (``LanguageCachePlan/requestCapacity(allocated:initial:resets:prefillTokens:maximum:)``), so the wider
+    /// width adds one larger shape change per long request rather than one per capacity step.
+    static let longPromptPrefillChunk = 256
+    /// Prompts up to this many tokens prefill at ``defaultBucketedPrefillChunk``, as before 0.0.3.
+    static let longPromptThreshold = 256
+
+    /// The width a prefill of `promptCount` tokens uses when the request names none: the bucketed contract's width
+    /// by prompt length (``defaultBucketedPrefillChunk`` up to ``longPromptThreshold`` tokens,
+    /// ``longPromptPrefillChunk`` above), nil for the running contract (the whole prompt). A 0.0.2 two-function asset
+    /// keeps ``fixedPrefillChunk`` instead (its plan was not qualified again).
+    func defaultPrefillChunk(promptCount: Int) -> Int? {
+        switch self {
+        case .runningPositions: nil
+        case .bucketedPositions: promptCount > Self.longPromptThreshold ? Self.longPromptPrefillChunk : Self.defaultBucketedPrefillChunk
+        }
+    }
+
+    /// The 0.0.2 plan's width whatever the prompt's length: ``defaultBucketedPrefillChunk`` for the bucketed contract,
+    /// nil (the whole prompt) for the running one. A 0.0.2 two-function (`withImage`) asset keeps it for every request.
+    var fixedPrefillChunk: Int? {
+        switch self {
+        case .runningPositions: nil
+        case .bucketedPositions: Self.defaultBucketedPrefillChunk
+        }
+    }
 
     /// Submissions for a fresh-cache prefill of a `promptCount`-token run, never above `maximumChunk`
     /// (the export bound, when declared). The running contract keeps 0.0.1 behaviour: uniform chunks
     /// of `requestedChunk` (whole prompt when nil) and a shorter tail. The bucketed contract submits
-    /// one width C (`requestedChunk`, default ``defaultBucketedPrefillChunk``, within the bound) so a
+    /// one width C (`requestedChunk`, default ``defaultPrefillChunk(promptCount:)``, within the bound) so a
     /// warm request switches shape only between C and the 1-token decode step: Core AI retains memory
     /// on every shape change. A run that is not a multiple of C ends with a C-token chunk over its
     /// last C tokens, recomputing up to C - 1 already written rows. That is the same computation:
@@ -143,7 +172,7 @@ public enum LanguageStepContract: String, Sendable, Equatable {
             let width = min(requestedChunk ?? promptCount, promptCount, maximumChunk ?? .max)
             return stride(from: 0, to: promptCount, by: width).map { LanguagePrefillChunk(offset: $0, count: min(width, promptCount - $0)) }
         case .bucketedPositions:
-            let width = min(requestedChunk ?? Self.defaultBucketedPrefillChunk, maximumChunk ?? .max)
+            let width = min(requestedChunk ?? defaultPrefillChunk(promptCount: promptCount)!, maximumChunk ?? .max)
             guard promptCount > width else { return [LanguagePrefillChunk(offset: 0, count: promptCount)] }
             var chunks = stride(from: 0, through: promptCount - width, by: width).map { LanguagePrefillChunk(offset: $0, count: width) }
             if promptCount % width != 0 { chunks.append(LanguagePrefillChunk(offset: promptCount - width, count: width)) }

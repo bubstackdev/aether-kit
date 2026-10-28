@@ -18,7 +18,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### Speed
 
-- **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference. The re-gate ran on a busy host (an unrelated transcode saturated the CPU), so the quiet reference stays open until a window when that pipeline is paused. Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
+- **H3:** measure Turbo4's quality (it's already exported; it stays experimental and outside measured admission in 0.0.3), measure video-decode tiling (about 40 s today) before deciding a fix, and record a quiet-host timing reference (done 2026-10-28: about 358 s for T2VA and 343 s for FL2VA at 960×544×124, Turbo8; [guide](h3-integration.md#quiet-host-timing-reference-2026-10-28)). Fused attention moves to 0.0.4: re-exporting the body graph gives a new profile identity, which would reset the qualification evidence H3 promotion rests on, and whether Core AI fuses it on the GPU is unverified.
 - **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap. Re-measured, and exact host fixes cut part of it ([guide](language-generation.md#time-to-first-token)). The split-attention re-export is a no-go under the current Core AI; see the [report](spikes/split-attention-2026-10.md).
 
 ### Coverage and iPhone
@@ -45,8 +45,8 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 ### FLUX.2
 
 - Native cancellation of the text encoder. Done: cancel returns in about 0.17 s during the native call, and in up to about 0.9 s (about 3.8 s on a process's first request) if it lands during a balanced session's function load; Core AI interrupts neither ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
-- iOS.
-- A quiet benchmark. The harness (`aether-probe benchmark-flux2`, two pinned plans) is in place and its `prepare` passes; the measured run waits for a quiet window ([harness](flux2-klein.md#benchmark-harness-003)).
+- iOS. Moved to 0.0.4 by user decision (2026-10-28).
+- A quiet benchmark. Done (2026-10-28; one quiet run, 5 iterations per case): both pinned plans pass with every iteration exact. With balanced residency a 512² image takes about 2.6 s encoded and 1.0–1.2 s with provided conditioning, and a 1024² image 5.8 s and 4.4 s ([results](flux2-klein.md#benchmark-harness-003)).
 - Prompt adherence. Done: Kit matches the float32 reference at the ceiling (38/38 on both, 114/114 over three extra seeds) under a local judge (Huihui-Qwen3-VL-4B-Instruct-abliterated, a fine-tune of Qwen3-VL-4B); a harder question set would be needed to resolve small losses ([measurement](flux2-klein.md#prompt-adherence-003)).
 
 ### Infrastructure
@@ -69,7 +69,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 | Piece | Scope in 0.0.3 |
 | --- | --- |
 | Runtime seam | A sampler or logits hook, and a `LanguageBackend` protocol. The runtime is greedy-only today. |
-| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is macOS 14 / iOS 17, with a CI launch check on macOS 14 ([deployment floor](deployment-floor.md)). |
+| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike: a conditional go ([report](spikes/mlx-backend-2026-10.md)), planned for 0.0.4 by user decision. The package floor is macOS 14 / iOS 17, with a CI launch check on macOS 14 ([deployment floor](deployment-floor.md)). |
 | `AetherLanguage` text facade | Owns the tokenizer, template, stop tokens, reasoning, sampling and UTF-8-safe streaming, building on `AetherLanguageTokenizers`. |
 | Structured output | Constrained decoding into `Decodable`, with a `@Generable`-style macro. This adds a swift-syntax dependency. |
 
@@ -82,9 +82,12 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **A managed lifecycle:** lazy loading, idle unload and memory-pressure response.
 - **A sandboxed sample app** with published qualification, and an API freeze for the facade.
 - **Quantization:** quantized Qwen3-VL and language decoders, moved from 0.0.3. It is the biggest unknown on the list, and was deferred by user decision.
+- **An MLX backend for older OSes,** as an optional separate product, by user decision (2026-10-28). The [spike](spikes/mlx-backend-2026-10.md) is a conditional go on three conditions: the lower floor (done in 0.0.3), mlx-swift core only (mlx-swift-lm's swift-syntax range conflicts with Kit's pin), and the Metal toolchain in CI. It also needs its own manifest kind, since it loads Hugging Face safetensors.
+- **FLUX.2 on iOS,** moved from 0.0.3 by user decision (2026-10-28).
+- **H3 fused attention,** moved from 0.0.3: re-exporting the body graph gives a new profile identity, which resets H3's qualification evidence.
 
 ## Open questions
 
 - The order of the backlog items.
-- Whether an older-OS backend goes ahead, after the MLX spike.
+- Whether an older-OS backend goes ahead: decided, an optional MLX backend product in 0.0.4.
 - The reference models the two apps choose, and therefore what iPhone and quantization (0.0.4) qualification covers.
