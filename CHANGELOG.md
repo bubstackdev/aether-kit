@@ -2,6 +2,12 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews with no API compatibility promise.
 
+## Unreleased
+
+### Added
+
+- **Model preparation, first piece** ([design](docs/model-preparation.md)): `ModelCatalogEntry` and `ModelSource` in `AetherAssets` pin a model's exact installation (every file's path, size and SHA-256) and where to fetch it, over HTTPS or a Hugging Face repository at a full commit revision. `LanguageModelManifest.installationManifest(in:)` (`AetherLanguage`) gives language bundles the installation contract Krea, FLUX.2 and Kokoro already have, and `aether-probe catalog-entry` prints an entry for a `language`, `kokoro`, `flux2` or `krea` bundle.
+
 ## 0.0.3 — 2026-10-28
 
 Third experimental developer preview. See the [release notes](docs/release-notes/0.0.3.md).

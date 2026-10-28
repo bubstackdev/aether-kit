@@ -54,7 +54,7 @@ let package = Package(
         // The app-facing text facade. It links and launches on macOS 14 and iOS 17, and reaches Core AI only behind
         // availability checks (docs/language-facade.md).
         .target(name: "AetherLanguage", dependencies: [
-            "AetherKit", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherLanguageCoreAI",
+            "AetherKit", "AetherAssets", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherLanguageCoreAI",
         ]),
         // The facade as a FoundationModels LanguageModel (OS 27): apps keep LanguageModelSession. FoundationModels links
         // weakly, like CoreAI.
@@ -85,7 +85,7 @@ let package = Package(
         .target(name: "AetherFlux2CoreAI", dependencies: ["AetherFlux2", "AetherCoreAI", "AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeech", dependencies: ["AetherKit", "AetherAssets"]),
         .target(name: "AetherSpeechCoreAI", dependencies: ["AetherSpeech", "AetherCoreAI", "AetherKit", "AetherAssets"]),
-        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI", "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers"]),
+        .executableTarget(name: "AetherProbe", dependencies: ["AetherH3", "AetherH3CoreAI", "AetherH3Tokenizers", "AetherKit", "AetherCoreAI", "AetherKrea", "AetherKreaTokenizers", "AetherKreaCoreAI", "AetherFlux2", "AetherFlux2CoreAI", "AetherFlux2Tokenizers", "AetherAssets", "AetherLanguage", "AetherSpeech"]),
         .testTarget(name: "AetherH3CoreAITests", dependencies: ["AetherH3CoreAI", "AetherH3", "AetherCoreAI", "AetherKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherH3Tests", dependencies: ["AetherH3", "AetherKit", "AetherAssets"], resources: [.copy("Fixtures")]),
         // Test-only child process for the GPU lease contention and signal tests. Not a product; never shipped.
@@ -95,6 +95,7 @@ let package = Package(
                     resources: [.copy("Fixtures")]),
         .testTarget(name: "AetherLanguageTests", dependencies: [
             "AetherLanguage", "AetherLanguageFoundationModels", "AetherLanguageRuntime", "AetherLanguageTokenizers", "AetherKit",
+            "AetherAssets",
         ]),
         .testTarget(name: "AetherLanguageMacrosTests", dependencies: [
             "AetherLanguageMacros", "AetherLanguageMacrosPlugin",
