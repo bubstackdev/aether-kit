@@ -212,17 +212,19 @@ private struct CoexistenceReport: Codable {
 
 /// Opt-in, guarded measurement of a Qwen3-VL describer and a Krea 1024x1024 render sharing one process, one GPU
 /// admission and one `ResourceCoordinator`: describer requests and renders alternate, and every window records the
-/// sampled peaks and the host's minimum memorystatus level and free memory. If a sample falls below the guard (level 60
-/// or 4 GiB free by default), the test stops at the next step boundary (a native call already running finishes first),
-/// unloads both sessions and records why. It measures the residency overlap that admission bounds, not the
-/// cross-process case. Run only in a window the lead gives, on a quiet host, under the shared GPU lease:
+/// sampled peaks and the host's minimum memorystatus level and free memory. If a sample falls below the guard
+/// (memorystatus level 60 by default; a free-memory floor only when asked, since opening the decoder reads its compiled
+/// file into the page cache and leaves almost no free pages while memorystatus stays high), the test stops at the next
+/// step boundary (a native call already running finishes first), unloads both sessions and records why. It measures the
+/// residency overlap that admission bounds, not the cross-process case. Run only in a cleared window, on a quiet host,
+/// under the shared GPU lease:
 ///
 /// AETHER_NATIVE_VL_KREA_COEXISTENCE=1
 /// AETHER_VL_COEXISTENCE_BUNDLE=<registered one-function Qwen3-VL bundle>
 /// AETHER_KREA_BUNDLE=<Krea bundle>
 /// AETHER_VL_COEXISTENCE_OUTPUT=<report .json>
 /// AETHER_VL_COEXISTENCE_ROUNDS=<default 3>
-/// AETHER_VL_COEXISTENCE_MIN_LEVEL=<default 60>; AETHER_VL_COEXISTENCE_MIN_FREE_MIB=<default 4096>
+/// AETHER_VL_COEXISTENCE_MIN_LEVEL=<default 60>; AETHER_VL_COEXISTENCE_MIN_FREE_MIB=<default 0, off>
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_VL_KREA_COEXISTENCE"] == "1"), .timeLimit(.minutes(40)))
 func visionLanguageBesideKreaGuarded() async throws {
     let gpu = try await nativeGPUGrant(); defer { gpu?.release() }
@@ -230,7 +232,7 @@ func visionLanguageBesideKreaGuarded() async throws {
     let vlBundle = URL(filePath: try #require(nativeEnvironment["AETHER_VL_COEXISTENCE_BUNDLE"]))
     let kreaRoot = URL(filePath: try #require(nativeEnvironment["AETHER_KREA_BUNDLE"]))
     let level = Int(nativeEnvironment["AETHER_VL_COEXISTENCE_MIN_LEVEL"] ?? "") ?? 60
-    let free = (Int(nativeEnvironment["AETHER_VL_COEXISTENCE_MIN_FREE_MIB"] ?? "") ?? 4096) << 20
+    let free = (Int(nativeEnvironment["AETHER_VL_COEXISTENCE_MIN_FREE_MIB"] ?? "") ?? 0) << 20
     var report = CoexistenceReport()
     report.bundles = [vlBundle.lastPathComponent, kreaRoot.deletingLastPathComponent().lastPathComponent]
     report.guardRule = "stop at the next step if memorystatus level < \(level) or free memory < \(free >> 20) MiB"

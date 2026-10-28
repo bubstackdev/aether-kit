@@ -1,7 +1,7 @@
 # Qwen3-VL resource admission (0.0.3 design)
 
 Status: items 1 and 2 implemented, 2026-10-27, and the scratch figures measured; the guarded coexistence measurement
-is ready and waits for a quiet host; the cross-process proposal waits for Atelier. This is the roadmap's safety item "Resource admission for the
+ran on 2026-10-28 ([below](#coexistence-measured)); the cross-process proposal is a coordinated future change. This is the roadmap's safety item "Resource admission for the
 Qwen3-VL encoder and decoder" ([roadmap](roadmap-0.0.3.md#safety-and-correctness)), moved ahead of other work by a
 crash Atelier reported on Kit 0.0.2.
 
@@ -78,10 +78,13 @@ public struct LanguageResourceAdmission: Sendable {
 - **Residency** is reserved before each load and held while the model is loaded. The decoder's covers its weights,
   its KV caches at the registered context, and the memory budget's growth allowance, because the budget is what bounds
   retained memory. The encoder's covers its weights and its grid functions.
-- **Scratch** is reserved around each request's native work (after the GPU grant, as Krea and FLUX order it).
+- **Scratch** is reserved around each request's native work (after the GPU grant, as Krea and FLUX order it, and
+  before a memory-budget reload, so a refusal never costs a load).
 - **Reloads** release the old model before loading the new one, so the decoder's residency carries over unchanged.
 - **Shape limits** (`maximumContextLength`, `maximumImageTokens`) are checked while planning, so a request larger than
-  the estimates cover is refused before native work.
+  the estimates cover is refused before native work. A bundle's estimates are looked up before its files are hashed.
+  The image-token limit covers the whole request: every image is preprocessed (CPU only) and the total checked before
+  the first encode.
 
 The text writer gets the same profile through `LanguageGenerationSession`, so a host can budget every language session
 the same way.
@@ -101,8 +104,9 @@ From the one-function bundles' memory by phase and budget runs
 | Largest sampled transient of a request (Metal / footprint) | 67 / 62 | (inside the image request) | 38 / 52 | (inside the image request) |
 | **Scratch estimate** | **256** | **128** | **128** | **128** |
 
-- **The encoder's further grids** add 0.8 GiB each to Metal's accounting but nothing resident (views of one copy), so
-  the estimate counts only the first grid.
+- **The encoder's further grids** add 0.8 GiB each to Metal's accounting (views of one copy) but only about 30 MiB of
+  process footprint each (1,644 to 1,764 MiB over the four), so the estimate counts the first grid; the encoder's
+  footprint with every grid warm stays under its 2,200 MiB.
 - **The budget allowance is a real bound.** The budget test kept the 4B within 13,311 MiB (warm 10,847 plus budget plus
   one request); the proposed 13,800 for a whole VL-4B session (decoder plus encoder) covers it.
 - **Not reserved: the page cache.** Opening reads the compiled file (15 GiB for the one-function 4B) into clean,
@@ -115,7 +119,7 @@ From the one-function bundles' memory by phase and budget runs
   budget allowance, not by scratch. The scratch estimates allow at least twice the largest sample, since 50 ms
   sampling can miss a shorter peak.
 - **Metal's accounting is not residency.** Each further encoder grid adds 0.8 GiB to Metal's allocated size at its
-  first image request (14.7 GiB on the 4B after all five) while adding nothing resident. The ledger reserves resident
+  first image request (14.7 GiB on the 4B after all five) while adding about 30 MiB of footprint. The ledger reserves resident
   memory, so a host comparing it with Metal's figure sees the gap.
 - **Checked natively.** The same test opens each bundle with the profile and GPU admission: the coordinator holds
   13,800 MiB (4B) and 8,300 MiB (2B) while the session is open and nothing after unload.
@@ -147,13 +151,38 @@ Apple frameworks, so a reproduction would show only that Core AI fails under pre
 - open the one-function VL-4B session and a balanced Krea session with a shared `ResourceCoordinator`;
 - alternate describer requests and a 1024×1024 Krea render;
 - sample memorystatus level, Metal, wired mapped-file pages and the footprint every 50 ms;
-- abort, releasing everything, if the level falls below 60 or free memory below 4 GiB.
+- abort, releasing everything, if the level falls below a floor (25 for the run below).
 
 It runs both models in one process and serializes their GPU work, so it measures the residency overlap that admission
 must bound, not the cross-process race. It runs only the one-function describer: tripping the guard on purpose with
 the 0.0.2 describer is not worth it on a shared Mac. It needs a quiet host, with no export or other heavy job alongside
-(unlike the original run), and waits for a window from the lead. The guard acts between steps; a native call already
+(unlike the original run), and waits for a cleared window. The guard acts between steps; a native call already
 running finishes first.
+
+### Coexistence, measured
+
+[Evidence](evidence/qwen3-vl-krea-coexistence-2026-10-28.json): the one-function VL-4B describer with the measured
+profile and krea-2-turbo-realism at 1024×1024, three rounds of one image request then one render, on the 64 GB M5 Max
+with nothing heavy alongside. All three rounds completed and the guard never tripped.
+
+| Stage | Metal peak | Footprint peak | Lowest memorystatus |
+| --- | --- | --- | --- |
+| Describer open | 1.0 GiB | 1.1 GiB | 87 |
+| First image request | 10.2 GiB | 1.7 GiB | 75 |
+| Krea renders (three) | 35.1–35.6 GiB | 14.8–15.7 GiB | 51–54 |
+| Image requests beside a resident Krea | 35.2–35.3 GiB | 14.8 GiB | 66–69 |
+| After unload | 1.7 GiB | 1.6 GiB | 70 |
+
+- **The describer stays inside its reservation.** The coordinator held 13,800 MiB for the session throughout; the
+  describer's own Metal was 10.2 GiB after its first image request (one grid; further grids add views, not
+  residency), and its requests beside Krea added no more than about 0.4 GiB of transient.
+- **Krea added about 25 GiB of Metal,** under the 32 GiB floor its manifest declares, so the declared sum (46 GiB) is
+  about 10 GiB above the measured 35.6 GiB peak.
+- **Memorystatus bottomed at 51** during renders with the describer resident: far from the 25 that Atelier's helper
+  gate uses, and from the 44 of the crash, which had a 16 GB export alongside.
+- **Free pages are not a guard.** A first attempt with a 4 GiB free-memory floor stopped right after the describer
+  opened: free pages fell to 133 MiB while memorystatus stayed at 87, because opening reads the 15 GiB compiled
+  decoder into the page cache. The test's free-memory floor is now off unless asked for.
 
 ## Implemented
 
@@ -163,9 +192,11 @@ running finishes first.
 - **`LanguageResourceAdmission`** on both sessions' bundle entry points (`resources:`). The raw entry points
   (`open(at:)`, `open(textModel:visionModel:…)`) take none, because they have no registered hash to key an estimate
   by. Residency is reserved after the open grant and before the load, released if the load fails, kept across
-  memory-budget reloads, and released on unload. Scratch is reserved after each request's grant (and, in the VL
-  session, after each encode's) and released when its native work joins. Image tokens are checked per image, before
-  that image is encoded.
+  memory-budget reloads, and released on unload. Scratch is reserved after each request's grant, before a
+  memory-budget reload (and, in the VL session, after each encode's), and released when its native work joins. A
+  request's image tokens are summed over its images and checked before the first encode.
 - **Tests.** CPU: the profile's validation and refusals, reservation accounting, the open admission's wait, release and
-  cancellation, and the VL session's encode scratch, image-token refusal and residency release (with fakes). Native:
-  `visionLanguageResourcePeaks` (above) and the guarded `visionLanguageBesideKreaGuarded`, not yet run.
+  cancellation, residency release on a failed or cancelled load and when the VL decoder fails to open beside the
+  encoder, scratch before a reload, and the VL session's encode scratch, single- and multi-image token refusal and
+  residency release (with fakes). Native: `visionLanguageResourcePeaks` (above) and the guarded
+  `visionLanguageBesideKreaGuarded` ([measured](#coexistence-measured)).
