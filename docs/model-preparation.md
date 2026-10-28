@@ -121,15 +121,19 @@ public protocol ModelTransport: Sendable {
 
 - **`.urlSession` (foreground)** uses a data-task stream. It resumes with an HTTP `Range` request and checks the
   response: 206 with a matching `Content-Range` appends, 200 restarts the file, anything else fails.
-- **`.background(identifier:)` (iOS, and macOS apps)** uses a background `URLSession` with download tasks, one per file,
-  so the system carries transfers on while the app is suspended. Download tasks deliver a finished temporary file,
-  which is moved into the download area. Interrupted tasks resume from the system's resume data.
-  The app connects Kit to its lifecycle in one place:
+- **`BackgroundTransport(identifier:)` (iOS, and macOS apps)** uses a background `URLSession` with download tasks, one
+  per file, so the system carries transfers on while the app is suspended or terminated.
+  - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A matching `206` is appended
+    and a `200` replaces the file.
+  - **Where bytes go:** each task records its destination (relative to the home directory, which survives an iOS app
+    update) in its description. A task that finishes while the app was relaunched only to receive it still lands in
+    the download area, and the next run finds the file complete.
+  - **No duplicates:** a `fetch` for a file whose task is still running joins that task instead of starting another.
+  - **Lifecycle:** the app connects the transport in one place:
   ```swift
   // UIApplicationDelegate, or SwiftUI's .backgroundTask(.urlSession(identifier))
-  ModelPreparation.handleBackgroundEvents(identifier: identifier, completionHandler: completionHandler)
+  BackgroundTransport.handleEvents(identifier: identifier, completionHandler: completionHandler)
   ```
-  On relaunch, `prepare` reattaches to the session's outstanding tasks for the entry instead of starting new ones.
 - **The app's own transport:** anything that conforms, for CDNs with signed URLs, a custom authentication scheme, or
   tests.
 
@@ -176,7 +180,8 @@ whether retrying can help.
    test transport. Done.
 3. The foreground `URLSession` transport (`URLSessionTransport`, `.urlSession`), with range resume. Done.
 4. The Hugging Face resolver (`ModelSource.huggingFace`) and `ModelPreparation.huggingFaceAuthorization(token:)`. Done.
-5. The background transport and `handleBackgroundEvents`.
+5. `BackgroundTransport` and `handleEvents(identifier:completionHandler:)`. Done; the session itself is qualified on a
+   device (below), since a background session needs an app.
 6. `AetherLanguageModel(installation:)` with the lease held.
 7. The guide and the qualification evidence.
 
