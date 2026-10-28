@@ -38,6 +38,29 @@ struct LanguageVisionPromptTests {
         }
     }
 
+    /// Prompts with two and three images, and with text between two images: expansion reproduces the upstream
+    /// processor's ids and the host M-RoPE rule its rope index for every token, each image advancing the position by
+    /// its largest merged side.
+    @Test func severalImagesMatchUpstream() throws {
+        struct Fixture: Decodable {
+            struct Case: Decodable { let name: String; let promptTokens: [Int]; let grids: [[Int]]; let ropePositions: [[Int]] }
+            let cases: [Case]
+        }
+        let url = try #require(Bundle.module.url(forResource: "qwen3vl-rope-multi", withExtension: "json", subdirectory: "Fixtures"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        #expect(fixture.cases.count == 3)
+        for c in fixture.cases {
+            var rendered: [Int] = []
+            for id in c.promptTokens where !(id == tokens.imagePad && rendered.last == tokens.imagePad) { rendered.append(id) }
+            let images = try c.grids.map { try features(grid: $0) }
+            let plan = try LanguagePromptPlan.expand(LanguageVisionPrompt(renderedTokenIDs: rendered, images: images), tokens: tokens)
+            #expect(plan.ids == c.promptTokens, "ids \(c.name)")
+            #expect(plan.rope.map { $0.map(Int.init) } == c.ropePositions, "rope \(c.name)")
+            #expect(plan.spans.map(\.count) == c.grids.map { $0[0] * $0[1] * $0[2] / 4 }, "spans \(c.name)")
+            #expect(Int(plan.rope[0].last!) + 1 == plan.ids.count + plan.ropeDelta)
+        }
+    }
+
     @Test func positionsAdvanceByTheLargestImageSideNotItsTokenCount() throws {
         // [text, start, image 4x6 patches -> 2x3 tokens, end, text]: the image spans rotary positions 2..4.
         let image = try features(grid: [1, 4, 6])

@@ -1,7 +1,9 @@
 # Qwen3-VL coverage: multi-image prompts, rotated photos and alpha (0.0.3 plan)
 
 Status: plan, 2026-10-27. Rotated photos ([evidence](evidence/qwen3-vl-rotated-photos-2026-10-27.json)) and alpha
-([evidence](evidence/qwen3-vl-alpha-2026-10-27.json); the lead chose to match upstream) are done; multi-image is next. These are the three Qwen3-VL coverage items in the
+([evidence](evidence/qwen3-vl-alpha-2026-10-27.json); the lead chose to match upstream) are done. Multi-image is done
+on the VL-2B ([evidence](evidence/qwen3-vl-multi-image-2026-10-27.json)); the 4B runs and the session's summed
+image-token check (step 3, which needs `LanguageResourceAdmission`) remain. These are the three Qwen3-VL coverage items in the
 [0.0.3 roadmap](roadmap-0.0.3.md#coverage-and-iphone). Each is CPU work first, then one native run under the GPU lock
 against a new upstream reference.
 

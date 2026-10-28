@@ -56,7 +56,8 @@ def main() -> None:
     parser.add_argument("--source-repository", required=True)
     parser.add_argument("--source-revision", required=True)
     parser.add_argument("--case", action="append", required=True, metavar="NAME=IMAGE::QUESTION",
-                        help="a case: name, image path and question")
+                        help="a case: name, then '::'-separated parts in order, each an image path or text "
+                             "(NAME=IMAGE::QUESTION, or several images: NAME=IMAGE::IMAGE::QUESTION, with text between)")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--license", required=True, help="the checkpoint's model-card licence, e.g. apache-2.0")
     parser.add_argument("--base-model", help="the upstream model a fine-tune derives from")
@@ -91,26 +92,41 @@ def main() -> None:
     cases, pending = [], []
     for spec in args.case:
         name, rest = spec.split("=", 1)
-        image_path, question = rest.split("::", 1)
-        image_path = Path(image_path)
-        copied = args.output / f"{name}{image_path.suffix.lower()}"
-        shutil.copyfile(image_path, copied)
-        image = Image.open(image_path)
-        image = (ImageOps.exif_transpose(image) if args.exif_transpose else image).convert("RGB")
+        # Parts in order: an existing file is an image, anything else is text.
+        parts = [(Path(p) if Path(p).is_file() else p) for p in rest.split("::")]
+        image_paths = [p for p in parts if isinstance(p, Path)]
+        if not image_paths:
+            raise SystemExit(f"{name}: a case needs at least one image")
+        copied, images = [], []
+        for index, image_path in enumerate(image_paths):
+            target = args.output / (f"{name}{image_path.suffix.lower()}" if len(image_paths) == 1
+                                    else f"{name}-image{index + 1}{image_path.suffix.lower()}")
+            shutil.copyfile(image_path, target)
+            copied.append(target)
+            image = Image.open(image_path)
+            images.append((ImageOps.exif_transpose(image) if args.exif_transpose else image).convert("RGB"))
         snapped = None
         if grids:
             import transformers.models.qwen2_vl.image_processing_qwen2_vl_fast as fast
 
-            snapped = nearest_grid(image.size[0], image.size[1], grids)
+            # The processor resizes the images in prompt order: each takes its own snapped grid's pixel size.
+            snapped = [nearest_grid(image.size[0], image.size[1], grids) for image in images]
             patch = int(config["vision_config"]["patch_size"])
-            fast.smart_resize = lambda *a, _g=snapped, **k: (_g[0] * patch, _g[1] * patch)
-        messages = [{"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": question}]}]
+            queue = list(snapped)
+            fast.smart_resize = lambda *a, **k: (lambda g: (g[0] * patch, g[1] * patch))(queue.pop(0))
+        content, next_image = [], iter(images)
+        for part in parts:
+            content.append({"type": "image", "image": next(next_image)} if isinstance(part, Path) else {"type": "text", "text": part})
+        question = " / ".join(p for p in parts if isinstance(p, str))
+        messages = [{"role": "user", "content": content}]
         inputs = processor.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_dict=True,
                                                return_tensors="pt")
         ids = inputs["input_ids"][0].tolist()
-        grid = inputs["image_grid_thw"][0].tolist()
-        if snapped and tuple(grid[1:]) != snapped:
-            raise SystemExit(f"{name}: processor grid {grid} is not the snapped grid {snapped}")
+        case_grids = inputs["image_grid_thw"].tolist()
+        grid = case_grids[0]
+        if snapped and [tuple(g[1:]) for g in case_grids] != snapped:
+            raise SystemExit(f"{name}: processor grids {case_grids} are not the snapped grids {snapped}")
+        image = images[0]
         pixels = inputs["pixel_values"].float()
         with torch.no_grad():
             out = model.generate(**inputs, max_new_tokens=args.greedy_tokens, do_sample=False, temperature=None,
@@ -120,10 +136,11 @@ def main() -> None:
             full = {k: v for k, v in inputs.items()}
             full["input_ids"] = torch.tensor([ids + forced])
             full["attention_mask"] = torch.ones_like(full["input_ids"])
-            logits = model(**full).logits[0].double().numpy()
-            reference_rows = logits[len(ids) - 1:len(ids) + len(forced) - 1]
+            # Only the forced rows, converted after slicing: a long multi-image prompt's full logits are large.
+            reference_rows = model(**full).logits[0, len(ids) - 1:len(ids) + len(forced) - 1].double().numpy()
             rope_ref, _ = model.model.get_rope_index(full["input_ids"], inputs["image_grid_thw"])
-        pending.append((name, question, copied, image.size, ids, grid, pixels, greedy, forced, reference_rows, rope_ref))
+        pending.append((name, question, copied, [im.size for im in images], ids, case_grids, pixels, greedy, forced,
+                        reference_rows, rope_ref))
     del model
     gc.collect()
 
@@ -135,13 +152,22 @@ def main() -> None:
     text = Qwen3VLText(text_cfg, image_token, len(config["vision_config"]["deepstack_visual_indexes"]))
     load_text(text, args.checkpoint)
     text = text.float().eval()
-    for name, question, copied, image_size, ids, grid, pixels, greedy, forced, reference_rows, rope_ref in pending:
+    for name, question, copied, image_sizes, ids, case_grids, pixels, greedy, forced, reference_rows, rope_ref in pending:
+        grid = case_grids[0]
         with torch.no_grad():
-            # Eager port: vision tower, then withImage prefill and main forced decode with host M-RoPE positions.
-            rope_host = np.array(mrope_positions(ids + forced, [tuple(grid)], image_token, merge), dtype=np.int64).T
+            # Eager port: the vision tower per image (its rows concatenated in prompt order), then the image prefill and
+            # forced decode with host M-RoPE positions.
+            rope_host = np.array(mrope_positions(ids + forced, [tuple(g) for g in case_grids], image_token, merge),
+                                 dtype=np.int64).T
             positions_match = bool(np.array_equal(rope_host, rope_ref[:, 0].numpy()))
-            tables = {k: torch.from_numpy(v) for k, v in host_inputs(*grid).items()}
-            embeds, deepstack = vision(pixels, tables["pos_index"], tables["pos_weight"], tables["patch_rc"])
+            pieces, start = [], 0
+            for g in case_grids:
+                count = int(np.prod(g))
+                tables = {k: torch.from_numpy(v) for k, v in host_inputs(*g).items()}
+                pieces.append(vision(pixels[start:start + count], tables["pos_index"], tables["pos_weight"], tables["patch_rc"]))
+                start += count
+            embeds = torch.cat([e for e, _ in pieces], 0)
+            deepstack = torch.cat([d for _, d in pieces], 1)
             kc, vc = text.empty_state(len(ids) + len(forced) + 8)
             rope = torch.from_numpy(rope_host.astype(np.int32))
             rows = [text.step(torch.tensor([ids], dtype=torch.int32), torch.arange(len(ids), dtype=torch.int32)[None],
@@ -156,10 +182,12 @@ def main() -> None:
         pixels.numpy().astype("<f4").tofile(pixels_path)
         logits_path = args.output / f"{name}-forced-logits.f32"
         reference_rows.astype("<f4").tofile(logits_path)
+        images_record = [{"file": c.name, "sha256": sha256(c), "size": list(size)} for c, size in zip(copied, image_sizes)]
         cases.append({
-            "name": name, "question": question, "image": {"file": copied.name, "sha256": sha256(copied),
-                                                          "size": list(image_size)},
-            "promptTokens": ids, "grid": grid, "imageTokens": int(np.prod(grid) // merge ** 2),
+            "name": name, "question": question, "image": images_record[0],
+            # Several images: every image and grid in prompt order; `pixels` holds their rows concatenated.
+            **({"images": images_record, "grids": case_grids} if len(case_grids) > 1 else {}),
+            "promptTokens": ids, "grid": grid, "imageTokens": int(sum(np.prod(g) for g in case_grids) // merge ** 2),
             "ropePositions": rope_ref[:, 0, :len(ids)].tolist(),
             "greedyTokens": greedy, "greedyText": processor.decode(greedy), "forcedTokens": forced,
             "pixels": {"file": pixels_path.name, "shape": list(pixels.shape), "sha256": sha256(pixels_path)},

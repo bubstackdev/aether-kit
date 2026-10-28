@@ -30,6 +30,11 @@ private struct VLReference: Decodable {
         let pixels: File
         let forcedLogits: Logits
         let image: File
+        /// Several images: every image and grid in prompt order (`pixels` holds their rows concatenated).
+        let images: [File]?
+        let grids: [[Int]]?
+        var allImages: [File] { images ?? [image] }
+        var allGrids: [[Int]] { grids ?? [grid] }
     }
     let cases: [Case]
     let maximumPixels: Int?
@@ -122,32 +127,41 @@ func qwen3VLImageTextQualification() async throws {
         for c in reference.cases {
             report.stage = "case \(c.name)"
             let referencePixels = try f32(directory.appendingPathComponent(c.pixels.file))
-            var pixels = referencePixels.map { Float16($0) }
-            var grid = (c.grid[0], c.grid[1], c.grid[2])
             var gridMatches: Bool?, pixelCosine: Double?
-            if swiftPreprocessing {
-                // Kit's own path: ImageIO decoding, snapping to the nearest fixed grid, resampling, patchify.
-                let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(c.image.file))
-                var configuration = Qwen3VLImagePreprocessor.Configuration()
-                if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
-                configuration.imageGrids = reference.grids
-                let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
-                                                                     configuration: configuration)
-                gridMatches = [processed.grid.t, processed.grid.h, processed.grid.w] == c.grid
-                if gridMatches == true {
-                    var dot = 0.0, aa = 0.0, bb = 0.0
-                    for (a, b) in zip(processed.pixels, referencePixels) { dot += Double(a) * Double(b); aa += Double(a * a); bb += Double(b * b) }
-                    pixelCosine = dot / (aa.squareRoot() * bb.squareRoot())
+            var features: [LanguageImageFeatures] = []
+            var encodeSeconds = 0.0
+            var offset = 0, dot = 0.0, aa = 0.0, bb = 0.0
+            for (file, referenceGrid) in zip(c.allImages, c.allGrids) {
+                let count = referenceGrid.reduce(1, *)
+                let referenceSlice = Array(referencePixels[offset..<(offset + count * 1536)])
+                offset += count * 1536
+                var pixels = referenceSlice.map { Float16($0) }
+                var grid = (referenceGrid[0], referenceGrid[1], referenceGrid[2])
+                if swiftPreprocessing {
+                    // Kit's own path: ImageIO decoding, snapping to the nearest fixed grid, resampling, patchify.
+                    let image = try VisionRGBImage(contentsOf: directory.appendingPathComponent(file.file))
+                    var configuration = Qwen3VLImagePreprocessor.Configuration()
+                    if let cap = reference.maximumPixels { configuration.maximumPixels = cap }
+                    configuration.imageGrids = reference.grids
+                    let processed = try Qwen3VLImagePreprocessor.process(rgb: image.rgb, width: image.width, height: image.height,
+                                                                         configuration: configuration)
+                    let matches = [processed.grid.t, processed.grid.h, processed.grid.w] == referenceGrid
+                    gridMatches = (gridMatches ?? true) && matches
+                    if matches {
+                        for (a, b) in zip(processed.pixels, referenceSlice) { dot += Double(a) * Double(b); aa += Double(a * a); bb += Double(b * b) }
+                    }
+                    pixels = processed.pixels.map { Float16($0) }
+                    grid = processed.grid
                 }
-                pixels = processed.pixels.map { Float16($0) }
-                grid = processed.grid
+                let start = ContinuousClock.now
+                features.append(try await encoder.encode(pixels: pixels, grid: grid))
+                let duration = start.duration(to: .now)
+                encodeSeconds += Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
             }
-            let start = ContinuousClock.now
-            let features = try await encoder.encode(pixels: pixels, grid: grid)
-            let encodeDuration = start.duration(to: .now)
+            if gridMatches == true { pixelCosine = dot / (aa.squareRoot() * bb.squareRoot()) }
             var rendered: [Int] = []
             for id in c.promptTokens where !(id == tokens.imagePad && rendered.last == tokens.imagePad) { rendered.append(id) }
-            let prompt = LanguageVisionPrompt(renderedTokenIDs: rendered, images: [features])
+            let prompt = LanguageVisionPrompt(renderedTokenIDs: rendered, images: features)
 
             let forced = try f32(directory.appendingPathComponent(c.forcedLogits.file))
             let vocab = c.forcedLogits.vocab
@@ -171,11 +185,11 @@ func qwen3VLImageTextQualification() async throws {
                 margin = row.2
                 accepted = row.2 < 0.1 && row.3 < 5
             }
-            report.cases.append(VLCaseReport(name: c.name, promptTokens: c.promptTokens.count, imageTokens: features.tokenCount,
+            report.cases.append(VLCaseReport(name: c.name, promptTokens: c.promptTokens.count, imageTokens: features.reduce(0) { $0 + $1.tokenCount },
                 forcedRows: rows.count, forcedMinimumCosine: compared.map(\.0).min() ?? 0, forcedArgmaxMismatches: mismatches.count,
                 forcedMismatchesAtNearTies: nearTieMismatches.count, greedyTokens: reply.tokens, referenceGreedyTokens: c.greedyTokens,
                 greedyFirstDivergence: divergence, greedyDivergenceReferenceMargin: margin, greedyAccepted: accepted,
-                encodeSeconds: Double(encodeDuration.components.seconds) + Double(encodeDuration.components.attoseconds) / 1e18,
+                encodeSeconds: encodeSeconds,
                 timeToFirstTokenSeconds: reply.timeToFirstTokenSeconds, preprocessing: swiftPreprocessing ? "swift" : "reference",
                 swiftGridMatches: gridMatches, swiftPixelCosine: pixelCosine))
         }

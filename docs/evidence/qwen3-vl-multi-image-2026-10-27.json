@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-multi-image-qualification",
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "model": "Qwen/Qwen3-VL-2B-Instruct@8964489 (qwen3-vl-2b-one-function-bundle-macos)",
+  "passed": true,
+  "reference": "Forge/language/reference_qwen3_vl.py --exif-transpose --grids, several images per case, one case per process (float32 CPU); the photos are the Kit-decoded PNGs (qwen3-vl-photos-kit-decoded) and the scene the Kit-decoded synthetic scene-448",
+  "cpuTest": "LanguageVisionPromptTests.severalImagesMatchUpstream: the prompt plan's expansion and M-RoPE positions equal the processor's ids and model.get_rope_index for every token (Tests/AetherLanguageCoreAITests/Fixtures/qwen3vl-rope-multi.json, from these references)",
+  "nativeTest": "qwen3VLImageTextQualification with several images per case: model parity on the reference's pixels, and Kit preprocessing on the same decode (AETHER_QWEN3VL_PREPROCESS=swift, AETHER_QWEN3VL_INPUTS=same-decode)",
+  "cases": {
+    "two-photos": {
+      "question": "Describe the two photos in two sentences.",
+      "images": [
+        {
+          "file": "two-photos-image1.png",
+          "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96",
+          "size": [
+            1200,
+            1412
+          ]
+        },
+        {
+          "file": "two-photos-image2.png",
+          "sha256": "8d799c68a22bfa6134363b35e24e5499b4967566184515c7d85f641174033e41",
+          "size": [
+            4032,
+            2268
+          ]
+        }
+      ],
+      "grids": [
+        [
+          1,
+          48,
+          36
+        ],
+        [
+          1,
+          32,
+          56
+        ]
+      ],
+      "promptTokens": 900,
+      "imageTokens": 880,
+      "greedyText": "The first image features a black American Bully dog with a spiked collar, sitting on a grassy lawn and looking directly at the camera with its mouth open. The second image shows a bustling market scene in Thailand, where a vendor is selling",
+      "reference": {
+        "recordSHA256": "9898285814832e9b622532cdd1142d21643b3cba7cf065b75ae65bbb183817a0",
+        "eagerPortVsReference": {
+          "hostRopePositionsMatch": true,
+          "minCosine": 1.0,
+          "argmaxEqualRows": 32,
+          "rows": 32
+        },
+        "maximumResidentSetBytes": 14292533248
+      },
+      "native": {
+        "model-parity": {
+          "file": "qwen3-vl-multi-image-2026-10-27-two-photos-model-parity.json",
+          "sha256": "0534d56ab0a84c01689d50d9e14b847885d7d2794f897497d71ae1ab72f8eeeb",
+          "passed": true,
+          "forcedMinimumCosine": 0.9997890719755141,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": null,
+          "gridsMatch": null
+        },
+        "same-decode": {
+          "file": "qwen3-vl-multi-image-2026-10-27-two-photos-same-decode.json",
+          "sha256": "710db2ae94923dfd60733ab65fdb10fa4eaa43b569b66d813f6f56e429a78d7c",
+          "passed": true,
+          "forcedMinimumCosine": 0.9999580939381347,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": 0.9999998647586842,
+          "gridsMatch": true
+        }
+      }
+    },
+    "three-images": {
+      "question": "Briefly describe each of the three images.",
+      "images": [
+        {
+          "file": "three-images-image1.png",
+          "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96",
+          "size": [
+            1200,
+            1412
+          ]
+        },
+        {
+          "file": "three-images-image2.png",
+          "sha256": "36d86e264e84042a8300ae1fb6bb72cce8bf440d3e1370bbade678000a8dde45",
+          "size": [
+            810,
+            608
+          ]
+        },
+        {
+          "file": "three-images-image3.png",
+          "sha256": "26436c80216cefd6f9668115eb184730a519acb5e1341c9312210e9edebbfd2d",
+          "size": [
+            448,
+            448
+          ]
+        }
+      ],
+      "grids": [
+        [
+          1,
+          48,
+          36
+        ],
+        [
+          1,
+          36,
+          48
+        ],
+        [
+          1,
+          44,
+          44
+        ]
+      ],
+      "promptTokens": 1371,
+      "imageTokens": 1348,
+      "greedyText": "- **Image 1:** A black American Bully dog with a white patch on its chest is sitting on a grassy lawn. It has a spiked collar and is panting with its tongue out.\n- **Image 2:** A",
+      "reference": {
+        "recordSHA256": "82cd26da45fec8eaf95f9174b7d12b84fa29d2e69bce19f2b4abfa6458ed67b1",
+        "eagerPortVsReference": {
+          "hostRopePositionsMatch": true,
+          "minCosine": 1.0,
+          "argmaxEqualRows": 32,
+          "rows": 32
+        },
+        "maximumResidentSetBytes": 14249885696
+      },
+      "native": {
+        "model-parity": {
+          "file": "qwen3-vl-multi-image-2026-10-27-three-images-model-parity.json",
+          "sha256": "4879a954e6665500ca82ce46b53dbc70ea23d9380cc34fb9baf94f21f03ad0ab",
+          "passed": true,
+          "forcedMinimumCosine": 0.9999576769303865,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": null,
+          "gridsMatch": null
+        },
+        "same-decode": {
+          "file": "qwen3-vl-multi-image-2026-10-27-three-images-same-decode.json",
+          "sha256": "b350ab4f94af328d4f17ebcd68cfe2685717fca29ef72008aa22f473b9fee1c8",
+          "passed": true,
+          "forcedMinimumCosine": 0.9999539531303098,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": 0.9999999072647404,
+          "gridsMatch": true
+        }
+      }
+    },
+    "text-between": {
+      "question": "This is the first picture. / What do the two pictures have in common?",
+      "images": [
+        {
+          "file": "text-between-image1.png",
+          "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96",
+          "size": [
+            1200,
+            1412
+          ]
+        },
+        {
+          "file": "text-between-image2.png",
+          "sha256": "8d799c68a22bfa6134363b35e24e5499b4967566184515c7d85f641174033e41",
+          "size": [
+            4032,
+            2268
+          ]
+        }
+      ],
+      "grids": [
+        [
+          1,
+          48,
+          36
+        ],
+        [
+          1,
+          32,
+          56
+        ]
+      ],
+      "promptTokens": 907,
+      "imageTokens": 880,
+      "greedyText": "The two pictures have a significant and direct connection: they both feature a dog.\n\n- The first image is a close-up, high-quality photograph of a black American Bully dog with a spiked collar, sitting on a grassy lawn.\n-",
+      "reference": {
+        "recordSHA256": "e5077b50a3863cf19e066092f73632bc6d8e731e295c46180f3c97caf791d352",
+        "eagerPortVsReference": {
+          "hostRopePositionsMatch": true,
+          "minCosine": 1.0,
+          "argmaxEqualRows": 32,
+          "rows": 32
+        },
+        "maximumResidentSetBytes": 14294564864
+      },
+      "native": {
+        "model-parity": {
+          "file": "qwen3-vl-multi-image-2026-10-27-text-between-model-parity.json",
+          "sha256": "9ec78c7fc4bcd1d090d30285c472a2ffcfbd7c069c08ee5bc068b450372a04cb",
+          "passed": true,
+          "forcedMinimumCosine": 0.9998456718540839,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": null,
+          "gridsMatch": null
+        },
+        "same-decode": {
+          "file": "qwen3-vl-multi-image-2026-10-27-text-between-same-decode.json",
+          "sha256": "9d5678fcc5f96d96487c629f2469601d183eb3e53962565d2eb8d49f69f037be",
+          "passed": true,
+          "forcedMinimumCosine": 0.9999443730034725,
+          "forcedArgmaxMismatches": 0,
+          "greedyAccepted": true,
+          "greedyFirstDivergence": null,
+          "pixelCosine": 0.9999998647586842,
+          "gridsMatch": true
+        }
+      }
+    }
+  },
+  "overlap": {
+    "file": "qwen3-vl-multi-image-2026-10-27-overlap.json",
+    "sha256": "32bfd405a7691a244bc422c0b80033c36f638e88782633c6244c309a4f449ca0",
+    "passed": true,
+    "imageCases": [
+      {
+        "name": "long question",
+        "promptTokens": 562,
+        "imageSpan": [
+          4,
+          436
+        ],
+        "chunksCrossImageEdges": true,
+        "tailReCoversImageRows": false,
+        "greedyIdentical": true
+      },
+      {
+        "name": "short question",
+        "promptTokens": 446,
+        "imageSpan": [
+          4,
+          436
+        ],
+        "chunksCrossImageEdges": true,
+        "tailReCoversImageRows": true,
+        "greedyIdentical": true
+      },
+      {
+        "name": "two images",
+        "promptTokens": 883,
+        "imageSpan": [
+          4,
+          436,
+          438,
+          870
+        ],
+        "chunksCrossImageEdges": true,
+        "tailReCoversImageRows": true,
+        "greedyIdentical": true
+      }
+    ]
+  }
+}
