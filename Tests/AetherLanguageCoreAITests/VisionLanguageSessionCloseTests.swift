@@ -46,6 +46,12 @@ private actor FakeDecoder: VisionLanguageDecoding {
     func unload() async { unloads += 1 }
 }
 
+private actor ReservedBox {
+    private(set) var bytes: UInt64 = 0
+    private(set) var running = 0
+    func set(_ value: UInt64, running: Int) { bytes = value; self.running = running }
+}
+
 private actor GrantBox {
     var grant: GPUAdmissionGrant?
     func set(_ g: GPUAdmissionGrant) { grant = g }
@@ -130,6 +136,56 @@ struct VisionLanguageSessionCloseTests {
         #expect(admission.snapshot.queued == 0)
         await other.release()
         #expect(admission.snapshot.running == 0)
+    }
+
+    /// With a resource budget, each encode holds the encoder's scratch only while it runs, after its GPU grant; the
+    /// encoder's residency is released on unload.
+    @Test(.timeLimit(.minutes(1))) func encodeHoldsItsScratchAndUnloadReleasesTheResidency() async throws {
+        let coordinator = try ResourceCoordinator(capacityBytes: 100)
+        let resources = try LanguageResourceAdmission(coordinator: coordinator,
+            models: [try LanguageModelResourceEstimate(modelSHA256: String(repeating: "a", count: 64), residentBytes: 20, runScratchBytes: 7)],
+            maximumContextLength: 4096, maximumImageTokens: 64)
+        let budget = try resources.budget(modelSHA256: registration().modelSHA256)
+        let residency = try budget.reserveResidency()
+        let admission = try GPUAdmission(maximumConcurrent: 1, waiting: .queue())
+        let during = ReservedBox()
+        let encoder = FakeEncoder(onEncode: { await during.set(coordinator.snapshot.reservedBytes, running: admission.snapshot.running) })
+        let session = VisionLanguageSession(language: FakeDecoder(gpu: admission.owner("decoder")), encoder: encoder,
+                                            registration: registration(), gpu: admission.owner("vl"),
+                                            encoderBudget: budget, encoderResidency: residency)
+        // The fake decoder refuses after its own admission; the encode before it is what this checks.
+        await #expect(throws: LanguageGenerationError.self) {
+            try await session.generate(renderedTokenIDs: prompt, images: [try image()], maximumTokens: 4)
+        }
+        #expect(await encoder.encodes == 1)
+        #expect(await during.bytes == 27)                                // residency plus scratch
+        #expect(await during.running == 1)                               // under the encode grant
+        #expect(coordinator.snapshot.reservedBytes == 20)                // the scratch is released after the encode
+        await session.unload()
+        #expect(coordinator.snapshot.reservedBytes == 0)
+    }
+
+    /// An image over the profile's image tokens, or an encode whose scratch does not fit, is refused before the encoder runs.
+    @Test(.timeLimit(.minutes(1))) func encodeIsRefusedBeforeRunningWhenTheBudgetDoesNotCoverIt() async throws {
+        for (capacity, maximumImageTokens) in [(UInt64(100), 32), (UInt64(25), 64)] {    // a 64-token image; then 20 + 7 > 25
+            let coordinator = try ResourceCoordinator(capacityBytes: capacity)
+            let resources = try LanguageResourceAdmission(coordinator: coordinator,
+                models: [try LanguageModelResourceEstimate(modelSHA256: String(repeating: "a", count: 64), residentBytes: 20, runScratchBytes: 7)],
+                maximumContextLength: 4096, maximumImageTokens: maximumImageTokens)
+            let budget = try resources.budget(modelSHA256: registration().modelSHA256)
+            let encoder = FakeEncoder()
+            let admission = try GPUAdmission(maximumConcurrent: 1, waiting: .queue())
+            let session = VisionLanguageSession(language: FakeDecoder(gpu: admission.owner("decoder")), encoder: encoder,
+                                                registration: registration(), gpu: admission.owner("vl"),
+                                                encoderBudget: budget, encoderResidency: try budget.reserveResidency())
+            await #expect(throws: (any Error).self) {
+                try await session.generate(renderedTokenIDs: prompt, images: [try image()], maximumTokens: 4)
+            }
+            #expect(await encoder.encodes == 0)
+            #expect(admission.snapshot.running == 0 && coordinator.snapshot.reservedBytes == 20)
+            await session.unload()
+            #expect(coordinator.snapshot.reservedBytes == 0)
+        }
     }
 
     @Test func imageInputRequiresAnImageChunkAndRefusesOversizedImages() throws {

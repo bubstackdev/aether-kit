@@ -101,6 +101,9 @@ public actor LanguageGenerationSession {
     private var ropeDelta = 0
     private let lifecycle = LanguageSessionLifecycle()
     private let gpu: GPUAdmissionOwner?
+    /// The model's estimates under a host's ``LanguageResourceAdmission``, and its residency reservation while loaded.
+    private var resourceBudget: LanguageModelBudget?
+    private var residency: ResourceReservation?
     private let admission = LanguageRequestAdmission()
 
     /// For an owning session's close (`VisionLanguageSession.unload()`): withdraws a request
@@ -110,18 +113,22 @@ public actor LanguageGenerationSession {
     public var state: State { lifecycle.state }
 
     /// Opens a registered local model through Aether Kit. No download or fallback.
-    /// `gpu` opts into a host-shared ``GPUAdmission``: each request waits for (or, in fail-fast mode, requires) a
-    /// grant after validation and holds it through a memory-budget reload and until its native submissions have
-    /// joined. Opening is not admitted.
+    /// `gpu` opts into a host-shared ``GPUAdmission``: opening (the model's load and its functions' specialization)
+    /// waits for a grant, and each request waits for (or, in fail-fast mode, requires) one after validation and holds
+    /// it through a memory-budget reload and until its native submissions have joined.
     /// `memoryGrowthBudgetBytes` bounds the native memory requests retain (see the raw-asset entry point).
+    /// `resources` opts into reservations against a host's ``ResourceCoordinator`` (``LanguageResourceAdmission``):
+    /// the model's residency while it is loaded and each request's scratch.
     public static func open(bundle directory: URL, platform: LanguageModelManifest.Platform,
                             memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
-                            gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
+                            gpu: GPUAdmissionOwner? = nil, resources: LanguageResourceAdmission? = nil) async throws
+        -> LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
         let modelURL = try manifest.verify(in: directory, platform: platform)
+        let budget = try resources?.budget(modelSHA256: manifest.modelSHA256, contextLength: manifest.maximumContextLength)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
             stopTokenIDs: Set(manifest.stopTokenIDs), memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
-            exportBounds: manifest.exportBounds, gpu: gpu)
+            exportBounds: manifest.exportBounds, gpu: gpu, budget: budget)
     }
 
     /// Explicit raw-asset entry point for qualification before bundle registration.
@@ -143,6 +150,21 @@ public actor LanguageGenerationSession {
                             memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
                             exportBounds: LanguageExportBounds? = nil,
                             gpu: GPUAdmissionOwner? = nil) async throws -> LanguageGenerationSession {
+        try await open(at: modelURL, maximumContextLength: maximumContextLength, initialCacheCapacity: initialCacheCapacity,
+                       stopTokenIDs: stopTokenIDs, compute: compute, expectFrequentReshapes: expectFrequentReshapes,
+                       maximumSubmissionsPerModel: maximumSubmissionsPerModel, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
+                       exportBounds: exportBounds, gpu: gpu, budget: nil)
+    }
+
+    /// The raw-asset opening with an optional resource budget (the bundle entry points look it up by the registered
+    /// model hash). With `gpu`, the load and its specialization run under a grant; the residency is reserved after the
+    /// grant, before the load, and released if the load fails.
+    static func open(at modelURL: URL, maximumContextLength: Int, initialCacheCapacity: Int = 256,
+                     stopTokenIDs: Set<Int> = [151645], compute: ModelComputePolicy = .preferGPU,
+                     expectFrequentReshapes: Bool = true, maximumSubmissionsPerModel: Int? = nil,
+                     memoryGrowthBudgetBytes: Int? = defaultMemoryGrowthBudgetBytes,
+                     exportBounds: LanguageExportBounds? = nil,
+                     gpu: GPUAdmissionOwner? = nil, budget: LanguageModelBudget?) async throws -> LanguageGenerationSession {
         try Task.checkCancellation()
         guard (maximumSubmissionsPerModel ?? 1) > 0, LanguageMemoryBudget.admits(limitBytes: memoryGrowthBudgetBytes)
         else { throw LanguageGenerationError.invalid("Invalid model residency policy") }
@@ -153,14 +175,23 @@ public actor LanguageGenerationSession {
         case .preferGPU: options = SpecializationOptions(preferredComputeUnitKind: .gpu)
         }
         options.expectFrequentReshapes = expectFrequentReshapes
-        let model = try await AIModel(contentsOf: modelURL, options: options)
-        try Task.checkCancellation()
-        let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
-            initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
+        let (session, residency) = try await withOpenAdmission(gpu) { () async throws -> (LanguageGenerationSession, ResourceReservation?) in
+            let residency = try budget?.reserveResidency()
+            do {
+                let model = try await AIModel(contentsOf: modelURL, options: options)
+                try Task.checkCancellation()
+                let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
+                    initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
+                return (session, residency)
+            } catch {
+                residency?.release()
+                throw error
+            }
+        }
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
             expectFrequentReshapes: expectFrequentReshapes,
             maximumSubmissions: maximumSubmissionsPerModel ?? session.contract.defaultMaximumSubmissionsPerModel),
-            memoryGrowthBudgetBytes: memoryGrowthBudgetBytes)
+            memoryGrowthBudgetBytes: memoryGrowthBudgetBytes, budget: budget, residency: residency)
         return session
     }
     public static var deviceArchitectureName: String { AIModel.deviceArchitectureName }
@@ -303,6 +334,8 @@ public actor LanguageGenerationSession {
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
+        let scratch = try reserveScratch()
+        defer { scratch?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         let output = try await LanguageDecodeLoop.generate(prompt: plan.ids, maximumTokens: maximumTokens,
@@ -326,6 +359,8 @@ public actor LanguageGenerationSession {
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
+        let scratch = try reserveScratch()
+        defer { scratch?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(plan, images: prompt.images, chunkSize: nil, observer: nil)]
@@ -339,6 +374,7 @@ public actor LanguageGenerationSession {
         guard acceptsImages else { throw LanguageGenerationError.invalid("This asset has no image input") }
         let plan = try LanguagePromptPlan.expand(prompt, tokens: imageTokens)
         try plan.requireImageSpans(within: imageLimit)
+        try resourceBudget?.check(imageTokens: plan.spans.reduce(0) { $0 + $1.count })
         return plan
     }
 
@@ -403,6 +439,8 @@ public actor LanguageGenerationSession {
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
+        let scratch = try reserveScratch()
+        defer { scratch?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         // Token delivery and the constraint overlap the following native step instead of idling the GPU.
@@ -423,6 +461,8 @@ public actor LanguageGenerationSession {
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
+        let scratch = try reserveScratch()
+        defer { scratch?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
@@ -435,6 +475,8 @@ public actor LanguageGenerationSession {
         let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
                                               reload: { try await self.reloadForMemory() })
         defer { grant?.release() }
+        let scratch = try reserveScratch()
+        defer { scratch?.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]
@@ -673,10 +715,16 @@ public actor LanguageGenerationSession {
             foreignMemoryBytes: memoryBudget.foreignBytes, distinctStepShapes: stepShapes.count)
     }
 
-    private func configureReopening(_ configuration: ReopenConfiguration, memoryGrowthBudgetBytes: Int?) {
+    private func configureReopening(_ configuration: ReopenConfiguration, memoryGrowthBudgetBytes: Int?,
+                                    budget: LanguageModelBudget?, residency: ResourceReservation?) {
         reopenConfiguration = configuration
         memoryBudget = LanguageMemoryBudget(limitBytes: memoryGrowthBudgetBytes)
+        resourceBudget = budget
+        self.residency = residency
     }
+
+    /// A request's scratch under the resource budget, reserved once it holds its grant (nil without a budget).
+    private func reserveScratch() throws -> ResourceReservation? { try resourceBudget?.reserveScratch() }
 
     /// Starts a request's measurement once it is admitted. Metal's allocated size is process-wide: a
     /// shared ``GPUAdmission`` keeps other admitted GPU work out of the window, and
@@ -735,6 +783,8 @@ public actor LanguageGenerationSession {
         materializedTokens = 0
         promptRope = []
         ropeDelta = 0
+        residency?.release()
+        residency = nil
         lifecycle.didClose()
     }
 
