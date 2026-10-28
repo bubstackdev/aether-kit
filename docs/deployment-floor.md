@@ -74,7 +74,9 @@ carry the triple too, for example
 
 ## Checks
 
-`Scripts/check-floor.sh` runs in CI on the `xcode-27` runner. It needs no weights and does no GPU work:
+`Scripts/check-floor.sh` runs in CI on `xcode-27` runners, as two parallel jobs: `--macos` (steps 1 and 2, and the
+macOS half of 4) and `--ios` (the iOS builds in 3 and 4). Without either flag it runs everything. It needs no weights and
+does no GPU work:
 1. `annotate-floor.py --check`;
 2. `swift build` of every product at macOS 14;
 3. an iOS 17 build of every library product (`xcodebuild -destination generic/platform=iOS`);
