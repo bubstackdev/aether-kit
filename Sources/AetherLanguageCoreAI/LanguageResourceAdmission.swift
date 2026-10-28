@@ -2,6 +2,7 @@ import AetherKit
 
 /// A caller-qualified maximum estimate for one language model asset, keyed by the SHA-256 its registration declares
 /// (`modelSHA256`, or the vision registration's for a Qwen3-VL encoder).
+@available(macOS 27, iOS 27, *)
 public struct LanguageModelResourceEstimate: Sendable {
     public let modelSHA256: String
     /// Held while the model is loaded: its load peak, weights, KV caches at the registered context and, for a decoder,
@@ -31,6 +32,7 @@ public struct LanguageModelResourceEstimate: Sendable {
 /// This is admission of estimates, not a measured footprint or allocator enforcement, and the ledger is per process:
 /// it cannot see another process's models (see docs/qwen3-vl-resource-admission.md). It does not cover the page cache
 /// a model's compiled file is read into when it opens (clean, evictable pages).
+@available(macOS 27, iOS 27, *)
 public struct LanguageResourceAdmission: Sendable {
     public let coordinator: ResourceCoordinator
     public let maximumContextLength: Int
@@ -68,6 +70,7 @@ public struct LanguageResourceAdmission: Sendable {
 }
 
 /// One model's reservations under a ``LanguageResourceAdmission``. Shared by the sessions and CPU tests.
+@available(macOS 27, iOS 27, *)
 struct LanguageModelBudget: Sendable {
     let coordinator: ResourceCoordinator
     let estimate: LanguageModelResourceEstimate
@@ -87,6 +90,7 @@ struct LanguageModelBudget: Sendable {
 /// Opening admitted to the GPU: a session's loads and first specializations wait for a grant, as its requests and
 /// reloads do, so a model never specializes beside another owner's GPU work (with a lease-backed admission, another
 /// process's render). Cancelling the opening task leaves the queue.
+@available(macOS 27, iOS 27, *)
 func withOpenAdmission<T>(_ gpu: GPUAdmissionOwner?, isolation: isolated (any Actor)? = #isolation,
                           _ body: () async throws -> T) async throws -> T {
     let grant = try await gpu?.admit()
