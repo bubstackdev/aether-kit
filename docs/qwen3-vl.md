@@ -345,7 +345,7 @@ token, between the two-function and one-function bundles, for a text and an imag
 | | VL-4B, two functions | VL-4B, one function | VL-2B, two functions | VL-2B, one function |
 | --- | --- | --- | --- | --- |
 | Wired mapped-file pages after the first image request | 16,086 MiB | 8,414 MiB | not measured | 3,875 MiB |
-| Metal at the first image request (by-phase test) | 22.6 GiB | 13.8 GiB | 12.7 GiB | 8.7 GiB |
+| Metal at the first image request (by-phase test) | 22.1 GiB | 13.8 GiB | 12.7 GiB | 8.7 GiB |
 | Compiled cache, read in at open | 22.5 GiB | 15.0 GiB | about 9 GiB | 6.4 GiB |
 | Warm level in the budget test | 19,566 MiB | 10,847 MiB | 10,113 MiB | 6,065 MiB |
 | Budget reloads in 60 requests (first after request) | 1 (34) | 2 (20) | 1 (58) | 1 (34) |
