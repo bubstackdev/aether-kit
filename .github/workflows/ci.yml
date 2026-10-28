@@ -22,6 +22,35 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    name: Change scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      swift: ${{ steps.scope.outputs.swift }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Decide whether the Swift jobs run
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          # Only a pull request can skip the macOS jobs, and only when every file it changes is documentation, a spike
+          # or Forge's Python, none of which the package builds or its weight-free tests read. Every other event builds.
+          swift=true
+          if [[ $EVENT == pull_request ]]; then
+            # A pull_request checkout is the PR's merge commit, whose first parent is the base branch.
+            changed=$(git diff --name-only HEAD^1 HEAD)
+            echo "$changed"
+            if [[ -n $changed ]] && ! grep -qvE '^(docs/|Spikes/|Forge/|[^/]+\.md$|LICENSE$|NOTICE$)' <<<"$changed"; then
+              swift=false
+            fi
+          fi
+          echo "swift=$swift" | tee -a "$GITHUB_OUTPUT"
+
   workflows:
     name: Workflow validation
     runs-on: ubuntu-24.04
@@ -38,12 +67,16 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
-          shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-floor.sh Scripts/launch-floor-consumer.sh
+          shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-ci-host.sh Scripts/check-floor.sh \
+            Scripts/launch-floor-consumer.sh
 
-  sdk:
-    name: Release contracts and consumers
+  # The four Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
+  floor-macos:
+    name: Package floor (macOS 14)
+    needs: changes
+    if: ${{ needs.changes.outputs.swift == 'true' }}
     runs-on: xcode-27
-    timeout-minutes: 45
+    timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
@@ -55,19 +88,7 @@ jobs:
       - name: Verify Apple silicon and the supported toolchain
         run: |
           mkdir -p "$RUNNER_TEMP/aether-ci"
-          {
-            sw_vers
-            uname -m
-            xcodebuild -version
-            swift --version
-            xcrun --sdk macosx --show-sdk-version
-          } | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
-          os=$(sw_vers -productVersion)
-          sdk=$(xcrun --sdk macosx --show-sdk-version)
-          if [[ $(uname -m) != arm64 || ${os%%.*} -lt 27 || ${sdk%%.*} -lt 27 ]]; then
-            echo "::error::AetherKit requires Apple silicon, macOS 27 and the Xcode 27.1 / Swift 6.4 toolchain."
-            exit 1
-          fi
+          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
       - name: Cache dependency repositories
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -77,9 +98,9 @@ jobs:
           key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
-      - name: Package floor (macOS 14 / iOS 17)
+      - name: Every product and the floor consumer at macOS 14
         run: |
-          sh Scripts/check-floor.sh "$RUNNER_TEMP/floor-stage" 2>&1 | tee "$RUNNER_TEMP/aether-ci/floor.log"
+          sh Scripts/check-floor.sh --macos "$RUNNER_TEMP/floor-stage" 2>&1 | tee "$RUNNER_TEMP/aether-ci/floor-macos.log"
           # A tarball keeps the executable bits that artifact upload would drop.
           tar -C "$RUNNER_TEMP/floor-stage" -cf "$RUNNER_TEMP/floor-consumer.tar" .
       - name: Upload the floor consumer for the macOS 14 launch
@@ -89,6 +110,80 @@ jobs:
           path: ${{ runner.temp }}/floor-consumer.tar
           if-no-files-found: error
           retention-days: 3
+      - name: Preserve diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-diagnostics-floor-macos-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/aether-ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  floor-ios:
+    name: Package floor (iOS 17)
+    needs: changes
+    if: ${{ needs.changes.outputs.swift == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
+      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Apple silicon and the supported toolchain
+        run: |
+          mkdir -p "$RUNNER_TEMP/aether-ci"
+          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
+      - name: Cache dependency repositories
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build/cache/repositories
+            ~/Library/Caches/org.swift.swiftpm/repositories
+          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
+      - name: Every library and the floor consumer at iOS 17
+        run: sh Scripts/check-floor.sh --ios 2>&1 | tee "$RUNNER_TEMP/aether-ci/floor-ios.log"
+      - name: Preserve diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-diagnostics-floor-ios-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/aether-ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  contracts:
+    name: Release contracts
+    needs: changes
+    if: ${{ needs.changes.outputs.swift == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
+      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Apple silicon and the supported toolchain
+        run: |
+          mkdir -p "$RUNNER_TEMP/aether-ci"
+          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
+      - name: Cache dependency repositories
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build/cache/repositories
+            ~/Library/Caches/org.swift.swiftpm/repositories
+          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
       - name: Weight-free Release contracts
         run: |
           sh Scripts/check-cpu.sh --force-resolved-versions \
@@ -96,6 +191,42 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
           # Swift Testing adds this suffix to the requested xUnit filename.
           test -s "$RUNNER_TEMP/aether-ci/tests-swift-testing.xml"
+      - name: Preserve diagnostics and test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-diagnostics-contracts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/aether-ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  consumers:
+    name: Independent consumers
+    needs: changes
+    if: ${{ needs.changes.outputs.swift == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
+      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Apple silicon and the supported toolchain
+        run: |
+          mkdir -p "$RUNNER_TEMP/aether-ci"
+          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
+      - name: Cache dependency repositories
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build/cache/repositories
+            ~/Library/Caches/org.swift.swiftpm/repositories
+          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
       - name: Independent foundation consumer
         run: |
           swift run --package-path Examples/Foundations --force-resolved-versions -c release \
@@ -104,19 +235,19 @@ jobs:
         run: |
           swift run --package-path Examples/LocalPackage --force-resolved-versions -c release \
             2>&1 | tee "$RUNNER_TEMP/aether-ci/sdk-consumer.log"
-      - name: Preserve diagnostics and test results
+      - name: Preserve diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ci-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ci-diagnostics-consumers-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/aether-ci/
           if-no-files-found: warn
           retention-days: 14
 
   floor-launch:
     name: Launch at the macOS 14 floor
-    needs: sdk
-    # GitHub-hosted macOS 14 (Apple silicon) has no CoreAI framework, so the floor consumer built by the sdk job only
+    needs: floor-macos
+    # GitHub-hosted macOS 14 (Apple silicon) has no CoreAI framework, so the floor consumer built by floor-macos only
     # launches if CoreAI is weak-linked. (There is no iOS 17 simulator launch: CoreAI isn't in the iOS Simulator SDK, so
     # nothing that links the facade builds for the simulator; docs/deployment-floor.md.)
     runs-on: macos-14
@@ -139,17 +270,31 @@ jobs:
   required:
     name: CI passed
     if: ${{ always() }}
-    needs: [workflows, sdk, floor-launch]
+    needs: [changes, workflows, floor-macos, floor-ios, contracts, consumers, floor-launch]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every CI job to succeed
         env:
+          SWIFT: ${{ needs.changes.outputs.swift }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
           WORKFLOW_RESULT: ${{ needs.workflows.result }}
-          SDK_RESULT: ${{ needs.sdk.result }}
+          FLOOR_MACOS_RESULT: ${{ needs.floor-macos.result }}
+          FLOOR_IOS_RESULT: ${{ needs.floor-ios.result }}
+          CONTRACTS_RESULT: ${{ needs.contracts.result }}
+          CONSUMERS_RESULT: ${{ needs.consumers.result }}
           FLOOR_RESULT: ${{ needs.floor-launch.result }}
         run: |
+          echo "Change scope: $CHANGES_RESULT (Swift jobs: $SWIFT)"
           echo "Workflow validation: $WORKFLOW_RESULT"
-          echo "Release contracts and consumers: $SDK_RESULT"
+          echo "Package floor (macOS 14): $FLOOR_MACOS_RESULT"
+          echo "Package floor (iOS 17): $FLOOR_IOS_RESULT"
+          echo "Release contracts: $CONTRACTS_RESULT"
+          echo "Independent consumers: $CONSUMERS_RESULT"
           echo "Launch at the floor: $FLOOR_RESULT"
-          [[ "$WORKFLOW_RESULT" == success && "$SDK_RESULT" == success && "$FLOOR_RESULT" == success ]]
+          [[ "$CHANGES_RESULT" == success && "$WORKFLOW_RESULT" == success ]]
+          # The Swift jobs must all succeed, or, only for a documentation-only pull request, all be skipped.
+          if [[ "$SWIFT" == false ]]; then expected=skipped; else expected=success; fi
+          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$CONSUMERS_RESULT" "$FLOOR_RESULT"; do
+            [[ "$result" == "$expected" ]]
+          done

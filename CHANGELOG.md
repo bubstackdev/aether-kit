@@ -12,6 +12,7 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 - **AetherAssets:** `DeclaredModelAsset.verifyConcurrently` uses `OSAllocatedUnfairLock` instead of `Synchronization.Mutex`, which needs macOS 15 / iOS 18. Behaviour is unchanged.
 - **Scripts:** `Scripts/annotate-floor.py` gates the Core AI targets and, with `--check`, fails CI on a declaration without the attribute. `Scripts/check-floor.sh` now builds every product at macOS 14 and every library at iOS 17 instead of typechecking two targets, and checks that `Examples/FloorConsumer` weak-links CoreAI. `Scripts/launch-floor-consumer.sh` launches that consumer on an older OS.
 - **CI:** a new **Launch at the macOS 14 floor** job runs the floor consumer on a GitHub-hosted `macos-14` runner, which has no CoreAI, and requires `unsupportedOS`; it is part of **CI passed**.
+- **CI runs faster:** the Release contracts and consumers job is split into four parallel `xcode-27` jobs: the macOS 14 floor, the iOS 17 floor, the Release contracts, and the independent consumers. A pull request that changes only documentation, spikes or Forge skips them; **CI passed** still reports. `Scripts/check-floor.sh` takes `--macos` or `--ios` to run one half ([CI](docs/ci.md)).
 
 ### Added
 
