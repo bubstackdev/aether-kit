@@ -1,0 +1,2581 @@
+{
+  "answers" : [
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image show a lighthouse?",
+      "reply" : "Yes",
+      "seed" : 1512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Is the scene at dusk or twilight?",
+      "reply" : "yes",
+      "seed" : 1512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image look like a watercolor painting?",
+      "reply" : "yes",
+      "seed" : 1512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : true,
+      "question" : "Does the image show a car?",
+      "reply" : "no",
+      "seed" : 1512,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image show a lighthouse?",
+      "reply" : "Yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Is the scene at dusk or twilight?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image look like a watercolor painting?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : true,
+      "question" : "Does the image show a car?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image show a lighthouse?",
+      "reply" : "Yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Is the scene at dusk or twilight?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image look like a watercolor painting?",
+      "reply" : "Yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : true,
+      "question" : "Does the image show a car?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image show a lighthouse?",
+      "reply" : "Yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Is the scene at dusk or twilight?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image look like a watercolor painting?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : true,
+      "question" : "Does the image show a car?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Does the image show a circle?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the circle red?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the background white?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : true,
+      "question" : "Does the image show a blue square?",
+      "reply" : "no",
+      "seed" : 2512,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Does the image show a circle?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the circle red?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the background white?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : true,
+      "question" : "Does the image show a blue square?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Does the image show a circle?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the circle red?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the background white?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : true,
+      "question" : "Does the image show a blue square?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Does the image show a circle?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the circle red?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the background white?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : true,
+      "question" : "Does the image show a blue square?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image show a fox?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the fox red or orange?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is there snow on the ground?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the scene lit by a low sun, as at sunrise?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image look like a wildlife photograph?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : true,
+      "question" : "Does the image show a cat?",
+      "reply" : "no",
+      "seed" : 3512,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image show a fox?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the fox red or orange?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is there snow on the ground?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the scene lit by a low sun, as at sunrise?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image look like a wildlife photograph?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : true,
+      "question" : "Does the image show a cat?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image show a fox?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the fox red or orange?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is there snow on the ground?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the scene lit by a low sun, as at sunrise?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image look like a wildlife photograph?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : true,
+      "question" : "Does the image show a cat?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image show a fox?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the fox red or orange?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is there snow on the ground?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the scene lit by a low sun, as at sunrise?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image look like a wildlife photograph?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : true,
+      "question" : "Does the image show a cat?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Does the image show a bowl of noodles?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the bowl on a wooden table?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the photo taken from directly above?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : true,
+      "question" : "Does the image show a pizza?",
+      "reply" : "no",
+      "seed" : 4576,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Does the image show a bowl of noodles?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the bowl on a wooden table?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the photo taken from directly above?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : true,
+      "question" : "Does the image show a pizza?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Does the image show a bowl of noodles?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the bowl on a wooden table?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the photo taken from directly above?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : true,
+      "question" : "Does the image show a pizza?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Does the image show a bowl of noodles?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the bowl on a wooden table?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the photo taken from directly above?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : true,
+      "question" : "Does the image show a pizza?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Does the image show a cup of coffee?",
+      "reply" : "yes",
+      "seed" : 5512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Is the cup on a wooden table?",
+      "reply" : "yes",
+      "seed" : 5512,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : true,
+      "question" : "Does the image show a dog?",
+      "reply" : "no",
+      "seed" : 5512,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Does the image show a cup of coffee?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Is the cup on a wooden table?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : true,
+      "question" : "Does the image show a dog?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Does the image show a cup of coffee?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Is the cup on a wooden table?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : true,
+      "question" : "Does the image show a dog?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Does the image show a cup of coffee?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Is the cup on a wooden table?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : true,
+      "question" : "Does the image show a dog?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Does the image show a cat?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat a tabby?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat wearing glasses?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat sitting on books?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the scene in a library?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : true,
+      "question" : "Does the image show a parrot?",
+      "reply" : "no",
+      "seed" : 61024,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Does the image show a cat?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat a tabby?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat wearing glasses?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat sitting on books?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the scene in a library?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : true,
+      "question" : "Does the image show a parrot?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Does the image show a cat?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat a tabby?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat wearing glasses?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat sitting on books?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the scene in a library?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : true,
+      "question" : "Does the image show a parrot?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Does the image show a cat?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat a tabby?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat wearing glasses?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat sitting on books?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the scene in a library?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : true,
+      "question" : "Does the image show a parrot?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Does the image show a harbor with boats?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Do the boats have colorful hulls?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the light warm, as at golden hour?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the water calm with small ripples?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : true,
+      "question" : "Is there snow in the image?",
+      "reply" : "no",
+      "seed" : 7768,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Does the image show a harbor with boats?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Do the boats have colorful hulls?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the light warm, as at golden hour?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the water calm with small ripples?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : true,
+      "question" : "Is there snow in the image?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Does the image show a harbor with boats?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Do the boats have colorful hulls?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the light warm, as at golden hour?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the water calm with small ripples?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : true,
+      "question" : "Is there snow in the image?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Does the image show a harbor with boats?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Do the boats have colorful hulls?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the light warm, as at golden hour?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the water calm with small ripples?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : true,
+      "question" : "Is there snow in the image?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Does the image show a city street?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is it night?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Are there neon signs?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is the street wet, with reflections on the ground?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : true,
+      "question" : "Does the image show a desert?",
+      "reply" : "no",
+      "seed" : 81024,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Does the image show a city street?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is it night?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Are there neon signs?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is the street wet, with reflections on the ground?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : true,
+      "question" : "Does the image show a desert?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Does the image show a city street?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is it night?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Are there neon signs?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is the street wet, with reflections on the ground?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : true,
+      "question" : "Does the image show a desert?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Does the image show a city street?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is it night?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Are there neon signs?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is the street wet, with reflections on the ground?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : true,
+      "question" : "Does the image show a desert?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Does the image show a wooden desk?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a window?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a brass lamp?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there an open notebook?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a mug?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : true,
+      "question" : "Does the image show a bicycle?",
+      "reply" : "no",
+      "seed" : 91024,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Does the image show a wooden desk?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a window?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a brass lamp?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there an open notebook?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a mug?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : true,
+      "question" : "Does the image show a bicycle?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Does the image show a wooden desk?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a window?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a brass lamp?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there an open notebook?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a mug?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : true,
+      "question" : "Does the image show a bicycle?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Does the image show a wooden desk?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a window?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a brass lamp?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there an open notebook?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a mug?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : true,
+      "question" : "Does the image show a bicycle?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Does the image show a canyon?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Are the rock walls red and layered?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is there a river?",
+      "reply" : "Yes",
+      "seed" : 101344,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is the scene at sunset?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "kit-paired",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : true,
+      "question" : "Does the image show a city?",
+      "reply" : "no",
+      "seed" : 101344,
+      "source" : "kit-paired",
+      "yes" : false
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Does the image show a canyon?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Are the rock walls red and layered?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is there a river?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is the scene at sunset?",
+      "reply" : "yes",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : true,
+      "question" : "Does the image show a city?",
+      "reply" : "no",
+      "seed" : 101,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Does the image show a canyon?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Are the rock walls red and layered?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is there a river?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is the scene at sunset?",
+      "reply" : "yes",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : true,
+      "question" : "Does the image show a city?",
+      "reply" : "no",
+      "seed" : 202,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Does the image show a canyon?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Are the rock walls red and layered?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is there a river?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is the scene at sunset?",
+      "reply" : "yes",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : true,
+      "question" : "Does the image show a city?",
+      "reply" : "no",
+      "seed" : 303,
+      "source" : "kit-seed",
+      "yes" : false
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image show a lighthouse?",
+      "reply" : "Yes",
+      "seed" : 1512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Is the scene at dusk or twilight?",
+      "reply" : "yes",
+      "seed" : 1512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : false,
+      "question" : "Does the image look like a watercolor painting?",
+      "reply" : "yes",
+      "seed" : 1512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "lighthouse-512",
+      "control" : true,
+      "question" : "Does the image show a car?",
+      "reply" : "no",
+      "seed" : 1512,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Does the image show a circle?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the circle red?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : false,
+      "question" : "Is the background white?",
+      "reply" : "yes",
+      "seed" : 2512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "red-circle-512",
+      "control" : true,
+      "question" : "Does the image show a blue square?",
+      "reply" : "no",
+      "seed" : 2512,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image show a fox?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the fox red or orange?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is there snow on the ground?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Is the scene lit by a low sun, as at sunrise?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : false,
+      "question" : "Does the image look like a wildlife photograph?",
+      "reply" : "yes",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "fox-512",
+      "control" : true,
+      "question" : "Does the image show a cat?",
+      "reply" : "no",
+      "seed" : 3512,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Does the image show a bowl of noodles?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the bowl on a wooden table?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : false,
+      "question" : "Is the photo taken from directly above?",
+      "reply" : "yes",
+      "seed" : 4576,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "ramen-576x448",
+      "control" : true,
+      "question" : "Does the image show a pizza?",
+      "reply" : "no",
+      "seed" : 4576,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Does the image show a cup of coffee?",
+      "reply" : "yes",
+      "seed" : 5512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : false,
+      "question" : "Is the cup on a wooden table?",
+      "reply" : "yes",
+      "seed" : 5512,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cafe-512",
+      "control" : true,
+      "question" : "Does the image show a dog?",
+      "reply" : "no",
+      "seed" : 5512,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Does the image show a cat?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat a tabby?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat wearing glasses?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the cat sitting on books?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : false,
+      "question" : "Is the scene in a library?",
+      "reply" : "yes",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "cat-1024",
+      "control" : true,
+      "question" : "Does the image show a parrot?",
+      "reply" : "no",
+      "seed" : 61024,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Does the image show a harbor with boats?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Do the boats have colorful hulls?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the light warm, as at golden hour?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : false,
+      "question" : "Is the water calm with small ripples?",
+      "reply" : "yes",
+      "seed" : 7768,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "harbor-768",
+      "control" : true,
+      "question" : "Is there snow in the image?",
+      "reply" : "no",
+      "seed" : 7768,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Does the image show a city street?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is it night?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Are there neon signs?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : false,
+      "question" : "Is the street wet, with reflections on the ground?",
+      "reply" : "yes",
+      "seed" : 81024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "street-1024x576",
+      "control" : true,
+      "question" : "Does the image show a desert?",
+      "reply" : "no",
+      "seed" : 81024,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Does the image show a wooden desk?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a window?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a brass lamp?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there an open notebook?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : false,
+      "question" : "Is there a mug?",
+      "reply" : "yes",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "desk-1024x768",
+      "control" : true,
+      "question" : "Does the image show a bicycle?",
+      "reply" : "no",
+      "seed" : 91024,
+      "source" : "reference",
+      "yes" : false
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Does the image show a canyon?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Are the rock walls red and layered?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is there a river?",
+      "reply" : "Yes",
+      "seed" : 101344,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : false,
+      "question" : "Is the scene at sunset?",
+      "reply" : "yes",
+      "seed" : 101344,
+      "source" : "reference",
+      "yes" : true
+    },
+    {
+      "case" : "canyon-1344x768",
+      "control" : true,
+      "question" : "Does the image show a city?",
+      "reply" : "no",
+      "seed" : 101344,
+      "source" : "reference",
+      "yes" : false
+    }
+  ],
+  "bundleFingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+  "controlAccuracy" : 1,
+  "fixture" : "ffc4b1365159e40c",
+  "images" : [
+    {
+      "case" : "lighthouse-512",
+      "file" : "images\/lighthouse-512-kit-paired-1512.png",
+      "seed" : 1512,
+      "sha256" : "08c13d8c6b898e9a89f40eab39545142f3dd42cd66a777772d074c15537c3490",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "lighthouse-512",
+      "file" : "images\/lighthouse-512-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "79feedae5ae1a69413d8563db111e912db0fa1965ebc32f4ba7e87ad447267b4",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "lighthouse-512",
+      "file" : "images\/lighthouse-512-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "a7f454e01c7b4a9a6fe02c5518407588d5d92e7164fec3d9bc0ee87cdbdbcec6",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "lighthouse-512",
+      "file" : "images\/lighthouse-512-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "f61e358e41469ee5985de30d4611c881fa5367c78219ce6d99224e9b926a88db",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "red-circle-512",
+      "file" : "images\/red-circle-512-kit-paired-2512.png",
+      "seed" : 2512,
+      "sha256" : "6b0d7a416afedd9f37ed01f12ce19a399a55a1536755547e7f57d9753a728051",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "red-circle-512",
+      "file" : "images\/red-circle-512-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "e99c95f801a7d2b1f2010e14485db8c0c8994fe3b880eacbdff0ca68269b8813",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "red-circle-512",
+      "file" : "images\/red-circle-512-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "f41fec6d99c9c69f786b439ed88371999b49a23194c87781baae8e38f3cc07f7",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "red-circle-512",
+      "file" : "images\/red-circle-512-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "bbafdd9b3dd71d599137486830d283b778916930d42d7dbe125d0699f845275c",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "fox-512",
+      "file" : "images\/fox-512-kit-paired-3512.png",
+      "seed" : 3512,
+      "sha256" : "74a4fc2bc4b6ab2d848fbec323c6edb19cd0847745bd5dc0c1eb08b37ba08dc8",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "fox-512",
+      "file" : "images\/fox-512-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "c043330e4b8fc206eed7f58a302df36194c8ce5c89113e2a602c31c23001b29d",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "fox-512",
+      "file" : "images\/fox-512-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "cb290616fa49ab1aa70b4393af2835dfac624e0cb2948a8843abf8d41b5d31c5",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "fox-512",
+      "file" : "images\/fox-512-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "f114e21994b361b6e20364309782ca45c7b9778e745a4657a31a554ac8dc8c37",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "ramen-576x448",
+      "file" : "images\/ramen-576x448-kit-paired-4576.png",
+      "seed" : 4576,
+      "sha256" : "1ceca7673f184ce0677547c041d2dee2a3c4a73c37d2423ba92f5c9f5e8f8a4b",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "ramen-576x448",
+      "file" : "images\/ramen-576x448-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "c08e7002cd03c9b9003afeccedc5fa5e43c13705763734e2c9f6898907153088",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "ramen-576x448",
+      "file" : "images\/ramen-576x448-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "8ec246082fac051654aa4e43a8d4abd811b28d9ec26b89361df10045a73ccd74",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "ramen-576x448",
+      "file" : "images\/ramen-576x448-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "07b9998bd5d2ec754df9491d52e6f4fbe331d1d89cada6c9371af8ebd74034c4",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cafe-512",
+      "file" : "images\/cafe-512-kit-paired-5512.png",
+      "seed" : 5512,
+      "sha256" : "d4244b22ffdd7f3bf6c2fd143170c083f801652ab7ab428ea13e8f53ed9145fa",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "cafe-512",
+      "file" : "images\/cafe-512-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "5a5119a7427e1e97f22a321253307095f5e67274636e8de153bb19331fdf07ed",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cafe-512",
+      "file" : "images\/cafe-512-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "b4bac76fb1e876494983223bbf9ec8e084a8e106612e49ee811686d44daa0a31",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cafe-512",
+      "file" : "images\/cafe-512-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "fee1b240fa73ff83ad6c63da5096feb6411379c705121ba0bb03a9dbe0645de6",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cat-1024",
+      "file" : "images\/cat-1024-kit-paired-61024.png",
+      "seed" : 61024,
+      "sha256" : "7ea4c26f00b32db6dc6d97607a3447b33593c8ed353f909ddd9c3b36532897ba",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "cat-1024",
+      "file" : "images\/cat-1024-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "59e981d99abe84bf56a95edf656a987ae4109a5f7d818a0fbf1ed7456a0d4a39",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cat-1024",
+      "file" : "images\/cat-1024-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "6e07beedd4412a55ed221c54d9c920acb67c285fc161685090eb50c940ace3ea",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "cat-1024",
+      "file" : "images\/cat-1024-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "67fb210ea2607429e0e4a1019ea2b4423722ef2a2e803bec479ba46e43b136df",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "harbor-768",
+      "file" : "images\/harbor-768-kit-paired-7768.png",
+      "seed" : 7768,
+      "sha256" : "4eb176476c255637e0a51536cce4bf794ae6c350a4275a904baca1c769a16e1c",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "harbor-768",
+      "file" : "images\/harbor-768-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "a0325e515731ed223e004a8efb466de3d5cc7928a33411bda4d8354bb32875f8",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "harbor-768",
+      "file" : "images\/harbor-768-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "3359de2eba60853ab3775450e4f746428cd92b6a8eaf1365af5aca93f195176d",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "harbor-768",
+      "file" : "images\/harbor-768-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "8879a66f8b3e1f3fd71fce998a1a2703192a18ff103e33104c2de2c09131d915",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "street-1024x576",
+      "file" : "images\/street-1024x576-kit-paired-81024.png",
+      "seed" : 81024,
+      "sha256" : "85d4a6060d4dea3dd6277dd7b9b77a4e1ab700ff215382b3aeec7aed3f3e48c0",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "street-1024x576",
+      "file" : "images\/street-1024x576-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "a2dc3ff72337880954037e067328be616e949230eaa5d1dfb1c051071a6e68e5",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "street-1024x576",
+      "file" : "images\/street-1024x576-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "d234079067307bcc31fe72f3298e027e11454bf197e8b8c5de9f8d42e3b2939a",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "street-1024x576",
+      "file" : "images\/street-1024x576-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "b2ba6d6f6ebda7b3c205be6e37d4c34743efa56375bf28bb81f48862b8abb13b",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "desk-1024x768",
+      "file" : "images\/desk-1024x768-kit-paired-91024.png",
+      "seed" : 91024,
+      "sha256" : "c567b7869a8845c4e2757c4fb42326f7daa897e0133b36f715dc060e3996a875",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "desk-1024x768",
+      "file" : "images\/desk-1024x768-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "b38024581202d5d3c151d05f9ec823f861ed8b0c9b78fdb22abcebf67cb0e16a",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "desk-1024x768",
+      "file" : "images\/desk-1024x768-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "5ad929a8c39df4b66c5d4165c3452e4599cd4863bed547e81012c82705d8ec52",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "desk-1024x768",
+      "file" : "images\/desk-1024x768-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "2acaca144861f01ba9bd995cf75b8a426dd04d0f7ca998fac766ad39551e16a1",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "canyon-1344x768",
+      "file" : "images\/canyon-1344x768-kit-paired-101344.png",
+      "seed" : 101344,
+      "sha256" : "07c38dc5cc18d1ad3b7f6e9d1fca3699ffa6262e53bfe4571983b770dadaca2d",
+      "source" : "kit-paired"
+    },
+    {
+      "case" : "canyon-1344x768",
+      "file" : "images\/canyon-1344x768-kit-seed-101.png",
+      "seed" : 101,
+      "sha256" : "c580dc6b4bab6872fd1e41f619dd6a2ad16991f9b59258f1447e2eba53df0fe6",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "canyon-1344x768",
+      "file" : "images\/canyon-1344x768-kit-seed-202.png",
+      "seed" : 202,
+      "sha256" : "da451f5783a348a2827d99d9321a09f77fd44e6093e898a332d5c803ec3e4577",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "canyon-1344x768",
+      "file" : "images\/canyon-1344x768-kit-seed-303.png",
+      "seed" : 303,
+      "sha256" : "8837393472b4052eff815a3ba27b290fbb6714158a0af6ecd265d895d9d169f3",
+      "source" : "kit-seed"
+    },
+    {
+      "case" : "lighthouse-512",
+      "file" : "images\/lighthouse-512-reference-1512.png",
+      "seed" : 1512,
+      "sha256" : "7151d7c44535b0300fb19eb56c20675169b55de3e755618d7d7d78670ae9cef0",
+      "source" : "reference"
+    },
+    {
+      "case" : "red-circle-512",
+      "file" : "images\/red-circle-512-reference-2512.png",
+      "seed" : 2512,
+      "sha256" : "b77097753f4f9af416d6e45cb38390449fa7fe2a2191b0da492592350dfb0a84",
+      "source" : "reference"
+    },
+    {
+      "case" : "fox-512",
+      "file" : "images\/fox-512-reference-3512.png",
+      "seed" : 3512,
+      "sha256" : "3bfb6139c66d498723624b2e921b64036e4eff99c74b28dd2ab079830f51f9b6",
+      "source" : "reference"
+    },
+    {
+      "case" : "ramen-576x448",
+      "file" : "images\/ramen-576x448-reference-4576.png",
+      "seed" : 4576,
+      "sha256" : "07efc83dc92aa152f74f5c46e8d3fdd7d86528d1a01fb7a45d5292fc1580f712",
+      "source" : "reference"
+    },
+    {
+      "case" : "cafe-512",
+      "file" : "images\/cafe-512-reference-5512.png",
+      "seed" : 5512,
+      "sha256" : "8472af93d7176dc620659ac134ad9d81f0cdaa804c941fd889897c1ffae89e27",
+      "source" : "reference"
+    },
+    {
+      "case" : "cat-1024",
+      "file" : "images\/cat-1024-reference-61024.png",
+      "seed" : 61024,
+      "sha256" : "1f54defe18ebb58bf17ad542a144472826815f31c609725601ab0bbed28606da",
+      "source" : "reference"
+    },
+    {
+      "case" : "harbor-768",
+      "file" : "images\/harbor-768-reference-7768.png",
+      "seed" : 7768,
+      "sha256" : "88a10945e771d4ddc24b5efcb963748788a8d2ebc75720da4d2f29d3a21aeab3",
+      "source" : "reference"
+    },
+    {
+      "case" : "street-1024x576",
+      "file" : "images\/street-1024x576-reference-81024.png",
+      "seed" : 81024,
+      "sha256" : "47d6ea6e4ee6212f77ad84d223dfcfccfe05c83c65af7912441e87cf4ce35807",
+      "source" : "reference"
+    },
+    {
+      "case" : "desk-1024x768",
+      "file" : "images\/desk-1024x768-reference-91024.png",
+      "seed" : 91024,
+      "sha256" : "017a7196413d75ae6637462875e3a499914a36f5c39cf9ef09ace26e27cf462c",
+      "source" : "reference"
+    },
+    {
+      "case" : "canyon-1344x768",
+      "file" : "images\/canyon-1344x768-reference-101344.png",
+      "seed" : 101344,
+      "sha256" : "e23df170a82846c1641ea57342cd5f3f04f4de706142a2c361db7a655f38c17e",
+      "source" : "reference"
+    }
+  ],
+  "judge" : "huihui-ai\/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c22aacb493fb94478de3bfbe834c61844a model 6e08a8d060d30e29",
+  "judgeSeconds" : 310.7974319458008,
+  "kind" : "flux2-prompt-adherence",
+  "kitExtraSeedScore" : 1,
+  "kitPairedScore" : 1,
+  "marginPercentagePoints" : 3,
+  "passed" : true,
+  "perPrompt" : {
+    "cafe-512" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "canyon-1344x768" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "cat-1024" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "desk-1024x768" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "fox-512" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "harbor-768" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "lighthouse-512" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "ramen-576x448" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "red-circle-512" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    },
+    "street-1024x576" : {
+      "kit-paired" : 1,
+      "kit-seed" : 1,
+      "reference" : 1
+    }
+  },
+  "plan" : "783f91eef04da22cc8e26c0f057c932162441ec90795427b6a58686917b657e1",
+  "referenceScore" : 1,
+  "unclearAnswers" : 0
+}

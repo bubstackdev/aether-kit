@@ -1,4 +1,5 @@
 {
+  "supersededBy": "flux2-klein-reference-fixture-80a86a512315fa94.json: the same cases and inputs, with the reference pictures taken from the CPU text-to-image fixture ffc4b1365159e40c instead of the 2026-10-26 MPS fixture 6a8a53d8f3b30817; see docs/flux2-klein.md",
   "cases": "cases.jsonl",
   "id": "caf92bb7d83d685c",
   "kind": "flux2-reference-images",

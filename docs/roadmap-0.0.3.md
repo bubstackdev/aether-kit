@@ -28,25 +28,25 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
   - multi-image M-RoPE;
   - parity on rotated photos;
   - alpha handling, which differs from upstream: PIL keeps the stored RGB, while Kit composites over black.
-- **Quantization:** quantized Qwen3-VL and language decoders.
 - **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases.
 - **H3 promotion:** media audit and per-stage lifecycle qualification before the experimental label is dropped, plus a durable home for the qualified profile. Measured admission covers more profiles and Macs as they're measured.
 
 ### Safety and correctness
 
-- **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`.
+- **FLUX.2 tokenizer:** hash the bundle's `chat_template.jinja`, which changes the fingerprint, then render prompts through `AetherLanguageTokenizers`. Done ([guide](flux2-klein.md#chat-template-in-the-fingerprint-003)).
 - **Resource admission** for the Qwen3-VL encoder and decoder: [design](qwen3-vl-resource-admission.md), prompted by a VL-4B plus Krea crash under memory pressure.
 - **GPU lease:** reclaim pid-less leases. This changes the shared protocol, so it needs Atelier's agreement ([open item](gpu-lease.md#open-item-pid-less-leases)).
 - **FLUX.2 evidence:**
-  - native reports should record both fixture IDs;
-  - move reference-mode regeneration onto the CPU text-to-image pictures at the next intentional regeneration.
+  - native reports should record both fixture IDs (done);
+  - move reference-mode regeneration onto the CPU text-to-image pictures (done: fixture `80a86a51…`, native parity 23/23, [guide](flux2-klein.md#independent-references));
+  - native cancellation of the reference encoder. Done: about 0.18–0.21 s, one image's encoder call ([measurement](flux2-klein.md#reference-encoder-cancellation-003)).
 
 ### FLUX.2
 
-- Native cancellation of the text encoder. Done: cancel returns in about 0.17 s, bounded by one encoder call plus its discard; Core AI does not interrupt a submitted call ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
+- Native cancellation of the text encoder. Done: cancel returns in about 0.17 s during the native call, and in up to about 0.9 s (about 3.8 s on a process's first request) if it lands during a balanced session's function load; Core AI interrupts neither ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
 - iOS.
-- A quiet benchmark.
-- Prompt adherence.
+- A quiet benchmark. The harness (`aether-probe benchmark-flux2`, two pinned plans) is in place and its `prepare` passes; the measured run waits for a quiet window ([harness](flux2-klein.md#benchmark-harness-003)).
+- Prompt adherence. Done: Kit matches the float32 reference at the ceiling (38/38 on both, 114/114 over three extra seeds) under a local judge (Huihui-Qwen3-VL-4B-Instruct-abliterated, a fine-tune of Qwen3-VL-4B); a harder question set would be needed to resolve small losses ([measurement](flux2-klein.md#prompt-adherence-003)).
 
 ### Infrastructure
 
@@ -80,9 +80,10 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **Typed readiness states.**
 - **A managed lifecycle:** lazy loading, idle unload and memory-pressure response.
 - **A sandboxed sample app** with published qualification, and an API freeze for the facade.
+- **Quantization:** quantized Qwen3-VL and language decoders, moved from 0.0.3. It is the biggest unknown on the list, and was deferred by user decision.
 
 ## Open questions
 
 - The order of the backlog items.
 - Whether an older-OS backend goes ahead, after the MLX spike.
-- The reference models the two apps choose, and therefore what iPhone and quantization qualification covers.
+- The reference models the two apps choose, and therefore what iPhone and quantization (0.0.4) qualification covers.
