@@ -69,14 +69,18 @@
         },
         "same-decode": {
           "file": "qwen3-vl-multi-image-2026-10-27-two-photos-same-decode.json",
-          "sha256": "710db2ae94923dfd60733ab65fdb10fa4eaa43b569b66d813f6f56e429a78d7c",
+          "sha256": "92be6def665d58a5df35f1b758993658c2d7c4109a3d28b03439500e57507697",
           "passed": true,
           "forcedMinimumCosine": 0.9999580939381347,
           "forcedArgmaxMismatches": 0,
           "greedyAccepted": true,
           "greedyFirstDivergence": null,
-          "pixelCosine": 0.9999998647586842,
-          "gridsMatch": true
+          "pixelCosine": 0.9999998647534667,
+          "gridsMatch": true,
+          "pixelCosinePerImage": [
+            0.9999997977750159,
+            0.9999999219294945
+          ]
         }
       }
     },
@@ -152,14 +156,19 @@
         },
         "same-decode": {
           "file": "qwen3-vl-multi-image-2026-10-27-three-images-same-decode.json",
-          "sha256": "b350ab4f94af328d4f17ebcd68cfe2685717fca29ef72008aa22f473b9fee1c8",
+          "sha256": "299acf0b0b5308dd9033d3214cb384b20741891e0540a76ade0c9073ad702e10",
           "passed": true,
           "forcedMinimumCosine": 0.9999539531303098,
           "forcedArgmaxMismatches": 0,
           "greedyAccepted": true,
           "greedyFirstDivergence": null,
-          "pixelCosine": 0.9999999072647404,
-          "gridsMatch": true
+          "pixelCosine": 0.9999999072625768,
+          "gridsMatch": true,
+          "pixelCosinePerImage": [
+            0.9999997977750159,
+            0.9999996422257512,
+            1.0000000002334386
+          ]
         }
       }
     },
@@ -222,14 +231,18 @@
         },
         "same-decode": {
           "file": "qwen3-vl-multi-image-2026-10-27-text-between-same-decode.json",
-          "sha256": "9d5678fcc5f96d96487c629f2469601d183eb3e53962565d2eb8d49f69f037be",
+          "sha256": "15a064292344569ad9082f50706af30f5d525e812554ca1cdef0f6be40012b0d",
           "passed": true,
           "forcedMinimumCosine": 0.9999443730034725,
           "forcedArgmaxMismatches": 0,
           "greedyAccepted": true,
           "greedyFirstDivergence": null,
-          "pixelCosine": 0.9999998647586842,
-          "gridsMatch": true
+          "pixelCosine": 0.9999998647534667,
+          "gridsMatch": true,
+          "pixelCosinePerImage": [
+            0.9999997977750159,
+            0.9999999219294945
+          ]
         }
       }
     }
@@ -275,5 +288,6 @@
         "greedyIdentical": true
       }
     ]
-  }
+  },
+  "pixelCosineNote": "pixelCosine is over all of a case's images at once; pixelCosinePerImage is each image's, in prompt order (same-decode runs re-run on 2026-10-28 to record it; the forced rows and tokens are unchanged)"
 }

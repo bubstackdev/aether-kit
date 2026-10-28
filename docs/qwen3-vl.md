@@ -233,11 +233,12 @@ processor's ids and the model's rope index for every token (`LanguageVisionPromp
 each image starts its span at the position after the previous text and the following text resumes at max(t, h, w) of the
 merged grid past the span's start, with no temporal offset between images. On the 2B, model parity passes on all three (forced-row
 cosine ≥ 0.99978, no argmax differences, greedy identical), and so does Kit preprocessing on the same decode (pixel
-cosine ≥ 0.9999998 and equal grids per image, forced-row cosine ≥ 0.99994, greedy identical). The overlapped-prefill
+cosine over each prompt's images ≥ 0.9999998, per image ≥ 0.9999996, equal grids per image, forced-row cosine
+≥ 0.99994, greedy identical). The overlapped-prefill
 check adds a two-image prompt whose 64-token chunks cross every image edge: default chunks, 512-token chunks and
 1-token steps give identical greedy output. The 4B passes the same checks on the same prompts (its prompt tokens
-are the 2B's): model parity with forced-row cosine ≥ 0.99994, Kit preprocessing on the same decode with pixel cosine
-≥ 0.9999998, equal grids and forced-row cosine ≥ 0.99961, no argmax differences and greedy identical in all six runs,
+are the 2B's): model parity with forced-row cosine ≥ 0.99994, Kit preprocessing on the same decode with the same pixel
+cosines and grids and forced-row cosine ≥ 0.99961, no argmax differences and greedy identical in all six runs,
 and the overlapped-prefill check with the two-image prompt.
 
 ## Qwen3-VL-4B describer

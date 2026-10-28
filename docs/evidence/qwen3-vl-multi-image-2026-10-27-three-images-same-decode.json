@@ -1,7 +1,7 @@
 {
   "cases" : [
     {
-      "encodeSeconds" : 0.869688667,
+      "encodeSeconds" : 0.8115779169999999,
       "forcedArgmaxMismatches" : 0,
       "forcedMinimumCosine" : 0.9999539531303098,
       "forcedMismatchesAtNearTies" : 0,
@@ -112,8 +112,13 @@
         362
       ],
       "swiftGridMatches" : true,
-      "swiftPixelCosine" : 0.9999999072647404,
-      "timeToFirstTokenSeconds" : 1.106372708
+      "swiftPixelCosine" : 0.9999999072625768,
+      "swiftPixelCosinePerImage" : [
+        0.9999997977750159,
+        0.9999996422257512,
+        1.0000000002334386
+      ],
+      "timeToFirstTokenSeconds" : 0.86751325
     }
   ],
   "device" : "h17c",
