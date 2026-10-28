@@ -2,7 +2,7 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews with no API compatibility promise.
 
-## 0.0.3 — YYYY-MM-DD
+## 0.0.3 — 2026-10-28
 
 Third experimental developer preview. See the [release notes](docs/release-notes/0.0.3.md).
 
