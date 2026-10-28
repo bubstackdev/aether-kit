@@ -1,4 +1,5 @@
 {
+  "supersededBy": "h3-memory-gate-review-2026-10-28.json: the same gate re-run after the #55 review fixes changed pinned code (lease-table parsing, the padding guard); same result",
   "hostConditions": {
     "label": "busy host (CPU saturated by an unrelated transcode), not a timing reference",
     "oneMinuteLoad": {
