@@ -236,7 +236,7 @@ jobs:
 
   required:
     name: CI passed
-    # A main run superseded by a newer push skips the gate instead of failing it; every other cancellation still fails.
+    # A cancelled main run (superseded or manual) skips the gate instead of failing it; a cancelled PR run still fails.
     if: ${{ always() && !(github.event_name == 'push' && cancelled()) }}
     needs: [changes, workflows, floor-macos, floor-ios, contracts, floor-launch]
     runs-on: ubuntu-24.04
