@@ -84,4 +84,10 @@ struct ModelCatalogEntryTests {
             try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
         }
     }
+
+    @Test func huggingFaceAuthorizationOnlyGoesToTheHub() {
+        let headers = ModelPreparation.huggingFaceAuthorization(token: "hf_x")
+        #expect(headers(URL(string: "https://huggingface.co/org/m/resolve/abc/f")!) == ["Authorization": "Bearer hf_x"])
+        #expect(headers(URL(string: "https://cdn.example.com/f")!).isEmpty)
+    }
 }

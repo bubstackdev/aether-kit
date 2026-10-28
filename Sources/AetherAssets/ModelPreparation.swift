@@ -87,6 +87,13 @@ public struct ModelPreparation: Sendable {
         self.availableCapacity = availableCapacity; self.progressInterval = progressInterval
     }
 
+    /// Request headers for a gated or private Hugging Face repository: the app's token as a bearer authorization, sent
+    /// only to huggingface.co. The transport forwards headers only to the original host, so a redirect to the CDN that
+    /// serves the bytes never sees the token. Kit doesn't store it.
+    public static func huggingFaceAuthorization(token: String) -> @Sendable (URL) -> [String: String] {
+        { url in url.host?.lowercased() == "huggingface.co" ? ["Authorization": "Bearer " + token] : [:] }
+    }
+
     /// Where the entry stands, without network access or hashing.
     public func status(_ entry: ModelCatalogEntry) throws -> PreparationStatus {
         let id = try validated(entry)

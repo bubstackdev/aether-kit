@@ -60,7 +60,8 @@ public enum ModelSource: Codable, Sendable {
   entry's installation ID always matches. Families: `language`, `kokoro`, `flux2` and `krea`.
 - **Hugging Face resolves to** `https://huggingface.co/<repository>/resolve/<revision>/<subdirectory>/<path>`. A
   revision that isn't a full commit hash is refused when the entry is decoded. The app may supply a bearer token for
-  gated or private repositories. Kit never stores it.
+  gated or private repositories through `ModelPreparation.huggingFaceAuthorization(token:)`, which sends it only to
+  huggingface.co. Kit never stores it.
 
 ## Preparing
 
@@ -173,8 +174,8 @@ whether retrying can help.
 1. The catalog entry, `LanguageModelManifest.installationManifest(in:)`, and `aether-probe catalog-entry`. Done.
 2. `ModelPreparation` with the check, the download area, install and cleanup, over the transport protocol and a local
    test transport. Done.
-3. The foreground `URLSession` transport, with range resume and streaming hashes.
-4. The Hugging Face resolver.
+3. The foreground `URLSession` transport (`URLSessionTransport`, `.urlSession`), with range resume. Done.
+4. The Hugging Face resolver (`ModelSource.huggingFace`) and `ModelPreparation.huggingFaceAuthorization(token:)`. Done.
 5. The background transport and `handleBackgroundEvents`.
 6. `AetherLanguageModel(installation:)` with the lease held.
 7. The guide and the qualification evidence.
