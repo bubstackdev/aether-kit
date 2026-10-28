@@ -105,7 +105,8 @@ public struct ModelPreparation: Sendable {
     /// Prepares the entry, ending in exactly one terminal event. Stopping the iteration cancels the run; downloaded
     /// bytes stay on disk for the next run.
     public func prepare(_ entry: ModelCatalogEntry) -> AsyncStream<PreparationEvent> {
-        AsyncStream { continuation in
+        let id = try? entry.installationID
+        return AsyncStream { continuation in
             let worker = Task {
                 let event: PreparationEvent
                 do {
@@ -117,12 +118,21 @@ public struct ModelPreparation: Sendable {
                 } catch {
                     event = Task.isCancelled ? .cancelled : .failed(Self.mapped(error))
                 }
+                // `run` has released the download lock by now, so a run waiting on this one can take it.
+                if let id { Self.stopping.withLock { _ = $0.remove(id) } }
                 continuation.yield(event)
                 continuation.finish()
             }
-            continuation.onTermination = { _ in worker.cancel() }
+            continuation.onTermination = { termination in
+                if case .cancelled = termination, let id { Self.stopping.withLock { _ = $0.insert(id) } }
+                worker.cancel()
+            }
         }
     }
+
+    /// Installations whose run the consumer stopped and whose worker hasn't finished unwinding. A new run for one of
+    /// them waits for the old run to release its lock instead of reporting busy, so cancel-then-retry works.
+    private static let stopping = LockedSet()
 
     /// `prepare` for callers that only need the result: the installation ID, or the run's error.
     public func install(_ entry: ModelCatalogEntry) async throws -> String {
@@ -148,8 +158,7 @@ public struct ModelPreparation: Sendable {
             _ = try await store.acquire(id)
             return id
         }
-        let held: StoreLock
-        do { held = try store.downloadLock(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+        let held = try await downloadLock(id)
         defer { withExtendedLifetime(held) {} }
         let area = try downloadFiles(id)
         let present = try presentBytes(entry, id: id)
@@ -206,6 +215,18 @@ public struct ModelPreparation: Sendable {
     }
 
     // MARK: - Helpers
+
+    /// The installation's download lock. Busy means another run is preparing it, unless that run is one this process
+    /// stopped and is still unwinding: then wait for it.
+    private func downloadLock(_ id: String) async throws -> StoreLock {
+        while true {
+            do { return try store.downloadLock(id) }
+            catch AssetStoreError.busy {
+                guard Self.stopping.withLock({ $0.contains(id) }) else { throw PreparationError.busy }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+    }
 
     private func validated(_ entry: ModelCatalogEntry) throws -> String {
         do {
@@ -287,4 +308,10 @@ private final class Throttle: @unchecked Sendable {
         last = now
         return true
     }
+}
+
+private final class LockedSet: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values = Set<String>()
+    func withLock<T>(_ body: (inout Set<String>) -> T) -> T { lock.withLock { body(&values) } }
 }

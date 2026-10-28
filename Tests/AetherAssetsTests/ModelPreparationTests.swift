@@ -218,13 +218,9 @@ struct ModelPreparationTests {
         for await event in preparation.prepare(fixture.entry) {
             if case let .downloading(path, fileBytes, _, _, _) = event, path == "model/main.mlirb", fileBytes > 0 { break }
         }
-        // The cancelled worker releases the download lock; wait until a status read sees the kept bytes.
-        var status = try preparation.status(fixture.entry)
-        for _ in 0..<200 {
-            if case .partial = status, (try? preparation.store.downloadLock(fixture.entry.installationID)) != nil { break }
-            try await Task.sleep(for: .milliseconds(5))
-            status = try preparation.status(fixture.entry)
-        }
+        // The kept bytes are visible at once, and a retry straight after the stop waits for the stopped run to unwind
+        // instead of reporting busy.
+        let status = try preparation.status(fixture.entry)
         guard case .partial = status else { Issue.record("expected kept partial data, got \(status)"); return }
         transport.release()
         _ = try await preparation.install(fixture.entry)

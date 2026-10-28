@@ -1,7 +1,7 @@
 # Model preparation
 
-Status: implemented, 2026-10-28, with weight-free CPU tests; real-network and on-device qualification are pending
-([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
+Status: implemented, 2026-10-28. Weight-free CPU tests and a real-network run on the Mac pass; the iPhone background
+transfer is pending ([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)). The user decided the four choices below on 2026-10-28. Type
 names may still change once the API has run in the sample app.
 
@@ -187,18 +187,26 @@ whether retrying can help.
 
 ## Qualification
 
-- **Weight-free CPU tests in CI.** A local file transport and a scripted `URLProtocol` cover:
-  - resume after a cut connection (206), restart on 200, refusal of a wrong `Content-Range`;
-  - size and hash mismatch;
-  - insufficient space;
-  - cancellation mid-file, then a resumed run;
-  - two concurrent runs for one entry;
-  - the Hugging Face URL and revision rules;
+- **Weight-free CPU tests in CI.** A local test transport and a scripted `URLProtocol` cover:
+  - resume after a cut connection (206), restart on 200, refusal of a wrong `Content-Range`, restart after a 416;
+  - size and hash mismatch, with the bad file dropped and refetched;
+  - insufficient space, refused before any download;
+  - cancellation mid-file, then an immediate retry that resumes;
+  - two concurrent runs for one entry (the second is busy);
+  - the Hugging Face URL, revision and authorization rules, and redirects that drop headers at a new host;
   - an installed entry finishing without network;
-  - background-session reattachment, driven through the delegate.
-- **Opt-in real-network qualification.** Prepare a real Kit bundle over HTTPS on the Mac and an iPhone, the iPhone
-  including a background transfer that survives app suspension. Then open it through the facade and run a short reply.
-  Record the evidence.
+  - what a finished background task does with its bytes (append after a matching 206, replace after a 200).
+- **Mac, real network (2026-10-28, [record](evidence/model-preparation-network-2026-10-28.json)).** A catalog entry
+  for the Qwen3-0.6B Kit bundle (11 files, 1,208,370,450 bytes) in a private Hugging Face repository, pinned to its
+  commit:
+  - the first run was stopped after 300,009,223 bytes, and status then reported exactly that much kept;
+  - a retry resumed from there (its first progress event was at 300,025,598 bytes), downloaded the rest and installed;
+  - `AetherLanguageModel(installation:)` opened the installation and gave a coherent greedy reply in 5.96 s.
+
+  This run found and fixed one bug: a retry straight after stopping a run reported busy, because the stopped run hadn't
+  yet released its lock. A stopped run is now waited for.
+- **Pending:** an iPhone run with `BackgroundTransport`, including a transfer that survives app suspension. It needs an
+  iOS registration of the bundle and the device host app wired to `handleEvents`.
 
 ## Implementation order
 
@@ -210,7 +218,7 @@ whether retrying can help.
 5. `BackgroundTransport` and `handleEvents(identifier:completionHandler:)`. Done; the session itself is qualified on a
    device (below), since a background session needs an app.
 6. `AetherLanguageModel(installation:)` with the lease held. Done.
-7. The guide and the qualification evidence.
+7. The guide and the qualification evidence. The guide and the Mac record are done; the iPhone run is pending.
 
 ## Open questions
 
