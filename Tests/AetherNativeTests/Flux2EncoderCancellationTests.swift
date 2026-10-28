@@ -16,6 +16,8 @@ import Testing
 /// - a cancelled call on a resident session, which also discards the retained encoder;
 /// - the same cancellation on a session with resource admission and in-process GPU admission: no reservation and no
 ///   GPU grant remains afterwards.
+/// With AETHER_FLUX2_REFERENCE_FIXTURES, the same for the reference (VAE) encoder: `prepare(references:)` cancelled during
+/// its first native call and during its open, and `generate(prompt:references:)` cancelled during its native call.
 /// Records whether Core AI ended the in-flight call or open early, and the cancellation latency.
 /// Run alone under the shared GPU lock.
 @Test(.enabled(if: nativeEnvironment["AETHER_NATIVE_FLUX2_ENCODER_CANCEL"] == "1"
@@ -195,6 +197,118 @@ func flux2NativeEncoderCancellation() async throws {
     check(true, "gpuAdmissionImmediatelyAvailable")
     await admitted.unload()
     check(coordinator.snapshot.reservedBytes == 0, "unloadReleasesAllReservations")
+
+    // D. The reference encoder (with AETHER_FLUX2_REFERENCE_FIXTURES): `prepare(references:)` for the two-reference case,
+    // cancelled during the VAE encoder's first native call and during its open, and `generate(prompt:references:)`
+    // cancelled during the encoder's native call. The second image is never submitted after a cancel, the encoder is
+    // discarded before the request returns, and recovery reproduces the uncancelled latents and pixels exactly.
+    if let path = env["AETHER_FLUX2_REFERENCE_FIXTURES"], let referenceAsset = assets.referenceEncoder {
+        let fixture = try Flux2Fixture(URL(fileURLWithPath: path))
+        report.set("fixtures", ["t2i": t2i.id, "case": fox.id, "reference": fixture.id])
+        let two = try #require(fixture.cases.first { $0.references.count == 2 })
+        let images = try two.references.map {
+            try Flux2ReferenceImage(pixels: FloatTensor(shape: [3, $0.height, $0.width], values: $0.pixels))
+        }
+        let vaePath = referenceAsset.url.path
+        let referenceSession = Flux2GenerationSession(assets: assets, factory: factory)
+        func latentsHash(_ prepared: Flux2PreparedReferences) -> String { nativeHash(prepared.images.flatMap(\.latents.values)) }
+        trace.phase("referenceBaseline")
+        let prepared = try await referenceSession.prepare(references: images, generatedTokens: two.tokens)
+        let preparedHash = latentsHash(prepared)
+        report.check("referenceLatentCosine", two.id, value: cosine(prepared.images.flatMap(\.latents.values), two.referenceLatents), bar: 0.999)
+        let baselineEvents = events("referenceBaseline")
+        if let open = seconds(baselineEvents, from: { $0.event == "modelOpenBegin" && $0.model == vaePath },
+                              to: { $0.event == "modelOpened" && $0.model == vaePath }) {
+            report.timing("referenceEncoderOpen", "referenceBaseline", open)
+        }
+        let begins = baselineEvents.filter { $0.event == "nativeBegin" && $0.model == vaePath }
+        for begin in begins {
+            if let end = baselineEvents.first(where: { $0.event == "nativeEnd" && $0.call == begin.call }), let a = begin.uptime, let b = end.uptime {
+                report.timing("referenceEncoderNativeCall", "referenceBaseline", b - a)
+            }
+        }
+        check(begins.count == 2, "baselineEncodesBothImages")
+        let referencePrompt = try tokenizer.prepare(two.prompt)
+        let referenceConfiguration = try Flux2Configuration(width: two.width, height: two.height, steps: two.steps, seed: UInt64(two.seed))
+        let referenceNoise = try FloatTensor(shape: [two.tokens, 128], values: two.noise)
+        trace.phase("referenceGenerateBaseline")
+        let generatedBaseline = try await referenceSession.generate(configuration: referenceConfiguration, prompt: referencePrompt,
+                                                                    references: images, noise: referenceNoise)
+        let generatedHash = nativeHash(generatedBaseline.pixelsCHW.values)
+
+        func referenceCancellation(phase: String, duringOpen: Bool, throughGenerate: Bool) async throws {
+            trace.phase(phase)
+            let task = Task { () -> String in
+                defer { trace.add("generationTaskFinished") }
+                if throughGenerate {
+                    let image = try await referenceSession.generate(configuration: referenceConfiguration, prompt: referencePrompt,
+                                                                    references: images, noise: referenceNoise)
+                    return nativeHash(image.pixelsCHW.values)
+                }
+                return latentsHash(try await referenceSession.prepare(references: images, generatedTokens: two.tokens))
+            }
+            if duringOpen {
+                let deadline = ContinuousClock.now.advanced(by: .seconds(600))
+                while !events(phase).contains(where: { $0.event == "modelOpenBegin" && $0.model == vaePath }) {
+                    guard ContinuousClock.now < deadline else { throw NativeFailure(description: "no reference encoder open in \(phase)") }
+                    try await Task.sleep(for: .milliseconds(1))
+                }
+            } else {
+                _ = try await trace.waitForNative(in: phase, model: vaePath, observationInterval: .milliseconds(2))
+            }
+            trace.add("cancelRequested")
+            task.cancel()
+            var cancelled = false
+            do { _ = try await task.value } catch is CancellationError { cancelled = true }
+            trace.add("cancellationReturned")
+            check(cancelled, "cancellationThrows")
+            let list = events(phase)
+            let request = list.firstIndex { $0.event == "cancelRequested" }!
+            let returned = list.firstIndex { $0.event == "cancellationReturned" }!
+            if let latency = seconds(list, from: { $0.event == "cancelRequested" }, to: { $0.event == "cancellationReturned" }) {
+                report.timing("cancellationLatency", phase, latency)
+            }
+            let vaeCalls = list.filter { $0.event == "nativeBegin" && $0.model == vaePath }
+            if duringOpen {
+                let opened = list.contains { $0.event == "modelOpened" && $0.model == vaePath }
+                report.record("openCompletedAfterCancel", phase, opened ? 1 : 0)
+                check(vaeCalls.isEmpty, "noEncoderCallAfterCancellation")
+                check(!opened || list.contains { $0.event == "modelClosed" && $0.model == vaePath }, "encoderDiscarded")
+            } else {
+                let begin = vaeCalls.first!
+                let end = list.firstIndex { $0.event == "nativeEnd" && $0.call == begin.call }
+                check(end != nil && end! < returned, "nativeReturnPrecedesCancellation")
+                report.record("nativeCallRanToCompletion", phase,
+                              list.contains { $0.event == "outputCopyBegin" && $0.model == vaePath } ? 1 : 0)
+                if let call = seconds(list, from: { $0.event == "nativeBegin" && $0.model == vaePath },
+                                      to: { $0.event == "nativeEnd" && $0.model == vaePath }) {
+                    report.timing("referenceEncoderNativeCall", phase, call)
+                }
+                check(vaeCalls.count == 1, "secondImageNeverSubmitted")
+                let close = list.firstIndex { $0.event == "modelClosed" && $0.model == vaePath }
+                check(close != nil && close! > end! && close! < returned, "encoderDiscardedBeforeReturn")
+                check(list[list.index(after: request)...].filter { $0.event == "nativeBegin" }.isEmpty, "noNativeCallAfterCancellation")
+            }
+            check(await referenceSession.state == .ready, "stateReturnsToReady")
+            trace.phase(phase + "Recovery")
+            if throughGenerate {
+                let image = try await referenceSession.generate(configuration: referenceConfiguration, prompt: referencePrompt,
+                                                                references: images, noise: referenceNoise)
+                check(nativeHash(image.pixelsCHW.values) == generatedHash, "recoveryIsExact")
+            } else {
+                check(latentsHash(try await referenceSession.prepare(references: images, generatedTokens: two.tokens)) == preparedHash,
+                      "recoveryIsExact")
+            }
+        }
+        for trial in 1...trials {
+            try await referenceCancellation(phase: "referenceCallCancellation\(trial)", duringOpen: false, throughGenerate: false)
+        }
+        for trial in 1...trials {
+            try await referenceCancellation(phase: "referenceOpenCancellation\(trial)", duringOpen: true, throughGenerate: false)
+        }
+        try await referenceCancellation(phase: "referenceGenerateCancellation", duringOpen: false, throughGenerate: true)
+        await referenceSession.unload()
+    }
 
     let all = trace.events
     let opened = Set(all.filter { $0.event == "modelOpened" }.compactMap(\.instance))
