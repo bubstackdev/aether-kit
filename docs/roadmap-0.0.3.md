@@ -20,6 +20,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 - **H3:** check Turbo4's quality (it's already exported), fused attention, video-decode tiling (about 40 s today), and a quiet-host timing reference.
 - **Bucketed language:** with power-of-two chunks, time to first token was 2–3× the running contract's; the 64-token width reaches 0.21 s on the writer. Re-measure against the running contract and close any remaining gap.
+- **Language time to first token:** a split-attention re-export, in which the cache and the current chunk are read separately and their softmax partials are merged, plus requalification of every language and Qwen3-VL bundle.
 
 ### Coverage and iPhone
 
@@ -28,7 +29,6 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
   - multi-image M-RoPE;
   - parity on rotated photos;
   - alpha handling, which differs from upstream: PIL keeps the stored RGB, while Kit composites over black.
-- **Quantization:** quantized Qwen3-VL and language decoders.
 - **Kokoro fp16:** retest the Neural Engine placement crash on newer OS releases.
 - **H3 promotion:** media audit and per-stage lifecycle qualification before the experimental label is dropped, plus a durable home for the qualified profile. Measured admission covers more profiles and Macs as they're measured.
 
@@ -81,6 +81,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 - **Typed readiness states.**
 - **A managed lifecycle:** lazy loading, idle unload and memory-pressure response.
 - **A sandboxed sample app** with published qualification, and an API freeze for the facade.
+- **Quantization:** quantized Qwen3-VL and language decoders, moved from 0.0.3. It is the biggest unknown on the list, and was deferred by user decision.
 
 ## Open questions
 
