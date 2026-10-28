@@ -1,0 +1,116 @@
+{
+ "tag": "fp16",
+ "res": 256,
+ "slab": 16,
+ "loadSeconds": 2.4424149580299854,
+ "images": {
+  "captured": {
+   "sceneSeconds": {
+    "first": 0.09523812495172024,
+    "warmMedian": 0.05894554196856916
+   },
+   "gridSeconds": {
+    "field65536": 1.247037708060816,
+    "field262144": 2.492055166978389,
+    "slab": 0.8710100830066949
+   },
+   "marchingCubesSeconds": 0.16403754078783095,
+   "vertexColorSeconds": 0.0474607078358531,
+   "totalSeconds": 1.1414538735989481,
+   "mesh": {
+    "vertices": 412889,
+    "faces": 806498
+   }
+  },
+  "chair": {
+   "sceneSeconds": {
+    "first": 0.08076624991372228,
+    "warmMedian": 0.058881625067442656
+   },
+   "gridSeconds": {
+    "field65536": 1.2468445838894695,
+    "field262144": 2.6964500409085304,
+    "slab": 0.2113877919036895
+   },
+   "marchingCubesSeconds": 0.17342720902524889,
+   "vertexColorSeconds": 0.06523712491616607,
+   "totalSeconds": 0.5089337509125471,
+   "mesh": {
+    "vertices": 404930,
+    "faces": 791506
+   }
+  },
+  "hamburger": {
+   "sceneSeconds": {
+    "first": 0.08956933417357504,
+    "warmMedian": 0.0601242498960346
+   },
+   "gridSeconds": {
+    "field65536": 1.888337624957785,
+    "field262144": 2.6641858329530805,
+    "slab": 0.1826342090498656
+   },
+   "marchingCubesSeconds": 0.16438666684553027,
+   "vertexColorSeconds": 0.06446183403022587,
+   "totalSeconds": 0.47160695982165635,
+   "mesh": {
+    "vertices": 606291,
+    "faces": 1187092
+   }
+  },
+  "poly_fox": {
+   "sceneSeconds": {
+    "first": 0.08137829205952585,
+    "warmMedian": 0.05902458308264613
+   },
+   "gridSeconds": {
+    "field65536": 1.293017707997933,
+    "field262144": 2.6658992918673903,
+    "slab": 0.2154903751797974
+   },
+   "marchingCubesSeconds": 0.182370665948838,
+   "vertexColorSeconds": 0.055051375180482864,
+   "totalSeconds": 0.5119369993917644,
+   "mesh": {
+    "vertices": 371888,
+    "faces": 722094
+   }
+  },
+  "robot": {
+   "sceneSeconds": {
+    "first": 0.08440491696819663,
+    "warmMedian": 0.060832791961729527
+   },
+   "gridSeconds": {
+    "field65536": 2.1097831251099706,
+    "field262144": 2.783837749855593,
+    "slab": 0.2026132910978049
+   },
+   "marchingCubesSeconds": 0.18155612493865192,
+   "vertexColorSeconds": 0.06337783392518759,
+   "totalSeconds": 0.5083800419233739,
+   "mesh": {
+    "vertices": 471003,
+    "faces": 920590
+   }
+  },
+  "teapot": {
+   "sceneSeconds": {
+    "first": 0.08358062501065433,
+    "warmMedian": 0.05910137505270541
+   },
+   "gridSeconds": {
+    "field65536": 1.4520862500648946,
+    "field262144": 2.528450750047341,
+    "slab": 0.18449504184536636
+   },
+   "marchingCubesSeconds": 0.17976612504571676,
+   "vertexColorSeconds": 0.06474920804612339,
+   "totalSeconds": 0.4881117499899119,
+   "mesh": {
+    "vertices": 592190,
+    "faces": 1162648
+   }
+  }
+ }
+}

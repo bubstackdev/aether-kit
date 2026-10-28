@@ -1,0 +1,10 @@
+# with-gpu-lock.sh log lines for this spike's holds (shared lock log, other holders omitted)
+2026-10-28 07:49:17 waiting  pid=54382 spikes: triposr images
+2026-10-28 07:49:17 acquired pid=54389 spikes: triposr images
+2026-10-28 07:49:58 released pid=54389 spikes: triposr images rc=0
+2026-10-28 07:52:05 waiting  pid=56371 spikes: triposr grid diagnosis
+2026-10-28 07:53:18 acquired pid=58159 spikes: triposr grid diagnosis
+2026-10-28 07:53:20 released pid=58159 spikes: triposr grid diagnosis rc=0
+2026-10-28 07:54:03 waiting  pid=58803 spikes: triposr images (linear grid)
+2026-10-28 08:09:10 acquired pid=71020 spikes: triposr images (linear grid)
+2026-10-28 08:09:37 released pid=71020 spikes: triposr images (linear grid) rc=0

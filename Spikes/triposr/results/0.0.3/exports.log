@@ -1,0 +1,14 @@
+== export-scene-field
+explicit vs grid_sample: density rel err 3.40e-06, color max err 1.84e-05
+scene-fp16.aimodel exported in 2.9s
+field-fp16.aimodel exported in 0.3s
+       11.41 real        14.12 user         1.26 sys
+          3852009472  maximum resident set size
+== export-field262144
+explicit vs grid_sample: density rel err 3.40e-06, color max err 1.84e-05
+field-262144-fp16.aimodel exported in 0.4s
+        6.14 real        11.27 user         0.82 sys
+          3768369152  maximum resident set size
+== export-grid-linear
+explicit vs grid_sample: density rel err 3.40e-06, color max err 1.84e-05
+grid-256x16-fp16.aimodel exported in 0.4s

@@ -1,0 +1,15 @@
+# The TripoSR spike's venv: these exact packages on top of Forge's locked environment, which already supplies torch,
+# coreai-torch, transformers, numpy, scipy, networkx, pillow, packaging and PyYAML. Installed without dependency
+# resolution, so nothing in Forge's set changes:
+#   uv venv --python 3.12 $SPIKE_ASSETS/triposr/venv
+#   echo "<repo>/Forge/.venv/lib/python3.12/site-packages" > $SPIKE_ASSETS/triposr/venv/lib/python3.12/site-packages/forge.pth
+#   uv pip install --python $SPIKE_ASSETS/triposr/venv/bin/python --no-deps -r Spikes/triposr/requirements-spike.txt
+omegaconf==2.3.0                  # BSD-3-Clause; upstream TripoSR's pin
+antlr4-python3-runtime==4.9.3     # BSD-3-Clause; omegaconf 2.3's grammar runtime (pure Python, sdist only)
+einops==0.8.2                     # MIT
+trimesh==5.2.0                    # MIT
+PyMCubes==0.1.6                   # BSD-3-Clause
+scikit-image==0.26.0              # BSD-3-Clause
+imageio==2.38.1                   # BSD-2-Clause; TripoSR's tsr/utils.py imports it; scikit-image needs it
+tifffile==2026.10.15              # BSD-3-Clause; scikit-image
+lazy-loader==0.6                  # BSD-3-Clause; scikit-image

@@ -1,0 +1,49 @@
+{
+ "snapshot": "5b521936b01fbe1890f6f9baed0254ab6351c04a",
+ "res": 256,
+ "threshold": 25.0,
+ "images": {
+  "captured": {
+   "sceneSeconds": 2.3030810356140137,
+   "gridSeconds": 4.723432302474976,
+   "vertices": 47130,
+   "faces": 94260,
+   "occupied": 273573
+  },
+  "chair": {
+   "sceneSeconds": 2.2626049518585205,
+   "gridSeconds": 4.760908126831055,
+   "vertices": 41864,
+   "faces": 83732,
+   "occupied": 200813
+  },
+  "hamburger": {
+   "sceneSeconds": 2.2754101753234863,
+   "gridSeconds": 5.000241994857788,
+   "vertices": 55414,
+   "faces": 110804,
+   "occupied": 252815
+  },
+  "poly_fox": {
+   "sceneSeconds": 2.3399899005889893,
+   "gridSeconds": 5.060266017913818,
+   "vertices": 59710,
+   "faces": 119420,
+   "occupied": 314428
+  },
+  "robot": {
+   "sceneSeconds": 2.486211061477661,
+   "gridSeconds": 6.17484712600708,
+   "vertices": 80644,
+   "faces": 161280,
+   "occupied": 798533
+  },
+  "teapot": {
+   "sceneSeconds": 2.639824151992798,
+   "gridSeconds": 5.354036092758179,
+   "vertices": 40768,
+   "faces": 81536,
+   "occupied": 304412
+  }
+ }
+}
