@@ -153,9 +153,10 @@ model hash) reserved against a host-selected `ResourceCoordinator`, as Krea and 
   across memory-budget reloads, and released on unload or a failed load. For a decoder it covers the weights, the KV
   caches at the registered context and the memory budget's growth allowance.
 - **Scratch** is reserved after each request's grant (and each image encode's) and released when its native work
-  joins.
-- **Refusals before native work:** model bytes without an estimate, a registered context above the profile's, and a
-  request with more image tokens than the profile allows.
+  joins. A request's is reserved before a memory-budget reload, so a refusal never costs a model load.
+- **Refusals before native work:** model bytes without an estimate and a registered context above the profile's (a
+  bundle's before its files are hashed), and a request with more image tokens than the profile allows, summed over its
+  images (every image is preprocessed and the total checked before the first encode).
 - **Opening is admitted.** With `gpu:`, the model's load and its functions' specialization run under a grant, so a
   session never specializes beside another owner's GPU work.
 - **Per process.** The ledger cannot see other processes, and it leaves out the page cache a model's compiled file is

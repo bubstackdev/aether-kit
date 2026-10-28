@@ -125,8 +125,9 @@ public actor LanguageGenerationSession {
                             gpu: GPUAdmissionOwner? = nil, resources: LanguageResourceAdmission? = nil) async throws
         -> LanguageGenerationSession {
         let manifest = try LanguageModelManifest.load(from: directory)
-        let modelURL = try manifest.verify(in: directory, platform: platform)
+        // The estimate is looked up, and the profile's limits checked, before the asset is hashed.
         let budget = try resources?.budget(modelSHA256: manifest.modelSHA256, contextLength: manifest.maximumContextLength)
+        let modelURL = try manifest.verify(in: directory, platform: platform)
         return try await open(at: modelURL, maximumContextLength: manifest.maximumContextLength,
             stopTokenIDs: Set(manifest.stopTokenIDs), memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
             exportBounds: manifest.exportBounds, gpu: gpu, budget: budget)
@@ -176,18 +177,11 @@ public actor LanguageGenerationSession {
         case .preferGPU: options = SpecializationOptions(preferredComputeUnitKind: .gpu)
         }
         options.expectFrequentReshapes = expectFrequentReshapes
-        let (session, residency) = try await withOpenAdmission(gpu) { () async throws -> (LanguageGenerationSession, ResourceReservation?) in
-            let residency = try budget?.reserveResidency()
-            do {
-                let model = try await AIModel(contentsOf: modelURL, options: options)
-                try Task.checkCancellation()
-                let session = try LanguageGenerationSession(model: model, capacity: maximumContextLength,
-                    initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
-                return (session, residency)
-            } catch {
-                residency?.release()
-                throw error
-            }
+        let (session, residency) = try await withReservedOpen(gpu, budget: budget) {
+            let model = try await AIModel(contentsOf: modelURL, options: options)
+            try Task.checkCancellation()
+            return try LanguageGenerationSession(model: model, capacity: maximumContextLength,
+                initialCacheCapacity: initialCacheCapacity, stopTokenIDs: stopTokenIDs, exportBounds: exportBounds, gpu: gpu)
         }
         await session.configureReopening(ReopenConfiguration(url: modelURL, compute: compute,
             expectFrequentReshapes: expectFrequentReshapes,
@@ -332,11 +326,9 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
-        let scratch = try reserveScratch()
-        defer { scratch?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         let output = try await LanguageDecodeLoop.generate(prompt: plan.ids, maximumTokens: maximumTokens,
@@ -357,11 +349,9 @@ public actor LanguageGenerationSession {
         defer { lifecycle.finish() }
         promptRope = plan.rope
         ropeDelta = plan.ropeDelta
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
-        let scratch = try reserveScratch()
-        defer { scratch?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(plan, images: prompt.images, chunkSize: nil, observer: nil)]
@@ -437,11 +427,9 @@ public actor LanguageGenerationSession {
         try request.sampling.validate()
         try begin(prompt: request.prompt, reserve: request.maximumTokens, chunkSize: prefillChunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
-        let scratch = try reserveScratch()
-        defer { scratch?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         // Token delivery and the constraint overlap the following native step instead of idling the GPU.
@@ -459,11 +447,9 @@ public actor LanguageGenerationSession {
     public func prefillLogits(prompt: [Int], chunkSize: Int? = nil) async throws -> [Float] {
         try begin(prompt: prompt, reserve: 0, chunkSize: chunkSize)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
-        let scratch = try reserveScratch()
-        defer { scratch?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         return try await prefill(prompt, chunkSize: chunkSize, observer: nil)
@@ -473,11 +459,9 @@ public actor LanguageGenerationSession {
         guard !prompt.isEmpty else { throw LanguageGenerationError.invalid("Empty oracle prompt") }
         try begin(prompt: prompt + continuation, reserve: 0, chunkSize: nil)
         defer { lifecycle.finish() }
-        let grant = try await admission.begin(gpu: gpu, reloadNeeded: { self.memoryReloadNeeded },
-                                              reload: { try await self.reloadForMemory() })
-        defer { grant?.release() }
-        let scratch = try reserveScratch()
-        defer { scratch?.release() }
+        let admitted = try await admission.begin(gpu: gpu, reserveScratch: { try self.reserveScratch() },
+                                                 reloadNeeded: { self.memoryReloadNeeded }, reload: { try await self.reloadForMemory() })
+        defer { admitted.release() }
         openMemoryWindow()
         defer { closeMemoryWindow() }
         var rows = [try await prefill(prompt, chunkSize: nil, observer: nil)]

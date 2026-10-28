@@ -95,13 +95,14 @@ public actor VisionLanguageSession {
                             gpu: GPUAdmissionOwner? = nil, resources: LanguageResourceAdmission? = nil) async throws
         -> VisionLanguageSession {
         let manifest = try LanguageModelManifest.load(from: directory)
-        let textModel = try manifest.verify(in: directory, platform: platform)
-        guard let registration = manifest.vision, let visionModel = try manifest.verifyVision(in: directory) else {
-            throw LanguageGenerationError.invalid("The registration has no image input")
-        }
-        // Both estimates are looked up, and the profile's limits checked, before either model loads.
+        guard let registration = manifest.vision else { throw LanguageGenerationError.invalid("The registration has no image input") }
+        // Both estimates are looked up, and the profile's limits checked, before the assets are hashed or either loads.
         let decoderBudget = try resources?.budget(modelSHA256: manifest.modelSHA256, contextLength: manifest.maximumContextLength)
         let encoderBudget = try resources?.budget(modelSHA256: registration.modelSHA256)
+        let textModel = try manifest.verify(in: directory, platform: platform)
+        guard let visionModel = try manifest.verifyVision(in: directory) else {
+            throw LanguageGenerationError.invalid("The registration has no image input")
+        }
         return try await open(textModel: textModel, visionModel: visionModel, registration: registration,
                               maximumContextLength: manifest.maximumContextLength, stopTokenIDs: Set(manifest.stopTokenIDs),
                               exportBounds: manifest.exportBounds, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes, gpu: gpu,
@@ -127,20 +128,13 @@ public actor VisionLanguageSession {
                      decoderBudget: LanguageModelBudget?) async throws -> VisionLanguageSession {
         try registration.validate()
         try Self.requireImageBudget(registration: registration, bounds: exportBounds)
-        let (encoder, encoderResidency) = try await withOpenAdmission(gpu) { () async throws -> (LanguageVisionEncoder, ResourceReservation?) in
-            let residency = try encoderBudget?.reserveResidency()
-            do {
-                let encoder = try await LanguageVisionEncoder.open(at: visionModel,
-                    configuration: .init(mergeSize: registration.mergeSize, positionTableSide: registration.positionTableSide,
-                                         imageGrids: Self.grids(of: registration)),
-                    expectFrequentReshapes: try registration.encoderExpectsFrequentReshapes())
-                return (encoder, residency)
-            } catch {
-                residency?.release()
-                throw error
-            }
+        let encoder = try await withReservedOpen(gpu, budget: encoderBudget) {
+            try await LanguageVisionEncoder.open(at: visionModel,
+                configuration: .init(mergeSize: registration.mergeSize, positionTableSide: registration.positionTableSide,
+                                     imageGrids: Self.grids(of: registration)),
+                expectFrequentReshapes: try registration.encoderExpectsFrequentReshapes())
         }
-        do {
+        let language = try await openBeside(encoder, close: { await $0.model.unload(); $0.residency?.release() }) {
             let language = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: maximumContextLength,
                                                                     stopTokenIDs: stopTokenIDs, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
                                                                     exportBounds: exportBounds, gpu: gpu, budget: decoderBudget)
@@ -148,13 +142,10 @@ public actor VisionLanguageSession {
                 await language.unload()
                 throw LanguageGenerationError.invalid("The text model has no image entry point")
             }
-            return VisionLanguageSession(language: language, encoder: encoder, registration: registration, gpu: gpu,
-                                         encoderBudget: encoderBudget, encoderResidency: encoderResidency)
-        } catch {
-            await encoder.unload()
-            encoderResidency?.release()
-            throw error
+            return language
         }
+        return VisionLanguageSession(language: language, encoder: encoder.model, registration: registration, gpu: gpu,
+                                     encoderBudget: encoderBudget, encoderResidency: encoder.residency)
     }
 
     /// The registration's fixed grids in the preprocessor's terms (empty when it lists none, which
@@ -169,6 +160,11 @@ public actor VisionLanguageSession {
         guard grid.t == 1, registration.imageGrids?.contains(LanguageImageGrid(height: grid.h, width: grid.w)) == true else {
             throw LanguageGenerationError.invalid("Image grid \(grid.t)x\(grid.h)x\(grid.w) is not one of the registration's fixed grids")
         }
+    }
+
+    /// The image tokens the decoder receives for these patch grids (each grid merged by the registration's merge size).
+    static func imageTokenCount(_ grids: [(t: Int, h: Int, w: Int)], registration: LanguageVisionRegistration) -> Int {
+        grids.reduce(0) { $0 + $1.t * ($1.h / registration.mergeSize) * ($1.w / registration.mergeSize) }
     }
 
     /// The decoder's image chunk must cover the largest image the registration admits.
@@ -239,19 +235,22 @@ public actor VisionLanguageSession {
                             visionEnd: registration.visionEndTokenID)
     }
 
-    /// Preprocesses and encodes each image (each encode admitted on its own) for an admitted request.
+    /// Preprocesses every image, then encodes each (each encode admitted on its own) for an admitted request.
     private func encode(renderedTokenIDs: [Int], images: [VisionRGBImage]) async throws -> LanguageVisionPrompt {
-        var features: [LanguageImageFeatures] = []
-        var imageTokens = 0
+        var processedImages: [(pixels: [Float16], grid: (t: Int, h: Int, w: Int))] = []
         for image in images {
             try Task.checkCancellation()
             // Double-precision resampling runs off the actor.
             let processed = try await Self.process(image, configuration: preprocessing)
             guard !closeRequested else { throw LanguageGenerationError.closed }
             try Self.requireRegisteredGrid(processed.grid, registration: registration)
-            // The resource profile's image-token limit, checked before this image is encoded.
-            imageTokens += processed.grid.t * (processed.grid.h / registration.mergeSize) * (processed.grid.w / registration.mergeSize)
-            try encoderBudget?.check(imageTokens: imageTokens)
+            processedImages.append(processed)
+        }
+        // The resource profile's image-token limit covers the whole request, checked before any image is encoded.
+        try encoderBudget?.check(imageTokens: Self.imageTokenCount(processedImages.map(\.grid), registration: registration))
+        var features: [LanguageImageFeatures] = []
+        for processed in processedImages {
+            try Task.checkCancellation()
             let grant = try await admitEncode()
             defer { grant?.release() }
             let scratch = try encoderBudget?.reserveScratch()

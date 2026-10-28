@@ -25,9 +25,10 @@ public struct LanguageModelResourceEstimate: Sendable {
 /// Opt-in reservations of caller estimates against a host-selected shared `ResourceCoordinator`, as Krea and FLUX.2
 /// have them: each loaded model's residency, reserved before it loads (after its GPU grant, when the session has one)
 /// and held until unload, across memory-budget reloads (the old model is released before the new one loads); and each
-/// request's scratch, reserved after its grant and held until its native work joins. A model whose bytes have no
-/// estimate, a registered context above `maximumContextLength` and a request with more image tokens than
-/// `maximumImageTokens` are refused before any native work.
+/// request's scratch, reserved after its grant (before a memory-budget reload, so a refusal never costs a load) and held
+/// until its native work joins. A model whose bytes have no estimate, a registered context above `maximumContextLength`
+/// and a request with more image tokens than `maximumImageTokens` are refused before any native work: a bundle's
+/// estimates before its files are hashed, and a request's image tokens, summed over its images, before the first encode.
 ///
 /// This is admission of estimates, not a measured footprint or allocator enforcement, and the ledger is per process:
 /// it cannot see another process's models (see docs/qwen3-vl-resource-admission.md). It does not cover the page cache
@@ -97,4 +98,33 @@ func withOpenAdmission<T>(_ gpu: GPUAdmissionOwner?, isolation: isolated (any Ac
     defer { grant?.release() }
     try Task.checkCancellation()
     return try await body()
+}
+
+/// A model's opening under a GPU grant (with `gpu`) and its residency reservation (with `budget`): the residency is
+/// reserved after the grant, before the load, and released if the load fails or is cancelled.
+@available(macOS 27, iOS 27, *)
+func withReservedOpen<Model>(_ gpu: GPUAdmissionOwner?, budget: LanguageModelBudget?, isolation: isolated (any Actor)? = #isolation,
+                             _ load: () async throws -> Model) async throws -> (model: Model, residency: ResourceReservation?) {
+    try await withOpenAdmission(gpu) {
+        let residency = try budget?.reserveResidency()
+        do {
+            return (try await load(), residency)
+        } catch {
+            residency?.release()
+            throw error
+        }
+    }
+}
+
+/// Opens a second model beside an open first one: if the second fails to open (or is cancelled), `close` releases the
+/// first before the error propagates.
+@available(macOS 27, iOS 27, *)
+func openBeside<First: Sendable, Second>(_ first: First, close: (First) async -> Void, isolation: isolated (any Actor)? = #isolation,
+                               _ open: () async throws -> Second) async throws -> Second {
+    do {
+        return try await open()
+    } catch {
+        await close(first)
+        throw error
+    }
 }

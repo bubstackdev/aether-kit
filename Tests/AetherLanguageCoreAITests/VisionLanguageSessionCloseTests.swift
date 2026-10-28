@@ -188,6 +188,30 @@ struct VisionLanguageSessionCloseTests {
         }
     }
 
+    /// Images each within the profile's image tokens but over it together are refused before the first encode, with no
+    /// GPU grant taken.
+    @Test(.timeLimit(.minutes(1))) func severalImagesOverTheProfileAreRefusedBeforeAnyEncode() async throws {
+        let coordinator = try ResourceCoordinator(capacityBytes: 100)
+        let resources = try LanguageResourceAdmission(coordinator: coordinator,
+            models: [try LanguageModelResourceEstimate(modelSHA256: String(repeating: "a", count: 64), residentBytes: 20, runScratchBytes: 7)],
+            maximumContextLength: 4096, maximumImageTokens: 100)
+        let budget = try resources.budget(modelSHA256: registration().modelSHA256)
+        let encoder = FakeEncoder()
+        let admission = try GPUAdmission(maximumConcurrent: 1, waiting: .queue())
+        let session = VisionLanguageSession(language: FakeDecoder(gpu: admission.owner("decoder")), encoder: encoder,
+                                            registration: registration(), gpu: admission.owner("vl"),
+                                            encoderBudget: budget, encoderResidency: try budget.reserveResidency())
+        let twoImages = [151644, 151652, 151655, 151653, 151652, 151655, 151653, 77091]
+        await #expect(throws: LanguageGenerationError.self) {                // 64 + 64 image tokens > 100
+            try await session.generate(renderedTokenIDs: twoImages, images: [try image(), try image()], maximumTokens: 4)
+        }
+        #expect(await encoder.encodes == 0)
+        #expect(admission.snapshot.running == 0 && coordinator.snapshot.reservedBytes == 20)
+        #expect(VisionLanguageSession.imageTokenCount([(1, 16, 16), (1, 8, 16)], registration: registration()) == 96)
+        await session.unload()
+        #expect(coordinator.snapshot.reservedBytes == 0)
+    }
+
     @Test func imageInputRequiresAnImageChunkAndRefusesOversizedImages() throws {
         let bounds = LanguageExportBounds(maximumPrefillChunk: 512, maximumCacheCapacity: 4096, maximumImageChunk: 64)
         #expect(LanguageStepContract.imageChunkLimit(acceptsImages: true, bounds: bounds) == 64)

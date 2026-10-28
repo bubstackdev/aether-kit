@@ -122,6 +122,55 @@ struct LanguageResourceAdmissionTests {
         #expect(admission.snapshot.running == 0)
     }
 
+    /// A load holds the model's residency while it runs, and a load that fails or is cancelled releases it.
+    @Test(.timeLimit(.minutes(1))) func residencyIsReleasedWhenALoadFailsOrIsCancelled() async throws {
+        let resources = try profile()
+        let budget = try resources.budget(modelSHA256: decoderHash)
+        struct LoadFailure: Error {}
+        await #expect(throws: LoadFailure.self) {
+            _ = try await withReservedOpen(nil, budget: budget) { () async throws -> Int in
+                #expect(resources.coordinator.snapshot.reservedBytes == 60)
+                throw LoadFailure()
+            }
+        }
+        #expect(resources.coordinator.snapshot.reservedBytes == 0)
+        let loading = Flag()
+        let open = Task {
+            try await withReservedOpen(nil, budget: budget) { () async throws -> Int in
+                loading.set()
+                while true { try await Task.sleep(for: .milliseconds(5)) }      // a load that ends when cancelled
+            }
+        }
+        for _ in 0..<200 where !loading.value { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(resources.coordinator.snapshot.reservedBytes == 60)
+        open.cancel()
+        await #expect(throws: CancellationError.self) { _ = try await open.value }
+        #expect(resources.coordinator.snapshot.reservedBytes == 0)
+        let opened = try await withReservedOpen(nil, budget: budget) { 7 }
+        #expect(opened.model == 7 && resources.coordinator.snapshot.reservedBytes == 60)
+        opened.residency?.release()
+    }
+
+    /// The VL session's opening: when the decoder fails to open beside the open encoder, the encoder is closed and its
+    /// residency released before the error propagates.
+    @Test(.timeLimit(.minutes(1))) func aDecoderThatFailsToOpenReleasesTheEncoder() async throws {
+        let resources = try profile()
+        let encoderBudget = try resources.budget(modelSHA256: encoderHash), decoderBudget = try resources.budget(modelSHA256: decoderHash)
+        let closed = Flag()
+        let encoder = try await withReservedOpen(nil, budget: encoderBudget) { "encoder" }
+        struct LoadFailure: Error {}
+        await #expect(throws: LoadFailure.self) {
+            _ = try await openBeside(encoder, close: { closed.set(); $0.residency?.release() }) { () async throws -> Int in
+                _ = try await withReservedOpen(nil, budget: decoderBudget) { () async throws -> Int in
+                    #expect(resources.coordinator.snapshot.reservedBytes == 80)
+                    throw LoadFailure()
+                }
+                return 0
+            }
+        }
+        #expect(closed.value && resources.coordinator.snapshot.reservedBytes == 0)
+    }
+
     /// Without a GPU owner, opening runs at once.
     @Test func openingWithoutAdmissionRunsAtOnce() async throws {
         #expect(try await withOpenAdmission(nil) { 7 } == 7)
