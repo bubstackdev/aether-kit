@@ -351,16 +351,18 @@ A short harness smoke ran on a busy host (one warm-up, three measured iterations
 
 **Quiet-window run (2026-10-28).** Both plans ran in one GPU-lock hold of 3 min 2 s, from a release `aether-probe`
 built from main `bd048e4`. The user's CPU-saturating transcode was paused, and no other GPU job overlapped the hold. The
-1-minute load was 3.74 at the start and 1.71 at the end; the run refuses to start at 10 or more. Both plans pass: every
+1-minute load was 3.74 at the start and 1.71 at the end, while the 15-minute load was still 34 at the start as the
+host settled from the transcode. The script refuses to start at a 1-minute load of 10 or more (recorded with its
+SHA-256 in the summary). Both plans pass: every
 iteration of every case reproduced its first iteration's conditioning and pixels exactly, and every provided case
 cleared SSIM 0.94 against its fixture. Seconds per image, application-stage wall clock with observers excluded; median
 (range) of 5 measured iterations after 2 warm-ups, on one balanced `preferGPU` session per case:
 
-| Case | Encoded | Provided | Encoded: conditioning, step 0, steps 1–3, decode | Peak Metal (encoded / provided) |
+| Case | Encoded | Provided | Encoded: conditioning, step 0, steps 1–3, decode | Peak Metal, measured iterations (encoded / provided) |
 | --- | --- | --- | --- | --- |
 | `fox-512` | 2.58 (2.57–2.59) | 1.03 (1.01–1.05) | 0.62, 1.18, 0.21 each, 0.14 | 7.1 / 7.0 GiB |
 | `lighthouse-512` | 2.59 (2.57–2.65) | 1.22 (1.04–1.23) | 0.63, 1.19, 0.21 each, 0.14 | 7.1 / 7.0 GiB |
-| `cat-1024` | 5.75 (5.62–5.76) | 4.43 (4.41–4.46) | 0.67, 1.83, 0.85–0.88, 0.63 | 13.5 / 13.4 GiB |
+| `cat-1024` | 5.75 (5.62–5.76) | 4.42 (4.41–4.46) | 0.67, 1.83, 0.85–0.88, 0.63 | 13.5 / 13.4 GiB |
 | `fox-watercolor-ref1` (one reference) | 2.95 (2.93–3.02) | 1.50 (1.49–1.51) | 0.63, 1.22, 0.26–0.27, 0.14 | 7.5 / 8.5 GiB |
 
 - **Where balanced time goes.** In the encoded profile, each iteration pays the text encoder's load, call and discard
@@ -371,10 +373,13 @@ cleared SSIM 0.94 against its fixture. Seconds per image, application-stage wall
   (provided). In the encoded profile its encoder runs every iteration.
 - **First image in the process:** 21.4 s for the encoded `fox-512` (7.1 s conditioning and 13.1 s step 0, while Core AI
   specialized the encoder and denoisers). Later cases' first images were 2.2–5.6 s.
+- **Warm-up peaks:** `fox-watercolor-ref1`'s warm-ups peaked higher than its measured iterations, at 8.77 GiB of Metal
+  (encoded) and 8.83 GiB (provided); the other cases' warm-up peaks match their measured ones.
 - **Peak physical footprint:** 3.0–4.0 GiB at 512² and 9.2–10.0 GiB at 1024². Sampled every 50 ms, so brief peaks can
   be missed.
 - **Not covered:** resident residency, which would avoid the per-iteration reloads; other Macs; iOS.
-- **Thermal state:** 0 throughout the encoded plan, and 1 (fair) by the end of the provided plan. `lighthouse-512`'s
+- **Thermal state:** 0 at the start and end of the encoded plan (the only two readings), and 1 (fair) at the end of
+  the provided plan. `lighthouse-512`'s
   provided steps were slower than `fox-512`'s at the same size (0.26 against 0.23 s), for no recorded reason; its
   encoded steps were not.
 
