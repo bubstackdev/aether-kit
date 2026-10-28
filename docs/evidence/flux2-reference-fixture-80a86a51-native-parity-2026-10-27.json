@@ -1,0 +1,340 @@
+{
+  "bundle" : {
+    "fingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+    "referenceFingerprint" : "d8a98cb04e2a28167a6354443677fa19d9a5ad6b8019cc8bbb3bd184f34d7664",
+    "revision" : "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "root" : "~\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/forge-export-2026-10-27\/bundle"
+  },
+  "checkCount" : 23,
+  "checks" : [
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997246615247337
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "tokenIDs",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "textRealRowCosine",
+      "passed" : true,
+      "value" : 0.99997242078523185
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "referencePositions",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-watercolor-ref1",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.99983224063298559
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99979421528903023
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99981570855572877
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99983412703435504
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referencePositions",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 1,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "timesteps",
+      "passed" : true,
+      "value" : 1
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[0]",
+      "passed" : true,
+      "value" : 0.9994296037596675
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[1]",
+      "passed" : true,
+      "value" : 0.99945039685347536
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[2]",
+      "passed" : true,
+      "value" : 0.99977475298764484
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "velocityCosine[3]",
+      "passed" : true,
+      "value" : 0.99977301690694487
+    },
+    {
+      "bar" : 35,
+      "case" : "fox-watercolor-ref1",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 89.679233256384805
+    },
+    {
+      "bar" : 35,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "decoderPSNR",
+      "passed" : true,
+      "value" : 88.07310829046402
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-watercolor-ref1",
+      "name" : "referenceLatentCosine[0]",
+      "passed" : true,
+      "value" : 0.99999999999810929
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceLatentCosine[0]",
+      "passed" : true,
+      "value" : 0.99999999999810929
+    },
+    {
+      "bar" : 0.999,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceLatentCosine[1]",
+      "passed" : true,
+      "value" : 0.99999999999828504
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "fox-watercolor-ref1",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.99856901240298523
+    },
+    {
+      "bar" : 0.93999999999999995,
+      "case" : "fox-lighthouse-ref2",
+      "name" : "imagePathSSIM",
+      "passed" : true,
+      "value" : 0.98775931994760935
+    }
+  ],
+  "elapsedSeconds" : "49.7",
+  "fixtures" : {
+    "cases" : "fox-watercolor-ref1,fox-lighthouse-ref2",
+    "reference" : "80a86a512315fa94",
+    "t2i" : "ffc4b1365159e40c"
+  },
+  "kind" : "flux2-native-parity",
+  "passed" : true,
+  "phases" : [
+    {
+      "footprintBytesAfter" : 283952328,
+      "lifetimePeakFootprintBytes" : 635965136,
+      "name" : "textEncoder",
+      "seconds" : 4.9811509847640991
+    },
+    {
+      "footprintBytesAfter" : 574752232,
+      "lifetimePeakFootprintBytes" : 2545637352,
+      "name" : "denoiser",
+      "seconds" : 12.70070207118988
+    },
+    {
+      "footprintBytesAfter" : 1040812264,
+      "lifetimePeakFootprintBytes" : 2545637352,
+      "name" : "vae",
+      "seconds" : 2.8567589521408081
+    },
+    {
+      "footprintBytesAfter" : 1333250304,
+      "lifetimePeakFootprintBytes" : 3918011400,
+      "name" : "session",
+      "seconds" : 18.568500995635986
+    }
+  ],
+  "records" : [
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "imagePathPSNR",
+      "value" : 45.625874910319311
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.9662873150534691
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "imagePathPSNR",
+      "value" : 33.02092585482044
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "wholePipelineSSIM",
+      "value" : 0.86740444264823735
+    }
+  ],
+  "schema" : 1,
+  "timings" : [
+    {
+      "name" : "verifyBundle",
+      "seconds" : 5.2654609680175781
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "textEncode",
+      "seconds" : 4.8043069839477539
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "textEncode",
+      "seconds" : 0.056100010871887207
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 9.9448180198669434
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.34425103664398193
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.33073604106903076
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "denoiseStep",
+      "seconds" : 0.37348902225494385
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.38171696662902832
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.38565611839294434
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.39738702774047852
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "denoiseStep",
+      "seconds" : 0.39232289791107178
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "decode",
+      "seconds" : 1.2921770811080933
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "decode",
+      "seconds" : 0.53958702087402344
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "referenceEncode",
+      "seconds" : 0.4435349702835083
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceEncode",
+      "seconds" : 0.070778012275695801
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "referenceEncode",
+      "seconds" : 0.44471299648284912
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "prepareReferences",
+      "seconds" : 0.61568808555603027
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "generateProvided",
+      "seconds" : 4.0336310863494873
+    },
+    {
+      "case" : "fox-watercolor-ref1",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.3462870121002197
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "prepareReferences",
+      "seconds" : 0.8133699893951416
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "generateProvided",
+      "seconds" : 3.7784880399703979
+    },
+    {
+      "case" : "fox-lighthouse-ref2",
+      "name" : "generateFromPrompt",
+      "seconds" : 4.715283989906311
+    }
+  ]
+}
