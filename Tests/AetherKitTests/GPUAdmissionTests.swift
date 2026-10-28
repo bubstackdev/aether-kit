@@ -294,6 +294,7 @@ private final class LeaseWatcher: @unchecked Sendable {
     let turn = Duration.milliseconds(300), hold = Duration.milliseconds(120)
     let admission = try GPUAdmission(maximumConcurrent: 2, crossProcessLease: leaseConfiguration(directory),
                                      crossProcessTurn: turn, crossProcessHandOffGap: .milliseconds(400))
+    let start = ContinuousClock.now
     let first = try await admission.admit(owner: "a")
     let watcher = LeaseWatcher(directory)
     let admitted = Mutex<[ContinuousClock.Instant]>([])
@@ -317,6 +318,8 @@ private final class LeaseWatcher: @unchecked Sendable {
     // hand-off gap had passed and the lease was taken again). Without draining, the lease is released only after the
     // last grant ends. The order is asserted rather than a wall-clock bound, which hosted runners overshoot.
     #expect(admitted.withLock { $0 }.contains { $0 > released })
+    // Not before the turn: the lease is held at least that long (a lower bound, which scheduling delays cannot break).
+    #expect(start.duration(to: released) >= turn)
     #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
     #expect(!FileManager.default.fileExists(atPath: directory.path))
 }

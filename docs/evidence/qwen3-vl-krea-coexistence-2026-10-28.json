@@ -5,7 +5,7 @@
   "device": "h17c",
   "hostOS": "macOS 27.0.1 (26A434)",
   "hostMemoryGiB": 64,
-  "test": "visionLanguageBesideKreaGuarded (one process, one GPUAdmission, one ResourceCoordinator of 48 GiB; under the shared GPU lock, quiet host, no heavy CPU job alongside)",
+  "test": "visionLanguageBesideKreaGuarded: one process and one GPUAdmission; only the describer reserves in the ResourceCoordinator (48 GiB), since the Krea session is built without a KreaResourceAdmission. Under the shared GPU lock, quiet host, no heavy CPU job alongside",
   "describer": "qwen3-vl-4b-abliterated-one-function-bundle-macos with the measured profile (decoder 11,600 + encoder 2,200 MiB resident)",
   "krea": "krea-2-turbo-realism macos-any-gpu, 1024x1024 renders",
   "passed": true,
@@ -192,5 +192,6 @@
         }
       ]
     }
-  }
+  },
+  "guard": "memorystatus level 25 (AETHER_VL_COEXISTENCE_MIN_LEVEL=25): the test's default of 60 would have stopped this run, since renders reached 51-54"
 }

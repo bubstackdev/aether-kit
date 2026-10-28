@@ -210,10 +210,13 @@ private struct CoexistenceReport: Codable {
     var error: String?
 }
 
-/// Opt-in, guarded measurement of a Qwen3-VL describer and a Krea 1024x1024 render sharing one process, one GPU
-/// admission and one `ResourceCoordinator`: describer requests and renders alternate, and every window records the
+/// Opt-in, guarded measurement of a Qwen3-VL describer and a Krea 1024x1024 render sharing one process and one GPU
+/// admission. Only the describer reserves in the `ResourceCoordinator` (the Krea session is built without a
+/// `KreaResourceAdmission`), so the ledger shows the describer's reservation alone. Describer requests and renders
+/// alternate, and every window records the
 /// sampled peaks and the host's minimum memorystatus level and free memory. If a sample falls below the guard
-/// (memorystatus level 60 by default; a free-memory floor only when asked, since opening the decoder reads its compiled
+/// (memorystatus level 60 by default, which a VL-4B-plus-Krea run crosses: its renders reached 51–54, so the recorded
+/// run used 25; a free-memory floor only when asked, since opening the decoder reads its compiled
 /// file into the page cache and leaves almost no free pages while memorystatus stays high), the test stops at the next
 /// step boundary (a native call already running finishes first), unloads both sessions and records why. It measures the
 /// residency overlap that admission bounds, not the cross-process case. Run only in a cleared window, on a quiet host,

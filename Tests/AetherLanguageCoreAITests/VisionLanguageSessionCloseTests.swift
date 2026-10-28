@@ -188,8 +188,8 @@ struct VisionLanguageSessionCloseTests {
         }
     }
 
-    /// Images each within the profile's image tokens but over it together are refused before the first encode, with no
-    /// GPU grant taken.
+    /// Images each within the profile's image tokens but over it together are refused before the first encode: the
+    /// encoder never runs.
     @Test(.timeLimit(.minutes(1))) func severalImagesOverTheProfileAreRefusedBeforeAnyEncode() async throws {
         let coordinator = try ResourceCoordinator(capacityBytes: 100)
         let resources = try LanguageResourceAdmission(coordinator: coordinator,

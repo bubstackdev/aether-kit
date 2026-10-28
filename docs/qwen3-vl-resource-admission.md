@@ -148,10 +148,12 @@ reclaiming from every process: other agents' jobs and Atelier Studio would be at
 Apple frameworks, so a reproduction would show only that Core AI fails under pressure, which is already known.
 
 **A guarded coexistence measurement is feasible and safe.** One test process, under the GPU lock, on a quiet host:
-- open the one-function VL-4B session and a balanced Krea session with a shared `ResourceCoordinator`;
+- open the one-function VL-4B session (reserving in a `ResourceCoordinator`) and a balanced Krea session (which, in
+  the test, reserves nothing);
 - alternate describer requests and a 1024×1024 Krea render;
 - sample memorystatus level, Metal, wired mapped-file pages and the footprint every 50 ms;
-- abort, releasing everything, if the level falls below a floor (25 for the run below).
+- abort, releasing everything, if the level falls below a floor. The test's default is 60, which the run below would
+  have crossed (its renders reached 51–54), so it ran with 25, the floor Atelier's helper gate uses.
 
 It runs both models in one process and serializes their GPU work, so it measures the residency overlap that admission
 must bound, not the cross-process race. It runs only the one-function describer: tripping the guard on purpose with
@@ -176,8 +178,9 @@ with nothing heavy alongside. All three rounds completed and the guard never tri
 - **The describer stays inside its reservation.** The coordinator held 13,800 MiB for the session throughout; the
   describer's own Metal was 10.2 GiB after its first image request (one grid; further grids add views, not
   residency), and its requests beside Krea added no more than about 0.4 GiB of transient.
-- **Krea added about 25 GiB of Metal,** under the 32 GiB floor its manifest declares, so the declared sum (46 GiB) is
-  about 10 GiB above the measured 35.6 GiB peak.
+- **Only the describer reserved.** The test's Krea session has no `KreaResourceAdmission`, so the coordinator held
+  the describer's 13.8 GiB alone. That plus Krea's 32 GiB host floor is 46 GiB, against a 35.6 GiB Metal peak (Metal
+  accounting, not residency); Krea added about 25 GiB of Metal.
 - **Memorystatus bottomed at 51** during renders with the describer resident: far from the 25 that Atelier's helper
   gate uses, and from the 44 of the crash, which had a 16 GB export alongside.
 - **Free pages are not a guard.** A first attempt with a 4 GiB free-memory floor stopped right after the describer
