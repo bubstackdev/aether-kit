@@ -1,0 +1,237 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-28",
+  "sourceCommit": "bd048e4bba8e185221e143dcd4e4f4d8248ea42a",
+  "scope": "FLUX.2 [klein] 4B quiet-window benchmark: the two pinned plans (Benchmarks/flux2-baseline.json, encoded; Benchmarks/flux2-provided.json, provided), bundle d27cefc4…, fixtures ffc4b136… and 80a86a51…, Apple M5 Max, macOS 27.0.1 (26A434), release aether-probe built from main bd048e4, balanced residency, preferGPU, 2 warm-ups and 5 measured iterations per case, one GPU-lock hold for both plans.",
+  "hostConditions": "Quiet window: the user paused the CPU-saturating transcode; GPU jobs of cooperating agents were serialized by the shared lock and none overlapped this hold. 1-minute load 3.74 at the start (5- and 15-minute 6.58 and 34.11, still decaying from the transcode) and 1.71 at the end (4.28, 27.89). The run refused to start unless the 1-minute load was under 10. Thermal state 0 at the start and end of the encoded plan (the only two readings) and 1 (fair) at the end of the provided plan. Timings are application-stage wall clock; see each report's timingScope.",
+  "gpuLockHold": {
+    "acquired": "2026-10-28 07:38:08",
+    "released": "2026-10-28 07:41:10",
+    "seconds": 182
+  },
+  "command": "aether-probe benchmark-flux2 BUNDLE T2I_FIXTURE REFERENCE_FIXTURE Benchmarks/flux2-{baseline,provided}.json SOURCE_ROOT OUTPUT --run, under ~/.cache/aether-kit/with-gpu-lock.sh",
+  "runs": [
+    {
+      "plan": "Benchmarks/flux2-baseline.json",
+      "planSHA256": "e88b84140474c6b8491fcc59bdeec5ba392f21b0dcc6f016a8fd958cf08c7f48",
+      "profile": "encoded",
+      "passed": true,
+      "executableSHA256": "081d50eed129f71e5d4538f493fee05cecf00c1eb2353cf74eb0fc19f58e9786",
+      "setups": [],
+      "cases": [
+        {
+          "case": "fox-512",
+          "firstImageSeconds": 21.36,
+          "measuredMedianSeconds": 2.58,
+          "measuredRangeSeconds": [
+            2.572,
+            2.586
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.624,
+            "step0": 1.183,
+            "step1": 0.212,
+            "step2": 0.211,
+            "step3": 0.21,
+            "decode": 0.14
+          },
+          "peakMetalAllocatedGiB": 7.07,
+          "peakPhysicalFootprintGiB": 3.02,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9011,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "lighthouse-512",
+          "firstImageSeconds": 2.751,
+          "measuredMedianSeconds": 2.594,
+          "measuredRangeSeconds": [
+            2.572,
+            2.652
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.63,
+            "step0": 1.192,
+            "step1": 0.211,
+            "step2": 0.21,
+            "step3": 0.21,
+            "decode": 0.136
+          },
+          "peakMetalAllocatedGiB": 7.08,
+          "peakPhysicalFootprintGiB": 3.19,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.8978,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "cat-1024",
+          "firstImageSeconds": 5.556,
+          "measuredMedianSeconds": 5.751,
+          "measuredRangeSeconds": [
+            5.623,
+            5.758
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.665,
+            "step0": 1.826,
+            "step1": 0.852,
+            "step2": 0.872,
+            "step3": 0.877,
+            "decode": 0.632
+          },
+          "peakMetalAllocatedGiB": 13.46,
+          "peakPhysicalFootprintGiB": 9.18,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.8624,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "fox-watercolor-ref1",
+          "firstImageSeconds": 3.325,
+          "measuredMedianSeconds": 2.947,
+          "measuredRangeSeconds": [
+            2.926,
+            3.016
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.626,
+            "step0": 1.224,
+            "step1": 0.258,
+            "step2": 0.264,
+            "step3": 0.266,
+            "decode": 0.137
+          },
+          "peakMetalAllocatedGiB": 7.46,
+          "peakPhysicalFootprintGiB": 3.82,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9663,
+          "peakMetalScope": "measured iterations",
+          "warmupPeakMetalAllocatedGiB": 8.77
+        }
+      ],
+      "report": "flux2-benchmark-quiet-encoded-2026-10-28.json",
+      "reportSHA256": "217eb6b9a4b62341e784348230633469928893065fa8677fe6bd28f8e53953de"
+    },
+    {
+      "plan": "Benchmarks/flux2-provided.json",
+      "planSHA256": "34038dd52d1252ef419acc841fb4d5b2a373c8b8cba9b999daa67b64397a8f12",
+      "profile": "provided",
+      "passed": true,
+      "executableSHA256": "081d50eed129f71e5d4538f493fee05cecf00c1eb2353cf74eb0fc19f58e9786",
+      "setups": [
+        {
+          "caseID": "fox-watercolor-ref1",
+          "excludedFromIterationTimings": true,
+          "referencesPreparedSeconds": 0.169323375
+        }
+      ],
+      "cases": [
+        {
+          "case": "fox-512",
+          "firstImageSeconds": 2.186,
+          "measuredMedianSeconds": 1.029,
+          "measuredRangeSeconds": [
+            1.013,
+            1.045
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.0,
+            "step0": 0.224,
+            "step1": 0.225,
+            "step2": 0.226,
+            "step3": 0.226,
+            "decode": 0.128
+          },
+          "peakMetalAllocatedGiB": 7.04,
+          "peakPhysicalFootprintGiB": 3.22,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9897,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "lighthouse-512",
+          "firstImageSeconds": 2.199,
+          "measuredMedianSeconds": 1.218,
+          "measuredRangeSeconds": [
+            1.042,
+            1.227
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.0,
+            "step0": 0.258,
+            "step1": 0.264,
+            "step2": 0.264,
+            "step3": 0.267,
+            "decode": 0.163
+          },
+          "peakMetalAllocatedGiB": 7.04,
+          "peakPhysicalFootprintGiB": 3.38,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9912,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "cat-1024",
+          "firstImageSeconds": 5.326,
+          "measuredMedianSeconds": 4.425,
+          "measuredRangeSeconds": [
+            4.414,
+            4.462
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.0,
+            "step0": 0.91,
+            "step1": 0.926,
+            "step2": 0.941,
+            "step3": 0.941,
+            "decode": 0.712
+          },
+          "peakMetalAllocatedGiB": 13.37,
+          "peakPhysicalFootprintGiB": 9.99,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9638,
+          "peakMetalScope": "measured iterations"
+        },
+        {
+          "case": "fox-watercolor-ref1",
+          "firstImageSeconds": 2.431,
+          "measuredMedianSeconds": 1.501,
+          "measuredRangeSeconds": [
+            1.492,
+            1.508
+          ],
+          "medianStageSeconds": {
+            "conditioning": 0.0,
+            "step0": 0.328,
+            "step1": 0.33,
+            "step2": 0.334,
+            "step3": 0.338,
+            "decode": 0.172
+          },
+          "peakMetalAllocatedGiB": 8.5,
+          "peakPhysicalFootprintGiB": 3.96,
+          "allIterationsIdentical": true,
+          "ssimAgainstFixture": 0.9986,
+          "peakMetalScope": "measured iterations",
+          "warmupPeakMetalAllocatedGiB": 8.83
+        }
+      ],
+      "report": "flux2-benchmark-quiet-provided-2026-10-28.json",
+      "reportSHA256": "8ef7c64a24ddc8c8438de4c426cec4b3e7385da5b407e7cbdf58071769513622"
+    }
+  ],
+  "loadGuard": {
+    "script": "flux2-quiet-benchmark.sh, the operator's staging script (outside the repository; it holds local paths)",
+    "scriptSHA256": "8fbd8e4b9034cb378959bfe7a013eb8182081f567205edd228d8689497d4c3bf",
+    "scriptModifiedBeforeRun": "2026-10-28 07:30:31 (the run started 07:38:08)",
+    "rule": "before taking the GPU lock, read the 1-minute load from `sysctl -n vm.loadavg` and refuse (exit 3) unless it is under 10",
+    "threshold1MinuteLoad": 10,
+    "guardLines": [
+      "load1=$(sysctl -n vm.loadavg | awk '{print $2}')",
+      "if (( load1 >= 10 )); then",
+      "    print \"refusing: 1-minute load $load1 is not under 10\" >&2; exit 3",
+      "fi"
+    ],
+    "observed1MinuteLoad": 3.74
+  }
+}

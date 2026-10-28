@@ -1,0 +1,1802 @@
+{
+  "benchmarkExecuted" : true,
+  "bundleFingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+  "bundlePath" : "~\/.cache\/huggingface\/aether-kit\/flux2-klein-4b\/forge-export-2026-10-27\/bundle",
+  "cachePolicy" : "No OS cache eviction; one generation session per case, reused across its warmups and measurements, then unloaded",
+  "computePolicy" : "preferGPU",
+  "correctness" : "Every iteration of a case must reproduce its first iteration's conditioning and pixels exactly. Provided-profile cases must reach the plan's SSIM against the fixture image on the first measured iteration; encoded cases record it (the whole pipeline is not gated in parity either).",
+  "device" : {
+    "architecture" : "h17c",
+    "logicalProcessors" : "18",
+    "lowPowerModeAfterRun" : "false",
+    "lowPowerModeAtPreparation" : "false",
+    "metalDevice" : "Apple M5 Max",
+    "os" : "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryBytes" : "68719476736",
+    "recommendedMaxWorkingSetBytes" : "55662788608",
+    "thermalStateAfterRun" : "1",
+    "thermalStateAtPreparation" : "0"
+  },
+  "executablePath" : "~\/Code\/bubstackdev\/aether\/aether-kit\/.worktrees\/flux-bench\/.build\/out\/Products\/Release\/aether-probe",
+  "executableSHA256" : "081d50eed129f71e5d4538f493fee05cecf00c1eb2353cf74eb0fc19f58e9786",
+  "fixtures" : {
+    "reference" : "80a86a512315fa94",
+    "t2i" : "ffc4b1365159e40c"
+  },
+  "hostConditions" : "Quiet-window availability must be arranged by the operator; this command does not establish system idleness or control other workloads",
+  "installedToolchain" : "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "iterations" : [
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 0,
+      "memorySamples" : 49,
+      "observerSeconds" : 0.009376500000000001,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7411073024,
+        "physicalFootprintBytes" : 3279886648,
+        "processLifetimePeakFootprintBytes" : 3281639736,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6942654464
+      },
+      "stages" : {
+        "completion" : 1.4208e-05,
+        "conditioning" : 3.3625e-05,
+        "decode" : 0.340720625,
+        "denoiserSetup" : 0.003282542,
+        "step0" : 1.195018583,
+        "step1" : 0.21159775,
+        "step2" : 0.211788583,
+        "step3" : 0.213878292
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 2.1857107080000002
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 1,
+      "memorySamples" : 27,
+      "observerSeconds" : 0.007887208,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7543144448,
+        "physicalFootprintBytes" : 3432946000,
+        "processLifetimePeakFootprintBytes" : 3440843088,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6982582272
+      },
+      "stages" : {
+        "completion" : 8.625e-06,
+        "conditioning" : 6.625e-06,
+        "decode" : 0.127393333,
+        "denoiserSetup" : 9.334e-06,
+        "step0" : 0.211954166,
+        "step1" : 0.215832084,
+        "step2" : 0.219995875,
+        "step3" : 0.220338791
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.003426041
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 0,
+      "memorySamples" : 27,
+      "observerSeconds" : 0.007974249,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7543144448,
+        "physicalFootprintBytes" : 3433929040,
+        "processLifetimePeakFootprintBytes" : 3441957200,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6983221248
+      },
+      "stages" : {
+        "completion" : 6.666e-06,
+        "conditioning" : 5.833e-06,
+        "decode" : 0.1269935,
+        "denoiserSetup" : 9.584e-06,
+        "step0" : 0.217914042,
+        "step1" : 0.220850667,
+        "step2" : 0.225106833,
+        "step3" : 0.221960542
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.020821916
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 1,
+      "memorySamples" : 27,
+      "observerSeconds" : 0.007855792,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7543177216,
+        "physicalFootprintBytes" : 3445594448,
+        "processLifetimePeakFootprintBytes" : 3461536080,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6995558400
+      },
+      "stages" : {
+        "completion" : 7.334e-06,
+        "conditioning" : 6.917e-06,
+        "decode" : 0.127618791,
+        "denoiserSetup" : 9.25e-06,
+        "step0" : 0.217497333,
+        "step1" : 0.221938417,
+        "step2" : 0.225643625,
+        "step3" : 0.225120333
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.025697792
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 2,
+      "memorySamples" : 28,
+      "observerSeconds" : 0.007931916,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7551287296,
+        "physicalFootprintBytes" : 3451361616,
+        "processLifetimePeakFootprintBytes" : 3461536080,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6995574784
+      },
+      "stages" : {
+        "completion" : 7.584e-06,
+        "conditioning" : 6.875e-06,
+        "decode" : 0.12765625,
+        "denoiserSetup" : 8.917e-06,
+        "step0" : 0.224124458,
+        "step1" : 0.225365417,
+        "step2" : 0.225208208,
+        "step3" : 0.226366834
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.036676459
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 3,
+      "memorySamples" : 28,
+      "observerSeconds" : 0.007854251,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7560724480,
+        "physicalFootprintBytes" : 3453311312,
+        "processLifetimePeakFootprintBytes" : 3461536080,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6999212032
+      },
+      "stages" : {
+        "completion" : 6.791e-06,
+        "conditioning" : 6.291e-06,
+        "decode" : 0.1284205,
+        "denoiserSetup" : 7.791e-06,
+        "step0" : 0.225620125,
+        "step1" : 0.228819375,
+        "step2" : 0.225850792,
+        "step3" : 0.225623875
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.042209791
+    },
+    {
+      "caseID" : "fox-512",
+      "conditioningSHA256" : "db30d085756d71c6726e60a1806f7409302553660f1021a94964426a418cf6fc",
+      "iteration" : 4,
+      "memorySamples" : 28,
+      "observerSeconds" : 0.007835458000000002,
+      "passed" : true,
+      "pixelsSHA256" : "185c584672f7cace6c781797915bf8ed2320d4dcb0010dde74ff74fe79afd106",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7551287296,
+        "physicalFootprintBytes" : 3453081936,
+        "processLifetimePeakFootprintBytes" : 3461536080,
+        "processLifetimePeakResidentBytes" : 7300857856,
+        "residentBytes" : 6995591168
+      },
+      "stages" : {
+        "completion" : 6.458e-06,
+        "conditioning" : 6.5e-06,
+        "decode" : 0.128840584,
+        "denoiserSetup" : 7.875e-06,
+        "step0" : 0.224700292,
+        "step1" : 0.229513833,
+        "step2" : 0.230506583,
+        "step3" : 0.231474833
+      },
+      "stepLatentsSHA256" : [
+        "4f1c1584dc04ee913439a65586f8d766c41ff3b4e5ec731cac847c7589523bd8",
+        "3678c52d332d3cc9725a02f2975972884ccbedfb1136a3bf71895806cd03f0b8",
+        "a042756a81e180e494bc98183e156c80434279aa9a42c63cd57a5b76d8a3496a",
+        "4cf73409bb00362824ba1cdc2503be88734d537bae6351530b05d753cbb75be5"
+      ],
+      "totalSeconds" : 1.052892416
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 0,
+      "memorySamples" : 49,
+      "observerSeconds" : 0.007877207,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7411073024,
+        "physicalFootprintBytes" : 3486161448,
+        "processLifetimePeakFootprintBytes" : 3486751272,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7343259648
+      },
+      "stages" : {
+        "completion" : 7.083e-06,
+        "conditioning" : 1.3958e-05,
+        "decode" : 0.338986667,
+        "denoiserSetup" : 0.002366417,
+        "step0" : 1.182109042,
+        "step1" : 0.219397625,
+        "step2" : 0.222744042,
+        "step3" : 0.225095417
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 2.198597458
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 1,
+      "memorySamples" : 27,
+      "observerSeconds" : 0.007851041999999999,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7543144448,
+        "physicalFootprintBytes" : 3621345832,
+        "processLifetimePeakFootprintBytes" : 3629193768,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7171293184
+      },
+      "stages" : {
+        "completion" : 6.833e-06,
+        "conditioning" : 9.416e-06,
+        "decode" : 0.127733583,
+        "denoiserSetup" : 9.25e-06,
+        "step0" : 0.219337834,
+        "step1" : 0.226229,
+        "step2" : 0.226087542,
+        "step3" : 0.224666458
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.031930958
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 0,
+      "memorySamples" : 28,
+      "observerSeconds" : 0.0078975,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7551287296,
+        "physicalFootprintBytes" : 3629177384,
+        "processLifetimePeakFootprintBytes" : 3629718056,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7171325952
+      },
+      "stages" : {
+        "completion" : 6.75e-06,
+        "conditioning" : 6.5e-06,
+        "decode" : 0.12887725,
+        "denoiserSetup" : 8.5e-06,
+        "step0" : 0.225193542,
+        "step1" : 0.229761416,
+        "step2" : 0.227906292,
+        "step3" : 0.230369
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.05002675
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 1,
+      "memorySamples" : 29,
+      "observerSeconds" : 0.007851373,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7560724480,
+        "physicalFootprintBytes" : 3623705128,
+        "processLifetimePeakFootprintBytes" : 3632503336,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7174111232
+      },
+      "stages" : {
+        "completion" : 6.125e-06,
+        "conditioning" : 6.125e-06,
+        "decode" : 0.158571709,
+        "denoiserSetup" : 7.792e-06,
+        "step0" : 0.224576,
+        "step1" : 0.229521209,
+        "step2" : 0.23897175,
+        "step3" : 0.253325459
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.112837542
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 2,
+      "memorySamples" : 31,
+      "observerSeconds" : 0.007848583,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7560724480,
+        "physicalFootprintBytes" : 3632011816,
+        "processLifetimePeakFootprintBytes" : 3632519720,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7174111232
+      },
+      "stages" : {
+        "completion" : 6.625e-06,
+        "conditioning" : 6.5e-06,
+        "decode" : 0.163099125,
+        "denoiserSetup" : 8.375e-06,
+        "step0" : 0.25826525,
+        "step1" : 0.263859792,
+        "step2" : 0.265416959,
+        "step3" : 0.267567458
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.226078667
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 3,
+      "memorySamples" : 31,
+      "observerSeconds" : 0.007880375,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7560724480,
+        "physicalFootprintBytes" : 3632257600,
+        "processLifetimePeakFootprintBytes" : 3632749120,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7173619712
+      },
+      "stages" : {
+        "completion" : 7.041e-06,
+        "conditioning" : 6.708e-06,
+        "decode" : 0.162912666,
+        "denoiserSetup" : 8.459e-06,
+        "step0" : 0.262276583,
+        "step1" : 0.265790042,
+        "step2" : 0.267272042,
+        "step3" : 0.268596625
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.234750541
+    },
+    {
+      "caseID" : "lighthouse-512",
+      "conditioningSHA256" : "e8783553a422aef29bb56ce44a4d6f3db6a2b312a76c6ca64cd63dba0e6ab509",
+      "iteration" : 4,
+      "memorySamples" : 31,
+      "observerSeconds" : 0.007882625,
+      "passed" : true,
+      "pixelsSHA256" : "b3a906fd8f8dd880388136fbc1d4d8eef5d3261c583afd6fd0c6987070686e62",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7551287296,
+        "physicalFootprintBytes" : 3632962112,
+        "processLifetimePeakFootprintBytes" : 3632962112,
+        "processLifetimePeakResidentBytes" : 7515324416,
+        "residentBytes" : 7173980160
+      },
+      "stages" : {
+        "completion" : 6.75e-06,
+        "conditioning" : 5.958e-06,
+        "decode" : 0.162924,
+        "denoiserSetup" : 8.584e-06,
+        "step0" : 0.261950417,
+        "step1" : 0.264041208,
+        "step2" : 0.263783042,
+        "step3" : 0.267329333
+      },
+      "stepLatentsSHA256" : [
+        "f4531914d649308144cfd18864d10aea11d3cdcdc3d94bd617ff6a651c5cfbb5",
+        "cc8091029359f69c90eaceb57fc4c23b232415c201b18c781212834fae38d59e",
+        "7ae3de97b77fe53cf44621cd9c0584561ccac7e14d50e0c40a1221601957a857",
+        "c7775d44b4f961bc5239601d0878ae61d7161163188ffbd3e73332518753f6e9"
+      ],
+      "totalSeconds" : 1.227931917
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 0,
+      "memorySamples" : 106,
+      "observerSeconds" : 0.009961916000000001,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14034878464,
+        "physicalFootprintBytes" : 9824328712,
+        "processLifetimePeakFootprintBytes" : 9828391944,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7875149824
+      },
+      "stages" : {
+        "completion" : 1.4166e-05,
+        "conditioning" : 1.2167e-05,
+        "decode" : 0.869739291,
+        "denoiserSetup" : 0.002369542,
+        "step0" : 1.766598667,
+        "step1" : 0.843596917,
+        "step2" : 0.909346792,
+        "step3" : 0.924391125
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 5.326030583
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 1,
+      "memorySamples" : 89,
+      "observerSeconds" : 0.009958001,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10726038536,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7646052352
+      },
+      "stages" : {
+        "completion" : 1.4042e-05,
+        "conditioning" : 7.375e-06,
+        "decode" : 0.709741708,
+        "denoiserSetup" : 8.916e-06,
+        "step0" : 0.894922958,
+        "step1" : 0.9279975,
+        "step2" : 0.933828625,
+        "step3" : 0.93688975
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.413368875
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 0,
+      "memorySamples" : 92,
+      "observerSeconds" : 0.009934125,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10725907464,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7695253504
+      },
+      "stages" : {
+        "completion" : 7.333e-06,
+        "conditioning" : 6.25e-06,
+        "decode" : 0.709285209,
+        "denoiserSetup" : 9.292e-06,
+        "step0" : 0.912925375,
+        "step1" : 0.920912666,
+        "step2" : 0.940554,
+        "step3" : 0.941259167
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.434893417
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 1,
+      "memorySamples" : 91,
+      "observerSeconds" : 0.010014915000000003,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10699430920,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7645806592
+      },
+      "stages" : {
+        "completion" : 1.475e-05,
+        "conditioning" : 9.5e-06,
+        "decode" : 0.712536042,
+        "denoiserSetup" : 9.125e-06,
+        "step0" : 0.898547542,
+        "step1" : 0.927121625,
+        "step2" : 0.935553209,
+        "step3" : 0.94022675
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.424033458
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 2,
+      "memorySamples" : 92,
+      "observerSeconds" : 0.009911667,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10724613128,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7676870656
+      },
+      "stages" : {
+        "completion" : 1.7167e-05,
+        "conditioning" : 6.167e-06,
+        "decode" : 0.709352583,
+        "denoiserSetup" : 9.25e-06,
+        "step0" : 0.913450166,
+        "step1" : 0.928013584,
+        "step2" : 0.93722575,
+        "step3" : 0.93666925
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.434655584
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 3,
+      "memorySamples" : 91,
+      "observerSeconds" : 0.010014125,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10724563976,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7645855744
+      },
+      "stages" : {
+        "completion" : 1.2916e-05,
+        "conditioning" : 7.625e-06,
+        "decode" : 0.712324083,
+        "denoiserSetup" : 9.333e-06,
+        "step0" : 0.909971625,
+        "step1" : 0.926096042,
+        "step2" : 0.972843208,
+        "step3" : 0.941220209
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.472499166
+    },
+    {
+      "caseID" : "cat-1024",
+      "conditioningSHA256" : "ef03db935fd16ef9b922bdb610b0a5e10b1c6f18cec965dff3520528951c0f14",
+      "iteration" : 4,
+      "memorySamples" : 91,
+      "observerSeconds" : 0.009953541,
+      "passed" : true,
+      "pixelsSHA256" : "92b2c53fdc199a0d4bdd849ce1058b0dd243076f66421726da012821d929f726",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 14351253504,
+        "physicalFootprintBytes" : 10725743624,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 7887159296,
+        "residentBytes" : 7645757440
+      },
+      "stages" : {
+        "completion" : 7.708e-06,
+        "conditioning" : 6.083e-06,
+        "decode" : 0.722551542,
+        "denoiserSetup" : 9e-06,
+        "step0" : 0.909146042,
+        "step1" : 0.924752667,
+        "step2" : 0.941190625,
+        "step3" : 0.94584775
+      },
+      "stepLatentsSHA256" : [
+        "7022b643b4bd17bf22e4afc0792eb1590a4798b0943f1745dacdaf3e39599c0b",
+        "ff1856adb246ed2277e2f7cfb7e9e899f87878b8daf67e75381ffc1e41cf3cd0",
+        "a0e645cd33ed1461b67b1eaf3440983a28cefd2a4c55a3cb4426c4f975652f4b",
+        "fa98faf140d1fceb9eca72a8da4156496b5c139a53b80bfd6e5a254a94b84f90"
+      ],
+      "totalSeconds" : 4.453464958
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 0,
+      "memorySamples" : 54,
+      "observerSeconds" : 0.007952999,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 9312403456,
+        "physicalFootprintBytes" : 4088552528,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7666122752
+      },
+      "stages" : {
+        "completion" : 8.542e-06,
+        "conditioning" : 7.75e-06,
+        "decode" : 0.340660167,
+        "denoiserSetup" : 0.002372917,
+        "references" : 7.5e-07,
+        "step0" : 1.27078675,
+        "step1" : 0.251852166,
+        "step2" : 0.268131875,
+        "step3" : 0.289194084
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 2.430968
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 1,
+      "memorySamples" : 35,
+      "observerSeconds" : 0.007974082,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "warmup",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 9486368768,
+        "physicalFootprintBytes" : 4255013968,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7533658112
+      },
+      "stages" : {
+        "completion" : 7.875e-06,
+        "conditioning" : 8.667e-06,
+        "decode" : 0.170404959,
+        "denoiserSetup" : 1.1458e-05,
+        "references" : 1.25e-06,
+        "step0" : 0.2743505,
+        "step1" : 0.300550083,
+        "step2" : 0.31759825,
+        "step3" : 0.330146709
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.401053833
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 0,
+      "memorySamples" : 37,
+      "observerSeconds" : 0.007934957999999999,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 9124610048,
+        "physicalFootprintBytes" : 4253555792,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7533330432
+      },
+      "stages" : {
+        "completion" : 7.25e-06,
+        "conditioning" : 7.417e-06,
+        "decode" : 0.1741415,
+        "denoiserSetup" : 9.5e-06,
+        "references" : 3.34e-07,
+        "step0" : 0.325762083,
+        "step1" : 0.329053458,
+        "step2" : 0.333654708,
+        "step3" : 0.338591792
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.509163
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 1,
+      "memorySamples" : 37,
+      "observerSeconds" : 0.00792579,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7829094400,
+        "physicalFootprintBytes" : 4245085264,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7526957056
+      },
+      "stages" : {
+        "completion" : 7.458e-06,
+        "conditioning" : 6.709e-06,
+        "decode" : 0.172304417,
+        "denoiserSetup" : 7.75e-06,
+        "references" : 3.33e-07,
+        "step0" : 0.328430292,
+        "step1" : 0.333742292,
+        "step2" : 0.334171709,
+        "step3" : 0.339721042
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.5163177920000002
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 2,
+      "memorySamples" : 37,
+      "observerSeconds" : 0.007948874000000002,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7829094400,
+        "physicalFootprintBytes" : 4246166608,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7526612992
+      },
+      "stages" : {
+        "completion" : 7.792e-06,
+        "conditioning" : 6.375e-06,
+        "decode" : 0.1721545,
+        "denoiserSetup" : 9.375e-06,
+        "references" : 7.08e-07,
+        "step0" : 0.330430042,
+        "step1" : 0.333633667,
+        "step2" : 0.3320055,
+        "step3" : 0.337582917
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.5137797499999999
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 3,
+      "memorySamples" : 37,
+      "observerSeconds" : 0.007947125,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7820886016,
+        "physicalFootprintBytes" : 4236532816,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7526432768
+      },
+      "stages" : {
+        "completion" : 7.291e-06,
+        "conditioning" : 6.458e-06,
+        "decode" : 0.173235125,
+        "denoiserSetup" : 8.75e-06,
+        "references" : 4.17e-07,
+        "step0" : 0.325054208,
+        "step1" : 0.32845125,
+        "step2" : 0.33205375,
+        "step3" : 0.333677584
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.5004419580000001
+    },
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "conditioningSHA256" : "debc71d1642d788b916acce73502202ecb95540976574e0eaf2217bd5bdfc9c9",
+      "iteration" : 4,
+      "memorySamples" : 37,
+      "observerSeconds" : 0.007931666,
+      "passed" : true,
+      "pixelsSHA256" : "c97fdcc12918f6096f185964573bb0953cb4b7161b19ed0ee06897457b8c881d",
+      "profile" : "provided",
+      "role" : "measured",
+      "sampledPeakMemory" : {
+        "metalAllocatedBytes" : 7829094400,
+        "physicalFootprintBytes" : 4237925456,
+        "processLifetimePeakFootprintBytes" : 10727414792,
+        "processLifetimePeakResidentBytes" : 8024276992,
+        "residentBytes" : 7526612992
+      },
+      "stages" : {
+        "completion" : 6.708e-06,
+        "conditioning" : 6.375e-06,
+        "decode" : 0.171362334,
+        "denoiserSetup" : 9e-06,
+        "references" : 5.83e-07,
+        "step0" : 0.32845225,
+        "step1" : 0.330138792,
+        "step2" : 0.338466708,
+        "step3" : 0.332346667
+      },
+      "stepLatentsSHA256" : [
+        "14f30538bc9b2d41a2b671e216f4552d36143eaea41bee8531c412fe2a98775a",
+        "36ff7b2e2c285fdba841730115ffe3f67d08d2b9a20b159a80b32e1def9870fb",
+        "8603f674b184c2646eb837dd1fa27c0140f9a8d6ccea36ed92ad61a7176b5de5",
+        "7d3357131141daad4308232d0f9c40769e6657294e2f7b127df7290cf7dfac56"
+      ],
+      "totalSeconds" : 1.508721083
+    }
+  ],
+  "memoryAfterUnload" : {
+    "metalAllocatedBytes" : 737869824,
+    "physicalFootprintBytes" : 2497399184,
+    "processLifetimePeakFootprintBytes" : 10727414792,
+    "processLifetimePeakResidentBytes" : 8024276992,
+    "residentBytes" : 1067728896
+  },
+  "memoryBeforeIterations" : {
+    "metalAllocatedBytes" : 65536,
+    "physicalFootprintBytes" : 178914144,
+    "processLifetimePeakFootprintBytes" : 178914144,
+    "processLifetimePeakResidentBytes" : 259686400,
+    "residentBytes" : 259686400
+  },
+  "memorySampleIntervalMilliseconds" : 50,
+  "memoryScope" : "Per-iteration maximum observed physical footprint, resident bytes and default Metal device currentAllocatedSize, sampled every 50 ms plus stage boundaries. Counters overlap and must not be summed; brief peaks may be missed.",
+  "modelStreamsVerified" : true,
+  "modelVerificationScope" : "Model streams hashed before iterations; postflight rechecks source, executable, plan, fixtures and asset declarations. Files must remain immutable during execution.",
+  "passed" : true,
+  "plan" : {
+    "bundleFingerprint" : "d27cefc4b63c0f25e9f4bf581f182745c874ca59583f1d311322de1b55337e66",
+    "cases" : [
+      {
+        "fixture" : "t2i",
+        "fixtureCase" : "fox-512",
+        "id" : "fox-512"
+      },
+      {
+        "fixture" : "t2i",
+        "fixtureCase" : "lighthouse-512",
+        "id" : "lighthouse-512"
+      },
+      {
+        "fixture" : "t2i",
+        "fixtureCase" : "cat-1024",
+        "id" : "cat-1024"
+      },
+      {
+        "fixture" : "reference",
+        "fixtureCase" : "fox-watercolor-ref1",
+        "id" : "fox-watercolor-ref1"
+      }
+    ],
+    "measuredIterations" : 5,
+    "minimumProvidedSSIM" : 0.94,
+    "profile" : "provided",
+    "referenceFixture" : "80a86a512315fa94",
+    "residency" : "balanced",
+    "schema" : 1,
+    "textToImageFixture" : "ffc4b1365159e40c",
+    "warmupIterations" : 2
+  },
+  "planPath" : "~\/Code\/bubstackdev\/aether\/aether-kit\/.worktrees\/flux-bench\/Benchmarks\/flux2-provided.json",
+  "planSHA256" : "34038dd52d1252ef419acc841fb4d5b2a373c8b8cba9b999daa67b64397a8f12",
+  "preparedCases" : [
+    {
+      "fixtureCase" : "fox-512",
+      "height" : 512,
+      "id" : "fox-512",
+      "noiseSHA256" : "30460c1765c1a35f2f6962e7eaf860891b1f0974e68081ba06aa6434a2a85e8a",
+      "references" : 0,
+      "seed" : 3512,
+      "steps" : 4,
+      "tokenIDsMatchFixture" : true,
+      "width" : 512
+    },
+    {
+      "fixtureCase" : "lighthouse-512",
+      "height" : 512,
+      "id" : "lighthouse-512",
+      "noiseSHA256" : "71edadd4e5a36eaab6e73a103150654d5b432bbdcda089485cc0f63ff7149dbe",
+      "references" : 0,
+      "seed" : 1512,
+      "steps" : 4,
+      "tokenIDsMatchFixture" : true,
+      "width" : 512
+    },
+    {
+      "fixtureCase" : "cat-1024",
+      "height" : 1024,
+      "id" : "cat-1024",
+      "noiseSHA256" : "8dd8ffdde15d4d03fb09cac7e98c85abf8f8051ebdda4f69a0980869e92c86a5",
+      "references" : 0,
+      "seed" : 61024,
+      "steps" : 4,
+      "tokenIDsMatchFixture" : true,
+      "width" : 1024
+    },
+    {
+      "fixtureCase" : "fox-watercolor-ref1",
+      "height" : 512,
+      "id" : "fox-watercolor-ref1",
+      "noiseSHA256" : "e8efccc38f4700f79f9e856d851d3fd572473136cd29623120f48c80070cd9d7",
+      "references" : 1,
+      "seed" : 11512,
+      "steps" : 4,
+      "tokenIDsMatchFixture" : true,
+      "width" : 512
+    }
+  ],
+  "provenanceFilesStableAfterRun" : true,
+  "purpose" : "Opt-in FLUX.2 [klein] generation benchmark",
+  "requestedMode" : "run",
+  "schema" : 1,
+  "setups" : [
+    {
+      "caseID" : "fox-watercolor-ref1",
+      "excludedFromIterationTimings" : true,
+      "referencesPreparedSeconds" : 0.169323375
+    }
+  ],
+  "sourceRoot" : "~\/Code\/bubstackdev\/aether\/aether-kit\/.worktrees\/flux-bench",
+  "sourceSHA256" : {
+    "Package.resolved" : "5d30e0e2a2aade14f7178368827ff674029fcc45047f36677ed3fced582c3b3f",
+    "Package.swift" : "765e58186011d265d5f446de881700e89b9821f4ba5af75ed89c95783dbc13b8",
+    "Scripts\/annotate-floor.py" : "17fef1e98ff65b47c39537f1ffd0b7bc39d48ec962b81fef273d0c7f7b9849ff",
+    "Scripts\/audit-h3-media.py" : "07cfea4c08b6d68e122de6e93df3aefdc81d2abf22f38b03b7b8ceafc30d27bb",
+    "Scripts\/benchmark-flux2.sh" : "081f6cc6ecb601c3e485126473c08346b064b7e934321ee2dda608e2d5b6c750",
+    "Scripts\/benchmark-krea.sh" : "57bf1e9881232e2f0c9b94684b55e5cd9fcc78a015e1bd079e70f01c28e5be48",
+    "Scripts\/check-cpu.sh" : "5975398facf92f075bd0474fe9bc7d875674e8a756b6ab10cea05b2e46fbc86f",
+    "Scripts\/check-floor.sh" : "3e00471a3b2a564fcd747e7bb2d3432fed06ce300cf958ac5d0ae5984d38c414",
+    "Scripts\/check-h3-block-lift.py" : "46460dc33bc103ae040f23b3ff1ee4eab2061e0dfd2dc9c92e8ba7f0b62f48d8",
+    "Scripts\/check-h3-converted-weights.py" : "1204d06f1741f0452253d346a495d56e9c553ba8d15ffca874b0830ff8cd6320",
+    "Scripts\/check.sh" : "d2c6a5b4f8d742cec136538476ad98b1225a1db54bda507790ac338a1c7f1d06",
+    "Scripts\/export-h3-profile.py" : "cd9076d373e540812bed2c99612b5c91aed052b77bc1d04b670a3e7dd7e6ef73",
+    "Scripts\/finalize-flux2-bundle.py" : "a282ab89906b5c648cadd162c4b3e18a147915de45b002cf3a4843c26c897f19",
+    "Scripts\/h3_export_lib.py" : "95da091de9a2a6e049803d71115688dbfb323e6cb77e22147d3422714fbda3b6",
+    "Scripts\/launch-floor-consumer.sh" : "14a2ee8231165d8e49e67d919cdf16ccdbfabbfb21818e7b99f68f7f747c7952",
+    "Scripts\/prepare-flux2-reference-fixtures.py" : "a60abf7130ef1f70065fc79266a093100e2effeb870abad7c2d9d0c0042309ee",
+    "Scripts\/prepare-h3-backbone-oracle.py" : "457682a6af3ab0c26fa51374224a76c8ca6284fff1aefe0bdea833b19246a062",
+    "Scripts\/prepare-h3-chain-oracle.py" : "4b1e934d2acb567438abf96932c273bf1b83609b703f5c19ca8d217d77137561",
+    "Scripts\/prepare-h3-denoising-oracle.py" : "03a810b8154320e090059a8053340ec15c7962819002a331966a86d800b6004b",
+    "Scripts\/prepare-h3-profile-oracle.py" : "564117c98832b4e0df186383a369725743c3785e3e75be230d56af5d3bb23a1c",
+    "Scripts\/prepare-h3-rotary-oracle.py" : "fea5a774e3f02cb7457f4b6a52f4dbc489cb28ba9a96669483ac9d104e4c9eb3",
+    "Scripts\/prepare-h3-temporal-oracle.py" : "28438911fa853c79e28e9b347d6603c2fc19e60187b77fb0c22deb0480551e0f",
+    "Scripts\/probe-function-weights.swift" : "fbd5040d2c6f7524d43025878bc7e839042082de7e8be3c8172de976580e2012",
+    "Scripts\/qualify-h3-denoising.py" : "e28c2fdb55b95a5fdb2fcbf9d917e1268b0a862ced00d4069f8e107efc455f49",
+    "Scripts\/qualify-h3-memory.py" : "ac0dd94e879f6149505f816b866ce16dc54e092698ea303af5f8e578dfdff9ba",
+    "Scripts\/qualify-h3-phases.py" : "ab6d5c7ebdfbf5e9add84dd4ffddef3046eb44dc098647d2c9f284eefb4f3085",
+    "Scripts\/qualify-h3-profile-graphs.py" : "c99d12bc99a6dd354a5b31861aa430f60f97a8f930b9e2af425184535dcf7256",
+    "Scripts\/qualify-h3-profile-trajectory.py" : "c63740b47100ca4780848cbfa2711abb90842a7d4816051242346d2d58e290dd",
+    "Scripts\/qualify-kokoro-native.sh" : "4fbbeb0deda17003e2bb0ea3f997d62b717a079660610b747d91bd5819bc7ef9",
+    "Scripts\/record-language-memory-evidence.py" : "cdd4cc5dfe16e08089b99d3d6fc788ae2d0a955c7c3f24004aa5559d35149194",
+    "Scripts\/sweep-kokoro-native.sh" : "a86004d88420448afafaccaac86b6b814bf33b166bf548f71b8626bad136515d",
+    "Scripts\/time-h3-render-paired.py" : "256538592a54bce7d1cee4186050023415143e3c1aced02ce32eb4f62f26e2b8",
+    "Scripts\/write-kit-decoded-photos.swift" : "c4662030849a1f8248ecdb99b0ab2918ef33f346b25a666267235ce65348451b",
+    "Scripts\/write-rotated-photos.swift" : "ecc4b3312fd1ba95805b676eae5b394b197fee0d95d289a1edc33b26a9ce18be",
+    "Sources\/AetherAssets\/AssetManifest.swift" : "ff00f5ba147b01d8a8933218dbc3543b65e872a4940fee6ad0ca23371bb67628",
+    "Sources\/AetherAssets\/DeclaredModelAsset.swift" : "74f60e5ce886861a81080dacf8a94d6ebe0c721267a4b28f415bf83907370df7",
+    "Sources\/AetherAssets\/ExternalFileLease.swift" : "b21507f23fc23df06bd59e60c4d180cd95eb48f41d3628cc7d0645489c7334ad",
+    "Sources\/AetherAssets\/LocalAssetStore.swift" : "e0abe7a59d2b19e876686c16c2a53ecb3f5e6a47c0f1eaad62735bd9d0f0ed8e",
+    "Sources\/AetherCoreAI\/CoreAIBackend.swift" : "2a6737cc18b622ac6540c0f828dec1d3ca6983f973ac8cc02c5134153370ac2f",
+    "Sources\/AetherCoreAI\/ModelDescription.swift" : "d6a2f6a58a3430969abfa5b96b0dc5221f61164ba660f0c415efd3d788719f64",
+    "Sources\/AetherCoreAI\/ModelSession.swift" : "a2fb3e9a5296baebb22b894066f92a63f14eda4fe1b1719c5a316b565d2f789f",
+    "Sources\/AetherCoreAI\/SerialComputeStream.swift" : "685ab6efc3d683e0da64c40a32b9f9c89a73d175f62130f5506ccdec7e13eaae",
+    "Sources\/AetherCoreAI\/StagedModel.swift" : "203ee72cb73f5a85445e006bf6dd4253f94b4f5ec211b3f0200f914999a438e0",
+    "Sources\/AetherFlux2\/Flux2Assets.swift" : "e19821d3fd11265986381c801a585e40ab56ad65fdb1eac1b79de96635bb2601",
+    "Sources\/AetherFlux2\/Flux2Configuration.swift" : "7eb21245e71a18da911cd4cec32d6338c0331c9bf932ecf27a3055b6d703bffa",
+    "Sources\/AetherFlux2\/Flux2Prompt.swift" : "2e4c86dc5dc9396285b01cadbbb1c0f325bde6c0a958ed732269eb44e9c2cedc",
+    "Sources\/AetherFlux2\/Flux2ReferenceImage.swift" : "e9a8f072ca69434c0e81856fdb6c86e04e466281c031f1f0f436f49ffd008c03",
+    "Sources\/AetherFlux2\/Flux2Rotary.swift" : "7d7396a3f6b720b3e67c795c38d316e892f9f5ca05ca08d2fc2c28ca957df90b",
+    "Sources\/AetherFlux2\/Flux2Schedule.swift" : "4d02de991af0fad70d35f1a8c9acfc005c5b99900fd12d99cac2a533421a60d0",
+    "Sources\/AetherFlux2CoreAI\/Flux2Contracts.swift" : "62ec2a2973100ad72f65204d8074e6a85b8e4e195357c0777511de9ead0cd1e5",
+    "Sources\/AetherFlux2CoreAI\/Flux2GenerationSession.swift" : "436d0d87b52561db70443c5ba52c00956a9e12fd9afa2d05a0657b9bdd46d001",
+    "Sources\/AetherFlux2CoreAI\/Flux2ResourceAdmission.swift" : "2110e09ecfa62fd461843ff1d7691936aef8b32da350c438ea706e26943795cc",
+    "Sources\/AetherFlux2Tokenizers\/Flux2Tokenizer.swift" : "b0cc18c941b6040d0324f66aa5f551faca9010c5ee44184c4a30a289805e7b03",
+    "Sources\/AetherH3\/H3BlockProbePlan.swift" : "ab2fb6b99ec5a34338dfc284695c56b3c51c8f0a4e961b5993eae16a217f150e",
+    "Sources\/AetherH3\/H3Bundle.swift" : "b92e08e085aa357cea34c03a2ebe293288b00447e894ec10c7a31cb460e4ae25",
+    "Sources\/AetherH3\/H3ChainProbePlan.swift" : "e149199d52924693c18a1cf3435e0e2e37ee4d417373399fe23cbb41eeacc1b3",
+    "Sources\/AetherH3\/H3DenoisingPlan.swift" : "29ac08b2e2a84ed188f025bfe8b6eb240fd440ac2396fe31f4b23e5858c1c5de",
+    "Sources\/AetherH3\/H3ExportHeader.swift" : "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "Sources\/AetherH3\/H3Geometry.swift" : "4ef248f8b61d0e6ac8a022ff1947a3401b7ef66914ca319d3350fe940953bc85",
+    "Sources\/AetherH3\/H3Layout.swift" : "b3f1864c8e7205ae703563d69a0c23a5c7c010a84d9c3f86adb68b91960f9640",
+    "Sources\/AetherH3\/H3MeasuredResources.swift" : "1b4520ca4a39a4a3ad7422b94349812602a57f98ff06be1a7113931548deeee4",
+    "Sources\/AetherH3\/H3Noise.swift" : "eb3981e4065460654c03bac19daaa6097f0dc7b7a80ba1be8dd2210dd6a3e3c7",
+    "Sources\/AetherH3\/H3PhaseProbePlan.swift" : "f0e9fb6888b527da5e027f04e4a68cb653b52b2ebfb9d37b03fa26d13eae4dba",
+    "Sources\/AetherH3\/H3Profile.swift" : "d381061e1663865ad82672e68f927e3ef4872f0db3d5363a7341048f1def8c9c",
+    "Sources\/AetherH3\/H3ReferenceComparison.swift" : "c0bb8d1b8d54d260f2d015b1d7abb49a8499ccdc924b4f8f99e4a887ff2ddb51",
+    "Sources\/AetherH3\/H3ResourceAdmission.swift" : "d03fb457b7c86a1237c865d8b7d936478f2e3b9c4fcae7750ae1bc8bc5b46465",
+    "Sources\/AetherH3\/H3Schedule.swift" : "a8dfee22d82a51f25a169dc59e76eb1c62db087e4022c731bc23194080cef63a",
+    "Sources\/AetherH3\/H3TensorComparison.swift" : "2aa88598d6c6164afb3e95544a57c98518de44a799c790e251ae6a87226d9c83",
+    "Sources\/AetherH3\/H3TensorData.swift" : "2ec2c2feef6b369ddd95281545e564e49448ae3200f2a24e32d9c23c25faf6a0",
+    "Sources\/AetherH3\/H3VideoSession.swift" : "9e04040b40e8ec9f517b275e2f5b2d4c01eba5fb7e220b62615daf738299c07d",
+    "Sources\/AetherH3\/H3VideoStitching.swift" : "2177f0265cc3312f32758b92b68351751accc1b98001bff7250b0ed0c061d58e",
+    "Sources\/AetherH3CoreAI\/H3BlockSession.swift" : "d7591bf9510392de8a6ced542df7ca597e016188c7dbcb8441c1c56da974eed7",
+    "Sources\/AetherH3CoreAI\/H3ChainSession.swift" : "55e76791c1f0ee1d6a4c605c730200d795ebe440ec4b610ba3b18eedaf132781",
+    "Sources\/AetherH3CoreAI\/H3ChainState.swift" : "fe9b36fccafcc080b6d0e8e09412f8a335be05b041af166d0fdd6a51178c613e",
+    "Sources\/AetherH3CoreAI\/H3DenoisingLoop.swift" : "729a988c9428e5a5f1183fe334082675379e56dc2a9651b8a36c559f45ef95c0",
+    "Sources\/AetherH3CoreAI\/H3DenoisingSession.swift" : "3146f63a3086ed689b545044e97c9e5783e4fd4ee8cff6da0fdda23d134c339d",
+    "Sources\/AetherH3CoreAI\/H3MeasuredAdmission.swift" : "716b1c1860aeb4ae910fe6520845a4af4cdd8f7c7b573cd2b96a91bf488b3b5d",
+    "Sources\/AetherH3CoreAI\/H3PhaseSession.swift" : "41d9f7e5e793bab439725323bbd5789a42f425538864b4eb2c1e65b719c6d24b",
+    "Sources\/AetherH3CoreAI\/H3ProfileStages.swift" : "dda73c7e69d8abfe65142e190d9dcee25de325ceda594206e00886d176237652",
+    "Sources\/AetherH3CoreAI\/NativeH3BlockBackend.swift" : "3fd8dd54ba87315d7541ae7b4892961d1702c7a3ba663b01dc537b19c76553f3",
+    "Sources\/AetherH3CoreAI\/NativeH3ChainBackend.swift" : "6c5b83a288f4d4731353a8c6d30add816c10ebb100ee7f7a8c6601ffefae3b41",
+    "Sources\/AetherH3CoreAI\/NativeH3DenoisingBackend.swift" : "6691ebb0404bff0044b36122dee6bfb06502bf74ea9a33f2fbb2bcee19fcaf01",
+    "Sources\/AetherH3CoreAI\/NativeH3Function.swift" : "ddaadb9d98b5a8ee3c228cec227466fbb9371d461364bd0d6eacf4b4b1cfb0c2",
+    "Sources\/AetherH3CoreAI\/NativeH3Graph.swift" : "20a0c81301e415d61e8511a4247a0f4e24bc859aa2539a3befd18f248a984f77",
+    "Sources\/AetherH3CoreAI\/NativeH3PhaseBackend.swift" : "4d25bbe1b50f2e667798dae82241d36fc41c530012c123e5916c34b9224346e3",
+    "Sources\/AetherH3Tokenizers\/H3Tokenizer.swift" : "67384043ec874ae42ae2b81ccca69fca456ce12f6d167f1205a8f181bcf8bfd7",
+    "Sources\/AetherKit\/AetherError.swift" : "90f4a49a4307af3b698abc0312b5a4e51a194cd344788386f6f99a4dc204cb8d",
+    "Sources\/AetherKit\/FairInferenceQueue.swift" : "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
+    "Sources\/AetherKit\/FloatTensor.swift" : "2d1e05c7a554a57703eecfc25634a0234532ebf1c9afeb28ff4f206fa35b47a3",
+    "Sources\/AetherKit\/GPUAdmission.swift" : "5c1e9aab70cf835d6f9f2eda25b9fa6bf363110d14a14ce42b51a5f771d8c75f",
+    "Sources\/AetherKit\/GeneratedAudio.swift" : "f16a705941aad4f0b6c8579b114df566d38cd7516a0385700c8acfc32fb2cb36",
+    "Sources\/AetherKit\/GeneratedImage.swift" : "f1dba080eeb07a647368bd4b73ba59bae88e9020ec2850735ec84fa9e005fc64",
+    "Sources\/AetherKit\/LanguageModelManifest.swift" : "4fb9d5d8290f5282acbc44fdbb5065df29d1bbc2296bfe5223ae75026263b3c0",
+    "Sources\/AetherKit\/ResourceCoordinator.swift" : "2acbe69f718a6ad4f1c412ce837305a81a9e5832b2ad13c2bfe0df509c90e9bb",
+    "Sources\/AetherKit\/SeededGaussianNoise.swift" : "2f49c10edfa40a4f589d8c97fd8a7f6a3c545585db0c85d73d7b2b85dc92a981",
+    "Sources\/AetherKit\/SharedGPULease.swift" : "9a7757d0487c7d8b7b96a165d42e9bb109afc68a8262174b826a217d3b36f699",
+    "Sources\/AetherKit\/TestBuildFloor.swift" : "e5c9af1b16eada30ffd9c9f5b0a211afb97e6eba79c11ef75c7c784b8df986f9",
+    "Sources\/AetherKit\/UnfairLock.swift" : "6d2d142f593816114b318572fbd19db787278d6a7abaa9acc1d501047ea65546",
+    "Sources\/AetherKrea\/KreaAssets.swift" : "f2e3c2823bda6e9c796c1d415958ef7be907674f5045aa59aed2dcbc537195e4",
+    "Sources\/AetherKrea\/KreaConditioning.swift" : "876878722486c5246a06f8928f583e9b1858668d5f479e91698cc071602839d9",
+    "Sources\/AetherKrea\/KreaConfiguration.swift" : "47c2430a0a719fd4b2b2b13cf52dab2f8bda0d26cf3f6d4d64286406e3475abf",
+    "Sources\/AetherKrea\/KreaNoise.swift" : "884849e0065276b0bdc4ac799a4a8b480e594b9a2506748d1e8e937c96ad8e3b",
+    "Sources\/AetherKrea\/KreaPrompt.swift" : "58cb01ea872c440d8b864dc3f5084d50695e72dc667b273f7bffdfbfc6a06047",
+    "Sources\/AetherKrea\/KreaReferenceImage.swift" : "2172282e1454b1d30dcaf982b68ea8838edaab4dd8a88376f39bbe5bca5cf3ba",
+    "Sources\/AetherKrea\/KreaReferencePrompt.swift" : "f634e99cddb241061a0990767b1d7c74d5bb109077ac3c52cfb8dc5f037bc08c",
+    "Sources\/AetherKrea\/KreaRefine.swift" : "a8a0fcf5be429e4bbe7d933b7c3f042231113bacb8896713d91c1c024193e5bb",
+    "Sources\/AetherKrea\/KreaRotary.swift" : "efa27fb6033cc775887f9e0bf7056a300bba8ee6cf17ac7aeaab5fbe7945568b",
+    "Sources\/AetherKrea\/KreaSchedule.swift" : "70fe134cb1c6e25c09c76efbd64e9c65e4523fbb055b719e0b2055b7f7373ff4",
+    "Sources\/AetherKreaCoreAI\/KreaContracts.swift" : "e451971c470d21004eadb9c03325eb11e1ea762e97641f5fb1ca6d7ae3eb1cec",
+    "Sources\/AetherKreaCoreAI\/KreaGenerationSession.swift" : "3692bf67d7251d049864b74be7b9e4b0398ce7cca2eeb5f12ed0e395cb513135",
+    "Sources\/AetherKreaCoreAI\/KreaResourceAdmission.swift" : "493446a466a676935ee0ed4149eab4783bce011dd808c1fe8f67be2de5314de9",
+    "Sources\/AetherKreaCoreAI\/KreaTextEncoder.swift" : "e9ca0eebb69b2d268a8ce15666f071b30a219db49093ffa7fbe33d8dfcb57bf4",
+    "Sources\/AetherKreaTokenizers\/KreaTokenizer.swift" : "7d3fbc57d23849d9345b785d3bbbb53d35ffa6bba6dd73a5e7447a22a53b8ff4",
+    "Sources\/AetherLanguage\/AetherGenerationOptions.swift" : "1fbb1a567b6459d4bb7f21ffc3c795020c2ea05263cbffaa9fd7becc8cb300b9",
+    "Sources\/AetherLanguage\/AetherGenerationSchema.swift" : "0dbee4760e83df6e2e8ebeb63ecc8b75057ef99cc1aa5fe9ebcb2c6debad96de",
+    "Sources\/AetherLanguage\/AetherLanguageError.swift" : "c42305e8842723ea9c7aea336d2345a087062ef57d8d56acb7787e1fc97a8cc5",
+    "Sources\/AetherLanguage\/AetherLanguageModel.swift" : "f65451fa34d30a29906fa67564eed86dab0c29fe39052d190ad736640529f86c",
+    "Sources\/AetherLanguage\/AetherLanguageSession.swift" : "e18c534952986136c6cc34b849d5fd088383a2082c3b81ce7e19a5551ebc5553",
+    "Sources\/AetherLanguage\/CoreAIBackend.swift" : "189ae2314c34a08bff9eab70b76cce626bace2b2729f9b43015f5780d02d7ab5",
+    "Sources\/AetherLanguage\/LanguageEngine.swift" : "745f121c67e60bffbf78d6729385351ab81eee0c6289790e29e1eb33309223fb",
+    "Sources\/AetherLanguage\/LanguageJSONGrammar.swift" : "277f0bae1dbc3d4127bd26dbdf40bac468585affa7e0c4891aacaffe90ce23e3",
+    "Sources\/AetherLanguage\/LanguageJSONMatcher.swift" : "275cf870fe00f5cdb891d9883ec440d041935ba2e60b889af1e4db21bc0c2df2",
+    "Sources\/AetherLanguage\/LanguageJSONSchemaConstraint.swift" : "e8b6cf22c1a93addd1050ca3f89e3351f189a60458cfc0b2cceb1129ad6bac44",
+    "Sources\/AetherLanguage\/LanguageModelResources.swift" : "d880db6b7aa9ab607b81f77742613b83fa03d3d3ccb20e3a2c6bbe241fc30a29",
+    "Sources\/AetherLanguage\/LanguageTextStream.swift" : "2af9b7dac1cffc782b768e100829d71ffbb1a50afb390baf5cf76915f436147e",
+    "Sources\/AetherLanguageCoreAI\/LanguageBackendConformance.swift" : "9b51c8cf5ab6bbba7e09ef6c217d3aa904f0ef84cfb053f9cd5d1ab792392fa1",
+    "Sources\/AetherLanguageCoreAI\/LanguageCachePlan.swift" : "df03dbef798144a0ccaa5a28b3fb5710c610da9bc6fd118467bc6790bb3d798e",
+    "Sources\/AetherLanguageCoreAI\/LanguageGenerationSession.swift" : "bb79edb5590c5c0c1233458be9f33a1e6b5b6f276684f5a1baef9e65e1c38752",
+    "Sources\/AetherLanguageCoreAI\/LanguageLogitsRow.swift" : "81891b806f4b24551a90eec992445a0401cbb56d5c3e7886179ac1d9b86e1c8b",
+    "Sources\/AetherLanguageCoreAI\/LanguageMemoryBudget.swift" : "0af9a96b34ad98b71fc5160a1faad5424c6cfc679e1b9538d7d60523d88c8e6d",
+    "Sources\/AetherLanguageCoreAI\/LanguageRequestAdmission.swift" : "3506f53fe33dec2cee8c289bb283ac5f663c2d9f7026f20427a634478f215826",
+    "Sources\/AetherLanguageCoreAI\/LanguageResourceAdmission.swift" : "a595ccc7ba06e8f7cae4181162e166b6bdc6d5575e3f9bb56f933e318c3eeab5",
+    "Sources\/AetherLanguageCoreAI\/LanguageSessionLifecycle.swift" : "f0707b359a1c712f27501f60009b823d2f0f0f69765a979ee500fc4d9db384ec",
+    "Sources\/AetherLanguageCoreAI\/LanguageStepContract.swift" : "16c99d0eb969c8e1ca770e68e40daa6c1bd09e519d34a9c87a70e102f6d02433",
+    "Sources\/AetherLanguageCoreAI\/LanguageVisionEncoder.swift" : "7b1e65a9bb5d33d2a7a7cc8c9e37bddd6198b01159bde5eb26b5d9e6f48a1603",
+    "Sources\/AetherLanguageCoreAI\/LanguageVisionPrompt.swift" : "1012f3671ab57e0b6abad5b72daec87140dfca93e9dfcae2b4bdfb2d765c4bd9",
+    "Sources\/AetherLanguageCoreAI\/VisionLanguageSession.swift" : "560e225e4647cead9e19f3261d541493fbd6fc0ed05df3790491d9abc4c7c570",
+    "Sources\/AetherLanguageFoundationModels\/AetherLanguageFoundationModels.swift" : "7535fdcc3ee1d410000f1744b460b0687a9e596a41e98a0988eccf4040b35a62",
+    "Sources\/AetherLanguageMacros\/AetherLanguageMacros.swift" : "a67d7c6431fa55c1c15ef5d14a5dc0bfee901f843e94ce151cac0512fda3bd40",
+    "Sources\/AetherLanguageMacrosPlugin\/AetherGenerableMacro.swift" : "80d4c9417544e9b2ab3fbe5d804684936d3923ad0ab0028822206fe587f55543",
+    "Sources\/AetherLanguageRuntime\/LanguageBackend.swift" : "a5b8c3223902a428c9045fa2abf0963ba874ecbc84807880c3d4d92c9c10358a",
+    "Sources\/AetherLanguageRuntime\/LanguageDecodeLoop.swift" : "a57f79429ac268152c31151ec3856528f194024058ac83a440e2efc675c2fdbc",
+    "Sources\/AetherLanguageRuntime\/LanguageRandomGenerator.swift" : "cb04244b71fdf6ceb4658cae7cb47b75d708162199e871c37fcd9a81611e2713",
+    "Sources\/AetherLanguageRuntime\/LanguageSampler.swift" : "9836472c1812179534948384d64d51fce2cd4a1ce9a365c2fe7de9842b695a76",
+    "Sources\/AetherLanguageRuntime\/LanguageSampling.swift" : "29bcc9d25d11a2912f60482690ba7ebe4038078f9f9740c5495ec6e0b934eda9",
+    "Sources\/AetherLanguageRuntime\/LanguageTokenConstraint.swift" : "5956579181606356b7a7cf6162fbe535e7a8fb1939373cb4c4410bee8f6e408d",
+    "Sources\/AetherLanguageTokenizers\/LanguageChat.swift" : "d8deaa848d75e178ef28dc9775c8fb4e6b9ae785cc11e2deb52432759a3014ad",
+    "Sources\/AetherLanguageTokenizers\/LanguageTokenBytes.swift" : "a494d06c5440e4c05434fce712c3ed19a5e7ee8918e016865b3b9c9fd09e2299",
+    "Sources\/AetherLanguageTokenizers\/LanguageTokenizer.swift" : "4b9e7484f72948a5159791cbd096f6a8566eb993396ad13b18068aa1da328efb",
+    "Sources\/AetherProbe\/AetherProbe.swift" : "22d301c1a1df6cb4daa964d7b158710b9b73c0f3bab8c703d913ca43afdfc2d1",
+    "Sources\/AetherProbe\/Flux2Benchmark.swift" : "f12b564d2aa2ff2f1dde7b5ffa54c4b40428b65c1915ddf83f17acb57378d2e4",
+    "Sources\/AetherProbe\/Flux2BenchmarkCommand.swift" : "09ae8a50dc0cde9a12a544ae31d7e85de5b2bca34aca370365e1bc8ef5ca566b",
+    "Sources\/AetherProbe\/H3ChainCommand.swift" : "3db8588fd57869884befda0f157f28d1978895c3af5dabe058c4888e4ebb816b",
+    "Sources\/AetherProbe\/H3DenoisingCommand.swift" : "3166f488a74e3eece65c5fafc78b74e81cc6f9ef13614f2a5dc3c2adc6383f3f",
+    "Sources\/AetherProbe\/H3DenoisingLifecycleTrace.swift" : "9b9985b1dcf0fbb7a6794855b709f4a48175d99135f1fa054ecafad0c8d30521",
+    "Sources\/AetherProbe\/H3LifecycleCommand.swift" : "161412adcee2c9d3f6c188bdb1e54d724f06b8a0d632dc9273c9294b59c2460a",
+    "Sources\/AetherProbe\/H3MemoryDiagnosis.swift" : "e278931d493fdcb1f4db8d11b3ac11ebab9f2f1cb78a4854956ab9a3d37fb8df",
+    "Sources\/AetherProbe\/H3PhaseCommand.swift" : "b0ee01fb31ce59cd9d01c64148343dc549f8cd139d8f3864dec84e5b0574c517",
+    "Sources\/AetherProbe\/H3ProfileCommand.swift" : "b34a2c5985fab36c9849ecbcc9953778ee70d98504d8bb820b03ef4711cb818d",
+    "Sources\/AetherProbe\/H3QualificationCommand.swift" : "035e45197edb11c0f7b4a6ff7e73a5ac06fda511c57bcaedef3074380c1cc1c1",
+    "Sources\/AetherProbe\/H3SessionLifecycleCommand.swift" : "17bad137c8bdade34d3451da71fc5928d131cee6000a301268bbe68f62dd14b3",
+    "Sources\/AetherProbe\/KreaBatchCommand.swift" : "4363993edbe80b36e5f49eb37db07c656c29cdf50bccccfa87d1494a98278aff",
+    "Sources\/AetherProbe\/KreaBenchmark.swift" : "ee91dc7738cee7ee3f9e203928622759dac68863d345d9d97bf567074cc42210",
+    "Sources\/AetherProbe\/KreaBenchmarkCommand.swift" : "d8c5ea24613eb128d11c9821b316476e46752ab57c4b9731a501ad21ceca18d9",
+    "Sources\/AetherProbe\/KreaCommands.swift" : "d7aab590605e0571ad89b31134ddae5be1de95d7a98e9c84b63d94cc016c0185",
+    "Sources\/AetherProbe\/ProbeGPULease.swift" : "d9d4607014df6c9ef3152f44e2f52b102e1aeb06d64adcbccab76377cdc42954",
+    "Sources\/AetherSpeech\/KokoroAssets.swift" : "43f312f18d1322c0d9d669cf62a993e3f1e31f81d9529fc786983c7bf41c0f94",
+    "Sources\/AetherSpeech\/KokoroPhonemes.swift" : "68cfd5c7e4a71a4347b9ebc5e6525a7d2d1f9883da44358a4f0b7bb96dfabeb9",
+    "Sources\/AetherSpeech\/KokoroSynthesis.swift" : "d01a07e4aebad74c1f7145e64dc781c6257db254329f24801553e4cb74d88eed",
+    "Sources\/AetherSpeech\/KokoroVoice.swift" : "6795565d3dc6eea0662ebb730eaf56df6a615f52ce1a7a307a14e40c55b9a2df",
+    "Sources\/AetherSpeechCoreAI\/KokoroContracts.swift" : "4feac88764dea6b29fdf1171b734c02fcda403d151a77c209498c9071c3e1ad4",
+    "Sources\/AetherSpeechCoreAI\/KokoroSpeechSession.swift" : "44d415a90060b50607266535deaa72233369d83f9a55ca99f11ba3ad21c8011e",
+    "Sources\/AetherVision\/Qwen3VLImagePreprocessor.swift" : "329c106c7449055bc8977259a32b97d150930a9c1d9eca674827ed5a86f3c315",
+    "Sources\/AetherVision\/Qwen3VLVisionTables.swift" : "9f358709bafacb68e5e0e2c49447debfbad2bace22baa490e89852ae760b69e4",
+    "Sources\/AetherVision\/VisionRGBImage.swift" : "00275c8a725bb16c9a6536916afb3c1895e720bad46b65c42f07eda9509dd590",
+    "Tests\/AetherAssetsTests\/ExternalFileLeaseTests.swift" : "919fa4d37e57f7c5d89b2fcbec5214cc4daba18c05227390289feed56dad33ff",
+    "Tests\/AetherAssetsTests\/LocalAssetStoreTests.swift" : "48da4ca0acb510941a3e743e6f1b1e4a1eba8bc57db9e348593e784ae157a72d",
+    "Tests\/AetherCoreAITests\/ModelSessionTests.swift" : "4b20a771db775e92d5b4419e813a51e677b2b54b8f26ff7d2d38c34a59a98fc8",
+    "Tests\/AetherCoreAITests\/OutputCopyTests.swift" : "06647d17ce82e5e03bfd0b053a9fe2a97ae8adf742fe99a352dc9ade46a90fb7",
+    "Tests\/AetherCoreAITests\/TensorCopyTests.swift" : "ab0980ac839e1c72551aa81cd47dfdb12638b4462f05ddaf4ac776ef37c9ddd8",
+    "Tests\/AetherCoreAITests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherFlux2Tests\/Flux2BundleFixture.swift" : "8b1feb17d0ef475bf4238b5651f8342c041f18a3b0864fd1a28c2e4ad5e6da6f",
+    "Tests\/AetherFlux2Tests\/Flux2ContractTests.swift" : "1c60a8440ff2a66643bd14ddb148f145b3cd5e365201d648f428768387d89051",
+    "Tests\/AetherFlux2Tests\/Flux2FixtureTests.swift" : "55d5a4769dd4185edc32966e56990923b2c6475f61a58107e06a3251ac2f8919",
+    "Tests\/AetherFlux2Tests\/Flux2SessionTests.swift" : "dc8091b582ba84802adae8bbc8ac6427662b9003a8da252efaee8043ee613136",
+    "Tests\/AetherFlux2Tests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherGPULeaseHelper\/main.swift" : "de4742732b6fedf379b944297fd0ce34dc0d1231107772bda08186f4df46534e",
+    "Tests\/AetherH3CoreAITests\/H3BlockSessionTests.swift" : "11a4476fbcff4bcea10a44d5131b88b5dacfd9408d02cd2f637f5cff64ce03a5",
+    "Tests\/AetherH3CoreAITests\/H3ChainSessionTests.swift" : "c2ca9e52a436c0858b2ea4b8f75548acc658fd38aaa7b5a46660eb5c72efa034",
+    "Tests\/AetherH3CoreAITests\/H3ChainStateTests.swift" : "361481619fbd70c8cf48285925a86bb67e0e1d91c9e81c59521e8aea0f773cbe",
+    "Tests\/AetherH3CoreAITests\/H3DenoisingTests.swift" : "ffd815eb9d5ed13b79158d5fe67c40f5f406cb8acc7facd999856de2dfc8a66c",
+    "Tests\/AetherH3CoreAITests\/H3PhaseSessionTests.swift" : "8d0ddddcdcaf62d0964c1e1752fc3beca225370fff9aa473bae90e9a85fb80d4",
+    "Tests\/AetherH3CoreAITests\/H3ProfileStagesTests.swift" : "692da6bdeb22e683bd023de0544675561d734976ea9da2adf99477706f39271b",
+    "Tests\/AetherH3CoreAITests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherH3Tests\/H3BlockPlanTests.swift" : "4e200d12435baa6ca59be61b8011b30562259e88e5b84656816854cccc96c7ff",
+    "Tests\/AetherH3Tests\/H3BundleTests.swift" : "75879d756baae272f71e229c35b7dcc58cd9fbb7798a6858ce37bb27ccd2486f",
+    "Tests\/AetherH3Tests\/H3ChainProbePlanTests.swift" : "19a7a0ce33dffb08301875801d3b4080ce61b0cc6afb125215b1b5808700ef12",
+    "Tests\/AetherH3Tests\/H3ContractsTests.swift" : "1f53f1d160abf9f4355a96a57d984149e54ce1c53aeec75d99593947b1a319e0",
+    "Tests\/AetherH3Tests\/H3DenoisingPlanTests.swift" : "c700dbd1565bad1db4ae2cfe31be2e1d0b30181b1036b7e028eda91dc3cdc0f1",
+    "Tests\/AetherH3Tests\/H3MediaTests.swift" : "2c21b4fc7021a8bbe16e8b34bf1a594166c6453b9c4b166cf964f608a65ada90",
+    "Tests\/AetherH3Tests\/H3PhaseProbePlanTests.swift" : "88e0074e59423c0693fb74bdd38a5e5846b1a5a665464669f77b6d96107bcac8",
+    "Tests\/AetherH3Tests\/H3ProfileKeyframeTests.swift" : "da4eb6503c6affa46ab7b75a6a3fcde8a12009dd5166db92e6693f8fc5dfcfd9",
+    "Tests\/AetherH3Tests\/H3ProfileLeaseTests.swift" : "0fb4260bcfcb4e33c8dfda402a6d2ef114d1b58f56779087b496d5cc2d0a4e8b",
+    "Tests\/AetherH3Tests\/H3ProfileTests.swift" : "555fb5a2b25529046b5dbfa51a8ebf00fd91e726f63a755fa139f91946eec75b",
+    "Tests\/AetherH3Tests\/H3TensorTests.swift" : "e01bbc9202e6bd3d794ed9b4fb3764023d248f91a3904c24451d409cbfb7682a",
+    "Tests\/AetherH3Tests\/H3VideoSessionTests.swift" : "0ded2a902a34736d5eb7f609ee7540ea5aaa22f48bcec69516680d1286d1272c",
+    "Tests\/AetherH3Tests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherH3TokenizersTests\/H3TokenizerTests.swift" : "787cfa717eea02f1b9342fa1612fccb47247d5dc9943a8990ca244e0c2b0341b",
+    "Tests\/AetherH3TokenizersTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherKitTests\/FairInferenceQueueTests.swift" : "17246088459de93961cec8584288d97f9bc224ac9e08e3c5879fb91f02f0436c",
+    "Tests\/AetherKitTests\/FloatTensorTests.swift" : "8c13b4aae214f293a4b47eab18d1bbbca10207a591ef0aa54545213272749015",
+    "Tests\/AetherKitTests\/GPUAdmissionTests.swift" : "8aea15db4b8181816328bcdd3b0a799ed14578c00c0ee3a6acde608a75f0b316",
+    "Tests\/AetherKitTests\/GeneratedImageTests.swift" : "a50555c5ba5035045373069ee97bd01fd9881180017218cd3a091910e0624453",
+    "Tests\/AetherKitTests\/LanguageManifestTests.swift" : "95c21c749e31a73a467b6b580e92bec617e686863f800713431c03d9c45675ec",
+    "Tests\/AetherKitTests\/ResourceCoordinatorTests.swift" : "ea70e85f725bae14d3b78a6188253e1da53de02e4b6a67380ba5ff3e0083b086",
+    "Tests\/AetherKitTests\/SeededGaussianNoiseTests.swift" : "62ab73eb656861bcab8a5222bea22f3468d43580a0973e06459b9706c488b3e5",
+    "Tests\/AetherKitTests\/SharedGPULeaseTests.swift" : "571283d73e88206b61f5616bd8182ed85db25ae62e5dbb2da64359da31387562",
+    "Tests\/AetherKitTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherKreaTests\/KreaAssetsTests.swift" : "b65242cedede57a27ab3a4247cf763ba2c95be89e32d471b373dffaeee45505e",
+    "Tests\/AetherKreaTests\/KreaConditioningTests.swift" : "7743a217f28cf11da930891ddf31f5f89905796131e3f338625ef8281d714785",
+    "Tests\/AetherKreaTests\/KreaEulerFixtureTests.swift" : "ea6e1dba66d53030acf8d7d642549bcebb2ee131b30d372d80665b2dd9857b7a",
+    "Tests\/AetherKreaTests\/KreaPipelineTests.swift" : "a893ad4815362378eea534e56ee5ad7c33796ea9daffa62d6cdc2d7be25eeb2d",
+    "Tests\/AetherKreaTests\/KreaReferenceImageTests.swift" : "d4581e9fe84853af1f3d77bd49b571fa07ac8ae4ad8c6528ab2c808c8589961e",
+    "Tests\/AetherKreaTests\/KreaReferenceSessionTests.swift" : "18fd8b92c0cbfb2738c7387fc3283d0fbf1300e09c8b19fd42c6111fc7509c37",
+    "Tests\/AetherKreaTests\/KreaReferenceTests.swift" : "fbc59f684ff94f72ceb1f8c1c4b286f0b68d4f7cc9ed21e4086a8037c887a041",
+    "Tests\/AetherKreaTests\/KreaSpecializationTests.swift" : "3464a9016d2291563743fc2c2cb3cc84b14d99e58083d672cec9652f6882990c",
+    "Tests\/AetherKreaTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherKreaTokenizersTests\/LocalFixtureTests.swift" : "f2196131b444620af243e3fa3b7ddafbe209c80ea0cdc4eca0b3db6a3eeb3a9f",
+    "Tests\/AetherLanguageCoreAITests\/LanguageBackendConformanceTests.swift" : "f6ce81bb8d698e95374cdfd184ab2b80cb7e3e93b3bdea1b678e3450726f9798",
+    "Tests\/AetherLanguageCoreAITests\/LanguageCacheTests.swift" : "8e30505945bc7081ea644da6ea332abe4a222d40d794ff984c20fe96d5c2dc42",
+    "Tests\/AetherLanguageCoreAITests\/LanguageDecodeTests.swift" : "e21a5c9cb747e13bef666a0272f818eacdfac01c10dd5d5874d901be24368ca1",
+    "Tests\/AetherLanguageCoreAITests\/LanguageLifecycleTests.swift" : "f93fcb27f2f25c77e5ad75faac8fc81bca173bf404cc6b5a3052e1e2e07b9e7b",
+    "Tests\/AetherLanguageCoreAITests\/LanguageLogitsRowTests.swift" : "0e7dbf6e964b03bfa40a297f629426abc4bab0e7aa222d1d58a5f1b957367b28",
+    "Tests\/AetherLanguageCoreAITests\/LanguageMemoryBudgetTests.swift" : "630140bab07fb02210fca4f8760aa56786d5d9f7c7a48cc9ae8800a36d759bbd",
+    "Tests\/AetherLanguageCoreAITests\/LanguageRequestAdmissionTests.swift" : "fa21fa70ed4d86e9d77b37e9842ecbc4a1eee51002c14f10d52fd340e3321827",
+    "Tests\/AetherLanguageCoreAITests\/LanguageResourceAdmissionTests.swift" : "d66f9476a1742246680f71b473fb440ed3f9b87831b7c8dd05552b7ea0d1e41d",
+    "Tests\/AetherLanguageCoreAITests\/LanguageStepContractTests.swift" : "57a9364ab397d1bc5fa52e3f996ac7fdcc377a5c8759a9bbec6122f998546e02",
+    "Tests\/AetherLanguageCoreAITests\/LanguageVisionPromptTests.swift" : "47e95c5bd447a8c19fc35f7e894df4718253add1ddb3ad5a45279e8f6e9a73f3",
+    "Tests\/AetherLanguageCoreAITests\/LanguageVisionSpecializationTests.swift" : "966c7590fdee03d05d554414ad6890d1a83d8a1e8e9c592df9556a91147fd745",
+    "Tests\/AetherLanguageCoreAITests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherLanguageCoreAITests\/VisionLanguageSessionCloseTests.swift" : "8967f593b3be63b6644e01e3484ab43184bac3890f9f6c68df7124da044ba6a1",
+    "Tests\/AetherLanguageMacrosTests\/AetherGenerableMacroTests.swift" : "d2de62ae25b82bc49f7cf509a86a3b99a5aaef9e879f67d349f3d0c422be27c8",
+    "Tests\/AetherLanguageRuntimeTests\/LanguageDecodeLoopTests.swift" : "53bf8869c3af23efd18de61a3397c11ebd92bf973a39f1646a5dd45b5a8d9121",
+    "Tests\/AetherLanguageRuntimeTests\/LanguageRuntimeTypesTests.swift" : "5d131fd26d3dfd04dd59f0f11bcd69532ebfb11964bacb88a1a364d479ceefa1",
+    "Tests\/AetherLanguageRuntimeTests\/LanguageSamplerTests.swift" : "d2ebaf77c8761d6f8c89e14c43d75d2307aa056020674c8830cae7210b08daa2",
+    "Tests\/AetherLanguageTests\/AetherGenerationSchemaTests.swift" : "dd53a37dd3eba578b28777bc15fa2eb0e4c4f13d2b8f257b31a96acba76b8e3f",
+    "Tests\/AetherLanguageTests\/AetherLanguageFoundationModelsTests.swift" : "ca7624532fd2ea4a7c009b92d9d61a4e25209d3a126ad30008472e4b0d97ce94",
+    "Tests\/AetherLanguageTests\/AetherLanguageModelTests.swift" : "83e9c6c40bb4bb2401fcc23f606def0c25e524d6b7c340dd1188d2a1d31fb621",
+    "Tests\/AetherLanguageTests\/AetherLanguageSessionTests.swift" : "1edbbe12deefbc42a9f8a908d9d8fa064dc2e11911cd78a1af0f272fb2818f4c",
+    "Tests\/AetherLanguageTests\/AetherStructuredOutputTests.swift" : "2b7661774b5b9c3e791e37d73bca23e5980130fb92387496ec4b41e819fc1a44",
+    "Tests\/AetherLanguageTests\/Fakes.swift" : "3bf2b3857eeb11c1a5aacd6c8c27e26ef834f482f8a6cf376e6b9b798f17ebee",
+    "Tests\/AetherLanguageTests\/LanguageJSONSchemaConstraintTests.swift" : "2edfb9949bee2a75911432e4aa583c02edb360f1de52e5dad3313eb2f1c51193",
+    "Tests\/AetherLanguageTests\/LanguageTextStreamTests.swift" : "bfbf20b65e395a16fd67455d4bbd3ed0e9307daaebae1b2f641240a7327e6b45",
+    "Tests\/AetherLanguageTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherLanguageTokenizersTests\/LanguageTokenBytesTests.swift" : "93f11bf38d2a4bfe7bcade3ec9cd6d6662aad329df2e5f6b2813a2596cf71518",
+    "Tests\/AetherLanguageTokenizersTests\/LanguageTokenizerTests.swift" : "e3bf73a68bb140e734223e6485ba2ac81c5e942907191b5005d0110925f9d581",
+    "Tests\/AetherLanguageTokenizersTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherNativeTests\/CoreAIReshapeRetentionTests.swift" : "6cbd297229dcc1354f5edea1c1e54fa8118dc4cda1c29e926fc583e6cd06bf83",
+    "Tests\/AetherNativeTests\/DecoderCancellationTests.swift" : "9cab7bf7e8abe5f4e84f0da2fa14f8661227a3b92603cd53c5c6147dc705c1b6",
+    "Tests\/AetherNativeTests\/DynamicParityTests.swift" : "276f74c0085446cc63055c726912d77fc6e39aae2936973255a3fdc1851cd2fd",
+    "Tests\/AetherNativeTests\/Flux2EncoderCancellationTests.swift" : "8cc23821406a5a242e23f8501d9cb47b06bc46bebf998346d7badeb2319b72ab",
+    "Tests\/AetherNativeTests\/Flux2NativeLifecycleTests.swift" : "eb6b6d905ce9dd9e49964f9c24638f73a02ef820a957076b7b840e5ffce8af0b",
+    "Tests\/AetherNativeTests\/Flux2NativeParityTests.swift" : "efbc25918e1bfabf3fd9ea2f807f8e14e31e62ea888f561da1d8bfe9befe5bc8",
+    "Tests\/AetherNativeTests\/Flux2PromptAdherenceTests.swift" : "084f3cbd7038dc1b9ef0dc5143f22f05cc3dfd701a686047a6c5e3a0ae72efe2",
+    "Tests\/AetherNativeTests\/KokoroMetrics.swift" : "d2c13c4dc0994d07265965ecd9cb5dc1a59b8f80c6d2bc70f3822fe3d10c7ea8",
+    "Tests\/AetherNativeTests\/KokoroNativeTests.swift" : "c4ae74a14d543363c3bf460b83c139dd94c0b069072e3c42f76064b083497895",
+    "Tests\/AetherNativeTests\/KokoroShapeSweepTests.swift" : "b6e94bf9c5e3f0efd0350e3c700a3abd7bef04cf45974b05812daec91eb2da89",
+    "Tests\/AetherNativeTests\/LanguageChatQualificationTests.swift" : "2a0580115e0806cefe7225969e5aebd560bf99d294ed4d0505c0696143ee04c6",
+    "Tests\/AetherNativeTests\/LanguageDecodeQualificationTests.swift" : "395adba9e1e335adc4f7c6af223a2397c3d4778e9974f2afbb67fd02308fffdc",
+    "Tests\/AetherNativeTests\/LanguageFacadeQualificationTests.swift" : "da1dc72f9ea10434054999f0b57b928ab65ef5dd40faf31819e00c02c15a452d",
+    "Tests\/AetherNativeTests\/LanguageGPUAdmissionTests.swift" : "ddc769afb82a6fc1e223ec245c21620451ba3f1a5de6dff6dd5ffdc14226362d",
+    "Tests\/AetherNativeTests\/LanguageMemoryBudgetQualificationTests.swift" : "99c85046b0368a6dd86a000d457f00e073857b81f8a580167a36856d1f388621",
+    "Tests\/AetherNativeTests\/LanguageOverlappedPrefillTests.swift" : "18df729d1fabe7a2584cdc8060146247db3618c89efe7789e07717018f39e86b",
+    "Tests\/AetherNativeTests\/LanguagePrefillChunkSweepTests.swift" : "380e311600032f109dd87f859f3776dff38a4a952a8aff31fb097ba0cc2e1b93",
+    "Tests\/AetherNativeTests\/LanguageSamplingQualificationTests.swift" : "6a8372f8a5ef795c456061baf899e8d081858222b4e387b2d67dc484b133fe11",
+    "Tests\/AetherNativeTests\/LanguageStructuredOutputQualificationTests.swift" : "ae61a8348695f8cfd0c6fa588cfdaf532bfdd159a3951a50691bbe95f45a249e",
+    "Tests\/AetherNativeTests\/LanguageTimeToFirstTokenTests.swift" : "2b0816dc3057411d5ed5d2eba981c4ebcfc2f5ece3fe3b4a3aee0ac6490f894a",
+    "Tests\/AetherNativeTests\/NativeGPULease.swift" : "a03649382598e035c5ba97a366207ccfe4ad668cb6d96aa6f4063a0b75e78b79",
+    "Tests\/AetherNativeTests\/NativeReferenceQualificationTests.swift" : "009732faf184b482aac1a0fa92f7f130f5aec423ff9bbbb87f24550a53d1139a",
+    "Tests\/AetherNativeTests\/NativeSessionTests.swift" : "93e56d6256c4c18010237617dd0c898baa818f5b4b3ecaca37e4b5513a700682",
+    "Tests\/AetherNativeTests\/Qwen3VLImageTextQualificationTests.swift" : "d45d68ed270aba31af229ec535e23171b684ff546f38f69fef57007387048f57",
+    "Tests\/AetherNativeTests\/Qwen3VLVisionQualificationTests.swift" : "bff7e06a669ed29781f36e607269042504c33d0032ccd5361539ca65b6336145",
+    "Tests\/AetherNativeTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherNativeTests\/UnloadCyclingTests.swift" : "220275b7271961d2971cf6539ad1bb32f6c93f49fd9add94db740608e47f7ed2",
+    "Tests\/AetherNativeTests\/VisionLanguageDecoderTimingTests.swift" : "7dde5ad8eb99874afb2ff21b58bdef70ec27823898336144cca4f7ec2fa25bd2",
+    "Tests\/AetherNativeTests\/VisionLanguageMemoryTests.swift" : "d35f71a9a952b9284e972e9f9cd7152dd69bf51633076d6c2e9602adc4d91ccb",
+    "Tests\/AetherNativeTests\/VisionLanguageResourceTests.swift" : "fd8505596523fd1fee08a777b140edaa42773779512a92909809a7452efe02b6",
+    "Tests\/AetherNativeTests\/VisionLanguageSessionTests.swift" : "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0",
+    "Tests\/AetherProbeTests\/BatchCommandTests.swift" : "0037c7c89dc4c8d368227351189c07c37a8d280aba240f1655bd8b1f05eadd41",
+    "Tests\/AetherProbeTests\/BenchmarkTests.swift" : "ba180d5b27995d1217125b377a8f471255db4827b14626d2e0b90a942a717487",
+    "Tests\/AetherProbeTests\/Flux2BenchmarkTests.swift" : "6fd62ee8bbb3444313d1e0bc279d98bc7a4a7326dc246684f53f3a92265074d3",
+    "Tests\/AetherProbeTests\/H3ChainCommandTests.swift" : "1b2a440d8a52ca5c8695306908b1f2c50b8a779ed95312001458a383759c8954",
+    "Tests\/AetherProbeTests\/H3DenoisingCommandTests.swift" : "42994b92f9c1cc46a53a866749d4b14006e927251f9f662ddb671f9906964c0f",
+    "Tests\/AetherProbeTests\/H3DenoisingLifecycleTraceTests.swift" : "33b3956f0e66b6df0ebd94d96c01cf47a8b8caa878ec9d5e4ea12e131ca5dd54",
+    "Tests\/AetherProbeTests\/H3LifecycleCommandTests.swift" : "7a792d29b9e823528b8d464910c78fcb0efeba0fbe9721f9ff4cb4258497da47",
+    "Tests\/AetherProbeTests\/H3MemoryDiagnosisTests.swift" : "4841d1b63a218fb1019119f5885c7477612f20321e67e1bcd63e4b462db9b499",
+    "Tests\/AetherProbeTests\/H3PhaseCommandTests.swift" : "abca63962af0c5cb60c4dec42aa8ffdd3aa24d01deb8bf9b515cb367f204ff23",
+    "Tests\/AetherProbeTests\/H3QualificationCommandTests.swift" : "e3c588bf3f8d1e0c71cd66b18bba5dddee2f60151ba8d10c01dd76887b6306ae",
+    "Tests\/AetherProbeTests\/H3SessionLifecycleTests.swift" : "a42d03834e358ff06f2d636caa04d23760c177cb9b41409c9de52d3d8b5074d1",
+    "Tests\/AetherProbeTests\/ParityHarnessTests.swift" : "656b1d2322894d25bf1a8b16efe5d4a81fba2ea3b1be5a713b5e7b2914caa2f1",
+    "Tests\/AetherProbeTests\/ProbeGPULeaseTests.swift" : "211a5731dae20294f894ba0c3734f1f1ff5124b8a0ddd73e9fe969f519430162",
+    "Tests\/AetherProbeTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherSpeechTests\/KokoroCoreTests.swift" : "83c33245d51a85b94f66963849705b05cec70130d35dc6c00f022c2dd4a1796b",
+    "Tests\/AetherSpeechTests\/KokoroSessionTests.swift" : "1e78a123f8d2cf808ba9b622ae16159e0aa47ea937acdfe4c111090593537ebb",
+    "Tests\/AetherSpeechTests\/SpeechTestSupport.swift" : "5916f2ab88d5add6223f0d9ec9ebbd2f04639082fa4d102b70cdefd0c45008df",
+    "Tests\/AetherSpeechTests\/TestBuildFloor.swift" : "a45b488285698105f37cf17863ad43bceb270b9ede48950d8129ed773a207479",
+    "Tests\/AetherVisionTests\/Qwen3VLImagePreprocessorTests.swift" : "e88007d3d925f3bc9844d010215f4d8baa14d0328e07a877c397c748ed4b3112",
+    "Tests\/AetherVisionTests\/Qwen3VLVisionTablesTests.swift" : "8cd1d6862dc7f9915d4244f2083dad8d552d4431cf21ff962b60772629db38e9",
+    "Tests\/AetherVisionTests\/VisionRGBImageTests.swift" : "1ef7630a53ac66ea7097ae0e670b686763d6e768136abb344059396bd6e0bcf1"
+  },
+  "ssimAgainstFixture" : {
+    "cat-1024" : 0.9637771388059055,
+    "fox-512" : 0.9896778878602157,
+    "fox-watercolor-ref1" : 0.9985690124029852,
+    "lighthouse-512" : 0.9911837319361387
+  },
+  "stage" : "complete",
+  "startedAt" : "2026-10-28T13:40:07Z",
+  "statistics" : {
+    "cat-1024" : {
+      "completion" : {
+        "count" : 5,
+        "maximum" : 1.7167e-05,
+        "mean" : 1.19748e-05,
+        "median" : 1.2916e-05,
+        "minimum" : 7.333e-06
+      },
+      "conditioning" : {
+        "count" : 5,
+        "maximum" : 9.5e-06,
+        "mean" : 7.1249999999999995e-06,
+        "median" : 6.25e-06,
+        "minimum" : 6.083e-06
+      },
+      "decode" : {
+        "count" : 5,
+        "maximum" : 0.722551542,
+        "mean" : 0.7132098918,
+        "median" : 0.712324083,
+        "minimum" : 0.709285209
+      },
+      "denoiserSetup" : {
+        "count" : 5,
+        "maximum" : 9.333e-06,
+        "mean" : 9.2e-06,
+        "median" : 9.25e-06,
+        "minimum" : 9e-06
+      },
+      "observer" : {
+        "count" : 5,
+        "maximum" : 0.010014915000000003,
+        "mean" : 0.009965674600000002,
+        "median" : 0.009953541,
+        "minimum" : 0.009911667
+      },
+      "pipelineExcludingObservers" : {
+        "count" : 5,
+        "maximum" : 4.462485041,
+        "mean" : 4.433943642,
+        "median" : 4.424959292,
+        "minimum" : 4.414018543
+      },
+      "sampling" : {
+        "count" : 5,
+        "maximum" : 3.750131084,
+        "mean" : 3.7207054503999997,
+        "median" : 3.715651208,
+        "minimum" : 3.701449126
+      },
+      "step0" : {
+        "count" : 5,
+        "maximum" : 0.913450166,
+        "mean" : 0.9088081499999999,
+        "median" : 0.909971625,
+        "minimum" : 0.898547542
+      },
+      "step1" : {
+        "count" : 5,
+        "maximum" : 0.928013584,
+        "mean" : 0.9253793168,
+        "median" : 0.926096042,
+        "minimum" : 0.920912666
+      },
+      "step2" : {
+        "count" : 5,
+        "maximum" : 0.972843208,
+        "mean" : 0.9454733583999999,
+        "median" : 0.940554,
+        "minimum" : 0.935553209
+      },
+      "step3" : {
+        "count" : 5,
+        "maximum" : 0.94584775,
+        "mean" : 0.9410446252,
+        "median" : 0.941220209,
+        "minimum" : 0.93666925
+      },
+      "totalIncludingObservers" : {
+        "count" : 5,
+        "maximum" : 4.472499166,
+        "mean" : 4.443909316599999,
+        "median" : 4.434893417,
+        "minimum" : 4.424033458
+      }
+    },
+    "fox-512" : {
+      "completion" : {
+        "count" : 5,
+        "maximum" : 7.584e-06,
+        "mean" : 6.9666e-06,
+        "median" : 6.791e-06,
+        "minimum" : 6.458e-06
+      },
+      "conditioning" : {
+        "count" : 5,
+        "maximum" : 6.917e-06,
+        "mean" : 6.483200000000001e-06,
+        "median" : 6.5e-06,
+        "minimum" : 5.833e-06
+      },
+      "decode" : {
+        "count" : 5,
+        "maximum" : 0.128840584,
+        "mean" : 0.127905925,
+        "median" : 0.12765625,
+        "minimum" : 0.1269935
+      },
+      "denoiserSetup" : {
+        "count" : 5,
+        "maximum" : 9.584e-06,
+        "mean" : 8.6834e-06,
+        "median" : 8.917e-06,
+        "minimum" : 7.791e-06
+      },
+      "observer" : {
+        "count" : 5,
+        "maximum" : 0.007974249,
+        "mean" : 0.007890333200000002,
+        "median" : 0.007855792,
+        "minimum" : 0.007835458000000002
+      },
+      "pipelineExcludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.045056958,
+        "mean" : 1.0277693416,
+        "median" : 1.0287445430000002,
+        "minimum" : 1.012847667
+      },
+      "sampling" : {
+        "count" : 5,
+        "maximum" : 0.916195541,
+        "mean" : 0.8998412834,
+        "median" : 0.901064917,
+        "minimum" : 0.885832084
+      },
+      "step0" : {
+        "count" : 5,
+        "maximum" : 0.225620125,
+        "mean" : 0.22197125,
+        "median" : 0.224124458,
+        "minimum" : 0.217497333
+      },
+      "step1" : {
+        "count" : 5,
+        "maximum" : 0.229513833,
+        "mean" : 0.2252975418,
+        "median" : 0.225365417,
+        "minimum" : 0.220850667
+      },
+      "step2" : {
+        "count" : 5,
+        "maximum" : 0.230506583,
+        "mean" : 0.2264632082,
+        "median" : 0.225643625,
+        "minimum" : 0.225106833
+      },
+      "step3" : {
+        "count" : 5,
+        "maximum" : 0.231474833,
+        "mean" : 0.22610928340000003,
+        "median" : 0.225623875,
+        "minimum" : 0.221960542
+      },
+      "totalIncludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.052892416,
+        "mean" : 1.0356596748,
+        "median" : 1.036676459,
+        "minimum" : 1.020821916
+      }
+    },
+    "fox-watercolor-ref1" : {
+      "completion" : {
+        "count" : 5,
+        "maximum" : 7.792e-06,
+        "mean" : 7.299800000000001e-06,
+        "median" : 7.291e-06,
+        "minimum" : 6.708e-06
+      },
+      "conditioning" : {
+        "count" : 5,
+        "maximum" : 7.417e-06,
+        "mean" : 6.6668e-06,
+        "median" : 6.458e-06,
+        "minimum" : 6.375e-06
+      },
+      "decode" : {
+        "count" : 5,
+        "maximum" : 0.1741415,
+        "mean" : 0.17263957519999998,
+        "median" : 0.172304417,
+        "minimum" : 0.171362334
+      },
+      "denoiserSetup" : {
+        "count" : 5,
+        "maximum" : 9.5e-06,
+        "mean" : 8.875e-06,
+        "median" : 9e-06,
+        "minimum" : 7.75e-06
+      },
+      "observer" : {
+        "count" : 5,
+        "maximum" : 0.007948874000000002,
+        "mean" : 0.007937682599999999,
+        "median" : 0.007934957999999999,
+        "minimum" : 0.00792579
+      },
+      "pipelineExcludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.508392002,
+        "mean" : 1.5017470339999999,
+        "median" : 1.5012280419999997,
+        "minimum" : 1.492494833
+      },
+      "references" : {
+        "count" : 5,
+        "maximum" : 7.08e-07,
+        "mean" : 4.75e-07,
+        "median" : 4.17e-07,
+        "minimum" : 3.33e-07
+      },
+      "sampling" : {
+        "count" : 5,
+        "maximum" : 1.3360653349999998,
+        "mean" : 1.3290841422,
+        "median" : 1.3294044170000001,
+        "minimum" : 1.3192367919999999
+      },
+      "step0" : {
+        "count" : 5,
+        "maximum" : 0.330430042,
+        "mean" : 0.32762577499999995,
+        "median" : 0.328430292,
+        "minimum" : 0.325054208
+      },
+      "step1" : {
+        "count" : 5,
+        "maximum" : 0.333742292,
+        "mean" : 0.3310038918,
+        "median" : 0.330138792,
+        "minimum" : 0.32845125
+      },
+      "step2" : {
+        "count" : 5,
+        "maximum" : 0.338466708,
+        "mean" : 0.33407047500000003,
+        "median" : 0.333654708,
+        "minimum" : 0.3320055
+      },
+      "step3" : {
+        "count" : 5,
+        "maximum" : 0.339721042,
+        "mean" : 0.3363840004,
+        "median" : 0.337582917,
+        "minimum" : 0.332346667
+      },
+      "totalIncludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.5163177920000002,
+        "mean" : 1.5096847166,
+        "median" : 1.509163,
+        "minimum" : 1.5004419580000001
+      }
+    },
+    "lighthouse-512" : {
+      "completion" : {
+        "count" : 5,
+        "maximum" : 7.041e-06,
+        "mean" : 6.658200000000001e-06,
+        "median" : 6.75e-06,
+        "minimum" : 6.125e-06
+      },
+      "conditioning" : {
+        "count" : 5,
+        "maximum" : 6.708e-06,
+        "mean" : 6.358199999999999e-06,
+        "median" : 6.5e-06,
+        "minimum" : 5.958e-06
+      },
+      "decode" : {
+        "count" : 5,
+        "maximum" : 0.163099125,
+        "mean" : 0.15527695000000002,
+        "median" : 0.162912666,
+        "minimum" : 0.12887725
+      },
+      "denoiserSetup" : {
+        "count" : 5,
+        "maximum" : 8.584e-06,
+        "mean" : 8.341999999999999e-06,
+        "median" : 8.459e-06,
+        "minimum" : 7.792e-06
+      },
+      "observer" : {
+        "count" : 5,
+        "maximum" : 0.0078975,
+        "mean" : 0.0078720912,
+        "median" : 0.007880375,
+        "minimum" : 0.007848583
+      },
+      "pipelineExcludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.2268701659999999,
+        "mean" : 1.1624529922,
+        "median" : 1.218230084,
+        "minimum" : 1.04212925
+      },
+      "sampling" : {
+        "count" : 5,
+        "maximum" : 1.063935292,
+        "mean" : 1.0071546838,
+        "median" : 1.055109459,
+        "minimum" : 0.91323025
+      },
+      "step0" : {
+        "count" : 5,
+        "maximum" : 0.262276583,
+        "mean" : 0.24645235840000002,
+        "median" : 0.25826525,
+        "minimum" : 0.224576
+      },
+      "step1" : {
+        "count" : 5,
+        "maximum" : 0.265790042,
+        "mean" : 0.2505947334,
+        "median" : 0.263859792,
+        "minimum" : 0.229521209
+      },
+      "step2" : {
+        "count" : 5,
+        "maximum" : 0.267272042,
+        "mean" : 0.25267001699999997,
+        "median" : 0.263783042,
+        "minimum" : 0.227906292
+      },
+      "step3" : {
+        "count" : 5,
+        "maximum" : 0.268596625,
+        "mean" : 0.25743757500000003,
+        "median" : 0.267329333,
+        "minimum" : 0.230369
+      },
+      "totalIncludingObservers" : {
+        "count" : 5,
+        "maximum" : 1.234750541,
+        "mean" : 1.1703250833999999,
+        "median" : 1.226078667,
+        "minimum" : 1.05002675
+      }
+    }
+  },
+  "timingScope" : "Provided: the fixture's text rows replace prompt encoding, and references are prepared once per case outside iteration timing (recorded under setups). Conditioning measures only the provided-tensor handoff. Application-stage wall clock, not GPU kernel timing. Encoded: conditioning includes balanced cleanup and text-encoder load, call and discard; references include the VAE encoder's load, calls and release. denoiserSetup includes segment acquisition and validation, which is quick because Core AI opens models lazily: the first native call after a (re)open specializes the model, so in balanced mode step0 carries the denoisers' reload cost on every iteration. Steps include native calls, host copies and Euler updates; decode includes decoder loading when needed, copies and image validation. Stage timings exclude observers (hashing, order checks); total includes them. Preflight, stream verification, one-time setup, SSIM, report IO and unload are outside timed generation."
+}

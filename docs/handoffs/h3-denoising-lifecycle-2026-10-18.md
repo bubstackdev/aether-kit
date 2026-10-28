@@ -34,7 +34,7 @@ Release validation passed **113 CPU tests** (117 registered; four native tests d
 
 ## Workspace and evidence
 
-Repository: `/Users/zakkeown/Code/bubstackdev/aether/aether-kit`.
+Repository: the aether-kit checkout; the paths below are relative to it.
 
 - CPU preparation: `.local/h3-denoising-lifecycle-prepared-01/` and its sibling `-controller.json`, `-provenance.json`, `-stdout.json`, `-stderr.log`. Passed, CPU-only, joined, source pins unchanged; elapsed 86.2789 seconds.
 - Interrupted native run: `.local/h3-denoising-lifecycle-native-01/` and the same sibling controller/provenance/stdout/stderr files. Progress is in one subdirectory per role. All files are retained.
@@ -60,12 +60,13 @@ Scripts/check.sh > .local/h3-denoising-lifecycle-tests-03.log 2>&1
 For a repeat of the current frozen harness, use the following arguments with a new preparation output, then a new native output:
 
 ```sh
+H3_PROTOTYPE=<aether-prototype checkout>
 python3 Scripts/qualify-h3-denoising.py \
   --bundle /private/tmp/aether-h3-qkv-ready/render/bundle.json \
   --phases /private/tmp/aether-h3-qkv-ready/phase/bundle.json \
   --cpu-record /private/tmp/aether-h3-qkv-phase-oracles/cpu-checks.json \
   --chain .local/h3-backbone-cpu-references-01/chain.json \
-  --modulations /Users/zakkeown/Code/bubstackdev/aether/lab/aether-prototype/.local/h3-diagnostic/models \
+  --modulations "$H3_PROTOTYPE/.local/h3-diagnostic/models" \
   --references .local/h3-denoising-cpu-references-01/references.json \
   --output .local/h3-denoising-lifecycle-prepared-02 \
   --prepare-only
