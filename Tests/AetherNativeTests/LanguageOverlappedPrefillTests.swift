@@ -107,14 +107,15 @@ private struct OverlapModel: Codable {
 }
 
 /// An image prompt prefilled three ways. `imageSpan` is [start, end) in the expanded prompt; `defaultChunkStarts` are the
-/// default plan's chunk starts on a one-function decoder (a 0.0.2 decoder sends the image span as one submission).
+/// default plan's chunk starts on a one-function decoder, and with the two flags below nil on a 0.0.2 two-function
+/// decoder, which never chunks an image (each image is one `withImage` submission).
 private struct OverlapImageCase: Codable {
     var name = ""
     var promptTokens = 0
     var imageSpan: [Int] = []
-    var defaultChunkStarts: [Int] = []
-    var chunksCrossImageEdges = false
-    var tailReCoversImageRows = false
+    var defaultChunkStarts: [Int]?
+    var chunksCrossImageEdges: Bool?
+    var tailReCoversImageRows: Bool?
     var greedy: [String: [Int]] = [:]
     var greedyIdentical = false
 }
@@ -250,13 +251,15 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                     let total = rendered.count - 1 + imageTokens
                     imageCase.promptTokens = total
                     imageCase.imageSpan = [start, start + imageTokens]
-                    let width = try #require(oneFunction ? LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total)
-                                                          : LanguageStepContract.bucketedPositions.fixedPrefillChunk)
-                    imageCase.defaultChunkStarts = Array(stride(from: 0, through: total - width, by: width))
-                        + (total % width == 0 || total <= width ? [] : [total - width])
-                    func inside(_ edge: Int) -> Bool { imageCase.defaultChunkStarts.contains { $0 < edge && edge < $0 + width } }
-                    imageCase.chunksCrossImageEdges = inside(start) && inside(start + imageTokens)
-                    imageCase.tailReCoversImageRows = total % width != 0 && total - width < start + imageTokens
+                    if oneFunction {
+                        let width = try #require(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total))
+                        let starts = Array(stride(from: 0, through: total - width, by: width))
+                            + (total % width == 0 || total <= width ? [] : [total - width])
+                        func inside(_ edge: Int) -> Bool { starts.contains { $0 < edge && edge < $0 + width } }
+                        imageCase.defaultChunkStarts = starts
+                        imageCase.chunksCrossImageEdges = inside(start) && inside(start + imageTokens)
+                        imageCase.tailReCoversImageRows = total % width != 0 && total - width < start + imageTokens
+                    }
                     for (name, chunk) in [("default", nil), ("512 wide", 512), ("1-token steps", 1)] as [(String, Int?)] {
                         imageCase.greedy[name] = try await vl.generate(renderedTokenIDs: rendered, images: [image], maximumTokens: 32,
                                                                         prefillChunkSize: chunk).tokens
@@ -276,15 +279,15 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                 let first = pads[0], next = pads[1] + imageTokens - 1
                 pairCase.promptTokens = pair.count - 2 + 2 * imageTokens
                 pairCase.imageSpan = [first, first + imageTokens, next, next + imageTokens]
-                let total = pairCase.promptTokens
-                let width = try #require(oneFunction ? LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total)
-                                                      : LanguageStepContract.bucketedPositions.fixedPrefillChunk)
-                pairCase.defaultChunkStarts = Array(stride(from: 0, through: total - width, by: width))
-                    + (total % width == 0 || total <= width ? [] : [total - width])
-                pairCase.chunksCrossImageEdges = pairCase.imageSpan.allSatisfy { edge in
-                    pairCase.defaultChunkStarts.contains { $0 < edge && edge < $0 + width }
+                if oneFunction {
+                    let total = pairCase.promptTokens
+                    let width = try #require(LanguageStepContract.bucketedPositions.defaultPrefillChunk(promptCount: total))
+                    let starts = Array(stride(from: 0, through: total - width, by: width))
+                        + (total % width == 0 || total <= width ? [] : [total - width])
+                    pairCase.defaultChunkStarts = starts
+                    pairCase.chunksCrossImageEdges = pairCase.imageSpan.allSatisfy { edge in starts.contains { $0 < edge && edge < $0 + width } }
+                    pairCase.tailReCoversImageRows = total % width != 0 && total - width < next + imageTokens
                 }
-                pairCase.tailReCoversImageRows = total % width != 0 && total - width < next + imageTokens
                 for (name, chunk) in [("default", nil), ("512 wide", 512), ("1-token steps", 1)] as [(String, Int?)] {
                     pairCase.greedy[name] = try await vl.generate(renderedTokenIDs: pair, images: [image, second], maximumTokens: 32,
                                                                    prefillChunkSize: chunk).tokens
@@ -294,9 +297,9 @@ func languageOverlappedPrefillMatchesOtherPlans() async throws {
                 await vl.unload()
                 // Each single-image case must exercise what it is for: image edges inside chunks, and the short
                 // question's tail stepping back into the image. Every case's greedy output must agree across plans.
-                let geometry = !oneFunction || model.imageCases.filter { $0.name != "two images" }.allSatisfy(\.chunksCrossImageEdges)
-                    && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows }
-                    && model.imageCases.contains { $0.name == "long question" && !$0.tailReCoversImageRows }
+                let geometry = !oneFunction || model.imageCases.filter { $0.name != "two images" }.allSatisfy { $0.chunksCrossImageEdges == true }
+                    && model.imageCases.contains { $0.name == "short question" && $0.tailReCoversImageRows == true }
+                    && model.imageCases.contains { $0.name == "long question" && $0.tailReCoversImageRows == false }
                 model.imageGreedyIdentical = geometry && model.imageCases.allSatisfy(\.greedyIdentical)
             }
             model.passed = model.comparisons.allSatisfy(\.passed) && (model.imageGreedyIdentical ?? true)

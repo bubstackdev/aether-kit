@@ -22,7 +22,7 @@
   "Sources/AetherLanguageCoreAI/LanguageVisionPrompt.swift": "5640bb9b2681a06576932258efa80dcb4c0a395dbcc9c318f008aca4b72ea177"
  },
  "nativeTests": {
-  "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "83c35aeefca092de1149b625a3245d38941b15290e10d658e6d398b3702f228a",
+  "Tests/AetherNativeTests/LanguageOverlappedPrefillTests.swift": "981605a22ae3c1fd7566a6bcd2c1fa9f96350dd41bce2758d9282c199ad753b6",
   "Tests/AetherNativeTests/LanguageDecodeQualificationTests.swift": "395adba9e1e335adc4f7c6af223a2397c3d4778e9974f2afbb67fd02308fffdc",
   "Tests/AetherNativeTests/Qwen3VLImageTextQualificationTests.swift": "d45d68ed270aba31af229ec535e23171b684ff546f38f69fef57007387048f57",
   "Tests/AetherNativeTests/VisionLanguageSessionTests.swift": "e0eb243d031dddfb445efe2083ac680afea4ef9c253e6bd04dced62239bbf5a0",
@@ -32,7 +32,7 @@
   "Tests/AetherNativeTests/LanguageChatQualificationTests.swift": "2a0580115e0806cefe7225969e5aebd560bf99d294ed4d0505c0696143ee04c6",
   "Tests/AetherNativeTests/VisionLanguageResourceTests.swift": "fd8505596523fd1fee08a777b140edaa42773779512a92909809a7452efe02b6"
  },
- "sourceNote": "sourceSHA256 and nativeTests are the final sources. The plan gate and the two-function runs used them; the time-to-first-token, sweep, budget, resource-peak, chat and upstream-parity runs were made before the review fixes, which changed only the two-function asset's plan, the gate's labels and its empty-report check, so the text and one-function paths they measured are the same code",
+ "sourceNote": "sourceSHA256 and nativeTests are the final sources. The plan gate and the two-function runs used them; the time-to-first-token, sweep, budget, resource-peak, chat and upstream-parity runs were made before the review fixes, which changed only the two-function asset's plan, the gate's labels and its empty-report check, so the text and one-function paths they measured are the same code. The one-function plan gates ran before the test stopped recording image geometry for two-function decoders (a change that does not touch one-function runs); the two-function gate ran after it",
  "before": "an origin/main build (bfbf814) with the branch's LanguagePrefillChunkSweepTests.swift, which adds the longer-prompt options; same bundles",
  "planGate": {
   "gate": "Text prompt (449 tokens unless AETHER_OVERLAP_TEXT_REPEATS sets another length), default plan (width 256 above 256 prompt tokens, last chunk stepping back 63 rows, cache sized for the prompt before the prefill) against three plans; last-row logits cosine >= 0.9999 with equal argmax for each. Rules step-back (against the widest chunk the export allows: the whole prompt in one chunk up to the chunk bound, more above it) and plan-rounding (against 1-token steps and against the 0.0.2 width of 64), the same for both: identical 32-token greedy, or a first divergence where the two plans' tokens are the upstream reference's top two at that row, its top-1 minus top-2 probability < 0.1 (the parity threshold), and the two plans' teacher-forced rows have cosine >= 0.9999 (the last-row bar) on every row up to and including it (acceptedAtNearTie, margin and source recorded); any other divergence fails. Before 0.0.3's plan: step-back allowed no divergence and the row bar was 0.99999. Qwen3-VL image prompts (a long and a short question about one image, and two images) under the default plan, one 512-token-wide plan and 1-token steps: identical greedy, no near-tie allowance",
@@ -659,7 +659,7 @@
    },
    "vl-2b-two-function": {
     "file": "overlap-vl-2b-two-function.json",
-    "sha256": "5727ad3ab88188f0ed7ede8335f70e860f2751a31242d525e922032b2cf02481",
+    "sha256": "6c9b634463eb84e93b15aef9756f512bfc356cab35cbbedd3b4430cee6d7f83d",
     "passed": true,
     "promptTokens": 449,
     "submissions": {
@@ -714,22 +714,9 @@
        4,
        436
       ],
-      "defaultChunkStarts": [
-       0,
-       64,
-       128,
-       192,
-       256,
-       320,
-       384,
-       448,
-       512,
-       576,
-       640,
-       666
-      ],
-      "chunksCrossImageEdges": true,
-      "tailReCoversImageRows": false,
+      "defaultChunkStarts": null,
+      "chunksCrossImageEdges": null,
+      "tailReCoversImageRows": null,
       "greedyIdentical": true
      },
      {
@@ -739,17 +726,9 @@
        4,
        436
       ],
-      "defaultChunkStarts": [
-       0,
-       64,
-       128,
-       192,
-       256,
-       320,
-       382
-      ],
-      "chunksCrossImageEdges": true,
-      "tailReCoversImageRows": true,
+      "defaultChunkStarts": null,
+      "chunksCrossImageEdges": null,
+      "tailReCoversImageRows": null,
       "greedyIdentical": true
      },
      {
@@ -761,24 +740,9 @@
        438,
        870
       ],
-      "defaultChunkStarts": [
-       0,
-       64,
-       128,
-       192,
-       256,
-       320,
-       384,
-       448,
-       512,
-       576,
-       640,
-       704,
-       768,
-       819
-      ],
-      "chunksCrossImageEdges": true,
-      "tailReCoversImageRows": true,
+      "defaultChunkStarts": null,
+      "chunksCrossImageEdges": null,
+      "tailReCoversImageRows": null,
       "greedyIdentical": true
      }
     ],
@@ -889,7 +853,12 @@
     ]
    }
   },
-  "planGate": "overlap-vl-2b-two-function.json in planGate.models (its default plan is the 0.0.2 one: 8 submissions at 449 tokens)"
+  "planGate": "overlap-vl-2b-two-function.json in planGate.models (its default plan is the 0.0.2 one: 8 submissions at 449 tokens)",
+  "imageGeometrySuperseded": {
+   "file": "two-function-old-geometry/overlap-vl-2b-two-function.json",
+   "sha256": "5727ad3ab88188f0ed7ede8335f70e860f2751a31242d525e922032b2cf02481",
+   "note": "an earlier run of the same gate on this bundle recorded defaultChunkStarts, chunksCrossImageEdges and tailReCoversImageRows for a uniform 64-token plan over the image prompts, which a two-function asset does not run (each image is one withImage submission); the test now leaves them out (nil) for two-function decoders, and the run above, which replaces it, has none. Its greedy results were the same: identical across plans"
+  }
  },
  "textUpstreamParity": {
   "0.6b-short": {
