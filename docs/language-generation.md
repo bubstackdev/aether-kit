@@ -223,16 +223,18 @@ the comparison; there is no running export of the 4B:
 **Where the time goes.** Almost all of it is in the native steps: a 2,048-token prompt is 32 submissions at C = 64, and
 each one reads every weight and concatenates the whole cache, where the running contract's four 512-token submissions
 do far less.
-- **Cache growth,** the host's largest share, took 83 ms (0.6B) and 133 ms (4B) at 2,048 tokens. That's bound by first
-  touches of each newly allocated buffer, since a bucketed request starts again at 256 rows.
-- **Update-row copies and input building** take under 20 ms.
+- **Cache growth,** the host's largest share, took 83 ms (0.6B) and 133 ms (4B) at 2,048 tokens before these changes.
+  That's bound by first touches of each newly allocated buffer, since a bucketed request starts again at 256 rows.
+- **Update-row copies and input building** took under 20 ms before these changes.
 
 Growth now zeroes only each row's unwritten tail, copies rows in parallel, and copies a step's update rows one row at a
 time instead of one token at a time. All three write the same bytes, and replies are identical. The default-width
 figures above are with these changes (before: 554 and 1,383 ms at 2,048 tokens, partly host noise).
 
-**Rejected.** Reusing large buffers across growths and requests removes most of the growth time, but Core AI then
-takes longer to encode: it pays for an input buffer larger than its view, as for the strided views above.
+**Rejected.** Reusing large buffers across growths and requests cut growth by 57 ms (0.6B) and 68 ms (4B) at 2,048
+tokens, but Core AI's encode rose by 51 and 58 ms, so time to first token didn't improve
+([probe](evidence/language-ttft-buffer-reuse-probe-2026-10-27.json)). Core AI pays for an input buffer larger than its
+view, as for the strided views above.
 
 **What would close the gap** isn't exact, so it isn't done:
 - **A wider chunk for long prompts.** C = 512 halves the 4B's time at 2,048 tokens. But it retains more memory per request

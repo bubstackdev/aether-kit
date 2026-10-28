@@ -33,7 +33,8 @@ struct LanguageCacheTests {
     @Test func relayoutEqualsZeroingThenCopying() {
         var seed: UInt64 = 3
         func next() -> UInt8 { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return UInt8(truncatingIfNeeded: seed >> 33) }
-        for (rows, old, new, valid, tokenBytes) in [(3, 4, 8, 2, 6), (1, 5, 5, 5, 2), (7, 256, 512, 200, 256), (224, 256, 512, 256, 256)] {
+        for (rows, old, new, valid, tokenBytes) in [(3, 4, 8, 2, 6), (1, 5, 5, 5, 2), (2, 4, 8, 0, 3), (7, 256, 512, 200, 256),
+                                                    (224, 256, 512, 256, 256), (224, 256, 512, 0, 256)] {
             let source = (0..<(rows * old * tokenBytes)).map { _ in next() }
             var reference = [UInt8](repeating: 0, count: rows * new * tokenBytes + 5)
             for row in 0..<rows {
@@ -50,21 +51,25 @@ struct LanguageCacheTests {
         }
     }
 
-    /// Contiguous update rows take one copy per row; the result equals the per-token placement.
+    /// Contiguous update rows take one copy per row; the result equals the per-token placement, including at the
+    /// cache's first and last rows and for one-token (decode) updates with a padded token stride.
     @Test func contiguousUpdateRowsMatchPerTokenPlacement() {
-        let rows = 6, capacity = 40, width = 8, start = 13, count = 9
-        let update = (0..<(rows * count * width)).map { Float16(Float($0 % 97) / 7) }
-        var fast = [Float16](repeating: 1, count: rows * capacity * width)
-        var reference = fast
-        update.withUnsafeBufferPointer { source in
-            fast.withUnsafeMutableBufferPointer { cache in
-                LanguageCachePlan.writeUpdate(source.baseAddress!, rowStride: count * width, tokenStride: width, elementStride: 1,
-                                              into: cache.baseAddress!, rows: rows, capacity: capacity, width: width, start: start, count: count)
+        let rows = 6, capacity = 40, width = 8
+        for (start, count, tokenStride) in [(13, 9, width), (0, 9, width), (31, 9, width), (39, 1, width + 5), (0, 1, width + 5)] {
+            let update = (0..<(rows * count * tokenStride)).map { Float16(Float($0 % 97) / 7) }
+            var fast = [Float16](repeating: 1, count: rows * capacity * width)
+            var reference = fast
+            update.withUnsafeBufferPointer { source in
+                fast.withUnsafeMutableBufferPointer { cache in
+                    LanguageCachePlan.writeUpdate(source.baseAddress!, rowStride: count * tokenStride, tokenStride: tokenStride,
+                                                  elementStride: 1, into: cache.baseAddress!, rows: rows, capacity: capacity,
+                                                  width: width, start: start, count: count)
+                }
             }
+            for row in 0..<rows { for token in 0..<count { for element in 0..<width {
+                reference[(row * capacity + start + token) * width + element] = update[row * count * tokenStride + token * tokenStride + element]
+            } } }
+            #expect(fast == reference, "start \(start), count \(count), token stride \(tokenStride)")
         }
-        for row in 0..<rows { for token in 0..<count { for element in 0..<width {
-            reference[(row * capacity + start + token) * width + element] = update[(row * count + token) * width + element]
-        } } }
-        #expect(fast == reference)
     }
 }

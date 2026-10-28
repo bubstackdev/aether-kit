@@ -47,7 +47,7 @@ The decode steps also run through `main`. A hand-written split softmax in `main`
 The probe's split graph has one shared max and denominator and no cache copy. It confirms the numerics hold:
 - eager: cosine ≥ 0.999997 against fused;
 - cpu_only: ≥ 0.99981 over chunked prefill plus four decode steps, argmax equal;
-- GPU: same argmax, logits within about 0.005.
+- GPU: the same argmax on all three probe calls (the results file records each call's argmax and logit sum).
 - It wires the weights once (92 MiB, the same as fused). Its fp32 scores raise Metal's allocation (242 against 143 MiB on the probe).
 
 ### 3. `torch.cond` in `main`: converts, then hangs the GPU compile and crashes cpu_only
@@ -81,7 +81,7 @@ Because the cond asset never opened on the GPU, its wired memory and q = 1 cost 
 
 ## Apple Feedback candidates
 
-Both defects reproduce with `Spikes/split-attention/split_attention_probe.py export cond` (seconds of CPU, no checkpoint).
+Both start from the asset `Spikes/split-attention/split_attention_probe.py export cond` writes (seconds of CPU, no checkpoint). Item 1 reproduces by running that asset with `split-attention-probe.swift` (GPU preferred); item 2 by `split_attention_probe.py check <fused .aimodel> <cond .aimodel>` (cpu_only).
 
 1. **The GPU specialization of a function containing `if_` never finishes.**
    - The function has two `if_` regions, one per layer. The condition is a 0-d boolean computed from an int32 input. Each branch is a transformer layer (matmuls, RMSNorm, RoPE, SDPA, or an explicit softmax) returning three fp16 tensors with a dynamic dimension.
@@ -95,9 +95,10 @@ Both defects reproduce with `Spikes/split-attention/split_attention_probe.py exp
 Forge/.venv/bin/python -I Spikes/split-attention/split_attention_probe.py eager
 Forge/.venv/bin/python -I Spikes/split-attention/split_attention_probe.py export <fused|split|cond> --output <new .aimodel>
 Forge/.venv/bin/python -I Spikes/split-attention/split_attention_probe.py check <fused .aimodel> <split .aimodel>
+Forge/.venv/bin/python -I Spikes/split-attention/split_attention_probe.py check <fused .aimodel> <cond .aimodel>   # Feedback item 2: aborts
 xcrun swiftc -O -swift-version 5 -o .build/split-attention-probe Spikes/split-attention/split-attention-probe.swift \
     -framework CoreAI -framework Metal
-~/.cache/aether-kit/with-gpu-lock.sh split-attention-probe .build/split-attention-probe <.aimodel>
+~/.cache/aether-kit/with-gpu-lock.sh split-attention-probe .build/split-attention-probe <.aimodel>   # on the cond asset: Feedback item 1, never opens
 ```
 
 The compact results are in `Spikes/split-attention/results/probe-2026-10-27.json`. With two layers, the probe's GPU timings are dominated by per-call overhead and are not comparable to real models.

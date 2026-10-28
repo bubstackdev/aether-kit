@@ -79,8 +79,9 @@ enum LanguageCachePlan {
                                     into cache: UnsafeMutablePointer<Scalar>, rows: Int, capacity: Int, width: Int,
                                     start: Int, count: Int) {
         precondition(rows > 0 && width > 0 && count > 0 && start >= 0 && start + count <= capacity)
-        if elementStride == 1, tokenStride == width {
-            // Each row's tokens are contiguous on both sides: one copy per row instead of one per token.
+        if elementStride == 1, count == 1 || tokenStride == width {
+            // Each row's tokens are contiguous on both sides (always so for one token, as in decode): one copy per row
+            // instead of one per token.
             for row in 0..<rows {
                 (cache + (row * capacity + start) * width).update(from: update + row * rowStride, count: count * width)
             }
