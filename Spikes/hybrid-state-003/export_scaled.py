@@ -28,6 +28,7 @@ def main() -> None:
     parser.add_argument("--layers", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--decode", action="store_true", help="also export the q = 1 `decode` function (C2 layout)")
+    parser.add_argument("--decode-only", action="store_true", help="export only the q = 1 recurrent function, as `decode`")
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("output exists")
@@ -55,7 +56,8 @@ def main() -> None:
     module = module.to(torch.float16).eval()
     main_ex, main_dyn, dec_ex, dec_dyn = examples(module, 512)
     converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
-    entries = [("main", Main(module), main_ex, main_dyn)] + ([("decode", Decode(module), dec_ex, dec_dyn)] if args.decode else [])
+    entries = [] if args.decode_only else [("main", Main(module), main_ex, main_dyn)]
+    entries += [("decode", Decode(module), dec_ex, dec_dyn)] if args.decode or args.decode_only else []
     for name, wrapper, example, dynamic in entries:
         with torch.no_grad():
             ep = torch.export.export(wrapper, example, dynamic_shapes=dynamic, prefer_deferred_runtime_asserts_over_guards=True)

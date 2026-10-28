@@ -22,7 +22,8 @@ func option(_ name: String) -> String? {
     guard let i = args.firstIndex(of: name), i + 1 < args.count else { return nil }
     let v = args[i + 1]; args.removeSubrange(i...(i + 1)); return v
 }
-let useDecode = flag("--decode")
+let decodeOnly = flag("--decode-only")   // an asset with only `decode`: every step is one token through it
+let useDecode = flag("--decode") || decodeOnly
 let baseline = flag("--baseline")   // export_baseline.py: [1, 1] steps, position scalar, fixed-capacity KV states
 let cpu = flag("--cpu")
 let chunk = Int(option("--chunk") ?? "64")!
@@ -74,8 +75,8 @@ let loadStart = clock.now
 var options: SpecializationOptions = cpu ? .cpuOnly : SpecializationOptions(preferredComputeUnitKind: .gpu)
 options.expectFrequentReshapes = true
 let model = try await AIModel(contentsOf: assetURL, options: options)
-let mainFunction: InferenceFunction = try model.loadFunction(named: "main")!
-let descriptor = model.functionDescriptor(for: "main")!
+let mainFunction: InferenceFunction = try model.loadFunction(named: decodeOnly ? "decode" : "main")!
+let descriptor = model.functionDescriptor(for: decodeOnly ? "decode" : "main")!
 let decodeFunction: InferenceFunction? = useDecode ? try model.loadFunction(named: "decode") : nil
 if useDecode && decodeFunction == nil { throw Failure(description: "no decode function") }
 let loadSeconds = seconds(loadStart.duration(to: clock.now))
@@ -169,7 +170,7 @@ final class Session {
             "keyCache": .init(unsafeBuffer: keys!, scalarType: .float16, shape: shape, strides: strides, interleaveLayout: nil),
             "valueCache": .init(unsafeBuffer: values!, scalarType: .float16, shape: shape, strides: strides, interleaveLayout: nil),
         ]
-        let f = tokens.count == 1 && position > 0 ? (decodeFunction ?? mainFunction) : mainFunction
+        let f = tokens.count == 1 && (position > 0 || decodeOnly) ? (decodeFunction ?? mainFunction) : mainFunction
         let outputs = try encode(f, inputs: inputs, index: 0, views: InferenceFunction.AsyncMutableViews())
         await stream.currentWorkCompleted()
         for (name, buffer) in [("keyUpdate", keys!), ("valueUpdate", values!)] {
