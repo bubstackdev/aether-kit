@@ -30,7 +30,8 @@ preprocessing parameters, an image-token budget (`maximumImageTokens`) and the e
 patch grids (`imageGrids`), plus `exportBounds` with a `maximumImageChunk` covering the budget.
 `Forge/language/register_qwen3_vl_bundle.py` writes one for an assembled bundle, listing every tokenizer file (`tokenizerFiles`) so `verifyTokenizer` checks the exact set. Each image
 snaps to the grid nearest its aspect ratio, is resized to that grid exactly, encoded once by
-that grid's static-shape function, and spliced into the decoder. Decoding is greedy. One request at a time; overlap fails with `busy`. With a `gpu:` owner, the
+that grid's static-shape function, and spliced into the decoder. Decoding is greedy by default; the sampling
+entry point takes a `LanguageSampling` and a constraint as a text request does ([sampling](language-generation.md)). One request at a time; overlap fails with `busy`. With a `gpu:` owner, the
 encode phase and the decoder's request are each admitted. `unload()` first withdraws a request
 still waiting for either admission (it fails with `closed`), so close never waits behind another
 owner's GPU work; an admitted request finishes first, then both models are released. A

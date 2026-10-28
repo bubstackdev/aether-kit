@@ -5,6 +5,7 @@ import AetherCoreAI
 /// Experimental fixed-input, outer-module session for qualification.
 /// Owns verified immutable shared buffers and one native function. Supports
 /// prepare/time/heads with complete named outputs; fixed inputs restart each run. This does not implement a denoising trajectory.
+@available(macOS 27, iOS 27, *)
 public actor H3PhaseSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -48,9 +49,11 @@ public actor H3PhaseSession {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 protocol H3PhaseBackend: Sendable { func run() async throws -> [String: H3TensorData] }
 
 /// CPU descriptor validation before native dispatch.
+@available(macOS 27, iOS 27, *)
 public enum H3PhaseBindings {
     public static func validate(_ function: ModelFunctionDescription, probe: H3PhaseProbePlan.Case) throws {
         guard function.name == probe.model.function, function.states.isEmpty,

@@ -8,6 +8,7 @@ import Synchronization
 
 /// Fixed bounds are published before native acquisition. This is a short
 /// stability check, not a claim that all native allocations have been freed.
+@available(macOS 27, iOS 27, *)
 struct H3LifecycleLimits: Encodable {
     let cycles = 4
     let runsPerSession = 2
@@ -33,6 +34,7 @@ struct H3LifecycleLimits: Encodable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 final class H3LifecycleTrace: Sendable {
     private struct State {
         var events: [String] = []
@@ -76,6 +78,7 @@ final class H3LifecycleTrace: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private struct H3LifecycleRun: Encodable {
     let name: String
     let cycle: Int
@@ -83,6 +86,7 @@ private struct H3LifecycleRun: Encodable {
     let fullOutputSHA256: String
     let comparison: H3ReferenceComparison
 }
+@available(macOS 27, iOS 27, *)
 private struct H3LifecycleCancellation: Encodable {
     let name: String
     let cycle: Int
@@ -90,6 +94,7 @@ private struct H3LifecycleCancellation: Encodable {
     let events: [String]
     let passed: Bool
 }
+@available(macOS 27, iOS 27, *)
 private struct H3LifecycleReport: Encodable {
     let schema = 1
     let scope = "Corrected block-0 lifecycle at two T2VA cardinalities; submitted-work cancellation, retained/reopened recovery and bounded memory stability. Not full generation or a benchmark."
@@ -111,6 +116,7 @@ private struct H3LifecycleReport: Encodable {
     var error: String?
 }
 
+@available(macOS 27, iOS 27, *)
 enum H3LifecycleCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         guard arguments.first == "qualify-h3-lifecycle" else { return false }

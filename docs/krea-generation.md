@@ -197,7 +197,7 @@ See the [summary](evidence/unload-cycling-2026-10-27.json).
 ```sh
 AETHER_NATIVE_UNLOAD_CYCLING=krea AETHER_NATIVE_UNLOAD_OUTPUT=/new/output/dir \
 AETHER_KREA_BUNDLE=~/.cache/huggingface/aether-kit/krea-2-turbo-realism/macos-any-gpu \
-~/.cache/aether-kit/with-gpu-lock.sh "krea unload cycling" swift test -c release --filter kreaUnloadCycling
+~/.cache/aether-kit/with-gpu-lock.sh "krea unload cycling" swift test --triple arm64-apple-macosx27.0 -c release --filter kreaUnloadCycling
 ```
 
 ## Verification and limits

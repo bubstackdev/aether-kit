@@ -4,6 +4,7 @@ import Foundation
 import Synchronization
 
 /// Specialization preferences for the reference executor.
+@available(macOS 27, iOS 27, *)
 public enum ModelComputePolicy: String, Sendable, CaseIterable {
     case automatic
     case cpuOnly
@@ -19,10 +20,12 @@ public enum ModelComputePolicy: String, Sendable, CaseIterable {
 }
 
 // Kept internal so lifecycle tests can exercise suspended native work without weights.
+@available(macOS 27, iOS 27, *)
 protocol ModelBackend: Sendable {
     func run(function: String, inputs: [String: TensorValue]) async throws -> [String: TensorValue]
 }
 
+@available(macOS 27, iOS 27, *)
 struct CoreAIBackend: ModelBackend {
     let model: AIModel
     // Internal, synchronous diagnostics. Execution observations bracket the
@@ -124,6 +127,7 @@ struct CoreAIBackend: ModelBackend {
 // Loading a new function on every invocation caused resource pressure in repeated
 // real-weight generations. Resolve each requested function once per model session.
 // The lock also preserves that lifetime if an internal backend copy is used.
+@available(macOS 27, iOS 27, *)
 private final class CoreAIFunctionCache: Sendable {
     private let functions = Mutex<[String: InferenceFunction]>([:])
 
@@ -141,6 +145,7 @@ private final class CoreAIFunctionCache: Sendable {
     }
 }
 
+@available(macOS 27, iOS 27, *)
 private func loadNativeFunction(_ name: String, model: AIModel,
                                 observer: (@Sendable (String) -> Void)?) throws -> InferenceFunction {
     observer?("functionLoadBegin")
@@ -151,6 +156,7 @@ private func loadNativeFunction(_ name: String, model: AIModel,
     return function
 }
 
+@available(macOS 27, iOS 27, *)
 func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(
     _ array: NDArray, as type: Scalar.Type
 ) throws -> Tensor<Scalar> {
@@ -170,6 +176,7 @@ func copyTensor<Scalar: TensorScalar & BitwiseCopyable>(
     return try Tensor(shape: array.shape, values: values)
 }
 
+@available(macOS 27, iOS 27, *)
 extension TensorValue {
     fileprivate var scalarType: NDArray.ScalarType {
         switch self {
@@ -191,6 +198,7 @@ extension TensorValue {
 // NDArray(scalars:shape:) iterates through a generic Sequence inside the runtime.
 // Copy contiguous storage in bulk while keeping the native allocation independent
 // of the Swift tensor and its lifetime.
+@available(macOS 27, iOS 27, *)
 private func copyNativeTensor<Scalar: TensorScalar & BitwiseCopyable>(
     _ tensor: Tensor<Scalar>, scalarType: NDArray.ScalarType
 ) -> NDArray {

@@ -43,7 +43,7 @@ Status: draft, 2026-10-27, written right after the [0.0.2 release](release-notes
 
 ### FLUX.2
 
-- Native cancellation of the text encoder.
+- Native cancellation of the text encoder. Done: cancel returns in about 0.17 s, bounded by one encoder call plus its discard; Core AI does not interrupt a submitted call ([measurement](flux2-klein.md#text-encoder-cancellation-003)).
 - iOS.
 - A quiet benchmark.
 - Prompt adherence.
@@ -68,7 +68,7 @@ Two apps, RenaML and Face Hugger, use FoundationModels `@Generable` today. They 
 | Piece | Scope in 0.0.3 |
 | --- | --- |
 | Runtime seam | A sampler or logits hook, and a `LanguageBackend` protocol. The runtime is greedy-only today. |
-| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is 27 today. |
+| Lower deployment floor | Link and launch only. On macOS 14 the facade reports "unsupported OS". An older-OS backend (likely MLX) is a go/no-go spike. The package floor is macOS 14 / iOS 17, with a CI launch check on macOS 14 ([deployment floor](deployment-floor.md)). |
 | `AetherLanguage` text facade | Owns the tokenizer, template, stop tokens, reasoning, sampling and UTF-8-safe streaming, building on `AetherLanguageTokenizers`. |
 | Structured output | Constrained decoding into `Decodable`, with a `@Generable`-style macro. This adds a swift-syntax dependency. |
 

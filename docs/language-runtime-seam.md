@@ -1,7 +1,7 @@
 # Language runtime seam
 
-Status: design approved and commits 1–5 and 7 implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
-commit 6 waits for the decoder rework. This is the first piece of the 0.0.3 app-facing language
+Status: design approved and all seven commits implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
+commit 6 followed the decoder rework. This is the first piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)): a sampler and logits hook, and a
 `LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. Type names are
 illustrative until the facade has run in a real app (see [architecture](architecture.md)).
@@ -83,23 +83,10 @@ not on the session actor.
 
 ## Where the protocol lives, and the deployment floor
 
-`AetherLanguageRuntime` must build at a floor below macOS 27 (macOS 14 is the facade's target) once the
-package's `platforms` drop. SwiftPM has no per-target deployment floor. When the package floor drops, every Core AI
-declaration needs `@available(macOS 27, iOS 27, *)`, and the facade needs a runtime `#available` check before it opens
-the Core AI backend. That's the deployment-floor piece's work. This seam only has to avoid making it harder:
-- **Not AetherKit.** AetherKit is the obvious home and already holds `LanguageModelManifest`, but it uses `Mutex` from
-  `Synchronization`, which needs macOS 15. Lowering AetherKit is real work of its own (gating `GPUAdmission`,
-  `SharedGPULease` and `ResourceCoordinator`, or replacing their locks). Putting the protocol there would tie the facade's
-  launch on macOS 14 to that work.
-- **No Core AI or Metal types in its surface,** and none in its imports. The facade holds an `any LanguageBackend`
-  with no availability annotation, and reports "unsupported OS" when no conforming backend is available.
-- **Checked while the floor is still 27:** `Scripts/check-floor.sh` typechecks the target's sources on
-  their own at macOS 14.0 and iOS 17.0 (`swiftc -typecheck -target arm64-apple-macos14.0`, and the iOS equivalent when
-  the SDK is installed). CI runs it before the release suite. The deployment-floor piece then turns that into a real
-  build.
-- **Known risk, outside this piece:** `AetherCoreAI` links `CoreAI` with `linkedFramework`. If that stays a strong
-  load command, a facade binary won't launch on macOS 14 at all, whatever the protocol does. The deployment-floor work
-  owns the fix, likely `-weak_framework CoreAI` plus availability gating of the Core AI targets.
+`AetherLanguageRuntime` builds at the package floor, macOS 14 and iOS 17, with no availability annotations: it has no
+Core AI or Metal types in its surface or its imports. The facade holds an `any LanguageBackend` and reports "unsupported
+OS" when no conforming backend is available. The [deployment floor](deployment-floor.md) gates the Core AI targets at OS
+27 and checks that a facade binary links `CoreAI` weakly and launches on macOS 14.
 
 ## `LanguageBackend`
 
@@ -183,8 +170,8 @@ cancels the task that runs `generate`.
 (`@_exported import`), so Shilo's source doesn't change; a typealias would have made the name ambiguous in files that
 import both modules. This is the only existing public type that moves.
 
-**Images are out of the protocol for now.** `VisionLanguageSession` keeps its own API. Once the decoder rework lands, its
-decoder path takes a `LanguageSampling` and a constraint through the same private body (commit 6). An image-capable
+**Images are out of the protocol for now.** `VisionLanguageSession` keeps its own API, and since commit 6 its sampling
+entry point, and the image `generate`'s, take a `LanguageSampling` and a constraint through the same decode loop. An image-capable
 protocol is a later refinement, if the apps need images through the facade.
 
 ## Sampling
@@ -417,6 +404,17 @@ throws it from commit 2), and a commit between 4 and 5 sped up random sampling a
 6. **After the decoder rework lands, give the image path the same options.** The image `generate` and
    `VisionLanguageSession` take a `LanguageSampling` and a constraint through the shared body.
    - Native: a VL token-identity check against the committed qualification tokens.
+
+   Done: each gained a sampling entry point (`sampling:` and an optional `constraint:`) returning a
+   `LanguageGenerationResult`, and the image `generate` runs through `LanguageDecodeLoop.generate`; the greedy entry
+   points wrap it with `.greedy`. The sampler and the processor see the expanded prompt. Before (`147c4b1`) and after,
+   under the GPU lock, the greedy replies are identical: the decoder-level text and image replies of the VL-2B and VL-4B,
+   one-function and two-function bundles; the public session's five image cases on the one-function 2B and 4B and the
+   two-function 4B, each also matching its qualified Kit run; and the writer's chat round trip. An opt-in
+   `languageSamplingQualificationWithImages` checks a VL bundle's public session: the sampling entry point's greedy equals
+   the greedy one, a seeded image request repeats (after other requests and in a freshly opened session) and differs by
+   seed, and the digits-then-stop constraint holds on every token of an image prompt
+   ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
 7. **Optional, measured: drop the per-step row allocation.** Fill a reused buffer by vImage, or use a Kit-owned logits
    output view.
    - Expected gain: about 0.25 ms a step, 4% of a 0.6B step and 1% of a 4B step.
@@ -481,7 +479,7 @@ The user confirmed the first four on 2026-10-27; the rest are the lead's answers
 
 - **Facade default:** greedy. Apps opt into sampling per request. The seam's default is greedy too, and the token
   identity above holds for it.
-- **Floor:** macOS 14 and iOS 17. The strong `CoreAI` link belongs to the deployment-floor work.
+- **Floor:** macOS 14 and iOS 17, the package floor ([deployment floor](deployment-floor.md)).
 - **Images through the facade:** none in 0.0.3, so commit 6 stays after the decoder rework.
 - **Log-probabilities:** none for now. The per-token callback takes a struct (`LanguageGeneratedToken`), so they can be
   added without breaking it.
