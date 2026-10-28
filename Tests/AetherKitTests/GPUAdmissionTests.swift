@@ -294,15 +294,17 @@ private final class LeaseWatcher: @unchecked Sendable {
     let turn = Duration.milliseconds(300), hold = Duration.milliseconds(120)
     let admission = try GPUAdmission(maximumConcurrent: 2, crossProcessLease: leaseConfiguration(directory),
                                      crossProcessTurn: turn, crossProcessHandOffGap: .milliseconds(400))
-    let first = try await admission.admit(owner: "a")
     let start = ContinuousClock.now
+    let first = try await admission.admit(owner: "a")
     let watcher = LeaseWatcher(directory)
+    let admitted = Mutex<[ContinuousClock.Instant]>([])
     // Two slots and a steady stream of overlapping grants: some grant is always running, so without draining the
     // lease would never be released.
     let workers = (0..<16).map { index in
         Task {
             try await Task.sleep(for: .milliseconds(40 * index))
             let grant = try await admission.admit(owner: "w\(index % 2)")
+            admitted.withLock { $0.append(.now) }
             try await Task.sleep(for: hold)
             grant.release()
         }
@@ -312,8 +314,12 @@ private final class LeaseWatcher: @unchecked Sendable {
     for worker in workers { try await worker.value }
     let released = try #require(watcher.firstMissing)
     _ = watcher.stop()
-    // Released within the turn plus one grant's duration (with scheduling slack), while grants were still queued.
-    #expect(start.duration(to: released) <= turn + hold + .milliseconds(250))
+    // Released after the turn while grants were still queued: some grant was admitted only after the release (once the
+    // hand-off gap had passed and the lease was taken again). Without draining, the lease is released only after the
+    // last grant ends. The order is asserted rather than a wall-clock bound, which hosted runners overshoot.
+    #expect(admitted.withLock { $0 }.contains { $0 > released })
+    // Not before the turn: the lease is held at least that long (a lower bound, which scheduling delays cannot break).
+    #expect(start.duration(to: released) >= turn)
     #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
     #expect(!FileManager.default.fileExists(atPath: directory.path))
 }

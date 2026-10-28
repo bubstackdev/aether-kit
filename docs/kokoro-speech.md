@@ -1,6 +1,6 @@
 # Kokoro speech synthesis — 2026-10-26
 
-Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see [iPhone](#iphone)). AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iOS, quantized or fp16 exports, sub-utterance streaming, and listening review.
+Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see [iPhone](#iphone)). AetherSpeech turns validated Kokoro phoneme strings into 24 kHz mono float32 PCM using two exported Core AI graphs. Native parity with the upstream PyTorch model, timing, cancellation and unload passed on one Mac (M5 Max, macOS 27.0.1), recorded in the [qualification record](evidence/kokoro-qualification-2026-10-26.json). Not yet covered: iPhone parity at bucket 512 and on other iPhone models, quantized or fp16 exports, sub-utterance streaming, and listening review.
 
 ## Source and license
 
@@ -191,6 +191,25 @@ The run on 2026-10-26 used an iPhone19,4 (11.3 GB RAM, iOS 27.1, app memory budg
 - **Parity and speed.** Frames match exactly and parity holds within the Mac limits, running 12–16× faster than real time. The first utterance takes 5.5 s, including model load and the first specialization; a later bucket's first use takes 0.7–1.1 s.
 - **Memory.** Peak footprint was 2.1 GB with bucket 512 in use, leaving 1.3 GB of the budget. Bucket 1024 exhausted the budget: the app had 2.7 GB available before that case and was killed.
 - **iOS default.** iOS sessions therefore default to `KokoroFrameCap.compact` (512 frames, about 12.8 s), and longer text must be segmented. Parity at bucket 512 on the device and other iPhone models remain unverified.
+
+**Prepared for the next device run (0.0.3).** No device has run these yet.
+
+- **A bucket-512 reference case.** `reference_kokoro.py` adds `medium-af_bella`: two sentences, 442 frames, float64
+  floor rel L2 0.022. The four earlier cases regenerate with byte-identical audio: each `audio.f32` hashes the same as
+  before ([audio hashes](evidence/kokoro-references-bucket512-audio-2026-10-27.json)). On the Mac, native parity passes all
+  five cases, with the new one at rel L2 0.027 and log-mel 0.015
+  ([references](evidence/kokoro-references-bucket512-2026-10-27.json),
+  [report](evidence/kokoro-native-bucket512-2026-10-27.json)). A first choice, `medium-am_adam` (419 frames), was
+  rejected. Kit measured 0.058, about 1.07× that case's own float32-versus-float64 upstream floor (0.054), so it was within
+  the floor-multiple rule. But the absolute 0.05 bound is out of reach on that voice even for upstream float32 against
+  float64, so the case can't be judged by it ([report](evidence/kokoro-native-bucket512-am_adam-rejected-2026-10-27.json)). Staged with `--frame-cap 512`, the
+  device run covers the four cases up to bucket 512 and checks that the 913-frame case is refused before decoding.
+- **The float16 Neural Engine retest.** `stage_device_assets.py BUNDLE REFERENCES --decoder-only FP16_BUNDLE` stages
+  only two decoders: the float32 one and the reduced-precision one from an `export_kokoro.py --decoder-precision
+  float16` bundle (30 s and 1.5 GiB on the CPU). KokoroDeviceProbe then runs both through `ModelSession` with
+  `preferGPU` on the same synthetic inputs at bucket 256, bypassing the session's float32-only rule. It records
+  timings and the float16 output's distance from float32. If iOS still places the float16 regions on the Neural
+  Engine and aborts, the process dies, and its last progress line shows where.
 
 ## Reduced-precision decoders
 

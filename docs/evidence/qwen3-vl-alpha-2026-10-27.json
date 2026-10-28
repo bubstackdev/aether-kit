@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-alpha-parity",
+  "passed": true,
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "policy": "VisionAlphaPolicy.dropAlpha (the new default): drop alpha, keep each pixel's stored colour, as Transformers' load_image (exif_transpose, then convert('RGB')); .composite(red:green:blue:) is the opt-in, and .composite(red: 0, green: 0, blue: 0) reproduces Kit 0.0.2",
+  "cpu": {
+    "fixtures": {
+      "rgba8": {
+        "file": "rgba8.png",
+        "sha256": "3d474642271f745dedbcc81cd5b55feb163d7e261c884f5defc4e3c50b6f943a",
+        "mode": "RGBA"
+      },
+      "gray-alpha8": {
+        "file": "gray-alpha8.png",
+        "sha256": "46028701ce4bcf40207387c621ff7d300a3dd6bdf7e64e87b37f3c9a6d6b1dbb",
+        "mode": "LA"
+      },
+      "rgba16": {
+        "file": "rgba16.png",
+        "sha256": "2c5b079e68f4620f4dd4ca923be10943fc7a192d46882ba1dd88c77d76a4806d",
+        "mode": "RGBA"
+      },
+      "palette-trns": {
+        "file": "palette-trns.png",
+        "sha256": "831e2f047248cee861f461ade251ad928a4eb6080623a1fd5cbab65baeef36a4",
+        "mode": "P"
+      }
+    },
+    "test": "VisionRGBImageTests.defaultAlphaMatchesUpstreamOnEveryLayout: Kit's bytes equal load_image's for 8-bit RGBA, grey plus alpha, a palette with tRNS and 16-bit RGBA (distinct high and low bytes); rotatedTransparentPixelsKeepTheirStoredColour: orientations 3, 6, 8",
+    "generator": "Forge/language/write_alpha_fixtures.py"
+  },
+  "scene": {
+    "file": "scene-448-transparent.png",
+    "sha256": "12562117b27c913880b39bb78999c6f6621a0db9a169c4fce17b46f0cf3a9033",
+    "recipe": "the Kit-decoded synthetic scene-448 (qwen3-vl-2b-reference-grids-kit-decoded) with alpha 0 in its top-left quadrant and 96 in its bottom-right, stored colours unchanged: 100,352 of 200,704 pixels below opaque, which compositing over black would change"
+  },
+  "reference": {
+    "recordSHA256": "81ea4e473cce13d2877002b5c1d439677e8c2ae4350674788cfbb275e6a14ca6",
+    "imageDecoding": "PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)",
+    "grid": [
+      1,
+      44,
+      44
+    ],
+    "pixelsEqualOpaqueScene": true,
+    "greedyEqualOpaqueScene": true
+  },
+  "native": {
+    "file": "qwen3-vl-alpha-2026-10-27-native.json",
+    "sha256": "27855dc61b1773e00bf5b3fbf26d9cab486983c1725893723dc3ac81e09e2e72",
+    "test": "qwen3VLImageTextQualification, AETHER_QWEN3VL_PREPROCESS=swift, AETHER_QWEN3VL_INPUTS=same-decode, VL-2B one-function bundle",
+    "passed": true,
+    "gridMatches": true,
+    "pixelCosine": 1.0000000002334386,
+    "forcedMinimumCosine": 0.9999981904391716,
+    "greedyAccepted": true,
+    "greedyFirstDivergence": null
+  }
+}

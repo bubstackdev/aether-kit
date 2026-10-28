@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "kind": "qwen3-vl-rotated-photo-parity",
+  "passed": true,
+  "date": "2026-10-27",
+  "device": "h17c",
+  "hostOS": "macOS 27.0.1 (26A434)",
+  "model": "Qwen/Qwen3-VL-2B-Instruct (qwen3-vl-2b-one-function-bundle-macos)",
+  "photos": {
+    "kind": "qwen3-vl-rotated-photos",
+    "method": "each variant stores its source's pixels moved by the inverse of an EXIF orientation and carries that orientation, as a lossless PNG without a colour profile; VisionRGBImage(contentsOf:) of every variant equals its source's decode byte for byte",
+    "photos": [
+      {
+        "decodesToSourceBytes": true,
+        "displayedSize": [
+          1200,
+          1412
+        ],
+        "file": "photo-dog-portrait-orientation6.png",
+        "orientation": 6,
+        "sha256": "68b0649d2d1c839b8ea099307d7494569ff5b078b7095a091c0cf449d9e39c31",
+        "source": {
+          "file": "photo-dog-portrait.png",
+          "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96"
+        },
+        "storedSize": [
+          1412,
+          1200
+        ]
+      },
+      {
+        "decodesToSourceBytes": true,
+        "displayedSize": [
+          1200,
+          1412
+        ],
+        "file": "photo-dog-portrait-orientation8.png",
+        "orientation": 8,
+        "sha256": "2a25a8728d169274f7a2b6ab3a0c40a4700783095e704f9957bbeee9fcde84ad",
+        "source": {
+          "file": "photo-dog-portrait.png",
+          "sha256": "a6521c83f884ca975d3af7880ec9dbcb8bc87358d7a5fa7a9aed1412b1462f96"
+        },
+        "storedSize": [
+          1412,
+          1200
+        ]
+      },
+      {
+        "decodesToSourceBytes": true,
+        "displayedSize": [
+          4032,
+          2268
+        ],
+        "file": "photo-fruit-stall-wide-orientation3.png",
+        "orientation": 3,
+        "sha256": "83d07b713a97d7764e750690854fffec0ed70c438c7f61596c0bcbddfb438632",
+        "source": {
+          "file": "photo-fruit-stall-wide.png",
+          "sha256": "8d799c68a22bfa6134363b35e24e5499b4967566184515c7d85f641174033e41"
+        },
+        "storedSize": [
+          4032,
+          2268
+        ]
+      },
+      {
+        "decodesToSourceBytes": true,
+        "displayedSize": [
+          810,
+          608
+        ],
+        "file": "photo-fruit-market-4x3-orientation6.png",
+        "orientation": 6,
+        "sha256": "003245ac5cd5c739a2864a3806b015b2484caedcf80b2edd6b642c07d0e822c7",
+        "source": {
+          "file": "photo-fruit-market-4x3.png",
+          "sha256": "36d86e264e84042a8300ae1fb6bb72cce8bf440d3e1370bbade678000a8dde45"
+        },
+        "storedSize": [
+          608,
+          810
+        ]
+      }
+    ]
+  },
+  "photosNote": "the sources are the Kit-decoded photos (qwen3-vl-photos-kit-decoded; provenance and licences in qwen3-vl-4b-image-text-2026-10-26.json), so upstream and Kit see identical RGB",
+  "reference": "Forge/language/reference_qwen3_vl.py --exif-transpose --grids, one case per process (float32 CPU, about 15 GB peak each)",
+  "nativeTest": "qwen3VLImageTextQualification with AETHER_QWEN3VL_PREPROCESS=swift AETHER_QWEN3VL_INPUTS=same-decode (model-parity gate)",
+  "cpuTests": [
+    "VisionRGBImageTests.exifOrientationMovesPixelsWithoutResampling (orientations 1-8, 1201x797 random lossless pixels, byte-exact)",
+    "VisionRGBImageTests.rotatedFileSnapsToItsDisplayedGrid (orientations 6 and 8)"
+  ],
+  "cases": {
+    "photo-dog-portrait-orientation6": {
+      "source": "photo-dog-portrait",
+      "reference": {
+        "recordSHA256": "84011c14f5567d7bdb6be58815dff971ea4a92abd947eb1ae3fd55232e76dbdf",
+        "imageDecoding": "PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)",
+        "grid": [
+          1,
+          48,
+          36
+        ],
+        "pixelsEqualUnrotatedReference": true,
+        "forcedLogitsEqualUnrotatedReference": true,
+        "greedyEqualUnrotatedReference": true
+      },
+      "native": {
+        "file": "qwen3-vl-rotated-photos-2026-10-27-photo-dog-portrait-orientation6.json",
+        "sha256": "2864636bdecce792e2a257d1ae3a4e6d0746c3a918a9b53a037340972d98d658",
+        "passed": true,
+        "inputs": "same-decode",
+        "gridMatches": true,
+        "pixelCosine": 0.9999997977750159,
+        "forcedMinimumCosine": 0.9999331261571813,
+        "greedyFirstDivergence": null,
+        "greedyDivergenceReferenceMargin": null,
+        "greedyEqualUnrotatedKitRun": true,
+        "forcedMinimumCosineEqualUnrotatedKitRun": true
+      }
+    },
+    "photo-dog-portrait-orientation8": {
+      "source": "photo-dog-portrait",
+      "reference": {
+        "recordSHA256": "ee5574687079b5c013dbe253da72675ff07718a036c7bc79fc3af793d8c20cd6",
+        "imageDecoding": "PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)",
+        "grid": [
+          1,
+          48,
+          36
+        ],
+        "pixelsEqualUnrotatedReference": true,
+        "forcedLogitsEqualUnrotatedReference": true,
+        "greedyEqualUnrotatedReference": true
+      },
+      "native": {
+        "file": "qwen3-vl-rotated-photos-2026-10-27-photo-dog-portrait-orientation8.json",
+        "sha256": "97f9f499887246a2faf0d6256db1b2844b1b1587df9ff80c6ee78ed4797e6e43",
+        "passed": true,
+        "inputs": "same-decode",
+        "gridMatches": true,
+        "pixelCosine": 0.9999997977750159,
+        "forcedMinimumCosine": 0.9999331261571813,
+        "greedyFirstDivergence": null,
+        "greedyDivergenceReferenceMargin": null,
+        "greedyEqualUnrotatedKitRun": true,
+        "forcedMinimumCosineEqualUnrotatedKitRun": true
+      }
+    },
+    "photo-fruit-stall-wide-orientation3": {
+      "source": "photo-fruit-stall-wide",
+      "reference": {
+        "recordSHA256": "236dc3c93a949c1256e17367c889e5852a5e36ea38435d6458406e0629c17a2c",
+        "imageDecoding": "PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)",
+        "grid": [
+          1,
+          32,
+          56
+        ],
+        "pixelsEqualUnrotatedReference": true,
+        "forcedLogitsEqualUnrotatedReference": true,
+        "greedyEqualUnrotatedReference": true
+      },
+      "native": {
+        "file": "qwen3-vl-rotated-photos-2026-10-27-photo-fruit-stall-wide-orientation3.json",
+        "sha256": "11e47ea3f7b9904a06b1d71998ce6b81d4d9e8069f02445ffd90d37a6c620096",
+        "passed": true,
+        "inputs": "same-decode",
+        "gridMatches": true,
+        "pixelCosine": 0.9999999219294945,
+        "forcedMinimumCosine": 0.9999878013167945,
+        "greedyFirstDivergence": null,
+        "greedyDivergenceReferenceMargin": null,
+        "greedyEqualUnrotatedKitRun": true,
+        "forcedMinimumCosineEqualUnrotatedKitRun": true
+      }
+    },
+    "photo-fruit-market-4x3-orientation6": {
+      "source": "photo-fruit-market-4x3",
+      "reference": {
+        "recordSHA256": "fcad1f97ff9f5d789bba316599da0e32702002edce784203a421c1ff3f17677e",
+        "imageDecoding": "PIL Image.open(...), ImageOps.exif_transpose, convert('RGB') (Transformers' load_image)",
+        "grid": [
+          1,
+          36,
+          48
+        ],
+        "pixelsEqualUnrotatedReference": true,
+        "forcedLogitsEqualUnrotatedReference": true,
+        "greedyEqualUnrotatedReference": true
+      },
+      "native": {
+        "file": "qwen3-vl-rotated-photos-2026-10-27-photo-fruit-market-4x3-orientation6.json",
+        "sha256": "014bd5b1bf5c0499ccca0ad308fdf51c85528689a9566f9d31b5374424f9a1c0",
+        "passed": true,
+        "inputs": "same-decode",
+        "gridMatches": true,
+        "pixelCosine": 0.9999996422257512,
+        "forcedMinimumCosine": 0.9999243156682918,
+        "greedyFirstDivergence": 16,
+        "greedyDivergenceReferenceMargin": 0.012183370241314495,
+        "greedyEqualUnrotatedKitRun": true,
+        "forcedMinimumCosineEqualUnrotatedKitRun": true
+      }
+    }
+  }
+}

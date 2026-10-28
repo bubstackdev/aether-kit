@@ -22,9 +22,11 @@ struct KokoroDeviceProbeApp: App {
                     if let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
                         try? data.write(to: documents.appendingPathComponent("kokoro-device-report.json"))
                     }
-                    status = report.passed ? "Passed" : "Failed: \(report.failures.joined(separator: "; "))"
+                    let ran = report.passed || report.completed == true
+                    status = report.completed == true ? "Completed (decoder-only, no gate)"
+                        : report.passed ? "Passed" : "Failed: \(report.failures.joined(separator: "; "))"
                     try? await Task.sleep(for: .seconds(1))
-                    exit(report.passed ? 0 : 1)
+                    exit(ran ? 0 : 1)
                 }
         }
     }

@@ -144,6 +144,27 @@ let result = try await session.generate(request) { token in
   ([evidence](evidence/qwen3-vl-sampling-2026-10-27.json)).
 - **Next:** the facade's tokenizer, templates and structured output.
 
+## Resource admission
+
+`LanguageGenerationSession.open(bundle:…, resources:)` and `VisionLanguageSession.open(bundle:…, resources:)` take an
+opt-in `LanguageResourceAdmission`: caller estimates (`LanguageModelResourceEstimate`, keyed by the registration's
+model hash) reserved against a host-selected `ResourceCoordinator`, as Krea and FLUX.2 do.
+- **Residency** is reserved before the model loads (after the open grant, with `gpu:`), held while it is loaded,
+  across memory-budget reloads, and released on unload or a failed load. For a decoder it covers the weights, the KV
+  caches at the registered context and the memory budget's growth allowance.
+- **Scratch** is reserved after each request's grant (and each image encode's) and released when its native work
+  joins. A request's is reserved before a memory-budget reload, so a refusal never costs a model load.
+- **Refusals before native work:** model bytes without an estimate and a registered context above the profile's (a
+  bundle's before its files are hashed), and a request with more image tokens than the profile allows, summed over its
+  images (every image is preprocessed and the total checked before the first encode).
+- **Opening is admitted.** With `gpu:`, the model's load and its functions' specialization run under a grant, so a
+  session never specializes beside another owner's GPU work.
+- **Per process.** The ledger cannot see other processes, and it leaves out the page cache a model's compiled file is
+  read into at open.
+
+Measured estimates for the Qwen3-VL bundles, and why the feature exists, are in
+[Qwen3-VL resource admission](qwen3-vl-resource-admission.md).
+
 ## Step contracts
 
 The session detects the contract from the `main` function signature
@@ -205,6 +226,44 @@ The cost is up to C − 1 recomputed tokens per run. A run shorter than C (a sho
 or a short text run beside a Qwen3-VL image) is one chunk of its own length,
 and a chunk never steps back into an image span. `languageOverlappedPrefillMatchesOtherPlans`
 (opt-in) checks this on every model against a whole-prompt chunk and 1-token steps.
+
+### Time to first token
+
+The bounded shape set costs time to first token on long prompts
+([evidence](evidence/language-time-to-first-token-2026-10-27.json), `languageTimeToFirstToken`, opt-in). These are warm
+medians on one M5 Max, a shared host, for one-token requests, in milliseconds. The running export of the 0.6B was made for
+the comparison; there is no running export of the 4B:
+
+| Prompt tokens | 0.6B bucketed (C = 64) | 0.6B running | 0.6B bucketed, C = 512 | 4B bucketed (C = 64) | 4B bucketed, C = 512 |
+| --- | --- | --- | --- | --- | --- |
+| 64 | 14 | 14 | 25 | 31 | 39 |
+| 256 | 46 | 17 | 25 | 121 | 66 |
+| 1,024 | 216 | 40 | 86 | 530 | 280 |
+| 2,048 | 496 | 83 | 187 | 1,178 | 604 |
+
+**Where the time goes.** Almost all of it is in the native steps: a 2,048-token prompt is 32 submissions at C = 64, and
+each one reads every weight and concatenates the whole cache, where the running contract's four 512-token submissions
+do far less.
+- **Cache growth,** the host's largest share, took 83 ms (0.6B) and 133 ms (4B) at 2,048 tokens before these changes.
+  That's bound by first touches of each newly allocated buffer, since a bucketed request starts again at 256 rows.
+- **Update-row copies and input building** took under 20 ms before these changes.
+
+Growth now zeroes only each row's unwritten tail, copies rows in parallel, and copies a step's update rows one row at a
+time instead of one token at a time. All three write the same bytes, and replies are identical. The default-width
+figures above are with these changes (before: 554 and 1,383 ms at 2,048 tokens, partly host noise).
+
+**Rejected.** Reusing large buffers across growths and requests cut growth by 57 ms (0.6B) and 68 ms (4B) at 2,048
+tokens, but Core AI's encode rose by 51 and 58 ms, so time to first token didn't improve
+([probe](evidence/language-ttft-buffer-reuse-probe-2026-10-27.json)). Core AI pays for an input buffer larger than its
+view, as for the strided views above.
+
+**What would close the gap** isn't exact, so it isn't done:
+- **A wider chunk for long prompts.** C = 512 halves the 4B's time at 2,048 tokens. But it retains more memory per request
+  (see [Native memory retention](#native-memory-retention)), and a different prefill plan can flip a greedy near-tie.
+- **An export whose attention reads the cache and the chunk separately,** instead of concatenating them every chunk.
+  It is a no-go under the current Core AI: a second function wires a second copy of the weights, split attention in
+  `main` halves decode, and a `torch.cond` between the two hangs the GPU compile
+  ([spike report](spikes/split-attention-2026-10.md)).
 
 ## Cache allocation
 
@@ -301,8 +360,8 @@ model's retention (`LanguageMemoryBudget`):
   looks like an outlier counts from the third.
 Set-aside requests are counted in `foreignMemoryRequests` and `foreignMemoryBytes`.
 Sharing a `GPUAdmission` between a host's sessions keeps their admitted GPU work out of
-each other's windows; loading and releasing are not admitted, so another session's load
-inside a window is caught only by the outlier rule. Without `gpu:`, the accounting
+each other's windows; opening is admitted too, but releasing is not, so another session's
+release inside a window is caught only by the net-decrease rule. Without `gpu:`, the accounting
 assumes no concurrent Metal work beyond what those rules catch. Before a model's rate is
 known, a foreign load inside a window counts and can cause one unnecessary reload; this
 errs towards reloading, because uncounted retention would grow without bound.
@@ -349,6 +408,23 @@ cache positions [1, q] and zeroed [28, 1, 8, 256, 128] key and value caches. Met
 Expected: once both shapes have run, alternating between them allocates nothing more, as
 without `expectFrequentReshapes`. Observed: every shape change retains memory until the
 model is released. The Feedback is the user's to file.
+
+## On-device host (prepared, 0.0.3)
+
+`Examples/LanguageDevice` is an XcodeGen app, LanguageDeviceProbe. It opens a staged bundle with `platform: .ios` and
+checks it against the float32 Transformers reference, printing one JSON report with timings, footprint and the app's
+available memory.
+
+- **Text** (a dense Qwen3): every teacher-forced row and a greedy continuation, judged by the native qualification's
+  rule.
+- **Vision** (Qwen3-VL): Kit decodes and preprocesses the photos the reference was made from (the `kit-decoded`
+  reference grids). The greedy answer must match, or first diverge at a near-tie of the reference's own row.
+
+`Forge/language/stage_device_assets.py text|vision BUNDLE REFERENCE` copies the model asset(s) and tokenizer, and
+registers them again for iOS with the same registration script and source. The asset is not re-exported, and the iOS
+registration differs from the macOS one only in `platform`. Staged, the Qwen3-0.6B is 1.25 GB and the Qwen3-VL-2B
+4.29 GB. The app builds for a generic iOS device; no device has run it yet. The VL-2B's weights exceed the app memory
+an iPhone grants without the increased-memory-limit entitlement, so its run may end in a refusal or a jetsam kill.
 
 ## Evidence and limits
 
