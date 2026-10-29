@@ -291,7 +291,7 @@ Kit's dump is compared against these and is never fed in. The checks:
 
 ## 5. Steps
 
-All GPU work runs under the GPU lock with the existing controllers. Scratch files go to `/Volumes/Scratch` or
+All GPU work runs under the GPU lock with the existing controllers. Scratch files go to the scratch volume or
 `~/.cache`.
 
 | # | Step | CPU | GPU | Memory |
