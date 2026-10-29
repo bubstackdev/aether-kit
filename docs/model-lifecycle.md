@@ -4,7 +4,8 @@ Status: implemented and qualified 2026-10-29: CPU tests, a Mac run, and real mem
 ([Qualification](#qualification)).
 This is the third piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md) and
-[model readiness](model-readiness.md). The user decided the four choices below on 2026-10-29.
+[model readiness](model-readiness.md). The user decided the four choices below on 2026-10-29. The policy and state types
+are frozen for 0.0.x ([API stability](api-stability.md)).
 
 Readiness ends at `ready`: the model is installed, verified and runnable. Lifecycle covers what happens after that:
 when the model loads, when it unloads, and what it does when the device runs short of memory.

@@ -1,6 +1,6 @@
 # Sample app and API freeze
 
-Status: plan, 2026-10-29. This is the last piece of the 0.0.4 release gate, app readiness
+Status: implemented 2026-10-29; qualification below. This is the last piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md),
 [model readiness](model-readiness.md) and [managed lifecycle](model-lifecycle.md). The user decided the four choices
 below on 2026-10-29.
@@ -23,98 +23,88 @@ below on 2026-10-29.
 
 ```
 Examples/SampleApp/
-  project.yml                 XcodeGen: one multiplatform application target (iOS 27, macOS 27); .xcodeproj ignored
-  SampleApp.entitlements      macOS: app-sandbox, network.client
-  Catalog/                    qwen3-0.6b-macos.json, qwen3-0.6b-ios.json (aether-probe catalog-entry), app resources
-  Sources/App/                SwiftUI views only
-  SampleAppCore/              local Swift package: the app's logic, no SwiftUI, with tests
+  project.yml                   XcodeGen: one application target for iOS and macOS (27.0); the .xcodeproj is ignored
+  SampleApp-macOS.entitlements  the Mac build: app-sandbox, network.client
+  make-catalog.sh               writes the two catalog entries from local copies of the public bundle
+  Sources/                      SwiftUI views and the app entry point only
+  SampleAppCore/                a local Swift package with the app's logic, its catalog entries and its tests
 ```
 
-**SampleAppCore** holds everything that isn't a view, so it is tested with `swift test`:
-- `ModelController` (`@Observable`, main actor): picks the entry for the platform, builds the store in Application
-  Support (excluded from iOS backup), `ModelPreparation` with `BackgroundTransport` on iOS and `.urlSession` on the
-  Mac, and a `ModelReadiness` with `.language`. It mirrors `readiness.states` and `MemoryPressure.levels`, opens
-  `AetherLanguageModel(installation:)` on `ready`, mirrors its `lifecycleStates`, and drops the model before
-  `uninstall()` (which fails busy while a model holds the lease).
-- `ReadinessDisplay`: a pure mapping from a readiness state to a title, detail, progress and the actions available
-  (download, cancel, retry, delete), so the screen's rules are tested without a view.
-- `ChatController`: one `AetherLanguageSession`, streaming turns into a message list; stop cancels; new chat starts a
-  new session.
-- `TodoExtraction`: the structured-output demo. `@AetherGenerable struct TodoItem { title; priority (low, medium,
-  high); dueInDays: Int? }` from a free-text sentence.
+Build it with `xcodegen generate` in `Examples/SampleApp`, then open `SampleApp.xcodeproj`, choose a team, and run
+the `SampleApp` scheme on a Mac or an iPhone with macOS 27 or iOS 27.
 
-**Screens** (a tab view on iOS, a sidebar on the Mac):
-1. **Model:** state, byte progress and phase; Download / Cancel / Retry / Delete. Covers notInstalled (with resumable
-   bytes), installing (checking, downloading, installing), verifying, ready, unsupported (OS, platform, memory) and
-   failed (with whether a retry can help).
+**SampleAppCore** holds everything that isn't a view, so `swift test` covers it (in CI's contracts job):
+- `SampleCatalog`: the shipped entry for the platform, decoded and validated.
+- `ModelController` (`@Observable`, main actor): a `ModelReadiness` with `.language` over the store in Application
+  Support/Models (excluded from backup), with `BackgroundTransport` on iOS and `.urlSession` on the Mac. It follows
+  `states` and `MemoryPressure.levels`, opens `AetherLanguageModel(installation:)` on `ready`, and follows its
+  `lifecycleStates`. It never stores a readiness state, because `ready` holds the installation's read lease and any
+  holder makes `uninstall()` fail busy. Before a delete it asks the screens to let go of the model, then uninstalls.
+- `ReadinessDisplay` and `LifecycleDisplay`: pure mappings from a readiness state to the title, detail, progress and
+  actions (download or resume, cancel, retry, delete, check again), and from a lifecycle state and pressure level to
+  the strip's text.
+- `ChatController`: one `AetherLanguageSession` per conversation, streamed. It reads the finished reply's stop reason
+  and usage from `ResponseStream.AsyncIterator.response`. Stop cancels the reply, and New chat starts a new session.
+- `TodoController`: the structured-output demo. `@AetherGenerable struct TodoItem { title; priority (low, medium,
+  high); dueInDays: Int? }` from one sentence, with the JSON the model produced.
+- `QualificationRun`: the `-qualify` launch mode (below).
+
+**Screens** (tabs on iPhone, a sidebar on the Mac and iPad):
+1. **Model:** state, phase and byte progress; Download (or Resume), Cancel, Retry, Delete, Check again. Covers
+   notInstalled (with resumable bytes), installing (checking, downloading, installing), verifying, ready, unsupported
+   (OS, platform, memory) and failed (retry offered only when it can help).
 2. **Chat:** streaming reply, stop, new chat; disabled until ready.
-3. **Structured:** one sentence in, a decoded `TodoItem` out, with its JSON.
-4. **Lifecycle** (a status strip on every screen): unloaded (never loaded / requested / idle / memory pressure),
-   loading, loaded, running, and the process's memory-pressure level.
+3. **Structured:** one sentence in, a decoded `TodoItem` out, with its JSON and the time it took.
+4. **Lifecycle,** a strip on every screen: not loaded yet, loading, loaded, running, unloaded (requested, idle or under
+   memory pressure), and the process's memory-pressure level.
 
 The iOS app forwards background-session events with `.backgroundTask(.urlSession(identifier))`. The Mac app uses the
 foreground transport, since it isn't suspended.
 
-**Catalog entries:** `aether-probe catalog-entry language <bundle> --huggingface
-aether-models/aether-kit-qwen3-0.6b@<revision>/mac` (and `/ios`), revision `7757d22bff5df7e106f7492a12d7278347aa3fb0`.
-The iOS entry declares `platforms: ["ios"]` and `--memory-bytes 230686720` (220 MiB, the readiness doc's qualified
-peak). The Mac entry declares its platform and no memory requirement. A CPU test decodes both committed entries and
-checks their source, revision and platform.
+**Catalog entries:** `make-catalog.sh MAC_BUNDLE IOS_BUNDLE` runs `aether-probe catalog-entry language BUNDLE
+--huggingface aether-models/aether-kit-qwen3-0.6b@7757d22bff5df7e106f7492a12d7278347aa3fb0/mac` (and `/ios`). Both
+entries declare their platform. The iOS entry also declares `memoryBytes` 230,686,720 (220 MiB). That is
+`footprintPeakMiB` 219.175 from
+[the 0.0.3 iPhone record](evidence/language-iphone18-qwen3-0.6b-2026-10-28.json), rounded up, the value
+[readiness](model-readiness.md#requirements-and-memory) uses. The Mac entry declares no memory requirement. A CPU test
+checks both committed entries: source, revision, subdirectory, platform, memory, 11 files, and the byte totals the
+model-preparation qualification recorded.
 
-**Signing:** the spec commits no team or profile. Qualification builds pass the existing development identity and an
-existing profile on the command line; nothing is created or registered.
+**Signing:** the spec names no team or profile. The qualification builds pass `DEVELOPMENT_TEAM` on the `xcodebuild`
+command line, with nothing created or registered:
+- On iOS, automatic signing picks the team's existing wildcard development profile. The app needs no capability that
+  an explicit App ID would carry.
+- The Mac build is signed with the existing development identity and carries only the sandbox and network-client
+  entitlements, which need no profile.
 
 ## The freeze
 
-What later 0.0.x releases may change: add types, members, overloads with defaults, enum cases on the enums marked
-below, and conformances. What they may not: remove or rename anything frozen, change a signature or a type, or add a
-case to an exhaustive enum.
+[API stability](api-stability.md) is the reference: the promise, the frozen declarations, the enums that can grow and
+why four stay exhaustive, how CI enforces it, and how to change the baseline intentionally. In short:
+- **Frozen:** the whole `AetherLanguage` module and the `AetherLanguageMacros` macros; in `AetherAssets`, preparation,
+  readiness and the catalog entry types, plus the store types their signatures expose; in `AetherKit`, the lifecycle
+  policy and state types and `LanguageModelManifest.Platform`. `AetherLanguageFoundationModels` is not frozen.
+- **CI:** the **Public API (frozen)** job (`Scripts/check-api.sh`) dumps those modules with `swift-api-digester`,
+  keeps the frozen declarations, and compares them with the committed baseline in `api/`. It runs whenever the Swift
+  jobs run, including every change under `Sources/`, and **CI passed** requires it. The direct digester was chosen over
+  `swift package diagnose-api-breaking-changes`, which builds its baseline from a repository revision rather than a
+  committed file and can't be limited to a list of declarations.
+- **Proof on the runner** (PR #80): a commit that made `AetherLanguageSession.prewarm()` internal failed the job with
+  `Func AetherLanguageSession.prewarm() has been removed`
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40936256797)), and its revert passed
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)). Locally, a removed method, a changed
+  parameter type, and `@nonexhaustive` added to an exhaustive enum each fail. A new method, a change to an unfrozen
+  type, and a payload-free case added to a `@nonexhaustive` enum each pass. A payload case added to a payload-free enum
+  fails, because it removes the synthesized `Hashable`.
 
-**Frozen symbols:**
+## API changes the app led to (made before the freeze)
 
-| Module | Frozen |
-| --- | --- |
-| `AetherLanguage` | The whole module (it is the facade): `AetherLanguageModel`, `AetherLanguageSession`, `ResponseStream`, `AetherTranscript`, `AetherGenerationOptions`, `AetherGenerationSchema`, `AetherGenerable`, `AetherGenerationGuide`, `AetherGenerableCodingKey`, `AetherLanguageError`, `AetherStopReason`, and its extensions `ModelRuntimeCheck.language` and `LanguageModelManifest.installationManifest(in:)`. |
-| `AetherLanguageMacros` | `@AetherGenerable`, `@AetherGuide` (structured output). |
-| `AetherAssets` | `ModelCatalogEntry`, `ModelSource`, `ModelRequirements`, `ModelPreparation`, `PreparationStatus`, `PreparationEvent`, `PreparationError`, `ModelTransport`, `TransportRequest`, `URLSessionTransport`, `BackgroundTransport`, `ModelReadiness`, `ModelRuntimeCheck`, `ModelRuntimeVerdict`; and the types their signatures expose: `AssetManifest`, `AssetFile`, `LocalAssetStore`, `AssetReadLease`, `AssetStoreError`. |
-| `AetherKit` | `ModelLifecyclePolicy`, `ModelLifecycleState`, `ModelUnloadReason`, `MemoryPressure`, `MemoryPressureLevel`; and `LanguageModelManifest.Platform` (in `AetherLanguageModel.init`). |
-
-Not frozen: `AetherLanguageFoundationModels` (it adapts FoundationModels' own API), and everything else.
-
-**CI:** a new job, **Public API (frozen)**, on the same `xcode-27` runner and Xcode 27.1 as the other Swift jobs. It
-runs whenever they do, so any change under `Sources/` runs it; a docs-only PR skips it, and **CI passed** requires it.
-`Scripts/check-api.sh`:
-1. builds the four modules at `arm64-apple-macosx27.0`;
-2. dumps each with `swift-api-digester -dump-sdk` (part of every Xcode toolchain; the runner's default Xcode 27.1 is
-   build 27A9275, the same build as the local one used for the baseline);
-3. prunes the dump to the frozen symbols above (an allowlist in `Scripts/api-freeze.json`);
-4. compares it with the committed baseline in `api/` (`swift-api-digester -diagnose-sdk`) and fails on any breaking
-   diagnostic. Additions pass.
-
-`Scripts/check-api.sh --update` regenerates the baseline. Updating it is how an intentional break is made, so a PR that
-touches `api/` says why. `docs/api-stability.md` will state the promise and that procedure. I chose the direct
-digester over `swift package diagnose-api-breaking-changes` because the latter builds its baseline from a git revision
-rather than a committed file, and can't be limited to a symbol list. Before relying on it, the job's first run must show
-the tool works on the runner; a deliberately breaking commit on the branch must fail it, then be reverted.
-
-## API gaps found while planning (to fix before the freeze)
-
-1. **Enums that will grow.** These are exhaustive to clients today, so adding a case later breaks every exhaustive
-   `switch`. Swift 6.4 has `@nonexhaustive` (SE-0487; checked: a client must then write `@unknown default`, an error in
-   Swift 6 mode). Proposed for: `AetherLanguageError`, `AetherLanguageModel.UnavailableReason`, `AetherStopReason`,
-   `AetherTranscript.Entry`, `AetherGenerationOptions.Reasoning`, `PreparationError`, `PreparationEvent`,
-   `ModelSource`, `ModelReadiness.State`, `.Progress.Phase`, `.Unsupported`, `.Failure`, `ModelLifecycleState`,
-   `ModelUnloadReason`. Kept exhaustive: `AetherLanguageModel.Availability`, `PreparationStatus`,
-   `MemoryPressureLevel`, `ModelRuntimeVerdict`. Doing it later would itself be a break.
-2. **A streamed reply's stop reason and usage are unreachable.** `ResponseStream`'s iterator keeps the finished
-   `Response` but not publicly, and `collect()` can't follow an iteration. Proposed: a public read-only
-   `AsyncIterator.response` (nil until `next()` returns nil). Additive, but the chat screen wants it now.
-3. The guides' "type names may still change once the API has run in the sample app" lines go once the freeze lands.
-
-## Documentation changes
-
-`README.md` (the no-compatibility and no-weights statements), `NOTICE` (the sample bundle), `docs/kokoro-speech.md`
-("AetherKit ships no weights"), the roadmap row, and the three gate guides' status lines.
+1. **Enums that can grow are `@nonexhaustive`** (SE-0487), so a later case is additive. Clients outside the package
+   need `@unknown default` (an error in Swift 6 mode without it). The changelog lists this under Breaking, with the
+   migration. Inside the package, modules still switch exhaustively. The examples that switch over these enums
+   (`FloorConsumer`, `LanguageDevice`) handle unknown cases.
+2. **`ResponseStream.AsyncIterator.response` is public:** a streamed reply's stop reason, usage, seed and transcript
+   entries once `next()` returns nil. The chat screen's footnote reads it.
 
 ## Qualification
 

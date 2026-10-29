@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews with no API compatibility promise.
+All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
 ## Unreleased
 
@@ -19,6 +19,15 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
   - H3 refuses a generation under critical pressure.
 
   `aether-probe qualify-lifecycle` and the LanguageDevice `lifecycle` mode qualify it: on the Mac with simulated pressure, and on an iPhone19,4 with real pressure, where iOS's critical notice released the idle model within 60 ms ([record](docs/evidence/model-lifecycle-2026-10-29.json)).
+
+- **API freeze for 0.0.x** ([API stability](docs/api-stability.md)): the language facade (`AetherLanguage`, `@AetherGenerable` and `@AetherGuide`), model preparation and readiness with the catalog entry types (`AetherAssets`), and the lifecycle policy and state types (`AetherKit`) are frozen. Later 0.0.x releases add to them and never break them. CI's new **Public API (frozen)** job compares them with the committed baseline in `api/` (`Scripts/check-api.sh`, `swift-api-digester`); **CI passed** requires it.
+- **A streamed reply's final response:** `ResponseStream.AsyncIterator.response` is now public. Once `next()` returns nil, it holds the reply's stop reason, usage, seed and transcript entries.
+- **Sample app** ([guide](docs/sample-app.md)): `Examples/SampleApp`, one SwiftUI app for iOS and macOS (sandboxed). It downloads Qwen3-0.6B through `ModelPreparation`, shows its readiness, streams a chat, runs one structured-output request and shows the model's lifecycle live.
+- **One published sample bundle:** Kit now publishes Qwen3-0.6B, converted from `Qwen/Qwen3-0.6B` under Apache-2.0, at [`aether-models/aether-kit-qwen3-0.6b`](https://huggingface.co/aether-models/aether-kit-qwen3-0.6b) (`mac/` and `ios/` bundles), for the sample app. It distributes no other weights.
+
+### Breaking
+
+- **Growable enums are `@nonexhaustive`** (SE-0487), so adding a case in a later 0.0.x release won't break clients. Code outside the package that switches over one of them exhaustively no longer compiles in Swift 6 mode (a warning in Swift 5 mode). The affected enums are `AetherLanguageError`, `AetherLanguageModel.UnavailableReason`, `AetherStopReason`, `AetherTranscript.Entry`, `AetherGenerationOptions.Reasoning`, `AetherGenerationOptions.SamplingMode.Kind`, `PreparationError`, `PreparationEvent`, `ModelSource`, `ModelReadiness.State`, `.Progress.Phase`, `.Unsupported`, `.Failure`, `ModelLifecycleState` and `ModelUnloadReason`. **Migration:** add `@unknown default:` to each such `switch` (or a catch-all pattern such as `case .unavailable(let reason):`).
 
 ### Changed
 

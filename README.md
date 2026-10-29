@@ -2,7 +2,7 @@
 
 Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
-**Status: 0.0.3 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. See the [release notes](docs/release-notes/0.0.3.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
+**Status: 0.0.3 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. On `main`, toward 0.0.4: the language facade, model preparation, readiness and lifecycle API is frozen for the rest of 0.0.x ([API stability](docs/api-stability.md)), and Kit publishes one sample bundle, Qwen3-0.6B ([sample app](docs/sample-app.md)). See the [release notes](docs/release-notes/0.0.3.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ Measured 2026-10-26 on the M5 Max, float32, durations on CPU and decoder on GPU 
 
 ## Models and assets
 
-AetherKit loads local Core AI exports that you supply and never downloads weights.
+AetherKit loads local Core AI exports. You supply them, or an app downloads one with `ModelPreparation` from a pinned catalog entry ([model preparation](docs/model-preparation.md)). Kit publishes one sample bundle: Qwen3-0.6B, converted from `Qwen/Qwen3-0.6B` under Apache-2.0, at [`aether-models/aether-kit-qwen3-0.6b`](https://huggingface.co/aether-models/aether-kit-qwen3-0.6b), which `Examples/SampleApp` downloads. It distributes no other weights.
 
 - **Krea:** a bundle directory containing `aether.json` (the recipe), `metadata.json`, six or seven `.aimodel` assets with `main.hash` declarations, and `tokenizer/`. It can optionally be installed through `AetherAssets`. A full written bundle specification isn't published yet.
 - **Language:** a registered bundle with `language-model.json`.
