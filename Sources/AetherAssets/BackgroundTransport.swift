@@ -141,19 +141,30 @@ enum RedirectResolver {
     private final class HeadersOnly: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         private let lock = NSLock()
         private var pending: [Int: CheckedContinuation<URLResponse, any Error>] = [:]
+        /// Results that arrived before their continuation, as for a task cancelled before it started.
+        private var early: [Int: Result<URLResponse, any Error>] = [:]
 
         func response(to request: URLRequest, in session: URLSession) async throws -> URLResponse {
             let task = session.dataTask(with: request)
             return try await withTaskCancellationHandler {
                 try await withCheckedThrowingContinuation { continuation in
-                    lock.withLock { pending[task.taskIdentifier] = continuation }
-                    task.resume()
+                    let result: Result<URLResponse, any Error>? = lock.withLock {
+                        if let result = early.removeValue(forKey: task.taskIdentifier) { return result }
+                        pending[task.taskIdentifier] = continuation
+                        return nil
+                    }
+                    if let result { continuation.resume(with: result) } else { task.resume() }
                 }
             } onCancel: { task.cancel() }
         }
 
         private func finish(_ task: URLSessionTask, _ result: Result<URLResponse, any Error>) {
-            lock.withLock { pending.removeValue(forKey: task.taskIdentifier) }?.resume(with: result)
+            let continuation: CheckedContinuation<URLResponse, any Error>? = lock.withLock {
+                if let continuation = pending.removeValue(forKey: task.taskIdentifier) { return continuation }
+                if early[task.taskIdentifier] == nil { early[task.taskIdentifier] = result }
+                return nil
+            }
+            continuation?.resume(with: result)
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,

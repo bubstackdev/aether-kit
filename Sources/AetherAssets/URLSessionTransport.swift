@@ -39,8 +39,7 @@ public struct URLSessionTransport: ModelTransport {
         let task = session.dataTask(with: urlRequest)
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-                delegate.start(continuation)
-                task.resume()
+                if delegate.start(continuation) { task.resume() }
             }
         } onCancel: { task.cancel() }
     }
@@ -74,6 +73,8 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, @unchec
     private let progress: @Sendable (UInt64) -> Void
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Void, any Error>?
+    /// The outcome when the task ended before `start` (a task cancelled before it began).
+    private var outcome: Result<Void, any Error>?
     private var handle: FileHandle?
     private var written: UInt64 = 0
     private var failure: (any Error)?
@@ -82,7 +83,17 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, @unchec
         self.destination = destination; self.offset = offset; self.request = request; self.progress = progress
     }
 
-    func start(_ continuation: CheckedContinuation<Void, any Error>) { lock.withLock { self.continuation = continuation } }
+    /// Waits for the task's end; false if it already ended, in which case `continuation` has been resumed.
+    func start(_ continuation: CheckedContinuation<Void, any Error>) -> Bool {
+        let ended: Result<Void, any Error>? = lock.withLock {
+            if let outcome { return outcome }
+            self.continuation = continuation
+            return nil
+        }
+        guard let ended else { return true }
+        continuation.resume(with: ended)
+        return false
+    }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                     completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void) {
@@ -172,9 +183,11 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, @unchec
             handle = nil
             let pending = self.continuation
             self.continuation = nil
-            if let failure { return (pending, failure) }
-            if let error = error as? URLError, error.code == .cancelled { return (pending, CancellationError()) }
-            return (pending, error.map { PreparationError.network(($0 as NSError).localizedDescription) })
+            let ended: (any Error)? = if let failure { failure }
+                else if let error = error as? URLError, error.code == .cancelled { CancellationError() }
+                else { error.map { PreparationError.network(($0 as NSError).localizedDescription) } }
+            if pending == nil { self.outcome = ended.map { .failure($0) } ?? .success(()) }
+            return (pending, ended)
         }
         if let outcome { continuation?.resume(throwing: outcome) } else { continuation?.resume() }
     }

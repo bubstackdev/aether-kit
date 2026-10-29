@@ -68,12 +68,12 @@ private struct Fixture {
     var storeRoot: URL { base.appendingPathComponent("store") }
     let entry: ModelCatalogEntry
 
-    init() throws {
+    init(including extra: [String: Data] = [:]) throws {
         let contents: [String: Data] = [
             "registration.json": Data(#"{"model":"example"}"#.utf8),
             "model/main.mlirb": Data((0..<300).map { UInt8($0 % 251) }),
             "tokenizer/tokenizer.json": Data(String(repeating: "token ", count: 20).utf8),
-        ]
+        ].merging(extra) { _, new in new }
         var files: [AssetFile] = []
         for (path, data) in contents {
             let url = base.appendingPathComponent("source").appendingPathComponent(path)
@@ -102,6 +102,18 @@ private func events(_ stream: AsyncStream<PreparationEvent>) async -> [Preparati
 }
 
 struct ModelPreparationTests {
+    @Test func anEmptyFileIsCreatedWithoutFetching() async throws {
+        let fixture = try Fixture(including: ["tokenizer/added_tokens.json": Data()])
+        defer { fixture.remove() }
+        let preparation = try fixture.preparation(ScriptedTransport(source: fixture.source))
+        let all = await events(preparation.prepare(fixture.entry))
+        let id = try fixture.entry.installationID
+        #expect(all.last == .installed(installationID: id))
+        #expect(!all.contains { if case let .downloading(path, _, _, _, _) = $0 { path == "tokenizer/added_tokens.json" } else { false } })
+        let lease = try await preparation.store.acquire(id)
+        #expect(try Data(contentsOf: lease.directory.appendingPathComponent("tokenizer/added_tokens.json")).isEmpty)
+    }
+
     @Test func aFreshEntryDownloadsInstallsAndCleansUp() async throws {
         let fixture = try Fixture()
         defer { fixture.remove() }

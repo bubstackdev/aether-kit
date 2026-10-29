@@ -173,6 +173,14 @@ public struct ModelPreparation: Sendable {
             let target = try confinedDownload(file.path, in: area)
             var size = fileSize(target)
             if size > file.byteCount { try remove(target); size = 0 }
+            if file.byteCount == 0, !FileManager.default.fileExists(atPath: target.path) {
+                // Nothing to fetch, but the install needs the file; it still checks the empty file's hash.
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
+                                                        attributes: [.posixPermissions: 0o700])
+                guard FileManager.default.createFile(atPath: target.path, contents: nil, attributes: [.posixPermissions: 0o600]) else {
+                    throw PreparationError.fileSystem(errno)
+                }
+            }
             if size < file.byteCount {
                 try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
                                                         attributes: [.posixPermissions: 0o700])
