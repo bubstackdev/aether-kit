@@ -110,10 +110,14 @@ struct ModelCatalogEntryTests {
         #expect(throws: AssetStoreError.self) {
             try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
         }
-        object["requirements"] = ["platforms": ["visionos"]]
-        #expect(throws: DecodingError.self) {
+        object["requirements"] = ["platforms": ["iOS"]]
+        #expect(throws: AssetStoreError.self) {
             try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
         }
+        // A platform this Kit doesn't know still decodes (it matches no device), so a newer entry stays readable.
+        object["requirements"] = ["platforms": ["visionos", "ios"]]
+        let newer = try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(newer.requirements?.platforms == [ModelRequirements.Platform(rawValue: "visionos"), .ios])
     }
 
     @Test func huggingFaceAuthorizationOnlyGoesToTheHub() {

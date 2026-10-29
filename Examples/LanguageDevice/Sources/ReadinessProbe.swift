@@ -7,7 +7,7 @@ struct ReadinessResult: Codable {
 
     var entryInstallationID = ""
     var requirements = ""
-    var deviceMemoryLimitBytes: UInt64 = 0
+    var deviceMemoryLimitBytes: UInt64?
     var transitions: [Transition] = []
     var final = ""
     var reply: String?

@@ -131,6 +131,59 @@ struct ModelReadinessTests {
         #expect(isNotInstalled(fits.current))
     }
 
+    @Test func withoutAKnownMemoryLimitTheRequirementGoesUnchecked() throws {
+        let fixture = try PreparationFixture()
+        defer { fixture.remove() }
+        let unknown = ModelReadiness.Device(platform: .ios, memoryLimit: { nil })
+        let model = try readiness(fixture, ScriptedTransport(source: fixture.source),
+                                  entry: entry(fixture, ModelRequirements(memoryBytes: 1 << 40)), device: unknown)
+        #expect(isNotInstalled(model.current))
+    }
+
+    @Test func releasingAReadinessStopsItsRunAndEndsItsStreams() async throws {
+        let fixture = try PreparationFixture()
+        defer { fixture.remove() }
+        let transport = ScriptedTransport(source: fixture.source)
+        transport.on("model/main.mlirb", .waitForRelease)
+        var model: ModelReadiness? = try readiness(fixture, transport)
+        let stream = model!.states
+        model!.prepare()
+        _ = try await settle(model!, until: { if case let .installing(progress) = $0 { progress.phase == .downloading && progress.bytesDone > 0 } else { false } })
+        model = nil
+        // The stream ends, and the cancelled run releases the download lock: a new readiness prepares at once.
+        let ended = Task { for await _ in stream {}; return true }
+        let finished = try await withThrowingTaskGroup(of: Bool.self) { group in
+            group.addTask { await ended.value }
+            group.addTask { try await Task.sleep(for: .seconds(10)); return false }
+            let first = try await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+        #expect(finished)
+        let again = try readiness(fixture, transport)
+        guard case let .notInstalled(present, _) = again.current else { Issue.record("\(again.current)"); return }
+        #expect(present > 0)
+        again.prepare()
+        _ = try await settle(again, until: isReady)
+    }
+
+    @Test func prepareDuringUninstallWaitsForTheRemoval() async throws {
+        let fixture = try PreparationFixture()
+        defer { fixture.remove() }
+        let transport = ScriptedTransport(source: fixture.source)
+        let model = try readiness(fixture, transport)
+        model.prepare()
+        _ = try await settle(model, until: isReady)
+        // An app that prepares whenever it sees notInstalled, racing the removal.
+        let watcher = Task {
+            for await state in model.states { if isNotInstalled(state) { model.prepare(); return } }
+        }
+        try await model.uninstall()
+        await watcher.value
+        _ = try await settle(model, until: isReady)
+        #expect(transport.calls.filter { $0.path == "model/main.mlirb" }.count == 2)
+    }
+
     @Test func anInstalledModelThatNoLongerFitsIsUnsupportedWithoutVerifying() async throws {
         let fixture = try PreparationFixture()
         defer { fixture.remove() }
@@ -163,6 +216,9 @@ struct ModelReadinessTests {
         let installed = try readiness(fixture, transport, check: brokenBundle)
         installed.prepare()
         #expect(try await settle(installed, until: isFailed).last == .failed(.invalidModel("no template")))
+        // The same model would fail the same way: prepare doesn't verify it again.
+        installed.prepare()
+        #expect(installed.current == .failed(.invalidModel("no template")))
     }
 
     @Test func aCorruptInstallationFailsVerificationAndPrepareReplacesIt() async throws {

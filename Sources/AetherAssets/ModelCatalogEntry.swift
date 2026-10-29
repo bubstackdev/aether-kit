@@ -66,7 +66,13 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
 /// What a device needs to run a catalog entry's model. Readiness reports a device that falls short as unsupported
 /// before anything downloads (docs/model-readiness.md).
 public struct ModelRequirements: Codable, Sendable, Equatable {
-    public enum Platform: String, Codable, Sendable { case macos, ios }
+    /// A platform name. Names Kit doesn't know decode, and match no device, so a newer entry stays readable.
+    public struct Platform: RawRepresentable, Codable, Hashable, Sendable {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+        public static let macos = Platform(rawValue: "macos")
+        public static let ios = Platform(rawValue: "ios")
+    }
 
     /// The platforms the installation runs on; nil means any.
     public let platforms: [Platform]?
@@ -90,8 +96,10 @@ public struct ModelRequirements: Codable, Sendable, Equatable {
     }
 
     public func validate() throws {
-        if let platforms, platforms.isEmpty || Set(platforms).count != platforms.count {
-            throw AssetStoreError.invalidManifest("requirements list no platform, or one twice")
+        if let platforms, platforms.isEmpty || Set(platforms).count != platforms.count || !platforms.allSatisfy({ platform in
+            (1...32).contains(platform.rawValue.utf8.count) && platform.rawValue.utf8.allSatisfy { (97...122).contains($0) || (48...57).contains($0) }
+        }) {
+            throw AssetStoreError.invalidManifest("requirements need distinct lowercase platform names")
         }
         guard memoryBytes.map({ $0 > 0 && $0 <= ModelCatalogEntry.maximumByteCount }) ?? true else {
             throw AssetStoreError.invalidManifest("invalid memory requirement")

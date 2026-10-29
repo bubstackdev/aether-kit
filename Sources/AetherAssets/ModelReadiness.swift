@@ -110,13 +110,14 @@ public final class ModelReadiness: @unchecked Sendable {
     }
 
     /// What a memory requirement is compared with here: the app's memory limit on iOS (its footprint plus what it may
-    /// still allocate), physical memory on a Mac.
-    public static var deviceMemoryLimit: UInt64 { Device.currentMemoryLimit() }
+    /// still allocate), physical memory on a Mac and for an iOS app running on a Mac. nil when iOS doesn't report a limit
+    /// (the process isn't an app); memory requirements then go unchecked.
+    public static var deviceMemoryLimit: UInt64? { Device.currentMemoryLimit() }
 
     /// The device the requirements are compared with.
     struct Device: Sendable {
         let platform: ModelRequirements.Platform
-        let memoryLimit: @Sendable () -> UInt64
+        let memoryLimit: @Sendable () -> UInt64?
 
         static let current = Device(platform: currentPlatform, memoryLimit: currentMemoryLimit)
 
@@ -128,16 +129,20 @@ public final class ModelReadiness: @unchecked Sendable {
             #endif
         }
 
-        /// iOS: the app's memory limit, its current footprint plus what it may still allocate. Mac: physical memory.
-        static func currentMemoryLimit() -> UInt64 {
+        static func currentMemoryLimit() -> UInt64? {
             #if os(iOS)
+            let process = ProcessInfo.processInfo
+            if process.isiOSAppOnMac || process.isMacCatalystApp { return process.physicalMemory }
+            // Zero means "not an app" (or already past the limit): no limit to compare with.
+            let available = os_proc_available_memory()
+            guard available > 0 else { return nil }
             var info = task_vm_info_data_t()
             var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
             let result = withUnsafeMutablePointer(to: &info) {
                 $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count) }
             }
             let footprint = result == KERN_SUCCESS ? info.phys_footprint : 0
-            return footprint + UInt64(max(0, os_proc_available_memory()))
+            return footprint + UInt64(available)
             #else
             ProcessInfo.processInfo.physicalMemory
             #endif
@@ -154,6 +159,9 @@ public final class ModelReadiness: @unchecked Sendable {
     /// The running preparation or verification, and its generation: a result from an older generation is dropped.
     private var work: Task<Void, Never>?
     private var generation = 0
+    /// While `uninstall()` removes the installation: `prepare()` waits for it, and `refresh()` does nothing.
+    private var uninstalling = false
+    private var prepareAfterUninstall = false
 
     public convenience init(entry: ModelCatalogEntry, preparation: ModelPreparation, check: ModelRuntimeCheck = .none) {
         self.init(entry: entry, preparation: preparation, check: check, device: .current)
@@ -162,9 +170,11 @@ public final class ModelReadiness: @unchecked Sendable {
     init(entry: ModelCatalogEntry, preparation: ModelPreparation, check: ModelRuntimeCheck, device: Device) {
         self.entry = entry; self.preparation = preparation; self.check = check; self.device = device
         state = .verifying
-        lock.withLock { evaluate() }
+        let screened = screen()
+        lock.withLock { evaluate(screened) }
     }
 
+    /// Releasing the readiness cancels its preparation or verification (downloaded bytes stay) and ends its streams.
     deinit {
         work?.cancel()
         for continuation in subscribers.values { continuation.finish() }
@@ -188,74 +198,98 @@ public final class ModelReadiness: @unchecked Sendable {
         }
     }
 
-    /// Downloads and installs the model, then verifies it, when it's not installed or failed. Does nothing while
-    /// installing, verifying or ready, or when unsupported. With `BackgroundTransport`, call it at launch to join a
-    /// transfer that continued while the app wasn't running.
+    /// Downloads and installs the model, then verifies it, when it's not installed or failed. Checks the entry again
+    /// first, so an entry that has become unsupported is never downloaded. Does nothing while installing, verifying or
+    /// ready, when unsupported (``refresh()`` decides again), or after `invalidModel` (the same model would fail the same
+    /// way). During ``uninstall()`` it starts once the removal ends. With `BackgroundTransport`, call it at launch to join
+    /// a transfer that continued while the app wasn't running.
     public func prepare() {
+        let screened = screen()
         lock.withLock {
+            if uninstalling { prepareAfterUninstall = true; return }
             switch state {
-            case .notInstalled, .failed:
-                // The entry may have become unsupported (or have been invalid all along): never download it then.
-                if let verdict = screen() { set(verdict) } else { start(preparing: true) }
-            case .installing, .verifying, .ready, .unsupported: break
+            case .notInstalled, .failed(.preparation), .failed(.verification):
+                if let screened { set(screened) } else { start(preparing: true) }
+            case .installing, .verifying, .ready, .unsupported, .failed(.invalidModel): break
             }
         }
     }
 
     /// Stops a running preparation; downloaded bytes stay for the next ``prepare()``.
     public func cancel() {
+        let screened = screen()
         lock.withLock {
             guard case .installing = state else { return }
             generation += 1
             work?.cancel()
             work = nil
-            evaluate()
+            evaluate(screened)
         }
     }
 
-    /// Checks again when not installed, unsupported or failed: for example after another process installed the model,
-    /// or to verify an installation again without downloading.
+    /// Decides again when not installed, unsupported or failed: for example after another process installed the model,
+    /// after the app's memory limit changed, or to verify an installation again without downloading.
     public func refresh() {
+        let screened = screen()
         lock.withLock {
+            guard !uninstalling else { return }
             switch state {
             case .notInstalled, .unsupported, .failed:
                 generation += 1
-                evaluate()
+                evaluate(screened)
             case .installing, .verifying, .ready: break
             }
         }
     }
 
-    /// Removes the installation and any downloaded bytes. Fails with `PreparationError.busy` while installing or
-    /// verifying, or while a model opened from the lease is still alive; then the installation is verified again.
+    /// Removes the installation and any downloaded bytes. The state reads `notInstalled` while it runs, because the
+    /// lease this readiness holds is dropped first. Fails with `PreparationError.busy` while installing, verifying or
+    /// already uninstalling, or while a model opened from the lease is still alive; the installation is then verified
+    /// again.
     public func uninstall() async throws {
         let id = try entry.installationID
         let ours: Int = try lock.withLock {
+            guard !uninstalling else { throw PreparationError.busy }
             switch state {
             case .installing, .verifying: throw PreparationError.busy
             case .notInstalled, .ready, .unsupported, .failed: break
             }
-            // Drop the lease this object holds, so only the app's own references can keep the installation busy.
             generation += 1
+            uninstalling = true
             set(.notInstalled(bytesPresent: 0, bytesTotal: entry.byteCount))
             return generation
+        }
+        var removed = false
+        defer {
+            // Whatever happened, decide from what's on disk, and start a preparation asked for meanwhile.
+            let screened = screen()
+            lock.withLock {
+                uninstalling = false
+                let resume = prepareAfterUninstall && removed
+                prepareAfterUninstall = false
+                if generation == ours {
+                    generation += 1
+                    evaluate(screened)
+                    if resume, case .notInstalled = state { start(preparing: true) }
+                }
+            }
         }
         do {
             try preparation.store.remove(id)
         } catch AssetStoreError.notInstalled {
         } catch AssetStoreError.busy {
-            lock.withLock { if generation == ours { generation += 1; evaluate() } }
             throw PreparationError.busy
         }
+        removed = true
         try preparation.discardDownloads(entry)
-        lock.withLock { if generation == ours { generation += 1; evaluate() } }
     }
 
-    // MARK: - Evaluation (all under the lock)
+    // MARK: - Evaluation
 
-    /// Settles what can be known without network access or hashing, and verifies an installed model.
-    private func evaluate() {
-        if let verdict = screen() { set(verdict); return }
+    /// Under the lock: settles what can be known without network access or hashing, and verifies an installed model.
+    /// `screened` is ``screen()``'s verdict, taken outside the lock.
+    private func evaluate(_ screened: State?) {
+        if let screened { set(screened); return }
         do {
             switch try preparation.status(entry) {
             case .installed: start(preparing: false)
@@ -267,7 +301,8 @@ public final class ModelReadiness: @unchecked Sendable {
         }
     }
 
-    /// Unsupported or invalid from the entry alone: the product's check, then the platforms, then memory.
+    /// Unsupported or invalid from the entry alone: the product's check, then the platforms, then memory. Reads only
+    /// immutable properties, and runs outside the lock, so a check may read ``current``.
     private func screen() -> State? {
         switch check.entry(entry) {
         case let .unsupported(reason): return .unsupported(reason)
@@ -275,38 +310,42 @@ public final class ModelReadiness: @unchecked Sendable {
         case .runnable: break
         }
         if let platforms = entry.requirements?.platforms, !platforms.contains(device.platform) { return .unsupported(.platform) }
-        if let required = entry.requirements?.memoryBytes {
-            let limit = device.memoryLimit()
-            if required > limit { return .unsupported(.memory(requiredBytes: required, availableBytes: limit)) }
+        if let required = entry.requirements?.memoryBytes, let limit = device.memoryLimit(), required > limit {
+            return .unsupported(.memory(requiredBytes: required, availableBytes: limit))
         }
         return nil
     }
 
+    /// Under the lock. The task holds this readiness weakly, so releasing it cancels the work.
     private func start(preparing: Bool) {
         generation += 1
         let ours = generation
         set(preparing ? .installing(Progress(phase: .checking, bytesDone: 0, bytesTotal: entry.byteCount)) : .verifying)
         work?.cancel()
-        work = Task { [self] in
-            let settled = await run(preparing: preparing, generation: ours)
+        let publish: @Sendable (State) -> Void = { [weak self] next in self?.publish(next, ours) }
+        work = Task { [weak self, entry, preparation, check] in
+            let settled = await Self.run(entry: entry, preparation: preparation, check: check, preparing: preparing, publish: publish)
+            guard let self else { return }
+            let screened = settled == nil ? screen() : nil
             lock.withLock {
                 guard generation == ours else { return }
                 work = nil
-                if let settled { set(settled) } else { evaluate() }
+                if let settled { set(settled) } else { evaluate(screened) }
             }
         }
     }
 
     /// Prepares (when asked), verifies and checks the installation. nil means start over from the store's status (a
     /// cancelled run, or an installation that vanished).
-    private func run(preparing: Bool, generation ours: Int) async -> State? {
+    private static func run(entry: ModelCatalogEntry, preparation: ModelPreparation, check: ModelRuntimeCheck, preparing: Bool,
+                            publish: @Sendable (State) -> Void) async -> State? {
         if preparing {
             var outcome: PreparationEvent?
             for await event in preparation.prepare(entry) {
                 switch event {
-                case .checking: publish(.installing(Progress(phase: .checking, bytesDone: 0, bytesTotal: entry.byteCount)), ours)
-                case let .downloading(_, _, _, done, total): publish(.installing(Progress(phase: .downloading, bytesDone: done, bytesTotal: total)), ours)
-                case let .installing(done, total): publish(.installing(Progress(phase: .installing, bytesDone: done, bytesTotal: total)), ours)
+                case .checking: publish(.installing(Progress(phase: .checking, bytesDone: 0, bytesTotal: entry.byteCount)))
+                case let .downloading(_, _, _, done, total): publish(.installing(Progress(phase: .downloading, bytesDone: done, bytesTotal: total)))
+                case let .installing(done, total): publish(.installing(Progress(phase: .installing, bytesDone: done, bytesTotal: total)))
                 case .installed, .failed, .cancelled: outcome = event
                 }
             }
@@ -315,7 +354,7 @@ public final class ModelReadiness: @unchecked Sendable {
             case let .failed(error): return .failed(.preparation(error))
             default: return nil
             }
-            publish(.verifying, ours)
+            publish(.verifying)
         }
         let lease: AssetReadLease
         do {

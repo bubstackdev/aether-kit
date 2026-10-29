@@ -22,7 +22,7 @@ enum ReadinessCommand {
     private struct Report: Encodable {
         let installationID: String
         let requirements: String
-        let deviceMemoryLimitBytes: UInt64
+        let deviceMemoryLimitBytes: UInt64?
         var transitions: [Transition] = []
         var progressStates = 0
         var final = ""

@@ -1,0 +1,73 @@
+{
+  "record": "model-readiness-2026-10-29",
+  "what": "Typed readiness (docs/model-readiness.md) qualified with `aether-probe readiness` against the store and entries of the model-preparation qualification (docs/evidence/model-preparation-network-2026-10-28.json). Nothing downloaded: the store's downloads area stayed empty throughout.",
+  "build": "the review-fix build of the readiness PR (after dca8f44)",
+  "mac": {
+    "host": {
+      "model": "Mac17,6",
+      "chip": "Apple M5 Max",
+      "os": "macOS 27.2 (26B123)",
+      "deviceMemoryLimitBytes": 68719476736
+    },
+    "installedEntry": {
+      "entry": {
+        "revision": "86948c119e3b6cd0e85f03127db439489b5fe117",
+        "files": 11,
+        "byteCount": 1208370450,
+        "requirements": null,
+        "installationID": "02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+      },
+      "command": "aether-probe readiness ENTRY STORE",
+      "transitions": [
+        {
+          "seconds": 0.001379917,
+          "state": "verifying"
+        },
+        {
+          "seconds": 0.43919175,
+          "state": "ready 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+        }
+      ],
+      "final": "ready 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7",
+      "seconds": 0.439201,
+      "result": "Created, verified (every installed byte hashed by LocalAssetStore.acquire) and ready, holding the lease."
+    },
+    "memoryRefused": {
+      "command": "aether-probe readiness ENTRY STORE --memory-bytes 68719476737",
+      "transitions": [
+        {
+          "seconds": 0.0004035,
+          "state": "unsupported memory(requiredBytes: 68719476737, availableBytes: 68719476736)"
+        }
+      ],
+      "final": "unsupported memory(requiredBytes: 68719476737, availableBytes: 68719476736)",
+      "seconds": 0.000464,
+      "result": "One byte over physical memory: unsupported(memory) before verifying."
+    },
+    "platformRefused": {
+      "entry": {
+        "revision": "86f79bd093c4aff10855ed0516b50f87686a7c54",
+        "subdirectory": "ios",
+        "requirements": {
+          "memoryBytes": 230686720,
+          "platforms": [
+            "ios"
+          ]
+        },
+        "note": "The iOS entry of the model-preparation iPhone record, rewritten by `aether-probe catalog-entry language ... --memory-bytes 230686720`; its manifest is identical, so its installation ID is unchanged. 230,686,720 bytes is 220 MiB, the 219.2 MiB footprintPeakMiB of docs/evidence/language-iphone18-qwen3-0.6b-2026-10-28.json rounded up."
+      },
+      "command": "aether-probe readiness ENTRY STORE --prepare",
+      "transitions": [
+        {
+          "seconds": 0.000404584,
+          "state": "unsupported platform"
+        }
+      ],
+      "final": "unsupported platform",
+      "seconds": 0.000432,
+      "result": "unsupported(platform) on the Mac although --prepare asked for preparation; no download started."
+    }
+  },
+  "iphone": "pending",
+  "failures": []
+}

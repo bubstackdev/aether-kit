@@ -1,6 +1,6 @@
 # Model readiness
 
-Status: implemented 2026-10-29. Weight-free CPU tests, and qualification on the Mac and an iPhone
+Status: implemented 2026-10-29. Weight-free CPU tests and a Mac qualification; the iPhone run is pending
 ([Qualification](#qualification)). This is the second piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md). The user decided
 the four choices below on 2026-10-29. Type names may still change once the API has run in the sample app.
@@ -67,8 +67,12 @@ Creating a `ModelReadiness` never touches the network and never hashes before it
    `availability` for the installed registration, so ready means `AetherLanguageModel(installation:)` reports it
    available. A missing chat template, for example, fails as `invalidModel`.
 
-Steps 1–3 come first, so an unsupported model is never downloaded and an unsupported installed model is never
-verified: `prepare()` checks them again before it starts.
+Steps 1–3 come first, and `prepare()` checks them again before it starts. So a model ruled out by the product's check
+or by the entry's requirements is never downloaded, and never verified if it's already installed. What only the
+installation can show (step 5) is found after downloading and verifying. That includes the platform of an entry that
+doesn't declare `platforms`: an iOS language entry without them is downloaded on a Mac before it's reported
+`unsupported(.platform)`, and `refresh()` verifies it again each time. Entries from `catalog-entry` declare the
+platform for language bundles.
 
 ## Requirements and memory
 
@@ -93,28 +97,38 @@ open-time check ([roadmap](roadmap-0.0.4.md#parallel-track-hardening-and-coverag
 
 `ModelReadiness.deviceMemoryLimit` is what the requirement is compared with:
 - **iOS:** the app's memory limit, which is its current footprint plus `os_proc_available_memory()`. It includes the
-  increased-memory-limit entitlement when the app has it.
-- **Mac:** physical memory.
+  increased-memory-limit entitlement when the app has it. When iOS reports no limit (`os_proc_available_memory()` is 0
+  for a process that isn't an app), the limit is nil and memory requirements go unchecked.
+- **Mac,** and an iOS app running on a Mac: physical memory.
 
-The limit is read when readiness is created, and again on `refresh()` or `prepare()`.
+The limit is read when readiness is created, on `refresh()`, and on `prepare()` from `notInstalled` or `failed`. An app's
+limit can change while it runs, but `unsupported(.memory)` stays until the app calls `refresh()`.
+
+Platform names Kit doesn't know (say `visionos`) decode, and match no device, so a newer entry stays readable. An
+unknown key inside `requirements` is ignored. A future requirement that older Kits must not ignore needs a new entry
+`schemaVersion`, which they refuse.
 
 ## Actions
 
 - **`prepare()`**, from `notInstalled` or `failed`: checks steps 1–3 again, then runs `ModelPreparation.prepare` and
-  verifies the result. From `failed(.verification)` it replaces the corrupt installation, as preparation does. It does
-  nothing while installing, verifying or ready, or when unsupported. With `BackgroundTransport`, call it at launch to
-  join a transfer that continued while the app wasn't running.
+  verifies the result. From `failed(.verification)` it replaces the corrupt installation, as preparation does. After
+  `failed(.preparation)` it runs again whether or not the error is retryable, for example once the app has freed disk
+  space. It does nothing while installing, verifying or ready, when unsupported (`refresh()` decides again), or after
+  `failed(.invalidModel)`, where the same model would fail the same way. With `BackgroundTransport`, call it at launch
+  to join a transfer that continued while the app wasn't running.
 - **`cancel()`** stops a running preparation. Downloaded bytes stay, and the state returns to `notInstalled` with them.
 - **`refresh()`**, from `notInstalled`, `unsupported` or `failed`: decides again. For example after another process
   installed the model, or to verify an installation again without downloading.
-- **`uninstall()`** removes the installation and any downloaded bytes. Readiness drops the lease it holds first. If a
+- **`uninstall()`** removes the installation and any downloaded bytes. Readiness drops the lease it holds first, so the
+  state reads `notInstalled` while the removal runs. A `prepare()` in that window starts once the removal ends. If a
   model opened from the lease is still alive, removal fails with `PreparationError.busy` and the installation is
-  verified again. It also fails with busy while installing or verifying. A background transfer the system still runs
-  for the entry isn't cancelled, and may leave a partial file when it lands; the next `uninstall()` or `prepare()` deals
-  with it.
+  verified again. It also fails with busy while installing, verifying or already uninstalling. A background transfer
+  the system still runs for the entry isn't cancelled, and may leave a partial file when it lands; the next
+  `uninstall()` or `prepare()` deals with it.
 
 `states` uses the newest-value buffer: a slow reader sees the latest state, not every progress step. Every reader
-sees the current state first. The stream ends when the readiness is released.
+sees the current state first. Releasing the readiness cancels its preparation or verification (downloaded bytes stay
+for the next one) and ends its streams.
 
 ## For other products
 
@@ -125,14 +139,16 @@ let speech = ModelRuntimeCheck(
 ```
 
 `ModelRuntimeCheck.none` checks only the entry's requirements. Both closures must be cheap: no hashing, no loading.
+They run outside readiness's lock, so they may read `current`. They must not call `prepare()`, `cancel()`,
+`refresh()` or `uninstall()`, which run the checks themselves.
 
 ## Qualification
 
 **Mac** (M5 Max, 64 GB, macOS 27.2; [record](evidence/model-readiness-2026-10-29.json)), with `aether-probe readiness`
 against the store and entries of the model-preparation qualification:
-- The installed Qwen3 0.6B macOS entry went `verifying` → `ready` in 0.43 s, hashing all 11 files (1,208,370,450 bytes).
+- The installed Qwen3 0.6B macOS entry went `verifying` → `ready` in 0.44 s, hashing all 11 files (1,208,370,450 bytes).
 - The same entry with a 64 GiB + 1 byte requirement was `unsupported(memory)` against 68,719,476,736 bytes of physical
-  memory, decided in 0.54 ms without verifying.
+  memory, decided in 0.46 ms without verifying.
 - The iOS entry, rewritten by `catalog-entry` with `platforms: ["ios"]` and 220 MiB, was `unsupported(platform)` with
   `--prepare`, and nothing downloaded.
 
