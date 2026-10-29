@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "record": "h3-memory-960x544-243",
+  "date": "2026-10-29",
+  "passed": false,
+  "summary": "960x544 at 243 frames (10.1 s) on profile 34c0c67e (the 5af39db5 overlay with a 405-latent audio decoder). The T2VA render completed: denoising plateaus at 20.22 GiB Metal / 21.26 GiB footprint, over the 18 GiB bar. The FL2VA render was stopped by SIGTERM twice, 4-6 minutes into the render, from outside this run (the lock log records the wrapper as interrupted); it has no timeline.",
+  "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "243",
+    "height": "544",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "t2va",
+    "width": "960"
+  },
+  "timelineSHA256": "289e42d901a19651f4994800ed42c19627361cbaa046f15418542d08497aa7b2",
+  "t2vaPhases": [
+    {
+      "phase": "baseline",
+      "seconds": 1.0,
+      "metalPeakGiB": 0.0,
+      "footprintPeakGiB": 0.02
+    },
+    {
+      "phase": "open",
+      "seconds": 0,
+      "metalPeakGiB": 0.0,
+      "footprintPeakGiB": 0.02
+    },
+    {
+      "phase": "stage.encoding",
+      "seconds": 20.03,
+      "metalPeakGiB": 1.83,
+      "footprintPeakGiB": 2.002
+    },
+    {
+      "phase": "released.encoding",
+      "seconds": 0.02,
+      "metalPeakGiB": 0.003,
+      "footprintPeakGiB": 1.992
+    },
+    {
+      "phase": "stage.denoising",
+      "seconds": 151.81,
+      "metalPeakGiB": 19.025,
+      "footprintPeakGiB": 19.976
+    },
+    {
+      "phase": "stage.denoising.after-step1",
+      "seconds": 128.97,
+      "metalPeakGiB": 19.775,
+      "footprintPeakGiB": 21.155
+    },
+    {
+      "phase": "stage.denoising.after-step2",
+      "seconds": 130.16,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.256
+    },
+    {
+      "phase": "stage.denoising.after-step3",
+      "seconds": 133.01,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.257
+    },
+    {
+      "phase": "stage.denoising.after-step4",
+      "seconds": 131.36,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.254
+    },
+    {
+      "phase": "stage.denoising.after-step5",
+      "seconds": 137.17,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.258
+    },
+    {
+      "phase": "stage.denoising.after-step6",
+      "seconds": 143.17,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.256
+    },
+    {
+      "phase": "stage.denoising.after-step7",
+      "seconds": 146.19,
+      "metalPeakGiB": 20.224,
+      "footprintPeakGiB": 21.259
+    },
+    {
+      "phase": "stage.denoising.after-step8",
+      "seconds": 0.11,
+      "metalPeakGiB": 18.381,
+      "footprintPeakGiB": 19.791
+    },
+    {
+      "phase": "released.denoising",
+      "seconds": 0,
+      "metalPeakGiB": 9.546,
+      "footprintPeakGiB": 14.168
+    },
+    {
+      "phase": "stage.decodingVideo",
+      "seconds": 75.93,
+      "metalPeakGiB": 9.546,
+      "footprintPeakGiB": 14.252
+    },
+    {
+      "phase": "released.decodingVideo",
+      "seconds": 0,
+      "metalPeakGiB": 0.358,
+      "footprintPeakGiB": 2.403
+    },
+    {
+      "phase": "stage.decodingAudio",
+      "seconds": 5.63,
+      "metalPeakGiB": 1.42,
+      "footprintPeakGiB": 2.403
+    },
+    {
+      "phase": "released.decodingAudio",
+      "seconds": 0.0,
+      "metalPeakGiB": 0.336,
+      "footprintPeakGiB": 0.253
+    },
+    {
+      "phase": "unload",
+      "seconds": 0,
+      "metalPeakGiB": 0.336,
+      "footprintPeakGiB": 0.253
+    },
+    {
+      "phase": "unloaded+0-5s",
+      "seconds": 5.01,
+      "metalPeakGiB": 0.334,
+      "footprintPeakGiB": 0.253
+    }
+  ],
+  "controllers": {
+    "dump-t2va-960x544": {
+      "schema": 1,
+      "stage": "dump-t2va-960x544",
+      "command": [
+        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "h3-profile-dump",
+        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "243",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
+      "startedAt": "2026-10-29T18:41:42.885416+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 2.59,
+      "endedAt": "2026-10-29T18:41:45.475147+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-t2va-960x544": {
+      "schema": 1,
+      "stage": "render-t2va-960x544",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
+        "h3-memory-gate: t2va-960x544",
+        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "h3-memory-render",
+        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/render-t2va-960x544"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
+      "startedAt": "2026-10-29T18:41:45.484329+00:00",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 1715.199,
+      "endedAt": "2026-10-29T19:10:20.699426+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "dump-fl2va-960x544": {
+      "schema": 1,
+      "stage": "dump-fl2va-960x544",
+      "command": [
+        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "h3-profile-dump",
+        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
+        "960",
+        "544",
+        "243",
+        "1043",
+        "turbo8",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
+      "startedAt": "2026-10-29T19:10:20.726334+00:00",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "exitCode": 0,
+      "joined": true,
+      "elapsedSeconds": 5.155,
+      "endedAt": "2026-10-29T19:10:25.881648+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-fl2va-960x544": {
+      "schema": 1,
+      "stage": "render-fl2va-960x544",
+      "command": [
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
+        "h3-memory-gate: fl2va-960x544",
+        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "h3-memory-render",
+        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
+        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/render-fl2va-960x544"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
+      "startedAt": "2026-10-29T19:10:25.898659+00:00",
+      "gpuLock": true,
+      "passed": false,
+      "timedOut": false,
+      "exitCode": -15,
+      "joined": true,
+      "elapsedSeconds": 753.765,
+      "endedAt": "2026-10-29T19:22:59.670321+00:00",
+      "sourcePinsUnchanged": true
+    }
+  },
+  "note": "Rendered from a detached checkout of 4056a06 (Sources identical to main 6c125a1); busy host; GPU lock taken through a wrapper that yields 90 s after release."
+}

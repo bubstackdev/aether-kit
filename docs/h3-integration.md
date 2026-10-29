@@ -656,3 +656,28 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 **Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
 
+
+## Larger canvas: 1280×704 and the 10 s clip (0.0.4, in progress)
+
+**Status (2026-10-29): runs, over the 18 GiB bar, not admitted.** At 1280×704 and 704×1280 × 141 frames, and at 960×544 × 243 frames, every stage runs natively. Denoising plateaus at about 20.2 GiB of Metal, so none of these combinations has a measured entry, and measured admission refuses them. The bar decision is open.
+
+**Export ([record](evidence/h3-large-canvas-export-2026-10-29.json)).** Only graphs that depend on the canvas or the clip length are new; the body (rows dynamic to 40,960), heads, pack, text, conditioner and video decoder are reused unchanged. `export-h3-profile.py --stage video-encoder-first-tiled` with a base that already has tiled entries reuses the base's 256 px tile graph after a hash check, and exports only the new canvases' tails. The tails are 1280×704, 704×1280, 1344×768 and 768×1344, 28 source tiles each, and each is byte-identical to `encode_vae_condition` on CPU. `--stage audio-decoder-fixed` adds static audio decoders for 235 latents (141 frames) and 405 latents (243 frames), each byte-identical to the pipeline's decode. `--stage overlay` writes the base bundle plus those keys only, refuses to replace any key, and records lineage. The overlay `34c0c67e…` extends `5af39db5…`, which is untouched. The tail exports took about 75 s each on CPU, with a 4.3–5.0 GiB footprint (21–22 GiB max RSS from the mapped float32 VAE).
+
+The row limit caps the larger canvases: 1280×704 fits 141 frames (36,960 video rows) and 1344×768 fits 124. The profile's Turbo LoRA (`8step_v1.0`) was trained at 544p; upstream also publishes `8step_v1.0_768p`, trained at 1344×768 with shifts 6/3. These renders use the qualified 544p adapter.
+
+**Memory and time ([1280×704 gate](evidence/h3-memory-gate-1280x704-2026-10-29.json), [960×544×243](evidence/h3-memory-960x544-243-2026-10-29.json)).** These are memory-gate renders: Turbo8, M5 Max, on a busy host. Peaks are Metal / footprint in GiB.
+
+| Render | Keyframe | Denoising | Video decode | Steps (s) | Total (s) |
+| --- | --- | --- | --- | --- | --- |
+| T2VA 1280×704×141 | — | 20.18 / 21.22 | 9.52 / 17.20 | 113–142 | 1,096 |
+| FL2VA 1280×704×141 | 2.05 / 1.91 (8.4 s) | 20.62 / 22.08 | 11.16 / 17.50 | 127–156 | 1,185 |
+| T2VA 704×1280×141 | — | 20.18 / 21.21 | 9.52 / 14.21 | 111–131 | 1,047 |
+| FL2VA 704×1280×141 | 2.05 / 1.61 (9.2 s) | 20.62 / 21.69 | 10.00 / 17.50 | 124–142 | 1,168 |
+| T2VA 960×544×243 | — | 20.22 / 21.26 | 9.55 / 14.25 | 129–152 | 1,204 |
+
+- The plateau is steady from step 1. Denoising memory follows the packed row count, not the canvas: about 37,400 rows in every row of this table, against 19,333 rows and 11.1–11.8 GiB at 960×544×124. That is about 0.5 MiB per row.
+- The admission estimate (largest stage + margin + operation) would be 22.64 GiB.
+- The tiled first-frame encoder costs the same at 28 tiles as at 15: 2.05 GiB of Metal.
+- The FL2VA render at 960×544×243 was stopped twice by SIGTERM from outside the run, 4–6 minutes in, so it has no timeline.
+
+**Admission.** An identity may now carry several measured entries, for example a small canvas measured at a long clip and a large canvas at a short one. `H3MeasuredResources.admission(entries:coordinator:)` and `H3ProfileEngine.measuredAdmission` hold each request to the cheapest entry whose canvases and maximum frames cover it, and refuse a canvas and length that no single entry measured (CPU-tested). No entry for the larger canvas is bundled while it exceeds the bar.

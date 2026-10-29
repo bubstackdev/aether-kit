@@ -1,0 +1,315 @@
+{
+ "schema": 1,
+ "record": "h3-large-canvas-export",
+ "date": "2026-10-29",
+ "summary": "Overlay of the qualified profile 5af39db5 adding first-frame encoder tails for 1280x704, 704x1280, 1344x768 and 768x1344 (reusing the base's 256 px tile graph) and fixed audio decoders for 235 and 405 latents. Every new graph is checked on CPU against the pipeline (tails byte-identical to encode_vae_condition; audio decoders byte-identical to denormalize + decode). Nothing in the base profile is written.",
+ "baseBundle": {
+  "path": "~/.cache/aether-kit/h3/profile-c49d8dbf/bundle.json",
+  "sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce"
+ },
+ "overlayBundle": {
+  "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+  "sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+  "added": [
+   "video_encoder_first_tiled.tails.1280x704",
+   "video_encoder_first_tiled.tails.1344x768",
+   "video_encoder_first_tiled.tails.704x1280",
+   "video_encoder_first_tiled.tails.768x1344",
+   "audio_decoder.fixed.235",
+   "audio_decoder.fixed.405"
+  ]
+ },
+ "provenance": {
+  "checkpoint": {
+   "repository": "MiniMaxAI/MiniMax-H3",
+   "revision": "42ed227ee7df40d41602854ae760620d6eb651fe",
+   "license": "other (model card; unchanged from the base profile)"
+  },
+  "adapter": {
+   "alpha": 8.0,
+   "execution": "dynamic_lora",
+   "rank": 128,
+   "repository": "lightx2v/Minimax-h3-Turbo",
+   "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+   "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+   "note": "unchanged from the base profile (544p Turbo 8-step v1.0)"
+  },
+  "diffusersCommit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "downloads": "none; the converted video and audio VAEs of the base export were read in place"
+ },
+ "exporterSHA256": "f2c012ec10ed8cd3a15566342cc1eed2eaa971c8c85fada50d822b6630105754",
+ "build": {
+  "audio_decoder_fixed": {
+   "235": {
+    "check": {
+     "byte_identical": true,
+     "latents": 235,
+     "relative_l2": 0.0,
+     "shape": [
+      2,
+      188000
+     ]
+    },
+    "converted_audio_vae": "~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/audio-vae",
+    "function": "main",
+    "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/audio-decoder-na235.aimodel",
+    "seconds": 6.6,
+    "sha256": "67b93ef4cbecaf08d5593f8e4f1221da1336b44d59ccfa093067a61ef24928b2"
+   },
+   "405": {
+    "check": {
+     "byte_identical": true,
+     "latents": 405,
+     "relative_l2": 0.0,
+     "shape": [
+      2,
+      324000
+     ]
+    },
+    "converted_audio_vae": "~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/audio-vae",
+    "function": "main",
+    "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/audio-decoder-na405.aimodel",
+    "seconds": 6.7,
+    "sha256": "2fa69ea803e117b5de6430c7837d589c3997afc9a7fc5783208fe0afe6d4ff3b"
+   }
+  },
+  "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+  "schema": 1,
+  "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "video_encoder_first_tiled": {
+   "checks": {
+    "1280x704": {
+     "byte_identical": true,
+     "canvas": "1280x704",
+     "relative_l2": 0.0,
+     "seconds": 75.5,
+     "shape": [
+      1,
+      24,
+      1,
+      44,
+      80
+     ],
+     "tiles": 28,
+     "x_overlaps": [
+      96,
+      96,
+      80,
+      80,
+      80,
+      80
+     ],
+     "x_starts": [
+      0,
+      160,
+      320,
+      496,
+      672,
+      848,
+      1024
+     ],
+     "y_overlaps": [
+      112,
+      112,
+      96
+     ],
+     "y_starts": [
+      0,
+      144,
+      288,
+      448
+     ]
+    },
+    "1344x768": {
+     "byte_identical": true,
+     "canvas": "1344x768",
+     "relative_l2": 0.0,
+     "seconds": 77.0,
+     "shape": [
+      1,
+      24,
+      1,
+      48,
+      84
+     ],
+     "tiles": 28,
+     "x_overlaps": [
+      80,
+      80,
+      80,
+      80,
+      64,
+      64
+     ],
+     "x_starts": [
+      0,
+      176,
+      352,
+      528,
+      704,
+      896,
+      1088
+     ],
+     "y_overlaps": [
+      96,
+      80,
+      80
+     ],
+     "y_starts": [
+      0,
+      160,
+      336,
+      512
+     ]
+    },
+    "704x1280": {
+     "byte_identical": true,
+     "canvas": "704x1280",
+     "relative_l2": 0.0,
+     "seconds": 65.9,
+     "shape": [
+      1,
+      24,
+      1,
+      80,
+      44
+     ],
+     "tiles": 28,
+     "x_overlaps": [
+      112,
+      112,
+      96
+     ],
+     "x_starts": [
+      0,
+      144,
+      288,
+      448
+     ],
+     "y_overlaps": [
+      96,
+      96,
+      80,
+      80,
+      80,
+      80
+     ],
+     "y_starts": [
+      0,
+      160,
+      320,
+      496,
+      672,
+      848,
+      1024
+     ]
+    },
+    "768x1344": {
+     "byte_identical": true,
+     "canvas": "768x1344",
+     "relative_l2": 0.0,
+     "seconds": 60.8,
+     "shape": [
+      1,
+      24,
+      1,
+      84,
+      48
+     ],
+     "tiles": 28,
+     "x_overlaps": [
+      96,
+      80,
+      80
+     ],
+     "x_starts": [
+      0,
+      160,
+      336,
+      512
+     ],
+     "y_overlaps": [
+      80,
+      80,
+      80,
+      80,
+      64,
+      64
+     ],
+     "y_starts": [
+      0,
+      176,
+      352,
+      528,
+      704,
+      896,
+      1088
+     ]
+    }
+   },
+   "converted_vae": "~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va/converted/vae",
+   "encode_seed": 42,
+   "moments_channels": 48,
+   "recipe_sha256": "f2c012ec10ed8cd3a15566342cc1eed2eaa971c8c85fada50d822b6630105754",
+   "tails": {
+    "1280x704": {
+     "function": "main",
+     "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/video-encoder-first-tail-1280x704.aimodel",
+     "seconds": 3.6,
+     "sha256": "2ba205c3936b6d5d188cb747f51bc3d4961f46e30864e07626e254acdc5818e9"
+    },
+    "1344x768": {
+     "function": "main",
+     "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/video-encoder-first-tail-1344x768.aimodel",
+     "seconds": 5.3,
+     "sha256": "100672d7a047cf2e196c835fcb25692a03cb6212c43235fbc7ac048cacca2fb5"
+    },
+    "704x1280": {
+     "function": "main",
+     "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/video-encoder-first-tail-704x1280.aimodel",
+     "seconds": 2.8,
+     "sha256": "a4cee2040e00806b779805690a30d0211eb248360867377373f5f3a4ac6cf406"
+    },
+    "768x1344": {
+     "function": "main",
+     "path": "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/models/video-encoder-first-tail-768x1344.aimodel",
+     "seconds": 3.6,
+     "sha256": "6e3ebe9f0b3f120fc714425bf131a10d6483bd2f2ec12bfd609918364ea8b85a"
+    }
+   },
+   "tile": {
+    "function": "main",
+    "path": "~/.cache/aether-kit/h3/profile-c49d8dbf/models/video-encoder-first-tile256.aimodel",
+    "reused_from": "~/.cache/aether-kit/h3/profile-c49d8dbf/bundle.json",
+    "sha256": "36e39e1a46b640fa0fbcf86f22fbf3319a6515f2164c21f6ec803e99008fefcf"
+   },
+   "tile_size": 256
+  }
+ },
+ "hostUsage": {
+  "slice-tail-1280x704": {
+   "wallSeconds": 90.91,
+   "maxResidentBytes": 22765666304,
+   "peakFootprintBytes": 4582490888
+  },
+  "tails (4 canvases)": {
+   "wallSeconds": 300.47,
+   "maxResidentBytes": 23485841408,
+   "peakFootprintBytes": 5323719984
+  },
+  "audio-decoder-fixed (235, 405)": {
+   "wallSeconds": 52.67,
+   "maxResidentBytes": 3355410432,
+   "peakFootprintBytes": 2809204240
+  },
+  "overlay": {
+   "wallSeconds": 11.64,
+   "maxResidentBytes": 489783296,
+   "peakFootprintBytes": 422773888
+  }
+ },
+ "notes": [
+  "The slice run's 1280x704 tail asset hash (9107e6bb...) differs from the final run's (2ba205c3...) though both pass the byte-identical CPU check; Core AI asset bytes were not reproducible across two exports of the same module. The bundle pins the final one.",
+  "Max RSS counts the mapped 10 GB float32 VAE; peak footprint is the process's own memory."
+ ]
+}
