@@ -1,6 +1,6 @@
 # Model readiness
 
-Status: implemented 2026-10-29. Weight-free CPU tests and a Mac qualification; the iPhone run is pending
+Status: implemented and qualified 2026-10-29: weight-free CPU tests, and runs on the Mac and an iPhone
 ([Qualification](#qualification)). This is the second piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md). The user decided
 the four choices below on 2026-10-29. Type names may still change once the API has run in the sample app.
@@ -144,15 +144,25 @@ They run outside readiness's lock, so they may read `current`. They must not cal
 
 ## Qualification
 
-**Mac** (M5 Max, 64 GB, macOS 27.2; [record](evidence/model-readiness-2026-10-29.json)), with `aether-probe readiness`
-against the store and entries of the model-preparation qualification:
+[Record](evidence/model-readiness-2026-10-29.json). Nothing downloaded in any run.
+
+**Mac** (M5 Max, 64 GB, macOS 27.2), with `aether-probe readiness` against the store and entries of the
+model-preparation qualification:
 - The installed Qwen3 0.6B macOS entry went `verifying` → `ready` in 0.44 s, hashing all 11 files (1,208,370,450 bytes).
 - The same entry with a 64 GiB + 1 byte requirement was `unsupported(memory)` against 68,719,476,736 bytes of physical
   memory, decided in 0.46 ms without verifying.
 - The iOS entry, rewritten by `catalog-entry` with `platforms: ["ios"]` and 220 MiB, was `unsupported(platform)` with
   `--prepare`, and nothing downloaded.
 
-**iPhone:** pending.
+**iPhone** (iPhone19,4, iOS 27.2, no increased-memory-limit entitlement), with the `readiness` mode of
+`Examples/LanguageDevice`: `BackgroundTransport` and `.language`, over the store holding the installation from the
+[model-preparation iPhone record](evidence/model-preparation-iphone-2026-10-29.json). The entry was the iOS one above,
+with its requirements.
+- The app's memory limit read 3,539,992,576 bytes, the same in both launches.
+- The installed model went `verifying` → `ready` in 0.49 s, hashing all 1,208,370,448 bytes. The model opened from the
+  ready state's lease and answered the hash-function prompt in 4.8 s (greedy, 48 tokens).
+- With the requirement replaced by 8 GiB, it was `unsupported(memory(requiredBytes: 8589934592, availableBytes:
+  3539992576))` before verifying.
 
 ## Open questions
 
