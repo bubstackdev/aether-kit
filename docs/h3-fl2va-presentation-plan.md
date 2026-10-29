@@ -122,6 +122,12 @@ They total 1,190,533,600 bytes, all bf16, read from the shard header only. All 1
     Canvas sides are multiples of 32, so H3 calls `patchify` directly, with no resize and no `imageGrids` snapping.
   - `Qwen3VLVisionTables` (`Sources/AetherVision/Qwen3VLVisionTables.swift` 12–62) builds the position-table gather
     and the patch (row, column) inputs.
+  - **As built (2026-10-29), H3 reuses neither.** `patchify` computes x · 1/(255 · 0.5) − 1. Upstream's torchvision
+    processor fuses rescale and normalize into (x − 127.5) / 127.5. The tables' weights come from float64 linspace;
+    upstream's `get_vision_interpolation_indices_and_weights` works in float32. Either difference can move a bf16
+    pixel or a pos-embedding sum by one ulp. `H3VisionInputs` (`Sources/AetherH3/H3Presentation.swift`) reproduces
+    upstream's arithmetic exactly, and its hashes match upstream's for the fixture canvases. The two modules stay
+    separate, so the language product's evidence isn't touched.
 - **The Forge vision module.** `Forge/language/qwen3_vl_vision.py` is config-driven: depth, hidden, heads, DeepStack
   indexes and `out_hidden_size` all come from `vision_config` (175–209).
   - It outputs `image_embeds` and `deepstack [3, n/4, d]`.
@@ -166,8 +172,8 @@ They total 1,190,533,600 bytes, all bf16, read from the shard header only. All 1
    - A pure `H3Presentation` in `AetherH3` builds ids, tags and spans for N keyframes from the tokenizer and grids, plus
      the 3 × T M-RoPE positions. It is roughly 30 lines, a small port of the rule above, with CPU fixtures produced by
      the oracle.
-   - `AetherH3CoreAI` gains a vision kernel (protocol plus native implementation, faked in CPU tests) and a dependency
-     on `AetherVision`.
+   - `AetherH3CoreAI` gains a vision kernel (protocol plus native implementation, faked in CPU tests). As built, it
+     needs no `AetherVision` dependency (see above).
    - `H3ProfileConditioner.encode` (`H3ProfileStages.swift` 89–110) builds the presentation, embeds, scatters, gathers
      cos/sin and streams the layers with DeepStack.
 4. **Tags.** `H3Layout` already accepts tags 0/1 and up to 4,096 text rows (`Sources/AetherH3/H3Layout.swift` 26–27,

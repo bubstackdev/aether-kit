@@ -90,6 +90,11 @@ private struct TapeConditioner: H3PromptConditioner {
     func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
         let tap = try await inner.encode(prompt, geometry: geometry, onLayer: onLayer); await tape.set(tap: tap); return tap
     }
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        let conditioning = try await inner.encode(prompt, keyframes: keyframes, geometry: geometry, onLayer: onLayer)
+        await tape.set(tap: conditioning.tap); return conditioning
+    }
     func release() async { await inner.release() }
 }
 @available(macOS 27, iOS 27, *)
@@ -97,6 +102,10 @@ private struct TapeDenoiser: H3Denoiser {
     let inner: any H3Denoiser, tape: H3RenderTape
     var steps: Int { inner.steps }
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        let latents = try await inner.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: onStep)
+        await tape.set(latents: latents); return latents
+    }
+    func denoise(_ initial: H3Latents, conditioning: H3Conditioning, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
         let latents = try await inner.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: onStep)
         await tape.set(latents: latents); return latents
     }
@@ -186,13 +195,26 @@ enum H3ProfileCommand {
         let ids = try tokenizer.tokenIDs(text)
         let geometry = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
         let keyframe = try firstFrame.map { try keyframe($0, width: width, height: height) }
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count), anchors: keyframe == nil ? [] : [.first])
+        // With a vision tower, FL2VA conditions on upstream's presentation: its rows and tags lay out the text.
+        let presentation = try keyframe.flatMap { frame in
+            try profile.conditionerVision.map { vision in
+                try H3Presentation(prompt: ids, keyframes: [(frame.width, frame.height)], vision: vision.vision, tokenize: tokenizer.tokenIDs)
+            }
+        }
+        let textTags = presentation?.tags ?? Array(repeating: 1, count: ids.count)
+        let layout = try H3Layout(geometry: geometry, textTags: textTags, anchors: keyframe == nil ? [] : [.first])
         guard let schedule = profile.recipes[recipe]?.schedule else { throw AetherError.unsupported("profile has no \(recipe)") }
         let out = try H3RawDirectory(new: output)
         out.fields = ["profile_sha256": profile.manifestSHA256, "recipe": recipe, "seed": String(seed), "width": String(width),
-                      "height": String(height), "frames": String(geometry.frames), "tokens": String(ids.count), "rows": String(layout.rows),
+                      "height": String(height), "frames": String(geometry.frames), "tokens": String(textTags.count), "rows": String(layout.rows),
                       "steps": String(schedule.count), "prompt_sha256": h3SHA256(Data(text.utf8))]
         try out.put("ids", ints(ids, [ids.count]))
+        if let presentation {
+            out.fields["presentation"] = "upstream FL2VA: \(presentation.images.count) keyframe vision block(s)"
+            try out.put("presentation_ids", ints(presentation.ids, [presentation.count]))
+            try out.put("presentation_tags", ints(presentation.tags, [presentation.count]))
+            try out.put("presentation_positions", ints(presentation.positions.flatMap { $0 }, [3, presentation.count]))
+        }
         try out.put("positions", floats(layout.positions.values, [layout.rows, 3]))
         try out.put("token_tags", ints(layout.tokenTags, [layout.rows]))
         try out.put("text_indices", ints(layout.textIndices, [layout.textIndices.count]))

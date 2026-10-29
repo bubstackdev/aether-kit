@@ -78,6 +78,78 @@ private struct LayerKernel: H3ConditionerKernel {
     await #expect(throws: AetherError.self) { _ = try await tampered.encode("p", geometry: try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)) { _, _ in } }
 }
 
+private struct VisionKernel: H3VisionKernel {
+    let calls: Calls
+    /// Merger rows of 10 and DeepStack level k of k + 1, exact in bf16.
+    func encode(_ inputs: H3VisionInputs, width: Int, height: Int) async throws -> (embeddings: H3TensorData, deepstack: H3TensorData) {
+        await calls.add("vision \(width)x\(height)")
+        let tokens = inputs.gridHeight * inputs.gridWidth / 4
+        let embeddings = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [tokens, 5120]),
+                                          bytes: bf16([Float](repeating: 10, count: tokens * 5120)))
+        let deepstack = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [3, tokens, 5120]),
+                                         bytes: bf16((0..<3).flatMap { [Float](repeating: Float($0 + 1), count: tokens * 5120) }))
+        return (embeddings, deepstack)
+    }
+    func release() async { await calls.add("vision release") }
+}
+
+@Test func h3ProfileConditionerPresentsKeyframesWithImageRowsMRoPEAndDeepStack() async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let rows = (0..<9).map { r in [Float](repeating: Float(r), count: 5120) }
+    let table = bf16(rows.flatMap { $0 })
+    let shard = root.appendingPathComponent("shard.safetensors"); try (Data(repeating: 7, count: 16) + table).write(to: shard)
+    let ropeValues: [Float] = (0..<(4096 * 128)).map { (i: Int) -> Float in Float((i / 128) % 97) + Float(i % 128) / 128 }
+    let cos = try file(root, "cos", bf16(ropeValues), .bfloat16, [4096, 128]), sin = try file(root, "sin", bf16(ropeValues.map { -$0 }), .bfloat16, [4096, 128])
+    let placeholder = try H3TensorFile(name: "w0", url: shard, spec: H3TensorSpec(scalarType: .bfloat16, shape: [1]), sha256: zeroHash)
+    let conditioner = H3Profile.Conditioner(
+        embedding: try H3EmbeddingTable(url: shard, offset: 16, rows: 9, width: 5120, byteCount: table.count, sha256: h3SHA256(table)),
+        layer: try H3ModelAsset(url: root, function: "main", sha256: zeroHash),
+        parameters: Array(repeating: [placeholder], count: 50), tap: 50, ropeCos: cos, ropeSin: sin)
+    // Small stand-in ids for the vision tokens, so the test table stays small.
+    var vision = H3Presentation.Vision()
+    vision.visionStart = 6; vision.imagePad = 7; vision.visionEnd = 8
+    let entry = H3Profile.ConditionerVision(functions: [:], parameters: [], vision: vision, deepstackLevels: 3, hiddenSize: 5120)
+    let tokenize: @Sendable (String) throws -> [Int32] = { $0 == H3Presentation.Vision.label(1) ? [4, 5] : [1, 2, 3] }
+    let presentation = try H3Presentation(prompt: [1, 2, 3], keyframes: [(288, 288)], vision: vision, tokenize: tokenize)
+    let expectedCos = try presentation.rotary(try cos.read(), section: vision.mropeSection).bytes
+    let calls = Calls()
+    let stage = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: tokenize,
+                                     kernel: LayerKernel(calls: calls, expectedCos: expectedCos), vision: (entry, VisionKernel(calls: calls)))
+    let keyframe = try H3Keyframe(width: 288, height: 288, rgb: [UInt8](repeating: 9, count: 288 * 288 * 3))
+    let geometry = try H3Geometry(width: 288, height: 288, requestedFrames: 39, diagnostic: true)
+    let result = try await stage.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in }
+    #expect(result.tags == presentation.tags)
+    #expect(result.tap.spec.shape == [1, presentation.count, 5120])
+    // The tower runs and is released before the first layer.
+    #expect(await Array(calls.log.prefix(3)) == ["vision 288x288", "vision release", "layer 0"])
+    // Image rows: 10, then +1 per layer and +k+1 after layer k < 3: 10 + 50 + 1 + 2 + 3. Text rows: their id + 50.
+    let image = try #require(presentation.images.first)
+    var expected: [Float] = []
+    for (row, id) in presentation.ids.enumerated() {
+        let value: Float = (image.start..<(image.start + image.tokens)).contains(row) ? 66 : Float(id) + 50
+        expected += [Float](repeating: value, count: 5120)
+    }
+    #expect(try floats(result.tap) == expected)
+    // Without a vision entry, keyframes are refused rather than presented as text.
+    let textOnly = H3ProfileConditioner(conditioner: conditioner, limits: 2...4096, tokenize: tokenize, kernel: LayerKernel(calls: calls, expectedCos: Data()))
+    await #expect(throws: AetherError.self) { _ = try await textOnly.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in } }
+    // A presentation longer than the profile's text limit is refused before any native call.
+    let before = await calls.log.count
+    let tight = H3ProfileConditioner(conditioner: conditioner, limits: 2...64, tokenize: tokenize, kernel: LayerKernel(calls: calls, expectedCos: Data()),
+                                     vision: (entry, VisionKernel(calls: calls)))
+    await #expect(throws: AetherError.self) { _ = try await tight.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in } }
+    #expect(await calls.log.count == before)
+}
+
+@Test func h3ImageRowsAddDeepStackInFloat32RoundedToNearestEvenBF16() throws {
+    // Ties at 256 (spacing 2): 256 + 1 rounds to even 256, 256 + 3 to even 260, as torch's bf16 add does.
+    let hidden = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 3, 2]), bytes: bf16([256, 256, 0.5, 2, 9, 9]))
+    let deepstack = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 2, 2]), bytes: bf16([1, 3, 0.25, -2]))
+    let image = H3Presentation.Image(start: 0, tokens: 2, gridHeight: 2, gridWidth: 4)
+    let out = try H3ImageRows.add([deepstack], level: 0, levels: 1, to: hidden, at: [image])
+    #expect(try floats(out) == [256, 260, 0.75, 0, 9, 9])
+}
+
 // MARK: Packing and denoising
 
 @Test func h3ModulationPaddingAppendsCopiesThatTheAdaLNSelectionNeverReads() throws {
