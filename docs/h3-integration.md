@@ -710,7 +710,7 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 - `maximumPixels`, `maximumFrames` and `operationBytes` on an admission are union bounds for diagnostics. A UI offers what `admits(_:)` allows, not their combination.
 - Per-task entries let an FL2VA entry be re-measured and replaced without touching T2VA's. The memory gate writes one entry per task beside the combined one (`measuredEntriesByTask`).
 
-**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. They were written or edited by hand after the runs (each lists the fields in `editedAfterRun`); once the pause ends, the current gate script's evaluation is re-run over the same renders, with no re-render, so the records become script-generated. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
+**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. The 1280×704 gate record is the current gate script's evaluation, re-run over the joined renders without re-rendering (it passes the 24 GiB bar; worst cases 21.78 GiB T2VA and 22.64 GiB FL2VA). The 960×544×243 record, the export record and the timeline summaries were assembled by hand and list their fields in `editedAfterRun`; the 960×544×243 gate is re-evaluated once its FL2VA render is re-measured. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
 
 ## Larger canvas: 1280×704 and the 10 s clip (0.0.4, in progress)
 
@@ -725,7 +725,7 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 - **Row limit:** by `H3Geometry` (rows = (5n + 2) · H/32 · W/32 for 17n + 5 frames), the 40,960-row limit fits 1280×704 at 141 frames and 1344×768 at 124.
 
 **Memory and time.**
-- Sources: the [1280×704 gate](evidence/h3-memory-gate-1280x704-2026-10-29.json), the [960×544×243 record](evidence/h3-memory-960x544-243-2026-10-29.json), and the per-render [timeline summaries](evidence/h3-large-canvas-timelines-2026-10-29.json) (each with its full timeline's SHA-256 and the dump's exact rows).
+- Sources: the [1280×704 gate](evidence/h3-memory-gate-1280x704-2026-10-29-eval.json), the [960×544×243 record](evidence/h3-memory-960x544-243-2026-10-29.json), and the per-render [timeline summaries](evidence/h3-large-canvas-timelines-2026-10-29.json) (each with its full timeline's SHA-256 and the dump's exact rows).
 - Conditions: Turbo8, M5 Max, busy host.
 - Rows are packed rows: video + audio + 49 text tokens, plus 880 first-frame rows for FL2VA.
 - Peaks are Metal / footprint in GiB; worst case is the admission number above.
