@@ -92,7 +92,16 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
 - **Proof on the runner** (PR #80): a commit that made `AetherLanguageSession.prewarm()` internal failed the job with
   `Func AetherLanguageSession.prewarm() has been removed`
   ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40936256797)), and its revert passed
-  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)).
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)). A public addition committed without
+  `--update` failed with "api/AetherKit.json is stale"
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40948509843)), and its revert passed
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40950658604)).
+- **Local trials** ([record](evidence/api-freeze-trials-2026-10-29.json)), each against the committed baseline:
+  - fail: a removed method, a changed parameter type, `@nonexhaustive` added to an exhaustive enum, and a frozen
+    type exposing an unfrozen one;
+  - fail as a stale baseline: a method, or a case on a `@nonexhaustive` enum, added without `--update`. The case is
+    classified as additive first, with or without a payload, since `Hashable` is now explicit;
+  - pass: an unfrozen type added.
 
 ## API changes the app led to (made before the freeze)
 

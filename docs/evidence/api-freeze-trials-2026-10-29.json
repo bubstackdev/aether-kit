@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-29",
+  "what": "Local trials of Scripts/check-api.sh (docs/api-stability.md): each trial edits one source file, runs the full check against the committed api/ baseline, and restores the file. Mac17,6, macOS 27.2, Xcode 27.1 (27A9275), the same Xcode build as CI's runner.",
+  "baseline": "api/ at 0d59a5f, as regenerated from CI run 40945648770",
+  "ci": {
+    "breakRemovedMethod": "https://github.com/bubstackdev/aether-kit/actions/runs/40936256797",
+    "breakReverted": "https://github.com/bubstackdev/aether-kit/actions/runs/40937869455",
+    "staleBaseline": "https://github.com/bubstackdev/aether-kit/actions/runs/40948509843",
+    "staleReverted": "https://github.com/bubstackdev/aether-kit/actions/runs/40950658604"
+  },
+  "trials": [
+    {
+      "trial": "a public method removed",
+      "expected": "fail",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "AetherAssets: matches the baseline",
+        "API break: Func AetherLanguageSession.prewarm() has been removed",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "a parameter type changed",
+      "expected": "fail",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "API break: Func ModelPreparation.huggingFaceAuthorization(token:) has parameter 0 type change from Swift.String to Swift.Substring",
+        "AetherLanguage: matches the baseline",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "@nonexhaustive added to the exhaustive MemoryPressureLevel",
+      "expected": "fail",
+      "exitCode": 1,
+      "output": [
+        "API break: Enum MemoryPressureLevel is now with @nonexhaustive",
+        "AetherAssets: matches the baseline",
+        "AetherLanguage: matches the baseline",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "a public method added without --update",
+      "expected": "fail (stale baseline)",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "AetherAssets: matches the baseline",
+        "check-api: api/AetherLanguage.json is stale: the frozen API gained declarations. Run Scripts/check-api.sh --update and commit api/.",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "a payload-free case added to the @nonexhaustive AetherStopReason, without --update",
+      "expected": "additive, then fail (stale baseline)",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "AetherAssets: matches the baseline",
+        "additive: EnumElement AetherStopReason.trialCase has been added as a new enum case",
+        "check-api: api/AetherLanguage.json is stale: the frozen API gained declarations. Run Scripts/check-api.sh --update and commit api/.",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "a payload case added to AetherStopReason (Hashable now explicit), without --update",
+      "expected": "additive, then fail (stale baseline)",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "AetherAssets: matches the baseline",
+        "additive: EnumElement AetherStopReason.trialCase has been added as a new enum case",
+        "check-api: api/AetherLanguage.json is stale: the frozen API gained declarations. Run Scripts/check-api.sh --update and commit api/.",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    },
+    {
+      "trial": "a frozen type exposes an unfrozen one",
+      "expected": "fail (exposure)",
+      "exitCode": 1,
+      "output": [
+        "AetherKit: matches the baseline",
+        "api-freeze: AetherAssets: frozen declarations expose unfrozen types: AetherAssets.ExternalFileLease (freeze them in Scripts/api-freeze.json, or keep them out of frozen signatures)"
+      ]
+    },
+    {
+      "trial": "an unfrozen AetherKit type added",
+      "expected": "pass",
+      "exitCode": 0,
+      "output": [
+        "AetherKit: matches the baseline",
+        "AetherAssets: matches the baseline",
+        "AetherLanguage: matches the baseline",
+        "AetherLanguageMacros: matches the baseline"
+      ]
+    }
+  ],
+  "allAsExpected": true
+}
