@@ -108,12 +108,34 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
 
 ## Qualification
 
-Evidence in `docs/evidence/sample-app-2026-10-*.json`. The app has a qualification mode (a launch argument) that runs
-the same controller actions the buttons call, with a 10 s idle policy, and writes a JSON record in its container:
-- **Mac** (sandboxed build, checked with `codesign -d --entitlements`): a fresh container; download → verify →
-  streamed chat → structured `TodoItem` → `unloaded(.idle)` → a reply after the reload → delete. The store must be
-  inside the app's container. Model work runs under the GPU lease.
-- **iPhone** (one of the two named devices only): the same sequence with `BackgroundTransport`, launched with
-  `devicectl`, the record copied from the container.
+[Record](evidence/sample-app-2026-10-29.json). The app's `-qualify PHASES` launch mode (`fresh`, `prepare`, `run`,
+`idle`, `delete`) calls the same controller actions the buttons do. `-idleSeconds 10` sets the idle policy, and the
+app writes its JSON record to its container. Each run downloaded the bundle anonymously from the public repository at
+revision `7757d22b`.
 
-Both runs also get a manual pass through the UI.
+**Mac** (Mac17,6, macOS 27.2, Release build, sandboxed: `codesign -d --entitlements` shows app-sandbox and
+network.client). The record has `sandboxed: true` and `storeInsideAppContainer: true`. It took two launches:
+- `fresh,prepare`, with no model work: from a new container, `notInstalled(0/1208370450)`, then checking, downloading
+  and installing, then `verifying` → `ready` 101.8 s after Download.
+- `run,idle,delete`, under the shared GPU lease. The installed model verified again to `ready` at launch.
+  - The streamed chat answered the hash-function prompt in 8.20 s, first text at 7.97 s, the cold first load included.
+    The footnote read "end of turn · 41 prompt + 24 reply tokens", so stop reason and usage came from
+    `AsyncIterator.response`.
+  - The structured request decoded `{"dueInDays": 7, "priority": "high", "title": "Renew my passport"}` in 0.74 s.
+  - The model was `unloaded(idle)` 10.07 s after the last request. A new chat's reply loaded it again and finished in
+    1.74 s.
+  - Delete returned the state to `notInstalled(0/1208370450)` and left 0 bytes in the store.
+
+**iPhone** (iPhone19,4, iOS 27.2, no increased-memory entitlement, `BackgroundTransport`, one launch through
+`devicectl` with all five phases). The memory limit read 3,539,992,576 bytes, over the iOS entry's 230,686,720-byte
+requirement.
+- From a new install, it reached `ready` 1,187.7 s after Download. Most of that was the transfer: downloading ran from
+  0.7 s to 1,186.9 s.
+- The streamed chat finished in 7.30 s (first text at 6.97 s), with the same reply and footnote as the Mac.
+- Structured output decoded the same `TodoItem` in 0.97 s.
+- The idle unload came 10.07 s after the last request, and the reload reply finished in 1.76 s.
+- Delete left `notInstalled(0/1208370448)` and 0 bytes in the store.
+
+Not covered by these runs: a pass through the UI by hand, and memory pressure in the app. The
+[lifecycle record](evidence/model-lifecycle-2026-10-29.json) qualifies pressure; the strip shows the level from
+`MemoryPressure.levels`.
