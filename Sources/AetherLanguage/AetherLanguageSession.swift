@@ -42,7 +42,7 @@ public actor AetherLanguageSession {
     }
 
     /// Verifies and loads the model now rather than on the first request.
-    public func prewarm() async throws { try await model.prewarm() }
+    func prewarm() async throws { try await model.prewarm() }
 
     public func respond(to prompt: String, options: AetherGenerationOptions = .init()) async throws -> Response<String> {
         try await run(prompt, options: options) { _ in }
