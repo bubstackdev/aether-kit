@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "record": "h3-last-frame-memory",
+  "date": "2026-10-29",
+  "command": "aether-probe h3-memory-render PROFILE DUMP NEW_DIR, each under ~/.cache/aether-kit/with-gpu-lock.sh",
+  "build": {
+    "commit": "c5e2199",
+    "configuration": "release",
+    "triple": "arm64-apple-macosx27.0"
+  },
+  "profile": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+  "model": {
+    "repository": "MiniMaxAI/MiniMax-H3",
+    "revision": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "licence": "MiniMax H3 Community License Agreement",
+    "adapter": "lightx2v/Minimax-h3-Turbo@3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "newDownloads": "none"
+  },
+  "inputs": {
+    "sha256": {
+      "prompt.txt": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+      "crane-288.png": "e393003d8166082a9c74f2c1f8dca0a96dfdfa7ac682f9067c395503bfebf378",
+      "crane-pushin-288.png": "d8df1c8f0abbc4faadb32c6717889a69d0111efd7ef46e0bd37f716c1e9258a3",
+      "crane-960x544.png": "4bbd8e87040de91a172246535b4e550648d5ada0b8d0406057e3a1ada00f4d24",
+      "crane-pushin-960x544.png": "22f96eaed11567c51996fc9ec89112c70972cc7dcd96dda6c3c33a93a822bf97"
+    },
+    "note": "The 960x544 and 288 crane keyframes are the FL2VA gate's (2026-10-26). The last frames are synthetic camera push-ins: the centre 60% of the same picture, Lanczos-scaled back to the canvas."
+  },
+  "dumps": {
+    "dump-fl-288": {
+      "fields": {
+        "anchors": "first,last",
+        "frames": "22",
+        "height": "288",
+        "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+        "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+        "recipe": "turbo8",
+        "rows": "852",
+        "seed": "1043",
+        "steps": "8",
+        "tokens": "49",
+        "width": "288"
+      },
+      "manifestSHA256": "1ed3322c395cd6820a4fb55fc299ee495cd59a7cbff6ed4c8c8b009b06074f79"
+    },
+    "dump-fl-960": {
+      "fields": {
+        "anchors": "first,last",
+        "frames": "124",
+        "height": "544",
+        "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+        "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+        "recipe": "turbo8",
+        "rows": "20353",
+        "seed": "1043",
+        "steps": "8",
+        "tokens": "49",
+        "width": "960"
+      },
+      "manifestSHA256": "4ac9cbfabccbbc63573ed76742e2c3ed78ae61cff9c1f3a35d0125e1ad0baebb"
+    }
+  },
+  "host": {
+    "note": "Shared Mac, busy: one-minute load about 20 at the 960 render's start and 35 at its end; timings are not a quiet reference."
+  },
+  "comparison": {
+    "fl2vaFirstOnlyMetalPeakGiB": 11.84,
+    "source": "h3-memory-gate-review-2026-10-28.json"
+  },
+  "renders": {
+    "first+last-288x288x22": {
+      "canvas": "288x288x22",
+      "task": "fl2va",
+      "anchors": "first,last",
+      "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
+      "deviceArchitecture": "h17c",
+      "renderSeconds": 85.5,
+      "metalPeakBytes": 5416402944,
+      "footprintPeakBytes": 2977171544,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964408832,
+          "footprintPeakBytes": 2172963048,
+          "seconds": 20.12
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2202353664,
+          "footprintPeakBytes": 2137049320,
+          "seconds": 2.9
+        },
+        "denoising": {
+          "metalPeakBytes": 2978201600,
+          "footprintPeakBytes": 2977171544,
+          "seconds": 49.76
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 5416402944,
+          "footprintPeakBytes": 1987348472,
+          "seconds": 8.18
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 774258688,
+          "footprintPeakBytes": 840844368,
+          "seconds": 4.52
+        }
+      },
+      "denoisingPhaseSeconds": [
+        20.82,
+        5.61,
+        5.77,
+        5.8,
+        3.73,
+        2.68,
+        2.68,
+        2.67,
+        0
+      ],
+      "samples": 3885,
+      "timelineSHA256": "ab2b4dc6c8d892485fbba5f31c80c517fce532dd815d6f527d05f2e41abf7bb6"
+    },
+    "first+last-960x544x124": {
+      "canvas": "960x544x124",
+      "task": "fl2va",
+      "anchors": "first,last",
+      "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
+      "deviceArchitecture": "h17c",
+      "renderSeconds": 491.0,
+      "metalPeakBytes": 12975816704,
+      "footprintPeakBytes": 13475777824,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 1964408832,
+          "footprintPeakBytes": 2155301072,
+          "seconds": 20.55
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2203959296,
+          "footprintPeakBytes": 2025244880,
+          "seconds": 8.56
+        },
+        "denoising": {
+          "metalPeakBytes": 12975816704,
+          "footprintPeakBytes": 13475777824,
+          "seconds": 413.21
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 6366625792,
+          "footprintPeakBytes": 8631617768,
+          "seconds": 43.24
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 942030848,
+          "footprintPeakBytes": 1835370368,
+          "seconds": 5.49
+        }
+      },
+      "denoisingPhaseSeconds": [
+        56.96,
+        44.44,
+        50.83,
+        53.34,
+        51.93,
+        56.83,
+        49.77,
+        49.06,
+        0.05
+      ],
+      "samples": 20648,
+      "timelineSHA256": "308ad724d59118056367bb12987acad2186b9b85cb9cc90e857807b390536a52"
+    }
+  },
+  "keyframeAdherence288": {
+    "source": "the 288x288x22 first+last trajectory capture's decoded frames (seed 1043)",
+    "psnrDB": {
+      "frame0_vs_firstKeyframe": 32.46,
+      "lastFrame_vs_lastKeyframe": 30.79,
+      "lastFrame_vs_firstKeyframe": 13.75
+    },
+    "note": "The clip starts on the first keyframe and ends on the last one (the push-in), not on the first."
+  },
+  "keyframeAdherence960": {
+    "source": "the 960x544x124 first+last trajectory capture's decoded frames (seed 1043)",
+    "psnrDB": {
+      "frame0_vs_firstKeyframe": 31.89,
+      "lastFrame_vs_lastKeyframe": 34.83,
+      "lastFrame_vs_firstKeyframe": 10.34
+    },
+    "captureRender": {
+      "seconds": 547.0,
+      "stepSeconds": [
+        59.7,
+        56.8,
+        57.1,
+        58.1,
+        59.8,
+        65.8,
+        63.0,
+        59.4
+      ],
+      "keyframeEncoderSeconds": 8.7,
+      "sampledMetalPeakBytes": 12975816704,
+      "note": "With the qualification observer attached, which reads back every block's output; higher than the plain render above."
+    }
+  }
+}

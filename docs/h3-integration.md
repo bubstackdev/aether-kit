@@ -656,3 +656,37 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 **Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
 
+
+## Last-frame and first+last keyframes (2026-10-29)
+
+`H3VideoSession` accepts `H3VideoRequest.lastFrame` alone or together with `firstFrame`. A clip can therefore end on a chosen picture, or start and end on chosen pictures. The model card lists the FL2VA checkpoint as taking zero, one or two images, and the pinned Diffusers pipeline runs all of these as the single `fl2va` task:
+
+- **Layout.** There is one condition block per keyframe, in packed order (first, then last), between the text and the audio. The last anchor sits at the rotary time of the last latent frame, `n + Σspans − 5/3`. `H3Layout` already built this, and its fixtures match the pipeline for both layouts.
+- **Noise.** Each condition is noised to `t = 0.999` by its own draw (`MiniMaxH3PrepareConditionLatentsStep`). The draws come in packed order and precede the noise for the generated rows. `H3Geometry.initialLatents(seed:first:last:)` draws Kit's stream in the same order. A first frame alone draws exactly the stream the first-frame path always drew.
+- **Timesteps.** Every condition row is held at `max(t, 0.999)`, so a last-only or first+last request has the same distinct row timesteps as a first-only one. The profile's `fl2va` step tables apply unchanged, and `H3Profile.steps` still checks them bit for bit against the layout.
+- **Encoding.** Both keyframes use the same single-frame encode (`encode_vae_condition`, seed 42), so the tiled first-frame graphs encode the last frame too. The session runs one `encodingKeyframe` stage for both, first then last.
+
+No export, step table or download is new. A last-only request has the same row count as a first-only one, so the latents now declare their anchors (`H3Latents.anchors`) and the denoiser lays them out from that, not from the row count.
+
+**Conditioner presentation (pre-existing gap, unchanged).** Upstream's `MiniMaxH3FL2VATextEncoderStep` puts a `"<Picture i>: "` label and a Qwen3-VL vision block per keyframe, tagged as video, in front of the prompt. Kit's conditioner presents the prompt alone for every FL2VA request, first-frame ones included. The graph and trajectory gates fed both sides the same text-only ids, so they could not catch the difference. Closing it needs the Qwen3-VL vision tower and M-RoPE for vision tokens in the conditioner graph.
+
+**Memory and time** ([record](evidence/h3-last-frame-memory-2026-10-29.json)). These are `h3-memory-render` runs on profile `5af39db5…`, Turbo8, seed 1043, with the crane keyframe as the first frame. The last frame is a synthetic camera push-in (the centre 60% of the same picture). The host was busy, so the times are not a quiet reference.
+
+| Stage, Metal / footprint GiB (wall s) | 288×288×22 | 960×544×124 |
+| --- | --- | --- |
+| Conditioner | 1.83 / 2.02 (20.1) | 1.83 / 2.01 (20.6) |
+| Keyframe encoder, both frames | 2.05 / 1.99 (2.9) | 2.05 / 1.89 (8.6) |
+| Denoising | 2.77 / 2.77 (49.9) | **12.08** / 12.55 (413.3) |
+| Video decode | 5.04 / 1.85 (8.2) | 5.93 / 8.04 (43.2) |
+| Audio decode | 0.72 / 0.78 (4.5) | 0.88 / 1.71 (5.5) |
+| Render | 85.5 s | 491 s |
+
+At 960×544 the first+last render peaks at 12.08 GiB Metal, against 11.84 GiB for a first frame alone (2026-10-28 gate). The two keyframes add 510 rows (20,353 against 19,843). The bundled measured entry admits the denoising stage at 16.12 GiB, which covers this, so admission is unchanged.
+
+**Keyframe adherence.** In the 960×544 first+last render, the first frame matches the first keyframe at 31.9 dB PSNR and the last frame matches the last keyframe at 34.8 dB; the last frame against the first keyframe is 10.3 dB. At 288×288 the figures are 32.5, 30.8 and 13.8 dB. The clip starts on one picture and ends on the other.
+
+**Trajectory gates.** `qualify-h3-profile-trajectory.py` takes `--last-keyframe`. For FL2VA it now also compares the captured step-0 condition rows with the pipeline's own VAE encode and noising, in anchor order (`step0/conditions`).
+
+- At 288×288×22 first+last (all eight steps), the replay matches all 457 boundary hashes. The condition rows match at 0.023% relative L2, and packing, block 0, heads and scheduler updates pass. Block 49 measures 3.4–4.3% against the bf16 CPU module, which is over the 0.02 limit, and 3.8–4.3% against float32.
+- A control run of the already-qualified first-only path at the same canvas gives 4.4–5.0% for block 49 ([first+last](evidence/h3-last-frame-trajectory-288-first-last-2026-10-29.json), [first-only control](evidence/h3-last-frame-trajectory-288-first-only-control-2026-10-29.json)). So block 49 at 288×288 exceeds the limit with or without a last frame. It is a property of the small canvas (852 rows), not of this change. The limit is qualified at 960×544.
+- At 960×544×124 first+last (20,353 rows, steps 0, 1 and 7 referenced), the capture and its replay agree on all 457 boundary hashes, and the layout and step-plan checks against the pipeline all pass. Step 0 passes every comparison: condition rows 0.021%, packing 0.0015%, block 0 0.59%, block 49 1.15%, video heads 0.17%, audio heads 0.19%, and both scheduler updates byte-identical. For comparison, the first-only gate at this canvas measured 0.70% and 0.62% for blocks 0 and 49 at the same step. The first oracle run was stopped from outside after step 0 (SIGTERM; [its step-0 record](evidence/h3-last-frame-oracle-960-step0-interrupted-2026-10-29.json)). It is being rerun from the passed capture and replay, and steps 1 and 7 will be added from that gate record.

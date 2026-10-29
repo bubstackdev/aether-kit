@@ -1,0 +1,116 @@
+{
+  "fields": {
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "dump": "<scratch>/trajectory-fl-960/dump-fl2va",
+    "oracle_sha256": "03454d57b319edff32736ea224ef9a3b2090ee5da86f83f208f13eb184acde21",
+    "part": "trajectory",
+    "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "run": "<scratch>/trajectory-fl-960/capture-fl2va",
+    "snapshot": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "steps": "0,1,7",
+    "torch": "2.13.0"
+  },
+  "report": {
+    "comparisons": {
+      "step0/block00": {
+        "byte_identical": false,
+        "cosine": 0.9999831204593992,
+        "finite": true,
+        "max_abs": 512.0,
+        "native_sha256": "62f0a52ee8878d39b6364d5563eac18ffca3d32a1eceed760963810bb92d144b",
+        "reference_max_abs": 128000.0,
+        "reference_sha256": "840549168eb8eb110e1676158a93050be64078e1abb6a315fb944c1ac327e28d",
+        "relative_l2": 0.0059406586922335445
+      },
+      "step0/block49": {
+        "byte_identical": false,
+        "cosine": 0.9999341816607181,
+        "finite": true,
+        "max_abs": 9952.0,
+        "native_sha256": "b03d9c5d765f3ba829fa752f0b8d82b8c2c302db13ad22222e9ffcc5adcd90f4",
+        "reference_max_abs": 11337728.0,
+        "reference_sha256": "1a1a111dd18a0d2ec825bbc73cfb086da267064f7c4d60e19182808703162832",
+        "relative_l2": 0.011477653166323347
+      },
+      "step0/conditions": {
+        "anchors": "first,last",
+        "cosine": 0.9999999773803,
+        "finite": true,
+        "max_abs": 0.0015485286712646484,
+        "reference_max_abs": 3.8541922569274902,
+        "relative_l2": 0.000212696710888512,
+        "rows": 1020
+      },
+      "step0/heads_audio": {
+        "byte_identical": false,
+        "cosine": 0.9999981469290259,
+        "finite": true,
+        "max_abs": 0.009032368659973145,
+        "native_sha256": "3910727d26df5e9c9f25eeb7d0914d60ef5085e631d67c11edb847484baf5fc8",
+        "reference_max_abs": 4.061285495758057,
+        "reference_sha256": "afcc5f267df2f4e452976033e80541672c67928ef5bcd7349033acd697233cc4",
+        "relative_l2": 0.001925148834095765
+      },
+      "step0/heads_video": {
+        "byte_identical": false,
+        "cosine": 0.9999985705300629,
+        "finite": true,
+        "max_abs": 0.013405561447143555,
+        "native_sha256": "4d01b155acee67635c0bb94e1d81f1e82a785235a1951b4e64d418a5619cb193",
+        "reference_max_abs": 7.238693714141846,
+        "reference_sha256": "d95061f36c1d9dccbe4fd22fc18d75cfbf16cfd28d4be15c97de8358b2f2b9b2",
+        "relative_l2": 0.0016959714901294111
+      },
+      "step0/latents_out_audio": {
+        "byte_identical": true,
+        "cosine": 0.999999999999992,
+        "finite": true,
+        "max_abs": 0.0,
+        "native_sha256": "f5fe5e8c8ca198694cb7fe9eb864e9009ecc114ca59f5526e1bb3ce1f53c701a",
+        "reference_max_abs": 3.804986000061035,
+        "reference_sha256": "f5fe5e8c8ca198694cb7fe9eb864e9009ecc114ca59f5526e1bb3ce1f53c701a",
+        "relative_l2": 0.0
+      },
+      "step0/latents_out_video": {
+        "byte_identical": true,
+        "cosine": 0.9999999999997972,
+        "finite": true,
+        "max_abs": 0.0,
+        "native_sha256": "6e2f3aa7c2449018242d2488c2fc68471289eab09b4d7a0fdab0919db1c3c19e",
+        "reference_max_abs": 5.339222431182861,
+        "reference_sha256": "6e2f3aa7c2449018242d2488c2fc68471289eab09b4d7a0fdab0919db1c3c19e",
+        "relative_l2": 0.0
+      },
+      "step0/packed": {
+        "byte_identical": false,
+        "cosine": 0.9999999998924445,
+        "finite": true,
+        "max_abs": 0.0625,
+        "native_sha256": "c53d38458169a71cc8e497730df009e799dd30010715f66ed03d5e7bf1d674fd",
+        "reference_max_abs": 105.5,
+        "reference_sha256": "50e870c27b17b9c0193ff044d69ef3e5476be8a3e73e83edf1897986b36119f3",
+        "relative_l2": 1.5070059530222548e-05
+      }
+    },
+    "float32_diagnostics": {},
+    "layout": {
+      "audio_indices": true,
+      "positions": true,
+      "step0": true,
+      "step1": true,
+      "step2": true,
+      "step3": true,
+      "step4": true,
+      "step5": true,
+      "step6": true,
+      "step7": true,
+      "text_indices": true,
+      "token_tags": true,
+      "video_indices": true
+    },
+    "step0_block00_seconds": 1127.9,
+    "step0_block49_seconds": 696.1,
+    "step0_seconds": 1828.1
+  },
+  "tensors": {}
+}
