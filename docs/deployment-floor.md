@@ -89,8 +89,8 @@ without CoreAI (macOS 15)** job runs `Scripts/launch-floor-consumer.sh` on a Git
 no CoreAI framework, and requires `AetherLanguage availability: unsupportedOS`. That job is part of the **CI passed**
 gate.
 
-**No macOS 14 launch.** The job ran on `macos-14` until GitHub retired that image (2026-11-02); macOS 15 is the
-oldest hosted OS left. It still proves the CoreAI link is weak and the facade reports `unsupportedOS` below 27. What
+**No macOS 14 launch.** The job ran on `macos-14` until GitHub began retiring that image (fully retired on
+2026-11-02); macOS 15 is the oldest hosted OS left. It still proves the CoreAI link is weak and the facade reports `unsupportedOS` below 27. What
 covers macOS 14 itself is the build: every product builds at macOS 14, the consumer reports macOS 14 as its minimum OS,
 and every strong load command is on the floor OS's allow-list. A call to an API newer than macOS 14 but present on 15
 would still launch here, so the compiler's availability checking at the macOS 14 target is what catches it.
