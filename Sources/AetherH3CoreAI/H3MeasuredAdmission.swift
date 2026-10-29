@@ -13,12 +13,14 @@ extension H3ProfileEngine {
     /// still available once the operation is reserved, is refused before any stage loads; capacity taken by others
     /// mid-run can still refuse a later stage. The bar binds only sessions created with this admission. An unmeasured combination has no estimate
     /// and throws: only profile/device pairs recorded in `h3-measured-resources.json` are admitted (other Macs are
-    /// refused, not estimated). Pass the result to `H3VideoSession(stages:resources:gpu:)` together with the host's
+    /// refused, not estimated). An identity with several recorded entries holds each request to the cheapest entry
+    /// whose canvases and maximum frames cover it. Pass the result to `H3VideoSession(stages:resources:gpu:)` together with the host's
     /// `GPUAdmission` owner: the operation and every stage reservation are then taken only after the GPU grant.
     public static func measuredAdmission(profile: H3Profile, recipe: String = "turbo8", coordinator: ResourceCoordinator,
                                          maximumPromptUTF8Bytes: Int = 16_384) throws -> H3ResourceAdmission {
-        try H3MeasuredResources.bundled(executionIdentity: resourceIdentity(profile: profile, recipe: recipe),
-                                        deviceArchitecture: deviceArchitecture)
-            .admission(coordinator: coordinator, maximumPromptUTF8Bytes: maximumPromptUTF8Bytes)
+        try H3MeasuredResources.admission(
+            entries: H3MeasuredResources.bundledEntries(executionIdentity: resourceIdentity(profile: profile, recipe: recipe),
+                                                        deviceArchitecture: deviceArchitecture),
+            coordinator: coordinator, maximumPromptUTF8Bytes: maximumPromptUTF8Bytes)
     }
 }

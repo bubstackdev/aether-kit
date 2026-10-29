@@ -3,6 +3,10 @@ import AetherKit
 /// Caller-qualified maxima for one exact execution identity. Stage bytes must include model loading,
 /// native scratch, reusable buffers and both streamed weight banks. Operation bytes cover overlapping
 /// CPU intermediates across stages. These are estimates, not measured footprint or allocator limits.
+///
+/// One identity can carry several envelopes (`init(envelopes:)`), each with its own limits and estimates, such as a
+/// small canvas measured at a long clip and a large canvas at a short one. A request is held to the cheapest envelope
+/// that covers it, so a combination no envelope covers (the large canvas at the long clip) is refused.
 public struct H3ResourceAdmission: Sendable {
     public let coordinator: ResourceCoordinator
     public let executionIdentity: String
@@ -11,6 +15,8 @@ public struct H3ResourceAdmission: Sendable {
     public let maximumFrames: Int
     public let maximumPromptUTF8Bytes: Int
     private let stages: [H3VideoStage: UInt64]
+    /// The envelopes a combined admission chooses from; empty for a single envelope.
+    private let envelopes: [H3ResourceAdmission]
 
     public init(coordinator: ResourceCoordinator, executionIdentity: String, operationBytes: UInt64,
                 stageBytes: [H3VideoStage: UInt64], maximumPixels: Int, maximumFrames: Int,
@@ -23,7 +29,38 @@ public struct H3ResourceAdmission: Sendable {
         }
         self.coordinator = coordinator; self.executionIdentity = executionIdentity; self.operationBytes = operationBytes
         self.maximumPixels = maximumPixels; self.maximumFrames = maximumFrames; self.maximumPromptUTF8Bytes = maximumPromptUTF8Bytes
-        stages = stageBytes
+        stages = stageBytes; envelopes = []
+    }
+
+    /// Several single envelopes for one identity and coordinator. The combined maxima are the largest of any envelope;
+    /// each request is checked and reserved against the cheapest envelope that covers it.
+    public init(envelopes: [H3ResourceAdmission]) throws {
+        guard let first = envelopes.first,
+              envelopes.allSatisfy({ $0.envelopes.isEmpty && $0.executionIdentity == first.executionIdentity && $0.coordinator === first.coordinator }) else {
+            throw AetherError.invalidRequest("H3 resource envelopes must be single envelopes of one identity and coordinator")
+        }
+        coordinator = first.coordinator; executionIdentity = first.executionIdentity
+        operationBytes = envelopes.map(\.operationBytes).max()!
+        maximumPixels = envelopes.map(\.maximumPixels).max()!; maximumFrames = envelopes.map(\.maximumFrames).max()!
+        maximumPromptUTF8Bytes = envelopes.map(\.maximumPromptUTF8Bytes).max()!
+        stages = envelopes.reduce(into: [:]) { all, e in all.merge(e.stages, uniquingKeysWith: max) }
+        self.envelopes = envelopes.count == 1 ? [] : envelopes
+    }
+
+    /// The single envelope `request` is held to: the cheapest (operation plus largest needed stage) that covers it.
+    func envelope(for request: H3VideoRequest) throws -> H3ResourceAdmission {
+        guard !envelopes.isEmpty else { return self }
+        guard let chosen = envelopes.filter({ $0.covers(request) })
+            .min(by: { $0.operationBytes + $0.peakStageBytes(request) < $1.operationBytes + $1.peakStageBytes(request) }) else {
+            throw AetherError.invalidRequest("H3 request exceeds or lacks a stage in its resource profile")
+        }
+        return chosen
+    }
+
+    private func covers(_ request: H3VideoRequest) -> Bool {
+        request.geometry.width * request.geometry.height <= maximumPixels
+            && request.geometry.frames <= maximumFrames && request.prompt.utf8.count <= maximumPromptUTF8Bytes
+            && (!request.audio || stages[.decodingAudio] != nil) && (request.firstFrame == nil || stages[.encodingKeyframe] != nil)
     }
 
     /// Before anything is reserved: the request is within the profile's limits, every stage it needs has an estimate
@@ -31,10 +68,8 @@ public struct H3ResourceAdmission: Sendable {
     /// largest of those stages fits the coordinator's capacity, so a run that can never fit is refused before any
     /// stage loads.
     func check(_ request: H3VideoRequest) throws {
-        guard request.geometry.width * request.geometry.height <= maximumPixels,
-              request.geometry.frames <= maximumFrames, request.prompt.utf8.count <= maximumPromptUTF8Bytes,
-              !request.audio || stages[.decodingAudio] != nil,
-              request.firstFrame == nil || stages[.encodingKeyframe] != nil else {
+        guard envelopes.isEmpty else { return try envelope(for: request).check(request) }
+        guard covers(request) else {
             throw AetherError.invalidRequest("H3 request exceeds or lacks a stage in its resource profile")
         }
         let needed = operationBytes + peakStageBytes(request)

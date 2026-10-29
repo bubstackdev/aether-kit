@@ -82,11 +82,27 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         return file.entries
     }
 
-    /// The recorded entry for this identity and device; there is no estimate for an unmeasured combination.
+    /// The first recorded entry for this identity and device; there is no estimate for an unmeasured combination.
+    /// An identity measured at several canvas and length envelopes has one entry per envelope (`bundledEntries`).
     public static func bundled(executionIdentity: String, deviceArchitecture: String) throws -> H3MeasuredResources {
-        guard let entry = try bundled().first(where: { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }) else {
-            throw AetherError.unsupported("no measured H3 memory for \(executionIdentity) on \(deviceArchitecture)")
+        try bundledEntries(executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture)[0]
+    }
+
+    /// Every recorded entry for this identity and device, in file order; throws when there is none.
+    public static func bundledEntries(executionIdentity: String, deviceArchitecture: String) throws -> [H3MeasuredResources] {
+        let entries = try bundled().filter { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }
+        guard !entries.isEmpty else { throw AetherError.unsupported("no measured H3 memory for \(executionIdentity) on \(deviceArchitecture)") }
+        return entries
+    }
+
+    /// One admission over several entries of the same identity and device: each request is held to the cheapest
+    /// entry whose canvases and maximum frames cover it, so a canvas and length no single entry measured is refused.
+    public static func admission(entries: [H3MeasuredResources], coordinator: ResourceCoordinator,
+                                 maximumPromptUTF8Bytes: Int = 16_384) throws -> H3ResourceAdmission {
+        guard let first = entries.first,
+              entries.allSatisfy({ $0.executionIdentity == first.executionIdentity && $0.deviceArchitecture == first.deviceArchitecture }) else {
+            throw AetherError.invalidModel("H3 measured entries must share one identity and device")
         }
-        return entry
+        return try H3ResourceAdmission(envelopes: entries.map { try $0.admission(coordinator: coordinator, maximumPromptUTF8Bytes: maximumPromptUTF8Bytes) })
     }
 }
