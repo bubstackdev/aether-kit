@@ -1,0 +1,81 @@
+{
+  "displayName" : "Qwen3 0.6B",
+  "manifest" : {
+    "assetIdentity" : "aether-language/1:b2cc16629598a87b16598d4e2d8e1485856bd1b46264c21526154772f00fc568",
+    "executionContract" : "aether.language-bundle/1",
+    "files" : [
+      {
+        "byteCount" : 1278,
+        "path" : "language-model.json",
+        "sha256" : "b2cc16629598a87b16598d4e2d8e1485856bd1b46264c21526154772f00fc568"
+      },
+      {
+        "byteCount" : 32,
+        "path" : "model.aimodel/main.hash",
+        "sha256" : "e1011a8d2f3c9510b4e74077584b488f445d910a05b54b5108ab14d54c0bcefa"
+      },
+      {
+        "byteCount" : 1192475653,
+        "path" : "model.aimodel/main.mlirb",
+        "sha256" : "d1c7232962eb5a6f1f31b71cfce03f734a43476ec90558deb7aab012504ff734"
+      },
+      {
+        "byteCount" : 105,
+        "path" : "model.aimodel/metadata.json",
+        "sha256" : "111d8e9e43e915a2705dc53e75615ed1ba4dfc2fb4585d7198e0c2c428691902"
+      },
+      {
+        "byteCount" : 11343,
+        "path" : "tokenizer/LICENSE",
+        "sha256" : "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+      },
+      {
+        "byteCount" : 726,
+        "path" : "tokenizer/config.json",
+        "sha256" : "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd"
+      },
+      {
+        "byteCount" : 239,
+        "path" : "tokenizer/generation_config.json",
+        "sha256" : "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2"
+      },
+      {
+        "byteCount" : 1671853,
+        "path" : "tokenizer/merges.txt",
+        "sha256" : "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      {
+        "byteCount" : 11422654,
+        "path" : "tokenizer/tokenizer.json",
+        "sha256" : "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      },
+      {
+        "byteCount" : 9732,
+        "path" : "tokenizer/tokenizer_config.json",
+        "sha256" : "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101"
+      },
+      {
+        "byteCount" : 2776833,
+        "path" : "tokenizer/vocab.json",
+        "sha256" : "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    ],
+    "requiredFeatures" : [
+
+    ],
+    "schemaVersion" : 1
+  },
+  "requirements" : {
+    "memoryBytes" : 230686720,
+    "platforms" : [
+      "ios"
+    ]
+  },
+  "schemaVersion" : 1,
+  "source" : {
+    "kind" : "huggingFace",
+    "repository" : "aether-models/aether-kit-qwen3-0.6b",
+    "revision" : "7757d22bff5df7e106f7492a12d7278347aa3fb0",
+    "subdirectory" : "ios"
+  }
+}

@@ -71,7 +71,7 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
           shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-ci-host.sh Scripts/check-floor.sh \
-            Scripts/launch-floor-consumer.sh Scripts/check-api.sh
+            Scripts/launch-floor-consumer.sh Scripts/check-api.sh Examples/SampleApp/make-catalog.sh
 
   # The four Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
   floor-macos:
@@ -202,6 +202,10 @@ jobs:
         run: |
           swift run --package-path Examples/LocalPackage --force-resolved-versions -c release \
             2>&1 | tee "$RUNNER_TEMP/aether-ci/sdk-consumer.log"
+      - name: Sample app logic
+        run: |
+          swift test --package-path Examples/SampleApp/SampleAppCore --force-resolved-versions \
+            2>&1 | tee "$RUNNER_TEMP/aether-ci/sample-app-core.log"
       - name: Preserve diagnostics and test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

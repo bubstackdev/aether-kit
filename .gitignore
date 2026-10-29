@@ -14,3 +14,4 @@ Examples/LanguageDevice/LanguageDeviceProbe.xcodeproj/
 .worktrees/
 Forge/.venv/
 Forge/h3-oracle/.venv/
+Examples/SampleApp/SampleApp.xcodeproj/
