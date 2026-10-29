@@ -32,6 +32,8 @@ public struct H3VideoRequest: Sendable {
         self.prompt = prompt; self.geometry = geometry; self.seed = seed
         self.firstFrame = firstFrame; self.lastFrame = lastFrame; self.audio = audio
     }
+    /// Whether the request conditions on a first frame, a last frame or both (FL2VA).
+    public var hasKeyframes: Bool { firstFrame != nil || lastFrame != nil }
 }
 
 /// Planar stereo float PCM at 32 kHz, as the source audio VAE returns it.
@@ -101,7 +103,8 @@ public protocol H3AudioDecoder: Sendable {
     func release() async
 }
 
-/// Encodes a first-frame keyframe (RGB8 at the clip size) into normalized condition latents `[1,24,1,H/16,W/16]` f32.
+/// Encodes one keyframe, first or last (RGB8 at the clip size), into normalized condition latents `[1,24,1,H/16,W/16]`
+/// f32. Both anchors use the same single-frame encode.
 public protocol H3KeyframeEncoder: Sendable {
     /// Whether an encoder exists for this canvas; the session refuses other canvases before any stage runs.
     func supports(_ geometry: H3Geometry) -> Bool
@@ -177,9 +180,8 @@ public actor H3VideoSession {
 
     private func startRun(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler) throws -> Task<H3VideoResult, any Error> {
         guard let stages else { throw AetherError.sessionClosed }
-        guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
-        guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
-        if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
+        guard !request.hasKeyframes || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
+        if request.hasKeyframes, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
         }
         // A request is checked and reserved against the one envelope that covers it.
@@ -238,12 +240,18 @@ public actor H3VideoSession {
             try Task.checkCancellation()
             var initial = try geometry.initialLatents(seed: request.seed)
             var conditionRows = 0
-            if let keyframe = request.firstFrame, let encoder = stages.keyframes {
+            if request.hasKeyframes, let encoder = stages.keyframes {
+                // One encoder stage for both keyframes, first then last (the pipeline's packed order).
                 try begin(.encodingKeyframe)
                 try await onEvent(.stageStarted(.encodingKeyframe))
-                let condition = try await encoder.encode(keyframe, geometry: geometry)
+                var first: H3TensorData?, last: H3TensorData?
+                if let keyframe = request.firstFrame { first = try await encoder.encode(keyframe, geometry: geometry) }
+                if let keyframe = request.lastFrame {
+                    try Task.checkCancellation()
+                    last = try await encoder.encode(keyframe, geometry: geometry)
+                }
                 await encoder.release(); finished(); try await onEvent(.stageReleased(.encodingKeyframe))
-                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: condition)
+                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: first, lastFrameCondition: last)
                 conditionRows = initial.video.spec.shape[1] - geometry.targetVideoRows
             }
             try begin(.denoising)

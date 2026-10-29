@@ -187,6 +187,65 @@ private struct TrajectoryKernels: H3DenoiserKernels {
     #expect(await calls.log.count == before)
 }
 
+/// Checks every block receives the anchored layout's rotary tables (a last anchor sits at another rotary time than a
+/// first one with the same row count).
+private struct RotaryCheckingKernels: H3DenoiserKernels {
+    let inner: TrajectoryKernels
+    let cos: Data, sin: Data
+    func refine(_ text: H3TensorData) async throws -> H3TensorData { try await inner.refine(text) }
+    func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
+        try await inner.pack(video: video, audio: audio, text: text, gather: gather)
+    }
+    func block(_ index: Int, hidden: H3TensorData, table: H3TensorData, tags: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        #expect(cos.bytes == self.cos && sin.bytes == self.sin)
+        return try await inner.block(index, hidden: hidden, table: table, tags: tags, cos: cos, sin: sin)
+    }
+    func heads(hidden: H3TensorData, temb: H3TensorData, indices: H3TensorData, videoIndices: H3TensorData, audioIndices: H3TensorData,
+               video: H3TensorSpec, audio: H3TensorSpec) async throws -> (video: H3TensorData, audio: H3TensorData) {
+        try await inner.heads(hidden: hidden, temb: temb, indices: indices, videoIndices: videoIndices, audioIndices: audioIndices, video: video, audio: audio)
+    }
+    func release() async { await inner.release() }
+}
+
+@Test(arguments: [[H3Anchor.first], [.last], [.first, .last]])
+func h3ProfileDenoiserLaysOutTheAnchorsTheLatentsDeclareAndNeverStepsTheirRows(_ anchors: [H3Anchor]) async throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let geometry = try H3Geometry(width: 64, height: 32, requestedFrames: 39, diagnostic: true)
+    let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: 4), anchors: anchors)
+    let schedule = try H3Schedule.turbo(steps: 4, videoShift: 12, audioShift: 3)
+    var steps: [H3Profile.Step] = []
+    for step in schedule.steps {
+        let k = layout.timesteps(for: step).values.count
+        let table = try file(root, "table-\(step.index)", bf16([Float](repeating: Float(step.index), count: 6 * 3 * k * 5376)), .bfloat16, [6, 3 * k, 5376])
+        let temb = try file(root, "temb-\(step.index)", [Float](repeating: Float(step.index), count: k * 2688).withUnsafeBytes { Data($0) }, .float32, [k, 2688])
+        steps.append(H3Profile.Step(timesteps: layout.timesteps(for: step).values, embedding: temb, tables: Array(repeating: table, count: 3)))
+    }
+    let frozen = steps
+    let condition = try h3Tensor([1, 24, 1, geometry.latentHeight, geometry.latentWidth],
+                                 [Float](repeating: 0.5, count: 24 * geometry.latentHeight * geometry.latentWidth))
+    let initial = try geometry.initialLatents(seed: 9, conditions: anchors.map { ($0, condition) })
+    let rotary = try layout.rotary()
+    let calls = Calls()
+    // Anchored layouts have two distinct row timesteps at step 0 and three afterwards.
+    let kernels = RotaryCheckingKernels(inner: TrajectoryKernels(calls: calls, layout: layout, cardinality: 3),
+                                        cos: rotary.cos.values.withUnsafeBytes { Data($0) }, sin: rotary.sin.values.withUnsafeBytes { Data($0) })
+    let denoiser = H3ProfileDenoiser(schedule: schedule, blocks: 3, tables: { got in
+        #expect(got.positions.values == layout.positions.values && got.conditionVideoRows == layout.conditionVideoRows)
+        return frozen
+    }, kernels: kernels)
+    let conditioning = try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, 4, 5120]), bytes: Data(count: 4 * 5120 * 2))
+    let result = try await denoiser.denoise(initial, conditioning: conditioning, geometry: geometry) { _, _ in }
+    #expect(result.anchors == anchors)
+    let anchorBytes = layout.conditionVideoRows * 96 * 4
+    #expect(result.video.bytes.prefix(anchorBytes) == initial.video.bytes.prefix(anchorBytes))
+    #expect(result.video.bytes.dropFirst(anchorBytes) != initial.video.bytes.dropFirst(anchorBytes))
+    // The same rows declared with no anchors no longer match the layout and are refused before any kernel runs.
+    let before = await calls.log.count
+    let undeclared = try H3Latents(video: initial.video, audio: initial.audio)
+    await #expect(throws: AetherError.self) { _ = try await denoiser.denoise(undeclared, conditioning: conditioning, geometry: geometry) { _, _ in } }
+    #expect(await calls.log.count == before)
+}
+
 private actor Observations {
     private(set) var events: [String] = []
     private(set) var first: H3Latents?, last: H3Latents?

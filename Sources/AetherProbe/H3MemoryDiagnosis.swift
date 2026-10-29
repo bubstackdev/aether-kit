@@ -135,10 +135,7 @@ enum H3MemoryDiagnosis {
         let ids = try Data(contentsOf: dump.appendingPathComponent(manifest.tensors["ids"]!.file))
         let tokens = ids.withUnsafeBytes { Array($0.bindMemory(to: Int32.self)) }
         let geometry = try H3Geometry(width: Int(f["width"]!)!, height: Int(f["height"]!)!, requestedFrames: Int(f["frames"]!)!, diagnostic: true)
-        var first: H3Keyframe? = nil
-        if let entry = manifest.tensors["keyframe"] {
-            first = try H3Keyframe(width: geometry.width, height: geometry.height, rgb: [UInt8](Data(contentsOf: dump.appendingPathComponent(entry.file))))
-        }
+        let keyframes = try H3ProfileCommand.dumpKeyframes(dump, geometry: geometry)
         let device = MTLCreateSystemDefaultDevice()
         let timeline = H3MemoryTimeline(device: device)
         // The capture goes beside NEW_DIR (written last) so the render's own output stays unchanged.
@@ -152,7 +149,8 @@ enum H3MemoryDiagnosis {
         timeline.mark("open")
         let stages = try H3ProfileEngine.stages(profile: profile, recipe: f["recipe"]!, tokenize: { _ in tokens })
         let session = H3VideoSession(stages: stages)
-        let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: UInt64(f["seed"]!)!, firstFrame: first, audio: true)
+        let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: UInt64(f["seed"]!)!, firstFrame: keyframes.first,
+                                         lastFrame: keyframes.last, audio: true)
         _ = try await session.generate(request) { event in
             switch event {
             case .stageStarted(let stage): timeline.mark("stage.\(stage.rawValue)")
@@ -167,7 +165,7 @@ enum H3MemoryDiagnosis {
                                              "execution_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: f["recipe"]!),
                                              "device_architecture": H3ProfileEngine.deviceArchitecture,
                                              "width": f["width"]!, "height": f["height"]!, "frames": f["frames"]!,
-                                             "task": manifest.tensors["keyframe"] == nil ? "t2va" : "fl2va",
+                                             "task": f["anchors"] == nil ? "t2va" : "fl2va", "anchors": f["anchors"] ?? "",
                                              "spike_capture_bytes": spikeCapture.map(String.init) ?? "off",
                                              "spike_captured": trigger?.fired == true ? spikeDirectory.lastPathComponent : "no"])
         print(output.path)

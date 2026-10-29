@@ -215,10 +215,8 @@ actor H3ProfileDenoiser: H3Denoiser {
         guard conditioning.spec.scalarType == .bfloat16, conditioning.spec.shape.count == 3, conditioning.spec.shape[0] == 1,
               conditioning.spec.shape[2] == 5120 else { throw AetherError.invalidTensor("H3 conditioning must be the [1,T,5120] bf16 tap") }
         let t = conditioning.spec.shape[1]
-        // Keyframe anchors lead the video rows: none (T2VA) or one first frame (FL2VA).
-        let frameRows = (geometry.latentHeight / 2) * (geometry.latentWidth / 2)
-        let anchors: [H3Anchor] = initial.video.spec.shape[1] == geometry.targetVideoRows + frameRows ? [.first] : []
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: t), anchors: anchors)
+        // Keyframe anchors lead the video rows: none (T2VA), or first, last or both (FL2VA), as the latents declare them.
+        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: t), anchors: initial.anchors)
         guard initial.video.spec.shape == [1, layout.videoIndices.count, 96],
               initial.audio.spec.shape == [1, layout.audioIndices.count, 32] else {
             throw AetherError.invalidTensor("H3 initial latents differ from the layout")

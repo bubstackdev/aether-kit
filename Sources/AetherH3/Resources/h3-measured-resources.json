@@ -11,13 +11,13 @@
       "maximum_frames": 124,
       "stage_peak_bytes": {
         "encoding": 2162936400,
-        "encodingKeyframe": 2201501696,
+        "encodingKeyframe": 2203959296,
         "denoising": 17307844608,
         "decodingVideo": 9077197896,
         "decodingAudio": 2023590384
       },
       "operation_bytes": 201326592,
-      "evidence": "docs/evidence/h3-memory-gate-review-2026-10-28.json"
+      "evidence": "docs/evidence/h3-memory-gate-review-2026-10-28.json; encodingKeyframe raised to the first+last peak in docs/evidence/h3-last-frame-memory-2026-10-29.json"
     }
   ]
 }
