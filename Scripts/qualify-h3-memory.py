@@ -40,6 +40,15 @@ def sha(path):
     return h.hexdigest()
 
 
+def scrub(value):
+    """A record for the public repository: this Mac's home directory and volumes become placeholders."""
+    text = json.dumps(value)
+    text = text.replace(str(Path.home()), "<home>")
+    for volume in sorted(Path("/Volumes").glob("*"), key=lambda v: -len(str(v))):
+        text = text.replace(str(volume), "<volume>")
+    return json.loads(text)
+
+
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -198,7 +207,7 @@ def main():
         failures.append(f"renders disagree on identity/device: {identities} {architectures}")
     # Peaks observed by earlier gates that this entry must still cover (for example a transient this gate did not see).
     # Only a passed gate on the same device architecture can be carried; each carried record is pinned by its SHA-256.
-    carried_peaks, carried_records = [], []
+    carried_peaks, carried_records, carried_stage_bytes = [], [], {}
     for record_path in args.carry_peaks:
         earlier = json.loads(record_path.read_text())
         earlier_device = earlier["measuredResources"]["device_architecture"]
@@ -210,6 +219,7 @@ def main():
                                     executionIdentity=earlier["measuredResources"]["execution_identity"]))
         for render_name, render in earlier["renders"].items():
             for k, v in render["stages"].items():
+                carried_stage_bytes[k] = max(carried_stage_bytes.get(k, 0), v["residentPeakBytes"])
                 if v["residentPeakBytes"] > stage_peaks.get(k, 0):
                     carried_peaks.append(dict(stage=k, bytes=v["residentPeakBytes"], render=render_name, record=record_path.name,
                                               recordSHA256=sha(record_path),
@@ -251,6 +261,10 @@ def main():
                 for k, v in render["stages"].items():
                     peaks[k] = max(peaks.get(k, 0), v["residentPeakBytes"])
                 carried_bytes = max(carried_bytes, render["carriedStateBytes"])
+        # Carried records cover every task: an earlier record's peak for a stage this task uses must still be reserved.
+        for k, carried in carried_stage_bytes.items():
+            if k in peaks:
+                peaks[k] = max(peaks[k], carried)
         task_worst = max(peaks.values()) + MARGIN + carried_bytes
         if task_worst > bar:
             failures.append(f"{task} admission estimate {task_worst / (1 << 30):.2f} GiB exceeds the {bar >> 30} GiB bar")
@@ -273,7 +287,8 @@ def main():
         record = root / "docs/evidence" / args.record
         if record.exists():
             raise SystemExit(f"{record} already exists; choose a new record name")
-        record.write_text(json.dumps(gate, indent=2) + "\n")
+        # The repository copy is scrubbed of local paths (the work directory keeps the raw gate.json).
+        record.write_text(json.dumps(scrub(gate), indent=2) + "\n")
     print(json.dumps(dict(passed=gate["passed"], failures=failures, worstGiB=round(worst / (1 << 30), 3),
                           renders={k: v["metalPeakGiB"] for k, v in renders.items()}), indent=2), flush=True)
     return 0 if gate["passed"] else 1

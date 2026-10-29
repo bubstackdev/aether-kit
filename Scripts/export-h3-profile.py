@@ -808,6 +808,10 @@ def main():
             raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
         bundle, meta = json.loads(base_path.read_text()), json.loads((out / "build.json").read_text())
         assert bundle["schema"] == 3 and bundle["complete"], "overlay needs a complete schema-3 base"
+        # Only these build.json records become bundle entries; anything else would be silently dropped, so refuse it.
+        unhandled = set(meta) - {"schema", "snapshot", "diffusers_commit", "video_encoder_first_tiled", "audio_decoder_fixed"}
+        if unhandled:
+            raise SystemExit(f"overlay does not add build.json records {sorted(unhandled)}; export them into a separate OUTPUT")
         entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
         def checked(item):
             assert h.sha256_file(Path(item["path"]) / "main.mlirb") == item["sha256"], item["path"]

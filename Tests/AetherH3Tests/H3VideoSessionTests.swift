@@ -694,9 +694,11 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
         _ = try entry(["960x544"], frames: 124, denoising: 20 * gib, bar: H3MeasuredResources.extendedMemoryBarBytes)
     }
     #expect(throws: AetherError.self) {                                                                                   // over 24 GiB
-        _ = try entry(["1280x704"], frames: 141, denoising: 23_900 * (1 << 20), bar: H3MeasuredResources.extendedMemoryBarBytes)
+        _ = try entry(["1280x704"], frames: 141, denoising: 24_100 * (1 << 20), bar: H3MeasuredResources.extendedMemoryBarBytes)   // + 512 MiB > 24 GiB
     }
     #expect(throws: AetherError.self) { _ = try entry(["1280x704"], frames: 141, denoising: gib, bar: 20 << 30) }       // unknown bar
+    _ = try entry(["1280x704"], frames: 141, denoising: 23_800 * (1 << 20), bar: H3MeasuredResources.extendedMemoryBarBytes)    // 24,312 MiB fits
+    #expect(throws: AetherError.self) { _ = try entry(["1344x800"], frames: 124, denoising: gib) }                     // over the pixel cap
     let large = try request(1280, 704, 141), long = try request(960, 544, 243)
     // Below 64 GiB: today's region still runs; the extended entries are refused, naming the requirement.
     let small = try H3MeasuredResources.admission(entries: [today, canvas, clip], coordinator: budget, physicalMemoryBytes: 32 << 30)
@@ -719,10 +721,30 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     #expect(try big.envelope(for: large) == canvas.envelope() && big.envelope(for: request(704, 1280, 141)) == canvas.envelope())
     #expect(try big.envelope(for: long) == clip.envelope() && big.envelope(for: request(960, 544, 141)) == canvas.envelope())
     #expect(try big.envelope(for: request(960, 544, 124)) == today.envelope())
+    // A 24 GiB envelope never covers today's region, even alone and even where its canvases would.
+    let extendedOnly = try H3MeasuredResources.admission(entries: [canvas, clip], coordinator: budget, physicalMemoryBytes: 64 << 30)
+    for inside in [try request(960, 544, 124), try request(640, 352, 39), try request(960, 544, 39)] {
+        #expect(!(try canvas.envelope()).covers(inside) && !(try clip.envelope()).covers(inside) && !extendedOnly.admits(inside))
+    }
+    #expect(extendedOnly.admits(try request(960, 544, 141)))
     // Never measured: the long clip in portrait, a canvas wider than any measured, the large canvas at the long clip,
     // and FL2VA where only T2VA was measured.
     for r in [try request(544, 960, 243), try request(1408, 640, 141), try request(1280, 704, 158), try request(1280, 704, 141, first: true)] {
         #expect(!big.admits(r))
+    }
+}
+
+@Test func h3SingleEntryLookupCountsRecordedEntriesBeforeTheMemoryFilter() throws {
+    let today = try entry(["960x544"], frames: 124, denoising: 11 * gib)
+    let extended = try entry(["1280x704"], frames: 141, denoising: 20 * gib, bar: H3MeasuredResources.extendedMemoryBarBytes)
+    for memory: UInt64 in [64 << 30, 32 << 30] {
+        #expect(throws: AetherError.self) {
+            _ = try H3MeasuredResources.entry([today, extended], executionIdentity: "fixture/1", deviceArchitecture: "fixture", physicalMemoryBytes: memory)
+        }
+    }
+    #expect(try H3MeasuredResources.entry([today], executionIdentity: "fixture/1", deviceArchitecture: "fixture") == today)
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources.entry([extended], executionIdentity: "fixture/1", deviceArchitecture: "fixture", physicalMemoryBytes: 32 << 30)
     }
 }
 
@@ -735,7 +757,7 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     #expect(encoded["memory_bar_bytes"] == nil && encoded["tasks"] == nil)
     let extended = try entry(["960x544"], frames: 243, denoising: 20 * gib, tasks: [.t2va], keyframe: false, bar: H3MeasuredResources.extendedMemoryBarBytes)
     #expect(try JSONDecoder().decode(H3MeasuredResources.self, from: JSONEncoder().encode(extended)) == extended)
-    for path in ["/Volumes/x/gate.json", "~/gate.json"] {
+    for path in ["/Volumes/x/gate.json", "~/gate.json", "unrecorded"] {
         #expect(throws: AetherError.self) {
             _ = try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124,
                                         stagePeakBytes: ["encoding": 1, "denoising": 2, "decodingVideo": 3], operationBytes: 4, evidence: path)
@@ -757,8 +779,9 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
 }
 
 /// Not opt-in: the bundled entry for the qualified tiled-encoder profile in its Kit-owned home (memory gate, both
-/// orientations, T2VA and FL2VA) decodes and is admitted exactly as before envelopes, on any device memory.
-@Test func h3BundledQualifiedEntryIsAdmittedUnchanged() throws {
+/// orientations, T2VA and FL2VA) keeps its 18 GiB bar and reservations on any device memory. Coverage is narrower than
+/// before envelopes: a canvas must fit inside 960x544 or 544x960, so 1024x480, 640x800 and 576x576 are now refused.
+@Test func h3BundledQualifiedEntryKeepsItsBarAndReservations() throws {
     let identity = "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8"
     let recorded = try H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: "h17c", physicalMemoryBytes: 8 << 30)
     #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
@@ -777,4 +800,6 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     let first = try request(960, 544, 124, first: true, audio: true), portrait = try request(544, 960, 124, audio: true)
     let longer = try request(960, 544, 141), larger = try request(1280, 704, 124)
     #expect(admission.admits(first) && admission.admits(portrait) && !admission.admits(longer) && !admission.admits(larger))
+    let wide = try request(1024, 480, 124), tall = try request(640, 800, 124), square = try request(576, 576, 124)
+    #expect(!admission.admits(wide) && !admission.admits(tall) && !admission.admits(square))
 }

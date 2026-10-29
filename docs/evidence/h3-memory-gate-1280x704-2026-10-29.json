@@ -528,7 +528,7 @@
     "parent": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
     "identity": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe"
   },
-  "candidateEntriesByTask": {
+  "measuredEntriesByTask": {
     "t2va": {
       "entry": {
         "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
@@ -584,5 +584,17 @@
       "label": "text-only presentation (known deviation, PR #76); provisional, not bundleable until re-measured with the keyframe vision blocks"
     }
   },
-  "candidateNote": "Per-task entries derived from this record's renders under the 24 GiB bar (decided 2026-10-29). They are keyed to the overlay identity measured here; bundled entries are measured under the final top identity, not copied."
+  "measuredEntriesNote": "Per-task entries derived from this record's renders under the 24 GiB bar (decided 2026-10-29). They are keyed to the overlay identity measured here; bundled entries are measured under the final top identity, not copied.",
+  "editedAfterRun": {
+    "note": "This record was written by Scripts/qualify-h3-memory.py at the scriptSHA256 shown (the script before per-task entries, region bars and scrubbing) and then edited by hand. After the pause, the current script's evaluation is re-run over the same joined renders (no re-render) to replace it with a script-generated record.",
+    "fields": [
+      "note",
+      "measuredResources.evidence (rewritten from the work directory's gate.json)",
+      "profileAdapter",
+      "profileLineage",
+      "measuredEntriesByTask",
+      "measuredEntriesNote",
+      "local paths replaced by placeholders throughout"
+    ]
+  }
 }

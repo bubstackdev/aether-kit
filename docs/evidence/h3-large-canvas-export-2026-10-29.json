@@ -324,5 +324,14 @@
  "profileLineage": {
   "parent": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
   "identity": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe"
+ },
+ "editedAfterRun": {
+  "note": "Assembled by hand from the export's build.json, bundle.json and /usr/bin/time logs.",
+  "fields": [
+   "the whole record",
+   "profileAdapter",
+   "profileLineage",
+   "local paths replaced by placeholders throughout"
+  ]
  }
 }

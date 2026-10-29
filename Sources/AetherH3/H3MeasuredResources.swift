@@ -102,9 +102,10 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     public func validate() throws {
         guard !executionIdentity.isEmpty, !deviceArchitecture.isEmpty, (1...360).contains(maximumFrames), operationBytes > 0,
               !canvases.isEmpty, canvases.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }), tasks?.isEmpty != true,
+              canvases.allSatisfy({ $0.split(separator: "x").map { Int($0)! }.reduce(1, *) <= 1_032_192 }),
               stagePeakBytes.keys.allSatisfy({ H3VideoStage(rawValue: $0) != nil }), stagePeakBytes.values.allSatisfy({ $0 > 0 }),
               Set(["encoding", "denoising", "decodingVideo"]).isSubset(of: Set(stagePeakBytes.keys)),
-              !evidence.isEmpty, !evidence.hasPrefix("/"), !evidence.hasPrefix("~") else {
+              !evidence.isEmpty, evidence != "unrecorded", !evidence.hasPrefix("/"), !evidence.hasPrefix("~") else {
             throw AetherError.invalidModel("invalid H3 measured resource entry")
         }
         guard [Self.memoryBarBytes, Self.extendedMemoryBarBytes].contains(memoryBarBytes) else {
@@ -191,16 +192,24 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         try entries(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: physicalMemoryBytes)
     }
 
-    /// The one bundled entry this device may use for this identity. Throws when there is none, or when several
-    /// match: an identity with several entries is admitted through `bundledAdmission`.
+    /// The one entry of `entries` recorded for this identity and device, if this device's physical memory allows it.
+    /// Throws when none is recorded, when several are (counted before the memory filter, so the answer does not depend
+    /// on the device), or when the one recorded needs more physical memory.
+    public static func entry(_ entries: [H3MeasuredResources], executionIdentity: String, deviceArchitecture: String,
+                             physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
+        let recorded = entries.filter { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }
+        guard recorded.count <= 1 else {
+            throw AetherError.invalidRequest("\(recorded.count) measured H3 entries for \(executionIdentity); use bundledAdmission")
+        }
+        return try Self.entries(recorded, executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture,
+                                physicalMemoryBytes: physicalMemoryBytes)[0]
+    }
+
+    /// The one bundled entry this device may use for this identity (see `entry(_:executionIdentity:deviceArchitecture:physicalMemoryBytes:)`);
+    /// an identity with several entries is admitted through `bundledAdmission`.
     public static func bundled(executionIdentity: String, deviceArchitecture: String,
                                physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
-        let matching = try bundledEntries(executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture,
-                                          physicalMemoryBytes: physicalMemoryBytes)
-        guard matching.count == 1 else {
-            throw AetherError.invalidRequest("\(matching.count) measured H3 entries for \(executionIdentity); use bundledAdmission")
-        }
-        return matching[0]
+        try entry(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: physicalMemoryBytes)
     }
 
     /// The admission over every bundled entry for this identity and device. Entries this device's physical memory does

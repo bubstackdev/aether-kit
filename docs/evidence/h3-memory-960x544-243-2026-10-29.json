@@ -3,7 +3,7 @@
   "record": "h3-memory-960x544-243",
   "date": "2026-10-29",
   "passed": false,
-  "summary": "960x544 at 243 frames (10.1 s) on profile 34c0c67e (the 5af39db5 overlay with a 405-latent audio decoder). The T2VA render completed: denoising plateaus at 20.22 GiB Metal / 21.26 GiB footprint, over the 18 GiB bar. The FL2VA render was stopped by SIGTERM twice, 4-6 minutes into the render, from outside this run (the lock log records the wrapper as interrupted); it has no timeline.",
+  "summary": "960x544 at 243 frames (10.1 s) on profile 34c0c67e (the 5af39db5 overlay with a 405-latent audio decoder). The T2VA render completed: denoising plateaus at 20.22 GiB Metal / 21.26 GiB footprint, held as a long-clip entry to the 24 GiB bar (worst case 21.76 GiB). The FL2VA render was stopped during a pause in other work (SIGTERM, exit -15; its controller record is below) and has no timeline; FL2VA x243 has no entry until it is re-measured.",
   "fields": {
     "device_architecture": "h17c",
     "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
@@ -258,7 +258,7 @@
     "parent": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
     "identity": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe"
   },
-  "candidateEntriesByTask": {
+  "measuredEntriesByTask": {
     "t2va": {
       "entry": {
         "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
@@ -285,5 +285,16 @@
       "withinExtendedBar": true
     }
   },
-  "candidateNote": "Stage peaks are the gate's own attribution (largest max(Metal, footprint) sample per stage, from the full timeline whose SHA-256 is recorded) and operation bytes the gate's carried-state formula over this render's dump. Keyed to the overlay identity measured here; bundled entries are measured under the final top identity, not copied. FL2VA x243 has no complete record and no entry."
+  "measuredEntriesNote": "Stage peaks are the gate's own attribution (largest max(Metal, footprint) sample per stage, from the full timeline whose SHA-256 is recorded) and operation bytes the gate's carried-state formula over this render's dump. Keyed to the overlay identity measured here; bundled entries are measured under the final top identity, not copied. FL2VA x243 has no complete record and no entry.",
+  "editedAfterRun": {
+    "note": "The gate run did not finish (its FL2VA render was stopped), so it wrote no gate record. This record was assembled by hand from the T2VA timeline, the dump and the controller records, using the gate's own stage attribution and carried-state formula. After the pause, the current script's evaluation is re-run over the joined renders (no re-render) to replace it with a script-generated record.",
+    "fields": [
+      "the whole record",
+      "profileAdapter",
+      "profileLineage",
+      "measuredEntriesByTask",
+      "measuredEntriesNote",
+      "local paths replaced by placeholders throughout"
+    ]
+  }
 }

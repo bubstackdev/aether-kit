@@ -662,7 +662,7 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 The user decided this on 2026-10-29, with the Kit lead's terms. Each measured entry is held to its own bar, on the same measure as before: the Metal allocation peak over a complete render, sampled every 20 ms. Admission holds the entry's worst case to that bar: the largest per-stage max(Metal, footprint) sample, plus the 256 MiB margin and the operation bytes (`H3MeasuredResources.validate()`). The measured peak governs.
 
 - **18 GiB** covers today's region: 960×544, 544×960 and anything smaller, up to 124 frames. Entries without a `memory_bar_bytes` field decode to 18 GiB, so the bundled 0.0.3 entry is unchanged.
-- **24 GiB** covers a larger canvas (more pixels than 960×544) or a longer clip (more than 124 frames), and nothing else. `validate()` refuses a 24 GiB claim on an entry inside today's region.
+- **24 GiB** covers a larger canvas (more pixels than 960×544) or a longer clip (more than 124 frames), and nothing else. `validate()` refuses a 24 GiB claim on an entry inside today's region, and a 24 GiB envelope never covers a request inside it, even where its canvases would.
 - **24 GiB entries need at least 64 GiB of physical memory** (`ProcessInfo.physicalMemory`, on iOS too). On a smaller device, `bundledEntries` leaves them out, and a request that only they cover is refused with the requirement named.
 - **Every entry comes from a measured record.** Nothing is interpolated or extrapolated.
 
@@ -676,10 +676,13 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 - So a landscape-only 960×544×243 entry doesn't cover 544×960×243, and nothing covers 1408×640.
 - Smaller canvases stay covered by 960×544. 960×544 at 125–141 frames falls under a 1280×704×141 entry.
 - The request is held to one covering envelope that the device's memory allows, 18 GiB entries first, then the cheapest. A request that no envelope covers is refused, naming the nearest envelope.
+- Coverage is narrower than before envelopes, when any canvas up to the entry's pixel count was admitted. Under the 0.0.3 entry, 1024×480, 640×800 and 576×576 are now refused.
+- `H3MeasuredResources.bundled(executionIdentity:deviceArchitecture:)` counts the recorded entries before the memory filter, and throws when there are several; `bundledAdmission` takes them all.
+- `validate()` also refuses canvases over the 1,032,192-pixel cap and the gate's `unrecorded` evidence.
 - `maximumPixels`, `maximumFrames` and `operationBytes` on an admission are union bounds for diagnostics. A UI offers what `admits(_:)` allows, not their combination.
 - Per-task entries let an FL2VA entry be re-measured and replaced without touching T2VA's. The memory gate writes one entry per task beside the combined one (`measuredEntriesByTask`).
 
-**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
+**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. They were written or edited by hand after the runs (each lists the fields in `editedAfterRun`); once the pause ends, the current gate script's evaluation is re-run over the same renders, with no re-render, so the records become script-generated. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
 
 ## Larger canvas: 1280×704 and the 10 s clip (0.0.4, in progress)
 

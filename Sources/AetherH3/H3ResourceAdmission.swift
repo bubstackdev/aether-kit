@@ -44,10 +44,14 @@ public struct H3ResourceAdmission: Sendable {
         /// The request's task (FL2VA with a first frame, else T2VA) is listed, every stage it needs has a reservation,
         /// its length is at most `maximumFrames`, and its canvas fits inside a listed canvas of the same orientation
         /// (width and height each at most the listed ones; a square canvas on either side matches any orientation).
-        /// An envelope without listed canvases covers any canvas up to `maximumPixels`.
+        /// An envelope without listed canvases covers any canvas up to `maximumPixels`. An envelope above the 18 GiB bar
+        /// never covers a request inside today's region (at most 960x544's pixels and 124 frames), which stays under
+        /// 18 GiB entries.
         public func covers(_ request: H3VideoRequest) -> Bool {
             let w = request.geometry.width, h = request.geometry.height
             let task: H3Profile.Task = request.firstFrame == nil ? .t2va : .fl2va
+            let insideToday = w * h <= H3MeasuredResources.baselinePixels && request.geometry.frames <= H3MeasuredResources.baselineFrames
+            guard memoryBarBytes <= H3MeasuredResources.memoryBarBytes || !insideToday else { return false }
             guard tasks.contains(task), request.geometry.frames <= maximumFrames,
                   !request.audio || stageBytes[.decodingAudio] != nil,
                   request.firstFrame == nil || stageBytes[.encodingKeyframe] != nil else { return false }
