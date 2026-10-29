@@ -223,8 +223,8 @@ One model value is shared by its sessions. It loads the backend and tokenizer on
 
 The facade links and launches on macOS 14 and iOS 17, the package floor, and reports "unsupported OS" there. The
 [deployment floor](deployment-floor.md) covers how: the Core AI targets are gated at OS 27 declaration by declaration,
-`CoreAI` and FoundationModels link weakly because every reference to them is gated, and CI launches a floor consumer of
-`AetherLanguage` on a macOS 14 runner, requiring `.unsupportedOS`.
+`CoreAI` and FoundationModels link weakly because every reference to them is gated, and CI builds a floor consumer of
+`AetherLanguage` at macOS 14 and launches it on a macOS 15 runner, which has no CoreAI, requiring `.unsupportedOS`.
 
 **Choosing the backend at runtime.** `AetherLanguage` depends on `AetherLanguageCoreAI` in SwiftPM, but calls it only
 inside `if #available(macOS 27, iOS 27, *)`. Otherwise `availability` is `.unavailable(.unsupportedOS)`, and requests

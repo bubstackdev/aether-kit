@@ -11,7 +11,7 @@ A pull request that changes only documentation (`docs/`, top-level Markdown, `LI
 | Package floor (macOS 14) | `xcode-27` (Apple silicon), Xcode 27.1 | `Scripts/check-floor.sh --macos`: `annotate-floor.py --check`, every product at macOS 14, and `Examples/FloorConsumer` weak-linking CoreAI, which it runs and stages for the launch job. |
 | Package floor (iOS 17) | `xcode-27`, Xcode 27.1 | `Scripts/check-floor.sh --ios`: every library at iOS 17, and the floor consumer's iOS 17 device build weak-linking CoreAI. |
 | Release contracts and consumers | `xcode-27`, Xcode 27.1 | The complete weight-free Release suite built at macOS 27, then `Examples/Foundations` and `Examples/LocalPackage` as separate consumer packages. |
-| Launch at the macOS 14 floor | `macos-14` (Apple silicon) | The floor consumer staged by the macOS floor job launches on macOS 14, which has no CoreAI, and prints `AetherLanguage availability: unsupportedOS` ([deployment floor](deployment-floor.md)). |
+| Launch without CoreAI (macOS 15) | `macos-15` (Apple silicon) | The macOS 14 floor consumer staged by the macOS floor job launches on macOS 15, which has no CoreAI, and prints `AetherLanguage availability: unsupportedOS`. GitHub retires its `macos-14` image on 2026-11-02, so nothing launches it on macOS 14 itself ([deployment floor](deployment-floor.md)). |
 | **CI passed** | `ubuntu-24.04` | Change scope and workflow validation succeeded, and every Swift job succeeded, or, for a PR the change scope cleared, every Swift job was skipped. A failed or cancelled job, or a skip anywhere else, cannot produce a passing gate. |
 
 The three `xcode-27` jobs run in parallel, each from a clean checkout, so a run takes about as long as its slowest job rather than the sum.
