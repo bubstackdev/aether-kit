@@ -47,6 +47,8 @@ enum ProbeGPULease {
             return count == 8 && mode(at: 7, gpu: ["--run"])
         case "reply-installed":
             return count == 4
+        case "qualify-lifecycle":
+            return count == 4 && Int(arguments[3]).map { (1...600).contains($0) } == true
         default:
             return false
         }

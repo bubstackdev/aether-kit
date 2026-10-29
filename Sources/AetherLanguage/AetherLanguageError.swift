@@ -11,7 +11,8 @@ public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
     case busy
     /// The model was unloaded while this request ran.
     case closed
-    /// The device lacks the memory to grow the model's cache (iOS).
+    /// The device lacks the memory to grow the model's cache (iOS), or memory pressure is critical, so the model won't
+    /// load until it eases (docs/model-lifecycle.md).
     case insufficientMemory
     /// The request is malformed (for example reasoning asked of a model without it).
     case invalidRequest(String)
@@ -29,7 +30,7 @@ public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
             "The prompt (\(prompt) tokens) and output limit (\(output)) exceed the model's context (\(limit))"
         case .busy: "This session already has a request in progress"
         case .closed: "The language model was unloaded"
-        case .insufficientMemory: "Not enough memory to continue generating"
+        case .insufficientMemory: "Not enough memory to load the model or continue generating"
         case .invalidRequest(let reason): "Invalid request: \(reason)"
         case .unsupportedSchema(let reason): "Unsupported schema: \(reason)"
         case .decodingFailure(let reason): "The reply did not decode: \(reason)"

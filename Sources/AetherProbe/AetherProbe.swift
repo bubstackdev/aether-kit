@@ -50,6 +50,7 @@ struct AetherProbe {
             \(CatalogEntryCommand.usage.split(separator: "\n").map { "  " + $0 }.joined(separator: "\n"))
             \(PrepareModelCommand.usage.split(separator: "\n").map { "  " + $0 }.joined(separator: "\n"))
             \(ReadinessCommand.usage.split(separator: "\n").map { "  " + $0 }.joined(separator: "\n"))
+              \(LifecycleCommand.usage)
 
             smoke expects Forge's float32 affine fixture: y = x * 2 + 1, shape [1, 4].
             inspect specializes/loads the model; it is not a static file inspection.
@@ -58,11 +59,13 @@ struct AetherProbe {
             catalog-entry prints the pinned catalog entry an app prepares the bundle from (docs/model-preparation.md).
             prepare-model qualifies preparation over HTTPS (HF_TOKEN for a gated repository); reply-installed opens the
             installation through the language facade and is a GPU command. readiness prints the states a model's
-            readiness passes through (docs/model-readiness.md); CPU and network only.
+            readiness passes through (docs/model-readiness.md); CPU and network only. qualify-lifecycle drives a
+            language model through idle unload, a simulated pressure release and a refused load (docs/model-lifecycle.md).
 
-            GPU commands (inspect, smoke, render-krea, render-krea-batch, parity-krea, h3-profile-run,
-            h3-profile-decode, h3-memory-render, h3-memory-encoder, qualify-h3-session-lifecycle, and the other
-            qualify-h3*, benchmark-krea and benchmark-flux2 modes other than --prepare-only) take the
+            GPU commands (inspect, smoke, reply-installed, qualify-lifecycle, render-krea, render-krea-batch,
+            parity-krea, h3-profile-run, h3-profile-decode, h3-memory-render, h3-memory-encoder,
+            qualify-h3-session-lifecycle, and the other qualify-h3*, benchmark-krea and benchmark-flux2 modes other than
+            --prepare-only) take the
             shared GPU lease /tmp/atelier-gpu.lock themselves, waiting while Atelier or another tool holds it.
             Malformed commands print their usage error without waiting.
               AETHER_GPU_LEASE=off              do not take the lease (special cases only)
@@ -76,6 +79,7 @@ struct AetherProbe {
         if try CatalogEntryCommand.run(arguments) { return }
         if try await PrepareModelCommand.run(arguments) { return }
         if try await ReadinessCommand.run(arguments) { return }
+        if try await LifecycleCommand.run(arguments) { return }
         if try await H3ProfileCommand.run(arguments) { return }
         if try await H3MemoryDiagnosis.run(arguments) { return }
         if try await H3SessionLifecycleCommand.run(arguments) { return }

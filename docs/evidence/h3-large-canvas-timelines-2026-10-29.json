@@ -1,0 +1,1280 @@
+{
+ "schema": 1,
+ "record": "h3-large-canvas-timelines",
+ "date": "2026-10-29",
+ "summary": "Per-phase summaries of every completed large-canvas and long-clip render timeline (20 ms samples of Metal allocation and physical footprint), with each full timeline's SHA-256 and the dump's exact row and token counts. Stage seconds are sums of a stage's phases, as the session reports them; steps are the eight denoising phases. Busy host.",
+ "renders": {
+  "t2va-1280x704": {
+   "gateRecord": "<scratch>/aether-kit-h3-large-canvas/gate-1280x704-141",
+   "timelineSHA256": "4f90356a620472456320848e25091fe0c256f54650510516be12aee77619bd68",
+   "samples": 45691,
+   "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "141",
+    "height": "704",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "t2va",
+    "width": "1280"
+   },
+   "dump": {
+    "rows": 37479,
+    "tokens": 49,
+    "frames": 141,
+    "width": 1280,
+    "height": 704,
+    "anchors": null
+   },
+   "phases": [
+    {
+     "phase": "baseline",
+     "seconds": 1.001,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21250624,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21250624,
+     "samples": 44
+    },
+    {
+     "phase": "open",
+     "seconds": 0,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21250624,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21250624,
+     "samples": 1
+    },
+    {
+     "phase": "stage.encoding",
+     "seconds": 21.409,
+     "metalPeakBytes": 1964408832,
+     "footprintPeakBytes": 2152270080,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 1954185216,
+     "footprintEndBytes": 2151860480,
+     "samples": 917
+    },
+    {
+     "phase": "released.encoding",
+     "seconds": 0.021,
+     "metalPeakBytes": 2818048,
+     "footprintPeakBytes": 2140948736,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2818048,
+     "footprintEndBytes": 2018363648,
+     "samples": 2
+    },
+    {
+     "phase": "stage.denoising",
+     "seconds": 141.912,
+     "metalPeakBytes": 21189689344,
+     "footprintPeakBytes": 21409877256,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 16726659032,
+     "samples": 5958
+    },
+    {
+     "phase": "stage.denoising.after-step1",
+     "seconds": 132.9,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22758821848,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21064683504,
+     "samples": 5530
+    },
+    {
+     "phase": "stage.denoising.after-step2",
+     "seconds": 139.175,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22778220528,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21065256944,
+     "samples": 5773
+    },
+    {
+     "phase": "stage.denoising.after-step3",
+     "seconds": 130.054,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22778761200,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21606256624,
+     "samples": 5410
+    },
+    {
+     "phase": "stage.denoising.after-step4",
+     "seconds": 117.55,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22780923888,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21606584304,
+     "samples": 4951
+    },
+    {
+     "phase": "stage.denoising.after-step5",
+     "seconds": 117.109,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22781136880,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21606846448,
+     "samples": 4791
+    },
+    {
+     "phase": "stage.denoising.after-step6",
+     "seconds": 116.507,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22781431792,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21607108616,
+     "samples": 4590
+    },
+    {
+     "phase": "stage.denoising.after-step7",
+     "seconds": 112.771,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22781628400,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 19692732416,
+     "footprintEndBytes": 21202587632,
+     "samples": 4709
+    },
+    {
+     "phase": "stage.denoising.after-step8",
+     "seconds": 0.033,
+     "metalPeakBytes": 19692732416,
+     "footprintPeakBytes": 21202587632,
+     "metalStartBytes": 19692732416,
+     "metalEndBytes": 12731957248,
+     "footprintEndBytes": 19553521072,
+     "samples": 3
+    },
+    {
+     "phase": "released.denoising",
+     "seconds": 0,
+     "metalPeakBytes": 10226434048,
+     "footprintPeakBytes": 18471029448,
+     "metalStartBytes": 10226434048,
+     "metalEndBytes": 10226434048,
+     "footprintEndBytes": 18471029448,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingVideo",
+     "seconds": 63.343,
+     "metalPeakBytes": 10226434048,
+     "footprintPeakBytes": 18471029448,
+     "metalStartBytes": 10226434048,
+     "metalEndBytes": 384155648,
+     "footprintEndBytes": 2568423848,
+     "samples": 2664
+    },
+    {
+     "phase": "released.decodingVideo",
+     "seconds": 0,
+     "metalPeakBytes": 383975424,
+     "footprintPeakBytes": 2568407464,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 383975424,
+     "footprintEndBytes": 2568407464,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingAudio",
+     "seconds": 3.19,
+     "metalPeakBytes": 1166409728,
+     "footprintPeakBytes": 2568423848,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 1166278656,
+     "footprintEndBytes": 1174783488,
+     "samples": 132
+    },
+    {
+     "phase": "released.decodingAudio",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 443598120,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 443598120,
+     "samples": 1
+    },
+    {
+     "phase": "unload",
+     "seconds": 0,
+     "metalPeakBytes": 366673920,
+     "footprintPeakBytes": 443598120,
+     "metalStartBytes": 366673920,
+     "metalEndBytes": 366673920,
+     "footprintEndBytes": 443598120,
+     "samples": 1
+    },
+    {
+     "phase": "unloaded+0-5s",
+     "seconds": 5.002,
+     "metalPeakBytes": 366673920,
+     "footprintPeakBytes": 443598120,
+     "metalStartBytes": 366673920,
+     "metalEndBytes": 305856512,
+     "footprintEndBytes": 164250848,
+     "samples": 212
+    }
+   ],
+   "stageSeconds": {
+    "encoding": 21.409,
+    "denoising": 1008.011,
+    "decodingVideo": 63.343,
+    "decodingAudio": 3.19
+   },
+   "renderSeconds": 1095.953,
+   "denoisingStepSeconds": [
+    141.912,
+    132.9,
+    139.175,
+    130.054,
+    117.55,
+    117.109,
+    116.507,
+    112.771
+   ]
+  },
+  "fl2va-1280x704": {
+   "gateRecord": "<scratch>/aether-kit-h3-large-canvas/gate-1280x704-141",
+   "timelineSHA256": "0d026c829ec901c706bc444c792e7ecdb7518a76c1fc399f96dee80e17e08c8f",
+   "samples": 49692,
+   "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "141",
+    "height": "704",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "fl2va",
+    "width": "1280"
+   },
+   "dump": {
+    "rows": 38359,
+    "tokens": 49,
+    "frames": 141,
+    "width": 1280,
+    "height": 704,
+    "anchors": "first"
+   },
+   "phases": [
+    {
+     "phase": "baseline",
+     "seconds": 1.003,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234240,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234240,
+     "samples": 46
+    },
+    {
+     "phase": "open",
+     "seconds": 0.0,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234240,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234240,
+     "samples": 2
+    },
+    {
+     "phase": "stage.encoding",
+     "seconds": 19.836,
+     "metalPeakBytes": 1964425216,
+     "footprintPeakBytes": 2149714104,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 1964392448,
+     "footprintEndBytes": 2149714104,
+     "samples": 850
+    },
+    {
+     "phase": "released.encoding",
+     "seconds": 0.017,
+     "metalPeakBytes": 2818048,
+     "footprintPeakBytes": 2138441912,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2818048,
+     "footprintEndBytes": 2014415056,
+     "samples": 2
+    },
+    {
+     "phase": "stage.encodingKeyframe",
+     "seconds": 8.398,
+     "metalPeakBytes": 2201501696,
+     "footprintPeakBytes": 2047691536,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2153611264,
+     "footprintEndBytes": 1675085384,
+     "samples": 357
+    },
+    {
+     "phase": "released.encodingKeyframe",
+     "seconds": 0.029,
+     "metalPeakBytes": 1219510272,
+     "footprintPeakBytes": 1477542920,
+     "metalStartBytes": 1219510272,
+     "metalEndBytes": 1219510272,
+     "footprintEndBytes": 1355056088,
+     "samples": 3
+    },
+    {
+     "phase": "stage.denoising",
+     "seconds": 155.611,
+     "metalPeakBytes": 21946105856,
+     "footprintPeakBytes": 22044496000,
+     "metalStartBytes": 1219510272,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 21540327552,
+     "samples": 6410
+    },
+    {
+     "phase": "stage.denoising.after-step1",
+     "seconds": 134.669,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23292137600,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 22109704344,
+     "samples": 5614
+    },
+    {
+     "phase": "stage.denoising.after-step2",
+     "seconds": 135.262,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23308587160,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 20252884992,
+     "footprintEndBytes": 21835026584,
+     "samples": 5655
+    },
+    {
+     "phase": "stage.denoising.after-step3",
+     "seconds": 139.715,
+     "metalPeakBytes": 21645312000,
+     "footprintPeakBytes": 23215132824,
+     "metalStartBytes": 20252884992,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 21559005336,
+     "samples": 5853
+    },
+    {
+     "phase": "stage.denoising.after-step4",
+     "seconds": 134.952,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23306408088,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 22111113368,
+     "samples": 5707
+    },
+    {
+     "phase": "stage.denoising.after-step5",
+     "seconds": 131.14,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23708635600,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 22111391896,
+     "samples": 5483
+    },
+    {
+     "phase": "stage.denoising.after-step6",
+     "seconds": 135.204,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23310258304,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 22111752344,
+     "samples": 5513
+    },
+    {
+     "phase": "stage.denoising.after-step7",
+     "seconds": 126.518,
+     "metalPeakBytes": 22135439360,
+     "footprintPeakBytes": 23311126656,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 21630713856,
+     "footprintEndBytes": 21562609816,
+     "samples": 5276
+    },
+    {
+     "phase": "stage.denoising.after-step8",
+     "seconds": 0.045,
+     "metalPeakBytes": 21630713856,
+     "footprintPeakBytes": 21562609816,
+     "metalStartBytes": 21630713856,
+     "metalEndBytes": 14157709312,
+     "footprintEndBytes": 19834539512,
+     "samples": 3
+    },
+    {
+     "phase": "released.denoising",
+     "seconds": 0,
+     "metalPeakBytes": 11980701696,
+     "footprintPeakBytes": 18791205600,
+     "metalStartBytes": 11980701696,
+     "metalEndBytes": 11980701696,
+     "footprintEndBytes": 18791205600,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingVideo",
+     "seconds": 63.065,
+     "metalPeakBytes": 11980701696,
+     "footprintPeakBytes": 18791205600,
+     "metalStartBytes": 11980701696,
+     "metalEndBytes": 384679936,
+     "footprintEndBytes": 1310574152,
+     "samples": 2674
+    },
+    {
+     "phase": "released.decodingVideo",
+     "seconds": 0,
+     "metalPeakBytes": 383975424,
+     "footprintPeakBytes": 756761752,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 383975424,
+     "footprintEndBytes": 756761752,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingAudio",
+     "seconds": 0.677,
+     "metalPeakBytes": 1166540800,
+     "footprintPeakBytes": 1001735656,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 368246784,
+     "footprintEndBytes": 799458528,
+     "samples": 30
+    },
+    {
+     "phase": "released.decodingAudio",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 642925792,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 642925792,
+     "samples": 1
+    },
+    {
+     "phase": "unload",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 642925792,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 642925792,
+     "samples": 1
+    },
+    {
+     "phase": "unloaded+0-5s",
+     "seconds": 5.009,
+     "metalPeakBytes": 366673920,
+     "footprintPeakBytes": 642925792,
+     "metalStartBytes": 366673920,
+     "metalEndBytes": 1769472,
+     "footprintEndBytes": 157074584,
+     "samples": 210
+    }
+   ],
+   "stageSeconds": {
+    "encoding": 19.836,
+    "encodingKeyframe": 8.398,
+    "denoising": 1093.116,
+    "decodingVideo": 63.065,
+    "decodingAudio": 0.677
+   },
+   "renderSeconds": 1185.092,
+   "denoisingStepSeconds": [
+    155.611,
+    134.669,
+    135.262,
+    139.715,
+    134.952,
+    131.14,
+    135.204,
+    126.518
+   ],
+   "label": "text-only presentation (known deviation, PR #76): FL2VA without upstream's keyframe vision blocks; provisional"
+  },
+  "t2va-704x1280": {
+   "gateRecord": "<scratch>/aether-kit-h3-large-canvas/gate-1280x704-141",
+   "timelineSHA256": "53768fc950cb5f9fadadf48d6597e706a93acccf9a72de967045e242e3336355",
+   "samples": 43898,
+   "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "141",
+    "height": "1280",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "t2va",
+    "width": "704"
+   },
+   "dump": {
+    "rows": 37479,
+    "tokens": 49,
+    "frames": 141,
+    "width": 704,
+    "height": 1280,
+    "anchors": null
+   },
+   "phases": [
+    {
+     "phase": "baseline",
+     "seconds": 1.001,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234264,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234264,
+     "samples": 45
+    },
+    {
+     "phase": "open",
+     "seconds": 0,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234264,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234264,
+     "samples": 1
+    },
+    {
+     "phase": "stage.encoding",
+     "seconds": 22.363,
+     "metalPeakBytes": 1964408832,
+     "footprintPeakBytes": 2152253696,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 1964392448,
+     "footprintEndBytes": 2152188160,
+     "samples": 929
+    },
+    {
+     "phase": "released.encoding",
+     "seconds": 0.022,
+     "metalPeakBytes": 2818048,
+     "footprintPeakBytes": 2124237056,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2818048,
+     "footprintEndBytes": 1565951968,
+     "samples": 2
+    },
+    {
+     "phase": "stage.denoising",
+     "seconds": 130.78,
+     "metalPeakBytes": 21189689344,
+     "footprintPeakBytes": 21587218488,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 21175287808,
+     "footprintEndBytes": 21587218488,
+     "samples": 5286
+    },
+    {
+     "phase": "stage.denoising.after-step1",
+     "seconds": 110.801,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22758772792,
+     "metalStartBytes": 21175287808,
+     "metalEndBytes": 21175418880,
+     "footprintEndBytes": 21591199800,
+     "samples": 4624
+    },
+    {
+     "phase": "stage.denoising.after-step2",
+     "seconds": 114.29,
+     "metalPeakBytes": 21670674432,
+     "footprintPeakBytes": 22777843792,
+     "metalStartBytes": 21175418880,
+     "metalEndBytes": 19826950144,
+     "footprintEndBytes": 21335330896,
+     "samples": 4729
+    },
+    {
+     "phase": "stage.denoising.after-step3",
+     "seconds": 114.537,
+     "metalPeakBytes": 21175549952,
+     "footprintPeakBytes": 22684766288,
+     "metalStartBytes": 19826950144,
+     "metalEndBytes": 17805295616,
+     "footprintEndBytes": 19299717200,
+     "samples": 4739
+    },
+    {
+     "phase": "stage.denoising.after-step4",
+     "seconds": 114.431,
+     "metalPeakBytes": 21175779328,
+     "footprintPeakBytes": 22688223312,
+     "metalStartBytes": 17805295616,
+     "metalEndBytes": 19961167872,
+     "footprintEndBytes": 21457555536,
+     "samples": 4822
+    },
+    {
+     "phase": "stage.denoising.after-step5",
+     "seconds": 119.123,
+     "metalPeakBytes": 21175549952,
+     "footprintPeakBytes": 22687027280,
+     "metalStartBytes": 19961167872,
+     "metalEndBytes": 18344263680,
+     "footprintEndBytes": 19855265872,
+     "samples": 4970
+    },
+    {
+     "phase": "stage.denoising.after-step6",
+     "seconds": 119.744,
+     "metalPeakBytes": 21263630336,
+     "footprintPeakBytes": 22689747024,
+     "metalStartBytes": 18344263680,
+     "metalEndBytes": 19692732416,
+     "footprintEndBytes": 21204865104,
+     "samples": 5014
+    },
+    {
+     "phase": "stage.denoising.after-step7",
+     "seconds": 130.179,
+     "metalPeakBytes": 20187987968,
+     "footprintPeakBytes": 21686063496,
+     "metalStartBytes": 19692732416,
+     "metalEndBytes": 19692732416,
+     "footprintEndBytes": 21205061712,
+     "samples": 5539
+    },
+    {
+     "phase": "stage.denoising.after-step8",
+     "seconds": 0.076,
+     "metalPeakBytes": 19692732416,
+     "footprintPeakBytes": 21205061712,
+     "metalStartBytes": 19692732416,
+     "metalEndBytes": 11108237312,
+     "footprintEndBytes": 18488216336,
+     "samples": 5
+    },
+    {
+     "phase": "released.denoising",
+     "seconds": 0,
+     "metalPeakBytes": 10226434048,
+     "footprintPeakBytes": 15252048536,
+     "metalStartBytes": 10226434048,
+     "metalEndBytes": 10226434048,
+     "footprintEndBytes": 15252048536,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingVideo",
+     "seconds": 69.984,
+     "metalPeakBytes": 10226434048,
+     "footprintPeakBytes": 15252064920,
+     "metalStartBytes": 10226434048,
+     "metalEndBytes": 2127052800,
+     "footprintEndBytes": 2523844088,
+     "samples": 2944
+    },
+    {
+     "phase": "released.decodingVideo",
+     "seconds": 0,
+     "metalPeakBytes": 383975424,
+     "footprintPeakBytes": 2522646808,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 383975424,
+     "footprintEndBytes": 2522646808,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingAudio",
+     "seconds": 0.697,
+     "metalPeakBytes": 1166409728,
+     "footprintPeakBytes": 2753841912,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 368771072,
+     "footprintEndBytes": 498468352,
+     "samples": 31
+    },
+    {
+     "phase": "released.decodingAudio",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 497206520,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 497206520,
+     "samples": 1
+    },
+    {
+     "phase": "unload",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 497206520,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 497206520,
+     "samples": 1
+    },
+    {
+     "phase": "unloaded+0-5s",
+     "seconds": 5.001,
+     "metalPeakBytes": 366673920,
+     "footprintPeakBytes": 497206520,
+     "metalStartBytes": 366673920,
+     "metalEndBytes": 1769472,
+     "footprintEndBytes": 134743168,
+     "samples": 213
+    }
+   ],
+   "stageSeconds": {
+    "encoding": 22.363,
+    "denoising": 953.961,
+    "decodingVideo": 69.984,
+    "decodingAudio": 0.697
+   },
+   "renderSeconds": 1047.005,
+   "denoisingStepSeconds": [
+    130.78,
+    110.801,
+    114.29,
+    114.537,
+    114.431,
+    119.123,
+    119.744,
+    130.179
+   ]
+  },
+  "fl2va-704x1280": {
+   "gateRecord": "<scratch>/aether-kit-h3-large-canvas/gate-1280x704-141",
+   "timelineSHA256": "249f9416b0f9003454607355e178bc2d84f2c7a943db247b4855badc98c0ed1a",
+   "samples": 48659,
+   "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "141",
+    "height": "1280",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "fl2va",
+    "width": "704"
+   },
+   "dump": {
+    "rows": 38359,
+    "tokens": 49,
+    "frames": 141,
+    "width": 704,
+    "height": 1280,
+    "anchors": "first"
+   },
+   "phases": [
+    {
+     "phase": "baseline",
+     "seconds": 1.01,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234240,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234240,
+     "samples": 44
+    },
+    {
+     "phase": "open",
+     "seconds": 0.0,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21234240,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21234240,
+     "samples": 2
+    },
+    {
+     "phase": "stage.encoding",
+     "seconds": 23.238,
+     "metalPeakBytes": 1964408832,
+     "footprintPeakBytes": 2152106216,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 1964392448,
+     "footprintEndBytes": 2152024296,
+     "samples": 956
+    },
+    {
+     "phase": "released.encoding",
+     "seconds": 0.024,
+     "metalPeakBytes": 2818048,
+     "footprintPeakBytes": 2140915944,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2818048,
+     "footprintEndBytes": 1177437792,
+     "samples": 3
+    },
+    {
+     "phase": "stage.encodingKeyframe",
+     "seconds": 9.233,
+     "metalPeakBytes": 2201501696,
+     "footprintPeakBytes": 1728300616,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 1220886528,
+     "footprintEndBytes": 1676854280,
+     "samples": 384
+    },
+    {
+     "phase": "released.encodingKeyframe",
+     "seconds": 0.048,
+     "metalPeakBytes": 1219510272,
+     "footprintPeakBytes": 1676837896,
+     "metalStartBytes": 1219510272,
+     "metalEndBytes": 1219510272,
+     "footprintEndBytes": 1371751456,
+     "samples": 3
+    },
+    {
+     "phase": "stage.denoising",
+     "seconds": 141.684,
+     "metalPeakBytes": 21645295616,
+     "footprintPeakBytes": 21925629384,
+     "metalStartBytes": 1219510272,
+     "metalEndBytes": 21630566400,
+     "footprintEndBytes": 21538984112,
+     "samples": 5887
+    },
+    {
+     "phase": "stage.denoising.after-step1",
+     "seconds": 135.782,
+     "metalPeakBytes": 22135422976,
+     "footprintPeakBytes": 23289073840,
+     "metalStartBytes": 21630566400,
+     "metalEndBytes": 20114456576,
+     "footprintEndBytes": 21680541896,
+     "samples": 5636
+    },
+    {
+     "phase": "stage.denoising.after-step2",
+     "seconds": 124.269,
+     "metalPeakBytes": 20619182080,
+     "footprintPeakBytes": 22189396216,
+     "metalStartBytes": 20114456576,
+     "metalEndBytes": 20114456576,
+     "footprintEndBytes": 21695434952,
+     "samples": 5179
+    },
+    {
+     "phase": "stage.denoising.after-step3",
+     "seconds": 129.314,
+     "metalPeakBytes": 20619182080,
+     "footprintPeakBytes": 22185775616,
+     "metalStartBytes": 20114456576,
+     "metalEndBytes": 20114456576,
+     "footprintEndBytes": 21697007816,
+     "samples": 5307
+    },
+    {
+     "phase": "stage.denoising.after-step4",
+     "seconds": 132.94,
+     "metalPeakBytes": 20619182080,
+     "footprintPeakBytes": 22187348480,
+     "metalStartBytes": 20114456576,
+     "metalEndBytes": 20114325504,
+     "footprintEndBytes": 21697286344,
+     "samples": 5484
+    },
+    {
+     "phase": "stage.denoising.after-step5",
+     "seconds": 138.386,
+     "metalPeakBytes": 20619182080,
+     "footprintPeakBytes": 22187659776,
+     "metalStartBytes": 20114325504,
+     "metalEndBytes": 20114456576,
+     "footprintEndBytes": 21698482376,
+     "samples": 5717
+    },
+    {
+     "phase": "stage.denoising.after-step6",
+     "seconds": 135.476,
+     "metalPeakBytes": 20619182080,
+     "footprintPeakBytes": 22188790224,
+     "metalStartBytes": 20114456576,
+     "metalEndBytes": 17358798848,
+     "footprintEndBytes": 18943103176,
+     "samples": 5618
+    },
+    {
+     "phase": "stage.denoising.after-step7",
+     "seconds": 128.784,
+     "metalPeakBytes": 21631041536,
+     "footprintPeakBytes": 23219458248,
+     "metalStartBytes": 17358798848,
+     "metalEndBytes": 20391280640,
+     "footprintEndBytes": 21978239176,
+     "samples": 5373
+    },
+    {
+     "phase": "stage.denoising.after-step8",
+     "seconds": 0.051,
+     "metalPeakBytes": 20391280640,
+     "footprintPeakBytes": 21978239176,
+     "metalStartBytes": 20391280640,
+     "metalEndBytes": 11642372096,
+     "footprintEndBytes": 18809555872,
+     "samples": 4
+    },
+    {
+     "phase": "released.denoising",
+     "seconds": 0,
+     "metalPeakBytes": 10741284864,
+     "footprintPeakBytes": 18794269456,
+     "metalStartBytes": 10741284864,
+     "metalEndBytes": 10741284864,
+     "footprintEndBytes": 18794269456,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingVideo",
+     "seconds": 67.937,
+     "metalPeakBytes": 10741284864,
+     "footprintPeakBytes": 18794285840,
+     "metalStartBytes": 10741284864,
+     "metalEndBytes": 384679936,
+     "footprintEndBytes": 1640580920,
+     "samples": 2818
+    },
+    {
+     "phase": "released.decodingVideo",
+     "seconds": 0,
+     "metalPeakBytes": 383975424,
+     "footprintPeakBytes": 756499656,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 383975424,
+     "footprintEndBytes": 756499656,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingAudio",
+     "seconds": 0.651,
+     "metalPeakBytes": 1154482176,
+     "footprintPeakBytes": 998131224,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 817070080,
+     "footprintEndBytes": 819054104,
+     "samples": 29
+    },
+    {
+     "phase": "released.decodingAudio",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 518472952,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 518472952,
+     "samples": 1
+    },
+    {
+     "phase": "unload",
+     "seconds": 0,
+     "metalPeakBytes": 368181248,
+     "footprintPeakBytes": 518472952,
+     "metalStartBytes": 368181248,
+     "metalEndBytes": 368181248,
+     "footprintEndBytes": 518472952,
+     "samples": 1
+    },
+    {
+     "phase": "unloaded+0-5s",
+     "seconds": 5.004,
+     "metalPeakBytes": 366673920,
+     "footprintPeakBytes": 518472952,
+     "metalStartBytes": 366673920,
+     "metalEndBytes": 1769472,
+     "footprintEndBytes": 154027184,
+     "samples": 211
+    }
+   ],
+   "stageSeconds": {
+    "encoding": 23.238,
+    "encodingKeyframe": 9.233,
+    "denoising": 1066.686,
+    "decodingVideo": 67.937,
+    "decodingAudio": 0.651
+   },
+   "renderSeconds": 1167.745,
+   "denoisingStepSeconds": [
+    141.684,
+    135.782,
+    124.269,
+    129.314,
+    132.94,
+    138.386,
+    135.476,
+    128.784
+   ],
+   "label": "text-only presentation (known deviation, PR #76): FL2VA without upstream's keyframe vision blocks; provisional"
+  },
+  "t2va-960x544": {
+   "gateRecord": "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243",
+   "timelineSHA256": "289e42d901a19651f4994800ed42c19627361cbaa046f15418542d08497aa7b2",
+   "samples": 49842,
+   "fields": {
+    "device_architecture": "h17c",
+    "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+    "frames": "243",
+    "height": "544",
+    "mode": "render",
+    "profile_sha256": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe",
+    "spike_capture_bytes": "off",
+    "spike_captured": "no",
+    "task": "t2va",
+    "width": "960"
+   },
+   "dump": {
+    "rows": 37579,
+    "tokens": 49,
+    "frames": 243,
+    "width": 960,
+    "height": 544,
+    "anchors": null
+   },
+   "phases": [
+    {
+     "phase": "baseline",
+     "seconds": 1.004,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21217856,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21217856,
+     "samples": 46
+    },
+    {
+     "phase": "open",
+     "seconds": 0,
+     "metalPeakBytes": 65536,
+     "footprintPeakBytes": 21217856,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 65536,
+     "footprintEndBytes": 21217856,
+     "samples": 1
+    },
+    {
+     "phase": "stage.encoding",
+     "seconds": 20.033,
+     "metalPeakBytes": 1964425216,
+     "footprintPeakBytes": 2149714080,
+     "metalStartBytes": 65536,
+     "metalEndBytes": 1964392448,
+     "footprintEndBytes": 2149632160,
+     "samples": 839
+    },
+    {
+     "phase": "released.encoding",
+     "seconds": 0.021,
+     "metalPeakBytes": 2818048,
+     "footprintPeakBytes": 2138441888,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 2818048,
+     "footprintEndBytes": 2015185080,
+     "samples": 2
+    },
+    {
+     "phase": "stage.denoising",
+     "seconds": 151.809,
+     "metalPeakBytes": 20427636736,
+     "footprintPeakBytes": 21449428304,
+     "metalStartBytes": 2818048,
+     "metalEndBytes": 19870515200,
+     "footprintEndBytes": 19723554848,
+     "samples": 6280
+    },
+    {
+     "phase": "stage.denoising.after-step1",
+     "seconds": 128.966,
+     "metalPeakBytes": 21233336320,
+     "footprintPeakBytes": 22715322400,
+     "metalStartBytes": 19870515200,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 21647331384,
+     "samples": 5360
+    },
+    {
+     "phase": "stage.denoising.after-step2",
+     "seconds": 130.159,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22823931960,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 21096927288,
+     "samples": 5389
+    },
+    {
+     "phase": "stage.denoising.after-step3",
+     "seconds": 133.01,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22824570936,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 21112213560,
+     "samples": 5448
+    },
+    {
+     "phase": "stage.denoising.after-step4",
+     "seconds": 131.365,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22821244984,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 21112459320,
+     "samples": 5398
+    },
+    {
+     "phase": "stage.denoising.after-step5",
+     "seconds": 137.174,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22825537592,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 20303368248,
+     "samples": 5688
+    },
+    {
+     "phase": "stage.denoising.after-step6",
+     "seconds": 143.169,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22822981688,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 21219115008,
+     "footprintEndBytes": 21652197432,
+     "samples": 5968
+    },
+    {
+     "phase": "stage.denoising.after-step7",
+     "seconds": 146.195,
+     "metalPeakBytes": 21715451904,
+     "footprintPeakBytes": 22826340408,
+     "metalStartBytes": 21219115008,
+     "metalEndBytes": 19736428544,
+     "footprintEndBytes": 21249937464,
+     "samples": 6020
+    },
+    {
+     "phase": "stage.denoising.after-step8",
+     "seconds": 0.111,
+     "metalPeakBytes": 19736428544,
+     "footprintPeakBytes": 21249937464,
+     "metalStartBytes": 19736428544,
+     "metalEndBytes": 10668130304,
+     "footprintEndBytes": 15226817152,
+     "samples": 6
+    },
+    {
+     "phase": "released.denoising",
+     "seconds": 0,
+     "metalPeakBytes": 10249502720,
+     "footprintPeakBytes": 15212432000,
+     "metalStartBytes": 10249502720,
+     "metalEndBytes": 10249502720,
+     "footprintEndBytes": 15212432000,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingVideo",
+     "seconds": 75.927,
+     "metalPeakBytes": 10249502720,
+     "footprintPeakBytes": 15302757064,
+     "metalStartBytes": 10249502720,
+     "metalEndBytes": 384417792,
+     "footprintEndBytes": 2581171632,
+     "samples": 2947
+    },
+    {
+     "phase": "released.decodingVideo",
+     "seconds": 0,
+     "metalPeakBytes": 383975424,
+     "footprintPeakBytes": 2580089208,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 383975424,
+     "footprintEndBytes": 2580089208,
+     "samples": 1
+    },
+    {
+     "phase": "stage.decodingAudio",
+     "seconds": 5.634,
+     "metalPeakBytes": 1524547584,
+     "footprintPeakBytes": 2580089208,
+     "metalStartBytes": 383975424,
+     "metalEndBytes": 922583040,
+     "footprintEndBytes": 556238312,
+     "samples": 236
+    },
+    {
+     "phase": "released.decodingAudio",
+     "seconds": 0.0,
+     "metalPeakBytes": 360890368,
+     "footprintPeakBytes": 271467744,
+     "metalStartBytes": 360890368,
+     "metalEndBytes": 360890368,
+     "footprintEndBytes": 271467744,
+     "samples": 2
+    },
+    {
+     "phase": "unload",
+     "seconds": 0,
+     "metalPeakBytes": 360890368,
+     "footprintPeakBytes": 271467744,
+     "metalStartBytes": 360890368,
+     "metalEndBytes": 360890368,
+     "footprintEndBytes": 271467744,
+     "samples": 1
+    },
+    {
+     "phase": "unloaded+0-5s",
+     "seconds": 5.007,
+     "metalPeakBytes": 358285312,
+     "footprintPeakBytes": 271467744,
+     "metalStartBytes": 358285312,
+     "metalEndBytes": 1769472,
+     "footprintEndBytes": 147588248,
+     "samples": 209
+    }
+   ],
+   "stageSeconds": {
+    "encoding": 20.033,
+    "denoising": 1101.958,
+    "decodingVideo": 75.927,
+    "decodingAudio": 5.634
+   },
+   "renderSeconds": 1203.552,
+   "denoisingStepSeconds": [
+    151.809,
+    128.966,
+    130.159,
+    133.01,
+    131.365,
+    137.174,
+    143.169,
+    146.195
+   ]
+  }
+ },
+ "editedAfterRun": {
+  "note": "Assembled by hand from each render's memory.json (phases, sample count, SHA-256 of the full timeline) and its dump's manifest.json (rows, tokens), not written by a script. FL2VA renders were labelled as the text-only presentation (PR #76) and local paths replaced by placeholders afterwards.",
+  "fields": [
+   "the whole record",
+   "renders.*.label",
+   "local paths replaced by placeholders throughout"
+  ]
+ }
+}

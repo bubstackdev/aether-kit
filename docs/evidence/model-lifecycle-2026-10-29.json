@@ -1,0 +1,259 @@
+{
+  "record": "model-lifecycle-2026-10-29",
+  "what": "Managed lifecycle (docs/model-lifecycle.md) on the installed Qwen3 0.6B language model of the model-preparation qualification (docs/evidence/model-preparation-network-2026-10-28.json).",
+  "mac": {
+    "host": {
+      "model": "Mac17,6",
+      "chip": "Apple M5 Max",
+      "os": "macOS 27.2 (26B123)",
+      "memoryGiB": 64
+    },
+    "build": "98fb934, release aether-probe. The later lifecycle commits change only how a notice is counted for a model that's unloaded or newly created, which the CPU tests cover.",
+    "command": "aether-probe qualify-lifecycle STORE INSTALLATION_ID 10, under with-gpu-lock.sh",
+    "policy": "idleUnloadAfter 10 s, releaseUnderMemoryPressure true",
+    "pressure": "simulated through MemoryPressureMonitor.shared.deliver: raising real system pressure on this shared Mac would disturb Atelier and other work. Real pressure is qualified on the iPhone.",
+    "metrics": "metalMiB is MTLDevice.currentAllocatedSize; footprintMiB is the task's phys_footprint",
+    "firstReplySeconds": 3.92,
+    "idleUnloadAfterReplySeconds": 10.524,
+    "reloadReplySeconds": 1.965,
+    "criticalRefusal": "Not enough memory to load the model or continue generating",
+    "points": [
+      {
+        "footprintMiB": 4.157,
+        "metalMiB": 0.062,
+        "seconds": 0.0,
+        "state": "-",
+        "step": "baseline"
+      },
+      {
+        "footprintMiB": 287.268,
+        "metalMiB": 1484.125,
+        "seconds": 4.351,
+        "state": "loaded",
+        "step": "first reply (loads)"
+      },
+      {
+        "footprintMiB": 108.173,
+        "metalMiB": 0.688,
+        "seconds": 16.903,
+        "state": "unloaded(Optional(AetherKit.ModelUnloadReason.idle))",
+        "step": "idle unload"
+      },
+      {
+        "footprintMiB": 259.878,
+        "metalMiB": 1484.125,
+        "seconds": 18.868,
+        "state": "loaded",
+        "step": "second reply (reloads)"
+      },
+      {
+        "footprintMiB": 81.204,
+        "metalMiB": 12.688,
+        "seconds": 20.899,
+        "state": "unloaded(Optional(AetherKit.ModelUnloadReason.memoryPressure))",
+        "step": "simulated warning"
+      },
+      {
+        "footprintMiB": 81.22,
+        "metalMiB": 12.688,
+        "seconds": 20.899,
+        "state": "unloaded(Optional(AetherKit.ModelUnloadReason.memoryPressure))",
+        "step": "critical refusal"
+      }
+    ],
+    "earlierRun": "The same command on 624761d (before the review fixes) gave the same sequence: 1,484.1 MiB loaded, 0.7 MiB after the idle unload, a 1.64 s reload reply, and 12.7 MiB after the simulated warning."
+  },
+  "iphone": {
+    "host": {
+      "device": "iPhone19,4",
+      "os": "27.2 (24B91020)",
+      "memoryGiB": "11.3",
+      "entitlements": "none (no increased memory limit)"
+    },
+    "app": "Examples/LanguageDevice, probe mode \"lifecycle\" (idle policy 10 s), on the installed Qwen3 0.6B of the model-preparation iPhone record, with real memory pressure: ballast allocated in 32 MiB touched steps until iOS reported pressure",
+    "final": {
+      "build": "5c45f4e (its code, built before the evidence was committed)",
+      "firstReplySeconds": 2.555,
+      "reloadReplySeconds": 1.95,
+      "ballastMiB": 2624,
+      "dispatchLevelsSeen": [
+        "normal",
+        "critical",
+        "normal"
+      ],
+      "uiKitMemoryWarnings": 1,
+      "releasedUnderPressure": true,
+      "passed": true,
+      "points": [
+        {
+          "seconds": 0.01,
+          "event": "dispatch level normal",
+          "footprintMiB": 10.0,
+          "availableMiB": 3366.0
+        },
+        {
+          "seconds": 0.45,
+          "event": "baseline",
+          "footprintMiB": 10.0,
+          "availableMiB": 3366.0
+        },
+        {
+          "seconds": 0.45,
+          "event": "state unloaded(nil)",
+          "footprintMiB": 10.1,
+          "availableMiB": 3365.9
+        },
+        {
+          "seconds": 0.45,
+          "event": "state loading",
+          "footprintMiB": 10.1,
+          "availableMiB": 3365.9
+        },
+        {
+          "seconds": 2.23,
+          "event": "state running",
+          "footprintMiB": 110.8,
+          "availableMiB": 3265.2
+        },
+        {
+          "seconds": 3.01,
+          "event": "state loaded",
+          "footprintMiB": 158.7,
+          "availableMiB": 3217.3
+        },
+        {
+          "seconds": 3.01,
+          "event": "first reply done",
+          "footprintMiB": 158.7,
+          "availableMiB": 3217.3
+        },
+        {
+          "seconds": 13.08,
+          "event": "state unloaded(Optional(AetherKit.ModelUnloadReason.idle))",
+          "footprintMiB": 72.4,
+          "availableMiB": 3303.6
+        },
+        {
+          "seconds": 15.32,
+          "event": "after idle unload",
+          "footprintMiB": 71.6,
+          "availableMiB": 3304.4
+        },
+        {
+          "seconds": 15.33,
+          "event": "state loading",
+          "footprintMiB": 71.6,
+          "availableMiB": 3304.4
+        },
+        {
+          "seconds": 16.59,
+          "event": "state running",
+          "footprintMiB": 138.2,
+          "availableMiB": 3237.8
+        },
+        {
+          "seconds": 17.27,
+          "event": "second reply done",
+          "footprintMiB": 205.6,
+          "availableMiB": 3170.4
+        },
+        {
+          "seconds": 17.28,
+          "event": "state loaded",
+          "footprintMiB": 237.6,
+          "availableMiB": 3138.4
+        },
+        {
+          "seconds": 22.23,
+          "event": "UIKit memory warning",
+          "footprintMiB": 2731.6,
+          "availableMiB": 644.4
+        },
+        {
+          "seconds": 22.23,
+          "event": "dispatch level critical",
+          "footprintMiB": 2731.6,
+          "availableMiB": 644.4
+        },
+        {
+          "seconds": 22.28,
+          "event": "ballast stopped at 2624 MiB",
+          "footprintMiB": 2721.4,
+          "availableMiB": 654.6
+        },
+        {
+          "seconds": 22.29,
+          "event": "state unloaded(Optional(AetherKit.ModelUnloadReason.memoryPressure))",
+          "footprintMiB": 2693.0,
+          "availableMiB": 683.0
+        },
+        {
+          "seconds": 25.33,
+          "event": "after pressure",
+          "footprintMiB": 2692.1,
+          "availableMiB": 683.9
+        },
+        {
+          "seconds": 28.53,
+          "event": "ballast freed",
+          "footprintMiB": 502.4,
+          "availableMiB": 2873.6
+        },
+        {
+          "seconds": 28.55,
+          "event": "dispatch level normal",
+          "footprintMiB": 336.9,
+          "availableMiB": 3039.1
+        },
+        {
+          "seconds": 28.55,
+          "event": "state loading",
+          "footprintMiB": 336.9,
+          "availableMiB": 3039.1
+        },
+        {
+          "seconds": 30.6,
+          "event": "state running",
+          "footprintMiB": 49.0,
+          "availableMiB": 3327.0
+        },
+        {
+          "seconds": 31.18,
+          "event": "state loaded",
+          "footprintMiB": 115.3,
+          "availableMiB": 3260.7
+        },
+        {
+          "seconds": 31.18,
+          "event": "third reply loaded",
+          "footprintMiB": 115.3,
+          "availableMiB": 3260.7
+        },
+        {
+          "seconds": 31.21,
+          "event": "state unloaded(Optional(AetherKit.ModelUnloadReason.requested))",
+          "footprintMiB": 103.9,
+          "availableMiB": 3272.1
+        }
+      ]
+    },
+    "finding": {
+      "what": "iOS delivered UIKit's memory warning and Kit's dispatch source at the same moment, as critical with no warning first. The idle model released within 60 ms. But iOS never reported a return to normal: after the ballast was freed, Kit still read critical for 60 s and refused a load, and kern.memorystatus_vm_pressure_level can't be read from the app (-1).",
+      "run": {
+        "build": "3639590 (critical lifted only by a normal notice)",
+        "dispatchLevelsSeen": [
+          "normal",
+          "critical"
+        ],
+        "thirdReply": "refused: insufficientMemory after 60 s"
+      },
+      "fix": "User decision 2026-10-29: critical eases on a normal notice, once the app's available memory has recovered to twice what it was at the notice, or 60 s after the last critical notice. The final run above shows it easing on recovery and the third reply loading."
+    },
+    "firstRunOnThisBuildSeries": {
+      "build": "3639590",
+      "releasedUnderPressure": true,
+      "ballastMiB": 2624
+    }
+  },
+  "failures": []
+}

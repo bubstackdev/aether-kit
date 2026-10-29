@@ -1,3 +1,4 @@
+import AetherKit
 import AetherLanguageRuntime
 import AetherLanguageTokenizers
 
@@ -28,11 +29,13 @@ struct TokenizerCodec: LanguageTextCodec {
 
 /// One model's loaded backend and tokenizer, shared by every copy of its ``AetherLanguageModel`` and every session on
 /// it. Loads lazily, once, and runs one request at a time: requests from several sessions wait their turn in order.
+/// Its lifecycle unloads it when idle or under memory pressure (docs/model-lifecycle.md); the next request loads again.
 actor LanguageModelResources {
     typealias Loader = @Sendable () async throws -> LoadedLanguageModel
 
     private let availability: AetherLanguageModel.Availability
     private let loader: Loader
+    nonisolated let lifecycle: ModelLifecycle
     private var loading: Task<LoadedLanguageModel, any Error>?
     /// The loaded model's tokens indexed for JSON constraints, built on the first structured request.
     private var vocabulary: LanguageJSONVocabulary?
@@ -40,21 +43,34 @@ actor LanguageModelResources {
     private var waiting: [(id: Int, continuation: CheckedContinuation<Void, any Error>)] = []
     private var nextWaiter = 0
 
-    init(availability: AetherLanguageModel.Availability, loader: @escaping Loader) {
+    init(availability: AetherLanguageModel.Availability, lifecycle: ModelLifecycle, loader: @escaping Loader) {
         self.availability = availability
         self.loader = loader
+        self.lifecycle = lifecycle
+        lifecycle.setRelease { [weak self] reason in await self?.release(reason) ?? false }
     }
 
-    /// The loaded model, loading it first if needed. A failed load is not cached: the next call tries again.
-    func loaded() async throws -> LoadedLanguageModel {
+    /// Loads the model now, in the request slot, rather than on the first request.
+    func prewarm() async throws {
+        try await acquire()
+        defer { release() }
+        _ = try await loaded()
+    }
+
+    /// The loaded model, loading it first if needed; called in the request slot. A failed load is not cached: the
+    /// next call tries again. While memory pressure is critical, a load is refused with `insufficientMemory`.
+    private func loaded() async throws -> LoadedLanguageModel {
         if case .unavailable(let reason) = availability { throw AetherLanguageError.unavailable(reason) }
         if let loading { return try await loading.value }
+        do { try lifecycle.admitLoad() } catch { throw AetherLanguageError.insufficientMemory }
         let task = Task { try await loader() }
         loading = task
+        lifecycle.loading()
         do {
             return try await task.value
         } catch {
-            loading = nil
+            if loading == task { loading = nil }
+            lifecycle.notLoaded()
             throw AetherLanguageError.loading(error)
         }
     }
@@ -62,10 +78,12 @@ actor LanguageModelResources {
     /// Runs `body` with the loaded model once no other request is running. A request cancelled while it waits throws
     /// `CancellationError` without running.
     func withModel<T: Sendable>(_ body: @Sendable (LoadedLanguageModel) async throws -> T) async throws -> T {
-        let model = try await loaded()
         try await acquire()
         defer { release() }
+        // Loaded inside the slot, so an idle or pressure release (which takes the slot) can't unload it in between.
+        let model = try await loaded()
         try Task.checkCancellation()
+        lifecycle.running()
         return try await body(model)
     }
 
@@ -86,6 +104,20 @@ actor LanguageModelResources {
         self.loading = nil
         vocabulary = nil
         if let model = try? await loading.value { await model.backend.unload() }
+        lifecycle.unloaded(.requested)
+    }
+
+    /// The lifecycle's idle or pressure release: unloads only if no request is running or waiting. The state turns
+    /// unloaded before the slot is released, so a request that was waiting loads again afterwards.
+    private func release(_ reason: ModelUnloadReason) async -> Bool {
+        guard !running, waiting.isEmpty, let loading else { return false }
+        running = true
+        defer { release() }
+        self.loading = nil
+        vocabulary = nil
+        if let model = try? await loading.value { await model.backend.unload() }
+        lifecycle.unloaded(reason)
+        return true
     }
 
     private func acquire() async throws {
@@ -112,7 +144,12 @@ actor LanguageModelResources {
     }
 
     private func release() {
-        guard !waiting.isEmpty else { running = false; return }
+        guard !waiting.isEmpty else {
+            running = false
+            // The slot is free and the model stays loaded: it's idle now.
+            if loading != nil { lifecycle.idle() }
+            return
+        }
         waiting.removeFirst().continuation.resume()
     }
 
