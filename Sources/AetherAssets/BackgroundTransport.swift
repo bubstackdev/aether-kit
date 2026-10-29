@@ -7,9 +7,11 @@ import Foundation
 ///   resolves them first, in the foreground: it follows each redirect on the original host with the app's headers and
 ///   stops at the first other host. The background task then fetches that URL, with the app's headers only if it is
 ///   still on the original host. A token for a model host never reaches the CDN it redirects to.
-/// - **Resuming.** A partial file resumes with a `Range` request: a `206` whose `Content-Range` starts at the file's
-///   size is appended, a `200` replaces the file, a `416` for a partial file restarts it once. A stopped or failed task
-///   keeps the system's resume data beside the file, and the next task for the same bytes continues from it.
+/// - **Resuming.** A partial file resumes with a `Range` request: a `206` that continues the file is appended, a `200`
+///   or a `206` from byte 0 replaces it, a `416` for a partial file restarts it once. A stopped or failed task keeps the
+///   system's resume data beside the file, and the next task for the same bytes continues from it; a task carrying the
+///   app's headers keeps none, since resume data holds the request. A `403` or `410` (an expired signed link) retries
+///   once with the redirect resolved again.
 /// - **Relaunches.** Every task records where its bytes belong, so a task that finishes while no `fetch` is waiting
 ///   (the app was relaunched to receive it) still lands in the download area, and the next preparation run finds the
 ///   file complete. A later `fetch` for a file whose task is still running joins that task instead of starting another.
@@ -62,41 +64,61 @@ public final class BackgroundTransport: ModelTransport, Sendable {
         }
         let offset = resume ? URLSessionTransport.size(of: destination) : 0
         do {
-            try await download(request, to: destination, from: offset, progress: progress)
+            try await downloadRenewingExpiredLinks(request, to: destination, from: offset, progress: progress)
         } catch let PreparationError.http(status, _) where status == 416 && offset > 0 {
             // The server can't satisfy the range: the partial file doesn't match what it holds. Start over.
             try? FileManager.default.removeItem(at: destination)
-            try await download(request, to: destination, from: 0, progress: progress)
+            try await downloadRenewingExpiredLinks(request, to: destination, from: 0, progress: progress)
         }
+    }
+
+    /// A task keeps the URL it was created with, and a CDN's signed link can expire before a long-suspended or
+    /// discretionary task (or one resumed from old resume data) reaches it. A 403 or 410 therefore retries once with
+    /// the redirect resolved again and without the resume data.
+    private func downloadRenewingExpiredLinks(_ request: TransportRequest, to destination: URL, from offset: UInt64,
+                                              progress: @escaping @Sendable (UInt64) -> Void) async throws {
+        do {
+            try await download(request, to: destination, from: offset, progress: progress)
+        } catch let PreparationError.http(status, _) where status == 403 || status == 410 {
+            try? FileManager.default.removeItem(at: record(request, destination, offset).resumeDataURL)
+            try await download(request, to: destination, from: offset, progress: progress)
+        }
+    }
+
+    private func record(_ request: TransportRequest, _ destination: URL, _ offset: UInt64) -> BackgroundTaskRecord {
+        BackgroundTaskRecord(destination: BackgroundTaskRecord.portablePath(destination.path), offset: offset,
+                             byteCount: request.file.byteCount, path: request.file.path)
     }
 
     private func download(_ request: TransportRequest, to destination: URL, from offset: UInt64,
                           progress: @escaping @Sendable (UInt64) -> Void) async throws {
-        let record = BackgroundTaskRecord(destination: BackgroundTaskRecord.portablePath(destination.path), offset: offset,
-                                          byteCount: request.file.byteCount, path: request.file.path)
-        try await coordinator.download(record: record, progress: progress) {
+        try await coordinator.download(record: record(request, destination, offset), progress: progress) {
             try await RedirectResolver.resolve(request, configuration: resolver)
         }
     }
 }
 
 /// Follows redirects in the foreground with the app's headers while they stay on the original host, and returns the
-/// URL a background task should fetch and the headers it may carry there.
+/// URL a background task should fetch and the headers it may carry there. Each hop is probed with the same GET the
+/// task will send (a one-byte range, abandoned once the response headers arrive), since a server may answer HEAD
+/// differently or not at all.
 enum RedirectResolver {
     static let maximumHops = 8
 
     static func resolve(_ request: TransportRequest, configuration: URLSessionConfiguration) async throws -> (url: URL, headers: [String: String]) {
         guard !request.headers.isEmpty else { return (request.url, [:]) }  // nothing to protect: let the system follow
         let host = request.url.host?.lowercased()
-        let session = URLSession(configuration: configuration, delegate: NoRedirects(), delegateQueue: nil)
-        defer { session.finishTasksAndInvalidate() }
+        let probe = HeadersOnly()
+        let session = URLSession(configuration: configuration, delegate: probe, delegateQueue: nil)
+        defer { session.invalidateAndCancel() }
         var url = request.url
         for _ in 0..<maximumHops {
             guard url.host?.lowercased() == host else { return (url, [:]) }
-            var probe = URLRequest(url: url)
-            probe.httpMethod = "HEAD"
-            for (name, value) in request.headers { probe.setValue(value, forHTTPHeaderField: name) }
-            let (_, response) = try await session.data(for: probe)
+            var hop = URLRequest(url: url)
+            for (name, value) in request.headers { hop.setValue(value, forHTTPHeaderField: name) }
+            hop.setValue("bytes=0-0", forHTTPHeaderField: "Range")
+            hop.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+            let response = try await probe.response(to: hop, in: session)
             guard let http = response as? HTTPURLResponse else { throw PreparationError.network("not an HTTP response") }
             switch http.statusCode {
             case 200..<300:
@@ -115,10 +137,43 @@ enum RedirectResolver {
         throw PreparationError.network("too many redirects for \(request.file.path)")
     }
 
-    private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+    /// Refuses redirects (the 3xx becomes the response) and cancels each task once its response headers arrive.
+    private final class HeadersOnly: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+        private let lock = NSLock()
+        private var pending: [Int: CheckedContinuation<URLResponse, any Error>] = [:]
+
+        func response(to request: URLRequest, in session: URLSession) async throws -> URLResponse {
+            let task = session.dataTask(with: request)
+            return try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    lock.withLock { pending[task.taskIdentifier] = continuation }
+                    task.resume()
+                }
+            } onCancel: { task.cancel() }
+        }
+
+        private func finish(_ task: URLSessionTask, _ result: Result<URLResponse, any Error>) {
+            lock.withLock { pending.removeValue(forKey: task.taskIdentifier) }?.resume(with: result)
+        }
+
         func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                         newRequest: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
             completionHandler(nil)
+        }
+
+        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                        completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void) {
+            finish(dataTask, .success(response))
+            completionHandler(.cancel)
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
+            if let error = error as? URLError, error.code == .cancelled {
+                finish(task, .failure(CancellationError()))
+            } else {
+                finish(task, .failure(error.map { PreparationError.network(($0 as NSError).localizedDescription) }
+                                      ?? PreparationError.network("no response")))
+            }
         }
     }
 }
@@ -279,13 +334,19 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
                 }
             }
         } onCancel: {
-            // Keep what the system downloaded, so the next task for these bytes continues from it.
-            if let download = task as? URLSessionDownloadTask {
+            // Keep what the system downloaded, so the next task for these bytes continues from it. Resume data holds
+            // the original request, so a task carrying the app's headers (a token) keeps none.
+            if let download = task as? URLSessionDownloadTask, !Self.carriesAppHeaders(task) {
                 download.cancel(byProducingResumeData: { data in if let data { try? data.write(to: record.resumeDataURL) } })
             } else {
                 task.cancel()
             }
         }
+    }
+
+    /// Whether a task's request carries headers beyond the transport's own (`Range`, `Accept-Encoding`).
+    static func carriesAppHeaders(_ task: URLSessionTask) -> Bool {
+        (task.originalRequest?.allHTTPHeaderFields ?? [:]).keys.contains { !["range", "accept-encoding"].contains($0.lowercased()) }
     }
 
     /// A running task from this or an earlier launch that writes the same file from the same offset.
@@ -345,8 +406,9 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
         let record = BackgroundTaskRecord(encoded: task.taskDescription)
-        // A failed transfer keeps the system's resume data for the next task.
-        if let data = (error as NSError?)?.userInfo[NSURLSessionDownloadTaskResumeData] as? Data, let record {
+        // A failed transfer keeps the system's resume data for the next task, unless it holds the app's headers.
+        if let data = (error as NSError?)?.userInfo[NSURLSessionDownloadTaskResumeData] as? Data, let record,
+           !Self.carriesAppHeaders(task) {
             try? data.write(to: record.resumeDataURL)
         }
         let (pending, outcome): ([Waiter], (any Error)?) = lock.withLock {

@@ -88,7 +88,8 @@ public enum ModelSource: Codable, Sendable {
 - **Hugging Face resolves to** `https://huggingface.co/<repository>/resolve/<revision>/<subdirectory>/<path>`. A
   revision that isn't a full commit hash is refused when the entry is decoded. The app may supply a bearer token for
   gated or private repositories through `ModelPreparation.huggingFaceAuthorization(token:)`, which sends it only to
-  huggingface.co. Kit never stores it.
+  huggingface.co. Kit never stores it. A background task that carries it is held by the system's background-session
+  store while the task exists, and Kit keeps no resume data for such a task, since resume data holds the request.
 
 ## Preparing
 
@@ -155,12 +156,16 @@ public protocol ModelTransport: Sendable {
   per file, so the system carries transfers on while the app is suspended or terminated.
   - **Redirects:** a background session follows redirects itself and never asks a delegate, so the app's headers
     would travel with them. The transport resolves redirects first, in the foreground. It follows each hop on the
-    original host with the app's headers, and stops at the first other host. The background task then fetches that
-    URL, carrying the headers only if it's still on the original host.
+    original host with the app's headers, and stops at the first other host. Each hop is probed with the GET the
+    task will send (a one-byte range, abandoned once the headers arrive), not a HEAD, which a server may answer
+    differently. The background task then fetches the final URL, carrying the headers only if it's still on the
+    original host. A task keeps that URL, and a CDN's signed link can expire before a long-suspended task reaches it,
+    so a `403` or `410` retries once with the redirect resolved again and without resume data.
   - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A `206` that continues the file
     is appended, a `200` or a `206` from byte 0 replaces it, and a `416` restarts it once. A background task writes
     nothing to the download area until it finishes. A stopped or failed task therefore keeps the system's resume data
-    beside the file, and the next task for the same bytes continues from it. Those bytes don't count in `status`. A
+    beside the file, and the next task for the same bytes continues from it (except a task carrying the app's
+    headers, above). Those bytes don't count in `status`. A
     resumed task's response range starts where it stopped, but its file holds every byte since the record's offset,
     so the transport works out where the file starts from the range's end and the size received.
   - **Where bytes go:** each task records its destination (relative to the home directory, which survives an iOS app
@@ -205,7 +210,8 @@ whether retrying can help.
   - cancellation mid-file, then an immediate retry that resumes;
   - two concurrent runs for one entry (the second is busy);
   - the Hugging Face URL, revision and authorization rules, and redirects that drop headers at a new host, including
-    the background transport's foreground redirect resolution;
+    the background transport's foreground redirect resolution (GET probes that stop at the headers) and that no
+    resume data is kept for a task carrying a token;
   - bodies larger than the pinned size, stopped before they can fill the disk;
   - a corrupt installation, removed and prepared again;
   - an installed entry finishing without network;
@@ -230,12 +236,12 @@ whether retrying can help.
   - the remaining files were fetched by new tasks, the entry installed, and `AetherLanguageModel(installation:)` gave a
     coherent greedy reply in 7.50 s.
 
-  - in a second launch, a fresh preparation stopped at 400,573,100 bytes left the system's resume data beside the
-    file; the retry continued from it (first event at 400,585,137 bytes) and installed. This run qualified a fix: a
-    resumed task's response starts at the resume point, which the first version refused.
+  - on the final build, after a fresh install, a preparation stopped at 400,245,600 bytes left the system's resume
+    data beside the file; the retry continued from it (first event at 400,252,492 bytes) and installed. This run
+    qualified a fix: a resumed task's response starts at the resume point, which the first version refused.
 
-  The relaunch shows the home-relative task record resolving on a device. A task in flight across an app update, when
-  the container path changes, hasn't been exercised.
+  The relaunch shows the home-relative task record resolving on a device. Not yet exercised: a task in flight across
+  an app update, when the container path changes, and the retry after an expired signed link.
 
 ## Implementation order
 

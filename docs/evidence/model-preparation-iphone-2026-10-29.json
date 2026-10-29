@@ -1,6 +1,6 @@
 {
   "record": "model-preparation-iphone-2026-10-29",
-  "what": "Model preparation on an iPhone with BackgroundTransport: a pinned catalog entry for the iOS Kit language bundle in a private Hugging Face repository, prepared by the LanguageDevice probe app (mode \"prepare\"). The app was suspended for 45 s mid-transfer, then killed and relaunched about 53 s later; the relaunch joined the running background task, finished, installed, and answered through AetherLanguageModel(installation:). A second launch, on the build that fixes the resumed-task check (review finding), stopped a fresh preparation after about 400 MB and retried in the same launch: the retry continued from the system's resume data and installed.",
+  "what": "Model preparation on an iPhone with BackgroundTransport: a pinned catalog entry for the iOS Kit language bundle in a private Hugging Face repository, prepared by the LanguageDevice probe app (mode \"prepare\"). The app was suspended for 45 s mid-transfer, then killed and relaunched about 53 s later; the relaunch joined the running background task, finished, installed, and answered through AetherLanguageModel(installation:). A later launch, on the final build of the PR, stopped a fresh preparation after about 400 MB and retried in the same launch: the retry continued from the system's resume data and installed.",
   "build": "1e1e370 (the PR #72 review fixes: foreground redirect resolution, so the token is never sent to the CDN)",
   "host": {
     "device": "iPhone19,4",
@@ -75,23 +75,25 @@
   },
   "failures": [],
   "resumeRun": {
-    "build": "this PR's resume fix: a finished background task's file start comes from the Content-Range end and the received size",
+    "build": "this PR's final transport: the resumed-task fix, GET redirect probes, no resume data for tasks carrying the token, and the expired-link retry",
     "probe": {
       "cutAfterBytes": 400000000,
-      "store": "a fresh store folder"
+      "store": "a fresh install of the app"
     },
-    "start": "2026-10-29T13:46:07Z",
+    "start": "2026-10-29T13:55:39Z",
     "statusAtStart": "notInstalled(bytesTotal: 1208370448)",
-    "stoppedAtBytes": 400573100,
+    "stoppedAtBytes": 400245600,
     "statusBetweenRuns": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
     "resumeDataFiles": [
       "model.aimodel/.main.mlirb.resume-0"
     ],
-    "retryFirstEventBytes": 400585137,
+    "retryFirstEventBytes": 400252492,
     "result": "The retry continued from the resume data instead of starting over, so the system's response was a 206 from the resume point; the file was applied from byte 0 and the entry installed. Bytes held in resume data don't count in status, as documented.",
     "terminal": "installed 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
-    "retrySeconds": 260.6,
+    "retrySeconds": 332.25,
     "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
-    "replySeconds": 4.51
+    "replySeconds": 7.23,
+    "earlierRun": "An earlier build with only the resumed-task fix gave the same result at 13:46:07Z: stopped at 400,573,100 bytes, retry's first event at 400,585,137, installed.",
+    "notExercised": "The 403/410 retry for an expired signed link."
   }
 }

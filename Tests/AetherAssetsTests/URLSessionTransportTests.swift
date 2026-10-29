@@ -10,7 +10,7 @@ private final class ScriptedProtocol: URLProtocol, @unchecked Sendable {
         case status(Int)
         case redirect(to: URL)
     }
-    struct Seen { let url: URL; let headers: [String: String] }
+    struct Seen { let url: URL; let method: String; let headers: [String: String] }
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var replies: [String: [Reply]] = [:]
@@ -26,7 +26,7 @@ private final class ScriptedProtocol: URLProtocol, @unchecked Sendable {
     override func startLoading() {
         let url = request.url!, host = url.host!
         let reply: Reply? = Self.lock.withLock {
-            Self.seen[host, default: []].append(Seen(url: url, headers: request.allHTTPHeaderFields ?? [:]))
+            Self.seen[host, default: []].append(Seen(url: url, method: request.httpMethod ?? "GET", headers: request.allHTTPHeaderFields ?? [:]))
             guard var list = Self.replies[host], !list.isEmpty else { return nil }
             let next = list.removeFirst(); Self.replies[host] = list
             return next
@@ -259,7 +259,9 @@ struct URLSessionTransportTests {
         let resolved = try await RedirectResolver.resolve(fixture.request(headers: ["Authorization": "Bearer secret"]),
                                                           configuration: resolverConfiguration)
         #expect(resolved.url == cdn && resolved.headers.isEmpty)
-        #expect(ScriptedProtocol.requests(fixture.host).allSatisfy { $0.headers["Authorization"] == "Bearer secret" })
+        #expect(ScriptedProtocol.requests(fixture.host).allSatisfy {
+            $0.headers["Authorization"] == "Bearer secret" && $0.method == "GET" && $0.headers["Range"] == "bytes=0-0"
+        })
         #expect(ScriptedProtocol.requests(cdn.host!).isEmpty)
     }
 
@@ -285,6 +287,27 @@ struct URLSessionTransportTests {
         await #expect(throws: PreparationError.http(status: 404, path: "file.bin")) {
             _ = try await RedirectResolver.resolve(missing.request(headers: ["Authorization": "x"]), configuration: resolverConfiguration)
         }
+    }
+
+    @Test func resolvingStopsAtTheHeadersOfAServerThatIgnoresTheRange() async throws {
+        let fixture = try TransportFixture()
+        defer { fixture.remove() }
+        ScriptedProtocol.script(fixture.host, [.file(fixture.data, honourRange: false)])
+        let resolved = try await RedirectResolver.resolve(fixture.request(headers: ["Authorization": "Bearer secret"]),
+                                                          configuration: resolverConfiguration)
+        #expect(resolved.url == fixture.url && resolved.headers == ["Authorization": "Bearer secret"])
+    }
+
+    @Test func resumeDataIsNotKeptForATaskCarryingAppHeaders() {
+        var request = URLRequest(url: URL(string: "https://example.com/f")!)
+        request.setValue("bytes=5-", forHTTPHeaderField: "Range")
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        let plain = URLSession.shared.downloadTask(with: request)
+        request.setValue("Bearer secret", forHTTPHeaderField: "Authorization")
+        let authorized = URLSession.shared.downloadTask(with: request)
+        defer { plain.cancel(); authorized.cancel() }
+        #expect(!BackgroundCoordinator.carriesAppHeaders(plain))
+        #expect(BackgroundCoordinator.carriesAppHeaders(authorized))
     }
 
     @Test func resolvingWithoutHeadersMakesNoRequest() async throws {
