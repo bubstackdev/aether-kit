@@ -53,10 +53,13 @@ references, native qualification and a guide.
   exports `F.scaled_dot_product_attention` as Core AI's SDPA composite, and the GPU runs it fused. No score tensor is
   allocated between calls, it runs at 44–56 TFLOPS, and it's 2.8× faster than explicit attention at 4,096 rows. H3's
   qualification evidence stands. The step-0 transient in the admitted worst case and profile paths relative to `bundle.json` are
-  follow-ups.
+  follow-ups. Overlays (the larger canvas, the FL2VA conditioner) inherit the location-dependent identity: moving a
+  profile changes its identity and orphans its measured entries.
 - **For Atelier** (user decision, 2026-10-29), for Atelier's v0.6, with the features that use them in its v0.7:
-  - **H3 at a larger canvas:** first-frame encoder and tail exports for 1280×704 and 704×1280, measured, and added to
-    measured admission.
+  - **H3 at a larger canvas** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress)):
+    first-frame encoder and tail exports for 1280×704 and 704×1280, measured, and added to measured admission under
+    per-entry memory bars (18 GiB for today's region, 24 GiB beyond it with at least 64 GiB of physical memory, decided
+    2026-10-29). Entries are bundled once measured under the final overlay stack.
   - **H3 last-frame conditioning:** `H3VideoRequest.lastFrame` is refused today.
 
   Atelier's team authors both as `v0.0.4/<topic>` PRs, which Kit reviews. They build on the current body graph.

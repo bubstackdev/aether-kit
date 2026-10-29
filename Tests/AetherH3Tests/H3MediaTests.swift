@@ -207,12 +207,16 @@ func h3SpatialTilesMatchOriginalStitchingAndOddLatentPatchOffsets() throws {
 
 @Test func h3SourceTilingReproducesTheOriginalSplitForProductionCanvases() throws {
     #expect(try H3SpatialTiling.source(width: 960, height: 544) == sourceTiling)
-    for (width, height) in [(544, 960), (1344, 768), (768, 1344), (864, 480), (1024, 992)] {
+    for (width, height) in [(544, 960), (1280, 704), (704, 1280), (1344, 768), (768, 1344), (864, 480), (1024, 992)] {
         let tiling = try H3SpatialTiling.source(width: width, height: height)
         try tiling.validate(width: width, height: height)
         #expect(tiling.yOverlaps.allSatisfy { $0 >= 64 } && tiling.xOverlaps.allSatisfy { $0 >= 64 })
     }
     #expect(try H3SpatialTiling.source(width: 1344, height: 768).xStarts.count == 7)
+    // The larger first-frame canvas: the split the exporter recorded from `_split_tiles` for its 1280x704 tail.
+    #expect(try H3SpatialTiling.source(width: 1280, height: 704) == H3SpatialTiling(
+        tileHeight: 256, tileWidth: 256, yStarts: [0, 144, 288, 448], xStarts: [0, 160, 320, 496, 672, 848, 1024],
+        yOverlaps: [112, 112, 96], xOverlaps: [96, 96, 80, 80, 80, 80]))
     #expect(throws: AetherError.self) { try H3SpatialTiling.source(width: 256, height: 544) }
 }
 
