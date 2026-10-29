@@ -37,7 +37,7 @@ public struct ModelRuntimeCheck: Sendable {
 /// Nothing downloads until ``prepare()``. Unsupported is decided before downloading where the entry allows: the
 /// product's check (the OS, for language), then the entry's platforms and memory requirement.
 public final class ModelReadiness: @unchecked Sendable {
-    public enum State: Sendable, Equatable {
+    @nonexhaustive public enum State: Sendable, Equatable {
         /// Not installed. `bytesPresent` are downloaded bytes a ``prepare()`` resumes from.
         case notInstalled(bytesPresent: UInt64, bytesTotal: UInt64)
         case installing(Progress)
@@ -63,7 +63,7 @@ public final class ModelReadiness: @unchecked Sendable {
     }
 
     public struct Progress: Sendable, Equatable {
-        public enum Phase: Sendable, Equatable {
+        @nonexhaustive public enum Phase: Sendable, Equatable {
             /// Checking the store and free space.
             case checking
             /// Fetching; `bytesDone` includes bytes a previous run left.
@@ -83,7 +83,7 @@ public final class ModelReadiness: @unchecked Sendable {
         }
     }
 
-    public enum Unsupported: Sendable, Equatable {
+    @nonexhaustive public enum Unsupported: Sendable, Equatable {
         /// The product doesn't run on this OS (the Core AI products need macOS 27 or iOS 27).
         case operatingSystem
         /// The model is for another platform (for example a macOS export on an iPhone).
@@ -92,7 +92,7 @@ public final class ModelReadiness: @unchecked Sendable {
         case memory(requiredBytes: UInt64, availableBytes: UInt64)
     }
 
-    public enum Failure: Error, Sendable, Equatable {
+    @nonexhaustive public enum Failure: Error, Sendable, Equatable {
         /// Preparing failed; ``prepare()`` again to retry when the error is retryable.
         case preparation(PreparationError)
         /// The installation didn't verify or couldn't be opened. ``prepare()`` replaces a corrupt installation.

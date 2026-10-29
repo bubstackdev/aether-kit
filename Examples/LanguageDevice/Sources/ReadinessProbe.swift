@@ -49,6 +49,7 @@ func runReadiness(assets: URL, store storeName: String, memoryBytes: UInt64?, re
         case let .ready(held): kind = "ready \(held.installationID)"
         case let .unsupported(reason): kind = "unsupported \(reason)"
         case let .failed(failure): kind = "failed \(failure) retryable=\(failure.isRetryable)"
+        @unknown default: kind = "\(state)"
         }
         if kind != lastKind {
             lastKind = kind

@@ -30,7 +30,7 @@ public struct ModelLifecyclePolicy: Sendable, Equatable {
     public static let manual = Self(idleUnloadAfter: nil, releaseUnderMemoryPressure: false)
 }
 
-public enum ModelUnloadReason: Sendable, Equatable {
+@nonexhaustive public enum ModelUnloadReason: Sendable, Equatable {
     /// The app asked (`unload()`).
     case requested
     /// The policy's idle time passed.
@@ -39,7 +39,7 @@ public enum ModelUnloadReason: Sendable, Equatable {
     case memoryPressure
 }
 
-public enum ModelLifecycleState: Sendable, Equatable {
+@nonexhaustive public enum ModelLifecycleState: Sendable, Equatable {
     /// Not loaded: never yet (nil), or unloaded for the reason given. The next request loads it.
     case unloaded(ModelUnloadReason?)
     case loading

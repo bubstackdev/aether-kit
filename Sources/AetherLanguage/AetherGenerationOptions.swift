@@ -5,7 +5,7 @@ import AetherLanguageTokenizers
 /// (`samplingMode`, `temperature`, `maximumResponseTokens`); the rest are what a local model adds.
 public struct AetherGenerationOptions: Sendable, Equatable {
     public struct SamplingMode: Sendable, Equatable {
-        public enum Kind: Sendable, Equatable {
+        @nonexhaustive public enum Kind: Sendable, Equatable {
             case greedy
             case randomTopK(Int, seed: UInt64?)
             case randomProbabilityThreshold(Double, seed: UInt64?)
@@ -22,7 +22,7 @@ public struct AetherGenerationOptions: Sendable, Equatable {
         }
     }
 
-    public enum Reasoning: Sendable, Equatable {
+    @nonexhaustive public enum Reasoning: Sendable, Equatable {
         /// Render with the template's thinking switch off; the model answers directly.
         case off
         /// Let the model think first. Its thinking is returned separately (`Response.reasoning`) and is not rendered back
@@ -72,7 +72,7 @@ public struct AetherGenerationOptions: Sendable, Equatable {
 /// A conversation: what renders into each request, in order. Reasoning is kept for the app but not rendered back, as
 /// thinking models' templates expect.
 public struct AetherTranscript: Sendable, Equatable, Codable {
-    public enum Entry: Sendable, Equatable, Codable {
+    @nonexhaustive public enum Entry: Sendable, Equatable, Codable {
         case instructions(String)
         case prompt(String)
         case reasoning(String)

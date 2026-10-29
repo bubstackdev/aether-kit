@@ -143,6 +143,28 @@ struct AetherLanguageSessionTests {
         #expect(collected.content == reply)
     }
 
+    @Test func anIteratedStreamReportsItsStopReasonAndUsage() async throws {
+        let backend = FakeBackend { _ in FakeVocabulary.tokens("Hello there, friend.") }
+        let session = AetherLanguageSession(model: FakeModel.make(backend: backend))
+        var iterator = session.streamResponse(to: "q").makeAsyncIterator()
+        #expect(iterator.response == nil)
+        var streamed = ""
+        while let snapshot = try await iterator.next() {
+            streamed = snapshot.content
+            #expect(iterator.response == nil || snapshot.content == "Hello there, friend.")
+        }
+        let finished = try #require(iterator.response)
+        #expect(finished.content == streamed && streamed == "Hello there, friend.")
+        #expect(finished.stopReason == .endOfTurn)
+        #expect(finished.usage.promptTokens > 0 && finished.usage.outputTokens > 0)
+        #expect(finished.transcriptEntries == [.prompt("q"), .response(streamed)])
+
+        var limited = session.streamResponse(to: "again", options: .init(maximumResponseTokens: 2)).makeAsyncIterator()
+        while try await limited.next() != nil {}
+        let cut = try #require(limited.response)
+        #expect(cut.stopReason == .outputLimit && cut.usage.outputTokens == 2)
+    }
+
     @Test(.timeLimit(.minutes(1))) func abandoningAStreamCancelsTheRequest() async throws {
         let backend = FakeBackend(stepDelay: .milliseconds(10)) { _ in FakeVocabulary.tokens(String(repeating: "word ", count: 100)) }
         let session = AetherLanguageSession(model: FakeModel.make(backend: backend))
