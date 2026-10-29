@@ -71,9 +71,9 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
           shellcheck Scripts/check.sh Scripts/check-cpu.sh Scripts/check-ci-host.sh Scripts/check-floor.sh \
-            Scripts/launch-floor-consumer.sh
+            Scripts/launch-floor-consumer.sh Scripts/check-api.sh
 
-  # The three Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
+  # The four Swift jobs run in parallel on separate xcode-27 runners; each builds what it needs from a clean checkout.
   floor-macos:
     name: Package floor (macOS 14)
     needs: changes
@@ -202,11 +202,60 @@ jobs:
         run: |
           swift run --package-path Examples/LocalPackage --force-resolved-versions -c release \
             2>&1 | tee "$RUNNER_TEMP/aether-ci/sdk-consumer.log"
+      - name: Sample app logic
+        run: |
+          swift test --package-path Examples/SampleApp/SampleAppCore --force-resolved-versions \
+            2>&1 | tee "$RUNNER_TEMP/aether-ci/sample-app-core.log"
       - name: Preserve diagnostics and test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-diagnostics-contracts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/aether-ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  api:
+    name: Public API (frozen)
+    needs: changes
+    if: ${{ needs.changes.outputs.swift == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
+      SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Apple silicon and the supported toolchain
+        run: |
+          mkdir -p "$RUNNER_TEMP/aether-ci"
+          sh Scripts/check-ci-host.sh | tee "$RUNNER_TEMP/aether-ci/toolchain.log"
+          xcrun --find swift-api-digester | tee -a "$RUNNER_TEMP/aether-ci/toolchain.log"
+      - name: Cache dependency repositories
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build/cache/repositories
+            ~/Library/Caches/org.swift.swiftpm/repositories
+          key: swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            swift-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
+      - name: Compare the frozen API with the committed baseline
+        run: |
+          sh Scripts/check-api.sh 2>&1 | tee "$RUNNER_TEMP/aether-ci/api.log"
+      - name: Preserve diagnostics
+        if: ${{ !cancelled() }}
+        run: |
+          # The pruned dumps and the digester's reports, so a failure shows exactly what changed.
+          if [[ -d .build/api-check ]]; then cp -R .build/api-check "$RUNNER_TEMP/aether-ci/api-check"; fi
+      - name: Upload diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-diagnostics-api-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/aether-ci/
           if-no-files-found: warn
           retention-days: 14
@@ -239,7 +288,7 @@ jobs:
     name: CI passed
     # A cancelled main run (superseded or manual) skips the gate instead of failing it; a cancelled PR run still fails.
     if: ${{ always() && !(github.event_name == 'push' && cancelled()) }}
-    needs: [changes, workflows, floor-macos, floor-ios, contracts, floor-launch]
+    needs: [changes, workflows, floor-macos, floor-ios, contracts, api, floor-launch]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -251,6 +300,7 @@ jobs:
           FLOOR_MACOS_RESULT: ${{ needs.floor-macos.result }}
           FLOOR_IOS_RESULT: ${{ needs.floor-ios.result }}
           CONTRACTS_RESULT: ${{ needs.contracts.result }}
+          API_RESULT: ${{ needs.api.result }}
           FLOOR_RESULT: ${{ needs.floor-launch.result }}
         run: |
           echo "Change scope: $CHANGES_RESULT (Swift jobs: $SWIFT)"
@@ -258,10 +308,11 @@ jobs:
           echo "Package floor (macOS 14): $FLOOR_MACOS_RESULT"
           echo "Package floor (iOS 17): $FLOOR_IOS_RESULT"
           echo "Release contracts and consumers: $CONTRACTS_RESULT"
+          echo "Public API (frozen): $API_RESULT"
           echo "Launch without CoreAI: $FLOOR_RESULT"
           [[ "$CHANGES_RESULT" == success && "$WORKFLOW_RESULT" == success ]]
           # The Swift jobs must all succeed, or, only for a documentation-only pull request, all be skipped.
           if [[ "$SWIFT" == false ]]; then expected=skipped; else expected=success; fi
-          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$FLOOR_RESULT"; do
+          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$API_RESULT" "$FLOOR_RESULT"; do
             [[ "$result" == "$expected" ]]
           done

@@ -1,0 +1,18 @@
+{
+  "comment": "The 0.0.x API freeze (docs/api-stability.md): per module, the top-level declarations Scripts/check-api.sh holds to the baseline in api/. \"*\" freezes the whole module; \"Outer.Inner\" freezes only Inner.",
+  "modules": {
+    "AetherLanguage": ["*"],
+    "AetherLanguageMacros": ["*"],
+    "AetherAssets": [
+      "ModelCatalogEntry", "ModelSource", "ModelRequirements",
+      "ModelPreparation", "PreparationStatus", "PreparationEvent", "PreparationError",
+      "ModelTransport", "TransportRequest", "URLSessionTransport", "BackgroundTransport",
+      "ModelReadiness", "ModelRuntimeCheck", "ModelRuntimeVerdict",
+      "AssetManifest", "AssetFile", "LocalAssetStore", "AssetReadLease", "AssetStoreError"
+    ],
+    "AetherKit": [
+      "ModelLifecyclePolicy", "ModelLifecycleState", "ModelUnloadReason", "MemoryPressure", "MemoryPressureLevel",
+      "LanguageModelManifest.Platform"
+    ]
+  }
+}
