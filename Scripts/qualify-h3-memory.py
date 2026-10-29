@@ -25,7 +25,9 @@ import signal
 import subprocess
 import time
 
-BAR = 18 << 30
+BAR = 18 << 30                 # today's region: at most 960x544's pixels and 124 frames
+EXTENDED_BAR = 24 << 30        # beyond it (a larger canvas or a longer clip), decided 2026-10-29
+EXTENDED_PHYSICAL = 64 << 30   # physical memory a device needs to use an extended-bar entry
 MARGIN = 256 << 20
 STAGES = ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"]
 
@@ -68,6 +70,10 @@ def main():
     ap.add_argument("--record", help="also write the gate record to docs/evidence/RECORD (a new file name); the measured entry cites it")
     args = ap.parse_args()
     root = Path(__file__).resolve().parent.parent
+    # Each gate is held to one bar, chosen by its region: an extended entry needs a larger canvas or a longer clip.
+    pixels = max(int(w) * int(h) for w, h in (c.split("x") for c in args.canvases.split(",")))
+    snapped = 17 * ((max(0, args.frames - 5) + 16) // 17) + 5
+    bar = EXTENDED_BAR if pixels > 960 * 544 or snapped > 124 else BAR
     probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     work = args.work.resolve()
     (work / "controllers").mkdir(parents=True, exist_ok=True)
@@ -182,9 +188,9 @@ def main():
                                            stages={k: dict(v, metalPeakGiB=round(v["metalPeakBytes"] / (1 << 30), 3),
                                                            footprintPeakGiB=round(v["footprintPeakBytes"] / (1 << 30), 3),
                                                            residentPeakGiB=round(v["residentPeakBytes"] / (1 << 30), 3)) for k, v in per_stage.items()},
-                                           withinBar=metal_peak <= BAR, timelineSHA256=sha(path))
-        if metal_peak > BAR:
-            failures.append(f"{task} {canvas}: Metal peak {metal_peak / (1 << 30):.2f} GiB exceeds the 18 GiB bar")
+                                           withinBar=metal_peak <= bar, timelineSHA256=sha(path))
+        if metal_peak > bar:
+            failures.append(f"{task} {canvas}: Metal peak {metal_peak / (1 << 30):.2f} GiB exceeds the {bar >> 30} GiB bar")
         for k, v in per_stage.items():
             stage_peaks[k] = max(stage_peaks.get(k, 0), v["residentPeakBytes"])
         operation = max(operation, carried)
@@ -214,25 +220,54 @@ def main():
         trigger = path.parent.with_name(path.parent.name + ".spike") / "trigger.json"
         spikes[f"{task}-{canvas}"] = json.loads(trigger.read_text()) if trigger.exists() else None
     worst = max(stage_peaks.values()) + MARGIN + operation
-    if worst > BAR:
-        failures.append(f"admission estimate {worst / (1 << 30):.2f} GiB (largest stage + margin + operation) exceeds the 18 GiB bar")
+    if worst > bar:
+        failures.append(f"admission estimate {worst / (1 << 30):.2f} GiB (largest stage + margin + operation) exceeds the {bar >> 30} GiB bar")
     pins_unchanged = all(sha(p) == v for p, v in pins.items())
     if not pins_unchanged:
         failures.append("pins changed during the gate")
-    entry = dict(execution_identity=identities.pop() if len(identities) == 1 else None,
-                 device_architecture=architectures.pop() if len(architectures) == 1 else None,
-                 canvases=args.canvases.split(","), maximum_frames=int(json.loads(runs[0][2].read_text())["fields"]["frames"]),
-                 stage_peak_bytes={k: stage_peaks[k] for k in STAGES if k in stage_peaks}, operation_bytes=operation,
-                 # The entry cites the record this run writes: docs/evidence/RECORD, or the work directory's gate.json.
-                 evidence=f"docs/evidence/{args.record}" if args.record else str(work / "gate.json"))
+    identity = identities.pop() if len(identities) == 1 else None
+    architecture = architectures.pop() if len(architectures) == 1 else None
+    maximum_frames = int(json.loads(runs[0][2].read_text())["fields"]["frames"])
+    # The entries cite the record this run writes (docs/evidence/RECORD); without --record they are not bundleable.
+    evidence = f"docs/evidence/{args.record}" if args.record else "unrecorded"
+
+    def measured_entry(stage_bytes, operation_bytes, tasks=None):
+        e = dict(execution_identity=identity, device_architecture=architecture, canvases=args.canvases.split(","),
+                 maximum_frames=maximum_frames, stage_peak_bytes={k: stage_bytes[k] for k in STAGES if k in stage_bytes},
+                 operation_bytes=operation_bytes, evidence=evidence)
+        if tasks:
+            e["tasks"] = tasks
+        if bar != BAR:
+            e["memory_bar_bytes"] = bar
+        return e
+    entry = measured_entry(stage_peaks, operation)
+    # One entry per task, so an FL2VA entry can be re-measured and replaced without touching T2VA's. Carried peaks
+    # apply to the combined entry only.
+    per_task = {}
+    for task in sorted({t for t, _, _ in runs}):
+        peaks, carried_bytes = {}, 0
+        for name, render in renders.items():
+            if name.startswith(task + "-"):
+                for k, v in render["stages"].items():
+                    peaks[k] = max(peaks.get(k, 0), v["residentPeakBytes"])
+                carried_bytes = max(carried_bytes, render["carriedStateBytes"])
+        task_worst = max(peaks.values()) + MARGIN + carried_bytes
+        if task_worst > bar:
+            failures.append(f"{task} admission estimate {task_worst / (1 << 30):.2f} GiB exceeds the {bar >> 30} GiB bar")
+        per_task[task] = dict(entry=measured_entry(peaks, carried_bytes, [task]), admissionWorstCaseBytes=task_worst)
+    bundle = json.loads(args.profile.read_text())
     gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
                 spikeCapture=dict(thresholdGiB=args.spike_capture, triggers=spikes) if args.spike_capture else None,
                 carriedRecords=carried_records, carriedStagePeaks=carried_peaks,
-                memoryBarBytes=BAR, memoryBar="Metal allocation peak over a complete render must not exceed 18 GiB, for every task and canvas",
-                marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, controllers=records,
+                memoryBarBytes=bar, minimumPhysicalMemoryBytes=EXTENDED_PHYSICAL if bar != BAR else 0,
+                memoryBar=(f"Metal allocation peak over a complete render must not exceed {bar >> 30} GiB, for every task and canvas; "
+                           "18 GiB up to 960x544's pixels and 124 frames, 24 GiB beyond (with at least 64 GiB of physical memory)"),
+                profileAdapter=bundle.get("adapter"), profileLineage=bundle.get("lineage"),
+                marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, measuredEntriesByTask=per_task,
+                controllers=records,
                 pinsDigest=digest, pinsUnchanged=pins_unchanged, filesSHA256=pins, scriptSHA256=sha(Path(__file__).resolve()),
                 scope=("Complete H3VideoSession renders (conditioner, first-frame encoder for FL2VA, eight Turbo steps, video and audio decode) "
-                       "at the 5 s clip menu; per-stage peaks attribute residual memory from the previous stage to the next stage."))
+                       "at the requested canvases and length; per-stage peaks attribute residual memory from the previous stage to the next stage."))
     (work / "gate.json").write_text(json.dumps(gate, indent=2) + "\n")
     if args.record:
         record = root / "docs/evidence" / args.record

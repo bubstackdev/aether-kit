@@ -609,43 +609,138 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
     await session.unload()
 }
 
-@Test func h3MeasuredEnvelopesHoldEachRequestToTheCheapestCoveringEntryAndRefuseUnmeasuredCombinations() async throws {
-    // A small canvas measured at a longer clip, and a larger canvas measured only at a short one.
-    func entry(_ canvas: String, frames: Int, denoising: UInt64) throws -> H3MeasuredResources {
-        try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: [canvas], maximumFrames: frames,
-                                stagePeakBytes: ["encoding": 2 * gib, "encodingKeyframe": 2 * gib, "denoising": denoising,
-                                                 "decodingVideo": 6 * gib, "decodingAudio": gib],
-                                operationBytes: gib / 4, evidence: "fixture")
-    }
-    let long = try entry("64x32", frames: 56, denoising: 12 * gib), large = try entry("96x64", frames: 39, denoising: 15 * gib)
+private func entry(_ canvases: [String], frames: Int, denoising: UInt64, operation: UInt64 = gib / 4, tasks: Set<H3Profile.Task>? = nil,
+                   audio: Bool = true, keyframe: Bool = true, bar: UInt64 = H3MeasuredResources.memoryBarBytes,
+                   identity: String = "fixture/1") throws -> H3MeasuredResources {
+    var peaks: [String: UInt64] = ["encoding": 2 * gib, "denoising": denoising, "decodingVideo": 6 * gib]
+    if audio { peaks["decodingAudio"] = gib }
+    if keyframe { peaks["encodingKeyframe"] = 2 * gib }
+    return try H3MeasuredResources(executionIdentity: identity, deviceArchitecture: "fixture", canvases: canvases, maximumFrames: frames,
+                                   tasks: tasks, stagePeakBytes: peaks, operationBytes: operation, memoryBarBytes: bar, evidence: "fixture")
+}
+private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = false, audio: Bool = false) throws -> H3VideoRequest {
+    let g = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
+    let keyframe = first ? try H3Keyframe(width: width, height: height, rgb: [UInt8](repeating: 0, count: width * height * 3)) : nil
+    return try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe, audio: audio)
+}
+
+@Test func h3MeasuredEnvelopesHoldEachRequestToOneCoveringEntryAndRefuseUnmeasuredCombinations() async throws {
+    // A small canvas measured at a longer clip, and a larger canvas measured only at a short one (both landscape).
+    let long = try entry(["64x32"], frames: 56, denoising: 12 * gib), large = try entry(["96x64"], frames: 39, denoising: 15 * gib)
     let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes), log = StageLog()
     let admission = try H3MeasuredResources.admission(entries: [long, large], coordinator: budget)
-    #expect(admission.maximumPixels == 96 * 64 && admission.maximumFrames == 56)
+    #expect(admission.envelopes == [try long.envelope(), try large.envelope()])
+    #expect(admission.maximumPixels == 96 * 64 && admission.maximumFrames == 56)     // a union, not an admitted combination
     let session = try H3VideoSession(stages: budgetStages(log), resources: admission)
-    func run(_ width: Int, _ height: Int, _ frames: Int, expecting chosen: H3MeasuredResources) async throws {
-        let g = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
-        _ = try await session.generate(H3VideoRequest(prompt: "p", geometry: g, seed: 1, audio: false)) { event in
+    func run(_ r: H3VideoRequest, expecting chosen: H3MeasuredResources) async throws {
+        #expect(try admission.envelope(for: r) == chosen.envelope())
+        _ = try await session.generate(r) { event in
             if case .stageStarted(let stage) = event {
                 #expect(budget.snapshot.reservedBytes == chosen.operationBytes + chosen.stagePeakBytes[stage.rawValue]! + H3MeasuredResources.marginBytes)
             }
         }
     }
-    try await run(64, 32, 56, expecting: long)
-    try await run(64, 32, 39, expecting: long)     // both cover it; the cheaper envelope is used
-    try await run(96, 64, 39, expecting: large)
-    // The large canvas at the long clip was never measured: refused before any stage.
-    let before = await log.entries.count
-    await #expect(throws: AetherError.self) {
-        try await session.generate(H3VideoRequest(prompt: "p", geometry: H3Geometry(width: 96, height: 64, requestedFrames: 56, diagnostic: true),
-                                                  seed: 1, audio: false))
+    try await run(request(64, 32, 56), expecting: long)     // at both of long's limits
+    try await run(request(64, 32, 39), expecting: long)     // both cover it; the cheaper envelope is used
+    try await run(request(96, 64, 39), expecting: large)    // at both of large's limits
+    try await run(request(64, 64, 39), expecting: large)    // a square canvas fits a landscape one
+    // Just outside: the next valid width, height and length, the portrait of a landscape-only canvas, and the large
+    // canvas at the long clip that no single entry measured.
+    for outside in [try request(128, 64, 39), try request(96, 96, 39), try request(96, 64, 56), try request(64, 32, 73),
+                    try request(64, 96, 39), try request(32, 64, 39)] {
+        #expect(!admission.admits(outside))
+        #expect(throws: AetherError.self) { _ = try admission.envelope(for: outside) }
     }
+    do { _ = try admission.envelope(for: request(96, 64, 56)); Issue.record("expected a refusal") } catch {
+        #expect("\(error)".contains("nearest"))
+    }
+    let before = await log.entries.count
+    await #expect(throws: AetherError.self) { try await session.generate(request(96, 64, 56)) }
     #expect(await log.entries.count == before && budget.snapshot.reservedBytes == 0)
     await session.unload()
-    // Envelopes must share one identity and device.
-    let other = try H3MeasuredResources(executionIdentity: "fixture/2", deviceArchitecture: "fixture", canvases: ["64x32"], maximumFrames: 39,
-                                        stagePeakBytes: long.stagePeakBytes, operationBytes: gib / 4, evidence: "fixture")
+    // Envelopes come from entries of one identity and device.
+    let other = try entry(["64x32"], frames: 39, denoising: 12 * gib, identity: "fixture/2")
     #expect(throws: AetherError.self) { _ = try H3MeasuredResources.admission(entries: [long, other], coordinator: budget) }
     #expect(throws: AetherError.self) { _ = try H3MeasuredResources.admission(entries: [], coordinator: budget) }
+}
+
+@Test func h3MeasuredEnvelopeChoiceFollowsTheTaskAndTheStagesTheRequestNeeds() throws {
+    // T2VA measured on its own (cheaper), and both tasks measured without the audio decoder.
+    let t2va = try entry(["64x32"], frames: 39, denoising: 12 * gib, tasks: [.t2va], keyframe: false)
+    let both = try entry(["64x32"], frames: 39, denoising: 14 * gib, audio: false)
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
+    let admission = try H3MeasuredResources.admission(entries: [t2va, both], coordinator: budget)
+    #expect(try admission.envelope(for: request(64, 32, 39)) == t2va.envelope())
+    #expect(try admission.envelope(for: request(64, 32, 39, audio: true)) == t2va.envelope())
+    #expect(try admission.envelope(for: request(64, 32, 39, first: true)) == both.envelope())
+    #expect(throws: AetherError.self) { _ = try admission.envelope(for: request(64, 32, 39, first: true, audio: true)) }
+    // An FL2VA entry can be replaced without touching the T2VA one: an admission without it still admits T2VA.
+    let t2vaOnly = try H3MeasuredResources.admission(entries: [t2va], coordinator: budget)
+    let withAudio = try request(64, 32, 39, audio: true), withFirst = try request(64, 32, 39, first: true)
+    #expect(t2vaOnly.admits(withAudio) && !t2vaOnly.admits(withFirst))
+    #expect(throws: AetherError.self) { _ = try entry(["64x32"], frames: 39, denoising: gib, tasks: []) }
+}
+
+@Test func h3MeasuredBarsAreHeldPerEntryAndTheExtendedBarNeedsSixtyFourGiB() throws {
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.extendedMemoryBarBytes)
+    // Today's region keeps 18 GiB; the 24 GiB bar is valid only beyond 960x544's pixels or 124 frames.
+    let today = try entry(["960x544", "544x960"], frames: 124, denoising: 11 * gib)
+    let canvas = try entry(["1280x704", "704x1280"], frames: 141, denoising: 20 * gib, operation: gib / 8, tasks: [.t2va], keyframe: false,
+                           bar: H3MeasuredResources.extendedMemoryBarBytes)
+    let clip = try entry(["960x544"], frames: 243, denoising: 20 * gib, tasks: [.t2va], keyframe: false, bar: H3MeasuredResources.extendedMemoryBarBytes)
+    #expect(today.minimumPhysicalMemoryBytes == 0 && canvas.minimumPhysicalMemoryBytes == 64 << 30 && clip.isBeyondBaseline)
+    #expect(throws: AetherError.self) { _ = try entry(["1280x704"], frames: 141, denoising: 20 * gib) }                 // over 18 GiB
+    #expect(throws: AetherError.self) {                                                                                   // invalid 24 GiB claim
+        _ = try entry(["960x544"], frames: 124, denoising: 20 * gib, bar: H3MeasuredResources.extendedMemoryBarBytes)
+    }
+    #expect(throws: AetherError.self) {                                                                                   // over 24 GiB
+        _ = try entry(["1280x704"], frames: 141, denoising: 23_900 * (1 << 20), bar: H3MeasuredResources.extendedMemoryBarBytes)
+    }
+    #expect(throws: AetherError.self) { _ = try entry(["1280x704"], frames: 141, denoising: gib, bar: 20 << 30) }       // unknown bar
+    let large = try request(1280, 704, 141), long = try request(960, 544, 243)
+    // Below 64 GiB: today's region still runs; the extended entries are refused, naming the requirement.
+    let small = try H3MeasuredResources.admission(entries: [today, canvas, clip], coordinator: budget, physicalMemoryBytes: 32 << 30)
+    let landscape = try request(960, 544, 124), portrait = try request(544, 960, 124, first: true)
+    #expect(small.admits(landscape) && small.admits(portrait))
+    for r in [large, long] {
+        do { _ = try small.envelope(for: r); Issue.record("expected a refusal") } catch { #expect("\(error)".contains("64 GiB")) }
+    }
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources.admission(entries: [canvas], coordinator: budget, physicalMemoryBytes: 32 << 30)
+    }
+    #expect(try H3MeasuredResources.entries([today, canvas, clip], executionIdentity: "fixture/1", deviceArchitecture: "fixture",
+                                            physicalMemoryBytes: 32 << 30) == [today])
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources.entries([canvas], executionIdentity: "fixture/1", deviceArchitecture: "fixture", physicalMemoryBytes: 32 << 30)
+    }
+    // At 64 GiB: the large canvas and the long clip are admitted, each under its own entry; 960x544 at 125...141
+    // frames falls under the large canvas; the 18 GiB class is preferred where both cover, even when dearer.
+    let big = try H3MeasuredResources.admission(entries: [today, canvas, clip], coordinator: budget, physicalMemoryBytes: 64 << 30)
+    #expect(try big.envelope(for: large) == canvas.envelope() && big.envelope(for: request(704, 1280, 141)) == canvas.envelope())
+    #expect(try big.envelope(for: long) == clip.envelope() && big.envelope(for: request(960, 544, 141)) == canvas.envelope())
+    #expect(try big.envelope(for: request(960, 544, 124)) == today.envelope())
+    // Never measured: the long clip in portrait, a canvas wider than any measured, the large canvas at the long clip,
+    // and FL2VA where only T2VA was measured.
+    for r in [try request(544, 960, 243), try request(1408, 640, 141), try request(1280, 704, 158), try request(1280, 704, 141, first: true)] {
+        #expect(!big.admits(r))
+    }
+}
+
+@Test func h3MeasuredEntriesDecodeWithTheDefaultBarAndRefuseLocalEvidencePaths() throws {
+    let json = #"{"execution_identity": "fixture/1", "device_architecture": "fixture", "canvases": ["960x544"], "maximum_frames": 124,"#
+        + #" "stage_peak_bytes": {"encoding": 1, "denoising": 2, "decodingVideo": 3}, "operation_bytes": 4, "evidence": "docs/evidence/x.json"}"#
+    let decoded = try JSONDecoder().decode(H3MeasuredResources.self, from: Data(json.utf8))
+    #expect(decoded.memoryBarBytes == H3MeasuredResources.memoryBarBytes && decoded.tasks == nil)
+    let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded)) as! [String: Any]
+    #expect(encoded["memory_bar_bytes"] == nil && encoded["tasks"] == nil)
+    let extended = try entry(["960x544"], frames: 243, denoising: 20 * gib, tasks: [.t2va], keyframe: false, bar: H3MeasuredResources.extendedMemoryBarBytes)
+    #expect(try JSONDecoder().decode(H3MeasuredResources.self, from: JSONEncoder().encode(extended)) == extended)
+    for path in ["/Volumes/x/gate.json", "~/gate.json"] {
+        #expect(throws: AetherError.self) {
+            _ = try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124,
+                                        stagePeakBytes: ["encoding": 1, "denoising": 2, "decodingVideo": 3], operationBytes: 4, evidence: path)
+        }
+    }
 }
 
 @Test func h3MeasuredResourcesOverTheEighteenGiBBarAreRefused() throws {
@@ -656,13 +751,30 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
         _ = try H3MeasuredResources(executionIdentity: "fixture/1", deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124,
                                     stagePeakBytes: ["denoising": gib], operationBytes: gib, evidence: "fixture")   // missing required stages
     }
-    // Every recorded entry decodes and is within the bar; an unmeasured identity has no estimate.
+    // Every recorded entry decodes and is within its bar; an unmeasured identity has no estimate.
     for entry in try H3MeasuredResources.bundled() { try entry.validate() }
-    // The recorded entry for the qualified tiled-encoder profile in its Kit-owned home (memory gate, both orientations, T2VA and FL2VA).
-    let recorded = try H3MeasuredResources.bundled(
-        executionIdentity: "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8", deviceArchitecture: "h17c")
-    #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
-    #expect(recorded.stagePeakBytes.values.max()! + H3MeasuredResources.marginBytes + recorded.operationBytes <= H3MeasuredResources.memoryBarBytes)
-    #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"])
     #expect(throws: AetherError.self) { _ = try H3MeasuredResources.bundled(executionIdentity: "unmeasured", deviceArchitecture: "fixture") }
+}
+
+/// Not opt-in: the bundled entry for the qualified tiled-encoder profile in its Kit-owned home (memory gate, both
+/// orientations, T2VA and FL2VA) decodes and is admitted exactly as before envelopes, on any device memory.
+@Test func h3BundledQualifiedEntryIsAdmittedUnchanged() throws {
+    let identity = "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8"
+    let recorded = try H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: "h17c", physicalMemoryBytes: 8 << 30)
+    #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
+    #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"] && recorded.tasks == nil)
+    #expect(recorded.memoryBarBytes == H3MeasuredResources.memoryBarBytes && recorded.minimumPhysicalMemoryBytes == 0)
+    #expect(recorded.evidence == "docs/evidence/h3-memory-gate-review-2026-10-28.json")
+    #expect(recorded.stagePeakBytes.values.max()! + H3MeasuredResources.marginBytes + recorded.operationBytes <= H3MeasuredResources.memoryBarBytes)
+    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
+    let admission = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
+                                                             physicalMemoryBytes: 8 << 30)
+    #expect(admission.envelopes.count == 1 && admission.operationBytes == recorded.operationBytes)
+    let envelope = admission.envelopes[0]
+    #expect(envelope.stageBytes.count == 5 && envelope.stageBytes.allSatisfy {
+        $0.value == recorded.stagePeakBytes[$0.key.rawValue]! + H3MeasuredResources.marginBytes
+    })
+    let first = try request(960, 544, 124, first: true, audio: true), portrait = try request(544, 960, 124, audio: true)
+    let longer = try request(960, 544, 141), larger = try request(1280, 704, 124)
+    #expect(admission.admits(first) && admission.admits(portrait) && !admission.admits(longer) && !admission.admits(larger))
 }

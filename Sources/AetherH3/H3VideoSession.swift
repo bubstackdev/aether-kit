@@ -172,7 +172,7 @@ public actor H3VideoSession {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
         }
         // A request is checked and reserved against the one envelope that covers it.
-        let resources = try resources?.envelope(for: request)
+        let resources = try resources?.resolved(for: request)
         try resources?.check(request)
         let reserve: @Sendable () throws -> ResourceReservation? = {
             try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
