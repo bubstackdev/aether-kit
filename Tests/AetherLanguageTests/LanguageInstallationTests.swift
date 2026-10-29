@@ -143,4 +143,29 @@ struct LanguageInstallationTests {
             Issue.record("expected bundleInvalid, got \(model.availability)"); return
         }
     }
+
+    @Test func theLanguageReadinessCheckFollowsTheFacade() async throws {
+        let bundle = try HashedBundle(registerTokenizerFiles: true)
+        let storeRoot = FileManager.default.temporaryDirectory.appendingPathComponent("language-store-\(UUID().uuidString)")
+        defer { bundle.remove(); try? FileManager.default.removeItem(at: storeRoot) }
+        let manifest = try LanguageModelManifest.installationManifest(in: bundle.url)
+        let entry = try ModelCatalogEntry(manifest: manifest, source: .https(base: URL(string: "https://example.com/m")!))
+        let store = try LocalAssetStore(root: storeRoot)
+        let lease = try await store.acquire(try await store.install(manifest, from: bundle.url))
+
+        let here = ModelRuntimeCheck.language(platform: .macos, coreAIAvailable: true)
+        #expect(here.entry(entry) == .runnable)
+        #expect(here.installation(lease) == .runnable)
+        // Below Core AI's OS nothing runs, before or after installing.
+        let oldOS = ModelRuntimeCheck.language(platform: .macos, coreAIAvailable: false)
+        #expect(oldOS.entry(entry) == .unsupported(.operatingSystem))
+        #expect(oldOS.installation(lease) == .unsupported(.operatingSystem))
+        // A macOS registration on an iPhone.
+        #expect(ModelRuntimeCheck.language(platform: .ios, coreAIAvailable: true).installation(lease) == .unsupported(.platform))
+
+        let foreign = try ModelCatalogEntry(
+            manifest: AssetManifest(assetIdentity: manifest.assetIdentity, executionContract: "kokoro.speech-bundle/1", files: manifest.files),
+            source: entry.source)
+        guard case .invalid = here.entry(foreign) else { Issue.record("a speech entry passed the language check"); return }
+    }
 }

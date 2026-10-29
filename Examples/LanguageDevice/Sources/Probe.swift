@@ -16,8 +16,10 @@ private struct ProbeConfiguration: Decodable {
     let cases: [String]?
     /// Prepare only: stop the first run once this many bytes have downloaded, then prepare again.
     let cutAfterBytes: UInt64?
-    /// Prepare only: the store's folder in Application Support (default "Models").
+    /// Prepare and readiness: the store's folder in Application Support (default "Models").
     let store: String?
+    /// Readiness only: replaces the entry's memory requirement.
+    let memoryBytes: UInt64?
 }
 
 private struct Logits: Decodable { let file: String; let rows: Int; let vocab: Int }
@@ -72,6 +74,8 @@ struct DeviceReport: Codable {
     var cases: [CaseResult] = []
     /// Mode "prepare": the background preparation run (PrepareProbe.swift).
     var preparation: PreparationResult?
+    /// Mode "readiness": the states a `ModelReadiness` passed through (ReadinessProbe.swift).
+    var readiness: ReadinessResult?
     var gate = "text: every teacher-forced row cosine >= 0.995 against the float32 reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token in the reference top-5); greedy identical to the reference (its final stop token excluded) or first diverging at such a near-tie. vision: Kit decodes and preprocesses the photo the reference was made from; greedy identical or first diverging at a near-tie of the reference's teacher-forced row there"
     var passed = false
     var failures: [String] = []
@@ -96,6 +100,15 @@ func runLanguageDeviceProbe() async -> DeviceReport {
             try await runPreparation(assets: assets, store: configuration.store ?? "Models",
                                      cutAfter: configuration.cutAfterBytes, report: &report)
             report.passed = report.failures.isEmpty && report.preparation?.reply != nil
+            return report
+        }
+        if configuration.mode == "readiness" {
+            try await runReadiness(assets: assets, store: configuration.store ?? "Models",
+                                   memoryBytes: configuration.memoryBytes, report: &report)
+            // Ready and answering, or, with a replaced memory requirement, refused for memory.
+            let final = report.readiness?.final ?? ""
+            report.passed = report.failures.isEmpty && (report.readiness?.reply != nil
+                || (configuration.memoryBytes != nil && final.hasPrefix("unsupported memory")))
             return report
         }
         let bundle = assets.appendingPathComponent("bundle"), reference = assets.appendingPathComponent("reference")

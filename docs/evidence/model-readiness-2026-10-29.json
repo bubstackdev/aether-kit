@@ -1,0 +1,117 @@
+{
+  "record": "model-readiness-2026-10-29",
+  "what": "Typed readiness (docs/model-readiness.md) qualified with `aether-probe readiness` against the store and entries of the model-preparation qualification (docs/evidence/model-preparation-network-2026-10-28.json). Nothing downloaded: the store's downloads area stayed empty throughout.",
+  "build": "080eb8f (the readiness PR with its review fixes); the iPhone app is Examples/LanguageDevice built from it",
+  "mac": {
+    "host": {
+      "model": "Mac17,6",
+      "chip": "Apple M5 Max",
+      "os": "macOS 27.2 (26B123)",
+      "deviceMemoryLimitBytes": 68719476736
+    },
+    "installedEntry": {
+      "entry": {
+        "revision": "86948c119e3b6cd0e85f03127db439489b5fe117",
+        "files": 11,
+        "byteCount": 1208370450,
+        "requirements": null,
+        "installationID": "02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+      },
+      "command": "aether-probe readiness ENTRY STORE",
+      "transitions": [
+        {
+          "seconds": 0.001379917,
+          "state": "verifying"
+        },
+        {
+          "seconds": 0.43919175,
+          "state": "ready 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+        }
+      ],
+      "final": "ready 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7",
+      "seconds": 0.439201,
+      "result": "Created, verified (every installed byte hashed by LocalAssetStore.acquire) and ready, holding the lease."
+    },
+    "memoryRefused": {
+      "command": "aether-probe readiness ENTRY STORE --memory-bytes 68719476737",
+      "transitions": [
+        {
+          "seconds": 0.0004035,
+          "state": "unsupported memory(requiredBytes: 68719476737, availableBytes: 68719476736)"
+        }
+      ],
+      "final": "unsupported memory(requiredBytes: 68719476737, availableBytes: 68719476736)",
+      "seconds": 0.000464,
+      "result": "One byte over physical memory: unsupported(memory) before verifying."
+    },
+    "platformRefused": {
+      "entry": {
+        "revision": "86f79bd093c4aff10855ed0516b50f87686a7c54",
+        "subdirectory": "ios",
+        "requirements": {
+          "memoryBytes": 230686720,
+          "platforms": [
+            "ios"
+          ]
+        },
+        "note": "The iOS entry of the model-preparation iPhone record, rewritten by `aether-probe catalog-entry language ... --memory-bytes 230686720`; its manifest is identical, so its installation ID is unchanged. 230,686,720 bytes is 220 MiB, the 219.2 MiB footprintPeakMiB of docs/evidence/language-iphone18-qwen3-0.6b-2026-10-28.json rounded up."
+      },
+      "command": "aether-probe readiness ENTRY STORE --prepare",
+      "transitions": [
+        {
+          "seconds": 0.000404584,
+          "state": "unsupported platform"
+        }
+      ],
+      "final": "unsupported platform",
+      "seconds": 0.000432,
+      "result": "unsupported(platform) on the Mac although --prepare asked for preparation; no download started."
+    }
+  },
+  "iphone": {
+    "host": {
+      "device": "iPhone19,4",
+      "os": "27.2 (24B91020)",
+      "memoryGiB": "11.3",
+      "entitlements": "none (no increased memory limit)",
+      "deviceMemoryLimitBytes": 3539992576
+    },
+    "app": "Examples/LanguageDevice, probe mode \"readiness\": ModelReadiness with BackgroundTransport and ModelRuntimeCheck.language, over the store that holds the installation of the model-preparation iPhone record (docs/evidence/model-preparation-iphone-2026-10-29.json)",
+    "entry": "the iOS entry with requirements from the Mac section (platforms [\"ios\"], memoryBytes 230686720)",
+    "installed": {
+      "transitions": [
+        {
+          "seconds": 0.0002925,
+          "state": "verifying"
+        },
+        {
+          "seconds": 0.490784708,
+          "state": "ready 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8"
+        }
+      ],
+      "final": "ready 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
+      "reply": {
+        "init": "AetherLanguageModel(installation:) from the ready state's lease",
+        "prompt": "In one sentence, what is a hash function?",
+        "options": "greedy, maximumResponseTokens 48",
+        "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
+        "seconds": 4.809
+      },
+      "result": "Verified (all 1,208,370,448 installed bytes hashed) and ready; the model opened from the lease answered."
+    },
+    "memoryRefused": {
+      "probe": {
+        "memoryBytes": 8589934592
+      },
+      "transitions": [
+        {
+          "seconds": 7.7416e-05,
+          "state": "unsupported memory(requiredBytes: 8589934592, availableBytes: 3539992576)"
+        }
+      ],
+      "final": "unsupported memory(requiredBytes: 8589934592, availableBytes: 3539992576)",
+      "result": "An 8 GiB requirement against the app's limit (footprint plus os_proc_available_memory): unsupported(memory) before verifying. The limit read the same in both launches."
+    }
+  },
+  "failures": []
+}

@@ -193,7 +193,8 @@ let speech = try KokoroSpeechSession(installed: lease)             // existing
 - `AetherLanguageModel(installation:)` reports availability from the leased directory, exactly as
   `init(bundle:)` does for a folder. The model keeps the lease while loaded and while any session it created is alive.
 - `init(bundle:)` stays for apps that manage their own folders.
-- **Readiness**, the next gate piece, builds on `status` and the run's events, so it isn't designed here.
+- **Readiness**, the next gate piece, builds on `status` and the run's events: [model readiness](model-readiness.md)
+  turns them into one state per model, ending in a ready state that holds the lease.
 
 ## Errors
 
@@ -260,5 +261,6 @@ whether retrying can help.
 - Install by rename instead of copy, which halves peak disk use for multi-GB bundles. It needs a proof that the
   download area can be trusted at publish time.
 - Whether `status` should also report Core AI's specialization cache. A model that's installed but not yet specialized
-  pays a first-open compile. That probably belongs to readiness.
+  pays a first-open compile. [Readiness](model-readiness.md#open-questions) leaves it to managed lifecycle, which owns
+  loading.
 - Where catalog entries live for the two apps: shipped in the app, or fetched and pinned by hash.
