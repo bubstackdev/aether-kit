@@ -1,0 +1,297 @@
+{
+  "date": "2026-10-29",
+  "what": "Examples/SampleApp qualification (docs/sample-app.md): the app's -qualify mode drives the same controllers its screens use. Each record is the app's own JSON, written in its container and copied here unchanged.",
+  "bundle": {
+    "repository": "aether-models/aether-kit-qwen3-0.6b",
+    "revision": "7757d22bff5df7e106f7492a12d7278347aa3fb0",
+    "access": "public, anonymous (no token)"
+  },
+  "build": {
+    "xcode": "Xcode 27.1 (27A9275), Release",
+    "mac": "signed with the existing Apple Development identity, no provisioning profile; entitlements com.apple.security.app-sandbox, com.apple.security.network.client (and get-task-allow), checked with codesign -d --entitlements",
+    "ios": "automatic signing without -allowProvisioningUpdates; Xcode chose the team's existing wildcard development profile (only get-task-allow); no increased-memory entitlement"
+  },
+  "mac": {
+    "note": "Two launches of the sandboxed app: fresh,prepare (network and CPU only), then run,idle,delete with a 10 s idle policy under the shared GPU lease (with-gpu-lock.sh).",
+    "prepare": {
+      "chatFootnote": "",
+      "chatPrompt": "",
+      "chatReply": "",
+      "deviceMemoryLimitBytes": 68719476736,
+      "downloadSeconds": 101.206731917,
+      "entryBytes": 1208370450,
+      "entryFiles": 11,
+      "failures": [],
+      "hardwareModel": "Mac17,6",
+      "initialState": "notInstalled(0/1208370450)",
+      "installationID": "02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7",
+      "lifecycle": [],
+      "os": "Version 27.2 (Build 26B123)",
+      "passed": true,
+      "phases": [
+        "fresh",
+        "prepare"
+      ],
+      "physicalMemoryBytes": 68719476736,
+      "platform": "macos",
+      "pressureLevels": [
+        "normal"
+      ],
+      "readiness": [
+        {
+          "seconds": 0.205092708,
+          "state": "notInstalled(0/1208370450)"
+        },
+        {
+          "seconds": 0.226607792,
+          "state": "installing(checking)"
+        },
+        {
+          "seconds": 0.828965042,
+          "state": "installing(downloading)"
+        },
+        {
+          "seconds": 100.581542292,
+          "state": "installing(installing)"
+        },
+        {
+          "seconds": 101.414676708,
+          "state": "verifying"
+        },
+        {
+          "seconds": 102.011998292,
+          "state": "ready"
+        }
+      ],
+      "reloadReply": "",
+      "repository": "aether-models/aether-kit-qwen3-0.6b",
+      "revision": "7757d22bff5df7e106f7492a12d7278347aa3fb0",
+      "sandboxed": true,
+      "startedAt": "2026-10-29T19:13:48Z",
+      "stateAfterDelete": "",
+      "storeInsideAppContainer": true,
+      "structuredJSON": "",
+      "structuredSentence": "",
+      "subdirectory": "mac",
+      "verifiedReadySeconds": 101.798334792
+    },
+    "run": {
+      "chatFirstTextSeconds": 7.972302416000001,
+      "chatFootnote": "end of turn \u00b7 41 prompt + 24 reply tokens",
+      "chatPrompt": "In one sentence, what is a hash function?",
+      "chatReply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string.",
+      "chatSeconds": 8.198295208000001,
+      "deviceMemoryLimitBytes": 68719476736,
+      "entryBytes": 1208370450,
+      "entryFiles": 11,
+      "failures": [],
+      "hardwareModel": "Mac17,6",
+      "idleUnloadAfterSeconds": 10,
+      "idleUnloadSecondsAfterReply": 10.066059791999999,
+      "initialState": "ready",
+      "installationID": "02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7",
+      "lifecycle": [
+        {
+          "seconds": 0.217310167,
+          "state": "unloaded(nil)"
+        },
+        {
+          "seconds": 0.224045708,
+          "state": "loading"
+        },
+        {
+          "seconds": 4.866701375,
+          "state": "running"
+        },
+        {
+          "seconds": 8.420664333,
+          "state": "loaded"
+        },
+        {
+          "seconds": 8.422127,
+          "state": "running"
+        },
+        {
+          "seconds": 9.160735833,
+          "state": "loaded"
+        },
+        {
+          "seconds": 19.206939542,
+          "state": "unloaded(Optional(AetherKit.ModelUnloadReason.idle))"
+        },
+        {
+          "seconds": 19.228116208,
+          "state": "loading"
+        },
+        {
+          "seconds": 20.707858833,
+          "state": "running"
+        },
+        {
+          "seconds": 20.965763208,
+          "state": "loaded"
+        }
+      ],
+      "os": "Version 27.2 (Build 26B123)",
+      "passed": true,
+      "phases": [
+        "run",
+        "idle",
+        "delete"
+      ],
+      "physicalMemoryBytes": 68719476736,
+      "platform": "macos",
+      "pressureLevels": [
+        "normal"
+      ],
+      "readiness": [
+        {
+          "seconds": 0.202065708,
+          "state": "verifying"
+        },
+        {
+          "seconds": 0.205577708,
+          "state": "ready"
+        },
+        {
+          "seconds": 20.991418917,
+          "state": "notInstalled(0/1208370450)"
+        }
+      ],
+      "reloadReply": "One common hash function is SHA-256.",
+      "reloadSeconds": 1.7388972920000008,
+      "repository": "aether-models/aether-kit-qwen3-0.6b",
+      "revision": "7757d22bff5df7e106f7492a12d7278347aa3fb0",
+      "sandboxed": true,
+      "startedAt": "2026-10-29T19:23:00Z",
+      "stateAfterDelete": "notInstalled(0/1208370450)",
+      "storeBytesAfterDelete": 0,
+      "storeInsideAppContainer": true,
+      "structuredJSON": "{\n  \"dueInDays\" : 7,\n  \"priority\" : \"high\",\n  \"title\" : \"Renew my passport\"\n}",
+      "structuredSeconds": 0.7400101249999995,
+      "structuredSentence": "Remind me to renew my passport next week, it's pretty urgent.",
+      "subdirectory": "mac"
+    }
+  },
+  "iphone": {
+    "note": "One launch through devicectl with fresh,prepare,run,idle,delete and a 10 s idle policy, BackgroundTransport, foreground.",
+    "record": {
+      "chatFirstTextSeconds": 6.967405083000131,
+      "chatFootnote": "end of turn \u00b7 41 prompt + 24 reply tokens",
+      "chatPrompt": "In one sentence, what is a hash function?",
+      "chatReply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string.",
+      "chatSeconds": 7.3016900830000395,
+      "deviceMemoryLimitBytes": 3539992576,
+      "downloadSeconds": 1187.360962125,
+      "entryBytes": 1208370448,
+      "entryFiles": 11,
+      "failures": [],
+      "hardwareModel": "iPhone19,4",
+      "idleUnloadAfterSeconds": 10,
+      "idleUnloadSecondsAfterReply": 10.068418290999944,
+      "initialState": "notInstalled(0/1208370448)",
+      "installationID": "729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
+      "lifecycle": [
+        {
+          "seconds": 1187.809998958,
+          "state": "unloaded(nil)"
+        },
+        {
+          "seconds": 1187.810138708,
+          "state": "loading"
+        },
+        {
+          "seconds": 1191.97001625,
+          "state": "running"
+        },
+        {
+          "seconds": 1195.110385333,
+          "state": "loaded"
+        },
+        {
+          "seconds": 1195.111980208,
+          "state": "running"
+        },
+        {
+          "seconds": 1196.079159208,
+          "state": "loaded"
+        },
+        {
+          "seconds": 1206.144970125,
+          "state": "unloaded(Optional(AetherKit.ModelUnloadReason.idle))"
+        },
+        {
+          "seconds": 1206.162083583,
+          "state": "loading"
+        },
+        {
+          "seconds": 1207.468025166,
+          "state": "running"
+        },
+        {
+          "seconds": 1207.907322875,
+          "state": "loaded"
+        }
+      ],
+      "os": "Version 27.2 (Build 24B91020)",
+      "passed": true,
+      "phases": [
+        "fresh",
+        "prepare",
+        "run",
+        "idle",
+        "delete"
+      ],
+      "physicalMemoryBytes": 12132057088,
+      "platform": "ios",
+      "pressureLevels": [
+        "normal"
+      ],
+      "readiness": [
+        {
+          "seconds": 0.06196425,
+          "state": "notInstalled(0/1208370448)"
+        },
+        {
+          "seconds": 0.082806833,
+          "state": "installing(checking)"
+        },
+        {
+          "seconds": 0.722857125,
+          "state": "installing(downloading)"
+        },
+        {
+          "seconds": 1186.871561208,
+          "state": "installing(installing)"
+        },
+        {
+          "seconds": 1187.433625958,
+          "state": "verifying"
+        },
+        {
+          "seconds": 1187.801548083,
+          "state": "ready"
+        },
+        {
+          "seconds": 1207.949864166,
+          "state": "notInstalled(0/1208370448)"
+        }
+      ],
+      "reloadReply": "One common hash function is SHA-256.",
+      "reloadSeconds": 1.7598857079999561,
+      "repository": "aether-models/aether-kit-qwen3-0.6b",
+      "revision": "7757d22bff5df7e106f7492a12d7278347aa3fb0",
+      "sandboxed": true,
+      "startedAt": "2026-10-29T19:17:55Z",
+      "stateAfterDelete": "notInstalled(0/1208370448)",
+      "storeBytesAfterDelete": 0,
+      "storeInsideAppContainer": true,
+      "structuredJSON": "{\n  \"dueInDays\" : 7,\n  \"priority\" : \"high\",\n  \"title\" : \"Renew my passport\"\n}",
+      "structuredSeconds": 0.9683185830001548,
+      "structuredSentence": "Remind me to renew my passport next week, it's pretty urgent.",
+      "subdirectory": "ios",
+      "verifiedReadySeconds": 1187.727213208
+    }
+  },
+  "passed": true
+}

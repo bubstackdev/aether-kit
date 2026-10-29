@@ -109,7 +109,7 @@ public struct ModelRequirements: Codable, Sendable, Equatable {
 
 /// Where a catalog entry's files come from. Only immutable locations are accepted: HTTPS under a fixed base, or a
 /// Hugging Face repository at a full commit revision (a branch or tag could change underneath the pinned hashes).
-public enum ModelSource: Codable, Sendable, Equatable {
+@nonexhaustive public enum ModelSource: Codable, Sendable, Equatable {
     case https(base: URL)
     case huggingFace(repository: String, revision: String, subdirectory: String?)
 

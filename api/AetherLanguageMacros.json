@@ -1,0 +1,165 @@
+{
+ "ABIRoot": {
+  "children": [
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.String?",
+          "usr": "s:Sq"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Tuple",
+        "printedName": "(description: Swift.String?)"
+       }
+      ],
+      "kind": "TypeFunc",
+      "name": "Function",
+      "printedName": "(Swift.String?) -> ()"
+     }
+    ],
+    "declAttributes": [
+     "MacroRole"
+    ],
+    "declKind": "Macro",
+    "kind": "Root",
+    "mangledName": "$s20AetherLanguageMacros0A9Generable11descriptionySSSg_tcfm",
+    "moduleName": "AetherLanguageMacros",
+    "name": "AetherGenerable",
+    "printedName": "AetherGenerable",
+    "usr": "s:20AetherLanguageMacros0A9Generable11descriptionySSSg_tcfm"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.String?",
+          "usr": "s:Sq"
+         },
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "GenericTypeParam",
+              "printedName": "T"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "AetherGenerationGuide",
+            "printedName": "AetherLanguage.AetherGenerationGuide<T>",
+            "usr": "s:14AetherLanguage0A15GenerationGuideV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "AetherLanguage.AetherGenerationGuide<T>...",
+          "usr": "s:Sa"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Tuple",
+        "printedName": "(description: Swift.String?, AetherLanguage.AetherGenerationGuide<T>...)"
+       }
+      ],
+      "kind": "TypeFunc",
+      "name": "GenericFunction",
+      "printedName": "<T> (description: Swift.String?, AetherLanguage.AetherGenerationGuide<T>...) -> ()"
+     }
+    ],
+    "declAttributes": [
+     "MacroRole"
+    ],
+    "declKind": "Macro",
+    "genericSig": "<T>",
+    "kind": "Root",
+    "mangledName": "$s20AetherLanguageMacros0A5Guide11description_ySSSg_0aB00a10GenerationD0VyxGdtclufm",
+    "moduleName": "AetherLanguageMacros",
+    "name": "AetherGuide",
+    "printedName": "AetherGuide",
+    "usr": "s:20AetherLanguageMacros0A5Guide11description_ySSSg_0aB00a10GenerationD0VyxGdtclufm"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Tuple",
+        "printedName": "(description: Swift.String)"
+       }
+      ],
+      "kind": "TypeFunc",
+      "name": "Function",
+      "printedName": "(Swift.String) -> ()"
+     }
+    ],
+    "declAttributes": [
+     "MacroRole"
+    ],
+    "declKind": "Macro",
+    "kind": "Root",
+    "mangledName": "$s20AetherLanguageMacros0A5Guide11descriptionySS_tcfm",
+    "moduleName": "AetherLanguageMacros",
+    "name": "AetherGuide",
+    "printedName": "AetherGuide",
+    "usr": "s:20AetherLanguageMacros0A5Guide11descriptionySS_tcfm"
+   }
+  ],
+  "json_format_version": 8,
+  "kind": "Root",
+  "name": "AetherLanguageMacros",
+  "printedName": "AetherLanguageMacros"
+ }
+}
