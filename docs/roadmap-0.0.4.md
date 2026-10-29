@@ -41,6 +41,10 @@ references, native qualification and a guide.
   ([on-device host](language-generation.md#on-device-host-003)). Find out why its assets appear to be mapped more than
   once.
 - **FLUX.2 on iOS,** moved from 0.0.3 by user decision.
+- **H3 FL2VA conditioner presentation** (user decision, 2026-10-29): add upstream's keyframe vision blocks, which 0.0.3
+  omits ([known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). That
+  means the Qwen3-VL vision tower in the conditioner and M-RoPE positions for its tokens, then FL2VA's gates again.
+  Schedule it before Atelier's FL2VA canvas measurements are final, since it adds image-token rows.
 - **An MLX backend for older OSes,** as an optional separate product, by user decision. The
   [spike](spikes/mlx-backend-2026-10.md) is a conditional go: mlx-swift core only, the Metal toolchain in CI, and its
   own manifest kind for Hugging Face safetensors.

@@ -10,6 +10,9 @@ The `AetherH3` SwiftPM product (experimental until 0.0.3) starts with CPU prepar
 
 ## Status: 2026-10-26
 
+**Known deviation, found 2026-10-29:** FL2VA's conditioner presentation omits upstream's keyframe vision blocks
+([below](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). A fix is planned for 0.0.4.
+
 **The 2026-10-18 records below are historical.** They cover block 0, lifecycle, the three-block chain, the fifty-block backbone, the outer phases and the eight-step provided-conditioning trajectory. Each describes exactly what ran against its pinned prototype bundles. Those bundles, oracles and the preparation cache lived under `/private/tmp`, and macOS temporary-file cleanup removed them. Only empty directory skeletons remain. The commands below that cite `/private/tmp/aether-h3-*` can no longer run. The assets were not regenerated: Core AI exports aren't byte-reproducible, so every pinned capture would have to be redone anyway. [The lost-asset record](evidence/h3-legacy-assets-lost-2026-10-26.json) lists the affected roots, the 64 citing records, the original identities and the regeneration route, should it ever be needed.
 
 **H3 work for 0.0.2 qualifies the schema-3 profile path instead.** Its CPU oracle and export tooling (`prepare-h3-profile-oracle.py`, `export-h3-profile.py`, `h3_export_lib.py`) run in Forge's H3 oracle environment, `uv sync --frozen --project Forge/h3-oracle`, then `Forge/h3-oracle/.venv/bin/python -I -B Scripts/...`. It is pinned to exactly the environment that produced the 2026-10-26 evidence (torch 2.13.0, transformers 5.20.1, peft 0.21.2, diffusers 0.41.0.dev0 at public commit `7ecb1e1b`); re-running the FL2VA keyframe condition in it reproduces the recorded hash ([record](evidence/forge-environment-2026-10-27.json)). That path is `Scripts/export-h3-profile.py`, `H3Profile`, `H3ProfileEngine.stages` and `H3VideoSession`. It uses none of the lost assets. Its complete profile is referenced in place under Atelier's team staging folder, `~/Code/atelier/.local/team/staging/h3/exports/h3-fl2va`. Weights are read as byte ranges of the pinned checkpoint snapshot and Turbo adapter. [The profile asset record](evidence/h3-profile-assets-2026-10-26.json) covers several checks:
@@ -656,3 +659,23 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 **Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
 
+## Known deviation: FL2VA conditioner presentation (found 2026-10-29)
+
+Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes to the conditioner too.
+
+- **Upstream** (diffusers `7ecb1e1b`, `modular_pipelines/minimax_h3/encoders.py`, `MiniMaxH3FL2VATextEncoderStep`):
+  before the prompt, each keyframe gets a `"<Picture i>: "` label and a vision block: `<|vision_start|>`,
+  `<|image_pad|>` repeated for each merged image token, then `<|vision_end|>`. The keyframe's `pixel_values` go through
+  Qwen3-VL's vision tower in the same conditioner call. The vision block's rows are tagged as video. T2VA presents the
+  prompt alone, upstream as in Kit.
+- **Kit** (`H3ProfileConditioner.encode`): tokenizes the prompt only, and every conditioning row is tagged as text. The
+  profile has no Qwen3-VL vision tower.
+- **What still conditions on the keyframe:** its encoded latents, anchored as condition rows of the denoising sequence.
+  The qualified FL2VA renders pass the media audit and the user's review on 2026-10-28. The effect of the missing vision
+  block on output has not been measured.
+- **Why the gates didn't catch it:** the graph and trajectory gates compare Kit with CPU references that were fed the
+  same text-only conditioner ids. They prove Kit computes that presentation correctly, not that it's upstream's.
+- **Fix, planned for 0.0.4** ([roadmap](roadmap-0.0.4.md)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
+  positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
+  changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
+  conditioning follow the same text-only presentation.
