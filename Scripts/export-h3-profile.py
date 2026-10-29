@@ -41,6 +41,11 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  posterior SAMPLED under the fixed keyframe seed 42 (its draw baked in as a constant), float16 rounding,
                  latent normalization. Checked on CPU against `encode_vae_condition` (byte-identical). Needs no
                  download: the FL2VA video_vae weights are in the local snapshot (converted under converted/vae).
+  video-encoder-first-tiled  The first-frame encoder as one shared 256 px tile graph plus one small tail graph per
+                 --canvases entry. With a --base-bundle that already has tiled entries, the base's tile graph is reused
+                 (only the new tails are exported) and the bundle is left to `overlay`.
+  overlay        Write OUTPUT/bundle.json = --base-bundle plus the tails and fixed audio decoders this OUTPUT's build.json
+                 records, which must be new keys. Every other entry, and every base file, stays the base's.
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -89,10 +94,12 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "video-encoder-first-tiled", "finalize"])
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "video-encoder-first-tiled", "overlay", "finalize"])
     ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first(-tiled): WIDTHxHEIGHT canvases")
-    ap.add_argument("--converted", type=Path, help="video-encoder-first-tiled: the converted VAE directory (default OUTPUT/converted)")
-    ap.add_argument("--base-bundle", type=Path, help="video-encoder-first-tiled: write OUTPUT/bundle.json = this bundle plus the tiled entries")
+    ap.add_argument("--converted", type=Path, help="video-encoder-first-tiled, audio-decoder-fixed: the directory holding the converted "
+                    "vae/ and audio-vae/ (default OUTPUT/converted)")
+    ap.add_argument("--base-bundle", type=Path, help="video-encoder-first-tiled: write OUTPUT/bundle.json = this bundle plus the tiled "
+                    "entries, or reuse its tile graph when it has them; overlay: the bundle the overlay extends")
     ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
@@ -525,7 +532,7 @@ def main():
         print(json.dumps(asset), flush=True)
     elif args.stage == "audio-decoder-fixed":
         from diffusers import AutoencoderKLMiniMaxH3Audio
-        target = out / "converted/audio-vae"
+        target = (args.converted or out / "converted").resolve() / "audio-vae"
         vae = AutoencoderKLMiniMaxH3Audio.from_pretrained(target, torch_dtype=torch.float32).eval()
 
         class AudioDecoder(torch.nn.Module):
@@ -538,7 +545,7 @@ def main():
                 latents = rows.permute(0, 2, 1) * self.std + self.mean
                 return self.decoder(self.dec_in_proj(latents)).squeeze(1)
         module = AudioDecoder().eval()
-        meta = json.loads((out / "build.json").read_text())
+        meta = json.loads((out / "build.json").read_text()) if (out / "build.json").exists() else {}
         fixed = meta.get("audio_decoder_fixed", {})
         for na in sorted({int(v) for v in args.audio_latents.split(",")}):
             assert 2 <= na <= 2048
@@ -555,7 +562,7 @@ def main():
             started = time.monotonic()
             asset = h.export_asset(out / f"models/audio-decoder-na{na}.aimodel", module, (rows,), ["rows"], ["pcm"])
             asset["seconds"] = round(time.monotonic() - started, 1)
-            fixed[str(na)] = dict(asset, check=check)
+            fixed[str(na)] = dict(asset, check=check, converted_audio_vae=str(target))
             record(out, audio_decoder_fixed=fixed)
             print(json.dumps(asset), flush=True)
     elif args.stage == "finalize":
@@ -701,6 +708,14 @@ def main():
         if args.base_bundle and out == args.base_bundle.resolve().parent:
             raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
         converted = (args.converted or out / "converted").resolve()
+        base = json.loads(args.base_bundle.resolve().read_text()) if args.base_bundle else {}
+        # A base that already has the tiled encoder keeps its tile graph (it does not depend on the canvas); only the
+        # new canvases' tails are exported, and `overlay` writes the bundle.
+        reused_tile = base.get("video_encoder_first_tiled", {}).get("tile")
+        if reused_tile:
+            assert h.sha256_file(Path(reused_tile["path"]) / "main.mlirb") == reused_tile["sha256"], reused_tile["path"]
+            known = set(base["video_encoder_first_tiled"]["tails"])
+            assert known.isdisjoint(args.canvases.split(",")), f"the base already has tails for {sorted(known & set(args.canvases.split(',')))}"
         vae = AutoencoderKLMiniMaxH3.from_pretrained(converted / "vae", torch_dtype=torch.float32).eval()
         assert vae.use_tiling and vae.tile_sample_min_height == vae.tile_sample_min_width == 256
         assert vae.tile_sample_min_overlap_height == vae.tile_sample_min_overlap_width == 64 and vae.spatial_compression_ratio == 16
@@ -764,13 +779,16 @@ def main():
             asset["seconds"] = round(time.monotonic() - started, 1)
             tails[key], checks[key] = asset, check
             print(json.dumps(asset), flush=True)
-        started = time.monotonic()
-        tile_asset = h.export_asset(out / "models/video-encoder-first-tile256.aimodel", tile_module, (torch.zeros(1, 3, 1, side, side),), ["pixels"], ["moments"])
-        tile_asset["seconds"] = round(time.monotonic() - started, 1)
+        if reused_tile:
+            tile_asset = dict(reused_tile, reused_from=str(args.base_bundle.resolve()))
+        else:
+            started = time.monotonic()
+            tile_asset = h.export_asset(out / "models/video-encoder-first-tile256.aimodel", tile_module, (torch.zeros(1, 3, 1, side, side),), ["pixels"], ["moments"])
+            tile_asset["seconds"] = round(time.monotonic() - started, 1)
         tiled = dict(tile=tile_asset, tile_size=side, moments_channels=2 * vae.config.latent_channels, tails=tails, checks=checks, encode_seed=seed,
                      converted_vae=str(converted / "vae"), recipe_sha256=h.sha256_file(Path(__file__)))
         record(out, video_encoder_first_tiled=tiled)
-        if args.base_bundle:
+        if args.base_bundle and not reused_tile:
             base_path = args.base_bundle.resolve()
             bundle = json.loads(base_path.read_text())
             assert bundle["schema"] == 3 and "video_encoder_first_tiled" not in bundle
@@ -781,6 +799,37 @@ def main():
                                      change="added video_encoder_first_tiled (tile graph + per-canvas tails); every other entry is the base bundle's")
             (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
             print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"))), flush=True)
+    elif args.stage == "overlay":
+        # Extend a complete bundle without touching it: the new tails reuse its tile graph, the new fixed audio
+        # decoders join its own, and an existing key is never replaced.
+        assert args.base_bundle, "overlay needs --base-bundle"
+        base_path = args.base_bundle.resolve()
+        if out == base_path.parent:
+            raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
+        bundle, meta = json.loads(base_path.read_text()), json.loads((out / "build.json").read_text())
+        assert bundle["schema"] == 3 and bundle["complete"], "overlay needs a complete schema-3 base"
+        entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
+        def checked(item):
+            assert h.sha256_file(Path(item["path"]) / "main.mlirb") == item["sha256"], item["path"]
+            return entry(item)
+        added = []
+        if "video_encoder_first_tiled" in meta:
+            tiled, new = bundle["video_encoder_first_tiled"], meta["video_encoder_first_tiled"]
+            assert entry(new["tile"]) == tiled["tile"], "the new tails were exported against a different tile graph"
+            for key, asset in sorted(new["tails"].items()):
+                assert key not in tiled["tails"], f"the base already has a {key} tail"
+                tiled["tails"][key] = checked(asset); added.append(f"video_encoder_first_tiled.tails.{key}")
+            tiled["tails"] = dict(sorted(tiled["tails"].items()))
+        for key, asset in sorted(meta.get("audio_decoder_fixed", {}).items()):
+            fixed = bundle["audio_decoder"].setdefault("fixed", {})
+            assert key not in fixed, f"the base already has a fixed audio decoder for {key} latents"
+            fixed[key] = checked(asset); added.append(f"audio_decoder.fixed.{key}")
+        bundle["audio_decoder"]["fixed"] = dict(sorted(bundle["audio_decoder"].get("fixed", {}).items(), key=lambda kv: int(kv[0])))
+        assert added, "build.json records nothing to add"
+        bundle["lineage"] = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path), added=added,
+                                 change="added entries only; every other entry is the base bundle's")
+        (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
+        print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"), added=added)), flush=True)
     elif args.stage == "video-decoder":
         from diffusers import AutoencoderKLMiniMaxH3
         vae = AutoencoderKLMiniMaxH3.from_pretrained(out / "converted/vae", torch_dtype=torch.float32).eval()
