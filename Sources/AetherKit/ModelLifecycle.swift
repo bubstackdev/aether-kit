@@ -28,6 +28,8 @@ public struct ModelLifecyclePolicy: Sendable, Equatable {
 
     /// Neither: the model stays loaded until it's asked to unload.
     public static let manual = Self(idleUnloadAfter: nil, releaseUnderMemoryPressure: false)
+    /// Deliberate addition without a baseline update, to prove the stale-baseline check (reverted next).
+    public var staleBaselineProbe: Bool { idleUnloadAfter == nil }
 }
 
 @nonexhaustive public enum ModelUnloadReason: Sendable, Hashable {
