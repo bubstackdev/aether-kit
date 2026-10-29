@@ -49,14 +49,15 @@ public struct URLSessionTransport: ModelTransport {
         ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.uint64Value ?? 0
     }
 
-    /// `bytes START-END/TOTAL` → (START, TOTAL); TOTAL may be `*`.
-    static func contentRange(_ value: String) -> (start: UInt64, total: UInt64?)? {
+    /// `bytes START-END/TOTAL` → (START, END, TOTAL); TOTAL may be `*`.
+    static func contentRange(_ value: String) -> (start: UInt64, end: UInt64, total: UInt64?)? {
         let parts = value.trimmingCharacters(in: .whitespaces).split(separator: " ", maxSplits: 1)
         guard parts.count == 2, parts[0].lowercased() == "bytes" else { return nil }
         let rangeAndTotal = parts[1].split(separator: "/", maxSplits: 1)
         guard rangeAndTotal.count == 2, let dash = rangeAndTotal[0].firstIndex(of: "-"),
-              let start = UInt64(rangeAndTotal[0][..<dash]) else { return nil }
-        return (start, rangeAndTotal[1] == "*" ? nil : UInt64(rangeAndTotal[1]))
+              let start = UInt64(rangeAndTotal[0][..<dash]),
+              let end = UInt64(rangeAndTotal[0][rangeAndTotal[0].index(after: dash)...]), end >= start else { return nil }
+        return (start, end, rangeAndTotal[1] == "*" ? nil : UInt64(rangeAndTotal[1]))
     }
 }
 

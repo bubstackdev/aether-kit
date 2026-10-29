@@ -39,6 +39,32 @@ struct BackgroundTransportTests {
         #expect(try Data(contentsOf: target) == data)
     }
 
+    @Test func aTaskResumedFromResumeDataIsAppendedFromTheRecordOffset() throws {
+        // Stopped at byte 450 and resumed: the system's request starts there, but its file holds bytes 200 through 599.
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("f.bin")
+        try data.prefix(200).write(to: target)
+        let record = BackgroundTaskRecord(destination: target.path, offset: 200, byteCount: 600, path: "f.bin")
+        let resumed = response(206, ["Content-Range": "bytes 450-599/600"])
+        #expect(record.base(of: resumed) == 200)
+        try record.apply(downloadedFile: downloaded(data.suffix(400)), response: resumed)
+        #expect(try Data(contentsOf: target) == data)
+    }
+
+    @Test func aPartialResponseFromTheStartReplacesTheFile() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("f.bin")
+        try Data(repeating: 9, count: 200).write(to: target)
+        let record = BackgroundTaskRecord(destination: target.path, offset: 200, byteCount: 600, path: "f.bin")
+        let fromStart = response(206, ["Content-Range": "bytes 0-599/600"])
+        #expect(record.base(of: fromStart) == 0)
+        #expect(record.base(of: response(200)) == 0)
+        try record.apply(downloadedFile: downloaded(data), response: fromStart)
+        #expect(try Data(contentsOf: target) == data)
+    }
+
     @Test func aFullResponseReplacesTheFile() throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }

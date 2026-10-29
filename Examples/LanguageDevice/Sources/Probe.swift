@@ -14,6 +14,10 @@ private struct ProbeConfiguration: Decodable {
     let mode: String
     /// Vision only: the reference cases to run (default: the first).
     let cases: [String]?
+    /// Prepare only: stop the first run once this many bytes have downloaded, then prepare again.
+    let cutAfterBytes: UInt64?
+    /// Prepare only: the store's folder in Application Support (default "Models").
+    let store: String?
 }
 
 private struct Logits: Decodable { let file: String; let rows: Int; let vocab: Int }
@@ -89,7 +93,8 @@ func runLanguageDeviceProbe() async -> DeviceReport {
         let configuration = try JSONDecoder().decode(ProbeConfiguration.self, from: Data(contentsOf: assets.appendingPathComponent("probe.json")))
         report.mode = configuration.mode
         if configuration.mode == "prepare" {
-            try await runPreparation(assets: assets, report: &report)
+            try await runPreparation(assets: assets, store: configuration.store ?? "Models",
+                                     cutAfter: configuration.cutAfterBytes, report: &report)
             report.passed = report.failures.isEmpty && report.preparation?.reply != nil
             return report
         }

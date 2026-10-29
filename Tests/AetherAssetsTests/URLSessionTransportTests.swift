@@ -296,10 +296,12 @@ struct URLSessionTransportTests {
 
     @Test func contentRangeParsing() {
         let range = URLSessionTransport.contentRange("bytes 128-299/300")
-        #expect(range?.start == 128 && range?.total == 300)
+        #expect(range?.start == 128 && range?.end == 299 && range?.total == 300)
         #expect(URLSessionTransport.contentRange("bytes 5-9/*")!.total == nil)
         #expect(URLSessionTransport.contentRange("items 1-2/3") == nil)
         #expect(URLSessionTransport.contentRange("bytes x-2/3") == nil)
+        #expect(URLSessionTransport.contentRange("bytes 5-/9") == nil)
+        #expect(URLSessionTransport.contentRange("bytes 9-5/10") == nil)
     }
 }
 

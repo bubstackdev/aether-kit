@@ -150,17 +150,19 @@ public protocol ModelTransport: Sendable {
 ```
 
 - **`.urlSession` (foreground)** uses a data-task stream. It resumes with an HTTP `Range` request and checks the
-  response: 206 with a matching `Content-Range` appends, 200 restarts the file, anything else fails.
+  response: 206 with a matching `Content-Range` appends, 200 or a 206 from byte 0 restarts the file, anything else fails.
 - **`BackgroundTransport(identifier:)` (iOS, and macOS apps)** uses a background `URLSession` with download tasks, one
   per file, so the system carries transfers on while the app is suspended or terminated.
   - **Redirects:** a background session follows redirects itself and never asks a delegate, so the app's headers
     would travel with them. The transport resolves redirects first, in the foreground. It follows each hop on the
     original host with the app's headers, and stops at the first other host. The background task then fetches that
     URL, carrying the headers only if it's still on the original host.
-  - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A matching `206` is appended,
-    a `200` replaces the file, and a `416` restarts it once. A background task writes nothing to the download area
-    until it finishes. A stopped or failed task therefore keeps the system's resume data beside the file, and the next
-    task for the same bytes continues from it. Those bytes don't count in `status`.
+  - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A `206` that continues the file
+    is appended, a `200` or a `206` from byte 0 replaces it, and a `416` restarts it once. A background task writes
+    nothing to the download area until it finishes. A stopped or failed task therefore keeps the system's resume data
+    beside the file, and the next task for the same bytes continues from it. Those bytes don't count in `status`. A
+    resumed task's response range starts where it stopped, but its file holds every byte since the record's offset,
+    so the transport works out where the file starts from the range's end and the size received.
   - **Where bytes go:** each task records its destination (relative to the home directory, which survives an iOS app
     update) in its description. A task that finishes while the app was relaunched only to receive it still lands in
     the download area, and the next run finds the file complete.
@@ -207,7 +209,8 @@ whether retrying can help.
   - bodies larger than the pinned size, stopped before they can fill the disk;
   - a corrupt installation, removed and prepared again;
   - an installed entry finishing without network;
-  - what a finished background task does with its bytes (append after a matching 206, replace after a 200).
+  - what a finished background task does with its bytes (append after a matching 206, including a task resumed from
+    resume data; replace after a 200 or a 206 from byte 0).
 - **Mac, real network (2026-10-28, [record](evidence/model-preparation-network-2026-10-28.json)).** A catalog entry
   for the Qwen3-0.6B Kit bundle (11 files, 1,208,370,450 bytes) in a private Hugging Face repository, pinned to its
   commit:
@@ -226,6 +229,10 @@ whether retrying can help.
     its first event was at 920,230,020 bytes, so about 709 MB arrived with no app process running;
   - the remaining files were fetched by new tasks, the entry installed, and `AetherLanguageModel(installation:)` gave a
     coherent greedy reply in 7.50 s.
+
+  - in a second launch, a fresh preparation stopped at 400,573,100 bytes left the system's resume data beside the
+    file; the retry continued from it (first event at 400,585,137 bytes) and installed. This run qualified a fix: a
+    resumed task's response starts at the resume point, which the first version refused.
 
   The relaunch shows the home-relative task record resolving on a device. A task in flight across an app update, when
   the container path changes, hasn't been exercised.

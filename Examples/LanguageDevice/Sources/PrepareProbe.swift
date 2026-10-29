@@ -14,6 +14,10 @@ struct PreparationResult: Codable {
     var firstDownloadedBytes: UInt64?
     var lastDownloadedBytes: UInt64?
     var preparationSeconds = 0.0
+    /// With `cutAfterBytes`: where the first run was stopped, the status after it, and the resume data it left.
+    var stoppedAtBytes: UInt64?
+    var statusBetweenRuns: String?
+    var resumeDataFiles: [String]?
     var reply: String?
     var replySeconds: Double?
 }
@@ -22,10 +26,13 @@ struct PreparationResult: Codable {
 /// opens the installation through `AetherLanguageModel(installation:)` and asks for a short greedy reply. Progress goes
 /// to stdout and to `Documents/prepare-log.jsonl`, which survives the app being killed and relaunched mid-transfer. A
 /// token for a private repository comes from the launch environment (`HF_TOKEN`); it's only needed when tasks are created.
-func runPreparation(assets: URL, report: inout DeviceReport) async throws {
+/// With `cutAfter`, the first run is stopped once that many bytes have downloaded, and a second run continues from the
+/// resume data the stopped task left.
+func runPreparation(assets: URL, store storeName: String, cutAfter: UInt64?, report: inout DeviceReport) async throws {
     let entry = try JSONDecoder().decode(ModelCatalogEntry.self, from: Data(contentsOf: assets.appendingPathComponent("entry.json")))
     let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-    let store = try LocalAssetStore(root: support.appendingPathComponent("Models"))
+    let storeRoot = support.appendingPathComponent(storeName)
+    let store = try LocalAssetStore(root: storeRoot)
     var headers: @Sendable (URL) -> [String: String] = { _ in [:] }
     if let token = ProcessInfo.processInfo.environment["HF_TOKEN"], !token.isEmpty {
         headers = ModelPreparation.huggingFaceAuthorization(token: token)
@@ -35,6 +42,23 @@ func runPreparation(assets: URL, report: inout DeviceReport) async throws {
     var result = PreparationResult(entryInstallationID: try entry.installationID, bytesTotal: entry.byteCount)
     result.statusAtStart = "\(try preparation.status(entry))"
     log(["event": "start", "status": result.statusAtStart])
+
+    if let cutAfter {
+        for await event in preparation.prepare(entry) {
+            if case let .downloading(_, _, _, done, _) = event, done >= cutAfter { result.stoppedAtBytes = done; break }
+            if case .downloading = event { continue }
+            if case .checking = event { continue }
+            break  // finished before the cut
+        }
+        // The stopped task hands over its resume data asynchronously; give it a moment before looking.
+        try? await Task.sleep(for: .seconds(2))
+        result.statusBetweenRuns = "\(try preparation.status(entry))"
+        let downloads = storeRoot.appendingPathComponent("downloads")
+        let files = FileManager.default.enumerator(atPath: downloads.path)?.compactMap { $0 as? String } ?? []
+        result.resumeDataFiles = files.filter { ($0 as NSString).lastPathComponent.contains(".resume-") }
+        log(["event": "stopped", "at": "\(result.stoppedAtBytes ?? 0)", "status": result.statusBetweenRuns ?? "",
+             "resumeData": result.resumeDataFiles?.joined(separator: ",") ?? ""])
+    }
 
     let started = ContinuousClock.now
     var lastLogged = ContinuousClock.now - .seconds(10)

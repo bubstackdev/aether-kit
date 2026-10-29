@@ -157,9 +157,11 @@ struct BackgroundTaskRecord: Codable, Equatable {
         self = value
     }
 
-    /// Moves a finished download into place: appended after a matching `206`, replacing the file after a `200`. A
-    /// download larger than the pinned remainder is refused. Runs inside the delegate callback, before the system
-    /// deletes `location`.
+    /// Moves a finished download into place: appended when it continues the file, replacing it when it starts at byte 0
+    /// (a `200`, or a `206` from the start). A task resumed from the system's resume data downloads into one file that
+    /// also holds the bytes fetched before the stop, so where the file starts comes from the `Content-Range` end and
+    /// the received size, not the range's start. A download larger than the pinned size is refused. Runs inside the
+    /// delegate callback, before the system deletes `location`.
     func apply(downloadedFile location: URL, response: URLResponse?) throws {
         guard let http = response as? HTTPURLResponse else { throw PreparationError.network("not an HTTP response") }
         let target = destinationURL
@@ -167,12 +169,15 @@ struct BackgroundTaskRecord: Codable, Equatable {
         switch http.statusCode {
         case 206:
             guard let header = http.value(forHTTPHeaderField: "Content-Range"),
-                  let range = URLSessionTransport.contentRange(header), range.start == offset,
-                  range.total.map({ $0 == byteCount }) ?? true,
-                  URLSessionTransport.size(of: target) == offset else {
+                  let range = URLSessionTransport.contentRange(header), range.total.map({ $0 == byteCount }) ?? true else {
                 throw PreparationError.network("unexpected Content-Range for \(path)")
             }
-            guard received <= byteCount - offset else { throw PreparationError.integrityMismatch(path: path) }
+            guard range.end < byteCount, received <= range.end + 1 else { throw PreparationError.integrityMismatch(path: path) }
+            let start = range.end + 1 - received
+            if start == 0 { try replace(target, with: location); return }
+            guard start == offset, URLSessionTransport.size(of: target) == offset else {
+                throw PreparationError.network("unexpected Content-Range for \(path)")
+            }
             let output = try FileHandle(forWritingTo: target)
             defer { try? output.close() }
             try output.seekToEnd()
@@ -182,13 +187,26 @@ struct BackgroundTaskRecord: Codable, Equatable {
             try output.synchronize()
         case 200:
             guard received <= byteCount else { throw PreparationError.integrityMismatch(path: path) }
-            try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
-                                                    attributes: [.posixPermissions: 0o700])
-            if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
-            try FileManager.default.moveItem(at: location, to: target)
+            try replace(target, with: location)
         default:
             throw PreparationError.http(status: http.statusCode, path: path)
         }
+    }
+
+    private func replace(_ target: URL, with location: URL) throws {
+        try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
+        try FileManager.default.moveItem(at: location, to: target)
+    }
+
+    /// Where a task's download starts in the file, once its response has arrived: byte 0 after a `200` or a `206`
+    /// from the start, otherwise the record's offset (a resumed task's byte counts include what it fetched before).
+    func base(of response: URLResponse?) -> UInt64 {
+        guard let http = response as? HTTPURLResponse else { return offset }
+        if http.statusCode == 200 { return 0 }
+        let range = http.value(forHTTPHeaderField: "Content-Range").flatMap(URLSessionTransport.contentRange)
+        return range?.start == 0 ? 0 : offset
     }
 }
 
@@ -304,13 +322,14 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let record = BackgroundTaskRecord(encoded: downloadTask.taskDescription) else { return }
         let written = UInt64(max(0, totalBytesWritten))
-        guard written <= record.byteCount - min(record.offset, record.byteCount) else {
+        let base = min(record.base(of: downloadTask.response), record.byteCount)
+        guard written <= record.byteCount - base else {
             // More than the pinned remainder: wrong, and it could fill the disk.
             lock.withLock { failures[downloadTask.taskIdentifier] = PreparationError.integrityMismatch(path: record.path) }
             downloadTask.cancel()
             return
         }
-        for waiter in lock.withLock({ waiters[downloadTask.taskIdentifier] ?? [] }) { waiter.progress(record.offset + written) }
+        for waiter in lock.withLock({ waiters[downloadTask.taskIdentifier] ?? [] }) { waiter.progress(base + written) }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {

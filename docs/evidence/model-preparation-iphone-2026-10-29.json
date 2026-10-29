@@ -1,6 +1,6 @@
 {
   "record": "model-preparation-iphone-2026-10-29",
-  "what": "Model preparation on an iPhone with BackgroundTransport: a pinned catalog entry for the iOS Kit language bundle in a private Hugging Face repository, prepared by the LanguageDevice probe app (mode \"prepare\"). The app was suspended for 45 s mid-transfer, then killed and relaunched about 53 s later; the relaunch joined the running background task, finished, installed, and answered through AetherLanguageModel(installation:).",
+  "what": "Model preparation on an iPhone with BackgroundTransport: a pinned catalog entry for the iOS Kit language bundle in a private Hugging Face repository, prepared by the LanguageDevice probe app (mode \"prepare\"). The app was suspended for 45 s mid-transfer, then killed and relaunched about 53 s later; the relaunch joined the running background task, finished, installed, and answered through AetherLanguageModel(installation:). A second launch, on the build that fixes the resumed-task check (review finding), stopped a fresh preparation after about 400 MB and retried in the same launch: the retry continued from the system's resume data and installed.",
   "build": "1e1e370 (the PR #72 review fixes: foreground redirect resolution, so the token is never sent to the CDN)",
   "host": {
     "device": "iPhone19,4",
@@ -27,23 +27,38 @@
   "launch1": {
     "start": "2026-10-29T13:30:46Z",
     "suspension": {
-      "lastEventBefore": { "time": "2026-10-29T13:31:02Z", "done": 48789635 },
+      "lastEventBefore": {
+        "time": "2026-10-29T13:31:02Z",
+        "done": 48789635
+      },
       "suspendedSeconds": 45,
       "firstEventsAfter": [
-        { "time": "2026-10-29T13:31:48Z", "done": 50509010 },
-        { "time": "2026-10-29T13:31:49Z", "done": 176579147 }
+        {
+          "time": "2026-10-29T13:31:48Z",
+          "done": 50509010
+        },
+        {
+          "time": "2026-10-29T13:31:49Z",
+          "done": 176579147
+        }
       ],
       "result": "The transfer continued while the app was suspended: the system delivered about 126 MB downloaded during the suspension within a second of the resume."
     },
     "kill": {
-      "lastEventBefore": { "time": "2026-10-29T13:32:05Z", "done": 211017829 },
+      "lastEventBefore": {
+        "time": "2026-10-29T13:32:05Z",
+        "done": 211017829
+      },
       "killed": "2026-10-29T13:32:06Z (SIGKILL)"
     }
   },
   "launch2": {
     "relaunched": "2026-10-29T13:32:59Z",
     "statusAtStart": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
-    "firstEvent": { "time": "2026-10-29T13:33:01Z", "done": 920230020 },
+    "firstEvent": {
+      "time": "2026-10-29T13:33:01Z",
+      "done": 920230020
+    },
     "joined": "The relaunch found the running task by its record (home-relative destination and offset) and joined it; about 709 MB arrived while no app process was running.",
     "downloadEvents": 619,
     "lastDownloadedBytes": 1208370448,
@@ -56,7 +71,27 @@
     "prompt": "In one sentence, what is a hash function?",
     "options": "greedy, maximumResponseTokens 48",
     "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
-    "seconds": 7.50
+    "seconds": 7.5
   },
-  "failures": []
+  "failures": [],
+  "resumeRun": {
+    "build": "this PR's resume fix: a finished background task's file start comes from the Content-Range end and the received size",
+    "probe": {
+      "cutAfterBytes": 400000000,
+      "store": "a fresh store folder"
+    },
+    "start": "2026-10-29T13:46:07Z",
+    "statusAtStart": "notInstalled(bytesTotal: 1208370448)",
+    "stoppedAtBytes": 400573100,
+    "statusBetweenRuns": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
+    "resumeDataFiles": [
+      "model.aimodel/.main.mlirb.resume-0"
+    ],
+    "retryFirstEventBytes": 400585137,
+    "result": "The retry continued from the resume data instead of starting over, so the system's response was a 206 from the resume point; the file was applied from byte 0 and the entry installed. Bytes held in resume data don't count in status, as documented.",
+    "terminal": "installed 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
+    "retrySeconds": 260.6,
+    "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
+    "replySeconds": 4.51
+  }
 }

@@ -248,8 +248,10 @@ public struct ModelPreparation: Sendable {
         do {
             _ = try await store.acquire(id)
             return true
+        } catch AssetStoreError.notInstalled {
+            return false  // another run removed it first
         } catch AssetStoreError.integrityMismatch, AssetStoreError.invalidManifest {
-            do { try store.remove(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+            do { try store.remove(id) } catch AssetStoreError.busy { throw PreparationError.busy } catch AssetStoreError.notInstalled {}
             return false
         }
     }
