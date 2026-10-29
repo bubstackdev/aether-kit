@@ -47,11 +47,16 @@ struct AetherProbe {
               aether-probe parity-krea BUNDLE LAB FIXTURES SHAPE.json OUTPUT_DIRECTORY provided|encoded
               aether-probe benchmark-krea BUNDLE PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
               aether-probe benchmark-flux2 BUNDLE T2I_FIXTURE REFERENCE_FIXTURE|- PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
+            \(CatalogEntryCommand.usage.split(separator: "\n").map { "  " + $0 }.joined(separator: "\n"))
+            \(PrepareModelCommand.usage.split(separator: "\n").map { "  " + $0 }.joined(separator: "\n"))
 
             smoke expects Forge's float32 affine fixture: y = x * 2 + 1, shape [1, 4].
             inspect specializes/loads the model; it is not a static file inspection.
             prepare-krea reads local assets/tokenizer and prepares inputs without native inference.
             verify-krea hashes all six model streams and can read tens of GB.
+            catalog-entry prints the pinned catalog entry an app prepares the bundle from (docs/model-preparation.md).
+            prepare-model qualifies preparation over HTTPS (HF_TOKEN for a gated repository); reply-installed opens the
+            installation through the language facade and is a GPU command.
 
             GPU commands (inspect, smoke, render-krea, render-krea-batch, parity-krea, h3-profile-run,
             h3-profile-decode, h3-memory-render, h3-memory-encoder, qualify-h3-session-lifecycle, and the other
@@ -66,6 +71,8 @@ struct AetherProbe {
             """)
             return
         }
+        if try CatalogEntryCommand.run(arguments) { return }
+        if try await PrepareModelCommand.run(arguments) { return }
         if try await H3ProfileCommand.run(arguments) { return }
         if try await H3MemoryDiagnosis.run(arguments) { return }
         if try await H3SessionLifecycleCommand.run(arguments) { return }

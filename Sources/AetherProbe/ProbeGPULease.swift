@@ -45,6 +45,8 @@ enum ProbeGPULease {
             return count == 6 && mode(at: 5, gpu: ["--run"])
         case "benchmark-flux2":
             return count == 8 && mode(at: 7, gpu: ["--run"])
+        case "reply-installed":
+            return count == 4
         default:
             return false
         }

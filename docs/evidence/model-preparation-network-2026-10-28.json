@@ -1,0 +1,98 @@
+{
+  "record": "model-preparation-network-2026-10-28",
+  "what": "Model preparation over a real network: a pinned catalog entry for a Kit language bundle in a private Hugging Face repository, prepared with URLSessionTransport, cut after about 300 MB, resumed, installed, then opened through AetherLanguageModel(installation:) for a greedy reply.",
+  "host": {
+    "device": "Apple M5 Max",
+    "os": "27.2 (26B123)"
+  },
+  "entry": {
+    "source": {
+      "kind": "huggingFace",
+      "repository": "<private repository of the user>",
+      "revision": "86948c119e3b6cd0e85f03127db439489b5fe117"
+    },
+    "assetIdentity": "aether-language/1:aa5e10cc24480e08c578232681ba018445b365f1385a3af82ab6f243e9d5635c",
+    "executionContract": "aether.language-bundle/1",
+    "files": [
+      {
+        "path": "language-model.json",
+        "byteCount": 1280
+      },
+      {
+        "path": "model.aimodel/main.hash",
+        "byteCount": 32
+      },
+      {
+        "path": "model.aimodel/main.mlirb",
+        "byteCount": 1192475653
+      },
+      {
+        "path": "model.aimodel/metadata.json",
+        "byteCount": 105
+      },
+      {
+        "path": "tokenizer/LICENSE",
+        "byteCount": 11343
+      },
+      {
+        "path": "tokenizer/config.json",
+        "byteCount": 726
+      },
+      {
+        "path": "tokenizer/generation_config.json",
+        "byteCount": 239
+      },
+      {
+        "path": "tokenizer/merges.txt",
+        "byteCount": 1671853
+      },
+      {
+        "path": "tokenizer/tokenizer.json",
+        "byteCount": 11422654
+      },
+      {
+        "path": "tokenizer/tokenizer_config.json",
+        "byteCount": 9732
+      },
+      {
+        "path": "tokenizer/vocab.json",
+        "byteCount": 2776833
+      }
+    ],
+    "bytesTotal": 1208370450,
+    "installationID": "02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+  },
+  "preparation": {
+    "transport": "URLSessionTransport",
+    "authorization": "HF_TOKEN via ModelPreparation.huggingFaceAuthorization (huggingface.co only)",
+    "cutAfterBytes": 300000000,
+    "runs": [
+      {
+        "downloadEvents": 680,
+        "firstDownloadedBytes": 1280,
+        "installingEvents": 0,
+        "lastDownloadedBytes": 300009223,
+        "seconds": 147.80763066699998,
+        "terminal": "stopped by the qualification at 300009223 bytes"
+      },
+      {
+        "downloadEvents": 1138,
+        "firstDownloadedBytes": 300025598,
+        "installingEvents": 8,
+        "lastDownloadedBytes": 1208370450,
+        "seconds": 209.36108825000002,
+        "terminal": "installed 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+      }
+    ],
+    "statusBetweenRuns": "partial 300009223/1208370450",
+    "finalStatus": "installed 02ea1791f629aaaf6a693536a05656e0ce755318ae986763d369662deb09b1b7"
+  },
+  "facade": {
+    "init": "AetherLanguageModel(installation:)",
+    "options": "greedy, maximumResponseTokens 48",
+    "prompt": "In one sentence, what is a hash function?",
+    "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
+    "seconds": 5.96
+  },
+  "findingFixed": "The first run of this qualification showed a retry straight after stopping a run reported busy, because the stopped run had not yet released its download lock. A run stopped by its consumer is now waited for, and this record is from the fixed build."
+}

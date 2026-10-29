@@ -1,0 +1,99 @@
+{
+  "record": "model-preparation-iphone-2026-10-29",
+  "what": "Model preparation on an iPhone with BackgroundTransport: a pinned catalog entry for the iOS Kit language bundle in a private Hugging Face repository, prepared by the LanguageDevice probe app (mode \"prepare\"). The app was suspended for 45 s mid-transfer, then killed and relaunched about 53 s later; the relaunch joined the running background task, finished, installed, and answered through AetherLanguageModel(installation:). A later launch, on the final build of the PR, stopped a fresh preparation after about 400 MB and retried in the same launch: the retry continued from the system's resume data and installed.",
+  "build": "1e1e370 (the PR #72 review fixes: foreground redirect resolution, so the token is never sent to the CDN)",
+  "host": {
+    "device": "iPhone19,4",
+    "os": "27.2 (24B91020)",
+    "memoryGiB": "11.3"
+  },
+  "entry": {
+    "source": {
+      "kind": "huggingFace",
+      "repository": "<private repository of the user>",
+      "revision": "86f79bd093c4aff10855ed0516b50f87686a7c54",
+      "subdirectory": "ios"
+    },
+    "assetIdentity": "aether-language/1:b2cc16629598a87b16598d4e2d8e1485856bd1b46264c21526154772f00fc568",
+    "executionContract": "aether.language-bundle/1",
+    "fileCount": 11,
+    "byteCount": 1208370448,
+    "installationID": "729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8"
+  },
+  "priorState": {
+    "status": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
+    "note": "language-model.json (1,278) and model.aimodel/main.hash (32) were left by a superseded run on the pre-fix build (started 2026-10-29T00:31:25Z, last logged at 86,456,182 bytes). No task from that run was joined: the main file started over in a new task, its first progress event at 16,375 file bytes."
+  },
+  "launch1": {
+    "start": "2026-10-29T13:30:46Z",
+    "suspension": {
+      "lastEventBefore": {
+        "time": "2026-10-29T13:31:02Z",
+        "done": 48789635
+      },
+      "suspendedSeconds": 45,
+      "firstEventsAfter": [
+        {
+          "time": "2026-10-29T13:31:48Z",
+          "done": 50509010
+        },
+        {
+          "time": "2026-10-29T13:31:49Z",
+          "done": 176579147
+        }
+      ],
+      "result": "The transfer continued while the app was suspended: the system delivered about 126 MB downloaded during the suspension within a second of the resume."
+    },
+    "kill": {
+      "lastEventBefore": {
+        "time": "2026-10-29T13:32:05Z",
+        "done": 211017829
+      },
+      "killed": "2026-10-29T13:32:06Z (SIGKILL)"
+    }
+  },
+  "launch2": {
+    "relaunched": "2026-10-29T13:32:59Z",
+    "statusAtStart": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
+    "firstEvent": {
+      "time": "2026-10-29T13:33:01Z",
+      "done": 920230020
+    },
+    "joined": "The relaunch found the running task by its record (home-relative destination and offset) and joined it; about 709 MB arrived while no app process was running.",
+    "downloadEvents": 619,
+    "lastDownloadedBytes": 1208370448,
+    "installing": "2026-10-29T13:34:27Z",
+    "terminal": "installed 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
+    "preparationSeconds": 86.08
+  },
+  "reply": {
+    "init": "AetherLanguageModel(installation:)",
+    "prompt": "In one sentence, what is a hash function?",
+    "options": "greedy, maximumResponseTokens 48",
+    "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
+    "seconds": 7.5
+  },
+  "failures": [],
+  "resumeRun": {
+    "build": "this PR's final transport: the resumed-task fix, the task's start taken from its expected byte count, GET redirect probes, no resume data for tasks carrying the token, and the expired-link retry",
+    "probe": {
+      "cutAfterBytes": 400000000,
+      "store": "a fresh install of the app"
+    },
+    "start": "2026-10-29T14:05:18Z",
+    "statusAtStart": "notInstalled(bytesTotal: 1208370448)",
+    "stoppedAtBytes": 400081850,
+    "statusBetweenRuns": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
+    "resumeDataFiles": [
+      "model.aimodel/.main.mlirb.resume-0"
+    ],
+    "retryFirstEventBytes": 400085296,
+    "result": "The retry continued from the resume data instead of starting over, so the system's response was a 206 from the resume point; the file was applied from byte 0 and the entry installed. The retry passed 792 MB, where the size cap would have cancelled it had the task's expected byte count covered only the remaining bytes, so a resumed task's expected count covers its whole download. Bytes held in resume data don't count in status, as documented.",
+    "terminal": "installed 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
+    "retrySeconds": 345.9,
+    "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
+    "replySeconds": 7.18,
+    "notExercised": "The 403/410 retry for an expired signed link.",
+    "earlierRuns": "Two earlier builds gave the same result: only the resumed-task fix (13:46:07Z, stopped at 400,573,100 bytes, retry's first event at 400,585,137) and the review 5-7 hardening (13:55:39Z, stopped at 400,245,600, first event at 400,252,492). Both installed."
+  }
+}
