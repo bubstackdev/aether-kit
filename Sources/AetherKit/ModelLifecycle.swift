@@ -179,10 +179,11 @@ package final class ModelLifecycle: Sendable {
         self.policy = policy
         self.monitor = monitor
         self.sleep = sleep
-        // Notices from before this model existed found nothing loaded to release.
-        let notice = monitor.reading.notice
-        state.withLock { $0.handledNotice = notice }
         monitor.register(self)
+        // Notices from before this model existed found nothing loaded to release. Read after registering, so a notice
+        // in between is either delivered (and spent on the unloaded model) or counted here.
+        let notice = monitor.reading.notice
+        state.withLock { $0.handledNotice = max($0.handledNotice, notice) }
     }
 
     deinit {
