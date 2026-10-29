@@ -2,7 +2,7 @@
 set -eu
 # Launches the floor consumer staged by `Scripts/check-floor.sh STAGE_DIR` on an OS below the Core AI floor, and
 # requires the language facade to report `unsupportedOS` (docs/deployment-floor.md). CI runs it on a GitHub-hosted
-# macos-14 runner, which has no CoreAI framework: the binary only launches if CoreAI is weak-linked.
+# macos-15 runner, which has no CoreAI framework: the binary only launches if CoreAI is weak-linked.
 # Usage: launch-floor-consumer.sh STAGE_DIR
 [ $# -eq 1 ] || { echo "usage: $0 STAGE_DIR" >&2; exit 2; }
 stage=$(cd "$1" && pwd)

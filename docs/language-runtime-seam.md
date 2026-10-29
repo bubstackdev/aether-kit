@@ -86,7 +86,7 @@ not on the session actor.
 `AetherLanguageRuntime` builds at the package floor, macOS 14 and iOS 17, with no availability annotations: it has no
 Core AI or Metal types in its surface or its imports. The facade holds an `any LanguageBackend` and reports "unsupported
 OS" when no conforming backend is available. The [deployment floor](deployment-floor.md) gates the Core AI targets at OS
-27 and checks that a facade binary links `CoreAI` weakly and launches on macOS 14.
+27 and checks that a macOS 14 facade binary links `CoreAI` weakly and launches on macOS 15, which has no CoreAI.
 
 ## `LanguageBackend`
 

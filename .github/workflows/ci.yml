@@ -212,12 +212,13 @@ jobs:
           retention-days: 14
 
   floor-launch:
-    name: Launch at the macOS 14 floor
+    name: Launch without CoreAI (macOS 15)
     needs: floor-macos
-    # GitHub-hosted macOS 14 (Apple silicon) has no CoreAI framework, so the floor consumer built by floor-macos only
-    # launches if CoreAI is weak-linked. (There is no iOS 17 simulator launch: CoreAI isn't in the iOS Simulator SDK, so
-    # nothing that links the facade builds for the simulator; docs/deployment-floor.md.)
-    runs-on: macos-14
+    # GitHub-hosted macOS 15 (Apple silicon) has no CoreAI framework, so the floor consumer built by floor-macos only
+    # launches if CoreAI is weak-linked. GitHub retires its macos-14 image on 2026-11-02, so macOS 15 is the oldest hosted
+    # OS left. (There is no iOS 17 simulator launch: CoreAI isn't in the iOS Simulator SDK, so nothing that links the
+    # facade builds for the simulator; docs/deployment-floor.md.)
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -257,7 +258,7 @@ jobs:
           echo "Package floor (macOS 14): $FLOOR_MACOS_RESULT"
           echo "Package floor (iOS 17): $FLOOR_IOS_RESULT"
           echo "Release contracts and consumers: $CONTRACTS_RESULT"
-          echo "Launch at the floor: $FLOOR_RESULT"
+          echo "Launch without CoreAI: $FLOOR_RESULT"
           [[ "$CHANGES_RESULT" == success && "$WORKFLOW_RESULT" == success ]]
           # The Swift jobs must all succeed, or, only for a documentation-only pull request, all be skipped.
           if [[ "$SWIFT" == false ]]; then expected=skipped; else expected=success; fi
