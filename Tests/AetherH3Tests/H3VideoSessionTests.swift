@@ -723,8 +723,9 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     #expect(try big.envelope(for: request(960, 544, 124)) == today.envelope())
     // A 24 GiB envelope never covers today's region, even alone and even where its canvases would.
     let extendedOnly = try H3MeasuredResources.admission(entries: [canvas, clip], coordinator: budget, physicalMemoryBytes: 64 << 30)
+    let canvasEnvelope = try canvas.envelope(), clipEnvelope = try clip.envelope()
     for inside in [try request(960, 544, 124), try request(640, 352, 39), try request(960, 544, 39)] {
-        #expect(!(try canvas.envelope()).covers(inside) && !(try clip.envelope()).covers(inside) && !extendedOnly.admits(inside))
+        #expect(!canvasEnvelope.covers(inside) && !clipEnvelope.covers(inside) && !extendedOnly.admits(inside))
     }
     #expect(extendedOnly.admits(try request(960, 544, 141)))
     do { _ = try extendedOnly.envelope(for: request(960, 544, 124)); Issue.record("expected a refusal") } catch {
