@@ -203,3 +203,59 @@ struct ModelLifecycleTests {
         monitor.deliver(.normal)
     }
 }
+
+/// A clock and an available-memory reading the test sets.
+final class FakeDevice: @unchecked Sendable {
+    private let lock = NSLock()
+    private var instant = ContinuousClock.now
+    private var bytes: UInt64?
+    init(available: UInt64?) { bytes = available }
+    var now: ContinuousClock.Instant { lock.withLock { instant } }
+    var available: UInt64? { lock.withLock { bytes } }
+    func advance(_ duration: Duration) { lock.withLock { instant += duration } }
+    func set(available: UInt64?) { lock.withLock { bytes = available } }
+}
+
+struct CriticalEasingTests {
+    @Test func criticalEasesOnceTheAppsMemoryHasDoubled() {
+        let device = FakeDevice(available: 600)
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        monitor.deliver(.critical)
+        device.set(available: 1_100)
+        #expect(monitor.level == .critical)
+        device.set(available: 1_200)
+        #expect(monitor.level == .normal)
+        let lifecycle = ModelLifecycle(policy: .manual, monitor: monitor)
+        #expect(throws: Never.self) { try lifecycle.admitLoad() }
+    }
+
+    @Test func criticalExpiresAfterItsLastNotice() {
+        let device = FakeDevice(available: nil)  // a Mac: no per-app reading
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        monitor.deliver(.critical)
+        device.advance(.seconds(45))
+        monitor.deliver(.critical)  // a repeated notice renews it
+        device.advance(.seconds(45))
+        #expect(monitor.level == .critical)
+        device.advance(.seconds(15))
+        #expect(monitor.level == .normal)
+    }
+
+    @Test func aFreshCriticalAfterEasingIsANewNotice() async throws {
+        let device = FakeDevice(available: 600)
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        let lifecycle = ModelLifecycle(policy: ModelLifecyclePolicy(idleUnloadAfter: nil), monitor: monitor)
+        let release = RecordingRelease()
+        release.attach(to: lifecycle)
+        lifecycle.loaded()
+        monitor.deliver(.critical)
+        try await settle(lifecycle) { $0 == .unloaded(.memoryPressure) }
+        device.advance(.seconds(61))
+        #expect(monitor.level == .normal)
+        lifecycle.loading()
+        lifecycle.loaded()
+        monitor.deliver(.critical)
+        try await settle(lifecycle) { $0 == .unloaded(.memoryPressure) }
+        #expect(release.recorded == [.memoryPressure, .memoryPressure])
+    }
+}

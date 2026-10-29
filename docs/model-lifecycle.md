@@ -1,6 +1,7 @@
 # Managed lifecycle
 
-Status: implemented 2026-10-29: CPU tests and a Mac run, with the iPhone run pending ([Qualification](#qualification)).
+Status: implemented and qualified 2026-10-29: CPU tests, a Mac run, and real memory pressure on an iPhone
+([Qualification](#qualification)).
 This is the third piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md) and
 [model readiness](model-readiness.md). The user decided the four choices below on 2026-10-29.
@@ -18,8 +19,12 @@ when the model loads, when it unloads, and what it does when the device runs sho
 2. **Idle unload is on by default:** after 60 s idle on iOS and 5 min on the Mac. Each model can change or disable it.
 3. **Memory pressure:** on a warning or a critical notice, every idle model in the process unloads, once per notice. A
    model that's busy when the notice arrives unloads as soon as its request ends. Running requests are never cancelled;
-   the level is reported, so the app can cancel if it wants. While pressure is critical, new loads are refused until it
-   returns to normal.
+   the level is reported, so the app can cancel if it wants. While pressure is critical, new loads are refused.
+   - **Revised the same day, after the iPhone run:** iOS never reports a return to normal after an app's critical
+     notice. So critical eases on whichever comes first:
+     - a normal notice;
+     - the app's available memory recovering to twice what it was at the notice (iOS);
+     - 60 s after the last critical notice.
 4. **No cross-model eviction** in this piece. A process-wide budget with least-recently-used eviction belongs with
    shared declared residency ([proposal](shared-residency-proposal.md)), which spans processes and Atelier.
 
@@ -63,6 +68,12 @@ Internally one package type, `ModelLifecycle`, does the bookkeeping for every pr
   after it, has nothing to release, and keeps its next load. While the level stays raised, later requests load and
   keep the model, so a long warning doesn't turn every request into a load and an unload. A process started under
   pressure sees the level for the load gate, but that isn't a notice, so it doesn't release anything.
+- **Easing.** iOS doesn't report a return to normal after an app's critical notice, and an app can't read the kernel's
+  level. So critical also ends by itself, reported as a normal level:
+  - once `os_proc_available_memory()` is back to twice what it was at the notice (iOS only);
+  - otherwise 60 s after the last critical notice. A repeated critical notice restarts that clock.
+
+  A later critical notice is a new notice, and releases models again.
 - **The load gate.** While pressure is critical, a load throws. Language reports `AetherLanguageError.insufficientMemory`;
   the others report a new `AetherError.memoryPressure`.
 
@@ -93,11 +104,22 @@ starts fresh.
   - pressure during a request (no release until it ends);
   - critical refusing a load, and normal lifting it;
   - each product's release keeping it usable.
-- **Mac:** `aether-probe qualify-lifecycle` drives the language facade with a short idle policy and records Metal's allocated
-  size and the physical footprint:
-  - loaded, then idle-unloaded back to baseline;
-  - the reload's time;
-  - a simulated pressure event through the package's test seam.
-- **iPhone:** the LanguageDevice probe holds an idle model, then allocates ballast until iOS sends a real memory warning.
-  It records that the warning arrived, that the model unloaded, and the footprint before and after, then frees the
-  ballast.
+- **Mac** (M5 Max, macOS 27.2; [record](evidence/model-lifecycle-2026-10-29.json)): `aether-probe qualify-lifecycle`
+  on the installed Qwen3 0.6B, with a 10 s idle policy. Pressure was simulated through the monitor's delivery seam,
+  because raising real pressure on this shared Mac would disturb other work.
+  - The first reply loaded the model: 1,484.1 MiB of Metal, 3.92 s.
+  - 10.5 s after the reply it was `unloaded(.idle)`, with Metal back to 0.7 MiB.
+  - The next reply loaded it again, in 1.97 s.
+  - A simulated warning released it, to 12.7 MiB.
+  - A simulated critical level refused the next load with `insufficientMemory`.
+- **iPhone** (iPhone19,4, iOS 27.2, no increased-memory entitlement; same record): the LanguageDevice `lifecycle`
+  mode, with a 10 s idle policy, on the installed Qwen3 0.6B. Real pressure came from ballast allocated in touched
+  32 MiB steps.
+  - The first reply took 2.56 s. 10 s later the model was `unloaded(.idle)`, and the reload reply took 1.95 s.
+  - At 2,624 MiB of ballast (a 2,731.6 MiB footprint, 644.4 MiB available), iOS sent UIKit's memory warning and Kit's
+    dispatch notice at the same moment. The notice came as **critical**, with no warning first. The idle model released
+    60 ms later.
+  - **Finding:** on the build before easing, iOS never sent a return to normal. With the ballast freed, Kit still read
+    critical for 60 s and refused the next load, and the kernel's level read -1 from the app. Hence the easing above.
+  - With easing, freeing the ballast brought available memory to 3,039.1 MiB, more than twice 644.4. Kit reported
+    normal, and the next reply loaded.

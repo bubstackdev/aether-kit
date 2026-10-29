@@ -12,13 +12,13 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
   - after an idle period: by default 60 s on iOS and 5 min on the Mac;
   - when the system reports memory pressure. Each warning or critical notice releases each idle model once; running requests are never cancelled.
 
-  While pressure is critical, new loads are refused (`AetherError.memoryPressure`; `AetherLanguageError.insufficientMemory` for the language facade). `MemoryPressure.level` and `.levels` report it. Each product takes a `lifecycle:` policy, and the language facade, Kokoro, Krea and FLUX.2 expose `lifecycleState` and `lifecycleStates`:
+  While pressure is critical, new loads are refused (`AetherError.memoryPressure`; `AetherLanguageError.insufficientMemory` for the language facade). iOS never reports a return to normal after an app's critical notice, so critical eases on a normal notice, once the app's available memory has recovered to twice what it was at the notice, or 60 s after the last critical notice. `MemoryPressure.level` and `.levels` report it. Each product takes a `lifecycle:` policy, and the language facade, Kokoro, Krea and FLUX.2 expose `lifecycleState` and `lifecycleStates`:
   - the language facade (Qwen3 and Qwen3-VL) unloads and loads again on the next request;
   - Kokoro releases both models and keeps its session usable;
   - Krea and FLUX.2 release the models a session keeps between operations;
   - H3 refuses a generation under critical pressure.
 
-  `aether-probe qualify-lifecycle` and the LanguageDevice `lifecycle` mode qualify it.
+  `aether-probe qualify-lifecycle` and the LanguageDevice `lifecycle` mode qualify it: on the Mac with simulated pressure, and on an iPhone19,4 with real pressure, where iOS's critical notice released the idle model within 60 ms ([record](docs/evidence/model-lifecycle-2026-10-29.json)).
 
 ### Changed
 

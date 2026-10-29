@@ -96,6 +96,17 @@ func runLifecycle(assets: URL, store storeName: String, idleSeconds: Int) async 
     ballast.removeAll()
     try await Task.sleep(for: .seconds(3))
     point("ballast freed")
+    // Does iOS ever report normal again? Watch Kit's level and the kernel's for up to 60 s, then try a load.
+    for _ in 0..<30 where MemoryPressure.level != .normal {
+        try await Task.sleep(for: .seconds(2))
+        point("waiting: Kit level \(MemoryPressure.level), kernel level \(kernelPressureLevel())")
+    }
+    do {
+        _ = try await reply()
+        point("third reply loaded")
+    } catch {
+        point("third reply refused: \(error)")
+    }
     await model.unload()
     return recorder.result
 }
@@ -107,4 +118,11 @@ private func lifecycleFootprintMiB() -> Double {
         $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count) }
     }
     return status == KERN_SUCCESS ? Double(info.phys_footprint) / 1_048_576 : 0
+}
+
+/// `kern.memorystatus_vm_pressure_level` (1 normal, 2 warning, 4 critical), or -1 if it can't be read.
+private func kernelPressureLevel() -> Int32 {
+    var value: Int32 = -1
+    var size = MemoryLayout<Int32>.size
+    return sysctlbyname("kern.memorystatus_vm_pressure_level", &value, &size, nil, 0) == 0 ? value : -1
 }

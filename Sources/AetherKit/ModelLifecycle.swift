@@ -1,5 +1,8 @@
 import Dispatch
 import Foundation
+#if os(iOS)
+import os
+#endif
 
 /// When a loaded model unloads by itself (docs/model-lifecycle.md).
 public struct ModelLifecyclePolicy: Sendable, Equatable {
@@ -53,7 +56,9 @@ public enum MemoryPressureLevel: Int, Sendable, Comparable {
 }
 
 /// The process's memory pressure, as the system reports it: read when first used, then each notice. While it's critical,
-/// Kit's products refuse new loads.
+/// Kit's products refuse new loads. iOS doesn't report a return to normal after an app's critical notice, so critical
+/// also eases by itself (docs/model-lifecycle.md): once the app's available memory has recovered to twice what it was at
+/// the notice (iOS), or 60 s after the last critical notice.
 public enum MemoryPressure {
     public static var level: MemoryPressureLevel { MemoryPressureMonitor.shared.level }
     /// The current level, then each change.
@@ -73,24 +78,53 @@ package final class MemoryPressureMonitor: Sendable {
         var subscribers: [UUID: AsyncStream<MemoryPressureLevel>.Continuation] = [:]
         var models: [ObjectIdentifier: Registered] = [:]
         var source: (any DispatchSourceMemoryPressure)?
+        /// The last critical notice: when it came, and the app's available memory then (iOS).
+        var critical: (at: ContinuousClock.Instant, available: UInt64?)?
     }
+
+    /// Critical eases this long after the last critical notice, if nothing else has eased it.
+    package static let criticalExpiry: Duration = .seconds(60)
 
     private let systemSource: Bool
     private let state = UnfairLock(State())
     private let queue = DispatchQueue(label: "aether.memory-pressure")
+    private let now: @Sendable () -> ContinuousClock.Instant
+    private let availableMemory: @Sendable () -> UInt64?
 
-    /// `systemSource: false` gives a monitor that only `deliver` drives (tests and qualification).
-    package init(systemSource: Bool) { self.systemSource = systemSource }
-
-    package var level: MemoryPressureLevel {
-        startIfNeeded()
-        return state.withLock { $0.level }
+    /// `systemSource: false` gives a monitor that only `deliver` drives (tests and qualification). `availableMemory` is
+    /// what the app may still allocate (iOS), or nil where there's no per-app limit.
+    package init(systemSource: Bool, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
+                 availableMemory: @escaping @Sendable () -> UInt64? = MemoryPressureMonitor.appAvailableMemory) {
+        self.systemSource = systemSource
+        self.now = now
+        self.availableMemory = availableMemory
     }
+
+    package var level: MemoryPressureLevel { reading.level }
 
     /// The level and the count of raised notices so far.
     package var reading: (level: MemoryPressureLevel, notice: Int) {
         startIfNeeded()
+        easeIfRecovered()
         return state.withLock { ($0.level, $0.notice) }
+    }
+
+    /// Ends a critical level the system won't end itself: once the app's available memory has doubled since the
+    /// notice, or the expiry has passed. Reported as a return to normal.
+    private func easeIfRecovered() {
+        guard let critical = state.withLock({ $0.level == .critical ? $0.critical : nil }) else { return }
+        let recovered = critical.available.map { at in availableMemory().map { $0 >= at.saturatingDoubled } ?? false } ?? false
+        if recovered || now() - critical.at >= Self.criticalExpiry { deliver(.normal) }
+    }
+
+    /// iOS: `os_proc_available_memory()`. Elsewhere nil.
+    package static func appAvailableMemory() -> UInt64? {
+        #if os(iOS)
+        let available = os_proc_available_memory()
+        return available > 0 ? UInt64(available) : nil
+        #else
+        nil
+        #endif
     }
 
     package var levels: AsyncStream<MemoryPressureLevel> {
@@ -116,14 +150,24 @@ package final class MemoryPressureMonitor: Sendable {
     /// Records a level and tells every registered model, as the system source does. Also the seam for tests and for
     /// qualification runs that can't raise real pressure.
     package func deliver(_ level: MemoryPressureLevel) {
+        let available = level == .critical ? availableMemory() : nil
         let (models, notice): ([ModelLifecycle], Int) = state.withLock { state in
+            if level == .critical { state.critical = (now(), available) }
             guard state.level != level else { return ([], state.notice) }
             state.level = level
+            if level != .critical { state.critical = nil }
             if level >= .warning { state.notice += 1 }
             for continuation in state.subscribers.values { continuation.yield(level) }
             return (state.models.values.compactMap(\.lifecycle), state.notice)
         }
         if level >= .warning { for model in models { model.pressure(notice: notice) } }
+        if level == .critical, systemSource {
+            // So a stream reader sees the expiry even if nothing reads the level meanwhile.
+            Task { [weak self] in
+                try? await Task.sleep(for: Self.criticalExpiry + .seconds(1))
+                self?.easeIfRecovered()
+            }
+        }
     }
 
     private func startIfNeeded() {
@@ -132,6 +176,7 @@ package final class MemoryPressureMonitor: Sendable {
             guard state.source == nil else { return }
             // A process started under pressure sees the current level (for the load gate), not a notice.
             state.level = Self.systemLevel()
+            if state.level == .critical { state.critical = (now(), nil) }
             let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: queue)
             source.setEventHandler { [weak self, weak source] in
                 guard let self, let event = source?.data else { return }
@@ -274,4 +319,8 @@ package final class ModelLifecycle: Sendable {
             if await release(.memoryPressure) { self?.state.withLock { $0.handledNotice = max($0.handledNotice, notice) } }
         }
     }
+}
+
+private extension UInt64 {
+    var saturatingDoubled: UInt64 { self > .max / 2 ? .max : self * 2 }
 }
