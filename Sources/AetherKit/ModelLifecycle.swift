@@ -52,7 +52,8 @@ public enum MemoryPressureLevel: Int, Sendable, Comparable {
     public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
 }
 
-/// The process's memory pressure, as the system reports it. While it's critical, Kit's products refuse new loads.
+/// The process's memory pressure, as the system reports it: read when first used, then each notice. While it's critical,
+/// Kit's products refuse new loads.
 public enum MemoryPressure {
     public static var level: MemoryPressureLevel { MemoryPressureMonitor.shared.level }
     /// The current level, then each change.
@@ -66,6 +67,9 @@ package final class MemoryPressureMonitor: Sendable {
     private struct Registered { weak var lifecycle: ModelLifecycle? }
     private struct State {
         var level = MemoryPressureLevel.normal
+        /// Counts warning and critical notices: a model releases once per notice, not on every idle while the level
+        /// stays raised.
+        var notice = 0
         var subscribers: [UUID: AsyncStream<MemoryPressureLevel>.Continuation] = [:]
         var models: [ObjectIdentifier: Registered] = [:]
         var source: (any DispatchSourceMemoryPressure)?
@@ -81,6 +85,12 @@ package final class MemoryPressureMonitor: Sendable {
     package var level: MemoryPressureLevel {
         startIfNeeded()
         return state.withLock { $0.level }
+    }
+
+    /// The level and the count of raised notices so far.
+    package var reading: (level: MemoryPressureLevel, notice: Int) {
+        startIfNeeded()
+        return state.withLock { ($0.level, $0.notice) }
     }
 
     package var levels: AsyncStream<MemoryPressureLevel> {
@@ -106,19 +116,22 @@ package final class MemoryPressureMonitor: Sendable {
     /// Records a level and tells every registered model, as the system source does. Also the seam for tests and for
     /// qualification runs that can't raise real pressure.
     package func deliver(_ level: MemoryPressureLevel) {
-        let models: [ModelLifecycle] = state.withLock { state in
-            guard state.level != level else { return [] }
+        let (models, notice): ([ModelLifecycle], Int) = state.withLock { state in
+            guard state.level != level else { return ([], state.notice) }
             state.level = level
+            if level >= .warning { state.notice += 1 }
             for continuation in state.subscribers.values { continuation.yield(level) }
-            return state.models.values.compactMap(\.lifecycle)
+            return (state.models.values.compactMap(\.lifecycle), state.notice)
         }
-        for model in models { model.pressure(level) }
+        if level >= .warning { for model in models { model.pressure(notice: notice) } }
     }
 
     private func startIfNeeded() {
         guard systemSource else { return }
         state.withLock { state in
             guard state.source == nil else { return }
+            // A process started under pressure sees the current level (for the load gate), not a notice.
+            state.level = Self.systemLevel()
             let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: queue)
             source.setEventHandler { [weak self, weak source] in
                 guard let self, let event = source?.data else { return }
@@ -127,6 +140,14 @@ package final class MemoryPressureMonitor: Sendable {
             source.activate()
             state.source = source
         }
+    }
+
+    /// The kernel's current pressure level (1 normal, 2 warning, 4 critical); normal if it can't be read.
+    private static func systemLevel() -> MemoryPressureLevel {
+        var value: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        guard sysctlbyname("kern.memorystatus_vm_pressure_level", &value, &size, nil, 0) == 0 else { return .normal }
+        return value >= 4 ? .critical : value >= 2 ? .warning : .normal
     }
 }
 
@@ -146,6 +167,10 @@ package final class ModelLifecycle: Sendable {
         var timer: Task<Void, Never>?
         var timerGeneration = 0
         var release: Release?
+        /// Why the model last unloaded, kept across failed or refused loads.
+        var lastReason: ModelUnloadReason?
+        /// The last pressure notice this model released for.
+        var handledNotice = 0
     }
     private let state = UnfairLock(State())
 
@@ -191,14 +216,19 @@ package final class ModelLifecycle: Sendable {
     /// A request ended and the model stays loaded.
     package func idle() { settle() }
 
-    /// Loaded and idle: start the idle timer, and release at once if pressure is still raised (a notice that arrived
-    /// while the model was busy).
+    /// Loaded and idle: start the idle timer, and release now for a raised notice this model hasn't released for yet
+    /// (one that arrived while it was busy). A level that stays raised doesn't release it again after every request.
     private func settle() {
         transition(to: .loaded, idleTimer: true)
-        let level = monitor.level
-        if level >= .warning { pressure(level) }
+        let reading = monitor.reading
+        if reading.level >= .warning { pressure(notice: reading.notice) }
     }
-    package func unloaded(_ reason: ModelUnloadReason?) { transition(to: .unloaded(reason), idleTimer: false) }
+    package func unloaded(_ reason: ModelUnloadReason) {
+        state.withLock { $0.lastReason = reason }
+        transition(to: .unloaded(reason), idleTimer: false)
+    }
+    /// A load failed or was refused, or an operation ended holding nothing: unloaded, keeping the last reason.
+    package func notLoaded() { transition(to: .unloaded(state.withLock { $0.lastReason }), idleTimer: false) }
 
     private func transition(to next: ModelLifecycleState, idleTimer: Bool) {
         state.withLock { state in
@@ -226,11 +256,14 @@ package final class ModelLifecycle: Sendable {
         if let release { _ = await release(.idle) }
     }
 
-    /// From the monitor: a warning or critical notice releases the model if it's idle and the policy allows.
-    func pressure(_ level: MemoryPressureLevel) {
-        guard level >= .warning, policy.releaseUnderMemoryPressure else { return }
-        let release: Release? = state.withLock { $0.current == .loaded ? $0.release : nil }
+    /// A raised notice releases the model, once, if it's idle and the policy allows. A busy model releases for it when
+    /// it next goes idle.
+    func pressure(notice: Int) {
+        guard policy.releaseUnderMemoryPressure else { return }
+        let release: Release? = state.withLock { $0.current == .loaded && $0.handledNotice < notice ? $0.release : nil }
         guard let release else { return }
-        Task { _ = await release(.memoryPressure) }
+        Task { [weak self] in
+            if await release(.memoryPressure) { self?.state.withLock { $0.handledNotice = max($0.handledNotice, notice) } }
+        }
     }
 }

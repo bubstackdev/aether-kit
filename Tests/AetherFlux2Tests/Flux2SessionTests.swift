@@ -567,3 +567,20 @@ private func settleLifecycle(_ states: @escaping @Sendable () -> AsyncStream<Mod
     }
     #expect(!h.log.snapshot.contains { $0.hasPrefix("open:") })
 }
+
+@Test func aBalancedSessionKeepsItsDenoisersAndDecoderSoItIsLoadedBetweenOperations() async throws {
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let h = try Flux2Harness(lifecycle: ModelLifecycle(policy: ModelLifecyclePolicy(idleUnloadAfter: nil), monitor: monitor))
+    defer { h.fixture.cleanup() }
+    _ = try await h.session.generate(configuration: try Flux2Configuration(width: 32, height: 32, steps: 1), prompt: prompt())
+    #expect(h.session.lifecycleState == .loaded)
+    h.log.clear()
+    monitor.deliver(.warning)
+    let session = h.session
+    #expect(try await settleLifecycle({ session.lifecycleStates }) { $0 == .unloaded(.memoryPressure) })
+    let deadline = ContinuousClock.now + .seconds(5)
+    while h.log.snapshot.count < 4, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(h.log.snapshot.sorted() == ["close:denoiser0", "close:denoiser1", "close:denoiser2", "close:vaeDecoder"])
+    monitor.deliver(.normal)
+    await h.session.unload()
+}

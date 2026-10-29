@@ -123,6 +123,36 @@ struct ModelLifecycleTests {
         #expect(later.current == .loaded && laterRelease.recorded.isEmpty)
     }
 
+    @Test func aSustainedWarningReleasesOncePerNotice() async throws {
+        let (model, release) = lifecycle(ModelLifecyclePolicy(idleUnloadAfter: nil))
+        model.loaded()
+        monitor.deliver(.warning)
+        try await settle(model) { $0 == .unloaded(.memoryPressure) }
+        // A request loads it again while the level stays at warning: it isn't released after every request.
+        model.loading()
+        model.running()
+        model.idle()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(model.current == .loaded && release.recorded == [.memoryPressure])
+        // A new notice releases it again.
+        monitor.deliver(.critical)
+        try await settle(model) { $0 == .unloaded(.memoryPressure) }
+        #expect(release.recorded == [.memoryPressure, .memoryPressure])
+        monitor.deliver(.normal)
+    }
+
+    @Test func aFailedLoadKeepsTheLastUnloadReason() {
+        let (model, _) = lifecycle(.manual)
+        model.loading()
+        model.notLoaded()
+        #expect(model.current == .unloaded(nil))
+        model.loaded()
+        model.unloaded(.idle)
+        model.loading()
+        model.notLoaded()  // a refused or failed reload
+        #expect(model.current == .unloaded(.idle))
+    }
+
     @Test func criticalPressureRefusesLoadsUntilItEases() throws {
         let (model, _) = lifecycle()
         try model.admitLoad()

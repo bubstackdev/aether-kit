@@ -239,8 +239,10 @@ public actor Flux2GenerationSession {
             if state == .running { state = .ready }
         }
         let result = await withTaskCancellationHandler { await task.result } onCancel: { task.cancel() }
+        let holds = await runner.holdsModels
+        // Re-checked after the await: an unload that ran meanwhile has already reported.
         if state == .running {
-            if await runner.holdsModels { lifecycle.idle() } else { lifecycle.unloaded(nil) }
+            if holds { lifecycle.idle() } else { lifecycle.notLoaded() }
         }
         let value = try result.get()
         try Task.checkCancellation()

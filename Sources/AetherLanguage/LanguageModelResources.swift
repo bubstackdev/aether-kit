@@ -70,7 +70,7 @@ actor LanguageModelResources {
             return try await task.value
         } catch {
             if loading == task { loading = nil }
-            lifecycle.unloaded(nil)
+            lifecycle.notLoaded()
             throw AetherLanguageError.loading(error)
         }
     }

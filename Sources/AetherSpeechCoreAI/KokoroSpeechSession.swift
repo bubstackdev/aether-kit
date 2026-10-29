@@ -326,8 +326,10 @@ public actor KokoroSpeechSession {
             if state == .running { state = .ready }
         }
         let result = await withTaskCancellationHandler { await task.result } onCancel: { task.cancel() }
+        let holds = await runner.holdsModels
+        // Re-checked after the await: an unload that ran meanwhile has already reported.
         if state == .running {
-            if await runner.holdsModels { lifecycle.idle() } else { lifecycle.unloaded(nil) }
+            if holds { lifecycle.idle() } else { lifecycle.notLoaded() }
         }
         let value = try result.get()
         try Task.checkCancellation()
@@ -345,7 +347,9 @@ public actor KokoroSpeechSession {
 
     /// Loads the decoder and specializes it at every bucket up to `maximumFrames` (default: the frame cap), so
     /// that later utterances never wait for GPU specialization. Each bucket costs roughly 2-4 s once and
-    /// keeps its specialization resident until `unload()`; see docs/kokoro-speech.md#length-buckets.
+    /// keeps its specialization resident until the models unload: `unload()`, or a lifecycle release after an idle
+    /// period or under memory pressure, after which the next utterance specializes again
+    /// (docs/model-lifecycle.md); see docs/kokoro-speech.md#length-buckets.
     /// Returns the buckets warmed (empty for an unbucketed bundle). Shares the request slot.
     @discardableResult
     public func prewarm(maximumFrames: Int? = nil) async throws -> [Int] {
