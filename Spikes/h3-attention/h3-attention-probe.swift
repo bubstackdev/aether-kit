@@ -6,24 +6,27 @@
 //     xcrun swiftc -O -swift-version 5 -o .build/h3-attention-probe Spikes/h3-attention/h3-attention-probe.swift \
 //         -framework CoreAI -framework Metal
 //     ~/.cache/aether-kit/with-gpu-lock.sh h3-attention-probe .build/h3-attention-probe <asset> bf16|fp16 <name> \
-//         <results directory> <rows,rows,...> [rounds]
+//         <results directory> <rows,rows,...> [rounds] [all]
+//
+// `all` samples every head instead of five.
 @preconcurrency import CoreAI
 import Foundation
 import Metal
 
 let heads = 56, dim = 128
-let sampleHeads = [0, 13, 27, 41, 55], sampleRows = 64
+let sampleRows = 64
 let seeds = ["q": 1, "k": 2, "v": 3], scales: [String: Double] = ["q": 8, "k": 1, "v": 1]
 
 let arguments = CommandLine.arguments
-guard arguments.count == 6 || arguments.count == 7, ["bf16", "fp16"].contains(arguments[2]) else {
-    fatalError("usage: h3-attention-probe <asset> bf16|fp16 <name> <results directory> <rows,...> [rounds]")
+guard (6...8).contains(arguments.count), ["bf16", "fp16"].contains(arguments[2]), arguments.count < 8 || arguments[7] == "all" else {
+    fatalError("usage: h3-attention-probe <asset> bf16|fp16 <name> <results directory> <rows,...> [rounds] [all]")
 }
+let sampleHeads = arguments.count == 8 ? Array(0..<heads) : [0, 13, 27, 41, 55]
 let bf16 = arguments[2] == "bf16"
 let name = arguments[3]
 let results = URL(filePath: arguments[4])
 let rowCounts = arguments[5].split(separator: ",").map { Int($0)! }
-let rounds = arguments.count == 7 ? Int(arguments[6])! : 5
+let rounds = arguments.count >= 7 ? Int(arguments[6])! : 5
 try FileManager.default.createDirectory(at: results, withIntermediateDirectories: true)
 
 let device = MTLCreateSystemDefaultDevice()!

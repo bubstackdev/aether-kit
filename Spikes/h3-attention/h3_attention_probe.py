@@ -6,7 +6,8 @@ values, and coreai-torch exports it as an SDPA composite. This probe exports tha
 ways, with R dynamic in 64...40960 like the body:
   sdpa_bf16      the body's form: SDPA on bf16;
   explicit_bf16  matmul, softmax, matmul on bf16 (what an unfused graph would be);
-  sdpa_fp16      SDPA on fp16.
+  sdpa_fp16      SDPA on fp16;
+  explicit_fp16  matmul, softmax, matmul on fp16 (to see whether explicit attention's failure depends on the dtype).
 
     Forge/h3-oracle/.venv/bin/python -I -B Spikes/h3-attention/h3_attention_probe.py export <variant> --output <new .aimodel>
     Forge/h3-oracle/.venv/bin/python -I -B Spikes/h3-attention/h3_attention_probe.py compare <results directory>
@@ -45,7 +46,8 @@ class Explicit(torch.nn.Module):
         return torch.matmul(torch.softmax(scores, dim=-1), v)
 
 
-VARIANTS = {"sdpa_bf16": (SDPA, torch.bfloat16), "explicit_bf16": (Explicit, torch.bfloat16), "sdpa_fp16": (SDPA, torch.float16)}
+VARIANTS = {"sdpa_bf16": (SDPA, torch.bfloat16), "explicit_bf16": (Explicit, torch.bfloat16), "sdpa_fp16": (SDPA, torch.float16),
+            "explicit_fp16": (Explicit, torch.float16)}
 
 
 def export(variant: str, output: Path) -> None:
@@ -83,11 +85,11 @@ def sample_rows(rows: int) -> list[int]:
     return [(j * (rows - 1)) // (SAMPLE_ROWS - 1) for j in range(SAMPLE_ROWS)]
 
 
-def reference(rows: int, dtype: torch.dtype) -> np.ndarray:
-    """Float64 attention of the sampled query rows, [len(SAMPLE_HEADS), SAMPLE_ROWS, DIM], from dtype-rounded inputs."""
+def reference(rows: int, dtype: torch.dtype, heads: list[int]) -> np.ndarray:
+    """Float64 attention of the sampled query rows, [len(heads), SAMPLE_ROWS, DIM], from dtype-rounded inputs."""
     picks = sample_rows(rows)
-    out = np.empty((len(SAMPLE_HEADS), SAMPLE_ROWS, DIM))
-    for slot, head in enumerate(SAMPLE_HEADS):
+    out = np.empty((len(heads), SAMPLE_ROWS, DIM))
+    for slot, head in enumerate(heads):
         q, k, v = (rounded(hashed(name, rows, head), dtype) for name in ("q", "k", "v"))
         logits = q[picks] @ k.T * (DIM ** -0.5)
         logits -= logits.max(axis=1, keepdims=True)
@@ -104,10 +106,16 @@ def compare(results: Path) -> None:
         variant, rows = path.stem.rsplit("-", 1)
         rows = int(rows)
         dtype = VARIANTS[variant][1]
-        sample = np.fromfile(path, dtype=np.float32).astype(np.float64).reshape(len(SAMPLE_HEADS), SAMPLE_ROWS, DIM)
-        ref = reference(rows, dtype)
+        sample = np.fromfile(path, dtype=np.float32).astype(np.float64)
+        # The probe samples five heads, or every head with its `all` option.
+        heads = list(range(HEADS)) if sample.size == HEADS * SAMPLE_ROWS * DIM else SAMPLE_HEADS
+        sample = sample.reshape(len(heads), SAMPLE_ROWS, DIM)
+        ref = reference(rows, dtype, heads)
         relative = float(np.linalg.norm(sample - ref) / np.linalg.norm(ref))
-        report.setdefault(str(rows), {})[variant] = {"relativeL2": relative, "finite": bool(np.isfinite(sample).all())}
+        entry = {"relativeL2": relative, "finite": bool(np.isfinite(sample).all())}
+        if len(heads) == HEADS:
+            entry["relativeL2ByHead"] = [round(float(np.linalg.norm(sample[h] - ref[h]) / np.linalg.norm(ref[h])), 5) for h in heads]
+        report.setdefault(str(rows), {})[variant] = entry
     print(json.dumps(report, indent=2, sort_keys=True))
 
 
