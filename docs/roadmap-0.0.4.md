@@ -46,7 +46,11 @@ references, native qualification and a guide.
   own manifest kind for Hugging Face safetensors.
 - **H3:** Turbo4 qualification (the user's side-by-side review judged it worth qualifying) and fused attention, which
   re-exports the body graph and so resets H3's qualification evidence. The step-0 transient in the admitted worst case
-  and profile paths relative to `bundle.json` are follow-ups.
+  and profile paths relative to `bundle.json` are follow-ups. Overlays (the larger canvas, the FL2VA conditioner) inherit
+  the location-dependent identity: moving a profile changes its identity and orphans its measured entries.
+- **H3 larger canvas and longer clips** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress)):
+  1280×704 and 704×1280 first-frame tails and per-entry memory bars (18 GiB today's region, 24 GiB beyond it with at
+  least 64 GiB of physical memory, decided 2026-10-29). Entries are bundled once measured under the final overlay stack.
 - **Exporter safety,** from the 0.0.3 follow-up bug hunt on macOS 27.2:
   - An export-time check that runs the optimized program against the unoptimized one on random inputs. Core AI's
     pre-compilation rewrite gives silently wrong results for some reshape-into-matmul patterns.

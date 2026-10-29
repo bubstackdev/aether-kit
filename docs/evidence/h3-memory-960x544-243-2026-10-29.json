@@ -144,16 +144,16 @@
       "schema": 1,
       "stage": "dump-t2va-960x544",
       "command": [
-        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "<repo>/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
         "h3-profile-dump",
-        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
         "docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
         "960",
         "544",
         "243",
         "1043",
         "turbo8",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544"
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544"
       ],
       "budgetSeconds": 600,
       "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
@@ -171,13 +171,13 @@
       "schema": 1,
       "stage": "render-t2va-960x544",
       "command": [
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
+        "<scratch>/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
         "h3-memory-gate: t2va-960x544",
-        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "<repo>/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
         "h3-memory-render",
-        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/render-t2va-960x544"
+        "<hf-cache>/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/dump-t2va-960x544",
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/render-t2va-960x544"
       ],
       "budgetSeconds": 7200,
       "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
@@ -195,17 +195,17 @@
       "schema": 1,
       "stage": "dump-fl2va-960x544",
       "command": [
-        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "<repo>/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
         "h3-profile-dump",
-        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
         "docs/evidence/h3-profile-graphs-prompt-2026-10-26.txt",
         "960",
         "544",
         "243",
         "1043",
         "turbo8",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
-        "/Volumes/Scratch/aether/aether-kit-h3-2026-10-26/inputs/crane-960x544.png"
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
+        "<scratch>/aether-kit-h3-2026-10-26/inputs/crane-960x544.png"
       ],
       "budgetSeconds": 600,
       "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
@@ -223,13 +223,13 @@
       "schema": 1,
       "stage": "render-fl2va-960x544",
       "command": [
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
+        "<scratch>/aether-kit-h3-large-canvas/gpu-lock-yield.sh",
         "h3-memory-gate: fl2va-960x544",
-        "~/Code/bubstackdev/aether/aether-kit/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
+        "<repo>/.worktrees/h3-large-canvas-gate/.build/release/aether-probe",
         "h3-memory-render",
-        "~/.cache/huggingface/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
-        "/Volumes/Scratch/aether/aether-kit-h3-large-canvas/gate-960x544-243/render-fl2va-960x544"
+        "<hf-cache>/aether-kit/minimax-h3/profile-large-canvas/bundle.json",
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/dump-fl2va-960x544",
+        "<scratch>/aether-kit-h3-large-canvas/gate-960x544-243/render-fl2va-960x544"
       ],
       "budgetSeconds": 7200,
       "pinsDigest": "5ce512c499784bfa3d0b49067830838552bfaca61a5ff2f73533aeb102159b61",
@@ -244,5 +244,46 @@
       "sourcePinsUnchanged": true
     }
   },
-  "note": "Rendered from a detached checkout of 4056a06 (Sources identical to main 6c125a1); busy host; GPU lock taken through a wrapper that yields 90 s after release."
+  "note": "Rendered from a detached checkout of 4056a06 (Sources identical to main 6c125a1); busy host; GPU lock taken through a wrapper that yields 90 s after release.",
+  "profileAdapter": {
+    "repository": "lightx2v/Minimax-h3-Turbo",
+    "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+    "execution": "dynamic_lora",
+    "rank": 128,
+    "alpha": 8.0,
+    "file": "minimax_h3_fl2v_turbo_8step_v1.0_bf16.safetensors (544p)"
+  },
+  "profileLineage": {
+    "parent": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "identity": "34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe"
+  },
+  "candidateEntriesByTask": {
+    "t2va": {
+      "entry": {
+        "execution_identity": "h3.profile/1:34c0c67e5b28801a4944a1b336b3a68fa778ebb747e58bb64fc55bd633ad58fe:turbo8",
+        "device_architecture": "h17c",
+        "canvases": [
+          "960x544"
+        ],
+        "maximum_frames": 243,
+        "tasks": [
+          "t2va"
+        ],
+        "stage_peak_bytes": {
+          "encoding": 2149714080,
+          "denoising": 22826340408,
+          "decodingVideo": 15302757064,
+          "decodingAudio": 2580089208
+        },
+        "operation_bytes": 268435456,
+        "memory_bar_bytes": 25769803776,
+        "evidence": "docs/evidence/h3-memory-960x544-243-2026-10-29.json"
+      },
+      "admissionWorstCaseBytes": 23363211320,
+      "admissionWorstCaseGiB": 21.759,
+      "withinExtendedBar": true
+    }
+  },
+  "candidateNote": "Stage peaks are the gate's own attribution (largest max(Metal, footprint) sample per stage, from the full timeline whose SHA-256 is recorded) and operation bytes the gate's carried-state formula over this render's dump. Keyed to the overlay identity measured here; bundled entries are measured under the final top identity, not copied. FL2VA x243 has no complete record and no entry."
 }
