@@ -673,8 +673,13 @@ Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes
 - **What still conditions on the keyframe:** its encoded latents, anchored as condition rows of the denoising sequence.
   The qualified FL2VA renders pass the media audit and the user's review on 2026-10-28. The effect of the missing vision
   block on output has not been measured.
-- **Why the gates didn't catch it:** the graph and trajectory gates compare Kit with CPU references that were fed the
-  same text-only conditioner ids. They prove Kit computes that presentation correctly, not that it's upstream's.
+- **Why the gates didn't catch it** (`Scripts/prepare-h3-profile-oracle.py`): their references were given Kit's own
+  text-only conditioning, never upstream's presentation.
+  - The text gate checks Kit's ids against the prompt alone, tokenized.
+  - FL2VA's graph gate checks only the keyframe encoder.
+  - The trajectory gate takes Kit's captured refined text, with every row tagged as text.
+
+  They prove Kit computes its presentation correctly, not that it's upstream's.
 - **Fix, planned for 0.0.4** ([roadmap](roadmap-0.0.4.md)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
   positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
   changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
