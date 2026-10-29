@@ -59,14 +59,17 @@ actor NativeH3Graph {
     private let observer: H3NativeCallObserver?
     private var calls = 0
 
-    static func open(_ asset: H3ModelAsset, role: String = "", observer: H3NativeCallObserver? = nil) async throws -> NativeH3Graph {
-        try await NativeH3Graph(asset, role: role, observer: observer)
+    /// `frequentReshapes` false specializes a static-shape graph without `expectFrequentReshapes` (the keyframe vision
+    /// tower: the language product's Qwen3-VL tower computed wrong GPU outputs with it).
+    static func open(_ asset: H3ModelAsset, role: String = "", observer: H3NativeCallObserver? = nil,
+                     frequentReshapes: Bool = true) async throws -> NativeH3Graph {
+        try await NativeH3Graph(asset, role: role, observer: observer, frequentReshapes: frequentReshapes)
     }
-    private init(_ asset: H3ModelAsset, role: String, observer: H3NativeCallObserver?) async throws {
+    private init(_ asset: H3ModelAsset, role: String, observer: H3NativeCallObserver?, frequentReshapes: Bool) async throws {
         self.role = role; self.observer = observer
         try asset.verify(); try Task.checkCancellation()
         guard let device = MTLCreateSystemDefaultDevice() else { throw AetherError.unsupported("H3 requires a Metal device") }
-        var options = SpecializationOptions(preferredComputeUnitKind: .gpu); options.expectFrequentReshapes = true
+        var options = SpecializationOptions(preferredComputeUnitKind: .gpu); options.expectFrequentReshapes = frequentReshapes
         let model = try await AIModel(contentsOf: asset.url, options: options)
         try Task.checkCancellation()
         guard let description = model.functionDescriptor(for: asset.function),

@@ -604,7 +604,7 @@ def compare_part(reference, run, out):
         a, b = run.get(name), reference.get(name)
         if a.shape != b.shape:
             rows[name] = dict(error=f"shape {list(a.shape)} vs {list(b.shape)}"); continue
-        rows[name] = compare(a.float(), b.float())
+        rows[name] = dict(compare(a.float(), b.float()), exact=bool(torch.equal(a, b)))
         if name == "frames":
             mse = float(((a.double() - b.double()) ** 2).mean())
             rows[name].update(psnr_db=round(10 * math.log10(255 ** 2 / mse), 2) if mse else math.inf,

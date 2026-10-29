@@ -25,6 +25,8 @@ enum ProbeGPULease {
             return count == 7 && ["provided", "encoded"].contains(arguments[6])
         case "h3-profile-run":
             return count >= 6 && ["--graphs", "--render"].contains(arguments[5])
+        case "h3-profile-presentation":
+            return count == 6 && mode(at: 5, gpu: ["--vision", "--conditioner"])
         case "h3-profile-decode":
             return count == 5 || count == 7
         case "h3-memory-render":

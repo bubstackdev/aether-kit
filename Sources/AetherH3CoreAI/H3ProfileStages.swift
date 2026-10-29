@@ -530,7 +530,8 @@ actor NativeH3VisionKernel: H3VisionKernel {
         let canvas = "\(width)x\(height)"
         if graph?.canvas != canvas {
             graph = nil
-            graph = (canvas, try await NativeH3Graph.open(try vision.function(width: width, height: height), role: "vision", observer: observer))
+            graph = (canvas, try await NativeH3Graph.open(try vision.function(width: width, height: height), role: "vision", observer: observer,
+                                                          frequentReshapes: false))
         }
         var bound: [String: NativeH3Graph.Input] = ["pixels": .data(inputs.pixels), "pos_index": .data(inputs.positionIndex),
                                                     "pos_weight": .data(inputs.positionWeight), "patch_rc": .data(inputs.patchCoordinates)]

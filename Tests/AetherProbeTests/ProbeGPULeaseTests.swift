@@ -13,7 +13,8 @@ import Testing
                 ["parity-krea", "b", "l", "f", "s", "o", "encoded"], ["qualify-h3", "b", "p", "o", "--run"],
                 ["qualify-h3-lifecycle", "b", "p", "o", "--run"], ["qualify-h3-phases", "b", "p", "c", "o", "--run"],
                 ["qualify-h3-chain", "b", "p", "c", "o", "--capture"],
-                ["qualify-h3-denoising", "1", "2", "3", "4", "5", "6", "o", "--lifecycle"], ["benchmark-krea", "b", "p", "s", "o", "--run"]] {
+                ["qualify-h3-denoising", "1", "2", "3", "4", "5", "6", "o", "--lifecycle"], ["benchmark-krea", "b", "p", "s", "o", "--run"],
+                ["h3-profile-presentation", "p", "t", "k", "o", "--vision"], ["h3-profile-presentation", "p", "t", "k", "o", "--conditioner"]] {
         #expect(ProbeGPULease.usesGPU(gpu), "\(gpu)")
     }
     for cpu in [[], ["--help"], ["doctor"], ["verify-krea", "b"], ["prepare-krea", "b", "p"], ["h3-profile-dump", "p"],
@@ -28,7 +29,8 @@ import Testing
                  ["render-krea", "b"], ["render-krea-batch", "b", "o", " ", "512", "512", "1"], ["parity-krea", "b", "l", "f", "s", "o", "maybe"],
                  ["h3-profile-run", "p", "d", "-", "o", "--draw"], ["h3-profile-decode", "p", "d"], ["qualify-h3", "b", "p", "--run"],
                  ["qualify-h3-phases", "b", "p", "c", "o", "--unknown"], ["qualify-h3-chain", "b", "p", "c", "o", "--run", "extra"],
-                 ["qualify-h3-denoising", "1", "2", "3", "4", "5", "-", "o", "--run"], ["benchmark-krea", "b", "p", "s", "--run"]] {
+                 ["qualify-h3-denoising", "1", "2", "3", "4", "5", "-", "o", "--run"], ["benchmark-krea", "b", "p", "s", "--run"],
+                 ["h3-profile-presentation", "p", "t", "k", "o"], ["h3-profile-presentation", "p", "t", "k", "o", "--tap"]] {
         #expect(!ProbeGPULease.usesGPU(typo), "\(typo)")
     }
 }
