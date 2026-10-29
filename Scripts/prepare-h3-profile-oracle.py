@@ -16,11 +16,17 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
            its Turbo LoRA exactly as PEFT loads it), both schedulers' `step`, then the pipeline's video decode
            (`vae.decode`, ImageNet revert, clamp, RGB8 round-half-even) and audio decode. Uses this oracle's own tap.
   compare  Cosine / relative L2 / max |diff| for every tensor both directories hold; PSNR for frames.
+  presentation  Upstream's FL2VA conditioner presentation from the request alone (no dump): the pipeline's resize step
+           and `MiniMaxH3FL2VATextEncoderStep` run verbatim on --prompt and --keyframe (first, then last) at --canvas,
+           with the real Qwen3-VL processor, the vision tower loaded whole and the decoder layers streamed. Records the
+           ids, tags, Qwen modality types, pixels, M-RoPE positions, merger and DeepStack rows, the decoder input, early
+           layer outputs and the tap. --layers N < 50 is a cost slice (no tap).
   trajectory  References at a native trajectory's captured contexts (`h3-profile-run --render --capture`): per step,
            packing, blocks 0 and 49 on their captured inputs, heads on the captured block-49 output and both scheduler
            updates, compared in-process on full tensors (no reference tensors written); float32 blocks as a diagnostic.
 Usage (Forge's H3 oracle environment, `uv sync --frozen --project Forge/h3-oracle`):
        Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py --part PART --dump DUMP --output NEW_DIR [--run RUN] [--text TEXT_DIR]
+       Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py --part presentation --prompt FILE --keyframe PNG --canvas WxH --output NEW_DIR
 """
 import argparse, json, math, os, sys, time
 from pathlib import Path
@@ -173,6 +179,155 @@ def text_part(dump, out, prompt):
     with torch.inference_mode():
         refined = model.token_refiner(model.context_embedder(tap.to(model.context_embedder.weight.dtype)))
     out.put("refined", refined)
+    out.save()
+
+
+def presentation_part(out, prompt, keyframes, canvas, layers=50):
+    """Upstream's FL2VA presentation from the request alone: the pipeline's own resize step and FL2VA text encoder step,
+    run verbatim (real `Qwen3VLProcessor`, FL2VA tokenizer, a `Qwen3VLForConditionalGeneration` whose vision tower is
+    loaded whole and whose decoder layers stream in place). Nothing comes from a Kit dump. Hooks record what the step
+    builds: ids, Qwen modality types, pixels, M-RoPE positions, the merger and DeepStack outputs, the decoder input,
+    early layer outputs and the tap. `layers` < 50 runs only that many decoder layers (a cost slice); the rest pass
+    their input through, so the step's `hidden_states[50]` is then not the tap and is not recorded as one."""
+    from types import SimpleNamespace
+    from PIL import Image
+    from safetensors import safe_open
+    from transformers import AutoTokenizer, Qwen3VLConfig, Qwen3VLForConditionalGeneration, Qwen3VLProcessor
+    from transformers.models.qwen3_vl.modeling_qwen3_vl import (
+        Qwen3VLTextDecoderLayer, Qwen3VLTextRotaryEmbedding, Qwen3VLVisionRotaryEmbedding)
+    from diffusers.image_processor import VaeImageProcessor
+    from diffusers.modular_pipelines import PipelineState
+    from diffusers.modular_pipelines.minimax_h3.before_encoder import MiniMaxH3ResizeStep
+    from diffusers.modular_pipelines.minimax_h3.encoders import MiniMaxH3FL2VATextEncoderStep
+    from diffusers.modular_pipelines.minimax_h3.modular_pipeline import MINIMAX_H3_TEXT_TAG, MINIMAX_H3_VIDEO_TAG
+    report, fields = out.manifest["report"], out.manifest["fields"]
+    width, height = canvas
+    text = prompt.read_text(encoding="utf-8")
+    fields.update(part="presentation", prompt_sha256=h.sha256_file(prompt), canvas=f"{width}x{height}", layers=layers,
+                  keyframes=[dict(name=p.name, sha256=h.sha256_file(p)) for p in keyframes])
+    images = [Image.open(p).convert("RGB") for p in keyframes]
+    for i, image in enumerate(images):
+        out.put(f"keyframe{i}_source", torch.frombuffer(bytearray(image.tobytes()), dtype=torch.uint8).view(image.size[1], image.size[0], 3))
+
+    # 1. The pipeline's resize step puts the keyframes on the canvas (a canvas-sized keyframe passes through).
+    resize = MiniMaxH3ResizeStep()
+    components = SimpleNamespace(image_processor=VaeImageProcessor(vae_scale_factor=16), canvas_multiple=32,
+                                 config=SimpleNamespace(canvas_short_edge=768, canvas_max_pixels=768 * 1344))
+    state = PipelineState()
+    state.set("image", images[0])
+    state.set("last_image", images[1] if len(images) > 1 else None)
+    state.set("height", height)
+    state.set("width", width)
+    resize(components, state)
+    placed = state.get("keyframes")
+    report["keyframes_passed_through"] = [a.size == (width, height) for a in images]
+    report["keyframe_anchors"] = list(state.get("keyframe_anchors"))
+    for i, image in enumerate(placed):
+        out.put(f"keyframe{i}", torch.frombuffer(bytearray(image.tobytes()), dtype=torch.uint8).view(height, width, 3))
+
+    # 2. The conditioner: vision tower and token embedding loaded, decoder layers streamed in place.
+    directory = SNAPSHOT_ROOT / "FL2VA/text_encoder"
+    config = Qwen3VLConfig.from_pretrained(directory)
+    config._attn_implementation = "sdpa"
+    config.text_config._attn_implementation = "sdpa"
+    config.vision_config._attn_implementation = "sdpa"
+    spans = h.Spans.sharded(directory)
+
+    def tensors(prefix):
+        result = {}
+        for name in sorted(k for k in spans.entries if k.startswith(prefix)):
+            with safe_open(spans.span(name)[0], framework="pt", device="cpu") as f:
+                result[name.removeprefix(prefix)] = f.get_tensor(name)
+        return result
+    with torch.device("meta"):
+        encoder = Qwen3VLForConditionalGeneration(config)
+    visual, language = encoder.model.visual, encoder.model.language_model
+    visual.load_state_dict(tensors("model.visual."), strict=True, assign=True)
+    visual.rotary_pos_emb = Qwen3VLVisionRotaryEmbedding(config.vision_config)
+    language.embed_tokens.load_state_dict(tensors("model.language_model.embed_tokens."), strict=True, assign=True)
+    language.norm.load_state_dict(tensors("model.language_model.norm."), strict=True, assign=True)
+    language.rotary_emb = Qwen3VLTextRotaryEmbedding(config.text_config)
+    assert not any(t.is_meta for t in [*visual.parameters(), *visual.buffers()]), "vision tower left on meta"
+
+    class PassThrough(Qwen3VLTextDecoderLayer):
+        """A decoder layer that returns its input, still recorded as a decoder-layer output."""
+        def __init__(self):
+            torch.nn.Module.__init__(self)
+            self.gradient_checkpointing = False
+
+        def forward(self, hidden_states, *args, **kwargs):
+            return hidden_states
+    recorded = {}
+    keep = {0, 1, 2, 3, layers - 1}
+
+    def pre(layer, args, kwargs, index):
+        layer.load_state_dict(tensors(f"model.language_model.layers.{index}."), strict=True, assign=True)
+
+    def post(layer, args, kwargs, output, index):
+        hidden = output[0] if isinstance(output, tuple) else output
+        layer.to("meta")
+        if index in keep:
+            recorded[f"layer{index:02d}"] = hidden.detach().clone()
+    for index in range(len(language.layers)):
+        if index < layers:
+            language.layers[index].register_forward_pre_hook(lambda m, a, k, i=index: pre(m, a, k, i), with_kwargs=True)
+            language.layers[index].register_forward_hook(lambda m, a, k, o, i=index: post(m, a, k, o, i), with_kwargs=True)
+        else:
+            language.layers[index] = PassThrough()
+
+    def model_inputs(module, args, kwargs):
+        recorded["input_ids"] = kwargs["input_ids"].detach().clone()
+        recorded["mm_token_type_ids"] = kwargs["mm_token_type_ids"].detach().clone()
+        if kwargs.get("pixel_values") is not None:
+            recorded["pixel_values"] = kwargs["pixel_values"].detach().clone()
+            recorded["image_grid_thw"] = kwargs["image_grid_thw"].detach().clone()
+
+    def vision_outputs(module, args, kwargs, output):
+        recorded["image_embeds"] = output.pooler_output.detach().clone()
+        recorded["deepstack"] = torch.stack([f.detach() for f in output.deepstack_features]).clone()
+
+    def language_inputs(module, args, kwargs):
+        recorded["position_ids"] = kwargs["position_ids"].detach().clone()
+        recorded["inputs_embeds"] = kwargs["inputs_embeds"].detach().clone()
+    encoder.model.register_forward_pre_hook(model_inputs, with_kwargs=True)
+    visual.register_forward_hook(vision_outputs, with_kwargs=True)
+    language.register_forward_pre_hook(language_inputs, with_kwargs=True)
+
+    # 3. The FL2VA text encoder step, verbatim.
+    step = MiniMaxH3FL2VATextEncoderStep()
+    components = SimpleNamespace(tokenizer=AutoTokenizer.from_pretrained(SNAPSHOT_ROOT / "FL2VA/tokenizer"),
+                                 processor=Qwen3VLProcessor.from_pretrained(SNAPSHOT_ROOT / "FL2VA/processor"),
+                                 text_encoder=encoder, text_encoder_layer=50, text_tag=MINIMAX_H3_TEXT_TAG,
+                                 video_tag=MINIMAX_H3_VIDEO_TAG, _execution_device=torch.device("cpu"))
+    state = PipelineState()
+    state.set("prompt", text)
+    state.set("keyframes", placed)
+    started = time.monotonic()
+    with torch.inference_mode():
+        step(components, state)
+    report["step_seconds"] = round(time.monotonic() - started, 1)
+
+    # 4. Everything the step built, as raw tensors.
+    ids = recorded["input_ids"][0]
+    out.put("token_ids", ids.to(torch.int32))
+    out.put("text_token_tags", state.get("text_token_tags").to(torch.int32))
+    out.put("mm_token_type_ids", recorded["mm_token_type_ids"][0].to(torch.int32))
+    out.put("position_ids", recorded["position_ids"][:, 0].to(torch.int32))    # [3, T]: time, height, width
+    if "pixel_values" in recorded:
+        out.put("pixel_values", recorded["pixel_values"])                         # bf16, as the step feeds the tower
+        out.put("pixel_values_f32", components.processor.image_processor(images=placed, return_tensors="pt")["pixel_values"])
+        out.put("image_grid_thw", recorded["image_grid_thw"].to(torch.int32))
+        out.put("image_embeds", recorded["image_embeds"])
+        out.put("deepstack", recorded["deepstack"])
+    out.put("inputs_embeds", recorded["inputs_embeds"])
+    for name in sorted(k for k in recorded if k.startswith("layer")):
+        out.put(name, recorded[name])
+    if layers == 50:
+        tap = state.get("prompt_embeds")
+        assert torch.equal(tap, recorded["layer49"]), "the step's hidden_states[50] is not layer 49's output"
+        out.put("tap", tap)
+    report.update(tokens=int(ids.numel()), image_tokens=int((ids == config.image_token_id).sum()),
+                  max_position=int(recorded["position_ids"].max()))
     out.save()
 
 
@@ -462,7 +617,11 @@ def compare_part(reference, run, out):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--part", required=True, choices=["text", "graphs", "render", "compare", "trajectory"])
+    ap.add_argument("--part", required=True, choices=["text", "graphs", "render", "compare", "trajectory", "presentation"])
+    ap.add_argument("--keyframe", type=Path, action="append", default=[],
+                    help="presentation: a keyframe image, in packed order (first, then last); repeat for both")
+    ap.add_argument("--canvas", help="presentation: WxH of the generated video")
+    ap.add_argument("--layers", type=int, default=50, help="presentation: decoder layers to run (50 for the tap; fewer is a cost slice)")
     ap.add_argument("--dump", type=Path)
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--run", type=Path)
@@ -479,6 +638,13 @@ def main():
     out = Raw(args.output, new=True)
     if args.part == "compare":
         return compare_part(Raw(args.text), Raw(args.run), out)
+    if args.part == "presentation":
+        width, height = (int(v) for v in args.canvas.split("x"))
+        out.manifest["fields"] = dict(oracle_sha256=h.sha256_file(Path(__file__)), diffusers_commit=h.COMMIT, snapshot=h.SNAPSHOT,
+                                      torch=torch.__version__)
+        presentation_part(out, args.prompt, args.keyframe, (width, height), args.layers)
+        print(out.path)
+        return
     dump = Raw(args.dump)
     out.manifest["fields"] = dict(dump=str(args.dump.resolve()), part=args.part, profile_sha256=dump.field("profile_sha256"),
                                   oracle_sha256=h.sha256_file(Path(__file__)), diffusers_commit=h.COMMIT, snapshot=h.SNAPSHOT, torch=torch.__version__)
