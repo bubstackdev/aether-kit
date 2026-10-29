@@ -72,7 +72,7 @@
     },
     "app": "Examples/LanguageDevice, probe mode \"lifecycle\" (idle policy 10 s), on the installed Qwen3 0.6B of the model-preparation iPhone record, with real memory pressure: ballast allocated in 32 MiB touched steps until iOS reported pressure",
     "final": {
-      "build": "the lifecycle branch with critical easing (after 3639590)",
+      "build": "5c45f4e (its code, built before the evidence was committed)",
       "firstReplySeconds": 2.555,
       "reloadReplySeconds": 1.95,
       "ballastMiB": 2624,
