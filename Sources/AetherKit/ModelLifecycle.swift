@@ -90,14 +90,18 @@ package final class MemoryPressureMonitor: Sendable {
     private let queue = DispatchQueue(label: "aether.memory-pressure")
     private let now: @Sendable () -> ContinuousClock.Instant
     private let availableMemory: @Sendable () -> UInt64?
+    private let kernelLevel: @Sendable () -> MemoryPressureLevel?
 
     /// `systemSource: false` gives a monitor that only `deliver` drives (tests and qualification). `availableMemory` is
-    /// what the app may still allocate (iOS), or nil where there's no per-app limit.
+    /// what the app may still allocate (iOS), or nil where there's no per-app limit. `kernelLevel` is the kernel's
+    /// level, or nil where an app can't read it (iOS).
     package init(systemSource: Bool, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
-                 availableMemory: @escaping @Sendable () -> UInt64? = MemoryPressureMonitor.appAvailableMemory) {
+                 availableMemory: @escaping @Sendable () -> UInt64? = MemoryPressureMonitor.appAvailableMemory,
+                 kernelLevel: @escaping @Sendable () -> MemoryPressureLevel? = MemoryPressureMonitor.systemLevel) {
         self.systemSource = systemSource
         self.now = now
         self.availableMemory = availableMemory
+        self.kernelLevel = kernelLevel
     }
 
     package var level: MemoryPressureLevel { reading.level }
@@ -110,11 +114,22 @@ package final class MemoryPressureMonitor: Sendable {
     }
 
     /// Ends a critical level the system won't end itself: once the app's available memory has doubled since the
-    /// notice, or the expiry has passed. Reported as a return to normal.
+    /// notice, or the expiry has passed. Reported as a return to normal. Where the kernel's level is readable (the
+    /// Mac), an expiry while it still reads critical keeps the level critical and restarts the clock.
     private func easeIfRecovered() {
         guard let critical = state.withLock({ $0.level == .critical ? $0.critical : nil }) else { return }
         let recovered = critical.available.map { at in availableMemory().map { $0 >= at.saturatingDoubled } ?? false } ?? false
-        if recovered || now() - critical.at >= Self.criticalExpiry { deliver(.normal) }
+        let expired = now() - critical.at >= Self.criticalExpiry
+        if expired, !recovered, kernelLevel() == .critical {
+            let renewed = state.withLock { state -> Bool in
+                guard state.critical?.at == critical.at else { return false }
+                state.critical?.at = now()
+                return true
+            }
+            if renewed { scheduleExpiryCheck() }
+        } else if recovered || expired {
+            apply(.normal, ifCriticalAt: critical.at)
+        }
     }
 
     /// iOS: `os_proc_available_memory()`. Elsewhere nil.
@@ -129,6 +144,7 @@ package final class MemoryPressureMonitor: Sendable {
 
     package var levels: AsyncStream<MemoryPressureLevel> {
         startIfNeeded()
+        easeIfRecovered()
         return AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let id = UUID()
             state.withLock {
@@ -149,9 +165,14 @@ package final class MemoryPressureMonitor: Sendable {
 
     /// Records a level and tells every registered model, as the system source does. Also the seam for tests and for
     /// qualification runs that can't raise real pressure.
-    package func deliver(_ level: MemoryPressureLevel) {
+    package func deliver(_ level: MemoryPressureLevel) { apply(level, ifCriticalAt: nil) }
+
+    /// A level from a notice, or (with `ifCriticalAt`) an easing decided against that critical notice, which a newer
+    /// critical notice cancels.
+    private func apply(_ level: MemoryPressureLevel, ifCriticalAt expected: ContinuousClock.Instant?) {
         let available = level == .critical ? availableMemory() : nil
         let (models, notice): ([ModelLifecycle], Int) = state.withLock { state in
+            if let expected, state.critical?.at != expected { return ([], state.notice) }
             if level == .critical { state.critical = (now(), available) }
             guard state.level != level else { return ([], state.notice) }
             state.level = level
@@ -161,21 +182,24 @@ package final class MemoryPressureMonitor: Sendable {
             return (state.models.values.compactMap(\.lifecycle), state.notice)
         }
         if level >= .warning { for model in models { model.pressure(notice: notice) } }
-        if level == .critical, systemSource {
-            // So a stream reader sees the expiry even if nothing reads the level meanwhile.
-            Task { [weak self] in
-                try? await Task.sleep(for: Self.criticalExpiry + .seconds(1))
-                self?.easeIfRecovered()
-            }
+        if level == .critical { scheduleExpiryCheck() }
+    }
+
+    /// So a stream reader sees an expiry even if nothing reads the level meanwhile (system source only).
+    private func scheduleExpiryCheck() {
+        guard systemSource else { return }
+        Task { [weak self] in
+            try? await Task.sleep(for: Self.criticalExpiry + .seconds(1))
+            self?.easeIfRecovered()
         }
     }
 
     private func startIfNeeded() {
         guard systemSource else { return }
-        state.withLock { state in
-            guard state.source == nil else { return }
+        let startedCritical = state.withLock { state -> Bool in
+            guard state.source == nil else { return false }
             // A process started under pressure sees the current level (for the load gate), not a notice.
-            state.level = Self.systemLevel()
+            state.level = kernelLevel() ?? .normal
             if state.level == .critical { state.critical = (now(), nil) }
             let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: queue)
             source.setEventHandler { [weak self, weak source] in
@@ -184,14 +208,16 @@ package final class MemoryPressureMonitor: Sendable {
             }
             source.activate()
             state.source = source
+            return state.level == .critical
         }
+        if startedCritical { scheduleExpiryCheck() }
     }
 
-    /// The kernel's current pressure level (1 normal, 2 warning, 4 critical); normal if it can't be read.
-    private static func systemLevel() -> MemoryPressureLevel {
+    /// The kernel's current pressure level (1 normal, 2 warning, 4 critical), or nil where it can't be read (an iOS app).
+    package static func systemLevel() -> MemoryPressureLevel? {
         var value: Int32 = 0
         var size = MemoryLayout<Int32>.size
-        guard sysctlbyname("kern.memorystatus_vm_pressure_level", &value, &size, nil, 0) == 0 else { return .normal }
+        guard sysctlbyname("kern.memorystatus_vm_pressure_level", &value, &size, nil, 0) == 0, value >= 1 else { return nil }
         return value >= 4 ? .critical : value >= 2 ? .warning : .normal
     }
 }

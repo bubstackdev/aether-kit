@@ -219,7 +219,8 @@ final class FakeDevice: @unchecked Sendable {
 struct CriticalEasingTests {
     @Test func criticalEasesOnceTheAppsMemoryHasDoubled() {
         let device = FakeDevice(available: 600)
-        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available },
+                                            kernelLevel: { nil })
         monitor.deliver(.critical)
         device.set(available: 1_100)
         #expect(monitor.level == .critical)
@@ -231,7 +232,8 @@ struct CriticalEasingTests {
 
     @Test func criticalExpiresAfterItsLastNotice() {
         let device = FakeDevice(available: nil)  // a Mac: no per-app reading
-        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available },
+                                            kernelLevel: { nil })
         monitor.deliver(.critical)
         device.advance(.seconds(45))
         monitor.deliver(.critical)  // a repeated notice renews it
@@ -241,9 +243,25 @@ struct CriticalEasingTests {
         #expect(monitor.level == .normal)
     }
 
+    @Test func whereTheKernelStillReadsCriticalTheExpiryWaits() {
+        let device = FakeDevice(available: nil)
+        let kernel = Locked(MemoryPressureLevel.critical)
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available },
+                                            kernelLevel: { kernel.value })
+        monitor.deliver(.critical)
+        device.advance(.seconds(61))
+        #expect(monitor.level == .critical)  // a sustained critical on a Mac
+        device.advance(.seconds(30))
+        kernel.value = .normal
+        #expect(monitor.level == .critical)  // the clock restarted at the first expiry
+        device.advance(.seconds(31))
+        #expect(monitor.level == .normal)
+    }
+
     @Test func aFreshCriticalAfterEasingIsANewNotice() async throws {
         let device = FakeDevice(available: 600)
-        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available })
+        let monitor = MemoryPressureMonitor(systemSource: false, now: { device.now }, availableMemory: { device.available },
+                                            kernelLevel: { nil })
         let lifecycle = ModelLifecycle(policy: ModelLifecyclePolicy(idleUnloadAfter: nil), monitor: monitor)
         let release = RecordingRelease()
         release.attach(to: lifecycle)
@@ -257,5 +275,15 @@ struct CriticalEasingTests {
         monitor.deliver(.critical)
         try await settle(lifecycle) { $0 == .unloaded(.memoryPressure) }
         #expect(release.recorded == [.memoryPressure, .memoryPressure])
+    }
+}
+
+final class Locked<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Value
+    init(_ value: Value) { stored = value }
+    var value: Value {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
     }
 }

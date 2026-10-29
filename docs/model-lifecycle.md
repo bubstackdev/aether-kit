@@ -71,7 +71,9 @@ Internally one package type, `ModelLifecycle`, does the bookkeeping for every pr
 - **Easing.** iOS doesn't report a return to normal after an app's critical notice, and an app can't read the kernel's
   level. So critical also ends by itself, reported as a normal level:
   - once `os_proc_available_memory()` is back to twice what it was at the notice (iOS only);
-  - otherwise 60 s after the last critical notice. A repeated critical notice restarts that clock.
+  - otherwise 60 s after the last critical notice. A repeated critical notice restarts that clock. Where the kernel's
+    level is readable (a Mac), an expiry while it still reads critical keeps the level critical and restarts the clock,
+    so a sustained critical isn't eased. An easing decided just as a new critical notice arrives is dropped.
 
   A later critical notice is a new notice, and releases models again.
 - **The load gate.** While pressure is critical, a load throws. Language reports `AetherLanguageError.insufficientMemory`;
