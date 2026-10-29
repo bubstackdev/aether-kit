@@ -9,7 +9,7 @@ import Testing
 /// keyframes, and the text rotary module's cos table and its value at the presentation's M-RoPE positions.
 private struct PresentationOracle: Decodable {
     struct Case: Decodable {
-        let canvas: String; let keyframes: Int; let grids: [[Int]]; let count: Int
+        let canvas: String; let keyframes: Int; let anchors: [String]; let grids: [[Int]]; let count: Int
         let ids_sha256: String; let tags_sha256: String; let positions_sha256: String; let prompt_ids_sha256: String
     }
     struct Embedded: Decodable { let canvas: String; let prompt: [Int32]; let ids: [Int32]; let tags: [Int32]; let positions: [[Int32]] }
@@ -59,6 +59,9 @@ private func canvas(_ text: String) -> (width: Int, height: Int) {
         #expect(sha256(p.positions.flatMap { $0 }) == item.positions_sha256, "\(item.canvas)")
         #expect(p.images.map { [$0.gridHeight, $0.gridWidth] } == item.grids)
     }
+    // The cases the fixture must cover: first, last alone (labelled <Picture 1>), first plus last, and portrait.
+    #expect(Set(oracle.presentations.map { "\($0.canvas) \($0.anchors.joined(separator: "+"))" })
+            .isSuperset(of: ["288x288 first", "960x544 first", "544x960 first", "960x544 last", "960x544 first+last"]))
 }
 
 @Test func h3PresentationNumbersKeyframesInPackedOrder() throws {
@@ -70,8 +73,14 @@ private func canvas(_ text: String) -> (width: Int, height: Int) {
     #expect(Array(p.ids[(6 + block)..<(12 + block)]) == oracle.labels["<Picture 2>: "])
     #expect(p.images.map(\.start) == [7, 7 + block + 6])
     #expect(p.tags.filter { $0 == 0 }.count == 2 * block)
-    // After a 9x9 merged image, the running position advances by 9: the second label starts at 7 + 9 + 1.
-    #expect(p.positions[0][6 + block] == 17)
+    // After a 9x9 merged image (t = 7, h and w = 7...15), the running position advances by 9: vision end at 16, the
+    // second label at 17...22, its vision start at 23 and the second image from 24.
+    #expect(p.positions[0][6 + block - 1] == 16)
+    #expect((0..<3).map { p.positions[$0][6 + block] } == [17, 17, 17])
+    let second = p.images[1].start
+    #expect((0..<3).map { p.positions[$0][second] } == [24, 24, 24])
+    #expect((0..<3).map { p.positions[$0][second + 80] } == [24, 32, 32])
+    #expect((0..<3).map { p.positions[$0][second + 81 + 1] } == [34, 34, 34])   // the prompt, after vision end at 33
     #expect(Array(p.ids.suffix(3)) == [9, 8, 7])
 }
 

@@ -17,7 +17,7 @@ writes raw tensors in the same manifest format, so `--part compare` (or a human)
            (`vae.decode`, ImageNet revert, clamp, RGB8 round-half-even) and audio decode. Uses this oracle's own tap.
   compare  Cosine / relative L2 / max |diff| for every tensor both directories hold; PSNR for frames.
   presentation  Upstream's FL2VA conditioner presentation from the request alone (no dump): the pipeline's resize step
-           and `MiniMaxH3FL2VATextEncoderStep` run verbatim on --prompt and --keyframe (first, then last) at --canvas,
+           and `MiniMaxH3FL2VATextEncoderStep` run verbatim on --prompt, --keyframe and/or --last-keyframe at --canvas,
            with the real Qwen3-VL processor, the vision tower loaded whole and the decoder layers streamed. Records the
            ids, tags, Qwen modality types, pixels, M-RoPE positions, merger and DeepStack rows, the decoder input, early
            layer outputs and the tap. --layers N < 50 is a cost slice (no tap).
@@ -182,7 +182,7 @@ def text_part(dump, out, prompt):
     out.save()
 
 
-def presentation_part(out, prompt, keyframes, canvas, layers=50):
+def presentation_part(out, prompt, first, last, canvas, layers=50):
     """Upstream's FL2VA presentation from the request alone: the pipeline's own resize step and FL2VA text encoder step,
     run verbatim (real `Qwen3VLProcessor`, FL2VA tokenizer, a `Qwen3VLForConditionalGeneration` whose vision tower is
     loaded whole and whose decoder layers stream in place). Nothing comes from a Kit dump. Hooks record what the step
@@ -204,8 +204,11 @@ def presentation_part(out, prompt, keyframes, canvas, layers=50):
     width, height = canvas
     text = prompt.read_text(encoding="utf-8")
     fields.update(part="presentation", prompt_sha256=h.sha256_file(prompt), canvas=f"{width}x{height}", layers=layers,
-                  keyframes=[dict(name=p.name, sha256=h.sha256_file(p)) for p in keyframes])
-    images = [Image.open(p).convert("RGB") for p in keyframes]
+                  first=first and dict(name=first.name, sha256=h.sha256_file(first)),
+                  last=last and dict(name=last.name, sha256=h.sha256_file(last)))
+    first_image, last_image = (Image.open(p).convert("RGB") if p else None for p in (first, last))
+    images = [i for i in (first_image, last_image) if i is not None]
+    assert images, "a presentation needs a first or a last keyframe"
     for i, image in enumerate(images):
         out.put(f"keyframe{i}_source", torch.frombuffer(bytearray(image.tobytes()), dtype=torch.uint8).view(image.size[1], image.size[0], 3))
 
@@ -214,8 +217,8 @@ def presentation_part(out, prompt, keyframes, canvas, layers=50):
     components = SimpleNamespace(image_processor=VaeImageProcessor(vae_scale_factor=16), canvas_multiple=32,
                                  config=SimpleNamespace(canvas_short_edge=768, canvas_max_pixels=768 * 1344))
     state = PipelineState()
-    state.set("image", images[0])
-    state.set("last_image", images[1] if len(images) > 1 else None)
+    state.set("image", first_image)
+    state.set("last_image", last_image)
     state.set("height", height)
     state.set("width", width)
     resize(components, state)
@@ -618,8 +621,8 @@ def compare_part(reference, run, out):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--part", required=True, choices=["text", "graphs", "render", "compare", "trajectory", "presentation"])
-    ap.add_argument("--keyframe", type=Path, action="append", default=[],
-                    help="presentation: a keyframe image, in packed order (first, then last); repeat for both")
+    ap.add_argument("--keyframe", type=Path, help="presentation: the first keyframe image")
+    ap.add_argument("--last-keyframe", type=Path, help="presentation: the last keyframe image (alone, or after --keyframe)")
     ap.add_argument("--canvas", help="presentation: WxH of the generated video")
     ap.add_argument("--layers", type=int, default=50, help="presentation: decoder layers to run (50 for the tap; fewer is a cost slice)")
     ap.add_argument("--dump", type=Path)
@@ -642,7 +645,7 @@ def main():
         width, height = (int(v) for v in args.canvas.split("x"))
         out.manifest["fields"] = dict(oracle_sha256=h.sha256_file(Path(__file__)), diffusers_commit=h.COMMIT, snapshot=h.SNAPSHOT,
                                       torch=torch.__version__)
-        presentation_part(out, args.prompt, args.keyframe, (width, height), args.layers)
+        presentation_part(out, args.prompt, args.keyframe, args.last_keyframe, (width, height), args.layers)
         print(out.path)
         return
     dump = Raw(args.dump)

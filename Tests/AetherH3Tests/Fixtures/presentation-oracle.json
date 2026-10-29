@@ -28,6 +28,9 @@
    "canvas": "288x288",
    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
    "keyframes": 1,
+   "anchors": [
+    "first"
+   ],
    "grids": [
     [
      18,
@@ -44,6 +47,9 @@
    "canvas": "960x544",
    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
    "keyframes": 1,
+   "anchors": [
+    "first"
+   ],
    "grids": [
     [
      34,
@@ -54,6 +60,68 @@
    "ids_sha256": "51f5da7e01625600e4b79b2a8cb36d373d5ef0f1110470ba2cfc7ac1b31aa679",
    "tags_sha256": "e56075d3aa7137b1b4473773337f63490ebcaa1ca56305373e87b46b3bbf19f1",
    "positions_sha256": "adf2e691a3885919697410e62e38ed594dbd837be816a3d1a5efc4cd9a467adb",
+   "prompt_ids_sha256": "5a1f6e7e726f971b415febed50b2d78d10b9dfd0a4bd399f73da32f3f5d8e1c9"
+  },
+  {
+   "canvas": "544x960",
+   "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+   "keyframes": 1,
+   "anchors": [
+    "first"
+   ],
+   "grids": [
+    [
+     60,
+     34
+    ]
+   ],
+   "count": 567,
+   "ids_sha256": "51f5da7e01625600e4b79b2a8cb36d373d5ef0f1110470ba2cfc7ac1b31aa679",
+   "tags_sha256": "e56075d3aa7137b1b4473773337f63490ebcaa1ca56305373e87b46b3bbf19f1",
+   "positions_sha256": "89d2ea3f348a8f0590c32e7fe4e13b9caca0f45bf9c8c3585d66a23569b500fa",
+   "prompt_ids_sha256": "5a1f6e7e726f971b415febed50b2d78d10b9dfd0a4bd399f73da32f3f5d8e1c9"
+  },
+  {
+   "canvas": "960x544",
+   "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+   "keyframes": 1,
+   "anchors": [
+    "last"
+   ],
+   "grids": [
+    [
+     34,
+     60
+    ]
+   ],
+   "count": 567,
+   "ids_sha256": "51f5da7e01625600e4b79b2a8cb36d373d5ef0f1110470ba2cfc7ac1b31aa679",
+   "tags_sha256": "e56075d3aa7137b1b4473773337f63490ebcaa1ca56305373e87b46b3bbf19f1",
+   "positions_sha256": "adf2e691a3885919697410e62e38ed594dbd837be816a3d1a5efc4cd9a467adb",
+   "prompt_ids_sha256": "5a1f6e7e726f971b415febed50b2d78d10b9dfd0a4bd399f73da32f3f5d8e1c9"
+  },
+  {
+   "canvas": "960x544",
+   "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+   "keyframes": 2,
+   "anchors": [
+    "first",
+    "last"
+   ],
+   "grids": [
+    [
+     34,
+     60
+    ],
+    [
+     34,
+     60
+    ]
+   ],
+   "count": 1085,
+   "ids_sha256": "ef55628c0eb3399e8797305a1eaccf7d2b248f33041adb24762577f2ad35b0b0",
+   "tags_sha256": "e114429e988e555170ca4e7019f5a12f7390e545be03571e2c4613dfc7b6d9fe",
+   "positions_sha256": "f12b3df78731a8ef18b8ad49c73590cfbb8bdaf6250f0d9440f9f48c2a893d02",
    "prompt_ids_sha256": "5a1f6e7e726f971b415febed50b2d78d10b9dfd0a4bd399f73da32f3f5d8e1c9"
   }
  ],

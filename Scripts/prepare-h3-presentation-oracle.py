@@ -63,6 +63,7 @@ def main():
         fields = manifest["fields"]
         prompt = ids[sum(int(g.prod()) // merge ** 2 + 2 for g in grids) + 6 * len(grids):]
         case = dict(canvas=fields["canvas"], prompt_sha256=fields["prompt_sha256"], keyframes=len(grids),
+                    anchors=manifest["report"]["keyframe_anchors"],
                     grids=grids[:, 1:].tolist(), count=int(ids.numel()),
                     ids_sha256=digest(ids), tags_sha256=digest(tags), positions_sha256=digest(positions),
                     prompt_ids_sha256=digest(prompt))
