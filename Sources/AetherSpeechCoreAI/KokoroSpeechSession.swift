@@ -162,7 +162,9 @@ public struct KokoroComputePlacement: Sendable, Equatable {
 ///
 /// The durations graph predicts frames per phoneme; the host rounds and aligns them; the decoder
 /// graph renders the waveform with seeded harmonic-source noise. Both models load on first use and
-/// stay resident until `unload()`. One request runs at a time: overlap fails with `sessionBusy`.
+/// stay resident until `unload()`, or until the lifecycle policy releases them after an idle period or under memory
+/// pressure; the session stays usable and the next request opens them again (docs/model-lifecycle.md). One request
+/// runs at a time: overlap fails with `sessionBusy`.
 /// Cancel the caller's task to stop between native calls; submitted calls are awaited first.
 /// `unload()` rejects new work, waits for the active request and closes the session permanently.
 ///
@@ -177,6 +179,7 @@ public actor KokoroSpeechSession {
     public private(set) var state: State = .ready
     public nonisolated let assets: KokoroAssets
     private let runner: KokoroRunner
+    private nonisolated let lifecycle: ModelLifecycle
     private let resources: KokoroResourceAdmission?
     private var active: Task<Void, Never>?
     private let gpu: GPUAdmissionOwner?
@@ -188,34 +191,57 @@ public actor KokoroSpeechSession {
     /// grant before any model work and holds it until its native work has joined. With admission, the request's
     /// operation reservation is taken after the grant, and `unload()` withdraws a request still waiting.
     public init(assets: KokoroAssets, compute: KokoroComputePlacement = .recommended, resources: KokoroResourceAdmission? = nil,
-                gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault) {
+                gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault,
+                lifecycle: ModelLifecyclePolicy = .platformDefault) {
         self.assets = assets
         self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
-        runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(compute: compute, installation: nil), resources: resources))
+        let lifecycle = ModelLifecycle(policy: lifecycle)
+        self.lifecycle = lifecycle
+        runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(compute: compute, installation: nil), resources: resources),
+                              admitLoad: lifecycle.admitLoad)
+        attachRelease()
     }
 
     /// Holds installation protection until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: KokoroComputePlacement = .recommended,
                 resources: KokoroResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
-                frameCap: KokoroFrameCap = .platformDefault) throws {
+                frameCap: KokoroFrameCap = .platformDefault, lifecycle: ModelLifecyclePolicy = .platformDefault) throws {
         assets = try KokoroAssets.open(in: installation)
         self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
+        let lifecycle = ModelLifecycle(policy: lifecycle)
+        self.lifecycle = lifecycle
         runner = KokoroRunner(assets: assets, factory: Self.factory(NativeKokoroFactory(
-            compute: compute, installation: KokoroInstallationAccess(installation)), resources: resources))
+            compute: compute, installation: KokoroInstallationAccess(installation)), resources: resources),
+            admitLoad: lifecycle.admitLoad)
+        attachRelease()
     }
 
     init(assets: KokoroAssets, factory: any KokoroModelFactory, resources: KokoroResourceAdmission? = nil,
-         gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault) {
+         gpu: GPUAdmissionOwner? = nil, frameCap: KokoroFrameCap = .platformDefault,
+         lifecycle: ModelLifecycle = ModelLifecycle(policy: .platformDefault)) {
         self.assets = assets
         self.frameCap = frameCap
         self.resources = resources
         self.gpu = gpu
-        runner = KokoroRunner(assets: assets, factory: Self.factory(factory, resources: resources))
+        self.lifecycle = lifecycle
+        runner = KokoroRunner(assets: assets, factory: Self.factory(factory, resources: resources), admitLoad: lifecycle.admitLoad)
+        attachRelease()
     }
+
+    private nonisolated func attachRelease() {
+        lifecycle.setRelease { [weak self] reason in await self?.release(reason) ?? false }
+    }
+
+    /// When this session's models unload by themselves.
+    public nonisolated var lifecyclePolicy: ModelLifecyclePolicy { lifecycle.policy }
+    /// Whether the models are loaded, serving a request, or unloaded (and why).
+    public nonisolated var lifecycleState: ModelLifecycleState { lifecycle.current }
+    /// The lifecycle state, then each change. A slow reader sees the latest state.
+    public nonisolated var lifecycleStates: AsyncStream<ModelLifecycleState> { lifecycle.states }
 
     private static func factory(_ base: any KokoroModelFactory, resources: KokoroResourceAdmission?) -> any KokoroModelFactory {
         if let resources { return BudgetedKokoroFactory(base: base, resources: resources) }
@@ -293,21 +319,37 @@ public actor KokoroSpeechSession {
         active = Task { _ = await task.result }
         pendingGPU = attempt
         state = .running
+        lifecycle.running()
         defer {
             active = nil
             pendingGPU = nil
             if state == .running { state = .ready }
         }
-        return try await withTaskCancellationHandler {
-            let value = try await task.value
-            try Task.checkCancellation()
-            return value
-        } onCancel: { task.cancel() }
+        let result = await withTaskCancellationHandler { await task.result } onCancel: { task.cancel() }
+        let holds = await runner.holdsModels
+        // Re-checked after the await: an unload that ran meanwhile has already reported.
+        if state == .running {
+            if holds { lifecycle.idle() } else { lifecycle.notLoaded() }
+        }
+        let value = try result.get()
+        try Task.checkCancellation()
+        return value
+    }
+
+    /// The lifecycle's idle or pressure release: unloads both models if no request is active, and keeps the session
+    /// ready. The state turns unloaded first, so a request arriving during the unload reports after it.
+    private func release(_ reason: ModelUnloadReason) async -> Bool {
+        guard state == .ready, active == nil else { return false }
+        lifecycle.unloaded(reason)
+        await runner.release()
+        return true
     }
 
     /// Loads the decoder and specializes it at every bucket up to `maximumFrames` (default: the frame cap), so
     /// that later utterances never wait for GPU specialization. Each bucket costs roughly 2-4 s once and
-    /// keeps its specialization resident until `unload()`; see docs/kokoro-speech.md#length-buckets.
+    /// keeps its specialization resident until the models unload: `unload()`, or a lifecycle release after an idle
+    /// period or under memory pressure, after which the next utterance specializes again
+    /// (docs/model-lifecycle.md); see docs/kokoro-speech.md#length-buckets.
     /// Returns the buckets warmed (empty for an unbucketed bundle). Shares the request slot.
     @discardableResult
     public func prewarm(maximumFrames: Int? = nil) async throws -> [Int] {
@@ -328,6 +370,7 @@ public actor KokoroSpeechSession {
         pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
+        lifecycle.unloaded(.requested)
         state = .closed
     }
 }
@@ -407,11 +450,25 @@ private actor KokoroRunner {
     var decoder: (any KokoroExecutable)?
     var styles: [KokoroVoice: KokoroVoiceStyles] = [:]
     let validTokens: Set<Int32>
+    /// Throws while memory pressure is critical, before any model opens.
+    let admitLoad: @Sendable () throws -> Void
 
-    init(assets: KokoroAssets, factory: any KokoroModelFactory) {
+    init(assets: KokoroAssets, factory: any KokoroModelFactory, admitLoad: @escaping @Sendable () throws -> Void) {
         self.assets = assets
         self.factory = factory
+        self.admitLoad = admitLoad
         validTokens = Set(assets.vocabulary.tokens.values).union([KokoroVocabulary.boundaryToken])
+    }
+
+    var holdsModels: Bool { durations != nil || decoder != nil }
+
+    /// Unloads both models without finishing the factory, so later requests open them again. The fields are cleared
+    /// before any suspension, so a request interleaving here opens fresh models.
+    func release() async {
+        let held = [durations, decoder].compactMap { $0 }
+        durations = nil
+        decoder = nil
+        for model in held { await model.unload() }
     }
 
     func synthesize(
@@ -507,6 +564,7 @@ private actor KokoroRunner {
     ) async throws -> any KokoroExecutable {
         if let loaded = isDecoder ? decoder : durations { return loaded }
         try Task.checkCancellation()
+        try admitLoad()
         let opened = try await factory.open(asset)
         do {
             guard let function = opened.functions.first(where: { $0.name == asset.function }) else {

@@ -41,22 +41,40 @@ references, native qualification and a guide.
   ([on-device host](language-generation.md#on-device-host-003)). Find out why its assets appear to be mapped more than
   once.
 - **FLUX.2 on iOS,** moved from 0.0.3 by user decision.
+- **H3 FL2VA conditioner presentation** (user decision, 2026-10-29): add upstream's keyframe vision blocks, which 0.0.3
+  omits ([known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). That
+  means the Qwen3-VL vision tower in the conditioner and M-RoPE positions for its tokens, then FL2VA's gates again.
+  Schedule it before Atelier's FL2VA canvas measurements are final, since it adds image-token rows.
 - **An MLX backend for older OSes,** as an optional separate product, by user decision. The
   [spike](spikes/mlx-backend-2026-10.md) is a conditional go: mlx-swift core only, the Metal toolchain in CI, and its
   own manifest kind for Hugging Face safetensors.
-- **H3:** Turbo4 qualification (the user's side-by-side review judged it worth qualifying) and fused attention, which
-  re-exports the body graph and so resets H3's qualification evidence. The step-0 transient in the admitted worst case
-  and profile paths relative to `bundle.json` are follow-ups. Overlays (the larger canvas, the FL2VA conditioner) inherit
-  the location-dependent identity: moving a profile changes its identity and orphans its measured entries.
-- **H3 larger canvas and longer clips** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress)):
-  1280×704 and 704×1280 first-frame tails and per-entry memory bars (18 GiB today's region, 24 GiB beyond it with at
-  least 64 GiB of physical memory, decided 2026-10-29). Entries are bundled once measured under the final overlay stack.
+- **H3:** Turbo4 qualification (the user's side-by-side review judged it worth qualifying). **Fused attention is
+  done, with no re-export** ([spike](spikes/h3-attention-2026-10.md), 2026-10-29): the qualified body graph already
+  exports `F.scaled_dot_product_attention` as Core AI's SDPA composite, and the GPU runs it fused. No score tensor is
+  allocated between calls, it runs at 44–56 TFLOPS, and it's 2.8× faster than explicit attention at 4,096 rows. H3's
+  qualification evidence stands. The step-0 transient in the admitted worst case and profile paths relative to `bundle.json` are
+  follow-ups. Overlays (the larger canvas, the FL2VA conditioner) inherit the location-dependent identity: moving a
+  profile changes its identity and orphans its measured entries.
+- **For Atelier** (user decision, 2026-10-29), for Atelier's v0.6, with the features that use them in its v0.7:
+  - **H3 at a larger canvas** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress)):
+    first-frame encoder and tail exports for 1280×704 and 704×1280, measured, and added to measured admission under
+    per-entry memory bars (18 GiB for today's region, 24 GiB beyond it with at least 64 GiB of physical memory, decided
+    2026-10-29). Entries are bundled once measured under the final overlay stack.
+  - **H3 last-frame conditioning:** `H3VideoRequest.lastFrame` is refused today.
+
+  Atelier's team authors both as `v0.0.4/<topic>` PRs, which Kit reviews. They build on the current body graph.
+  - **Shared declared residency** ([proposal](shared-residency-proposal.md)): a joint, announced calibration window on
+    this Mac sets the capacity fraction. Kit's side follows: the lease rules, a records-backed `ResourceCoordinator`,
+    and declarations by `aether-probe` and heavy CPU jobs.
 - **Exporter safety,** from the 0.0.3 follow-up bug hunt on macOS 27.2:
   - An export-time check that runs the optimized program against the unoptimized one on random inputs. Core AI's
     pre-compilation rewrite gives silently wrong results for some reshape-into-matmul patterns.
   - A lint that refuses float masks of rank 2 or 3, and `is_causal=True`, into fp16 attention. On macOS 27.2's
     cpu_only path, those masks are misread. Kit's graphs use bool or 4-D masks today.
   - A guard for one-layer graphs, where removing identity copies deletes a state write.
+  - Unfused attention whose 56 · R² score tensor passes 2^32 elements returns wrong values for the heads past the
+    boundary, in bf16 and fp16 ([H3 attention spike](spikes/h3-attention-2026-10.md)). Fail the export check on any
+    tensor of that size, and keep `F.scaled_dot_product_attention`.
 - **Core AI retention on shape changes:** keep the prefill tail and decode widths within 2x of each other where
   possible, and measure whether turning `expectFrequentReshapes` off for language sessions avoids the retention at an
   acceptable first-call cost per new shape. Until then the memory budget stays.

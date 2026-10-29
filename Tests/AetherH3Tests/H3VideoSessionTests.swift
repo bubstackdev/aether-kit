@@ -803,3 +803,19 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     let wide = try request(1024, 480, 124), tall = try request(640, 800, 124), square = try request(576, 576, 124)
     #expect(!admission.admits(wide) && !admission.admits(tall) && !admission.admits(square))
 }
+
+@Test func h3VideoSessionRefusesAGenerationUnderCriticalPressure() async throws {
+    let log = StageLog()
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)),
+                                 pressure: monitor)
+    let request = try H3VideoRequest(prompt: "integrated_multimodal_description: a quiet room", geometry: geometry(), seed: 3)
+    monitor.deliver(.critical)
+    await #expect(throws: AetherError.memoryPressure) { try await session.generate(request) }
+    #expect(await log.entries.isEmpty)
+    #expect(await session.state == .ready)
+    monitor.deliver(.normal)
+    _ = try await session.generate(request)
+    #expect(await log.entries.first == "acquire conditioner")
+}
