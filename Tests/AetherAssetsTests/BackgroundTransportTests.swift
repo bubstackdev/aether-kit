@@ -47,7 +47,10 @@ struct BackgroundTransportTests {
         try data.prefix(200).write(to: target)
         let record = BackgroundTaskRecord(destination: target.path, offset: 200, byteCount: 600, path: "f.bin")
         let resumed = response(206, ["Content-Range": "bytes 450-599/600"])
-        #expect(record.base(of: resumed) == 200)
+        #expect(record.base(of: resumed, expectedBytes: 400) == 200)
+        #expect(record.base(of: resumed, expectedBytes: -1) == 200)
+        // The first response sent the whole file; resumed, the server honoured the range.
+        #expect(record.base(of: resumed, expectedBytes: 600) == 0)
         try record.apply(downloadedFile: downloaded(data.suffix(400)), response: resumed)
         #expect(try Data(contentsOf: target) == data)
     }
@@ -59,8 +62,9 @@ struct BackgroundTransportTests {
         try Data(repeating: 9, count: 200).write(to: target)
         let record = BackgroundTaskRecord(destination: target.path, offset: 200, byteCount: 600, path: "f.bin")
         let fromStart = response(206, ["Content-Range": "bytes 0-599/600"])
-        #expect(record.base(of: fromStart) == 0)
-        #expect(record.base(of: response(200)) == 0)
+        #expect(record.base(of: fromStart, expectedBytes: -1) == 0)
+        #expect(record.base(of: response(200), expectedBytes: -1) == 0)
+        #expect(record.base(of: response(200), expectedBytes: 600) == 0)
         try record.apply(downloadedFile: downloaded(data), response: fromStart)
         #expect(try Data(contentsOf: target) == data)
     }

@@ -75,25 +75,25 @@
   },
   "failures": [],
   "resumeRun": {
-    "build": "this PR's final transport: the resumed-task fix, GET redirect probes, no resume data for tasks carrying the token, and the expired-link retry",
+    "build": "this PR's final transport: the resumed-task fix, the task's start taken from its expected byte count, GET redirect probes, no resume data for tasks carrying the token, and the expired-link retry",
     "probe": {
       "cutAfterBytes": 400000000,
       "store": "a fresh install of the app"
     },
-    "start": "2026-10-29T13:55:39Z",
+    "start": "2026-10-29T14:05:18Z",
     "statusAtStart": "notInstalled(bytesTotal: 1208370448)",
-    "stoppedAtBytes": 400245600,
+    "stoppedAtBytes": 400081850,
     "statusBetweenRuns": "partial(bytesPresent: 1310, bytesTotal: 1208370448)",
     "resumeDataFiles": [
       "model.aimodel/.main.mlirb.resume-0"
     ],
-    "retryFirstEventBytes": 400252492,
-    "result": "The retry continued from the resume data instead of starting over, so the system's response was a 206 from the resume point; the file was applied from byte 0 and the entry installed. Bytes held in resume data don't count in status, as documented.",
+    "retryFirstEventBytes": 400085296,
+    "result": "The retry continued from the resume data instead of starting over, so the system's response was a 206 from the resume point; the file was applied from byte 0 and the entry installed. The retry passed 792 MB, where the size cap would have cancelled it had the task's expected byte count covered only the remaining bytes, so a resumed task's expected count covers its whole download. Bytes held in resume data don't count in status, as documented.",
     "terminal": "installed 729fa00265c0531b666fc753a0ab4e1cf413cd02d5a76e995ab41b512a331ad8",
-    "retrySeconds": 332.25,
+    "retrySeconds": 345.9,
     "reply": "A hash function is a process that takes a message or input and converts it into a unique output, typically a string of characters, which is used to verify data integrity or store data.",
-    "replySeconds": 7.23,
-    "earlierRun": "An earlier build with only the resumed-task fix gave the same result at 13:46:07Z: stopped at 400,573,100 bytes, retry's first event at 400,585,137, installed.",
-    "notExercised": "The 403/410 retry for an expired signed link."
+    "replySeconds": 7.18,
+    "notExercised": "The 403/410 retry for an expired signed link.",
+    "earlierRuns": "Two earlier builds gave the same result: only the resumed-task fix (13:46:07Z, stopped at 400,573,100 bytes, retry's first event at 400,585,137) and the review 5-7 hardening (13:55:39Z, stopped at 400,245,600, first event at 400,252,492). Both installed."
   }
 }

@@ -236,8 +236,8 @@ whether retrying can help.
   - the remaining files were fetched by new tasks, the entry installed, and `AetherLanguageModel(installation:)` gave a
     coherent greedy reply in 7.50 s.
 
-  - on the final build, after a fresh install, a preparation stopped at 400,245,600 bytes left the system's resume
-    data beside the file; the retry continued from it (first event at 400,252,492 bytes) and installed. This run
+  - on the final build, after a fresh install, a preparation stopped at 400,081,850 bytes left the system's resume
+    data beside the file; the retry continued from it (first event at 400,085,296 bytes) and installed. This run
     qualified a fix: a resumed task's response starts at the resume point, which the first version refused.
 
   The relaunch shows the home-relative task record resolving on a device. Not yet exercised: a task in flight across

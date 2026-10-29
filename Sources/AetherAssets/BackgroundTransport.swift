@@ -255,13 +255,16 @@ struct BackgroundTaskRecord: Codable, Equatable {
         try FileManager.default.moveItem(at: location, to: target)
     }
 
-    /// Where a task's download starts in the file, once its response has arrived: byte 0 after a `200` or a `206`
-    /// from the start, otherwise the record's offset (a resumed task's byte counts include what it fetched before).
-    func base(of response: URLResponse?) -> UInt64 {
-        guard let http = response as? HTTPURLResponse else { return offset }
+    /// Where a task's download starts in the file, once its response has arrived. A task's expected byte count covers
+    /// its whole download, including what a resumed task fetched before it stopped, so when known it gives the start
+    /// even if the first response sent the whole file and the resumed one honoured the range. Otherwise: byte 0 after
+    /// a `200` or a `206` from the start, else the record's offset.
+    func base(of response: URLResponse?, expectedBytes: Int64) -> UInt64 {
+        if expectedBytes > 0, UInt64(expectedBytes) <= byteCount { return byteCount - UInt64(expectedBytes) }
+        guard let http = response as? HTTPURLResponse else { return min(offset, byteCount) }
         if http.statusCode == 200 { return 0 }
         let range = http.value(forHTTPHeaderField: "Content-Range").flatMap(URLSessionTransport.contentRange)
-        return range?.start == 0 ? 0 : offset
+        return range?.start == 0 ? 0 : min(offset, byteCount)
     }
 }
 
@@ -383,7 +386,7 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let record = BackgroundTaskRecord(encoded: downloadTask.taskDescription) else { return }
         let written = UInt64(max(0, totalBytesWritten))
-        let base = min(record.base(of: downloadTask.response), record.byteCount)
+        let base = record.base(of: downloadTask.response, expectedBytes: totalBytesExpectedToWrite)
         guard written <= record.byteCount - base else {
             // More than the pinned remainder: wrong, and it could fill the disk.
             lock.withLock { failures[downloadTask.taskIdentifier] = PreparationError.integrityMismatch(path: record.path) }
