@@ -247,8 +247,10 @@ M-RoPE and DeepStack are all upstream code:
 Kit's dump is compared against these and is never fed in. The checks:
 
 - ids, tags, the patchified pixels and the 3 × T positions must be exactly equal;
-- the vision embeddings, DeepStack levels and tap are compared by relative L2 against the existing predefined limit of
-  0.02, over all rows and over prompt rows separately;
+- the tap is compared by relative L2 against the existing predefined limit of 0.02, over all rows and over prompt rows
+  separately;
+- the vision tower (merger rows and DeepStack levels) is compared against upstream's fp32 reference at relative L2 ≤
+  0.03. This was revised by the user on 2026-10-29; see D5 below.
 - a second run with the keyframe through `MiniMaxH3ResizeStep` checks that passing a canvas-sized frame through is the
   identity.
 
@@ -333,8 +335,17 @@ The user decided on 2026-10-29:
 3. **D3, canvases: 960×544, 544×960, 288×288, 1280×704 and 704×1280.** One static grid each. The large canvases
    follow Atelier's large-canvas lane (large-canvas tails and measured envelopes).
 4. **D4, oracle environment: add torchvision** to `Forge/h3-oracle`, then re-verify the environment record.
-5. **D5, gate bars: as proposed.** Exact equality for ids, tags, pixels and positions; relative L2 ≤ 0.02 for the
-   vision embeddings, DeepStack and tap.
+5. **D5, gate bars.** The exact checks are as proposed: keyframe bytes, ids, tags, pixels and positions. The tap is gated
+   at relative L2 ≤ 0.02 against the full presentation oracle.
+   - **Tower bar, revised 2026-10-29.** The proposed 0.02 against upstream's bf16 tower can't be met by any bf16
+     implementation. Upstream's own bf16 tower is 0.033 from the fp32 computation of the same weights on the merger at
+     288×288. The native GPU tower is 0.038 from upstream bf16 but 0.024 from fp32 (`docs/evidence/h3-presentation-vision-2026-10-29.json`).
+   - **The user decided (b) plus (c).** The tower (merger and DeepStack 0/1/2) is gated against upstream's fp32 reference
+     (`Scripts/prepare-h3-vision-reference.py`: bf16 weights, fp32 compute) at relative L2 ≤ 0.03. The decisive gates
+     are the conditioner tap and the denoising trajectory, against the full upstream oracle with the presentation.
+     Every vision record keeps the native-vs-bf16 distance and upstream's bf16-vs-fp32 spread, as diagnostics.
+   - **Upstream's merger spread grows with the canvas:** 0.033 at 288×288, 0.039 at 960×544, 0.075 at 544×960, 0.044
+     at 1280×704 and 0.036 at 704×1280. Each other canvas still has to pass its own native run.
 6. **D6, profile identity: an overlay bundle** with `lineage`, with T2VA carried by an identity replay.
 7. **D7, keyframes: N keyframes** (first, last, both), built on Atelier's last-frame lane (PR #78) once it merges.
    Until then the presentation is N-capable and tested on the first frame only.

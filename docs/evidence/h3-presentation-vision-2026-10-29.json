@@ -1,0 +1,405 @@
+{
+ "schema": 1,
+ "kind": "h3-presentation-vision",
+ "date": "2026-10-29",
+ "decision": "user, 2026-10-29: the tower (merger, DeepStack 0/1/2) is gated against upstream's fp32 reference (bf16 weights, fp32 compute) at relative L2 <= 0.03; the decisive gates are the conditioner tap and the trajectory against the full upstream oracle; native-vs-bf16 and upstream's bf16-vs-fp32 spread are diagnostics",
+ "floor288": {
+  "source": "upstream Qwen3VLVisionModel on the 288x288 presentation oracle's own pixels; its bf16 run reproduces the oracle's merger byte for byte; reference is the second of each pair",
+  "cost": {
+   "realSeconds": 9.74,
+   "maximumResidentSetBytes": 4039131136
+  },
+  "pairs": {
+   "bf16 vs fp32 (bf16 weights, fp32 compute)": {
+    "merger": {
+     "relative_l2": 0.033154,
+     "cosine": 0.9994503,
+     "max_abs": 1.01189
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010187,
+     "cosine": 0.9999482,
+     "max_abs": 0.08653
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.016045,
+     "cosine": 0.9998717,
+     "max_abs": 0.39831
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.026928,
+     "cosine": 0.9996374,
+     "max_abs": 0.28435
+    }
+   },
+   "native GPU vs bf16": {
+    "merger": {
+     "relative_l2": 0.038082,
+     "cosine": 0.9992914,
+     "max_abs": 1.21875
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.013315,
+     "cosine": 0.9999172,
+     "max_abs": 0.10938
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.018746,
+     "cosine": 0.9998268,
+     "max_abs": 0.4375
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.031317,
+     "cosine": 0.9995192,
+     "max_abs": 0.21216
+    }
+   },
+   "native GPU vs fp32 (bf16 weights, fp32 compute)": {
+    "merger": {
+     "relative_l2": 0.023976,
+     "cosine": 0.9997224,
+     "max_abs": 0.6266
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.009492,
+     "cosine": 0.9999593,
+     "max_abs": 0.05768
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.011983,
+     "cosine": 0.9999325,
+     "max_abs": 0.19935
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.019359,
+     "cosine": 0.9998188,
+     "max_abs": 0.13606
+    }
+   },
+   "note": "reference is the second of each pair; torch exposes no CPU switch for bf16 reduction precision (allow_bf16_reduced_precision_reduction is CUDA-only), so there is no separate fp32-accumulate run"
+  }
+ },
+ "upstreamBf16VsFp32ByCanvas": {
+  "288x288": {
+   "deepstack[0]": {
+    "cosine": 0.9999481708971154,
+    "max_abs": 0.08652752637863159,
+    "relative_l2": 0.010187283369431038
+   },
+   "deepstack[1]": {
+    "cosine": 0.9998716809763657,
+    "max_abs": 0.3983116149902344,
+    "relative_l2": 0.016045360172889434
+   },
+   "deepstack[2]": {
+    "cosine": 0.9996374039525312,
+    "max_abs": 0.2843509316444397,
+    "relative_l2": 0.02692766525004013
+   },
+   "image_embeds": {
+    "cosine": 0.9994503378079029,
+    "max_abs": 1.0118942260742188,
+    "relative_l2": 0.03315351611763655
+   }
+  },
+  "960x544": {
+   "deepstack[0]": {
+    "cosine": 0.9999404802906132,
+    "max_abs": 0.24006175994873047,
+    "relative_l2": 0.010913175585074533
+   },
+   "deepstack[1]": {
+    "cosine": 0.9997388484136188,
+    "max_abs": 1.3067231178283691,
+    "relative_l2": 0.022852498046407262
+   },
+   "deepstack[2]": {
+    "cosine": 0.9993360936279074,
+    "max_abs": 0.5139518976211548,
+    "relative_l2": 0.036433142940152805
+   },
+   "image_embeds": {
+    "cosine": 0.9992272611236495,
+    "max_abs": 2.3216819763183594,
+    "relative_l2": 0.03930652961034077
+   }
+  },
+  "544x960": {
+   "deepstack[0]": {
+    "cosine": 0.9999417261524216,
+    "max_abs": 0.1262199878692627,
+    "relative_l2": 0.010795755933676276
+   },
+   "deepstack[1]": {
+    "cosine": 0.9997629050479726,
+    "max_abs": 0.5579156875610352,
+    "relative_l2": 0.021780683036922148
+   },
+   "deepstack[2]": {
+    "cosine": 0.9994465124043838,
+    "max_abs": 1.0286909341812134,
+    "relative_l2": 0.03326669018523847
+   },
+   "image_embeds": {
+    "cosine": 0.9971649611310649,
+    "max_abs": 15.397706508636475,
+    "relative_l2": 0.07529457414557018
+   }
+  },
+  "1280x704": {
+   "deepstack[0]": {
+    "cosine": 0.9999346633543429,
+    "max_abs": 0.15909194946289062,
+    "relative_l2": 0.011443860956704119
+   },
+   "deepstack[1]": {
+    "cosine": 0.9996445810909588,
+    "max_abs": 1.0585036277770996,
+    "relative_l2": 0.026666074975585288
+   },
+   "deepstack[2]": {
+    "cosine": 0.9990954741564991,
+    "max_abs": 0.7285848259925842,
+    "relative_l2": 0.04256165478063902
+   },
+   "image_embeds": {
+    "cosine": 0.9990405107373723,
+    "max_abs": 4.486299276351929,
+    "relative_l2": 0.04386516916706852
+   }
+  },
+  "704x1280": {
+   "deepstack[0]": {
+    "cosine": 0.9999424116472501,
+    "max_abs": 0.2283782958984375,
+    "relative_l2": 0.010732057103343452
+   },
+   "deepstack[1]": {
+    "cosine": 0.9997569112004199,
+    "max_abs": 0.7001023292541504,
+    "relative_l2": 0.022052520363186567
+   },
+   "deepstack[2]": {
+    "cosine": 0.9994232347500471,
+    "max_abs": 0.4577294588088989,
+    "relative_l2": 0.033959532208412815
+   },
+   "image_embeds": {
+    "cosine": 0.9993351387543874,
+    "max_abs": 2.018339157104492,
+    "relative_l2": 0.036461917862402195
+   }
+  }
+ },
+ "upstreamBf16VsFp32Source": "Scripts/prepare-h3-vision-reference.py on each canvas's presentation oracle run (960x544 and 288x288 full, the others vision-only); keyframes: the gate crane PNGs, 1280x704 a LANCZOS resize of the 960x544 one, the portrait canvases rotations",
+ "gate288": {
+  "schema": 2,
+  "gate": "h3-presentation",
+  "passed": true,
+  "failures": [],
+  "limits": {
+   "tower": 0.03,
+   "towerReference": "upstream bf16 weights, fp32 compute",
+   "tap": 0.02,
+   "tapReference": "full presentation oracle"
+  },
+  "mode": "vision",
+  "canvas": "288x288",
+  "profileSHA256": "037e464ff419966739e71e4a9b5bc1284ef356dae4dd9b46c050baaf7fb74887",
+  "referenceFields": {
+   "canvas": "288x288",
+   "layers": 50,
+   "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+   "oracle_sha256": "1f61d4438be1da65a42768a17edcbb8da2448b19cef43cb2f1c3af0517c5d879",
+   "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+   "torch": "2.13.0"
+  },
+  "referenceManifestSHA256": "58a908df503dd6cfd4491e88f4d60e23725cbb5078c3b10c21d0b250fa83e986",
+  "nativeManifestSHA256": "71b473f2d904e31826be28129f2d514bcab242249e34ecefd25a727841485f17",
+  "visionReferenceManifestSHA256": "28c2e8b1e9f4c4777bee6d0deae32cdc2da32f3b65951de305ff6d04572c1485",
+  "nativeReport": {
+   "footprintPeakBytes": 1782810592,
+   "metalPeakBytes": 1530675200,
+   "mode": "vision",
+   "phases": [
+    {
+     "footprintEnd": 79004392,
+     "footprintPeak": 79004392,
+     "metalEnd": 65536,
+     "metalPeak": 65536,
+     "metalStart": 65536,
+     "phase": "baseline",
+     "samples": 47,
+     "seconds": 1.019730917
+    },
+    {
+     "footprintEnd": 1551877944,
+     "footprintPeak": 1782810592,
+     "metalEnd": 1235025920,
+     "metalPeak": 1530675200,
+     "metalStart": 65536,
+     "phase": "vision",
+     "samples": 74,
+     "seconds": 1.721588875
+    },
+    {
+     "footprintEnd": 159613912,
+     "footprintPeak": 1126024992,
+     "metalEnd": 39518208,
+     "metalPeak": 42844160,
+     "metalStart": 42844160,
+     "phase": "vision.released",
+     "samples": 43,
+     "seconds": 0.9865747910000002
+    },
+    {
+     "footprintEnd": 159613912,
+     "footprintPeak": 159613912,
+     "metalEnd": 39518208,
+     "metalPeak": 39518208,
+     "metalStart": 39518208,
+     "phase": "end",
+     "samples": 2,
+     "seconds": 1.5829999999716904e-06
+    }
+   ],
+   "visionSpecialization": "gpu, expectFrequentReshapes false"
+  },
+  "checks": {
+   "keyframe0": {
+    "exact": true,
+    "shape": [
+     288,
+     288,
+     3
+    ]
+   },
+   "token_ids": {
+    "exact": true,
+    "shape": [
+     138
+    ]
+   },
+   "text_token_tags": {
+    "exact": true,
+    "shape": [
+     138
+    ]
+   },
+   "position_ids": {
+    "exact": true,
+    "shape": [
+     3,
+     138
+    ]
+   },
+   "pixel_values": {
+    "exact": true,
+    "shape": [
+     324,
+     1536
+    ]
+   },
+   "image_embeds": {
+    "relative_l2": 0.023976246895509725,
+    "cosine": 0.9997223763847245,
+    "max_abs": 0.6266031265258789,
+    "reference_max_abs": 28.80701446533203,
+    "finite": true,
+    "limit": 0.03,
+    "passed": true
+   },
+   "deepstack[0]": {
+    "relative_l2": 0.009492215435127628,
+    "cosine": 0.9999593317486266,
+    "max_abs": 0.057677268981933594,
+    "reference_max_abs": 7.606385231018066,
+    "finite": true,
+    "limit": 0.03,
+    "passed": true
+   },
+   "deepstack[1]": {
+    "relative_l2": 0.01198283484763773,
+    "cosine": 0.9999325209826285,
+    "max_abs": 0.199354887008667,
+    "reference_max_abs": 16.78877067565918,
+    "finite": true,
+    "limit": 0.03,
+    "passed": true
+   },
+   "deepstack[2]": {
+    "relative_l2": 0.019359482928519064,
+    "cosine": 0.999818846273078,
+    "max_abs": 0.13605785369873047,
+    "reference_max_abs": 7.545506477355957,
+    "finite": true,
+    "limit": 0.03,
+    "passed": true
+   }
+  },
+  "diagnostics": {
+   "native_vs_upstream_bf16": {
+    "image_embeds": {
+     "relative_l2": 0.03808210373325309,
+     "cosine": 0.9992913754297753,
+     "max_abs": 1.21875,
+     "reference_max_abs": 28.875,
+     "finite": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.013315113429781245,
+     "cosine": 0.9999171651028496,
+     "max_abs": 0.109375,
+     "reference_max_abs": 7.625,
+     "finite": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.018745669219789336,
+     "cosine": 0.9998268359021637,
+     "max_abs": 0.4375,
+     "reference_max_abs": 16.75,
+     "finite": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.03131720235268019,
+     "cosine": 0.9995191738379768,
+     "max_abs": 0.212158203125,
+     "reference_max_abs": 7.53125,
+     "finite": true
+    }
+   },
+   "upstream_bf16_vs_fp32": {
+    "deepstack[0]": {
+     "cosine": 0.9999481708971154,
+     "max_abs": 0.08652752637863159,
+     "relative_l2": 0.010187283369431038
+    },
+    "deepstack[1]": {
+     "cosine": 0.9998716809763657,
+     "max_abs": 0.3983116149902344,
+     "relative_l2": 0.016045360172889434
+    },
+    "deepstack[2]": {
+     "cosine": 0.9996374039525312,
+     "max_abs": 0.2843509316444397,
+     "relative_l2": 0.02692766525004013
+    },
+    "image_embeds": {
+     "cosine": 0.9994503378079029,
+     "max_abs": 1.0118942260742188,
+     "relative_l2": 0.03315351611763655
+    }
+   }
+  }
+ },
+ "native288": {
+  "command": "with-gpu-lock.sh ... aether-probe h3-profile-presentation <vision overlay bundle.json> <gate prompt> crane-288.png <new dir> --vision",
+  "lock": "acquired 2026-10-29 12:48:35, released 12:48:40, rc 0",
+  "usrBinTimeL": {
+   "realSeconds": 4.84,
+   "maximumResidentSetBytes": 1654915072,
+   "peakMemoryFootprintBytes": 1807681504
+  }
+ },
+ "pending": "the other four canvases' native runs wait for the GPU pause to lift"
+}
