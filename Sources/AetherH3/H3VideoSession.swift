@@ -182,8 +182,9 @@ public actor H3VideoSession {
         if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
         }
+        // A request is checked and reserved against the one envelope that covers it.
+        let resources = try resources?.resolved(for: request)
         try resources?.check(request)
-        let resources = resources
         let reserve: @Sendable () throws -> ResourceReservation? = {
             try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
         }

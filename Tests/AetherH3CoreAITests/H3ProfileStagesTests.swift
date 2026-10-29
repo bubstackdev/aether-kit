@@ -412,17 +412,17 @@ private struct AudioKernel: H3AudioKernel {
 }
 
 /// Opt-in, CPU only: with `AETHER_H3_PROFILE` set to a measured profile on its measured device, the session's
-/// admission comes from the recorded memory measurement and fits the 18 GiB bar; elsewhere it is refused.
+/// admission comes from the recorded memory measurements, one envelope per entry; elsewhere it is refused.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"] != nil))
 func h3MeasuredAdmissionForTheExportedProfile() throws {
     let profile = try H3Profile(url: URL(fileURLWithPath: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"]!))
     let identity = H3ProfileEngine.resourceIdentity(profile: profile)
-    let measured = try? H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: H3ProfileEngine.deviceArchitecture)
+    let measured = try? H3MeasuredResources.bundledEntries(executionIdentity: identity, deviceArchitecture: H3ProfileEngine.deviceArchitecture)
     let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
     if measured == nil {
         #expect(throws: AetherError.self) { _ = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget) }
     } else {
         let admission = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget)
-        #expect(admission.executionIdentity == identity)
+        #expect(admission.executionIdentity == identity && admission.envelopes.count == measured!.count)
     }
 }

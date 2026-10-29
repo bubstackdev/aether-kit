@@ -684,3 +684,62 @@ Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes
   positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
   changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
   conditioning follow the same text-only presentation.
+
+## Memory bars beyond 960×544 and 124 frames (decided 2026-10-29)
+
+The user decided this on 2026-10-29, with the Kit lead's terms. Each measured entry is held to its own bar, on the same measure as before: the Metal allocation peak over a complete render, sampled every 20 ms. Admission holds the entry's worst case to that bar: the largest per-stage max(Metal, footprint) sample, plus the 256 MiB margin and the operation bytes (`H3MeasuredResources.validate()`). The measured peak governs.
+
+- **18 GiB** covers today's region: 960×544, 544×960 and anything smaller, up to 124 frames. Entries without a `memory_bar_bytes` field decode to 18 GiB, so the bundled 0.0.3 entry is unchanged.
+- **24 GiB** covers a larger canvas (more pixels than 960×544) or a longer clip (more than 124 frames), and nothing else. `validate()` refuses a 24 GiB claim on an entry inside today's region, and a 24 GiB envelope never covers a request inside it, even where its canvases would.
+- **24 GiB entries need at least 64 GiB of physical memory** (`ProcessInfo.physicalMemory`, on iOS too). On a smaller device, `bundledEntries` leaves them out, and a request that only they cover is refused with the requirement named.
+- **Every entry comes from a measured record.** Nothing is interpolated or extrapolated.
+
+**Entries and envelopes.**
+- An identity may carry several entries. Each one lists its canvases, maximum frames and, optionally, `tasks`. Each becomes one `H3ResourceAdmission.Envelope`.
+- A request is covered by an envelope when:
+  - its task is listed;
+  - every stage it needs is measured;
+  - its length is at most the envelope's maximum;
+  - its canvas fits inside a listed canvas of the same orientation, with width and height each at most the listed ones (a square on either side matches any orientation).
+- So a landscape-only 960×544×243 entry doesn't cover 544×960×243, and nothing covers 1408×640.
+- Smaller canvases stay covered by 960×544. 960×544 at 125–141 frames falls under a 1280×704×141 entry.
+- The request is held to one covering envelope that the device's memory allows, 18 GiB entries first, then the cheapest. A request that no envelope covers is refused, naming the nearest envelope.
+- Coverage is narrower than before envelopes, when any canvas up to the entry's pixel count was admitted. Under the 0.0.3 entry, 1024×480, 640×800 and 576×576 are now refused.
+- `H3MeasuredResources.bundled(executionIdentity:deviceArchitecture:)` counts the recorded entries before the memory filter, and throws when there are several; `bundledAdmission` takes them all.
+- `validate()` also refuses canvases over the 1,032,192-pixel cap and the gate's `unrecorded` evidence.
+- `maximumPixels`, `maximumFrames` and `operationBytes` on an admission are union bounds for diagnostics. A UI offers what `admits(_:)` allows, not their combination.
+- Per-task entries let an FL2VA entry be re-measured and replaced without touching T2VA's. The memory gate writes one entry per task beside the combined one (`measuredEntriesByTask`).
+
+**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. They were written or edited by hand after the runs (each lists the fields in `editedAfterRun`); once the pause ends, the current gate script's evaluation is re-run over the same renders, with no re-render, so the records become script-generated. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
+
+## Larger canvas: 1280×704 and the 10 s clip (0.0.4, in progress)
+
+**Status (2026-10-29).** T2VA and FL2VA run natively at 1280×704 and 704×1280 × 141 frames, and T2VA at 960×544 × 243. Every T2VA worst case fits the 24 GiB bar. No entry is bundled yet: see **Identity** above. Every FL2VA number here is a **text-only presentation (known deviation, PR #76)**. It lacks upstream's keyframe vision blocks, so it is provisional, and FL2VA large-canvas entries wait for a re-measurement with them. The FL2VA render at 960×544 × 243 was stopped during a pause in other work, so it has no record.
+
+**Export ([record](evidence/h3-large-canvas-export-2026-10-29.json)).**
+- **Reused unchanged:** only graphs that depend on the canvas or clip length are new. The body (rows dynamic to 40,960, keeping `F.scaled_dot_product_attention`), heads, pack, text, conditioner and video decoder are reused as they are.
+- **Tails:** `export-h3-profile.py --stage video-encoder-first-tiled`, given a base that already has tiled entries, reuses the base's 256 px tile graph after a hash check and exports only the new canvases' tails. The tails are 1280×704, 704×1280, 1344×768 and 768×1344, 28 source tiles each, each byte-identical to `encode_vae_condition` on CPU. Their checks took 75.5, 65.9, 77.0 and 60.8 s.
+- **Audio decoders:** `--stage audio-decoder-fixed` adds static audio decoders for 235 and 405 latents per channel, each byte-identical to the pipeline's decode.
+- **Overlay:** `--stage overlay` writes the base bundle plus those keys only, refuses to replace any key, and records lineage.
+- **Identities:** the overlay `34c0c67e…` has parent `5af39db5…`, which is untouched. Every record carries the profile's adapter, the 544p Turbo LoRA `8step_v1.0`.
+- **Row limit:** by `H3Geometry` (rows = (5n + 2) · H/32 · W/32 for 17n + 5 frames), the 40,960-row limit fits 1280×704 at 141 frames and 1344×768 at 124.
+
+**Memory and time.**
+- Sources: the [1280×704 gate](evidence/h3-memory-gate-1280x704-2026-10-29.json), the [960×544×243 record](evidence/h3-memory-960x544-243-2026-10-29.json), and the per-render [timeline summaries](evidence/h3-large-canvas-timelines-2026-10-29.json) (each with its full timeline's SHA-256 and the dump's exact rows).
+- Conditions: Turbo8, M5 Max, busy host.
+- Rows are packed rows: video + audio + 49 text tokens, plus 880 first-frame rows for FL2VA.
+- Peaks are Metal / footprint in GiB; worst case is the admission number above.
+
+| Render | Rows | Keyframe | Denoising | Video decode | Steps (s) | Total (s) | Worst case |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T2VA 1280×704×141 | 37,479 | — | 20.18 / 21.22 | 9.52 / 17.20 | 112.8–141.9 | 1,096.0 | 21.78 (T2VA entry, both orientations) |
+| T2VA 704×1280×141 | 37,479 | — | 20.18 / 21.21 | 9.52 / 14.21 | 110.8–130.8 | 1,047.0 | (same entry) |
+| T2VA 960×544×243 | 37,579 | — | 20.22 / 21.26 | 9.55 / 14.25 | 129.0–151.8 | 1,203.6 | 21.76 |
+| FL2VA 1280×704×141, provisional | 38,359 | 2.05 / 1.91 (8.4 s) | 20.62 / 22.08 | 11.16 / 17.50 | 126.5–155.6 | 1,185.1 | 22.64 (FL2VA, both orientations) |
+| FL2VA 704×1280×141, provisional | 38,359 | 2.05 / 1.61 (9.2 s) | 20.62 / 21.69 | 10.00 / 17.50 | 124.3–141.7 | 1,167.7 | (same entry) |
+
+- **Rows:** 36,960 video + 470 audio + 49 text at 1280×704×141; 36,720 + 810 + 49 at 960×544×243.
+- **0.0.3 comparison:** the 0.0.3 gate measured 960×544 × 124 only (19,333 rows at 11.13 / 11.91 GiB), so there was no earlier 10 s record. Its entry (maximum 124 frames) already refuses 10 s.
+- **Denoising:** the plateau is steady from step 1 in every render.
+- **Video decode:** the decode stage's peak is the denoiser's memory not yet returned. The stage starts at that level (the `released.denoising` phase: 9.52 / 17.20 GiB in T2VA 1280×704) and ends at 0.36 GiB of Metal. Decode works in fixed 256 px × 22-frame windows, so its own memory should not grow with the canvas; a decode-only measurement to confirm that is pending.
+- **Keyframe:** the tiled first-frame encoder holds 2.05 GiB of Metal at 28 tiles, the same as at 15.
