@@ -242,7 +242,8 @@ public final class ModelReadiness: @unchecked Sendable {
         }
     }
 
-    /// Removes the installation and any downloaded bytes. The state reads `notInstalled` while it runs, because the
+    /// Removes the installation and any downloaded bytes (except those another run is using). The state reads
+    /// `notInstalled` while it runs, because the
     /// lease this readiness holds is dropped first. Fails with `PreparationError.busy` while installing, verifying or
     /// already uninstalling, or while a model opened from the lease is still alive; the installation is then verified
     /// again.
@@ -281,7 +282,8 @@ public final class ModelReadiness: @unchecked Sendable {
             throw PreparationError.busy
         }
         removed = true
-        try preparation.discardDownloads(entry)
+        // Downloads another run is using stay with it: the installation is gone, which is what was asked.
+        do { try preparation.discardDownloads(entry) } catch PreparationError.busy {}
     }
 
     // MARK: - Evaluation

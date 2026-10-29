@@ -272,6 +272,21 @@ struct ModelReadinessTests {
         #expect(model.current == .notInstalled(bytesPresent: 0, bytesTotal: fixture.entry.byteCount))
     }
 
+    @Test func uninstallLeavesDownloadsAnotherRunHoldsAndStillSucceeds() async throws {
+        let fixture = try PreparationFixture()
+        defer { fixture.remove() }
+        let transport = ScriptedTransport(source: fixture.source)
+        let model = try readiness(fixture, transport)
+        model.prepare()
+        _ = try await settle(model, until: isReady)
+        let store = try fixture.preparation(transport).store
+        let held = try store.downloadLock(fixture.entry.installationID)  // as another process's run would
+        try await model.uninstall()
+        withExtendedLifetime(held) {}
+        #expect(isNotInstalled(model.current))
+        #expect(!store.isInstalled(try fixture.entry.installationID))
+    }
+
     @Test func refreshFindsAnInstallationMadeElsewhere() async throws {
         let fixture = try PreparationFixture()
         defer { fixture.remove() }

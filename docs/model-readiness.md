@@ -119,7 +119,8 @@ unknown key inside `requirements` is ignored. A future requirement that older Ki
 - **`cancel()`** stops a running preparation. Downloaded bytes stay, and the state returns to `notInstalled` with them.
 - **`refresh()`**, from `notInstalled`, `unsupported` or `failed`: decides again. For example after another process
   installed the model, or to verify an installation again without downloading.
-- **`uninstall()`** removes the installation and any downloaded bytes. Readiness drops the lease it holds first, so the
+- **`uninstall()`** removes the installation and any downloaded bytes, except those another run (another process, or
+  another readiness for the same entry) is downloading with. Readiness drops the lease it holds first, so the
   state reads `notInstalled` while the removal runs. A `prepare()` in that window starts once the removal ends. If a
   model opened from the lease is still alive, removal fails with `PreparationError.busy` and the installation is
   verified again. It also fails with busy while installing, verifying or already uninstalling. A background transfer
