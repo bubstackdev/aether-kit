@@ -269,10 +269,15 @@ struct BackgroundTaskRecord: Codable, Equatable {
     /// Where a task's download starts in the file, once its response has arrived. A task's expected byte count covers
     /// its whole download, including what a resumed task fetched before it stopped, so when known it gives the start
     /// even if the first response sent the whole file and the resumed one honoured the range. Otherwise: byte 0 after
-    /// a `200` or a `206` from the start, else the record's offset.
+    /// a `200` or a `206` from the start, else the record's offset. A content-encoded body's expected count is its
+    /// encoded size, so it isn't used then.
     func base(of response: URLResponse?, expectedBytes: Int64) -> UInt64 {
-        if expectedBytes > 0, UInt64(expectedBytes) <= byteCount { return byteCount - UInt64(expectedBytes) }
-        guard let http = response as? HTTPURLResponse else { return min(offset, byteCount) }
+        let http = response as? HTTPURLResponse
+        let encoding = http?.value(forHTTPHeaderField: "Content-Encoding")?.lowercased()
+        if expectedBytes > 0, UInt64(expectedBytes) <= byteCount, encoding == nil || encoding == "identity" {
+            return byteCount - UInt64(expectedBytes)
+        }
+        guard let http else { return min(offset, byteCount) }
         if http.statusCode == 200 { return 0 }
         let range = http.value(forHTTPHeaderField: "Content-Range").flatMap(URLSessionTransport.contentRange)
         return range?.start == 0 ? 0 : min(offset, byteCount)

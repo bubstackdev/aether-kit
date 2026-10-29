@@ -51,6 +51,9 @@ struct BackgroundTransportTests {
         #expect(record.base(of: resumed, expectedBytes: -1) == 200)
         // The first response sent the whole file; resumed, the server honoured the range.
         #expect(record.base(of: resumed, expectedBytes: 600) == 0)
+        // A compressed body's expected count is its encoded size: read the response instead.
+        let gzipped = response(206, ["Content-Range": "bytes 450-599/600", "Content-Encoding": "gzip"])
+        #expect(record.base(of: gzipped, expectedBytes: 90) == 200)
         try record.apply(downloadedFile: downloaded(data.suffix(400)), response: resumed)
         #expect(try Data(contentsOf: target) == data)
     }
