@@ -1,4 +1,19 @@
 {
+  "provenance": {
+    "profileIdentity": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
+    "recipe": "turbo8",
+    "conditionerPresentation": "text-only presentation (known deviation, PR #76)",
+    "pathPlaceholders": {
+      "<repo>": "this repository's checkout",
+      "<oracle-env>": "the checkout holding the Forge/h3-oracle environment",
+      "<staging>": "the H3 oracle staging directory",
+      "<profile>": "the Kit-owned profile directory",
+      "<gpu-lock>": "the shared GPU lock wrapper",
+      "<scratch>": "the run's scratch directory"
+    },
+    "interruption": "This oracle run was stopped deliberately for a host pause after step 0; its step-0 comparisons are complete. Steps 1 and 7 are pending a rerun from the passed capture and replay."
+  },
   "fields": {
     "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
     "dump": "<scratch>/trajectory-fl-960/dump-fl2va",

@@ -74,7 +74,7 @@ public struct H3Latents: Sendable {
               video.spec.shape[2] == 96, audio.spec.shape[2] == 32 else {
             throw AetherError.invalidTensor("H3 latents must preserve F32 video/audio geometry")
         }
-        guard anchors.count <= 2, anchors.count < 2 || anchors == [.first, .last] else {
+        guard H3Anchor.isPackedOrder(anchors) else {
             throw AetherError.invalidTensor("H3 keyframe anchors must be ordered first then last")
         }
         self.video = video; self.audio = audio; self.anchors = anchors

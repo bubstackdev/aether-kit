@@ -223,7 +223,7 @@ func h3ProfileDenoiserLaysOutTheAnchorsTheLatentsDeclareAndNeverStepsTheirRows(_
     let frozen = steps
     let condition = try h3Tensor([1, 24, 1, geometry.latentHeight, geometry.latentWidth],
                                  [Float](repeating: 0.5, count: 24 * geometry.latentHeight * geometry.latentWidth))
-    let initial = try geometry.initialLatents(seed: 9, first: anchors.contains(.first) ? condition : nil, last: anchors.contains(.last) ? condition : nil)
+    let initial = try geometry.initialLatents(seed: 9, conditions: anchors.map { ($0, condition) })
     let rotary = try layout.rotary()
     let calls = Calls()
     // Anchored layouts have two distinct row timesteps at step 0 and three afterwards.

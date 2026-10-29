@@ -21,19 +21,25 @@ extension H3Geometry {
     /// The keyframe noise level the released model holds its anchors at (`keyframe_noise_aug`).
     public static let keyframeNoiseLevel: Float = 0.999
 
-    /// FL2VA with a first frame only: `initialLatents(seed:first:last:)` with no last frame.
-    public func initialLatents(seed: UInt64, firstFrameCondition condition: H3TensorData) throws -> H3Latents {
-        try initialLatents(seed: seed, first: condition, last: nil)
+    /// FL2VA with a first frame, a last frame or both: `initialLatents(seed:conditions:)` in packed order. With
+    /// neither, the T2VA stream.
+    public func initialLatents(seed: UInt64, firstFrameCondition first: H3TensorData?,
+                               lastFrameCondition last: H3TensorData? = nil) throws -> H3Latents {
+        try initialLatents(seed: seed, conditions: [(H3Anchor.first, first), (.last, last)].compactMap { anchor, condition in
+            condition.map { (anchor, $0) }
+        })
     }
 
     /// FL2VA: like `initialLatents(seed:)`, but the stream first draws each keyframe's condition noise `[24,1,H,W]` in
     /// packed order, first then last (the pipeline draws each condition before the generated rows). Each draw is mixed
     /// into its normalized condition latents at `t = 0.999` (`t * x + (1 - t) * noise`, float32), and the condition
     /// rows are packed in front of the generated video rows. With a first frame only, the stream is the one the
-    /// first-frame path has always drawn.
-    public func initialLatents(seed: UInt64, first: H3TensorData?, last: H3TensorData?) throws -> H3Latents {
-        let conditions = [(H3Anchor.first, first), (.last, last)].compactMap { anchor, condition in condition.map { (anchor, $0) } }
+    /// first-frame path has always drawn; with no conditions, the T2VA stream.
+    public func initialLatents(seed: UInt64, conditions: [(H3Anchor, H3TensorData)]) throws -> H3Latents {
         guard !conditions.isEmpty else { return try initialLatents(seed: seed) }
+        guard H3Anchor.isPackedOrder(conditions.map(\.0)) else {
+            throw AetherError.invalidRequest("H3 keyframe conditions must be ordered first then last")
+        }
         let frame = 24 * latentHeight * latentWidth
         let spec = try H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, latentHeight, latentWidth])
         guard conditions.allSatisfy({ $0.1.spec == spec }) else {

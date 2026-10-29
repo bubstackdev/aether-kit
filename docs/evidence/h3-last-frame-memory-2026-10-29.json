@@ -1,8 +1,22 @@
 {
+  "provenance": {
+    "profileIdentity": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
+    "recipe": "turbo8",
+    "conditionerPresentation": "text-only presentation (known deviation, PR #76)",
+    "pathPlaceholders": {
+      "<repo>": "this repository's checkout",
+      "<oracle-env>": "the checkout holding the Forge/h3-oracle environment",
+      "<staging>": "the H3 oracle staging directory",
+      "<profile>": "the Kit-owned profile directory",
+      "<gpu-lock>": "the shared GPU lock wrapper",
+      "<scratch>": "the run's scratch directory"
+    }
+  },
   "schema": 1,
   "record": "h3-last-frame-memory",
   "date": "2026-10-29",
-  "command": "aether-probe h3-memory-render PROFILE DUMP NEW_DIR, each under ~/.cache/aether-kit/with-gpu-lock.sh",
+  "command": "aether-probe h3-memory-render PROFILE DUMP NEW_DIR, each under <gpu-lock>",
   "build": {
     "commit": "c5e2199",
     "configuration": "release",
@@ -199,7 +213,7 @@
       ],
       "keyframeEncoderSeconds": 8.7,
       "sampledMetalPeakBytes": 12975816704,
-      "note": "With the qualification observer attached, which reads back every block's output; higher than the plain render above."
+      "note": "With the qualification observer attached (every block's output read back). Its sampled Metal peak equals the plain render's (12,975,816,704 B = 12.08 GiB)."
     }
   }
 }

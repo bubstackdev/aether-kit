@@ -239,7 +239,7 @@ public actor H3VideoSession {
                     last = try await encoder.encode(keyframe, geometry: geometry)
                 }
                 await encoder.release(); finished(); try await onEvent(.stageReleased(.encodingKeyframe))
-                initial = try geometry.initialLatents(seed: request.seed, first: first, last: last)
+                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: first, lastFrameCondition: last)
                 conditionRows = initial.video.spec.shape[1] - geometry.targetVideoRows
             }
             try begin(.denoising)

@@ -109,7 +109,9 @@ enum H3ProfileCommand {
         switch arguments.first {
         case "h3-profile-dump":
             guard (9...11).contains(arguments.count), let width = Int(arguments[3]), let height = Int(arguments[4]),
-                  let frames = Int(arguments[5]), let seed = UInt64(arguments[6]), arguments.count < 11 || arguments[10] != "-" else {
+                  let frames = Int(arguments[5]), let seed = UInt64(arguments[6]), arguments.count < 11 || arguments[10] != "-",
+                  arguments.count != 10 || arguments[9] != "-" else {
+                // `-` stands for an absent first frame only when a last frame follows; alone it would quietly dump T2VA.
                 throw AetherError.invalidRequest("use h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png|-] [LAST_FRAME.png]")
             }
             let image = { (index: Int) -> URL? in arguments.count > index && arguments[index] != "-" ? URL(fileURLWithPath: arguments[index]) : nil }

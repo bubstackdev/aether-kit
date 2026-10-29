@@ -207,12 +207,15 @@ private struct FakeKeyframeEncoder: H3KeyframeEncoder {
 private struct AnchorCheckingDenoiser: H3Denoiser {
     let log: StageLog
     var anchors: [H3Anchor] = [.first]
+    /// When set, the exact initial video rows the denoiser must receive (value-level row order).
+    var expectedVideo: Data? = nil
     var steps: Int { 1 }
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
         await log.acquire("denoiser")
         let frameRows = (geometry.latentHeight / 2) * (geometry.latentWidth / 2)
         #expect(initial.anchors == anchors)
         #expect(initial.video.spec.shape == [1, anchors.count * frameRows + geometry.targetVideoRows, 96])
+        if let expectedVideo { #expect(initial.video.bytes == expectedVideo) }
         onStep(1, 1)
         return initial
     }
@@ -247,9 +250,16 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
 @Test(arguments: [[H3Anchor.last], [.first, .last]])
 func h3VideoSessionEncodesLastAndBothKeyframesInPackedOrderAndDecodesOnlyGeneratedRows(_ anchors: [H3Anchor]) async throws {
     let log = StageLog(), events = EventLog(), g = try geometry()
+    // The fake encoder's condition is the keyframe's first byte everywhere (3 for the first frame, 7 for the last), so
+    // the expected rows put frame 3's condition rows before frame 7's, each noised by its own draw in that order.
+    func condition(_ value: Float) throws -> H3TensorData {
+        try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, g.latentHeight, g.latentWidth]),
+                         bytes: [Float](repeating: value, count: 24 * g.latentHeight * g.latentWidth).withUnsafeBytes { Data($0) })
+    }
+    let expected = try g.initialLatents(seed: 5, conditions: anchors.map { ($0, try condition($0 == .first ? 3 : 7)) })
     let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
-                                                       denoiser: AnchorCheckingDenoiser(log: log, anchors: anchors), video: FakeWindowDecoder(log: log),
-                                                       audio: FakeAudioDecoder(log: log)))
+                                                       denoiser: AnchorCheckingDenoiser(log: log, anchors: anchors, expectedVideo: expected.video.bytes),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
     func keyframe(_ value: UInt8) throws -> H3Keyframe { try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: value, count: g.width * g.height * 3)) }
     let request = try H3VideoRequest(prompt: "p", geometry: g, seed: 5, firstFrame: anchors.contains(.first) ? keyframe(3) : nil, lastFrame: keyframe(7))
     let result = try await session.generate(request) { await events.record($0) }
@@ -262,6 +272,33 @@ func h3VideoSessionEncodesLastAndBothKeyframesInPackedOrderAndDecodesOnlyGenerat
     #expect(recorded.filter { $0 == "start encodingKeyframe" }.count == 1 && recorded.contains("released encodingKeyframe"))
     #expect(await log.maximumResident == 1)
     #expect(await log.residentNow.isEmpty)
+}
+
+/// Cancels the generation's own task once its first keyframe is encoded, so cancellation lands between the two encodes.
+private struct CancellingKeyframeEncoder: H3KeyframeEncoder {
+    let log: StageLog
+    func supports(_ geometry: H3Geometry) -> Bool { true }
+    func encode(_ keyframe: H3Keyframe, geometry: H3Geometry) async throws -> H3TensorData {
+        let condition = try await FakeKeyframeEncoder(log: log).encode(keyframe, geometry: geometry)
+        withUnsafeCurrentTask { $0?.cancel() }
+        return condition
+    }
+    func release() async { await log.release("keyframes") }
+}
+
+@Test func h3VideoSessionCancelledBetweenTheTwoKeyframeEncodesStopsBeforeTheLastAndReleasesEverything() async throws {
+    let log = StageLog(), g = try geometry()
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: CancellingKeyframeEncoder(log: log),
+                                                       denoiser: FakeDenoiser(log: log), video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
+    func keyframe(_ value: UInt8) throws -> H3Keyframe { try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: value, count: g.width * g.height * 3)) }
+    await #expect(throws: CancellationError.self) {
+        try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 5, firstFrame: keyframe(3), lastFrame: keyframe(7)))
+    }
+    // The last frame is never encoded, the denoiser never acquired, and every stage is released.
+    #expect(await log.notes == ["encode 3"])
+    #expect(!(await log.entries.contains("acquire denoiser")))
+    #expect(await log.residentNow.isEmpty)
+    #expect(await session.state == .ready)
 }
 
 @Test func h3FirstFrameLatentsDrawTheConditionNoiseFirstAndKeepTheT2VAStreamShape() throws {
@@ -294,7 +331,7 @@ func h3VideoSessionEncodesLastAndBothKeyframesInPackedOrderAndDecodesOnlyGenerat
     let first = try condition(0), last = try condition(10)
     let t: Float = 0.999, one = Float(1) - t
     // First and last: two condition draws (first, then last), then the generated video rows and the audio.
-    let both = try g.initialLatents(seed: 11, first: first.tensor, last: last.tensor)
+    let both = try g.initialLatents(seed: 11, firstFrameCondition: first.tensor, lastFrameCondition: last.tensor)
     #expect(both.anchors == [.first, .last])
     #expect(both.video.spec.shape == [1, 2 * frameRows + g.targetVideoRows, 96])
     var noise = try H3Noise.generate(seed: 11, count: 2 * frame + videoCount + g.audioRows * 32)
@@ -306,22 +343,20 @@ func h3VideoSessionEncodesLastAndBothKeyframesInPackedOrderAndDecodesOnlyGenerat
                                                                                    values: Array(noise[(2 * frame)..<(2 * frame + videoCount)])))).values)
     #expect(try both.audio.floatValues() == Array(noise[(2 * frame + videoCount)...]))
     // Last only: one condition draw, the same stream shape as a first frame, declared as the last anchor.
-    let lastOnly = try g.initialLatents(seed: 11, first: nil, last: last.tensor)
+    let lastOnly = try g.initialLatents(seed: 11, conditions: [(.last, last.tensor)])
     #expect(lastOnly.anchors == [.last])
     noise = try H3Noise.generate(seed: 11, count: frame + videoCount + g.audioRows * 32)
     video = try lastOnly.video.floatValues()
     #expect(Array(video[..<(frameRows * 96)]) == (try g.packFrames((0..<frame).map { t * last.clean[$0] + one * noise[$0] }, latentFrames: 1)))
     #expect(try lastOnly.audio.floatValues() == Array(noise[(frame + videoCount)...]))
-    // A first frame alone draws exactly the first-frame stream; no keyframe draws the T2VA stream.
-    let firstOnly = try g.initialLatents(seed: 11, first: first.tensor, last: nil)
-    let legacy = try g.initialLatents(seed: 11, firstFrameCondition: first.tensor)
-    #expect(firstOnly.anchors == [.first] && legacy.anchors == [.first])
-    #expect(firstOnly.video.bytes == legacy.video.bytes && firstOnly.audio.bytes == legacy.audio.bytes)
-    let none = try g.initialLatents(seed: 11, first: nil, last: nil), t2va = try g.initialLatents(seed: 11)
+    // No keyframe draws the T2VA stream.
+    let none = try g.initialLatents(seed: 11, conditions: []), t2va = try g.initialLatents(seed: 11)
     #expect(none.anchors.isEmpty && none.video.bytes == t2va.video.bytes && none.audio.bytes == t2va.audio.bytes)
     // A condition at another canvas is refused.
     let small = try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: [1, 24, 1, 1, 1]), bytes: Data(count: 96))
-    #expect(throws: AetherError.self) { try g.initialLatents(seed: 11, first: nil, last: small) }
+    #expect(throws: AetherError.self) { try g.initialLatents(seed: 11, conditions: [(.last, small)]) }
+    // Conditions out of packed order are refused.
+    #expect(throws: AetherError.self) { try g.initialLatents(seed: 11, conditions: [(.last, last.tensor), (.first, first.tensor)]) }
 }
 
 @Test func h3LatentsKeepTheirAnchorsThroughASchedulerStepAndRefuseMisorderedOnes() throws {
