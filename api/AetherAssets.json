@@ -358,6 +358,9 @@
       "usr": "s:s16SendableMetatypeP"
      }
     ],
+    "declAttributes": [
+     "Nonexhaustive"
+    ],
     "declKind": "Enum",
     "isEnumExhaustive": true,
     "kind": "TypeDecl",
