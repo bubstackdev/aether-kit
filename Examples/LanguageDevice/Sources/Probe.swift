@@ -5,7 +5,8 @@ import Darwin
 import Foundation
 
 /// The staged run: `Assets/probe.json` names the mode; `Assets/bundle` is an iOS-registered bundle and
-/// `Assets/reference` its float32 Transformers reference.
+/// `Assets/reference` its float32 Transformers reference. Mode "prepare" instead downloads `Assets/entry.json`
+/// (PrepareProbe.swift).
 private struct ProbeConfiguration: Decodable {
     /// "text": a dense Qwen3 bundle against `reference.json` + `forced-logits.f32`
     /// (`Forge/language/reference_qwen3.py`). "vision": a Qwen3-VL bundle against a reference-grids directory
@@ -65,6 +66,8 @@ struct DeviceReport: Codable {
     var footprintPeakMiB = 0.0
     var footprintAfterUnloadMiB = 0.0
     var cases: [CaseResult] = []
+    /// Mode "prepare": the background preparation run (PrepareProbe.swift).
+    var preparation: PreparationResult?
     var gate = "text: every teacher-forced row cosine >= 0.995 against the float32 reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token in the reference top-5); greedy identical to the reference (its final stop token excluded) or first diverging at such a near-tie. vision: Kit decodes and preprocesses the photo the reference was made from; greedy identical or first diverging at a near-tie of the reference's teacher-forced row there"
     var passed = false
     var failures: [String] = []
@@ -85,6 +88,11 @@ func runLanguageDeviceProbe() async -> DeviceReport {
         }
         let configuration = try JSONDecoder().decode(ProbeConfiguration.self, from: Data(contentsOf: assets.appendingPathComponent("probe.json")))
         report.mode = configuration.mode
+        if configuration.mode == "prepare" {
+            try await runPreparation(assets: assets, report: &report)
+            report.passed = report.failures.isEmpty && report.preparation?.reply != nil
+            return report
+        }
         let bundle = assets.appendingPathComponent("bundle"), reference = assets.appendingPathComponent("reference")
         let manifest = try LanguageModelManifest.load(from: bundle)
         report.bundleModelSHA256 = manifest.modelSHA256
@@ -239,6 +247,6 @@ private func progress(_ stage: String) {
     fflush(stdout)
 }
 
-private extension Duration {
+extension Duration {
     var seconds: Double { Double(components.seconds) + Double(components.attoseconds) / 1e18 }
 }

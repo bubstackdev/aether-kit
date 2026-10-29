@@ -1,10 +1,27 @@
+import AetherAssets
 import Foundation
 import SwiftUI
+import UIKit
+
+/// Hands the system's background-session events for model preparation to Kit (docs/model-preparation.md).
+final class ProbeAppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        let completion = UncheckedCompletion(completionHandler)
+        BackgroundTransport.handleEvents(identifier: identifier) { completion.call() }
+    }
+}
+
+private struct UncheckedCompletion: @unchecked Sendable {
+    let call: () -> Void
+    init(_ call: @escaping () -> Void) { self.call = call }
+}
 
 /// Runs the language device probe once at launch, prints one `LANGUAGE_DEVICE_REPORT` JSON line to stdout
 /// (captured by `xcrun devicectl device process launch --console`), saves it to Documents, then exits.
 @main
 struct LanguageDeviceProbeApp: App {
+    @UIApplicationDelegateAdaptor private var delegate: ProbeAppDelegate
     @State private var status = "Running language device probe…"
 
     var body: some Scene {

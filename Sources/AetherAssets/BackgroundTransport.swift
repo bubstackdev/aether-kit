@@ -32,6 +32,14 @@ public final class BackgroundTransport: ModelTransport, Sendable {
         BackgroundCoordinator.shared(identifier: identifier, configure: { _ in }).storeEventsCompletion(completionHandler)
     }
 
+    /// The async form, for SwiftUI's `.backgroundTask(.urlSession(identifier)) { await BackgroundTransport.handleEvents(identifier: identifier) }`:
+    /// returns once every event for the session has been delivered.
+    public static func handleEvents(identifier: String) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            handleEvents(identifier: identifier) { continuation.resume() }
+        }
+    }
+
     public func fetch(_ request: TransportRequest, to destination: URL, resume: Bool,
                       progress: @escaping @Sendable (UInt64) -> Void) async throws {
         guard request.url.scheme?.lowercased() == "https" else {
