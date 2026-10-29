@@ -129,7 +129,9 @@ public struct H3VideoStages: Sendable {
 /// latents, denoising, windowed video decoding and optional audio decoding, strictly in
 /// sequence so at most one heavyweight stage is resident. One call at a time; cancellation
 /// is observed between stages, steps (by the denoiser) and decoder windows, and every
-/// acquired stage is released before the call returns or throws.
+/// acquired stage is released before the call returns or throws. Nothing stays loaded between
+/// calls, so the only lifecycle rule is the load gate: a generation started while memory pressure
+/// is critical is refused with `AetherError.memoryPressure` (docs/model-lifecycle.md).
 public actor H3VideoSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -139,23 +141,32 @@ public actor H3VideoSession {
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
     private var closingTask: Task<Void, Never>?
+    private let pressure: MemoryPressureMonitor
 
     /// `gpu` opts into a host-shared ``GPUAdmission``: each generation waits for (or, in fail-fast mode, requires) a
     /// grant before its first stage and holds it until every stage has been released. With admission, the operation's
     /// resource reservation is taken after the grant, and `unload()` withdraws a generation still waiting.
-    public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) { self.stages = stages; resources = nil; self.gpu = gpu }
+    public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) {
+        self.stages = stages; resources = nil; self.gpu = gpu; pressure = .shared
+    }
 
     public init(stages: H3VideoStages, resources: H3ResourceAdmission, gpu: GPUAdmissionOwner? = nil) throws {
         guard stages.resourceIdentity == resources.executionIdentity else {
             throw AetherError.invalidRequest("H3 resource profile belongs to different execution stages")
         }
-        self.stages = stages; self.resources = resources; self.gpu = gpu
+        self.stages = stages; self.resources = resources; self.gpu = gpu; pressure = .shared
+    }
+
+    /// A session reading memory pressure from `pressure` (tests).
+    package init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil, pressure: MemoryPressureMonitor) {
+        self.stages = stages; resources = nil; self.gpu = gpu; self.pressure = pressure
     }
 
     public func generate(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler = { _ in }) async throws -> H3VideoResult {
         try Task.checkCancellation()
         guard state != .closing, state != .closed, stages != nil else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
+        guard pressure.level != .critical else { throw AetherError.memoryPressure }
         let task = try startRun(request, onEvent: onEvent)
         active = task; state = .running
         defer { active = nil; pendingGPU = nil; if state == .running { state = .ready } }

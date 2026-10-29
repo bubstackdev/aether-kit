@@ -627,3 +627,19 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
     #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"])
     #expect(throws: AetherError.self) { _ = try H3MeasuredResources.bundled(executionIdentity: "unmeasured", deviceArchitecture: "fixture") }
 }
+
+@Test func h3VideoSessionRefusesAGenerationUnderCriticalPressure() async throws {
+    let log = StageLog()
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)),
+                                 pressure: monitor)
+    let request = try H3VideoRequest(prompt: "integrated_multimodal_description: a quiet room", geometry: geometry(), seed: 3)
+    monitor.deliver(.critical)
+    await #expect(throws: AetherError.memoryPressure) { try await session.generate(request) }
+    #expect(await log.entries.isEmpty)
+    #expect(await session.state == .ready)
+    monitor.deliver(.normal)
+    _ = try await session.generate(request)
+    #expect(await log.entries.first == "acquire conditioner")
+}

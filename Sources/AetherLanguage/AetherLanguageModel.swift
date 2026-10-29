@@ -9,8 +9,10 @@ import Foundation
 /// `LanguageModelSession`.
 ///
 /// Creating one is cheap: it reads the registration and checks the OS, the platform and the bundle's paths, and never
-/// hashes or loads the model. The backend and tokenizer load, fully verified, on ``prewarm()`` or the first request, and
-/// stay loaded until ``unload()``. Copies share one loaded model.
+/// hashes or loads the model. The backend and tokenizer load, fully verified, on ``prewarm()`` or the first request.
+/// They stay loaded until ``unload()``, or until the lifecycle policy unloads them: after an idle period, or under memory
+/// pressure (docs/model-lifecycle.md). The next request loads them again. Copies share one loaded model and its
+/// lifecycle.
 public struct AetherLanguageModel: Sendable {
     public enum Availability: Sendable, Equatable {
         case available
@@ -53,23 +55,28 @@ public struct AetherLanguageModel: Sendable {
         #endif
     }
 
-    public init(bundle: URL, platform: LanguageModelManifest.Platform = Self.currentPlatform) {
-        self.init(bundle: bundle, platform: platform, coreAIAvailable: Self.coreAIAvailable)
+    public init(bundle: URL, platform: LanguageModelManifest.Platform = Self.currentPlatform,
+                lifecycle: ModelLifecyclePolicy = .platformDefault) {
+        self.init(bundle: bundle, platform: platform, coreAIAvailable: Self.coreAIAvailable, lifecyclePolicy: lifecycle)
     }
 
     /// A model in a `LocalAssetStore` installation, typically one `ModelPreparation` produced
     /// (docs/model-preparation.md). Acquiring the lease verified every installed byte; the model holds it for its
     /// lifetime. An installation of anything other than a language bundle is unavailable (`bundleInvalid`).
-    public init(installation: AssetReadLease, platform: LanguageModelManifest.Platform = Self.currentPlatform) {
-        self.init(installation: installation, platform: platform, coreAIAvailable: Self.coreAIAvailable)
+    public init(installation: AssetReadLease, platform: LanguageModelManifest.Platform = Self.currentPlatform,
+                lifecycle: ModelLifecyclePolicy = .platformDefault) {
+        self.init(installation: installation, platform: platform, coreAIAvailable: Self.coreAIAvailable, lifecyclePolicy: lifecycle)
     }
 
-    init(installation: AssetReadLease, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool) {
-        self.init(bundle: installation.directory, platform: platform, coreAIAvailable: coreAIAvailable, installation: installation)
+    init(installation: AssetReadLease, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool,
+         lifecyclePolicy: ModelLifecyclePolicy = .platformDefault) {
+        self.init(bundle: installation.directory, platform: platform, coreAIAvailable: coreAIAvailable, installation: installation,
+                  lifecyclePolicy: lifecyclePolicy)
     }
 
     /// The backend choice with the OS check injected, so CPU tests on OS 27 reach the unsupported-OS branch.
-    init(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool, installation: AssetReadLease? = nil) {
+    init(bundle: URL, platform: LanguageModelManifest.Platform, coreAIAvailable: Bool, installation: AssetReadLease? = nil,
+         lifecyclePolicy: ModelLifecyclePolicy = .platformDefault) {
         var readiness = Self.readiness(bundle: bundle, platform: platform, coreAIAvailable: coreAIAvailable)
         if let installation, installation.manifest.executionContract != Self.installationContract,
            readiness.availability != .unavailable(.unsupportedOS) {
@@ -77,7 +84,8 @@ public struct AetherLanguageModel: Sendable {
                 "installation \(installation.installationID) is \(installation.manifest.executionContract), not a language bundle"))
         }
         self.init(bundle: bundle, availability: readiness.availability, supportsReasoning: readiness.manifest?.supportsReasoning ?? false,
-                  contextLength: readiness.manifest?.maximumContextLength ?? 0, installation: installation) {
+                  contextLength: readiness.manifest?.maximumContextLength ?? 0, installation: installation,
+                  lifecycle: ModelLifecycle(policy: lifecyclePolicy)) {
             try await Self.loadCoreAI(bundle: bundle, platform: platform)
         }
     }
@@ -87,20 +95,30 @@ public struct AetherLanguageModel: Sendable {
 
     /// A model over any backend (CPU tests drive the engine with a fake one).
     init(bundle: URL, availability: Availability, supportsReasoning: Bool, contextLength: Int,
-         installation: AssetReadLease? = nil, loader: @escaping LanguageModelResources.Loader) {
+         installation: AssetReadLease? = nil, lifecycle: ModelLifecycle = ModelLifecycle(policy: .platformDefault),
+         loader: @escaping LanguageModelResources.Loader) {
         self.bundle = bundle
         self.installation = installation
         self.availability = availability
         self.supportsReasoning = supportsReasoning
         self.contextLength = contextLength
-        resources = LanguageModelResources(availability: availability, loader: loader)
+        resources = LanguageModelResources(availability: availability, lifecycle: lifecycle, loader: loader)
     }
 
     /// Verifies and loads the model now rather than on the first request.
-    public func prewarm() async throws { _ = try await resources.loaded() }
+    public func prewarm() async throws { try await resources.prewarm() }
 
     /// Releases the backend and tokenizer. Waits for a running request; later requests load the model again.
     public func unload() async { await resources.unload() }
+
+    /// When this model unloads by itself.
+    public var lifecyclePolicy: ModelLifecyclePolicy { resources.lifecycle.policy }
+
+    /// Whether the model is loaded, loading, serving a request, or unloaded (and why).
+    public var lifecycleState: ModelLifecycleState { resources.lifecycle.current }
+
+    /// The lifecycle state, then each change. A slow reader sees the latest state.
+    public var lifecycleStates: AsyncStream<ModelLifecycleState> { resources.lifecycle.states }
 
     /// The OS, then the registration's structural checks and the template, with no hashing. The OS comes first: below
     /// macOS 27 or iOS 27 no backend runs, whatever the bundle holds.

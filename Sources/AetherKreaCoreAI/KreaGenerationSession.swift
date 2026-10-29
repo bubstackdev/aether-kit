@@ -38,6 +38,7 @@ public actor KreaGenerationSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
     private let runner: KreaRunner
+    private nonisolated let lifecycle: ModelLifecycle
     private let bundleFingerprint: String
     private var active: Task<Void, Never>?
     private let resources: KreaResourceAdmission?
@@ -47,39 +48,64 @@ public actor KreaGenerationSession {
     /// `gpu` opts into a host-shared ``GPUAdmission``: each operation waits for (or, in fail-fast mode, requires) a
     /// grant before any model work and holds it until the operation's native work has joined. With admission, the
     /// operation's resource reservation is taken after the grant, and `unload()` withdraws an operation still waiting.
+    /// `lifecycle` releases the models a session keeps between operations (the image encoder, and every model in
+    /// `resident` mode) after an idle period or under memory pressure (docs/model-lifecycle.md).
     public init(assets: KreaAssets, compute: ModelComputePolicy = .preferGPU, residency: KreaResidency = .balanced,
-                resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
+                resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
+                lifecycle: ModelLifecyclePolicy = .platformDefault) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
         self.gpu = gpu
+        let lifecycle = ModelLifecycle(policy: lifecycle)
+        self.lifecycle = lifecycle
         let factory = NativeKreaFactory(compute: compute, installation: nil)
-        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources, lifecycle: lifecycle), residency: residency)
+        attachRelease()
     }
 
     /// Holds installation protection through every stage and releases it after terminal joined unload.
     /// External specialization/refine models are not imported; undeclared paths refuse.
     public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
                 residency: KreaResidency = .balanced, resources: KreaResourceAdmission? = nil,
-                gpu: GPUAdmissionOwner? = nil) throws {
+                gpu: GPUAdmissionOwner? = nil, lifecycle: ModelLifecyclePolicy = .platformDefault) throws {
         let assets = try KreaAssets.open(in: installation)
         bundleFingerprint = assets.fingerprint
         self.resources = resources
         self.gpu = gpu
+        let lifecycle = ModelLifecycle(policy: lifecycle)
+        self.lifecycle = lifecycle
         let factory = NativeKreaFactory(compute: compute, installation: KreaInstallationAccess(installation))
-        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources, lifecycle: lifecycle), residency: residency)
+        attachRelease()
     }
 
     init(assets: KreaAssets, factory: any KreaModelFactory, residency: KreaResidency = .balanced,
-         resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
+         resources: KreaResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
+         lifecycle: ModelLifecycle = ModelLifecycle(policy: .platformDefault)) {
         bundleFingerprint = assets.fingerprint
         self.resources = resources
         self.gpu = gpu
-        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources), residency: residency)
+        self.lifecycle = lifecycle
+        runner = KreaRunner(assets: assets, factory: Self.factory(factory, resources: resources, lifecycle: lifecycle), residency: residency)
+        attachRelease()
     }
 
-    private static func factory(_ base: any KreaModelFactory, resources: KreaResourceAdmission?) -> any KreaModelFactory {
-        if let resources { return BudgetedKreaFactory(base: base, resources: resources) }
-        return base
+    private nonisolated func attachRelease() {
+        lifecycle.setRelease { [weak self] reason in await self?.release(reason) ?? false }
+    }
+
+    /// When this session's kept models unload by themselves.
+    public nonisolated var lifecyclePolicy: ModelLifecyclePolicy { lifecycle.policy }
+    /// Whether models are kept loaded, serving an operation, or unloaded (and why).
+    public nonisolated var lifecycleState: ModelLifecycleState { lifecycle.current }
+    /// The lifecycle state, then each change. A slow reader sees the latest state.
+    public nonisolated var lifecycleStates: AsyncStream<ModelLifecycleState> { lifecycle.states }
+
+    private static func factory(_ base: any KreaModelFactory, resources: KreaResourceAdmission?,
+                                lifecycle: ModelLifecycle) -> any KreaModelFactory {
+        let gated = GatedKreaFactory(base: base, admitLoad: lifecycle.admitLoad)
+        if let resources { return BudgetedKreaFactory(base: gated, resources: resources) }
+        return gated
     }
 
     /// Encodes once and releases the encoder before returning. Preparation always
@@ -215,16 +241,31 @@ public actor KreaGenerationSession {
         active = Task { _ = await task.result }
         pendingGPU = attempt
         state = .running
+        lifecycle.running()
         defer {
             active = nil
             pendingGPU = nil
             if state == .running { state = .ready }
         }
-        return try await withTaskCancellationHandler {
-            let value = try await task.value
-            try Task.checkCancellation()
-            return value
-        } onCancel: { task.cancel() }
+        let result = await withTaskCancellationHandler { await task.result } onCancel: { task.cancel() }
+        let holds = await runner.holdsModels
+        // Re-checked after the await: an unload that ran meanwhile has already reported.
+        if state == .running {
+            if holds { lifecycle.idle() } else { lifecycle.notLoaded() }
+        }
+        let value = try result.get()
+        try Task.checkCancellation()
+        return value
+    }
+
+    /// The lifecycle's idle or pressure release: unloads the models this session kept, if no operation is active, and
+    /// keeps the session ready. The state turns unloaded first, so an operation arriving during the unload reports
+    /// after it.
+    private func release(_ reason: ModelUnloadReason) async -> Bool {
+        guard state == .ready, active == nil, await runner.holdsModels, state == .ready, active == nil else { return false }
+        lifecycle.unloaded(reason)
+        await runner.release()
+        return true
     }
 
     /// Terminal close; waits for generation/preparation before releasing models.
@@ -235,6 +276,7 @@ public actor KreaGenerationSession {
         pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
+        lifecycle.unloaded(.requested)
         state = .closed
     }
 }
@@ -250,6 +292,18 @@ protocol KreaModelFactory: Sendable {
 }
 @available(macOS 27, iOS 27, *)
 extension KreaModelFactory { func finish() async {} }
+
+/// Refuses to open a model while memory pressure is critical (docs/model-lifecycle.md).
+@available(macOS 27, iOS 27, *)
+private struct GatedKreaFactory: KreaModelFactory {
+    let base: any KreaModelFactory
+    let admitLoad: @Sendable () throws -> Void
+    func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
+        try admitLoad()
+        return try await base.open(asset, frequentReshapes: frequentReshapes)
+    }
+    func finish() async { await base.finish() }
+}
 
 @available(macOS 27, iOS 27, *)
 private final class KreaInstallationAccess: Sendable {
@@ -532,6 +586,21 @@ private actor KreaRunner {
             denoisers = []
             throw error
         }
+    }
+
+    var holdsModels: Bool { encoder != nil || vision != nil || decoder != nil || imageEncoder != nil || !denoisers.isEmpty }
+
+    /// Unloads every kept model without finishing the factory, so later operations open them again. The fields are
+    /// cleared before any suspension, so an operation interleaving here opens fresh models.
+    func release() async {
+        let held = [encoder, vision, decoder, imageEncoder?.model].compactMap { $0 } + denoisers
+        encoder = nil
+        vision = nil
+        decoder = nil
+        imageEncoder = nil
+        denoisers = []
+        selectionIdentity = nil
+        for model in held { await model.unload() }
     }
 
     func unload() async {
