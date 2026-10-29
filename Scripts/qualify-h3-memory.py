@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Own the H3 memory gate: complete renders under 20 ms memory timelines, held to the 18 GiB bar.
 
-For each task (T2VA, FL2VA) and canvas, as owned process groups joined in order:
+For each task (T2VA, FL2VA, and FL2VA first+last when --last-keyframes gives a canvas a last frame) and canvas, as owned
+process groups joined in order:
 
   dump-TASK-CANVAS     aether-probe h3-profile-dump (CPU).
   render-TASK-CANVAS   aether-probe h3-memory-render (GPU, under ~/.cache/aether-kit/with-gpu-lock.sh): a complete
@@ -54,6 +55,9 @@ def main():
     ap.add_argument("--profile", type=Path, required=True)
     ap.add_argument("--prompt", type=Path, required=True)
     ap.add_argument("--keyframes", nargs="+", type=Path, required=True, help="first frames, one per canvas, named by their exact size")
+    ap.add_argument("--last-keyframes", nargs="*", type=Path, default=[],
+                    help="last frames, one per canvas, named by their exact size: each adds a first+last FL2VA render (fl2va-firstlast), "
+                         "whose two-frame keyframe-encoder peak the measured entry must cover")
     ap.add_argument("--canvases", default="960x544,544x960")
     ap.add_argument("--frames", type=int, default=120)
     ap.add_argument("--seed", type=int, default=1043)
@@ -73,7 +77,7 @@ def main():
     (work / "controllers").mkdir(parents=True, exist_ok=True)
     # Render pins: everything a render depends on. This script's evaluation is pinned separately (scriptSHA256), so
     # a revised evaluation can be rerun over the same joined renders without re-rendering.
-    files = [probe, root / "Package.swift", args.profile.resolve(), args.prompt.resolve(), *[k.resolve() for k in args.keyframes]]
+    files = [probe, root / "Package.swift", args.profile.resolve(), args.prompt.resolve(), *[k.resolve() for k in args.keyframes + args.last_keyframes]]
     for directory in ["Sources/AetherKit", "Sources/AetherCoreAI", "Sources/AetherH3", "Sources/AetherH3CoreAI", "Sources/AetherProbe"]:
         files.extend(sorted(p for p in (root / directory).rglob("*") if p.is_file() and p.name != "h3-measured-resources.json"))
     pins = {str(p): sha(p) for p in files}
@@ -98,16 +102,18 @@ def main():
     keyframes = {}
     for k in args.keyframes:
         keyframes[k.stem.split("-")[-1]] = k.resolve()
+    last_keyframes = {k.stem.split("-")[-1]: k.resolve() for k in args.last_keyframes}
 
     runs, records = [], {}
     for canvas in args.canvases.split(","):
         width, height = canvas.split("x")
-        for task in ("t2va", "fl2va"):
-            if task == "fl2va" and canvas not in keyframes:
+        for task in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()):
+            if task != "t2va" and canvas not in keyframes:
                 ap.error(f"no first frame for {canvas}")
             stem = f"{task}-{canvas}"
+            frames = {"t2va": [], "fl2va": [str(keyframes.get(canvas))], "fl2va-firstlast": [str(keyframes.get(canvas)), str(last_keyframes.get(canvas))]}[task]
             dump = [str(probe), "h3-profile-dump", str(args.profile), str(args.prompt), width, height, str(args.frames), str(args.seed), args.recipe,
-                    str(work / f"dump-{stem}")] + ([str(keyframes[canvas])] if task == "fl2va" else [])
+                    str(work / f"dump-{stem}")] + frames
             render = [str(args.gpu_lock), f"h3-memory-gate: {stem}", str(probe), "h3-memory-render", str(args.profile), str(work / f"dump-{stem}"),
                       str(work / f"render-{stem}")] + ([f"--spike-capture={args.spike_capture}"] if args.spike_capture else [])
             for name, command, budget in ((f"dump-{stem}", dump, 600), (f"render-{stem}", render, 7200)):
@@ -158,7 +164,10 @@ def main():
         timeline = json.loads(path.read_text())
         fields, samples = timeline["fields"], timeline["samples"]
         identities.add(fields["execution_identity"]); architectures.add(fields["device_architecture"])
-        if fields["task"] != task or f"{fields['width']}x{fields['height']}" != canvas:
+        # fl2va-firstlast renders report task fl2va with anchors "first,last".
+        anchors = {"t2va": None, "fl2va": "first", "fl2va-firstlast": "first,last"}[task]
+        if fields["task"] != task.split("-")[0] or (anchors and fields.get("anchors", "first") != anchors) \
+                or f"{fields['width']}x{fields['height']}" != canvas:
             raise RuntimeError(f"{path}: timeline is for {fields['task']} {fields['width']}x{fields['height']}, expected {task} {canvas}")
         per_stage = {}
         for s in samples:
@@ -222,6 +231,8 @@ def main():
     entry = dict(execution_identity=identities.pop() if len(identities) == 1 else None,
                  device_architecture=architectures.pop() if len(architectures) == 1 else None,
                  canvases=args.canvases.split(","), maximum_frames=int(json.loads(runs[0][2].read_text())["fields"]["frames"]),
+                 # The bundled encodingKeyframe peak is the two-frame (first+last) encode's: without --last-keyframes this
+                 # entry would fall back to the one-frame peak (see docs/evidence/h3-last-frame-memory-2026-10-29.json).
                  stage_peak_bytes={k: stage_peaks[k] for k in STAGES if k in stage_peaks}, operation_bytes=operation,
                  # The entry cites the record this run writes: docs/evidence/RECORD, or the work directory's gate.json.
                  evidence=f"docs/evidence/{args.record}" if args.record else str(work / "gate.json"))

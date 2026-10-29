@@ -12,7 +12,6 @@
       "<gpu-lock>": "the shared GPU lock wrapper",
       "<scratch>": "the run's scratch directory"
     },
-    "interruption": "This oracle run was stopped deliberately for a host pause after step 0; its step-0 comparisons are complete. Steps 1 and 7 are pending a rerun from the passed capture and replay.",
     "controlNote": "Control for the first+last record at the same canvas: the identical harness (qualify-h3-profile-trajectory.py at the same build and pins), the same steps (all eight), seed 1043, prompt, first keyframe and 0.02 relative-L2 bar; only the last keyframe is absent."
   },
   "schema": 1,

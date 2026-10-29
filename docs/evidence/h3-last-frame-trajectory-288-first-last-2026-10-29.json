@@ -11,8 +11,7 @@
       "<profile>": "the Kit-owned profile directory",
       "<gpu-lock>": "the shared GPU lock wrapper",
       "<scratch>": "the run's scratch directory"
-    },
-    "interruption": "This oracle run was stopped deliberately for a host pause after step 0; its step-0 comparisons are complete. Steps 1 and 7 are pending a rerun from the passed capture and replay."
+    }
   },
   "schema": 1,
   "gate": "h3-profile-trajectory-fl2va",
