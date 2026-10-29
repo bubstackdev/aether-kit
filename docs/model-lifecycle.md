@@ -24,7 +24,7 @@ when the model loads, when it unloads, and what it does when the device runs sho
      notice. So critical eases on whichever comes first:
      - a normal notice;
      - the app's available memory recovering to twice what it was at the notice (iOS);
-     - 60 s after the last critical notice.
+     - 60 s after the last critical notice (on a Mac, only once the kernel no longer reads critical).
 4. **No cross-model eviction** in this piece. A process-wide budget with least-recently-used eviction belongs with
    shared declared residency ([proposal](shared-residency-proposal.md)), which spans processes and Atelier.
 
