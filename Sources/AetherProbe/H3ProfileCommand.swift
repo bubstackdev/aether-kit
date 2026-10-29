@@ -108,13 +108,14 @@ enum H3ProfileCommand {
     static func run(_ arguments: [String]) async throws -> Bool {
         switch arguments.first {
         case "h3-profile-dump":
-            guard arguments.count == 9 || arguments.count == 10, let width = Int(arguments[3]), let height = Int(arguments[4]),
-                  let frames = Int(arguments[5]), let seed = UInt64(arguments[6]) else {
-                throw AetherError.invalidRequest("use h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png]")
+            guard (9...11).contains(arguments.count), let width = Int(arguments[3]), let height = Int(arguments[4]),
+                  let frames = Int(arguments[5]), let seed = UInt64(arguments[6]), arguments.count < 11 || arguments[10] != "-" else {
+                throw AetherError.invalidRequest("use h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png|-] [LAST_FRAME.png]")
             }
+            let image = { (index: Int) -> URL? in arguments.count > index && arguments[index] != "-" ? URL(fileURLWithPath: arguments[index]) : nil }
             try await dump(profile: URL(fileURLWithPath: arguments[1]), prompt: URL(fileURLWithPath: arguments[2]), width: width, height: height,
                            frames: frames, seed: seed, recipe: arguments[7], output: URL(fileURLWithPath: arguments[8]),
-                           firstFrame: arguments.count == 10 ? URL(fileURLWithPath: arguments[9]) : nil)
+                           firstFrame: image(9), lastFrame: image(10))
             return true
         case "h3-profile-run":
             guard arguments.count >= 6, ["--graphs", "--render"].contains(arguments[5]) else {
@@ -179,14 +180,16 @@ enum H3ProfileCommand {
     }
 
     private static func dump(profile url: URL, prompt: URL, width: Int, height: Int, frames: Int, seed: UInt64, recipe: String, output: URL,
-                             firstFrame: URL? = nil) async throws {
+                             firstFrame: URL? = nil, lastFrame: URL? = nil) async throws {
         let profile = try H3Profile(url: url)
         let text = try String(contentsOf: prompt, encoding: .utf8)
         let tokenizer = try await H3Tokenizer.open(directory: profile.tokenizer)
         let ids = try tokenizer.tokenIDs(text)
         let geometry = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
-        let keyframe = try firstFrame.map { try keyframe($0, width: width, height: height) }
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count), anchors: keyframe == nil ? [] : [.first])
+        let first = try firstFrame.map { try keyframe($0, width: width, height: height) }
+        let last = try lastFrame.map { try keyframe($0, width: width, height: height) }
+        let anchors = [(H3Anchor.first, first), (.last, last)].compactMap { $1 == nil ? nil : $0 }
+        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count), anchors: anchors)
         guard let schedule = profile.recipes[recipe]?.schedule else { throw AetherError.unsupported("profile has no \(recipe)") }
         let out = try H3RawDirectory(new: output)
         out.fields = ["profile_sha256": profile.manifestSHA256, "recipe": recipe, "seed": String(seed), "width": String(width),
@@ -207,16 +210,19 @@ enum H3ProfileCommand {
             try out.put("step\(step.index)_indices", ints(rows.indices, [layout.rows]))
             try out.put("step\(step.index)_adaln", ints(rows.adalnIndices, [layout.rows]))
         }
-        if let keyframe {
-            // The FL2VA stream: the keyframe's condition noise first, then the generated video rows and audio (the session's order).
-            out.fields["anchors"] = "first"
+        if !anchors.isEmpty {
+            // The FL2VA stream: each keyframe's condition noise in packed order (first, then last), then the generated
+            // video rows and audio (the session's order). `condition_noise` is [anchors, 24, 1, H, W], one draw per anchor.
+            out.fields["anchors"] = anchors.map { $0 == .first ? "first" : "last" }.joined(separator: ",")
             let frame = 24 * geometry.latentHeight * geometry.latentWidth, video = geometry.targetVideoRows * 96
-            let noise = try H3Noise.generate(seed: seed, count: frame + video + geometry.audioRows * 32)
-            try out.putBytes("keyframe", Data(keyframe.rgb), dtype: "uint8", shape: [height, width, 3])
-            try out.put("condition_noise", floats(Array(noise[..<frame]), [1, 24, 1, geometry.latentHeight, geometry.latentWidth]))
-            let target = try geometry.packVideo(FloatTensor(shape: geometry.videoLatentShape, values: Array(noise[frame..<(frame + video)])))
+            let leading = frame * anchors.count
+            let noise = try H3Noise.generate(seed: seed, count: leading + video + geometry.audioRows * 32)
+            if let first { try out.putBytes("keyframe", Data(first.rgb), dtype: "uint8", shape: [height, width, 3]) }
+            if let last { try out.putBytes("last_keyframe", Data(last.rgb), dtype: "uint8", shape: [height, width, 3]) }
+            try out.put("condition_noise", floats(Array(noise[..<leading]), [anchors.count, 24, 1, geometry.latentHeight, geometry.latentWidth]))
+            let target = try geometry.packVideo(FloatTensor(shape: geometry.videoLatentShape, values: Array(noise[leading..<(leading + video)])))
             try out.put("latents_video", floats(target.values, [1, geometry.targetVideoRows, 96]))
-            try out.put("latents_audio", floats(Array(noise[(frame + video)...]), [1, geometry.audioRows, 32]))
+            try out.put("latents_audio", floats(Array(noise[(leading + video)...]), [1, geometry.audioRows, 32]))
         } else {
             let initial = try geometry.initialLatents(seed: seed)
             try out.put("latents_video", initial.video); try out.put("latents_audio", initial.audio)
@@ -275,8 +281,9 @@ enum H3ProfileCommand {
                                                                    denoiser: TapeDenoiser(inner: stages.denoiser, tape: tape),
                                                                    video: stages.video, audio: stages.audio))
                 let stageClock = H3StageClock()
-                let first = try firstFrame(dump, geometry: geometry)
-                let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, firstFrame: first, audio: audio)
+                let keyframes = try dumpKeyframes(dump, geometry: geometry)
+                let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, firstFrame: keyframes.first, lastFrame: keyframes.last,
+                                                 audio: audio)
                 let result = try await timed("render") {
                     try await session.generate(request) { event in
                         await stageClock.record(event, memory: try? BenchmarkMemory.read(device: device))
@@ -305,8 +312,10 @@ enum H3ProfileCommand {
                 }
             } else {
                 let qualifier = try H3ProfileQualifier(profile: profile)
-                if let first = try firstFrame(dump, geometry: geometry) {
-                    // An FL2VA dump qualifies the keyframe encoder only; the other graphs are the T2VA ones, qualified on T2VA dumps.
+                let keyframes = try dumpKeyframes(dump, geometry: geometry)
+                if let first = keyframes.first ?? keyframes.last {
+                    // An FL2VA dump qualifies the keyframe encoder only, on its first keyframe (a last frame runs the same
+                    // graph); the other graphs are the T2VA ones, qualified on T2VA dumps.
                     for pass in ["cold", "warm"] {
                         let condition = try await timed("keyframe.\(pass)") { try await qualifier.keyframe(first, geometry: geometry) }
                         if pass == "warm" { try out.put("condition", condition) }
@@ -439,19 +448,18 @@ extension H3ProfileCommand {
 
 @available(macOS 27, iOS 27, *)
 extension H3ProfileCommand {
-    /// The dump's keyframe (FL2VA dumps), if any.
-    static func dumpKeyframe(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? { try firstFrame(dump, geometry: geometry) }
-}
-
-/// The dump's keyframe (FL2VA dumps), if any.
-@available(macOS 27, iOS 27, *)
-private func firstFrame(_ dump: URL, geometry: H3Geometry) throws -> H3Keyframe? {
-    struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
-    let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
-    guard let entry = manifest.tensors["keyframe"] else { return nil }
-    let data = try Data(contentsOf: dump.appendingPathComponent(entry.file))
-    guard h3SHA256(data) == entry.sha256 else { throw AetherError.invalidModel("dump keyframe changed on disk") }
-    return try H3Keyframe(width: geometry.width, height: geometry.height, rgb: [UInt8](data))
+    /// The dump's first and last keyframes (FL2VA dumps), each if present.
+    static func dumpKeyframes(_ dump: URL, geometry: H3Geometry) throws -> (first: H3Keyframe?, last: H3Keyframe?) {
+        struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
+        let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
+        func keyframe(_ name: String) throws -> H3Keyframe? {
+            guard let entry = manifest.tensors[name] else { return nil }
+            let data = try Data(contentsOf: dump.appendingPathComponent(entry.file))
+            guard h3SHA256(data) == entry.sha256 else { throw AetherError.invalidModel("dump \(name) changed on disk") }
+            return try H3Keyframe(width: geometry.width, height: geometry.height, rgb: [UInt8](data))
+        }
+        return (try keyframe("keyframe"), try keyframe("last_keyframe"))
+    }
 }
 
 /// Wall-clock per session stage, from the session's own events.

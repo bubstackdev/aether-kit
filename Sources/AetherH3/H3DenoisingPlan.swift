@@ -64,14 +64,20 @@ public struct H3DenoisingPlan: Sendable {
 public struct H3Latents: Sendable {
     public let video: H3TensorData
     public let audio: H3TensorData
-    public init(video: H3TensorData, audio: H3TensorData) throws {
+    /// The keyframe anchors whose condition rows lead `video`, in packed order (first, then last); empty for T2VA.
+    /// A last-only and a first-only request have the same row count, so the anchors travel with the latents.
+    public let anchors: [H3Anchor]
+    public init(video: H3TensorData, audio: H3TensorData, anchors: [H3Anchor] = []) throws {
         guard video.spec.scalarType == .float32, audio.spec.scalarType == .float32,
               video.spec.shape.count == 3, audio.spec.shape.count == 3,
               video.spec.shape[0] == 1, audio.spec.shape[0] == 1,
               video.spec.shape[2] == 96, audio.spec.shape[2] == 32 else {
             throw AetherError.invalidTensor("H3 latents must preserve F32 video/audio geometry")
         }
-        self.video = video; self.audio = audio
+        guard anchors.count <= 2, anchors.count < 2 || anchors == [.first, .last] else {
+            throw AetherError.invalidTensor("H3 keyframe anchors must be ordered first then last")
+        }
+        self.video = video; self.audio = audio; self.anchors = anchors
     }
     /// One scheduler step. The first `conditionVideoRows` video rows (the keyframe anchors) are never written, as in the
     /// pipeline, which steps only `latents[num_condition_video_rows:]`.
@@ -88,6 +94,6 @@ public struct H3Latents: Sendable {
             return try H3TensorData(spec: tensor.spec, bytes: values.withUnsafeBytes { Data($0) })
         }
         return try H3Latents(video: advance(.video, video, videoVelocity, frozen: conditionVideoRows * 96),
-                             audio: advance(.audio, audio, audioVelocity, frozen: 0))
+                             audio: advance(.audio, audio, audioVelocity, frozen: 0), anchors: anchors)
     }
 }

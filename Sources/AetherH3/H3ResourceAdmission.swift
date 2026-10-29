@@ -27,14 +27,14 @@ public struct H3ResourceAdmission: Sendable {
     }
 
     /// Before anything is reserved: the request is within the profile's limits, every stage it needs has an estimate
-    /// (the first-frame encoder for FL2VA, the audio decoder when audio is produced), and the operation plus the
+    /// (the keyframe encoder for FL2VA, the audio decoder when audio is produced), and the operation plus the
     /// largest of those stages fits the coordinator's capacity, so a run that can never fit is refused before any
     /// stage loads.
     func check(_ request: H3VideoRequest) throws {
         guard request.geometry.width * request.geometry.height <= maximumPixels,
               request.geometry.frames <= maximumFrames, request.prompt.utf8.count <= maximumPromptUTF8Bytes,
               !request.audio || stages[.decodingAudio] != nil,
-              request.firstFrame == nil || stages[.encodingKeyframe] != nil else {
+              !request.hasKeyframes || stages[.encodingKeyframe] != nil else {
             throw AetherError.invalidRequest("H3 request exceeds or lacks a stage in its resource profile")
         }
         let needed = operationBytes + peakStageBytes(request)
@@ -54,7 +54,7 @@ public struct H3ResourceAdmission: Sendable {
     /// The largest estimate among the stages `request` uses.
     func peakStageBytes(_ request: H3VideoRequest) -> UInt64 {
         var used: [H3VideoStage] = [.encoding, .denoising, .decodingVideo]
-        if request.firstFrame != nil { used.append(.encodingKeyframe) }
+        if request.hasKeyframes { used.append(.encodingKeyframe) }
         if request.audio { used.append(.decodingAudio) }
         return used.compactMap { stages[$0] }.max() ?? 0
     }

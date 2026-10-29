@@ -184,7 +184,9 @@ def layout(dump, model_config):
     from diffusers.schedulers.scheduling_minimax_h3 import MiniMaxH3Scheduler
     width, height, frames = int(dump.field("width")), int(dump.field("height")), int(dump.field("frames"))
     tokens = int(dump.field("tokens"))
-    anchors = ("first",) if dump.manifest["fields"].get("anchors") == "first" else ()
+    # The dump's keyframe anchors in packed order: "first", "last" or "first,last" (absent for T2VA).
+    anchors = tuple(a for a in dump.manifest["fields"].get("anchors", "").split(",") if a)
+    assert anchors in ((), ("first",), ("last",), ("first", "last")), anchors
     position_ids, token_tags, video_indices, audio_indices, text_indices, ncv, nca = MiniMaxH3PrepareLayoutStep.build_packed_sequence(
         torch.full((tokens,), 1, dtype=torch.long), video_latent_num_frames(frames, 17, 5), height // 16, width // 16,
         audio_latent_num_frames(frames), (1, 2, 2), mp.MINIMAX_H3_AUDIO_CHANNELS, mp.MINIMAX_H3_AUDIO_TAG, mp.MINIMAX_H3_VIDEO_TAG, anchors)
@@ -209,22 +211,39 @@ def layout(dump, model_config):
                 text_indices=text_indices, plan=plan, schedulers=schedulers, frames=frames, width=width, height=height), checks
 
 
-def condition_latents(dump):
-    """The pipeline's keyframe conditioning for the dump's first frame (`encode_vae_condition`, float32 VAE, default tiling)."""
+KEYFRAMES = ("keyframe", "last_keyframe")   # the dump's first and last frames, in packed order
+
+
+def condition_latents(dump, name="keyframe"):
+    """The pipeline's keyframe conditioning for one of the dump's keyframes (`encode_vae_condition`, float32 VAE, default
+    tiling). The first and the last frame use the same single-frame encode."""
     from diffusers import AutoencoderKLMiniMaxH3
     from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
     vae = AutoencoderKLMiniMaxH3.from_pretrained(STAGING / "exports/h3-fl2va/converted/vae", torch_dtype=torch.float32).eval()
-    pixels = dump.get("keyframe").permute(2, 0, 1)[None, :, None]
+    pixels = dump.get(name).permute(2, 0, 1)[None, :, None]
     with torch.inference_mode():
         return encode_vae_condition(vae, pixels, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 42)
+
+
+def condition_rows(dump, scheduler):
+    """The pipeline's FL2VA condition rows (`MiniMaxH3PrepareConditionLatentsStep`): each keyframe's latents noised to
+    t = 0.999 by its own draw (`condition_noise[i]`, in packed order) and patchified, first then last."""
+    from diffusers.modular_pipelines.minimax_h3.before_denoise import patchify_video_latents
+    names = [n for n in KEYFRAMES if dump.has(n)]
+    noise = dump.get("condition_noise")
+    assert noise.shape[0] == len(names), (noise.shape, names)
+    conditions = [condition_latents(dump, n) for n in names]
+    rows = [patchify_video_latents(scheduler.scale_noise(c, 0.999, noise[i:i + 1]), (1, 2, 2)) for i, c in enumerate(conditions)]
+    return torch.cat(conditions), torch.cat(rows)
 
 
 def graphs_part(dump, out, run, text, blocks=(0, 49)):
     from diffusers import AutoencoderKLMiniMaxH3, AutoencoderKLMiniMaxH3Audio
     report = out.manifest["report"]
-    if dump.has("keyframe"):   # FL2VA dumps qualify the keyframe encoder only (the probe's --graphs does the same)
+    keyframe = next((n for n in KEYFRAMES if dump.has(n)), None)
+    if keyframe:   # FL2VA dumps qualify the keyframe encoder only, on their first keyframe (the probe's --graphs does the same)
         t = time.monotonic()
-        out.put("condition", condition_latents(dump))
+        out.put("condition", condition_latents(dump, keyframe))
         report["condition_seconds"] = round(time.monotonic() - t, 1)
         out.save()
         return
@@ -300,12 +319,9 @@ def render_part(dump, out, text, tap_source=None):
     video_scheduler, audio_scheduler = shape["schedulers"]
     ncv = shape["ncv"]
     if ncv:
-        # The pipeline's FL2VA conditioning: noise the keyframe latents to t = 0.999 with the request's first draw, pack, lead.
-        from diffusers.modular_pipelines.minimax_h3.before_denoise import patchify_video_latents
-        condition = condition_latents(dump)
+        # The pipeline's FL2VA conditioning: noise each keyframe's latents to t = 0.999 with its own draw, pack, lead.
+        condition, rows = condition_rows(dump, video_scheduler)
         out.put("condition", condition)
-        noised = video_scheduler.scale_noise(condition, 0.999, dump.get("condition_noise"))
-        rows = patchify_video_latents(noised, (1, 2, 2))
         assert rows.shape[0] == ncv
         video = torch.cat([rows, video])
     kwargs = dict(token_tags=shape["token_tags"], position_ids=shape["position_ids"], video_indices=shape["video_indices"],
@@ -373,6 +389,17 @@ def trajectory_part(dump, out, run, steps, float32_diagnostic=False):
         comparisons[name] = row
         return native
 
+    if shape["ncv"] and 0 in steps and not float32_diagnostic:
+        # The step-0 input's condition rows against the pipeline's own: each keyframe through the original VAE encode,
+        # noised by the dump's draws and packed in anchor order.
+        name = "step0_latents_in_video"
+        native = capture.get(name)
+        assert sha(native) == hashes[name], f"{name} differs from the capture hash"
+        _, reference = condition_rows(dump, shape["schedulers"][0])
+        row = compare(native[0, :shape["ncv"]].float(), reference.float())
+        row.update(anchors=dump.manifest["fields"]["anchors"], rows=int(shape["ncv"]))
+        comparisons["step0/conditions"] = row
+        out.save()
     with torch.inference_mode():
         for s in steps:
             started = time.monotonic()
