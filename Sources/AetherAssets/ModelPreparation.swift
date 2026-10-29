@@ -148,6 +148,15 @@ public struct ModelPreparation: Sendable {
         throw CancellationError()
     }
 
+    /// Removes the entry's downloaded bytes. Fails with busy while a run is preparing it.
+    func discardDownloads(_ entry: ModelCatalogEntry) throws {
+        let id = try validated(entry)
+        let held: StoreLock
+        do { held = try store.downloadLock(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+        defer { withExtendedLifetime(held) {} }
+        try remove(store.downloads.appendingPathComponent(id, isDirectory: true))
+    }
+
     // MARK: - The run
 
     private func run(_ entry: ModelCatalogEntry, token: UUID,

@@ -14,8 +14,8 @@ idle. The gate is those pieces plus a sample app that proves them together.
 
 | Piece | Scope |
 | --- | --- |
-| Model preparation | Import, installation, progress, verification and download, shipping together. Builds on `AetherAssets`' staged SHA-256-verified installation and reader leases. Download transport is pluggable; Kit still distributes no weights. |
-| Typed readiness | One state per model that an app can show: not installed, installing (with progress), verifying, ready, unsupported (OS, platform, memory), failed. `availability` stays the no-load check. |
+| Model preparation | Implemented and qualified 2026-10-29 ([model preparation](model-preparation.md)). Import, installation, progress, verification and download, shipping together. Builds on `AetherAssets`' staged SHA-256-verified installation and reader leases. Download transport is pluggable; Kit still distributes no weights. |
+| Typed readiness | One state per model that an app can show: not installed, installing (with progress), verifying, ready, unsupported (OS, platform, memory), failed. `availability` stays the no-load check. Implemented 2026-10-29 ([model readiness](model-readiness.md)). |
 | Managed lifecycle | Lazy loading, idle unload and a memory-pressure response, for language, Qwen3-VL and the generative products. It folds in the language memory budget, which reloads a model once Core AI's retention spends its growth allowance. |
 | Sample app and API freeze | A sandboxed sample app that prepares, checks and runs a model through the facade, with its qualification published. The facade's API (`AetherLanguageModel`, sessions, structured output) freezes for 0.0.x: later 0.0.x releases add to it without breaking it. |
 

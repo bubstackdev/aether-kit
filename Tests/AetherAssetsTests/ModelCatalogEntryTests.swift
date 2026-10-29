@@ -85,6 +85,37 @@ struct ModelCatalogEntryTests {
         }
     }
 
+    @Test func requirementsRoundTripAndAreOptional() throws {
+        let source = ModelSource.https(base: URL(string: "https://example.com/m")!)
+        let requirements = try ModelRequirements(platforms: [.ios], memoryBytes: 4 << 30)
+        let entry = try ModelCatalogEntry(manifest: manifest(), source: source, requirements: requirements)
+        let json = try JSONEncoder().encode(entry)
+        #expect(try JSONDecoder().decode(ModelCatalogEntry.self, from: json).requirements == requirements)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect((object["requirements"] as? [String: Any])?["platforms"] as? [String] == ["ios"])
+        // An entry written before requirements existed has none, and encodes none.
+        let plain = try ModelCatalogEntry(manifest: manifest(), source: source)
+        let plainObject = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(plain)) as? [String: Any])
+        #expect(plainObject["requirements"] == nil)
+        #expect(try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONEncoder().encode(plain)).requirements == nil)
+    }
+
+    @Test func invalidRequirementsAreRefused() throws {
+        #expect(throws: AssetStoreError.self) { try ModelRequirements(platforms: []) }
+        #expect(throws: AssetStoreError.self) { try ModelRequirements(platforms: [.macos, .macos]) }
+        #expect(throws: AssetStoreError.self) { try ModelRequirements(memoryBytes: 0) }
+        let entry = try ModelCatalogEntry(manifest: manifest(), source: .https(base: URL(string: "https://example.com/m")!))
+        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(entry)) as? [String: Any])
+        object["requirements"] = ["platforms": [String]()]
+        #expect(throws: AssetStoreError.self) {
+            try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+        object["requirements"] = ["platforms": ["visionos"]]
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(ModelCatalogEntry.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+    }
+
     @Test func huggingFaceAuthorizationOnlyGoesToTheHub() {
         let headers = ModelPreparation.huggingFaceAuthorization(token: "hf_x")
         #expect(headers(URL(string: "https://huggingface.co/org/m/resolve/abc/f")!) == ["Authorization": "Bearer hf_x"])

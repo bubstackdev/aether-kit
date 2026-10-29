@@ -8,14 +8,18 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
     public let manifest: AssetManifest
     public let source: ModelSource
     public let displayName: String?
+    /// What a device needs to run the model, checked before anything downloads (docs/model-readiness.md). nil checks
+    /// nothing up front.
+    public let requirements: ModelRequirements?
 
-    public init(manifest: AssetManifest, source: ModelSource, displayName: String? = nil) throws {
+    public init(manifest: AssetManifest, source: ModelSource, displayName: String? = nil,
+                requirements: ModelRequirements? = nil) throws {
         schemaVersion = 1
-        self.manifest = manifest; self.source = source; self.displayName = displayName
+        self.manifest = manifest; self.source = source; self.displayName = displayName; self.requirements = requirements
         try validate()
     }
 
-    private enum CodingKeys: String, CodingKey { case schemaVersion, manifest, source, displayName }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, manifest, source, displayName, requirements }
 
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -23,6 +27,7 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
         manifest = try values.decode(AssetManifest.self, forKey: .manifest)
         source = try values.decode(ModelSource.self, forKey: .source)
         displayName = try values.decodeIfPresent(String.self, forKey: .displayName)
+        requirements = try values.decodeIfPresent(ModelRequirements.self, forKey: .requirements)
         try validate()
     }
 
@@ -33,6 +38,7 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
         }
         try manifest.validate()
         try source.validate()
+        try requirements?.validate()
         // Bounded so byte arithmetic (totals, free-space checks) can't overflow on a malformed entry.
         var total: UInt64 = 0
         for file in manifest.files {
@@ -54,6 +60,42 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
     public func url(for file: AssetFile) throws -> URL {
         guard manifest.files.contains(file) else { throw AssetStoreError.invalidManifest("file not in entry: \(file.path)") }
         return try source.url(for: file.path)
+    }
+}
+
+/// What a device needs to run a catalog entry's model. Readiness reports a device that falls short as unsupported
+/// before anything downloads (docs/model-readiness.md).
+public struct ModelRequirements: Codable, Sendable, Equatable {
+    public enum Platform: String, Codable, Sendable { case macos, ios }
+
+    /// The platforms the installation runs on; nil means any.
+    public let platforms: [Platform]?
+    /// The model's qualified peak memory footprint while it runs (loaded, and serving a request at its registered
+    /// context), in bytes; nil means unchecked. Compared with the device's physical memory on a Mac and with the app's
+    /// memory limit on iOS.
+    public let memoryBytes: UInt64?
+
+    public init(platforms: [Platform]? = nil, memoryBytes: UInt64? = nil) throws {
+        self.platforms = platforms; self.memoryBytes = memoryBytes
+        try validate()
+    }
+
+    private enum CodingKeys: String, CodingKey { case platforms, memoryBytes }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        platforms = try values.decodeIfPresent([Platform].self, forKey: .platforms)
+        memoryBytes = try values.decodeIfPresent(UInt64.self, forKey: .memoryBytes)
+        try validate()
+    }
+
+    public func validate() throws {
+        if let platforms, platforms.isEmpty || Set(platforms).count != platforms.count {
+            throw AssetStoreError.invalidManifest("requirements list no platform, or one twice")
+        }
+        guard memoryBytes.map({ $0 > 0 && $0 <= ModelCatalogEntry.maximumByteCount }) ?? true else {
+            throw AssetStoreError.invalidManifest("invalid memory requirement")
+        }
     }
 }
 

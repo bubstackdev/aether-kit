@@ -3,10 +3,10 @@ import CryptoKit
 import Foundation
 import Testing
 
-private func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
 /// A transport that serves files from a local directory, with scripted failures per (path, attempt).
-private final class ScriptedTransport: ModelTransport, @unchecked Sendable {
+final class ScriptedTransport: ModelTransport, @unchecked Sendable {
     enum Behavior { case normal, cutAfter(Int), corrupt, short, waitForRelease }
     struct Call: Equatable { let path: String; let resume: Bool; let offset: UInt64 }
 
@@ -62,7 +62,7 @@ private final class ScriptedTransport: ModelTransport, @unchecked Sendable {
 }
 
 /// A source bundle, its catalog entry and an empty store.
-private struct Fixture {
+struct PreparationFixture {
     let base = FileManager.default.temporaryDirectory.appendingPathComponent("preparation-\(UUID().uuidString)")
     var source: URL { base.appendingPathComponent("source") }
     var storeRoot: URL { base.appendingPathComponent("store") }
@@ -103,7 +103,7 @@ private func events(_ stream: AsyncStream<PreparationEvent>) async -> [Preparati
 
 struct ModelPreparationTests {
     @Test func anEmptyFileIsCreatedWithoutFetching() async throws {
-        let fixture = try Fixture(including: ["tokenizer/added_tokens.json": Data()])
+        let fixture = try PreparationFixture(including: ["tokenizer/added_tokens.json": Data()])
         defer { fixture.remove() }
         let preparation = try fixture.preparation(ScriptedTransport(source: fixture.source))
         let all = await events(preparation.prepare(fixture.entry))
@@ -115,7 +115,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aFreshEntryDownloadsInstallsAndCleansUp() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         let preparation = try fixture.preparation(transport)
@@ -141,7 +141,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aCutConnectionResumesFromTheBytesOnDisk() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         transport.on("model/main.mlirb", .cutAfter(128))
@@ -162,7 +162,7 @@ struct ModelPreparationTests {
     }
 
     @Test func bytesThatDontHashToTheEntryAreDroppedAndRefetched() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         transport.on("model/main.mlirb", .corrupt)
@@ -177,7 +177,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aFileOfTheWrongSizeIsRefused() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         transport.on("tokenizer/tokenizer.json", .short)
@@ -187,7 +187,7 @@ struct ModelPreparationTests {
     }
 
     @Test func notEnoughSpaceRefusesBeforeDownloading() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         let preparation = try fixture.preparation(transport, capacity: fixture.entry.byteCount)
@@ -197,7 +197,7 @@ struct ModelPreparationTests {
     }
 
     @Test func anInstalledEntryNeedsNoTransport() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let store = try LocalAssetStore(root: fixture.storeRoot)
         _ = try await store.install(fixture.entry.manifest, from: fixture.source)
@@ -209,7 +209,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aSecondRunForTheSameEntryIsBusy() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         transport.on("model/main.mlirb", .waitForRelease)
@@ -223,7 +223,7 @@ struct ModelPreparationTests {
     }
 
     @Test func stoppingTheIterationCancelsAndKeepsTheDownloadedBytes() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         transport.on("model/main.mlirb", .waitForRelease)
@@ -241,7 +241,7 @@ struct ModelPreparationTests {
     }
 
     @Test func anOversizedPartialFileRestarts() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         let preparation = try fixture.preparation(transport)
@@ -254,7 +254,7 @@ struct ModelPreparationTests {
     }
 
     @Test func cleanupRemovesDownloadAreasOfPublishedInstallations() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let store = try LocalAssetStore(root: fixture.storeRoot)
         let id = try await store.install(fixture.entry.manifest, from: fixture.source)
@@ -265,7 +265,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aFinishedRunLeavesNoRecordSoALockHeldElsewhereIsBusyAtOnce() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         let preparation = try fixture.preparation(transport)
@@ -282,7 +282,7 @@ struct ModelPreparationTests {
     }
 
     @Test func aCorruptInstallationIsRemovedAndPreparedAgain() async throws {
-        let fixture = try Fixture()
+        let fixture = try PreparationFixture()
         defer { fixture.remove() }
         let transport = ScriptedTransport(source: fixture.source)
         let preparation = try fixture.preparation(transport)

@@ -6,32 +6,51 @@ import AetherLanguage
 import AetherSpeech
 import Foundation
 
-/// `catalog-entry FAMILY BUNDLE SOURCE [--name NAME]`: prints the pinned catalog entry an app prepares the bundle from
-/// (docs/model-preparation.md). The manifest is the family's own installation contract, so the entry's installation
-/// ID equals the one a local install of the same bundle gets. CPU only: model streams are not reread.
+/// `catalog-entry FAMILY BUNDLE SOURCE [--name NAME] [--memory-bytes BYTES]`: prints the pinned catalog entry an app
+/// prepares the bundle from (docs/model-preparation.md). The manifest is the family's own installation contract, so the
+/// entry's installation ID equals the one a local install of the same bundle gets. A language entry requires its
+/// registration's platform; `--memory-bytes` declares the model's qualified peak footprint, which readiness compares
+/// with the device (docs/model-readiness.md). CPU only: model streams are not reread.
 @available(macOS 27, iOS 27, *)
 enum CatalogEntryCommand {
     static let usage = """
-        aether-probe catalog-entry language|kokoro|flux2|krea BUNDLE --https BASE_URL [--name NAME]
-        aether-probe catalog-entry language|kokoro|flux2|krea BUNDLE --huggingface OWNER/NAME@REVISION[/SUBDIRECTORY] [--name NAME]
+        aether-probe catalog-entry language|kokoro|flux2|krea BUNDLE --https BASE_URL [--name NAME] [--memory-bytes BYTES]
+        aether-probe catalog-entry language|kokoro|flux2|krea BUNDLE --huggingface OWNER/NAME@REVISION[/SUBDIRECTORY]
+            [--name NAME] [--memory-bytes BYTES]
         """
 
     static func run(_ arguments: [String]) throws -> Bool {
         guard arguments.first == "catalog-entry" else { return false }
-        guard arguments.count == 5 || (arguments.count == 7 && arguments[5] == "--name") else {
-            throw AetherError.invalidRequest("usage:\n" + usage)
+        guard arguments.count >= 5 else { throw AetherError.invalidRequest("usage:\n" + usage) }
+        var name: String?
+        var memoryBytes: UInt64?
+        var options = arguments.dropFirst(5)
+        while let flag = options.popFirst() {
+            guard let value = options.popFirst() else { throw AetherError.invalidRequest("usage:\n" + usage) }
+            switch flag {
+            case "--name" where name == nil: name = value
+            case "--memory-bytes" where memoryBytes == nil:
+                guard let bytes = UInt64(value) else { throw AetherError.invalidRequest("--memory-bytes takes a byte count") }
+                memoryBytes = bytes
+            default: throw AetherError.invalidRequest("usage:\n" + usage)
+            }
         }
         let bundle = URL(fileURLWithPath: arguments[2])
         let manifest: AssetManifest
+        var platforms: [ModelRequirements.Platform]?
         switch arguments[1] {
-        case "language": manifest = try LanguageModelManifest.installationManifest(in: bundle)
+        case "language":
+            manifest = try LanguageModelManifest.installationManifest(in: bundle)
+            platforms = [try LanguageModelManifest.load(from: bundle).platform == .ios ? .ios : .macos]
         case "kokoro": manifest = try KokoroAssets.open(at: bundle).installationManifest()
         case "flux2": manifest = try Flux2Assets.open(at: bundle).installationManifest()
         case "krea": manifest = try KreaAssets.open(at: bundle).installationManifest()
         default: throw AetherError.invalidRequest("unknown family \(arguments[1]); usage:\n" + usage)
         }
+        let requirements = platforms == nil && memoryBytes == nil
+            ? nil : try ModelRequirements(platforms: platforms, memoryBytes: memoryBytes)
         let entry = try ModelCatalogEntry(manifest: manifest, source: source(arguments[3], arguments[4]),
-                                          displayName: arguments.count == 7 ? arguments[6] : nil)
+                                          displayName: name, requirements: requirements)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         FileHandle.standardOutput.write(try encoder.encode(entry) + Data("\n".utf8))
