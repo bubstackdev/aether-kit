@@ -151,12 +151,12 @@ struct Flux2Harness {
 
     init(references: Bool = true, residency: Flux2Residency = .balanced, gates: [String: Flux2Gate] = [:],
          failures: Set<String> = [], resources: ((Flux2Assets) throws -> Flux2ResourceAdmission)? = nil,
-         gpu: GPUAdmissionOwner? = nil) throws {
+         gpu: GPUAdmissionOwner? = nil, lifecycle: ModelLifecycle = ModelLifecycle(policy: .platformDefault)) throws {
         fixture = try Flux2BundleFixture(references: references)
         assets = try Flux2Assets.open(at: fixture.root)
         factory = Flux2ScriptedFactory(log: log, gates: gates, failures: failures)
         session = Flux2GenerationSession(assets: assets, factory: factory, residency: residency, resources: try resources?(assets),
-                                         gpu: gpu)
+                                         gpu: gpu, lifecycle: lifecycle)
     }
 }
 
@@ -519,4 +519,51 @@ private func estimates(_ coordinator: ResourceCoordinator) -> (Flux2Assets) thro
     #expect(h.log.snapshot.filter { $0.hasPrefix("open:") }.isEmpty)
     #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
     other.release()
+}
+
+/// Waits until `states` reaches a state `done` accepts (at most 5 s).
+private func settleLifecycle(_ states: @escaping @Sendable () -> AsyncStream<ModelLifecycleState>,
+                             until done: @escaping @Sendable (ModelLifecycleState) -> Bool) async throws -> Bool {
+    try await withThrowingTaskGroup(of: Bool.self) { group in
+        group.addTask { for await state in states() where done(state) { return true }; return false }
+        group.addTask { try await Task.sleep(for: .seconds(5)); return false }
+        let reached = try await group.next() ?? false
+        group.cancelAll()
+        return reached
+    }
+}
+
+@Test func residentModelsReleaseUnderPressureAndTheSessionStaysUsable() async throws {
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let h = try Flux2Harness(residency: .resident, lifecycle: ModelLifecycle(policy: ModelLifecyclePolicy(idleUnloadAfter: nil), monitor: monitor))
+    defer { h.fixture.cleanup() }
+    let configuration = try Flux2Configuration(width: 32, height: 32, steps: 1)
+    _ = try await h.session.generate(configuration: configuration, prompt: prompt())
+    #expect(h.session.lifecycleState == .loaded)
+    h.log.clear()
+    monitor.deliver(.warning)
+    let session = h.session
+    #expect(try await settleLifecycle({ session.lifecycleStates }) { $0 == .unloaded(.memoryPressure) })
+    // The state turns unloaded first; the models close right after.
+    let deadline = ContinuousClock.now + .seconds(5)
+    while !h.log.snapshot.contains("close:textEncoder"), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(h.log.snapshot.allSatisfy { $0.hasPrefix("close:") } && h.log.snapshot.contains("close:textEncoder"))
+    #expect(await h.session.state == .ready)
+    monitor.deliver(.normal)
+    h.log.clear()
+    _ = try await h.session.generate(configuration: configuration, prompt: prompt())
+    #expect(h.log.snapshot.contains { $0.hasPrefix("open:") })
+    await h.session.unload()
+    #expect(h.session.lifecycleState == .unloaded(.requested))
+}
+
+@Test func criticalPressureRefusesToOpenFlux2Models() async throws {
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let h = try Flux2Harness(lifecycle: ModelLifecycle(policy: .manual, monitor: monitor))
+    defer { h.fixture.cleanup() }
+    monitor.deliver(.critical)
+    await #expect(throws: AetherError.memoryPressure) {
+        try await h.session.generate(configuration: try Flux2Configuration(width: 32, height: 32, steps: 1), prompt: prompt())
+    }
+    #expect(!h.log.snapshot.contains { $0.hasPrefix("open:") })
 }
