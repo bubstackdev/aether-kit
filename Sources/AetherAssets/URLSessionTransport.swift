@@ -91,12 +91,17 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, @unchec
             switch http.statusCode {
             case 206:
                 guard let header = http.value(forHTTPHeaderField: "Content-Range"),
-                      let range = URLSessionTransport.contentRange(header), range.start == offset,
+                      let range = URLSessionTransport.contentRange(header),
+                      range.start == offset || range.start == 0,
                       range.total.map({ $0 == request.file.byteCount }) ?? true else {
                     throw PreparationError.network("unexpected Content-Range for \(request.file.path)")
                 }
-                append = true
+                // A range from the start is the whole file: restart it, as for a 200.
+                append = range.start == offset && offset > 0
             case 200:
+                guard http.expectedContentLength < 0 || UInt64(http.expectedContentLength) == request.file.byteCount else {
+                    throw PreparationError.integrityMismatch(path: request.file.path)
+                }
                 append = false
             default:
                 throw PreparationError.http(status: http.statusCode, path: request.file.path)
@@ -120,6 +125,12 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, @unchec
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         let total: UInt64? = lock.withLock {
             guard failure == nil, let handle else { return nil }
+            // Never write past the pinned size: a server sending more is wrong, and could fill the disk.
+            guard written + UInt64(data.count) <= request.file.byteCount else {
+                failure = PreparationError.integrityMismatch(path: request.file.path)
+                dataTask.cancel()
+                return nil
+            }
             do {
                 try handle.write(contentsOf: data)
                 written += UInt64(data.count)

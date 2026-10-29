@@ -33,7 +33,17 @@ public struct ModelCatalogEntry: Codable, Sendable, Equatable {
         }
         try manifest.validate()
         try source.validate()
+        // Bounded so byte arithmetic (totals, free-space checks) can't overflow on a malformed entry.
+        var total: UInt64 = 0
+        for file in manifest.files {
+            let (sum, overflow) = total.addingReportingOverflow(file.byteCount)
+            guard !overflow, sum <= Self.maximumByteCount else { throw AssetStoreError.invalidManifest("entry exceeds the size limit") }
+            total = sum
+        }
     }
+
+    /// 4 PiB: far above any model, far below UInt64 overflow in preparation's arithmetic.
+    static let maximumByteCount: UInt64 = 1 << 52
 
     public var installationID: String { get throws { try manifest.installationID } }
 

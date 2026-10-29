@@ -62,4 +62,20 @@ struct BackgroundTransportTests {
         }
         #expect(try Data(contentsOf: target) == data.prefix(200))
     }
+
+    @Test func aDownloadLargerThanThePinnedRemainderIsRefused() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("f.bin")
+        let record = BackgroundTaskRecord(destination: target.path, offset: 0, byteCount: 600, path: "f.bin")
+        #expect(throws: PreparationError.integrityMismatch(path: "f.bin")) {
+            try record.apply(downloadedFile: downloaded(data + Data([1])), response: response(200))
+        }
+        #expect(!FileManager.default.fileExists(atPath: target.path))
+    }
+
+    @Test func resumeDataLivesBesideTheFileKeyedByOffset() {
+        let record = BackgroundTaskRecord(destination: "/store/downloads/x/files/model/main.mlirb", offset: 128, byteCount: 9, path: "p")
+        #expect(record.resumeDataURL.path == "/store/downloads/x/files/model/.main.mlirb.resume-128")
+    }
 }

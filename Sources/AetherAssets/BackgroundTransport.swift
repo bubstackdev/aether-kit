@@ -1,42 +1,57 @@
 import Foundation
 
 /// HTTPS through a background `URLSession`, so the system carries transfers on while an iOS app is suspended or
-/// terminated (and in macOS apps). One download task per file. A partial file resumes with a `Range` request, as in
-/// the foreground transport: a `206` whose `Content-Range` starts at the file's size is appended, a `200` replaces the
-/// file, anything else fails. Every task records where its bytes belong, so a task that finishes while no `fetch` is
-/// waiting (the app was relaunched to receive it) still lands in the download area, and the next preparation run finds
-/// the file complete. A later `fetch` for a file whose task is still running joins that task instead of starting
-/// another.
+/// terminated (and in macOS apps). One download task per file.
+///
+/// - **Redirects.** Background sessions follow redirects themselves and never consult a delegate, so the transport
+///   resolves them first, in the foreground: it follows each redirect on the original host with the app's headers and
+///   stops at the first other host. The background task then fetches that URL, with the app's headers only if it is
+///   still on the original host. A token for a model host never reaches the CDN it redirects to.
+/// - **Resuming.** A partial file resumes with a `Range` request: a `206` whose `Content-Range` starts at the file's
+///   size is appended, a `200` replaces the file, a `416` for a partial file restarts it once. A stopped or failed task
+///   keeps the system's resume data beside the file, and the next task for the same bytes continues from it.
+/// - **Relaunches.** Every task records where its bytes belong, so a task that finishes while no `fetch` is waiting
+///   (the app was relaunched to receive it) still lands in the download area, and the next preparation run finds the
+///   file complete. A later `fetch` for a file whose task is still running joins that task instead of starting another.
 ///
 /// The app connects the transport to its lifecycle in one place (docs/model-preparation.md):
 /// ```swift
-/// // UIApplicationDelegate.application(_:handleEventsForBackgroundURLSession:completionHandler:),
-/// // or SwiftUI's .backgroundTask(.urlSession(identifier)) { ... }
+/// // UIApplicationDelegate.application(_:handleEventsForBackgroundURLSession:completionHandler:)
 /// BackgroundTransport.handleEvents(identifier: identifier, completionHandler: completionHandler)
+/// // or SwiftUI: .backgroundTask(.urlSession(identifier)) { await BackgroundTransport.handleEvents(identifier: identifier) }
 /// ```
 public final class BackgroundTransport: ModelTransport, Sendable {
     public let identifier: String
     private let coordinator: BackgroundCoordinator
+    private let resolver: URLSessionConfiguration
 
     /// `configure` adjusts the background configuration before the session is created (for example
-    /// `isDiscretionary` or `allowsCellularAccess`). Every transport with the same identifier shares one session; the
-    /// first one created decides its configuration.
-    public init(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void = { _ in }) {
+    /// `isDiscretionary` or `allowsCellularAccess`). Every transport with the same identifier shares one session: pass
+    /// the same `configure` here and to ``handleEvents(identifier:configure:completionHandler:)``, since whichever runs
+    /// first in a process creates the session.
+    public convenience init(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void = { _ in }) {
+        self.init(identifier: identifier, configure: configure, resolver: .ephemeral)
+    }
+
+    init(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void, resolver: URLSessionConfiguration) {
         self.identifier = identifier
+        self.resolver = resolver
         coordinator = BackgroundCoordinator.shared(identifier: identifier, configure: configure)
     }
 
     /// Hands the system's background-session events to Kit. Call it from the app's background-session hook; Kit calls
     /// `completionHandler` on the main queue once every event for the session has been delivered.
-    public static func handleEvents(identifier: String, completionHandler: @escaping @Sendable () -> Void) {
-        BackgroundCoordinator.shared(identifier: identifier, configure: { _ in }).storeEventsCompletion(completionHandler)
+    public static func handleEvents(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void = { _ in },
+                                    completionHandler: @escaping @Sendable () -> Void) {
+        BackgroundCoordinator.shared(identifier: identifier, configure: configure, eventsCompletion: completionHandler)
     }
 
-    /// The async form, for SwiftUI's `.backgroundTask(.urlSession(identifier)) { await BackgroundTransport.handleEvents(identifier: identifier) }`:
-    /// returns once every event for the session has been delivered.
-    public static func handleEvents(identifier: String) async {
+    /// The async form, for SwiftUI's `.backgroundTask(.urlSession(identifier))`: returns once every event for the
+    /// session has been delivered.
+    public static func handleEvents(identifier: String,
+                                    configure: @escaping @Sendable (URLSessionConfiguration) -> Void = { _ in }) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            handleEvents(identifier: identifier) { continuation.resume() }
+            handleEvents(identifier: identifier, configure: configure) { continuation.resume() }
         }
     }
 
@@ -46,9 +61,65 @@ public final class BackgroundTransport: ModelTransport, Sendable {
             throw PreparationError.invalidEntry("not an HTTPS URL: \(request.url.absoluteString)")
         }
         let offset = resume ? URLSessionTransport.size(of: destination) : 0
+        do {
+            try await download(request, to: destination, from: offset, progress: progress)
+        } catch let PreparationError.http(status, _) where status == 416 && offset > 0 {
+            // The server can't satisfy the range: the partial file doesn't match what it holds. Start over.
+            try? FileManager.default.removeItem(at: destination)
+            try await download(request, to: destination, from: 0, progress: progress)
+        }
+    }
+
+    private func download(_ request: TransportRequest, to destination: URL, from offset: UInt64,
+                          progress: @escaping @Sendable (UInt64) -> Void) async throws {
         let record = BackgroundTaskRecord(destination: BackgroundTaskRecord.portablePath(destination.path), offset: offset,
                                           byteCount: request.file.byteCount, path: request.file.path)
-        try await coordinator.download(request, record: record, progress: progress)
+        try await coordinator.download(record: record, progress: progress) {
+            try await RedirectResolver.resolve(request, configuration: resolver)
+        }
+    }
+}
+
+/// Follows redirects in the foreground with the app's headers while they stay on the original host, and returns the
+/// URL a background task should fetch and the headers it may carry there.
+enum RedirectResolver {
+    static let maximumHops = 8
+
+    static func resolve(_ request: TransportRequest, configuration: URLSessionConfiguration) async throws -> (url: URL, headers: [String: String]) {
+        guard !request.headers.isEmpty else { return (request.url, [:]) }  // nothing to protect: let the system follow
+        let host = request.url.host?.lowercased()
+        let session = URLSession(configuration: configuration, delegate: NoRedirects(), delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
+        var url = request.url
+        for _ in 0..<maximumHops {
+            guard url.host?.lowercased() == host else { return (url, [:]) }
+            var probe = URLRequest(url: url)
+            probe.httpMethod = "HEAD"
+            for (name, value) in request.headers { probe.setValue(value, forHTTPHeaderField: name) }
+            let (_, response) = try await session.data(for: probe)
+            guard let http = response as? HTTPURLResponse else { throw PreparationError.network("not an HTTP response") }
+            switch http.statusCode {
+            case 200..<300:
+                return (url, request.headers)
+            case 300..<400:
+                guard let location = http.value(forHTTPHeaderField: "Location"),
+                      let next = URL(string: location, relativeTo: url)?.absoluteURL,
+                      next.scheme?.lowercased() == "https" else {
+                    throw PreparationError.network("redirect away from HTTPS for \(request.file.path)")
+                }
+                url = next
+            default:
+                throw PreparationError.http(status: http.statusCode, path: request.file.path)
+            }
+        }
+        throw PreparationError.network("too many redirects for \(request.file.path)")
+    }
+
+    private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+        func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                        newRequest: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+            completionHandler(nil)
+        }
     }
 }
 
@@ -66,9 +137,14 @@ struct BackgroundTaskRecord: Codable, Equatable {
             : URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(destination)
     }
 
+    /// The system's resume data for this task's bytes, kept beside the file until a task continues from it.
+    var resumeDataURL: URL {
+        destinationURL.deletingLastPathComponent().appendingPathComponent(".\(destinationURL.lastPathComponent).resume-\(offset)")
+    }
+
     static func portablePath(_ absolute: String) -> String {
-        let home = URL(fileURLWithPath: NSHomeDirectory()).standardizedFileURL.path + "/"
-        let path = URL(fileURLWithPath: absolute).standardizedFileURL.path
+        let home = URL(fileURLWithPath: NSHomeDirectory()).standardizedFileURL.resolvingSymlinksInPath().path + "/"
+        let path = URL(fileURLWithPath: absolute).standardizedFileURL.resolvingSymlinksInPath().path
         return path.hasPrefix(home) ? String(path.dropFirst(home.count)) : path
     }
 
@@ -81,11 +157,13 @@ struct BackgroundTaskRecord: Codable, Equatable {
         self = value
     }
 
-    /// Moves a finished download into place: appended after a matching `206`, replacing the file after a `200`.
-    /// Runs inside the delegate callback, before the system deletes `location`.
+    /// Moves a finished download into place: appended after a matching `206`, replacing the file after a `200`. A
+    /// download larger than the pinned remainder is refused. Runs inside the delegate callback, before the system
+    /// deletes `location`.
     func apply(downloadedFile location: URL, response: URLResponse?) throws {
         guard let http = response as? HTTPURLResponse else { throw PreparationError.network("not an HTTP response") }
         let target = destinationURL
+        let received = URLSessionTransport.size(of: location)
         switch http.statusCode {
         case 206:
             guard let header = http.value(forHTTPHeaderField: "Content-Range"),
@@ -94,6 +172,7 @@ struct BackgroundTaskRecord: Codable, Equatable {
                   URLSessionTransport.size(of: target) == offset else {
                 throw PreparationError.network("unexpected Content-Range for \(path)")
             }
+            guard received <= byteCount - offset else { throw PreparationError.integrityMismatch(path: path) }
             let output = try FileHandle(forWritingTo: target)
             defer { try? output.close() }
             try output.seekToEnd()
@@ -102,6 +181,7 @@ struct BackgroundTaskRecord: Codable, Equatable {
             while let chunk = try input.read(upToCount: 4 << 20), !chunk.isEmpty { try output.write(contentsOf: chunk) }
             try output.synchronize()
         case 200:
+            guard received <= byteCount else { throw PreparationError.integrityMismatch(path: path) }
             try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
                                                     attributes: [.posixPermissions: 0o700])
             if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
@@ -122,10 +202,22 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
     private static let registryLock = NSLock()
     nonisolated(unsafe) private static var registry: [String: BackgroundCoordinator] = [:]
 
-    static func shared(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void) -> BackgroundCoordinator {
+    /// The coordinator for `identifier`, creating it (and its session) on first use. An events completion is stored
+    /// before the session exists, so events the system delivers as soon as the session is created can't miss it.
+    @discardableResult
+    static func shared(identifier: String, configure: @escaping @Sendable (URLSessionConfiguration) -> Void,
+                       eventsCompletion: (@Sendable () -> Void)? = nil) -> BackgroundCoordinator {
         registryLock.withLock {
-            if let existing = registry[identifier] { return existing }
-            let coordinator = BackgroundCoordinator(identifier: identifier, configure: configure)
+            if let existing = registry[identifier] {
+                if let eventsCompletion { existing.storeEventsCompletion(eventsCompletion) }
+                return existing
+            }
+            let coordinator = BackgroundCoordinator()
+            if let eventsCompletion { coordinator.storeEventsCompletion(eventsCompletion) }
+            let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
+            configuration.sessionSendsLaunchEvents = true
+            configure(configuration)
+            coordinator.session = URLSession(configuration: configuration, delegate: coordinator, delegateQueue: nil)
             registry[identifier] = coordinator
             return coordinator
         }
@@ -133,34 +225,49 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
 
     private let lock = NSLock()
     private var session: URLSession!
-    private var waiters: [Int: [Waiter]] = [:]          // by task identifier
-    private var outcomes: [Int: (any Error)?] = [:]     // a finished download's result, until didComplete
-    private var eventsCompletion: (@Sendable () -> Void)?
+    private var waiters: [Int: [Waiter]] = [:]            // by task identifier
+    private var applied: [Int: (any Error)?] = [:]        // a finished download's result, until didComplete
+    private var failures: [Int: any Error] = [:]          // a task cancelled for a reason of ours
+    private var outcomes: [Int: (any Error)?] = [:]       // completed tasks, for a fetch that joins late
+    private var eventsCompletions: [@Sendable () -> Void] = []
+    private var eventsFinishedUnclaimed = false
 
-    private init(identifier: String, configure: @Sendable (URLSessionConfiguration) -> Void) {
-        super.init()
-        let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
-        configuration.sessionSendsLaunchEvents = true
-        configure(configuration)
-        session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+    private override init() { super.init() }
+
+    func storeEventsCompletion(_ completion: @escaping @Sendable () -> Void) {
+        let callNow: Bool = lock.withLock {
+            if eventsFinishedUnclaimed { eventsFinishedUnclaimed = false; return true }
+            eventsCompletions.append(completion)
+            return false
+        }
+        if callNow { DispatchQueue.main.async { completion() } }
     }
 
-    func storeEventsCompletion(_ completion: @escaping @Sendable () -> Void) { lock.withLock { eventsCompletion = completion } }
-
-    func download(_ request: TransportRequest, record: BackgroundTaskRecord,
-                  progress: @escaping @Sendable (UInt64) -> Void) async throws {
-        let task = await existingTask(for: record) ?? newTask(request, record: record)
+    func download(record: BackgroundTaskRecord, progress: @escaping @Sendable (UInt64) -> Void,
+                  resolve: () async throws -> (url: URL, headers: [String: String])) async throws {
+        let task: URLSessionTask
+        if let existing = await existingTask(for: record) { task = existing } else { task = try newTask(record, resolved: await resolve()) }
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-                let finished: Bool = lock.withLock {
-                    if task.state == .completed { return true }
+                let outcome: (any Error)?? = lock.withLock {
+                    if let outcome = outcomes[task.taskIdentifier] { return .some(outcome) }
                     waiters[task.taskIdentifier, default: []].append(Waiter(continuation: continuation, progress: progress))
-                    return false
+                    return .none
                 }
-                if finished { continuation.resume() }  // the file landed before we joined; preparation checks its size
-                if task.state == .suspended { task.resume() }
+                switch outcome {
+                case .some(.some(let error)): continuation.resume(throwing: error)
+                case .some(.none): continuation.resume()
+                case .none: if task.state == .suspended { task.resume() }
+                }
             }
-        } onCancel: { task.cancel() }
+        } onCancel: {
+            // Keep what the system downloaded, so the next task for these bytes continues from it.
+            if let download = task as? URLSessionDownloadTask {
+                download.cancel(byProducingResumeData: { data in if let data { try? data.write(to: record.resumeDataURL) } })
+            } else {
+                task.cancel()
+            }
+        }
     }
 
     /// A running task from this or an earlier launch that writes the same file from the same offset.
@@ -175,12 +282,18 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
         }
     }
 
-    private func newTask(_ request: TransportRequest, record: BackgroundTaskRecord) -> URLSessionTask {
-        var urlRequest = URLRequest(url: request.url)
-        for (name, value) in request.headers { urlRequest.setValue(value, forHTTPHeaderField: name) }
-        if record.offset > 0 { urlRequest.setValue("bytes=\(record.offset)-", forHTTPHeaderField: "Range") }
-        urlRequest.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-        let task = session.downloadTask(with: urlRequest)
+    private func newTask(_ record: BackgroundTaskRecord, resolved: (url: URL, headers: [String: String])) throws -> URLSessionTask {
+        let task: URLSessionDownloadTask
+        if let data = try? Data(contentsOf: record.resumeDataURL) {
+            try? FileManager.default.removeItem(at: record.resumeDataURL)
+            task = session.downloadTask(withResumeData: data)
+        } else {
+            var urlRequest = URLRequest(url: resolved.url)
+            for (name, value) in resolved.headers { urlRequest.setValue(value, forHTTPHeaderField: name) }
+            if record.offset > 0 { urlRequest.setValue("bytes=\(record.offset)-", forHTTPHeaderField: "Range") }
+            urlRequest.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+            task = session.downloadTask(with: urlRequest)
+        }
         task.taskDescription = record.encoded
         return task
     }
@@ -190,8 +303,14 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let record = BackgroundTaskRecord(encoded: downloadTask.taskDescription) else { return }
-        let total = record.offset + UInt64(max(0, totalBytesWritten))
-        for waiter in lock.withLock({ waiters[downloadTask.taskIdentifier] ?? [] }) { waiter.progress(total) }
+        let written = UInt64(max(0, totalBytesWritten))
+        guard written <= record.byteCount - min(record.offset, record.byteCount) else {
+            // More than the pinned remainder: wrong, and it could fill the disk.
+            lock.withLock { failures[downloadTask.taskIdentifier] = PreparationError.integrityMismatch(path: record.path) }
+            downloadTask.cancel()
+            return
+        }
+        for waiter in lock.withLock({ waiters[downloadTask.taskIdentifier] ?? [] }) { waiter.progress(record.offset + written) }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
@@ -202,34 +321,36 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
         } else {
             outcome = PreparationError.network("background task without a record")
         }
-        lock.withLock { outcomes[downloadTask.taskIdentifier] = .some(outcome) }
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
-                    newRequest: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
-        guard let url = newRequest.url, url.scheme?.lowercased() == "https" else { completionHandler(nil); return }
-        // As in the foreground transport: carry the range, and the app's headers only while the host is unchanged.
-        var redirected = URLRequest(url: url)
-        let original = task.originalRequest
-        let sameHost = url.host?.lowercased() == original?.url?.host?.lowercased()
-        for (name, value) in original?.allHTTPHeaderFields ?? [:]
-            where sameHost || ["range", "accept-encoding"].contains(name.lowercased()) {
-            redirected.setValue(value, forHTTPHeaderField: name)
-        }
-        completionHandler(redirected)
+        lock.withLock { applied[downloadTask.taskIdentifier] = .some(outcome) }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
+        let record = BackgroundTaskRecord(encoded: task.taskDescription)
+        // A failed transfer keeps the system's resume data for the next task.
+        if let data = (error as NSError?)?.userInfo[NSURLSessionDownloadTaskResumeData] as? Data, let record {
+            try? data.write(to: record.resumeDataURL)
+        }
         let (pending, outcome): ([Waiter], (any Error)?) = lock.withLock {
             let pending = waiters.removeValue(forKey: task.taskIdentifier) ?? []
-            let finished = outcomes.removeValue(forKey: task.taskIdentifier)
-            if let error = error as? URLError, error.code == .cancelled { return (pending, CancellationError()) }
-            if let error { return (pending, PreparationError.network((error as NSError).localizedDescription)) }
-            if let finished { return (pending, finished) }
-            // A redirect refused, or a response without a body: report the status.
-            let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
-            let path = BackgroundTaskRecord(encoded: task.taskDescription)?.path ?? ""
-            return (pending, PreparationError.http(status: status, path: path))
+            let finished = applied.removeValue(forKey: task.taskIdentifier)
+            let ours = failures.removeValue(forKey: task.taskIdentifier)
+            let outcome: (any Error)?
+            if let ours {
+                outcome = ours
+            } else if let error = error as? URLError, error.code == .cancelled {
+                outcome = CancellationError()
+            } else if let error {
+                outcome = PreparationError.network((error as NSError).localizedDescription)
+            } else if let finished {
+                outcome = finished
+            } else {
+                // No body was delivered (an error status): report it.
+                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+                outcome = PreparationError.http(status: status, path: record?.path ?? "")
+            }
+            outcomes[task.taskIdentifier] = .some(outcome)
+            if outcomes.count > 256, let oldest = outcomes.keys.min() { outcomes[oldest] = nil }
+            return (pending, outcome)
         }
         for waiter in pending {
             if let outcome { waiter.continuation.resume(throwing: outcome) } else { waiter.continuation.resume() }
@@ -237,10 +358,12 @@ final class BackgroundCoordinator: NSObject, URLSessionDownloadDelegate, @unchec
     }
 
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        guard let completion = lock.withLock({ () -> (@Sendable () -> Void)? in
-            defer { eventsCompletion = nil }
-            return eventsCompletion
-        }) else { return }
-        DispatchQueue.main.async { completion() }
+        let completions: [@Sendable () -> Void] = lock.withLock {
+            defer { eventsCompletions = [] }
+            if eventsCompletions.isEmpty { eventsFinishedUnclaimed = true }
+            return eventsCompletions
+        }
+        guard !completions.isEmpty else { return }
+        DispatchQueue.main.async { completions.forEach { $0() } }
     }
 }

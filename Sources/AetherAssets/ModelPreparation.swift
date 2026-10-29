@@ -106,11 +106,15 @@ public struct ModelPreparation: Sendable {
     /// bytes stay on disk for the next run.
     public func prepare(_ entry: ModelCatalogEntry) -> AsyncStream<PreparationEvent> {
         let id = try? entry.installationID
+        let token = UUID()
         return AsyncStream { continuation in
+            // The worker registers itself and removes its own record when it ends; nothing else writes the registry,
+            // so a stream dropped after its terminal event can't leave a stale record behind.
+            if let id { Self.runs.register(id, token) }
             let worker = Task {
                 let event: PreparationEvent
                 do {
-                    event = .installed(installationID: try await run(entry) { continuation.yield($0) })
+                    event = .installed(installationID: try await run(entry, token: token) { continuation.yield($0) })
                 } catch is CancellationError {
                     event = .cancelled
                 } catch let error as PreparationError {
@@ -119,20 +123,17 @@ public struct ModelPreparation: Sendable {
                     event = Task.isCancelled ? .cancelled : .failed(Self.mapped(error))
                 }
                 // `run` has released the download lock by now, so a run waiting on this one can take it.
-                if let id { Self.stopping.withLock { _ = $0.remove(id) } }
+                if let id { Self.runs.remove(id, token) }
                 continuation.yield(event)
                 continuation.finish()
             }
-            continuation.onTermination = { termination in
-                if case .cancelled = termination, let id { Self.stopping.withLock { _ = $0.insert(id) } }
-                worker.cancel()
-            }
+            if let id { Self.runs.attach(id, token, worker) }
+            continuation.onTermination = { _ in worker.cancel() }
         }
     }
 
-    /// Installations whose run the consumer stopped and whose worker hasn't finished unwinding. A new run for one of
-    /// them waits for the old run to release its lock instead of reporting busy, so cancel-then-retry works.
-    private static let stopping = LockedSet()
+    /// Every run this process has started and not yet finished, by installation.
+    static let runs = RunRegistry()
 
     /// `prepare` for callers that only need the result: the installation ID, or the run's error.
     public func install(_ entry: ModelCatalogEntry) async throws -> String {
@@ -149,17 +150,15 @@ public struct ModelPreparation: Sendable {
 
     // MARK: - The run
 
-    private func run(_ entry: ModelCatalogEntry, emit: @escaping @Sendable (PreparationEvent) -> Void) async throws -> String {
+    private func run(_ entry: ModelCatalogEntry, token: UUID,
+                     emit: @escaping @Sendable (PreparationEvent) -> Void) async throws -> String {
         let id = try validated(entry)
         emit(.checking)
-        if store.isInstalled(id) {
-            // An existing installation is trusted only after its bytes are hashed, as a retried install would.
-            emit(.installing(bytesDone: 0, bytesTotal: entry.byteCount))
-            _ = try await store.acquire(id)
-            return id
-        }
-        let held = try await downloadLock(id)
+        if try await verifiedExisting(entry, id: id, emit: emit) { return id }
+        let held = try await downloadLock(id, token: token)
         defer { withExtendedLifetime(held) {} }
+        // Another run (here or in another process) may have published while this one waited for the lock.
+        if try await verifiedExisting(entry, id: id, emit: emit) { return id }
         let area = try downloadFiles(id)
         let present = try presentBytes(entry, id: id)
         // The download needs the missing bytes, and the install's copy needs the whole entry again.
@@ -177,7 +176,8 @@ public struct ModelPreparation: Sendable {
             if size < file.byteCount {
                 try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true,
                                                         attributes: [.posixPermissions: 0o700])
-                let before = done - size
+                // Saturating: the area can change under a background task that lands after `present` was summed.
+                let before = done - min(done, size)
                 let url = try entry.url(for: file)
                 let request = TransportRequest(url: url, file: file, headers: headers(url))
                 let report: @Sendable (UInt64) -> Void = { bytes in
@@ -216,15 +216,41 @@ public struct ModelPreparation: Sendable {
 
     // MARK: - Helpers
 
-    /// The installation's download lock. Busy means another run is preparing it, unless that run is one this process
-    /// stopped and is still unwinding: then wait for it.
-    private func downloadLock(_ id: String) async throws -> StoreLock {
-        while true {
-            do { return try store.downloadLock(id) }
-            catch AssetStoreError.busy {
-                guard Self.stopping.withLock({ $0.contains(id) }) else { throw PreparationError.busy }
-                try await Task.sleep(for: .milliseconds(10))
-            }
+    /// The installation's download lock. Busy means another run is preparing it, unless the holder is a run this
+    /// process has cancelled and that is still unwinding: then wait for it (at most `stoppedRunWait`) and try again.
+    private func downloadLock(_ id: String, token: UUID) async throws -> StoreLock {
+        do { return try store.downloadLock(id) } catch AssetStoreError.busy {}
+        let stopped = Self.runs.cancelledRuns(id, excluding: token)
+        guard !stopped.isEmpty else {
+            // The holder may have released the lock between our attempt and the registry check.
+            do { return try store.downloadLock(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+        }
+        let waited = await withTaskGroup(of: Bool.self) { group in
+            group.addTask { for run in stopped { await run.value }; return true }
+            group.addTask { try? await Task.sleep(for: Self.stoppedRunWait); return false }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+        try Task.checkCancellation()
+        guard waited else { throw PreparationError.busy }
+        do { return try store.downloadLock(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+    }
+
+    static let stoppedRunWait: Duration = .seconds(30)
+
+    /// If the installation exists, hashes it (as a retried install would) and returns true. An installation that fails
+    /// verification is removed so this run downloads it again; one that readers hold open reports busy.
+    private func verifiedExisting(_ entry: ModelCatalogEntry, id: String,
+                                  emit: @Sendable (PreparationEvent) -> Void) async throws -> Bool {
+        guard store.isInstalled(id) else { return false }
+        emit(.installing(bytesDone: 0, bytesTotal: entry.byteCount))
+        do {
+            _ = try await store.acquire(id)
+            return true
+        } catch AssetStoreError.integrityMismatch, AssetStoreError.invalidManifest {
+            do { try store.remove(id) } catch AssetStoreError.busy { throw PreparationError.busy }
+            return false
         }
     }
 
@@ -310,8 +336,31 @@ private final class Throttle: @unchecked Sendable {
     }
 }
 
-private final class LockedSet: @unchecked Sendable {
+/// Runs by installation: each run's record and, once started, its worker task.
+final class RunRegistry: @unchecked Sendable {
     private let lock = NSLock()
-    private var values = Set<String>()
-    func withLock<T>(_ body: (inout Set<String>) -> T) -> T { lock.withLock { body(&values) } }
+    private var runs: [String: [UUID: Task<Void, Never>?]] = [:]
+
+    func register(_ id: String, _ token: UUID) { lock.withLock { runs[id, default: [:]][token] = .some(nil) } }
+
+    /// Records the worker, unless it already finished and removed its record.
+    func attach(_ id: String, _ token: UUID, _ worker: Task<Void, Never>) {
+        lock.withLock { if runs[id]?[token] != nil { runs[id]?[token] = worker } }
+    }
+
+    func remove(_ id: String, _ token: UUID) {
+        lock.withLock {
+            runs[id]?[token] = nil
+            if runs[id]?.isEmpty == true { runs[id] = nil }
+        }
+    }
+
+    /// Workers of other runs for `id` that have been cancelled and haven't finished.
+    func cancelledRuns(_ id: String, excluding token: UUID) -> [Task<Void, Never>] {
+        lock.withLock {
+            (runs[id] ?? [:]).compactMap { key, worker in key != token ? worker.flatMap { $0.isCancelled ? $0 : nil } : nil }
+        }
+    }
+
+    func isEmpty(_ id: String) -> Bool { lock.withLock { runs[id] == nil } }
 }

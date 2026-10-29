@@ -134,7 +134,10 @@ Cancelling the consuming task cancels the run. Already downloaded bytes stay on 
    areas for installations that already exist.
 
 Two runs for the same entry share a per-installation download lock: the second reports `.busy` and never downloads
-twice.
+twice. The exception is a run this process cancelled that is still unwinding: a new run waits for it (up to 30 s), so
+cancelling and retrying at once works. After taking the lock, a run checks again whether the installation now exists
+(another run may have published it meanwhile) and if so verifies it instead of downloading. An existing installation
+that fails verification is removed and prepared again; while readers hold it open, the run reports `.busy`.
 
 ## Transport
 
@@ -150,8 +153,14 @@ public protocol ModelTransport: Sendable {
   response: 206 with a matching `Content-Range` appends, 200 restarts the file, anything else fails.
 - **`BackgroundTransport(identifier:)` (iOS, and macOS apps)** uses a background `URLSession` with download tasks, one
   per file, so the system carries transfers on while the app is suspended or terminated.
-  - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A matching `206` is appended
-    and a `200` replaces the file.
+  - **Redirects:** a background session follows redirects itself and never asks a delegate, so the app's headers
+    would travel with them. The transport resolves redirects first, in the foreground. It follows each hop on the
+    original host with the app's headers, and stops at the first other host. The background task then fetches that
+    URL, carrying the headers only if it's still on the original host.
+  - **Resuming:** a partial file resumes with a `Range` request, as in the foreground. A matching `206` is appended,
+    a `200` replaces the file, and a `416` restarts it once. A background task writes nothing to the download area
+    until it finishes. A stopped or failed task therefore keeps the system's resume data beside the file, and the next
+    task for the same bytes continues from it. Those bytes don't count in `status`.
   - **Where bytes go:** each task records its destination (relative to the home directory, which survives an iOS app
     update) in its description. A task that finishes while the app was relaunched only to receive it still lands in
     the download area, and the next run finds the file complete.
@@ -193,7 +202,10 @@ whether retrying can help.
   - insufficient space, refused before any download;
   - cancellation mid-file, then an immediate retry that resumes;
   - two concurrent runs for one entry (the second is busy);
-  - the Hugging Face URL, revision and authorization rules, and redirects that drop headers at a new host;
+  - the Hugging Face URL, revision and authorization rules, and redirects that drop headers at a new host, including
+    the background transport's foreground redirect resolution;
+  - bodies larger than the pinned size, stopped before they can fill the disk;
+  - a corrupt installation, removed and prepared again;
   - an installed entry finishing without network;
   - what a finished background task does with its bytes (append after a matching 206, replace after a 200).
 - **Mac, real network (2026-10-28, [record](evidence/model-preparation-network-2026-10-28.json)).** A catalog entry

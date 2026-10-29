@@ -6,7 +6,7 @@ import Testing
 /// Serves scripted HTTP responses for one test's host. Hosts are unique per test, so parallel tests don't interact.
 private final class ScriptedProtocol: URLProtocol, @unchecked Sendable {
     enum Reply {
-        case file(Data, honourRange: Bool = true, contentRangeStart: UInt64? = nil, cutAfter: Int? = nil)
+        case file(Data, honourRange: Bool = true, contentRangeStart: UInt64? = nil, cutAfter: Int? = nil, partialFromStart: Bool = false)
         case status(Int)
         case redirect(to: URL)
     }
@@ -39,8 +39,13 @@ private final class ScriptedProtocol: URLProtocol, @unchecked Sendable {
         case let .redirect(target):
             let response = HTTPURLResponse(url: url, statusCode: 302, httpVersion: "HTTP/1.1", headerFields: ["Location": target.absoluteString])!
             client?.urlProtocol(self, wasRedirectedTo: URLRequest(url: target), redirectResponse: response)
+            // If the session's delegate refuses the redirect, the 302 itself is the response the task completes with.
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocolDidFinishLoading(self)
-        case let .file(data, honourRange, rangeStart, cutAfter):
+        case let .file(data, _, _, _, true):
+            send(status: 206, headers: ["Content-Range": "bytes 0-\(data.count - 1)/\(data.count)", "Content-Length": "\(data.count)"],
+                 body: data)
+        case let .file(data, honourRange, rangeStart, cutAfter, false):
             var start = 0
             if honourRange, let range = request.value(forHTTPHeaderField: "Range"),
                let value = range.split(separator: "=").last?.split(separator: "-").first, let offset = Int(value) {
@@ -218,6 +223,75 @@ struct URLSessionTransportTests {
         #expect(try Data(contentsOf: lease.directory.appendingPathComponent("file.bin")) == fixture.data)
         let ranges = ScriptedProtocol.requests(fixture.host).map { $0.headers["Range"] }
         #expect(ranges.count == 2 && ranges[0] == nil)
+    }
+
+    @Test func aBodyLargerThanThePinnedSizeIsStopped() async throws {
+        let fixture = try TransportFixture()
+        defer { fixture.remove() }
+        // A 200 whose Content-Length disagrees with the entry is refused before anything is written.
+        ScriptedProtocol.script(fixture.host, [.file(fixture.data + Data(repeating: 1, count: 500))])
+        await #expect(throws: PreparationError.integrityMismatch(path: "file.bin")) {
+            try await fixture.transport.fetch(fixture.request(), to: fixture.destination, resume: false) { _ in }
+        }
+    }
+
+    @Test func aPartialResponseFromTheStartRestartsTheFile() async throws {
+        let fixture = try TransportFixture()
+        defer { fixture.remove() }
+        try Data(repeating: 9, count: 400).write(to: fixture.destination)
+        ScriptedProtocol.script(fixture.host, [.file(fixture.data, honourRange: false, partialFromStart: true)])
+        try await fixture.transport.fetch(fixture.request(), to: fixture.destination, resume: true) { _ in }
+        #expect(try Data(contentsOf: fixture.destination) == fixture.data)
+    }
+
+    private var resolverConfiguration: URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ScriptedProtocol.self]
+        return configuration
+    }
+
+    @Test func resolvingStopsAtTheFirstOtherHostAndDropsHeadersThere() async throws {
+        let fixture = try TransportFixture()
+        defer { fixture.remove() }
+        let cdn = URL(string: "https://cdn-\(UUID().uuidString.lowercased()).example/signed/file.bin")!
+        let sameHostHop = URL(string: "https://\(fixture.host)/kit/moved.bin")!
+        ScriptedProtocol.script(fixture.host, [.redirect(to: sameHostHop), .redirect(to: cdn)])
+        let resolved = try await RedirectResolver.resolve(fixture.request(headers: ["Authorization": "Bearer secret"]),
+                                                          configuration: resolverConfiguration)
+        #expect(resolved.url == cdn && resolved.headers.isEmpty)
+        #expect(ScriptedProtocol.requests(fixture.host).allSatisfy { $0.headers["Authorization"] == "Bearer secret" })
+        #expect(ScriptedProtocol.requests(cdn.host!).isEmpty)
+    }
+
+    @Test func resolvingWithoutARedirectKeepsTheHeaders() async throws {
+        let fixture = try TransportFixture()
+        defer { fixture.remove() }
+        ScriptedProtocol.script(fixture.host, [.status(200)])
+        let same = try await RedirectResolver.resolve(fixture.request(headers: ["Authorization": "Bearer secret"]),
+                                                      configuration: resolverConfiguration)
+        #expect(same.url == fixture.url && same.headers == ["Authorization": "Bearer secret"])
+    }
+
+    @Test func resolvingRefusesPlainHTTPAndReportsErrors() async throws {
+        let plain = try TransportFixture()
+        defer { plain.remove() }
+        ScriptedProtocol.script(plain.host, [.redirect(to: URL(string: "http://\(plain.host)/x")!)])
+        await #expect(throws: PreparationError.self) {
+            _ = try await RedirectResolver.resolve(plain.request(headers: ["Authorization": "x"]), configuration: resolverConfiguration)
+        }
+        let missing = try TransportFixture()
+        defer { missing.remove() }
+        ScriptedProtocol.script(missing.host, [.status(404)])
+        await #expect(throws: PreparationError.http(status: 404, path: "file.bin")) {
+            _ = try await RedirectResolver.resolve(missing.request(headers: ["Authorization": "x"]), configuration: resolverConfiguration)
+        }
+    }
+
+    @Test func resolvingWithoutHeadersMakesNoRequest() async throws {
+        let open = try TransportFixture()
+        defer { open.remove() }
+        #expect(try await RedirectResolver.resolve(open.request(), configuration: resolverConfiguration).url == open.url)
+        #expect(ScriptedProtocol.requests(open.host).isEmpty)
     }
 
     @Test func contentRangeParsing() {

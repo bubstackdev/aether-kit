@@ -82,7 +82,8 @@ private struct Fixture {
             files.append(AssetFile(path: path, byteCount: UInt64(data.count), sha256: sha256(data)))
         }
         entry = try ModelCatalogEntry(
-            manifest: AssetManifest(assetIdentity: "example/1:fixture", executionContract: "example.bundle/1", files: files),
+            // A unique identity per fixture: tests run in parallel, and runs are tracked per installation process-wide.
+            manifest: AssetManifest(assetIdentity: "example/1:\(UUID().uuidString)", executionContract: "example.bundle/1", files: files),
             source: .https(base: URL(string: "https://models.example.com/fixture")!))
     }
 
@@ -249,6 +250,39 @@ struct ModelPreparationTests {
         try FileManager.default.createDirectory(at: leftover, withIntermediateDirectories: true)
         #expect(try store.removeAbandonedStages() == 1)
         #expect(!FileManager.default.fileExists(atPath: store.downloads.appendingPathComponent(id).path))
+    }
+
+    @Test func aFinishedRunLeavesNoRecordSoALockHeldElsewhereIsBusyAtOnce() async throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        let transport = ScriptedTransport(source: fixture.source)
+        let preparation = try fixture.preparation(transport)
+        let id = try fixture.entry.installationID
+        _ = try await preparation.install(fixture.entry)  // stops iterating at the terminal event
+        #expect(ModelPreparation.runs.isEmpty(id))
+        try preparation.store.remove(id)
+        let held = try preparation.store.downloadLock(id)  // as another process would hold it
+        let started = ContinuousClock.now
+        let all = await events(preparation.prepare(fixture.entry))
+        #expect(all.last == .failed(.busy))
+        #expect(ContinuousClock.now - started < .seconds(5))
+        withExtendedLifetime(held) {}
+    }
+
+    @Test func aCorruptInstallationIsRemovedAndPreparedAgain() async throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        let transport = ScriptedTransport(source: fixture.source)
+        let preparation = try fixture.preparation(transport)
+        let id = try await preparation.install(fixture.entry)
+        let installed = preparation.store.destination(id).appendingPathComponent("files/model/main.mlirb")
+        var bytes = try Data(contentsOf: installed)
+        bytes[0] ^= 0xff
+        try bytes.write(to: installed)
+        let before = transport.calls.count
+        #expect(try await preparation.install(fixture.entry) == id)
+        #expect(transport.calls.count == before + fixture.entry.manifest.files.count)
+        _ = try await preparation.store.acquire(id)  // verifies again
     }
 
     @Test func retryabilityFollowsTheCause() {
