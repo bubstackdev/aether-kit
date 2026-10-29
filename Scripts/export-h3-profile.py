@@ -41,6 +41,11 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
                  posterior SAMPLED under the fixed keyframe seed 42 (its draw baked in as a constant), float16 rounding,
                  latent normalization. Checked on CPU against `encode_vae_condition` (byte-identical). Needs no
                  download: the FL2VA video_vae weights are in the local snapshot (converted under converted/vae).
+  conditioner-vision  Export the Qwen3-VL vision tower FL2VA presents each keyframe to, one STATIC graph per --canvases
+                 entry: upstream's modules in bf16 (pixels [n,1536] bf16 + host position-table taps/weights and patch
+                 (row, column) in merge-window order -> merger [n/4,5120] and DeepStack [3,n/4,5120] bf16), every weight
+                 lifted and bound in place from the FL2VA shard, checked on CPU against `Qwen3VLVisionModel.forward`.
+                 With --base-bundle, writes an overlay OUTPUT/bundle.json (base plus `conditioner_vision`, `lineage`).
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -89,10 +94,10 @@ def main():
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--converter", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "video-encoder-first-tiled", "finalize"])
-    ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first(-tiled): WIDTHxHEIGHT canvases")
+    ap.add_argument("--stage", required=True, choices=["convert-vae", "video-decoder", "body", "tables", "heads", "conditioner", "parameters", "prepare", "conditioner-layer", "conditioner-rope", "audio-decoder", "audio-decoder-fixed", "video-decoder-bf16", "video-encoder-first", "video-encoder-first-tiled", "conditioner-vision", "finalize"])
+    ap.add_argument("--canvases", default="960x544,544x960", help="video-encoder-first(-tiled), conditioner-vision: WIDTHxHEIGHT canvases")
     ap.add_argument("--converted", type=Path, help="video-encoder-first-tiled: the converted VAE directory (default OUTPUT/converted)")
-    ap.add_argument("--base-bundle", type=Path, help="video-encoder-first-tiled: write OUTPUT/bundle.json = this bundle plus the tiled entries")
+    ap.add_argument("--base-bundle", type=Path, help="video-encoder-first-tiled, conditioner-vision: write OUTPUT/bundle.json = this bundle plus the stage's entries")
     ap.add_argument("--audio-latents", default="207", help="comma-separated per-channel audio latent counts (audio-decoder-fixed)")
     ap.add_argument("--minimum-free-gb", type=float, default=150.0)
     args = ap.parse_args()
@@ -779,6 +784,134 @@ def main():
                                                        tails={k: entry(v) for k, v in sorted(tails.items())})
             bundle["lineage"] = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path),
                                      change="added video_encoder_first_tiled (tile graph + per-canvas tails); every other entry is the base bundle's")
+            (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
+            print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"))), flush=True)
+    elif args.stage == "conditioner-vision":
+        # The Qwen3-VL vision tower upstream's FL2VA presentation runs on every keyframe (encoders.py
+        # `MiniMaxH3FL2VATextEncoderStep`), as one STATIC graph per canvas. It is upstream's own modules in bf16: the
+        # patch embedding, the learned position table, the vision rotary, each block's norms, qkv, MLP and projection,
+        # the DeepStack mergers and the merger. Only what the original forward derives from `grid_thw` comes from the
+        # host instead: the position-table taps and weights (computed exactly as `get_vision_interpolation_indices_and_
+        # weights`, in float32) and each patch's (row, column), both in merge-window order, and attention runs over the
+        # one image (the original splits `cu_seqlens` with a data-dependent `tolist()`). Every weight is lifted to an
+        # input and bound in place from the FL2VA shard. Checked on CPU per canvas against `Qwen3VLVisionModel.forward`.
+        from safetensors import safe_open
+        from transformers import Qwen3VLConfig
+        from transformers.integrations.sdpa_attention import sdpa_attention_forward
+        from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLVisionModel, Qwen3VLVisionRotaryEmbedding, apply_rotary_pos_emb_vision
+        from transformers.vision_utils import get_vision_interpolation_indices_and_weights, get_vision_position_ids
+        if args.base_bundle and out == args.base_bundle.resolve().parent:
+            raise SystemExit("--output must not be the base bundle's directory; write the overlay elsewhere")
+        directory = args.snapshot / "FL2VA/text_encoder"
+        config = Qwen3VLConfig.from_pretrained(directory)
+        vc = config.vision_config
+        vc._attn_implementation = "sdpa"
+        spans = h.Spans.sharded(directory)
+        prefix = "model.visual."
+        state = {}
+        for name in sorted(k for k in spans.entries if k.startswith(prefix)):
+            with safe_open(spans.span(name)[0], framework="pt", device="cpu") as f:
+                state[name.removeprefix(prefix)] = f.get_tensor(name)
+        with torch.device("meta"):
+            visual = Qwen3VLVisionModel(vc)
+        visual.load_state_dict(state, strict=True, assign=True)
+        visual.rotary_pos_emb = Qwen3VLVisionRotaryEmbedding(vc)
+        visual.eval()
+        assert all(p.dtype == torch.bfloat16 for p in visual.parameters())
+        merge, patch, side = vc.spatial_merge_size, vc.patch_size, visual.num_grid_per_side
+
+        class VisionTower(torch.nn.Module):
+            """pixels [n, 1536] bf16, pos_index [n, 4] i32, pos_weight [n, 4] f32, patch_rc [n, 2] i32 (merge-window
+            order, one image) -> image_embeds [n/4, 5120] bf16, deepstack [3, n/4, 5120] bf16."""
+
+            def __init__(self):
+                super().__init__()
+                self.visual = visual
+
+            def forward(self, pixels, pos_index, pos_weight, patch_rc):
+                v = self.visual
+                x = v.patch_embed(pixels)
+                x = x + (v.pos_embed(pos_index) * pos_weight[:, :, None]).sum(1).to(x.dtype)
+                cos, sin = v.rotary_pos_emb(x, patch_rc)
+                n, levels = x.shape[0], []
+                for index, block in enumerate(v.blocks):
+                    attn = block.attn
+                    q, k, w = attn.qkv(block.norm1(x)).reshape(n, 3, attn.num_heads, -1).permute(1, 0, 2, 3).unbind(0)
+                    q, k = apply_rotary_pos_emb_vision(q, k, cos, sin)
+                    o, _ = sdpa_attention_forward(attn, q.transpose(0, 1).unsqueeze(0), k.transpose(0, 1).unsqueeze(0),
+                                                  w.transpose(0, 1).unsqueeze(0), attention_mask=None, scaling=attn.scaling,
+                                                  dropout=0.0, is_causal=False)
+                    x = x + attn.proj(o.reshape(n, -1).contiguous())
+                    x = x + block.mlp(block.norm2(x))
+                    if index in v.deepstack_visual_indexes:
+                        levels.append(v.deepstack_merger_list[v.deepstack_visual_indexes.index(index)](x))
+                return v.merger(x), torch.stack(levels)
+
+        def host_tables(grid_h, grid_w):
+            grid = torch.tensor([[1, grid_h, grid_w]])
+            index, weight = get_vision_interpolation_indices_and_weights(grid, num_grid_per_side=side, mode=visual.interpolation_mode,
+                                                                       align_corners=visual.interpolation_align_corners, spatial_merge_size=merge)
+            return index.to(torch.int32), weight, get_vision_position_ids(grid, merge).to(torch.int32)
+
+        tower = VisionTower().eval()
+        graph, params = h.lift(tower)
+        names = list(params)
+        parameters = [h.bound_tensor(f"w{i}", spans.segments(prefix + n.removeprefix("visual.")), t, "bfloat16")
+                      for i, (n, t) in enumerate(params.items())]
+        functions, checks, tables = {}, {}, {}
+        for width, height in (tuple(int(v) for v in c.split("x")) for c in args.canvases.split(",")):
+            key = f"{width}x{height}"
+            assert width % (patch * merge) == 0 and height % (patch * merge) == 0, key
+            grid_h, grid_w = height // patch, width // patch
+            pos_index, pos_weight, patch_rc = host_tables(grid_h, grid_w)
+            torch.manual_seed(1043)
+            # Pixels as the step feeds the tower: processor output in [-1, 1], rounded to bf16 (encoders.py 77).
+            pixels = (torch.randint(0, 256, (grid_h * grid_w, 3 * vc.temporal_patch_size * patch * patch)).float() / 127.5 - 1).to(torch.bfloat16)
+            started = time.monotonic()
+            with torch.inference_mode():
+                reference = visual(pixels, grid_thw=torch.tensor([[1, grid_h, grid_w]]), return_dict=True)
+                embeds, deepstack = graph(pixels, pos_index, pos_weight, patch_rc, *params.values())
+            expected = (reference.pooler_output, torch.stack(reference.deepstack_features))
+            check = dict(canvas=key, grid=[grid_h, grid_w], patches=grid_h * grid_w, tokens=grid_h * grid_w // merge ** 2,
+                         byte_identical=bool(torch.equal(embeds, expected[0]) and torch.equal(deepstack, expected[1])),
+                         relative_l2=[float((a.double() - b.double()).norm() / b.double().norm()) for a, b in
+                                      ((embeds, expected[0]), *zip(deepstack, expected[1]))],
+                         seconds=round(time.monotonic() - started, 1))
+            print(json.dumps(check), flush=True)
+            assert max(check["relative_l2"]) < 1e-3, check
+            started = time.monotonic()
+            asset = h.export_asset(out / f"models/conditioner-vision-{key}.aimodel", graph, (pixels, pos_index, pos_weight, patch_rc, *params.values()),
+                                   ["pixels", "pos_index", "pos_weight", "patch_rc"] + [f"w{i}" for i in range(len(names))], ["image_embeds", "deepstack"])
+            asset["seconds"] = round(time.monotonic() - started, 1)
+            functions[key], checks[key] = asset, check
+            tables[key] = {name: h.raw_fixture(out / f"tables/conditioner-vision/{key}-{name}.raw", name, tensor)
+                           for name, tensor in (("pos_index", pos_index), ("pos_weight", pos_weight), ("patch_rc", patch_rc))}
+            print(json.dumps(asset), flush=True)
+        vision = dict(functions=functions, checks=checks, tables=tables, parameters=parameters, bindings=names,
+                      grids={k: c["grid"] for k, c in checks.items()}, patch_size=patch, merge_size=merge,
+                      temporal_patch_size=vc.temporal_patch_size, table_side=side, deepstack_levels=len(vc.deepstack_visual_indexes),
+                      out_hidden=vc.out_hidden_size, pixel_mean=[0.5] * 3, pixel_std=[0.5] * 3, dtype="bfloat16",
+                      mrope_section=list(config.text_config.rope_parameters["mrope_section"]),
+                      mrope_interleaved=bool(config.text_config.rope_parameters.get("mrope_interleaved", False)),
+                      presentation=dict(label="<Picture {index}>: ", vision_start=config.vision_start_token_id, image_pad=config.image_token_id,
+                                        vision_end=config.vision_end_token_id, text_tag=1, video_tag=0),
+                      recipe_sha256=h.sha256_file(Path(__file__)))
+        record(out, conditioner_vision=vision)
+        if args.base_bundle:
+            base_path = args.base_bundle.resolve()
+            bundle = json.loads(base_path.read_text())
+            assert bundle["schema"] == 3 and "conditioner_vision" not in bundle
+            entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
+            # The host computes the per-canvas tables (build.json keeps the exported ones as references).
+            bundle["conditioner_vision"] = dict(
+                {k: v for k, v in vision.items() if k not in ("functions", "checks", "tables", "parameters", "bindings", "recipe_sha256")},
+                functions={k: entry(v) for k, v in sorted(functions.items())},
+                parameters=[{k: t[k] for k in ("name", "segments", "dtype", "shape", "sha256")} for t in parameters])
+            change = "added conditioner_vision (the Qwen3-VL vision tower per canvas, weights in place); every other entry is the base bundle's"
+            lineage = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path), change=change)
+            if "lineage" in bundle:
+                lineage["base_lineage"] = bundle["lineage"]
+            bundle["lineage"] = lineage
             (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
             print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"))), flush=True)
     elif args.stage == "video-decoder":
