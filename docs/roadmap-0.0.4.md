@@ -44,9 +44,21 @@ references, native qualification and a guide.
 - **An MLX backend for older OSes,** as an optional separate product, by user decision. The
   [spike](spikes/mlx-backend-2026-10.md) is a conditional go: mlx-swift core only, the Metal toolchain in CI, and its
   own manifest kind for Hugging Face safetensors.
-- **H3:** Turbo4 qualification (the user's side-by-side review judged it worth qualifying) and fused attention, which
-  re-exports the body graph and so resets H3's qualification evidence. The step-0 transient in the admitted worst case
-  and profile paths relative to `bundle.json` are follow-ups.
+- **H3:** Turbo4 qualification (the user's side-by-side review judged it worth qualifying). **Fused attention is
+  done, with no re-export** ([spike](spikes/h3-attention-2026-10.md), 2026-10-29): the qualified body graph already
+  exports `F.scaled_dot_product_attention` as Core AI's SDPA composite, and the GPU runs it fused. No score tensor is
+  allocated, it runs at 44–56 TFLOPS, and it's 14.7× faster than explicit attention at 9,728 rows. H3's qualification
+  evidence stands. The step-0 transient in the admitted worst case and profile paths relative to `bundle.json` are
+  follow-ups.
+- **For Atelier** (user decision, 2026-10-29), for Atelier's v0.6, with the features that use them in its v0.7:
+  - **H3 at a larger canvas:** first-frame encoder and tail exports for 1280×704 and 704×1280, measured, and added to
+    measured admission.
+  - **H3 last-frame conditioning:** `H3VideoRequest.lastFrame` is refused today.
+
+  Atelier's team authors both as `v0.0.4/<topic>` PRs, which Kit reviews. They build on the current body graph.
+  - **Shared declared residency** ([proposal](shared-residency-proposal.md)): a joint, announced calibration window on
+    this Mac sets the capacity fraction. Kit's side follows: the lease rules, a records-backed `ResourceCoordinator`,
+    and declarations by `aether-probe` and heavy CPU jobs.
 - **Exporter safety,** from the 0.0.3 follow-up bug hunt on macOS 27.2:
   - An export-time check that runs the optimized program against the unoptimized one on random inputs. Core AI's
     pre-compilation rewrite gives silently wrong results for some reshape-into-matmul patterns.
