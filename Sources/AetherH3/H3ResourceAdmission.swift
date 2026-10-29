@@ -28,10 +28,8 @@ public struct H3ResourceAdmission: Sendable {
         public init(canvases: [String] = [], maximumPixels: Int, maximumFrames: Int, tasks: Set<H3Profile.Task> = Set(H3Profile.Task.allCases),
                     operationBytes: UInt64, stageBytes: [H3VideoStage: UInt64], memoryBarBytes: UInt64 = H3MeasuredResources.memoryBarBytes,
                     minimumPhysicalMemoryBytes: UInt64 = 0) throws {
-            let sides = canvases.map { $0.split(separator: "x").compactMap { Int($0) } }
             guard (1...1_032_192).contains(maximumPixels), (1...360).contains(maximumFrames), !tasks.isEmpty, operationBytes > 0,
-                  canvases.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }),
-                  sides.allSatisfy({ $0.count == 2 && $0[0] * $0[1] <= maximumPixels }), memoryBarBytes > 0,
+                  canvases.allSatisfy({ canvas in H3MeasuredResources.pixels(canvas).map { $0 <= maximumPixels } ?? false }), memoryBarBytes > 0,
                   stageBytes.values.allSatisfy({ $0 > 0 }),
                   Set([H3VideoStage.encoding, .denoising, .decodingVideo]).isSubset(of: Set(stageBytes.keys)) else {
                 throw AetherError.invalidRequest("invalid H3 resource envelope")
@@ -48,10 +46,21 @@ public struct H3ResourceAdmission: Sendable {
         /// never covers a request inside today's region (at most 960x544's pixels and 124 frames), which stays under
         /// 18 GiB entries.
         public func covers(_ request: H3VideoRequest) -> Bool {
+            (!isExtended || !Self.insideToday(request)) && coversIgnoringRegion(request)
+        }
+
+        /// Above the 18 GiB bar (the extended class, for regions beyond today's).
+        public var isExtended: Bool { memoryBarBytes > H3MeasuredResources.memoryBarBytes }
+
+        /// At most 960x544's pixels and 124 frames: the region held to 18 GiB entries.
+        static func insideToday(_ request: H3VideoRequest) -> Bool {
+            request.geometry.width * request.geometry.height <= H3MeasuredResources.baselinePixels
+                && request.geometry.frames <= H3MeasuredResources.baselineFrames
+        }
+
+        func coversIgnoringRegion(_ request: H3VideoRequest) -> Bool {
             let w = request.geometry.width, h = request.geometry.height
             let task: H3Profile.Task = request.firstFrame == nil ? .t2va : .fl2va
-            let insideToday = w * h <= H3MeasuredResources.baselinePixels && request.geometry.frames <= H3MeasuredResources.baselineFrames
-            guard memoryBarBytes <= H3MeasuredResources.memoryBarBytes || !insideToday else { return false }
             guard tasks.contains(task), request.geometry.frames <= maximumFrames,
                   !request.audio || stageBytes[.decodingAudio] != nil,
                   request.firstFrame == nil || stageBytes[.encodingKeyframe] != nil else { return false }
@@ -126,12 +135,19 @@ public struct H3ResourceAdmission: Sendable {
         if let needed = covering.map(\.minimumPhysicalMemoryBytes).min() {
             throw AetherError.unsupported("H3 \(asked) needs at least \(needed >> 30) GiB of physical memory; this device has \(physicalMemoryBytes >> 30) GiB")
         }
+        if Envelope.insideToday(request), envelopes.contains(where: { $0.isExtended && $0.coversIgnoringRegion(request) }) {
+            throw AetherError.invalidRequest("H3 \(asked) is inside today's region (960x544 pixels, 124 frames): "
+                                             + "today's canvases need an 18 GiB measured entry, and this profile has only 24 GiB entries for it")
+        }
         throw AetherError.invalidRequest("H3 \(asked) is outside every measured envelope; nearest: \(nearest(to: request).summary)")
     }
 
     /// The envelope needing the smallest relative stretch (width, height, frames; a missing task or stage counts as 1).
+    /// A request inside today's region is pointed at 18 GiB envelopes when there are any, since no 24 GiB one can cover it.
     private func nearest(to request: H3VideoRequest) -> Envelope {
         let g = request.geometry
+        let today = envelopes.filter { !$0.isExtended }
+        let candidates = Envelope.insideToday(request) && !today.isEmpty ? today : envelopes
         func stretch(_ e: Envelope) -> Double {
             let task: H3Profile.Task = request.firstFrame == nil ? .t2va : .fl2va
             let frames = max(0, Double(g.frames) / Double(e.maximumFrames) - 1)
@@ -143,7 +159,7 @@ public struct H3ResourceAdmission: Sendable {
                 }
             return frames + Double(missing) + sides.min()!
         }
-        return envelopes.min { stretch($0) < stretch($1) }!
+        return candidates.min { stretch($0) < stretch($1) }!
     }
 
     /// The admission restricted to the one envelope `request` is held to; a session checks and reserves through it.

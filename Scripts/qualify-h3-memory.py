@@ -16,10 +16,12 @@ physical footprint; they overlap and cannot be added. Sampling every 20 ms can m
 """
 import argparse
 import datetime
+import getpass
 import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -40,13 +42,61 @@ def sha(path):
     return h.hexdigest()
 
 
+# Placeholders for local paths in records written to the public repository, most specific first. <scratch> is the
+# scratch volume's aether folder; any other volume is <volume>; temporary folders are <tmp>; the home folder is <home>.
+SCRUB_PREFIXES = [
+    (str(Path.home() / "Code/atelier/.local/team/staging"), "<staging>"),
+    (str(Path.home() / ".cache/huggingface"), "<hf-cache>"),
+    (str(Path.home() / ".cache/aether-kit"), "<kit-cache>"),
+    (str(Path(__file__).resolve().parent.parent), "<repo>"),
+    ("/Volumes/Scratch/aether", "<scratch>"),
+]
+SCRUB_PATTERNS = [
+    (re.compile(r"/Volumes/[^/]+"), "<volume>"),
+    (re.compile(r"(?:/private)?/var/folders/[^/]+/[^/]+"), "<tmp>"),
+    (re.compile(r"(?:/private)?/tmp(?=/|$)"), "<tmp>"),
+    (re.compile(re.escape(str(Path.home())) + r"(?=/|$)"), "<home>"),
+]
+SCRUB_FORBIDDEN = ["/Users/", "/private/", "/Volumes/", "/tmp/", "/var/folders/"]
+
+
 def scrub(value):
-    """A record for the public repository: this Mac's home directory and volumes become placeholders."""
-    text = json.dumps(value)
-    text = text.replace(str(Path.home()), "<home>")
-    for volume in sorted(Path("/Volumes").glob("*"), key=lambda v: -len(str(v))):
-        text = text.replace(str(volume), "<volume>")
-    return json.loads(text)
+    """A record for the public repository, with local paths replaced by placeholders (keys and strings alike).
+
+    Fails closed: it refuses to return a record still holding a local path prefix or this account's login name."""
+    def text(s):
+        for prefix, placeholder in SCRUB_PREFIXES:
+            s = re.sub(re.escape(prefix) + r"(?=/|$|[^A-Za-z0-9._-])", placeholder, s)
+        for pattern, placeholder in SCRUB_PATTERNS:
+            s = pattern.sub(placeholder, s)
+        return s
+
+    def walk(v):
+        if isinstance(v, dict):
+            return {text(k): walk(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [walk(x) for x in v]
+        return text(v) if isinstance(v, str) else v
+
+    scrubbed = walk(value)
+    login = getpass.getuser()
+    leaks = set()
+
+    def check(v):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                check(k); check(x)
+        elif isinstance(v, list):
+            for x in v:
+                check(x)
+        elif isinstance(v, str):
+            leaks.update(f for f in SCRUB_FORBIDDEN if f in v)
+            if login and re.search(r"(?<![A-Za-z0-9])" + re.escape(login) + r"(?![A-Za-z0-9])", v):
+                leaks.add("the login name")
+    check(scrubbed)
+    if leaks:
+        raise SystemExit(f"refusing to write a repository record that still holds {sorted(leaks)}; extend SCRUB_PREFIXES")
+    return scrubbed
 
 
 def now():

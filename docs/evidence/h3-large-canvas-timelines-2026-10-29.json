@@ -1268,5 +1268,13 @@
     146.195
    ]
   }
+ },
+ "editedAfterRun": {
+  "note": "Assembled by hand from each render's memory.json (phases, sample count, SHA-256 of the full timeline) and its dump's manifest.json (rows, tokens), not written by a script. FL2VA renders were labelled as the text-only presentation (PR #76) and local paths replaced by placeholders afterwards.",
+  "fields": [
+   "the whole record",
+   "renders.*.label",
+   "local paths replaced by placeholders throughout"
+  ]
  }
 }

@@ -727,6 +727,16 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
         #expect(!(try canvas.envelope()).covers(inside) && !(try clip.envelope()).covers(inside) && !extendedOnly.admits(inside))
     }
     #expect(extendedOnly.admits(try request(960, 544, 141)))
+    do { _ = try extendedOnly.envelope(for: request(960, 544, 124)); Issue.record("expected a refusal") } catch {
+        #expect("\(error)".contains("18 GiB measured entry"))
+    }
+    // With an 18 GiB entry present, a refused request inside today's region is pointed at it, not at a 24 GiB one.
+    let todayT2VA = try entry(["960x544", "544x960"], frames: 124, denoising: 11 * gib, tasks: [.t2va], keyframe: false)
+    let mixed = try H3MeasuredResources.admission(entries: [todayT2VA, canvas], coordinator: budget, physicalMemoryBytes: 64 << 30)
+    do { _ = try mixed.envelope(for: request(960, 544, 124, first: true)); Issue.record("expected a refusal") } catch {
+        #expect("\(error)".contains("nearest: 960x544, 544x960 x 124 frames"))
+    }
+    #expect(throws: AetherError.self) { _ = try entry(["99999999999999999999x2"], frames: 124, denoising: gib) }      // does not parse
     // Never measured: the long clip in portrait, a canvas wider than any measured, the large canvas at the long clip,
     // and FL2VA where only T2VA was measured.
     for r in [try request(544, 960, 243), try request(1408, 640, 141), try request(1280, 704, 158), try request(1280, 704, 141, first: true)] {

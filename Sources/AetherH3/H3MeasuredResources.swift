@@ -102,7 +102,7 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     public func validate() throws {
         guard !executionIdentity.isEmpty, !deviceArchitecture.isEmpty, (1...360).contains(maximumFrames), operationBytes > 0,
               !canvases.isEmpty, canvases.allSatisfy({ $0.wholeMatch(of: /[1-9][0-9]*x[1-9][0-9]*/) != nil }), tasks?.isEmpty != true,
-              canvases.allSatisfy({ $0.split(separator: "x").map { Int($0)! }.reduce(1, *) <= 1_032_192 }),
+              canvases.allSatisfy({ canvas in Self.pixels(canvas).map { $0 <= 1_032_192 } ?? false }),
               stagePeakBytes.keys.allSatisfy({ H3VideoStage(rawValue: $0) != nil }), stagePeakBytes.values.allSatisfy({ $0 > 0 }),
               Set(["encoding", "denoising", "decodingVideo"]).isSubset(of: Set(stagePeakBytes.keys)),
               !evidence.isEmpty, evidence != "unrecorded", !evidence.hasPrefix("/"), !evidence.hasPrefix("~") else {
@@ -120,8 +120,15 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         }
     }
 
-    public var maximumPixels: Int {
-        canvases.map { c in c.split(separator: "x").map { Int($0)! }.reduce(1, *) }.max()!
+    /// The largest listed canvas's pixel count (0 when none parses; `validate()` refuses such an entry).
+    public var maximumPixels: Int { canvases.compactMap(Self.pixels).max() ?? 0 }
+
+    /// The pixel count of a "WIDTHxHEIGHT" canvas, or nil when it does not parse or overflows.
+    public static func pixels(_ canvas: String) -> Int? {
+        let sides = canvas.split(separator: "x", omittingEmptySubsequences: false)
+        guard sides.count == 2, let width = Int(sides[0]), let height = Int(sides[1]), width > 0, height > 0 else { return nil }
+        let area = width.multipliedReportingOverflow(by: height)
+        return area.overflow ? nil : area.partialValue
     }
 
     /// This entry's admission envelope: reservations covering every measured stage peak plus margin, and the operation.
