@@ -93,7 +93,7 @@ private func log(_ fields: [String: String]) {
     let url = documents.appendingPathComponent("prepare-log.jsonl")
     if !FileManager.default.fileExists(atPath: url.path) { FileManager.default.createFile(atPath: url.path, contents: nil) }
     if let handle = try? FileHandle(forWritingTo: url) {
-        try? handle.seekToEnd()
+        _ = try? handle.seekToEnd()
         try? handle.write(contentsOf: data + Data("\n".utf8))
         try? handle.close()
     }

@@ -1,7 +1,7 @@
 # Model preparation
 
-Status: implemented, 2026-10-28. Weight-free CPU tests and a real-network run on the Mac pass; the iPhone background
-transfer is pending ([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
+Status: implemented, 2026-10-28; qualified 2026-10-29. Weight-free CPU tests, a real-network run on the Mac and an
+iPhone background transfer pass ([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)). The user decided the four choices below on 2026-10-28. Type
 names may still change once the API has run in the sample app.
 
@@ -217,8 +217,18 @@ whether retrying can help.
 
   This run found and fixed one bug: a retry straight after stopping a run reported busy, because the stopped run hadn't
   yet released its lock. A stopped run is now waited for.
-- **Pending:** an iPhone run with `BackgroundTransport`, including a transfer that survives app suspension. It needs an
-  iOS registration of the bundle and the device host app wired to `handleEvents`.
+- **iPhone, background transfer (2026-10-29, [record](evidence/model-preparation-iphone-2026-10-29.json)).** The
+  LanguageDevice probe app (iPhone19,4, iOS 27.2) prepared the iOS bundle's entry (11 files, 1,208,370,448 bytes) from
+  the same private repository with `BackgroundTransport`:
+  - suspended for 45 s mid-file, the transfer kept going: the last event before was at 48,789,635 bytes, and within a
+    second of the resume the system delivered progress to 176,579,147;
+  - killed at 211,017,829 bytes and relaunched 53 s later, the app found the running task by its record and joined it;
+    its first event was at 920,230,020 bytes, so about 709 MB arrived with no app process running;
+  - the remaining files were fetched by new tasks, the entry installed, and `AetherLanguageModel(installation:)` gave a
+    coherent greedy reply in 7.50 s.
+
+  The relaunch shows the home-relative task record resolving on a device. A task in flight across an app update, when
+  the container path changes, hasn't been exercised.
 
 ## Implementation order
 
@@ -227,10 +237,10 @@ whether retrying can help.
    test transport. Done.
 3. The foreground `URLSession` transport (`URLSessionTransport`, `.urlSession`), with range resume. Done.
 4. The Hugging Face resolver (`ModelSource.huggingFace`) and `ModelPreparation.huggingFaceAuthorization(token:)`. Done.
-5. `BackgroundTransport` and `handleEvents(identifier:completionHandler:)`. Done; the session itself is qualified on a
-   device (below), since a background session needs an app.
+5. `BackgroundTransport` and `handleEvents(identifier:completionHandler:)`. Done; qualified on an iPhone, since a
+   background session needs an app.
 6. `AetherLanguageModel(installation:)` with the lease held. Done.
-7. The guide and the qualification evidence. The guide and the Mac record are done; the iPhone run is pending.
+7. The guide and the qualification evidence. Done: the Mac and iPhone records are in `docs/evidence`.
 
 ## Open questions
 
