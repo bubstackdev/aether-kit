@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 # --macos runs 1 and the macOS half of 2 and 3; --ios runs the iOS half, and fails without the iOS SDK. CI runs the two
 # halves as parallel jobs. With neither, everything runs, and the iOS builds are skipped when the iOS SDK is missing.
 # With STAGE_DIR, the floor consumer's macOS binary is copied there with the Span back-deployment library it loads
-# through @rpath, for Scripts/launch-floor-consumer.sh on an older OS (CI's macos-14 job). There is no iOS-simulator
+# through @rpath, for Scripts/launch-floor-consumer.sh on an older OS (CI's macos-15 job). There is no iOS-simulator
 # consumer: CoreAI is not in the iOS Simulator SDK, so nothing that links the facade builds for the simulator yet.
 part=all
 case ${1:-} in

@@ -84,15 +84,21 @@ does no GPU work:
    binary must report its minimum OS and weak-link CoreAI. Every strong load command must be on an allow-list of
    libraries the floor OS has, so a new dependency fails until it is reviewed. The macOS binary runs.
 
-With a stage directory, `check-floor.sh` also copies the consumer binary and its Span library there. CI's **Launch at
-the macOS 14 floor** job runs `Scripts/launch-floor-consumer.sh` on a GitHub-hosted `macos-14` runner, which has no
-CoreAI framework, and requires `AetherLanguage availability: unsupportedOS`. That job is part of the **CI passed** gate.
+With a stage directory, `check-floor.sh` also copies the consumer binary and its Span library there. CI's **Launch
+without CoreAI (macOS 15)** job runs `Scripts/launch-floor-consumer.sh` on a GitHub-hosted `macos-15` runner, which has
+no CoreAI framework, and requires `AetherLanguage availability: unsupportedOS`. That job is part of the **CI passed**
+gate.
+
+**No macOS 14 launch.** The job ran on `macos-14` until GitHub retired that image (2026-11-02); macOS 15 is the
+oldest hosted OS left. It still proves the CoreAI link is weak and the facade reports `unsupportedOS` below 27. What
+covers macOS 14 itself is the build: every product builds at macOS 14, the consumer reports macOS 14 as its minimum OS,
+and every strong load command is on the floor OS's allow-list. A call to an API newer than macOS 14 but present on 15
+would still launch here, so the compiler's availability checking at the macOS 14 target is what catches it.
 
 **No iOS 17 launch yet.** The iOS 17 device build and its weak CoreAI link are checked. But CoreAI isn't
 in the iOS Simulator SDK, so nothing that links the facade builds for the simulator: `import CoreAI` fails there. That
 was already true at the old floor. A simulator launch, and simulator builds for apps, need the Core AI targets to compile
-without CoreAI (for example `#if canImport(CoreAI)` around them), which is a follow-up. The macos-14 image does carry iOS
-17 simulator runtimes.
+without CoreAI (for example `#if canImport(CoreAI)` around them), which is a follow-up.
 
 ## Why this design
 

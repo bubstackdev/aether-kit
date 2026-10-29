@@ -2,6 +2,12 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews with no API compatibility promise.
 
+## Unreleased
+
+### Changed
+
+- **CI:** the floor consumer's launch job runs on a GitHub-hosted `macos-15` runner instead of `macos-14`, which GitHub retires on 2026-11-02, and is now named **Launch without CoreAI (macOS 15)**. macOS 15 has no CoreAI either, so the job still requires a weak CoreAI link and `unsupportedOS`; macOS 14 itself is covered by the floor build only ([deployment floor](docs/deployment-floor.md)).
+
 ## 0.0.3 — 2026-10-28
 
 Third experimental developer preview. See the [release notes](docs/release-notes/0.0.3.md).
