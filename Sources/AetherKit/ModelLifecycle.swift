@@ -179,6 +179,9 @@ package final class ModelLifecycle: Sendable {
         self.policy = policy
         self.monitor = monitor
         self.sleep = sleep
+        // Notices from before this model existed found nothing loaded to release.
+        let notice = monitor.reading.notice
+        state.withLock { $0.handledNotice = notice }
         monitor.register(self)
     }
 
@@ -257,10 +260,14 @@ package final class ModelLifecycle: Sendable {
     }
 
     /// A raised notice releases the model, once, if it's idle and the policy allows. A busy model releases for it when
-    /// it next goes idle.
+    /// it next goes idle; an unloaded one has nothing to release, so the notice is spent and its next load is kept.
     func pressure(notice: Int) {
         guard policy.releaseUnderMemoryPressure else { return }
-        let release: Release? = state.withLock { $0.current == .loaded && $0.handledNotice < notice ? $0.release : nil }
+        let release: Release? = state.withLock { state in
+            guard state.handledNotice < notice else { return nil }
+            if case .unloaded = state.current { state.handledNotice = notice; return nil }
+            return state.current == .loaded ? state.release : nil
+        }
         guard let release else { return }
         Task { [weak self] in
             if await release(.memoryPressure) { self?.state.withLock { $0.handledNotice = max($0.handledNotice, notice) } }

@@ -141,6 +141,21 @@ struct ModelLifecycleTests {
         monitor.deliver(.normal)
     }
 
+    @Test func aNoticeThatFindsTheModelUnloadedDoesNotReleaseItsNextLoad() async throws {
+        let (model, release) = lifecycle(ModelLifecyclePolicy(idleUnloadAfter: nil))
+        monitor.deliver(.warning)  // unloaded: nothing to release
+        model.loading()
+        model.loaded()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(model.current == .loaded && release.recorded.isEmpty)
+        // A model created during the warning keeps its first load too.
+        let (later, laterRelease) = lifecycle(ModelLifecyclePolicy(idleUnloadAfter: nil))
+        later.loaded()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(later.current == .loaded && laterRelease.recorded.isEmpty)
+        monitor.deliver(.normal)
+    }
+
     @Test func aFailedLoadKeepsTheLastUnloadReason() {
         let (model, _) = lifecycle(.manual)
         model.loading()

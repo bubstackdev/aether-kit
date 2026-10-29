@@ -59,7 +59,8 @@ Internally one package type, `ModelLifecycle`, does the bookkeeping for every pr
 - **Pressure.** The model is registered weakly with the process-wide monitor, a `DispatchSource` memory-pressure source
   for warning, critical and normal. It starts on first use, from the kernel's current level
   (`kern.memorystatus_vm_pressure_level`). Each warning or critical notice releases each idle model once, if the policy
-  allows; a model that was busy releases when it next goes idle. While the level stays raised, later requests load and
+  allows; a model that was busy releases when it next goes idle. A model that was unloaded at the notice, or created
+  after it, has nothing to release, and keeps its next load. While the level stays raised, later requests load and
   keep the model, so a long warning doesn't turn every request into a load and an unload. A process started under
   pressure sees the level for the load gate, but that isn't a notice, so it doesn't release anything.
 - **The load gate.** While pressure is critical, a load throws. Language reports `AetherLanguageError.insufficientMemory`;
@@ -92,7 +93,7 @@ starts fresh.
   - pressure during a request (no release until it ends);
   - critical refusing a load, and normal lifting it;
   - each product's release keeping it usable.
-- **Mac:** `aether-probe lifecycle` drives the language facade with a short idle policy and records Metal's allocated
+- **Mac:** `aether-probe qualify-lifecycle` drives the language facade with a short idle policy and records Metal's allocated
   size and the physical footprint:
   - loaded, then idle-unloaded back to baseline;
   - the reload's time;
