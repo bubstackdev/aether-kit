@@ -140,8 +140,10 @@ They total 1,190,533,600 bytes, all bf16, read from the shard header only. All 1
 ### Changes
 
 1. **Vision tower graph, new.** Add an H3 stage, `export-h3-profile.py --stage conditioner-vision`, built on
-   `qwen3_vl_vision.py` with a precision parameter. It writes static functions for the admitted canvases: grid
-   (34, 60) at 960×544 and (60, 34) at 544×960, plus (18, 18) for the 288×288 diagnostic canvas.
+   `qwen3_vl_vision.py` with a precision parameter. It writes one static function per canvas (D3): grid (34, 60) at
+   960×544, (60, 34) at 544×960, (44, 80) at 1280×704, (80, 44) at 704×1280, and (18, 18) for the 288×288
+   diagnostic canvas. The large canvases follow Atelier's large-canvas lane, which builds their tails and measured
+   envelopes.
    - Weights are bound in place from shard 14, as the conditioner layers already are
      (`Scripts/export-h3-profile.py` 400–470), rather than baked in.
    - It writes an overlay bundle with `lineage`, the pattern of the tiled encoder overlay
@@ -200,15 +202,15 @@ They total 1,190,533,600 bytes, all bf16, read from the shard header only. All 1
      so the two can overlap.
    - Admission is keyed by pixels and was measured with the 49-token prompt. That gap predates this work, but this
      change widens every FL2VA request by a fixed amount.
-7. **First plus last.** The presentation code should be N-keyframe generic: labels are numbered 1… in packed order,
-   first then last, and a two-keyframe batch is still one tower call per image. But Kit refuses last-frame requests
+7. **First plus last (D7).** The presentation is N-keyframe generic: labels are numbered 1… in packed order, first
+   then last, and a two-keyframe batch is still one tower call per image. Kit refuses last-frame requests today
    (`H3VideoSession.swift` 169), and the denoiser lays out only a `.first` anchor (`H3ProfileStages.swift` 218–221).
-   Enabling last-frame conditioning also needs:
-   - the `.last` anchor time (`before_denoise.py` 325–342);
-   - a last-frame condition encode.
+   Last-frame conditioning (the `.last` anchor time, `before_denoise.py` 325–342, and a last-frame condition encode)
+   comes from Atelier's last-frame lane, PR #78. This change builds the N-keyframe presentation and tests the
+   first-frame case. Last and first-plus-last presentation tests land on top of #78 once it merges.
 
-   That is separate work. Note also that the deviation section says last-frame and first-plus-last conditioning
-   "follow the same text-only presentation", but both are refused today. That sentence should be corrected.
+   The deviation section says last-frame and first-plus-last conditioning "follow the same text-only presentation",
+   but both are refused today. That sentence should be corrected.
 
 ## 4. Gates
 
@@ -289,7 +291,7 @@ All GPU work runs under the GPU lock with the existing controllers. Scratch file
 | # | Step | CPU | GPU | Memory |
 | --- | --- | --- | --- | --- |
 | 0 | Add torchvision to `Forge/h3-oracle` (D4). Re-verify that the FL2VA keyframe hash still reproduces (`docs/evidence/forge-environment-2026-10-27.json`). | minutes | none | small |
-| 1 | Oracle `--part presentation`. First a two-layer slice to time it and take peak RSS, then full runs at 960×544 and 288×288. Write fixtures (ids, tags, positions) for the Swift tests. | slice minutes; full run several minutes (**unverified**) | none | ~3–4 GB (**unverified**; measure on the slice) |
+| 1 | Oracle `--part presentation`. First a two-layer slice to time it and take peak RSS, then full runs at 960×544 and 288×288 (the large canvases after their grids are exported). Write fixtures (ids, tags, positions) for the Swift tests. | slice minutes; full run several minutes (**unverified**) | none | ~3–4 GB (**unverified**; measure on the slice) |
 | 2 | `--stage conditioner-vision` overlay: static grids, in-place weights, CPU self-check against upstream's `Qwen3VLVisionModel` per grid. | minutes (**unverified**) | none | a few GB (**unverified**) |
 | 3 | Swift: `H3Presentation`, profile schema fields, vision kernel, conditioner changes, tag plumbing, limits, probe dump of presentation inputs, CPU tests on oracle fixtures. | build and tests | none | small |
 | 4 | Native vision qualification per grid against step 1 (specialized without `expectFrequentReshapes`), recording the Metal peak. | small | seconds per grid | ~1.2 GB weights plus scratch (**unverified**) |
@@ -316,26 +318,22 @@ All GPU work runs under the GPU lock with the existing controllers. Scratch file
   - Atelier's FL2VA canvas measurements depend on the new row count
     ([roadmap](roadmap-0.0.4.md#parallel-track-hardening-and-coverage)), so they should wait for step 8.
 
-## 6. Decisions for the user
+## 6. Decisions
 
-1. **D1, tower precision.** Recommended: an upstream-matching bf16 recipe (bf16 weights and pixels, f32 RoPE). The
-   alternative is the language product's fp16-storage, f32-compute recipe.
-2. **D2, weight binding.** Recommended: bind in place from checkpoint shard 14, with no copy. The alternative is to
-   bake 1.19 GB into the asset, as the language product does.
-3. **D3, canvases.** Recommended: static grids for 960×544, 544×960 and 288×288. Adding 1280×704 (880 tokens) means
-   measuring admission for it.
-4. **D4, oracle environment.** Recommended: add torchvision to the pinned H3 oracle environment, so upstream's
-   processor runs verbatim. The alternative keeps the pin with a PIL-backend stand-in, which leaves a small
-   independence gap.
-5. **D5, gate bars.** Recommended: exact equality for ids, tags, pixels and positions; relative L2 ≤ 0.02 for the
+The user decided on 2026-10-29:
+
+1. **D1, tower precision: bf16.** An upstream-matching recipe: bf16 weights and pixels, f32 RoPE.
+2. **D2, weight binding: in place** from checkpoint shard 14, with no copy.
+3. **D3, canvases: 960×544, 544×960, 288×288, 1280×704 and 704×1280.** One static grid each. The large canvases
+   follow Atelier's large-canvas lane (large-canvas tails and measured envelopes).
+4. **D4, oracle environment: add torchvision** to `Forge/h3-oracle`, then re-verify the environment record.
+5. **D5, gate bars: as proposed.** Exact equality for ids, tags, pixels and positions; relative L2 ≤ 0.02 for the
    vision embeddings, DeepStack and tap.
-6. **D6, profile identity.** Recommended: an overlay bundle with `lineage`, with T2VA carried by an identity replay.
-   The alternative is a full T2VA re-gate.
-7. **D7, first plus last.** Recommended: an N-keyframe presentation, with last-frame requests still refused in this
-   change. The alternative is to implement last-frame conditioning in 0.0.4.
-8. **D8, API.** Accept the public change to `H3PromptConditioner` and `H3Denoiser` (keyframes in, tags out) in
-   0.0.4.
-9. **D9, admission.** Re-measure at the gate prompt only, or also at a long prompt. The second closes the existing
-   text-length gap.
-10. **D10, the effect on output.** Whether the user wants an A/B review of old and new FL2VA renders before the
-    measured entry is re-bundled.
+6. **D6, profile identity: an overlay bundle** with `lineage`, with T2VA carried by an identity replay.
+7. **D7, keyframes: N keyframes** (first, last, both), built on Atelier's last-frame lane (PR #78) once it merges.
+   Until then the presentation is N-capable and tested on the first frame only.
+8. **D8, API: accepted.** The public change to `H3PromptConditioner` and `H3Denoiser` (keyframes in, tags out) lands
+   in 0.0.4.
+9. **D9, admission: re-measure at the gate prompt and at a long prompt.**
+10. **D10, the effect on output: yes.** An A/B of old and new FL2VA renders goes to the user before the measured entry
+    is re-bundled.
