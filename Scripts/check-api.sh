@@ -28,6 +28,7 @@ digester=$(xcrun --find swift-api-digester 2>/dev/null) || fail "swift-api-diges
 [ -x "$digester" ] || fail "swift-api-digester is not executable: $digester"
 sdk=$(xcrun --sdk macosx --show-sdk-path) || fail "no macOS SDK"
 python3 -I -c 'import json' || fail "python3 is required"
+python3 -I Scripts/test_api_freeze.py 2>&1 || fail "Scripts/api-freeze.py fails its own tests"
 
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/.build/swift-module-cache"
@@ -66,10 +67,15 @@ for module in $modules; do
     # Every report has its section headers; without them the comparison didn't run.
     grep -q '^/\* Removed Decls \*/$' "$work/$module.diagnostics.txt" \
         || { cat "$work/$module.diagnostics.txt" >&2; fail "no comparison report for $module"; }
-    if python3 -I Scripts/api-freeze.py diagnose "api/$module.json" "$work/$module.diagnostics.txt"; then
-        echo "$module: no breaking change to the frozen API"
-    else
+    if ! python3 -I Scripts/api-freeze.py diagnose "api/$module.json" "$work/$module.diagnostics.txt"; then
         status=1
+    elif ! cmp -s "api/$module.json" "$work/current/$module.json"; then
+        # Additive, but not yet in the baseline: until it is, a later change could remove the addition unnoticed.
+        echo "::error::check-api: api/$module.json is stale: the frozen API gained declarations. Run Scripts/check-api.sh --update and commit api/."
+        diff "api/$module.json" "$work/current/$module.json" | head -40 || true
+        status=1
+    else
+        echo "$module: matches the baseline"
     fi
 done
 [ "$status" -eq 0 ] || fail "the frozen API changed incompatibly (docs/api-stability.md says how to make an intended break)"

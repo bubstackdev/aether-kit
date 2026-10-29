@@ -4,7 +4,7 @@ import Foundation
 /// Versioned registration for a local dense language model. Registration is an
 /// explicit caller-owned contract; it does not establish numerical qualification.
 public struct LanguageModelManifest: Codable, Sendable {
-    public enum Platform: String, Codable, Sendable { case macos, ios }
+    @nonexhaustive public enum Platform: String, Codable, Sendable { case macos, ios }
     public let schemaVersion: Int
     public let modelDirectory: String
     public let tokenizerDirectory: String

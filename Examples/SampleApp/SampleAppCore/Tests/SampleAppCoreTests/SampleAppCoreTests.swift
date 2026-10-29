@@ -78,6 +78,16 @@ import Testing
         #expect(running.isLoaded && running.model == "Running" && running.pressure.contains("critical"))
         #expect(LifecycleDisplay(state: .loaded, pressure: .normal).model == "Loaded, idle")
     }
+
+    @Test func theQualificationRecordNamesLifecycleStatesPlainly() {
+        #expect(QualificationRun.name(.unloaded(nil)) == "unloaded")
+        #expect(QualificationRun.name(.unloaded(.idle)) == "unloaded(idle)")
+        #expect(QualificationRun.name(.unloaded(.requested)) == "unloaded(requested)")
+        #expect(QualificationRun.name(.unloaded(.memoryPressure)) == "unloaded(memoryPressure)")
+        #expect(QualificationRun.name(.loading) == "loading")
+        #expect(QualificationRun.name(.loaded) == "loaded")
+        #expect(QualificationRun.name(.running) == "running")
+    }
 }
 
 /// A responder that replays scripted updates, optionally pausing between them.
@@ -183,9 +193,35 @@ struct ScriptedResponder: ChatResponder {
         struct Nope: Error {}
         await todo.attach { _ in throw Nope() }
         #expect(todo.item == nil)
-        todo.run("x")
+        #expect(todo.run("x"))
         await todo.waitForResult()
         #expect(todo.item == nil && todo.error != nil)
+    }
+}
+
+@MainActor
+@Suite struct ReplacingTheModelTests {
+    /// An extraction that finishes 300 ms after it starts, whether or not it's cancelled.
+    static func slowExtraction(_ sentence: String) async throws -> TodoItem {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) { continuation.resume() }
+        }
+        return TodoItem(title: sentence, priority: .low, dueInDays: nil)
+    }
+
+    @Test func runIsRefusedWhileTheModelIsReplaced() async throws {
+        let todo = TodoController()
+        await todo.attach(Self.slowExtraction)
+        #expect(todo.run("first"))
+        #expect(!todo.run("overlapping"), "one extraction at a time")
+        let replacing = Task { await todo.attach { _ in TodoItem(title: "new", priority: .high, dueInDays: 1) } }
+        while todo.isAvailable { try await Task.sleep(for: .milliseconds(1)) }
+        #expect(!todo.run("during"), "refused while the old extraction drains")
+        await replacing.value
+        #expect(todo.isAvailable && todo.item == nil)
+        #expect(todo.run("after"))
+        await todo.waitForResult()
+        #expect(todo.item?.title == "new")
     }
 }
 
@@ -227,8 +263,11 @@ struct MemoryTransport: ModelTransport {
         #expect(seen.contains("ready"))
         #expect(controller.model == nil && !app.chat.isAvailable && !app.todo.isAvailable)
 
-        await controller.perform(.delete)
-        #expect(controller.actionError == nil)
+        // A second delete while the first runs is ignored rather than failing busy.
+        async let first: Void = controller.perform(.delete)
+        async let second: Void = controller.perform(.delete)
+        _ = await (first, second)
+        #expect(controller.actionError == nil && !controller.isDeleting)
         try await until { controller.stateName == "notInstalled(0/\(payload.count))" }
         #expect(controller.display.actions == [.download])
     }

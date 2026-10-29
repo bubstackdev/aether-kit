@@ -43,8 +43,12 @@ without breaking that code.
 | Module | `@nonexhaustive` |
 | --- | --- |
 | `AetherLanguage` | `AetherLanguageError`, `AetherLanguageModel.UnavailableReason`, `AetherStopReason`, `AetherTranscript.Entry`, `AetherGenerationOptions.Reasoning`, `AetherGenerationOptions.SamplingMode.Kind` |
-| `AetherAssets` | `PreparationError`, `PreparationEvent`, `ModelSource`, `ModelReadiness.State`, `ModelReadiness.Progress.Phase`, `ModelReadiness.Unsupported`, `ModelReadiness.Failure` |
-| `AetherKit` | `ModelLifecycleState`, `ModelUnloadReason` |
+| `AetherAssets` | `PreparationError`, `PreparationEvent`, `ModelSource`, `ModelReadiness.State`, `ModelReadiness.Progress.Phase`, `ModelReadiness.Unsupported`, `ModelReadiness.Failure`, `AssetStoreError` |
+| `AetherKit` | `ModelLifecycleState`, `ModelUnloadReason`, `LanguageModelManifest.Platform` (a registration for another OS, such as visionOS, is plausible) |
+
+The payload-free ones (`AetherStopReason`, `AetherGenerationOptions.Reasoning`, `ModelReadiness.Progress.Phase`,
+`ModelUnloadReason`) declare `Hashable` explicitly. Swift synthesizes it for a payload-free enum by itself, and would
+silently drop it when a case with a payload arrives; declared, a later case keeps it or doesn't compile.
 
 These stay exhaustive, by choice:
 - **`AetherLanguageModel.Availability`**: available or not. Every new reason goes in `UnavailableReason`, which can grow.
@@ -62,11 +66,15 @@ Swift jobs, which includes every change under `Sources/`. **CI passed** requires
 1. builds the four modules at `arm64-apple-macosx27.0`;
 2. dumps each with `swift-api-digester -dump-sdk`, from the selected Xcode toolchain (Xcode 27.1 in CI);
 3. keeps the frozen declarations, without internal or package ones ([`Scripts/api-freeze.py`](../Scripts/api-freeze.py));
-4. compares them with the committed baseline in [`api/`](../api) (`swift-api-digester -diagnose-sdk`), and fails on
-   every finding except a case added to a `@nonexhaustive` enum.
+4. fails if a frozen signature names an `Aether` type the freeze doesn't cover (a frozen declaration must expose only
+   frozen types, or the unfrozen one could break it);
+5. compares them with the committed baseline in [`api/`](../api) (`swift-api-digester -diagnose-sdk`), and fails on
+   every finding except a case added to a `@nonexhaustive` enum;
+6. then fails if the baseline is stale: an addition passes the comparison, but until `api/` records it, a later change
+   could remove it unnoticed. The fix is `--update` in the same pull request.
 
-It fails closed: a missing digester, baseline or frozen declaration, an empty dump, or a comparison with no report fails
-the job. The job uploads the pruned dumps and the digester's reports as diagnostics.
+`Scripts/test_api_freeze.py` tests the pruning, exposure and comparison rules, and runs first. The script fails closed:
+a missing digester, baseline or frozen declaration, an empty dump, or a comparison with no report fails the job. The job uploads the pruned dumps and the digester's reports as diagnostics.
 
 Run it locally with Xcode 27.1 selected:
 
@@ -76,8 +84,8 @@ sh Scripts/check-api.sh
 
 ## Changing the frozen API
 
-- **An addition** passes the check as it is. Refresh the baseline in the same pull request, so the addition is frozen
-  too: `sh Scripts/check-api.sh --update`, and commit `api/`.
+- **An addition** must be recorded in the same pull request: `sh Scripts/check-api.sh --update`, and commit `api/`.
+  Without that, the job fails with "baseline is stale".
 - **Freezing more** (a new declaration in an unfrozen module): add it to `Scripts/api-freeze.json`, then `--update`.
 - **A break** is a decision, not a fix-up. It needs the user's approval, a `Breaking` entry in the changelog with the
   migration, and `--update`. The pull request says why, and its `api/` diff shows exactly what changed.

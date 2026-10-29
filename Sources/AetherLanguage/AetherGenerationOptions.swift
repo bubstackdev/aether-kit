@@ -22,7 +22,7 @@ public struct AetherGenerationOptions: Sendable, Equatable {
         }
     }
 
-    @nonexhaustive public enum Reasoning: Sendable, Equatable {
+    @nonexhaustive public enum Reasoning: Sendable, Hashable {
         /// Render with the template's thinking switch off; the model answers directly.
         case off
         /// Let the model think first. Its thinking is returned separately (`Response.reasoning`) and is not rendered back

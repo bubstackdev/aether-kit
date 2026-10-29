@@ -27,7 +27,7 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ### Breaking
 
-- **Growable enums are `@nonexhaustive`** (SE-0487), so adding a case in a later 0.0.x release won't break clients. Code outside the package that switches over one of them exhaustively no longer compiles in Swift 6 mode (a warning in Swift 5 mode). The affected enums are `AetherLanguageError`, `AetherLanguageModel.UnavailableReason`, `AetherStopReason`, `AetherTranscript.Entry`, `AetherGenerationOptions.Reasoning`, `AetherGenerationOptions.SamplingMode.Kind`, `PreparationError`, `PreparationEvent`, `ModelSource`, `ModelReadiness.State`, `.Progress.Phase`, `.Unsupported`, `.Failure`, `ModelLifecycleState` and `ModelUnloadReason`. **Migration:** add `@unknown default:` to each such `switch` (or a catch-all pattern such as `case .unavailable(let reason):`).
+- **Growable enums are `@nonexhaustive`** (SE-0487), so adding a case in a later 0.0.x release won't break clients. Code outside the package that switches over one of them exhaustively no longer compiles in Swift 6 mode (a warning in Swift 5 mode). The affected enums are `AetherLanguageError`, `AetherLanguageModel.UnavailableReason`, `AetherStopReason`, `AetherTranscript.Entry`, `AetherGenerationOptions.Reasoning`, `AetherGenerationOptions.SamplingMode.Kind`, `PreparationError`, `PreparationEvent`, `ModelSource`, `ModelReadiness.State`, `.Progress.Phase`, `.Unsupported`, `.Failure`, `ModelLifecycleState`, `ModelUnloadReason`, `AssetStoreError` and `LanguageModelManifest.Platform`. **Migration:** add `@unknown default:` to each such `switch` (or a catch-all pattern such as `case .unavailable(let reason):`).
 
 ### Changed
 

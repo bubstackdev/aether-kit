@@ -99,8 +99,9 @@ public final class QualificationRun {
         }
         app.model.lifecycleDidChange = { [weak self] state in
             guard let self else { return }
-            record.lifecycle.append(.init(seconds: now, state: "\(state)"))
-            log("LIFECYCLE \(state)")
+            let name = Self.name(state)
+            record.lifecycle.append(.init(seconds: now, state: name))
+            log("LIFECYCLE \(name)")
         }
         app.model.start()
         await waitFor("an initial readiness state", timeout: 120) { self.app.model.stateName != "starting" && !self.app.model.stateName.hasPrefix("verifying") }
@@ -236,6 +237,24 @@ public final class QualificationRun {
             try? await Task.sleep(for: .milliseconds(20))
         }
         return true
+    }
+
+    /// A lifecycle state as the record writes it: `unloaded(idle)`, `unloaded` before the first load, `loaded`, and so on.
+    public nonisolated static func name(_ state: ModelLifecycleState) -> String {
+        switch state {
+        case let .unloaded(reason):
+            switch reason {
+            case nil: "unloaded"
+            case .requested?: "unloaded(requested)"
+            case .idle?: "unloaded(idle)"
+            case .memoryPressure?: "unloaded(memoryPressure)"
+            case let reason?: "unloaded(\(reason))"
+            }
+        case .loading: "loading"
+        case .loaded: "loaded"
+        case .running: "running"
+        @unknown default: "\(state)"
+        }
     }
 
     static func seconds(_ duration: Duration) -> Double {

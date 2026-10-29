@@ -16,8 +16,8 @@ that repository's own LICENSE and NOTICE. The weights are not in this
 repository; Examples/SampleApp downloads them. AetherKit distributes no other
 weights.
 
-No model weights, tokenizer files, adapters or upstream Core AI Models runtime
-implementation are distributed by this package. External assets retain their
+This repository contains no model weights, tokenizer files, adapters or
+upstream Core AI Models runtime implementation. External assets retain their
 own licenses.
 
 H3 geometry, packing, row positions and scheduler conventions are derived from

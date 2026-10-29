@@ -58,7 +58,7 @@ struct ModelScreen: View {
             } footer: {
                 Text("Qwen3-0.6B, converted by AetherKit from Qwen/Qwen3-0.6B (Apache-2.0), downloaded from Hugging Face and verified file by file.")
             }
-            if !display.actions.isEmpty {
+            if !display.actions.isEmpty && !model.isDeleting {
                 Section {
                     ForEach(display.actions, id: \.self) { action in
                         Button(title(action), role: action == .delete ? .destructive : nil) {
@@ -144,8 +144,8 @@ struct ChatScreen: View {
     }
 
     private func send() {
-        chat.send(draft)
-        draft = ""
+        // The draft stays when the controller refuses it (a reply running, or the model being replaced).
+        if chat.send(draft) { draft = "" }
     }
 }
 

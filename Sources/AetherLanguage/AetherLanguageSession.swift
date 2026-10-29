@@ -166,8 +166,9 @@ public struct ResponseStream: AsyncSequence, Sendable {
     public struct AsyncIterator: AsyncIteratorProtocol {
         var events: AsyncThrowingStream<Event, any Error>.AsyncIterator
         private var content = "", reasoning = ""
-        /// The finished reply (stop reason, usage, seed and transcript entries) once ``next()`` has returned nil; nil
-        /// before then, and after a failed or cancelled request.
+        /// The finished reply: stop reason, usage, seed and transcript entries. It's set by the ``next()`` call that sees
+        /// the reply finish, which may also return the final snapshot; read it once ``next()`` has returned nil. It
+        /// stays nil when the request fails or is cancelled.
         public fileprivate(set) var response: AetherLanguageSession.Response<String>?
 
         init(events: AsyncThrowingStream<Event, any Error>.AsyncIterator) { self.events = events }

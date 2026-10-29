@@ -38,13 +38,22 @@ public final class TodoController {
 
     @ObservationIgnored private var extract: (@Sendable (String) async throws -> TodoItem)?
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Attaches in progress; `run` refuses while any runs.
+    @ObservationIgnored private var switching = 0
+    @ObservationIgnored private var generation = 0
 
     public init() {}
 
     /// Uses `extract` for each request, after the current one ends. nil detaches.
     public func attach(_ extract: (@Sendable (String) async throws -> TodoItem)?) async {
+        generation += 1
+        let mine = generation
+        switching += 1
+        defer { switching -= 1 }
+        isAvailable = false
         task?.cancel()
         await task?.value
+        guard mine == generation else { return }
         self.extract = extract
         isAvailable = extract != nil
         item = nil; json = nil; error = nil; seconds = nil
@@ -59,8 +68,10 @@ public final class TodoController {
         }
     }
 
-    public func run(_ sentence: String) {
-        guard let extract, !isWorking else { return }
+    /// Starts an extraction. Returns false when one is running, no model is attached, or the model is being replaced.
+    @discardableResult
+    public func run(_ sentence: String) -> Bool {
+        guard let extract, !isWorking, switching == 0 else { return false }
         isWorking = true
         error = nil
         task = Task { [weak self] in
@@ -76,6 +87,7 @@ public final class TodoController {
             }
             self?.isWorking = false
         }
+        return true
     }
 
     public func waitForResult() async { await task?.value }

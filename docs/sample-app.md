@@ -92,10 +92,7 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
 - **Proof on the runner** (PR #80): a commit that made `AetherLanguageSession.prewarm()` internal failed the job with
   `Func AetherLanguageSession.prewarm() has been removed`
   ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40936256797)), and its revert passed
-  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)). Locally, a removed method, a changed
-  parameter type, and `@nonexhaustive` added to an exhaustive enum each fail. A new method, a change to an unfrozen
-  type, and a payload-free case added to a `@nonexhaustive` enum each pass. A payload case added to a payload-free enum
-  fails, because it removes the synthesized `Hashable`.
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)).
 
 ## API changes the app led to (made before the freeze)
 
@@ -103,7 +100,8 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
    need `@unknown default` (an error in Swift 6 mode without it). The changelog lists this under Breaking, with the
    migration. Inside the package, modules still switch exhaustively. The examples that switch over these enums
    (`FloorConsumer`, `LanguageDevice`) handle unknown cases.
-2. **`ResponseStream.AsyncIterator.response` is public:** a streamed reply's stop reason, usage, seed and transcript
+2. **Payload-free `@nonexhaustive` enums declare `Hashable`,** so a later case can't drop it silently.
+3. **`ResponseStream.AsyncIterator.response` is public:** a streamed reply's stop reason, usage, seed and transcript
    entries once `next()` returns nil. The chat screen's footnote reads it.
 
 ## Qualification
@@ -111,7 +109,8 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
 [Record](evidence/sample-app-2026-10-29.json). The app's `-qualify PHASES` launch mode (`fresh`, `prepare`, `run`,
 `idle`, `delete`) calls the same controller actions the buttons do. `-idleSeconds 10` sets the idle policy, and the
 app writes its JSON record to its container. Each run downloaded the bundle anonymously from the public repository at
-revision `7757d22b`.
+revision `7757d22b`. These records predate a formatting fix, so their lifecycle lists print the idle unload as
+`unloaded(Optional(AetherKit.ModelUnloadReason.idle))`; later records print `unloaded(idle)`.
 
 **Mac** (Mac17,6, macOS 27.2, Release build, sandboxed: `codesign -d --entitlements` shows app-sandbox and
 network.client). The record has `sandboxed: true` and `storeInsideAppContainer: true`. It took two launches:
@@ -136,6 +135,12 @@ requirement.
 - The idle unload came 10.07 s after the last request, and the reload reply finished in 1.76 s.
 - Delete left `notInstalled(0/1208370448)` and 0 bytes in the store.
 
-Not covered by these runs: a pass through the UI by hand, and memory pressure in the app. The
-[lifecycle record](evidence/model-lifecycle-2026-10-29.json) qualifies pressure; the strip shows the level from
-`MemoryPressure.levels`.
+Not covered by these runs:
+- **The background relaunch path.** The app forwards background-session events through
+  `.backgroundTask(.urlSession(identifier))`, but the iPhone run kept the app in the foreground the whole time, with
+  `BackgroundTransport` doing the download. A suspended app, and an app relaunched to receive a finished transfer, were
+  qualified with the LanguageDevice probe for model preparation
+  ([preparation iPhone record](evidence/model-preparation-iphone-2026-10-29.json)), not in the sample app.
+- A pass through the UI by hand.
+- Memory pressure in the app. The [lifecycle record](evidence/model-lifecycle-2026-10-29.json) qualifies pressure, and
+  the strip shows the level from `MemoryPressure.levels`.

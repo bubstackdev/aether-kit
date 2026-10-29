@@ -86,12 +86,23 @@ public final class ChatController {
     @ObservationIgnored private var makeResponder: (@MainActor () -> any ChatResponder)?
     @ObservationIgnored private var responder: (any ChatResponder)?
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Attaches and new chats in progress; `send` refuses while any runs, so nothing starts on a responder being
+    /// replaced.
+    @ObservationIgnored private var switching = 0
+    /// The latest attach; an earlier one that finishes waiting later doesn't overwrite it.
+    @ObservationIgnored private var generation = 0
 
     public init() {}
 
     /// Uses `makeResponder` for each new conversation, after stopping the current reply. nil detaches.
     public func attach(_ makeResponder: (@MainActor () -> any ChatResponder)?) async {
+        generation += 1
+        let mine = generation
+        switching += 1
+        defer { switching -= 1 }
+        isAvailable = false
         await stopAndWait()
+        guard mine == generation else { return }
         self.makeResponder = makeResponder
         responder = nil
         messages = []
@@ -104,9 +115,12 @@ public final class ChatController {
         await attach { SessionResponder(session: AetherLanguageSession(model: model, instructions: Self.instructions), options: Self.options) }
     }
 
-    public func send(_ prompt: String) {
+    /// Starts a reply. Returns false, leaving the conversation unchanged, when the prompt is empty, a reply is running,
+    /// no model is attached, or the conversation is being replaced.
+    @discardableResult
+    public func send(_ prompt: String) -> Bool {
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !prompt.isEmpty, !isResponding, let makeResponder else { return }
+        guard !prompt.isEmpty, !isResponding, switching == 0, let makeResponder else { return false }
         let responder = responder ?? makeResponder()
         self.responder = responder
         messages.append(ChatMessage(role: .user, text: prompt))
@@ -131,6 +145,7 @@ public final class ChatController {
             self?.update(reply.id) { $0.isStreaming = false; $0.footnote = footnote }
             self?.isResponding = false
         }
+        return true
     }
 
     /// Stops the running reply. Text so far stays on screen; the session's transcript keeps only completed turns.
@@ -140,7 +155,11 @@ public final class ChatController {
     public func waitForReply() async { await task?.value }
 
     public func newChat() async {
+        let mine = generation
+        switching += 1
+        defer { switching -= 1 }
         await stopAndWait()
+        guard mine == generation else { return }
         responder = nil
         messages = []
     }

@@ -3,7 +3,7 @@ import AetherLanguageTokenizers
 import os
 
 /// Why a reply ended.
-@nonexhaustive public enum AetherStopReason: Sendable, Equatable {
+@nonexhaustive public enum AetherStopReason: Sendable, Hashable {
     /// The model ended its turn (a registered end-of-sequence token).
     case endOfTurn
     /// It reached `maximumResponseTokens`.

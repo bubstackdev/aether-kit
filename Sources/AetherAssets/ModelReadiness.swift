@@ -63,7 +63,7 @@ public final class ModelReadiness: @unchecked Sendable {
     }
 
     public struct Progress: Sendable, Equatable {
-        @nonexhaustive public enum Phase: Sendable, Equatable {
+        @nonexhaustive public enum Phase: Sendable, Hashable {
             /// Checking the store and free space.
             case checking
             /// Fetching; `bytesDone` includes bytes a previous run left.

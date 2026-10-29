@@ -21,6 +21,8 @@ public final class ModelController {
     public private(set) var pressure: MemoryPressureLevel = MemoryPressure.level
     /// The last action that failed (for example a delete refused while the model is busy).
     public private(set) var actionError: String?
+    /// While a delete runs, the screen offers no actions and further deletes are ignored.
+    public private(set) var isDeleting = false
     public var lifecycle: LifecycleDisplay { LifecycleDisplay(state: lifecycleState, pressure: pressure) }
 
     /// Called on the main actor whenever the open model changes (opened when ready, nil when dropped). The app passes it
@@ -35,7 +37,6 @@ public final class ModelController {
     @ObservationIgnored private let lifecyclePolicy: ModelLifecyclePolicy
     @ObservationIgnored private var observers: [Task<Void, Never>] = []
     @ObservationIgnored private var lifecycleObserver: Task<Void, Never>?
-    @ObservationIgnored private var deleting = false
 
     public init(entry: ModelCatalogEntry, preparation: ModelPreparation, check: ModelRuntimeCheck = .language,
                 lifecycle: ModelLifecyclePolicy = .platformDefault) {
@@ -80,7 +81,10 @@ public final class ModelController {
             }
         })
         observers.append(Task { [weak self] in
-            for await level in MemoryPressure.levels { self?.pressure = level }
+            for await level in MemoryPressure.levels {
+                guard let self else { return }
+                self.pressure = level
+            }
         })
     }
 
@@ -91,6 +95,7 @@ public final class ModelController {
     }
 
     public func perform(_ action: ReadinessDisplay.Action) async {
+        guard !isDeleting else { return }
         actionError = nil
         switch action {
         case .download, .retry: readiness.prepare()
@@ -102,8 +107,9 @@ public final class ModelController {
 
     /// Drops the model everywhere (screens first), then removes the installation and downloaded bytes.
     public func delete() async {
-        deleting = true
-        defer { deleting = false }
+        guard !isDeleting else { return }
+        isDeleting = true
+        defer { isDeleting = false }
         await dropModel()
         do {
             try await readiness.uninstall()
@@ -117,7 +123,7 @@ public final class ModelController {
         stateName = Self.name(state)
         stateDidChange?(stateName)
         if case let .ready(lease) = state {
-            guard model == nil, !deleting else { return }
+            guard model == nil, !isDeleting else { return }
             let model = AetherLanguageModel(installation: lease, lifecycle: lifecyclePolicy)
             guard model.availability == .available else {
                 display = ReadinessDisplay(title: "Can't open the model", detail: "\(model.availability)", actions: [.delete], tone: .problem)

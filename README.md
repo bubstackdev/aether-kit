@@ -2,7 +2,7 @@
 
 Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
-**Status: 0.0.3 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. On `main`, toward 0.0.4: the language facade, model preparation, readiness and lifecycle API is frozen for the rest of 0.0.x ([API stability](docs/api-stability.md)), and Kit publishes one sample bundle, Qwen3-0.6B ([sample app](docs/sample-app.md)). See the [release notes](docs/release-notes/0.0.3.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
+**Status: 0.0.3 experimental developer preview; `main` is heading for 0.0.4.** On `main`, the language facade, model preparation, readiness and lifecycle API is frozen for the rest of 0.0.x ([API stability](docs/api-stability.md)); every other API may still change in any 0.0.x release. Kit publishes one sample bundle, Qwen3-0.6B converted from `Qwen/Qwen3-0.6B` under Apache-2.0, and distributes no other weights ([sample app](docs/sample-app.md)). See the [release notes](docs/release-notes/0.0.3.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
@@ -14,9 +14,9 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 | `AetherKreaCoreAI` | Preview | Krea 2 Turbo text-to-image, with reference images and image-to-image refine: Qwen text encoder → four denoiser segments → Euler sampling → VAE decode. |
 | `AetherLanguageTokenizers` | **Experimental** (0.0.2) | A language model's local tokenizer and own chat template: chat messages (with image placeholders) to rendered token IDs, and tokens back to text. Never downloads. |
 | `AetherLanguageRuntime` | **Experimental** (0.0.3) | Backend-neutral language runtime at the macOS 14 / iOS 17 floor: the `LanguageBackend` protocol, a seeded sampler, token constraints and the shared decode loop. No Core AI dependency ([design](docs/language-runtime-seam.md)). |
-| `AetherLanguage` | **Experimental** (0.0.3) | The app-facing text facade in FoundationModels' shape: availability without loading, sessions, streaming, sampling, reasoning and structured output into `Decodable` types. Links at the floor; runs a model on macOS 27 / iOS 27 ([design](docs/language-facade.md)). |
+| `AetherLanguage` | **API frozen** (0.0.4) | The app-facing text facade in FoundationModels' shape: availability without loading, sessions, streaming, sampling, reasoning and structured output into `Decodable` types. Links at the floor; runs a model on macOS 27 / iOS 27 ([design](docs/language-facade.md)). |
 | `AetherLanguageFoundationModels` | **Experimental** (0.0.3) | `AetherLanguageModel` as a FoundationModels `LanguageModel`, including `@Generable` guided generation (macOS 27 / iOS 27). |
-| `AetherLanguageMacros` | **Experimental** (0.0.3) | `@AetherGenerable` and `@AetherGuide`, which write a type's generation schema. A separate product, so apps that don't use it don't build swift-syntax. |
+| `AetherLanguageMacros` | **API frozen** (0.0.4) | `@AetherGenerable` and `@AetherGuide`, which write a type's generation schema. A separate product, so apps that don't use it don't build swift-syntax. |
 | `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload; sampling and token constraints; Qwen3-VL image + text prompts with one or more images (`VisionLanguageSession`); optional resource admission. |
 | `AetherVision` | **Experimental** | Core-AI-independent image decoding (EXIF orientation, an alpha policy that drops alpha like upstream by default) and Qwen3-VL preprocessing. |
 | `AetherH3`, `AetherH3Tokenizers` | Preview (0.0.3) | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |

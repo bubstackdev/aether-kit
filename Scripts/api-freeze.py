@@ -26,6 +26,33 @@ def strip_internal(node):
     return node
 
 
+def is_frozen(qualified, freeze):
+    """Whether an Aether type, "Module.Outer[.Inner...]", is frozen: its module is frozen whole, its outer type is
+    named, or "Outer.Inner" is named and the type is Inner or nested in it."""
+    module, _, path = qualified.partition(".")
+    if module not in freeze:
+        return False
+    names = freeze[module]
+    if names == ["*"]:
+        return True
+    parts = path.split(".")
+    return parts[0] in names or (len(parts) > 1 and f"{parts[0]}.{parts[1]}" in names)
+
+
+def unfrozen_references(node, freeze):
+    """The Aether types a pruned dump's signatures name that the freeze doesn't cover. A frozen signature that exposes
+    an unfrozen type would let that type break the frozen API."""
+    found = set()
+    if node.get("kind") == "TypeNominal":
+        for match in re.finditer(r"\bAether\w+(?:\.\w+)+", node.get("printedName", "")):
+            name = re.sub(r"\.Type$", "", match.group(0))
+            if not is_frozen(name, freeze):
+                found.add(name)
+    for child in node.get("children", []):
+        found |= unfrozen_references(child, freeze)
+    return found
+
+
 def prune(freeze_path, module, dump_path, out_path):
     with open(freeze_path) as f:
         freeze = json.load(f)["modules"]
@@ -64,36 +91,54 @@ def prune(freeze_path, module, dump_path, out_path):
     if not declarations:
         fail(f"{module}: the dump has no frozen declarations")
     root["children"] = [strip_internal(d) for d in declarations]
+    unfrozen = sorted(unfrozen_references(root, freeze))
+    if unfrozen:
+        fail(f"{module}: frozen declarations expose unfrozen types: {', '.join(unfrozen)} "
+             "(freeze them in Scripts/api-freeze.json, or keep them out of frozen signatures)")
     with open(out_path, "w") as f:
         json.dump(dump, f, indent=1, sort_keys=True)
         f.write("\n")
 
 
-def nonexhaustive_enums(node, prefix=""):
-    found = set()
+def enums(node, prefix=""):
+    """Every enum in a dump, by qualified name ("ModelReadiness.State"), mapped to whether it's @nonexhaustive."""
+    found = {}
     for child in node.get("children", []):
         if child.get("kind") != "TypeDecl":
             continue
         name = f"{prefix}{child['name']}"
-        if child.get("declKind") == "Enum" and "Nonexhaustive" in child.get("declAttributes", []):
-            found.add(name)
-        found |= nonexhaustive_enums(child, f"{name}.")
+        if child.get("declKind") == "Enum":
+            found[name] = "Nonexhaustive" in child.get("declAttributes", [])
+        found.update(enums(child, f"{name}."))
     return found
+
+
+def is_open(enum_name, known):
+    """Whether a case added to `enum_name`, as the digester printed it, is additive. The digester may print a nested
+    enum by its full or a shorter qualified name ("State" for "ModelReadiness.State"), so the name matches every enum
+    it is a suffix of; the case is additive only if there is at least one and all of them are @nonexhaustive."""
+    matches = [open_ for name, open_ in known.items() if name == enum_name or name.endswith("." + enum_name)]
+    return bool(matches) and all(matches)
+
+
+def classify(lines, known):
+    """Splits digester findings into (additive, breaking)."""
+    findings = [line for line in lines if line and not (line.startswith("/*") and line.endswith("*/"))]
+    additive, breaking = [], []
+    for line in findings:
+        added = re.fullmatch(r"EnumElement (\S+)\.[^.\s]+ has been added as a new enum case", line)
+        (additive if added and is_open(added.group(1), known) else breaking).append(line)
+    return additive, breaking
 
 
 def diagnose(baseline_path, diagnostics_path):
     with open(baseline_path) as f:
-        open_enums = nonexhaustive_enums(json.load(f)["ABIRoot"])
+        known = enums(json.load(f)["ABIRoot"])
     with open(diagnostics_path) as f:
         lines = [line.strip() for line in f]
-    findings = [line for line in lines if line and not (line.startswith("/*") and line.endswith("*/"))]
-    breaking = []
-    for line in findings:
-        added = re.fullmatch(r"EnumElement (\S+)\.[^.\s]+ has been added as a new enum case", line)
-        if added and added.group(1) in open_enums:
-            print(f"additive: {line}")
-            continue
-        breaking.append(line)
+    additive, breaking = classify(lines, known)
+    for line in additive:
+        print(f"additive: {line}")
     for line in breaking:
         print(f"::error::API break: {line}")
     if breaking:

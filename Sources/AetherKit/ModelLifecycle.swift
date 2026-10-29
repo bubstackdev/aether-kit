@@ -30,7 +30,7 @@ public struct ModelLifecyclePolicy: Sendable, Equatable {
     public static let manual = Self(idleUnloadAfter: nil, releaseUnderMemoryPressure: false)
 }
 
-@nonexhaustive public enum ModelUnloadReason: Sendable, Equatable {
+@nonexhaustive public enum ModelUnloadReason: Sendable, Hashable {
     /// The app asked (`unload()`).
     case requested
     /// The policy's idle time passed.
