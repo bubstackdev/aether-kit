@@ -6,7 +6,8 @@
     "breakRemovedMethod": "https://github.com/bubstackdev/aether-kit/actions/runs/40936256797",
     "breakReverted": "https://github.com/bubstackdev/aether-kit/actions/runs/40937869455",
     "staleBaseline": "https://github.com/bubstackdev/aether-kit/actions/runs/40948509843",
-    "staleReverted": "https://github.com/bubstackdev/aether-kit/actions/runs/40950658604"
+    "staleReverted": "https://github.com/bubstackdev/aether-kit/actions/runs/40950658604",
+    "note": "breakRemovedMethod: the Public API job failed and CI cancelled the remaining jobs, so the run's conclusion reads cancelled. staleReverted ran on 063605a, the merge of main after the revert 0d59a5f, not on 0d59a5f itself."
   },
   "trials": [
     {

@@ -165,6 +165,47 @@ struct ScriptedResponder: ChatResponder {
         await chat.attach(nil)
         #expect(!chat.isAvailable && chat.messages.isEmpty)
     }
+
+    @Test func sendIsRefusedWhileTheConversationIsReplacedEvenWithNoReplyRunning() async throws {
+        let chat = ChatController()
+        await chat.attach { ScriptedResponder(updates: [.text("old")]) }
+        chat.send("1"); await chat.waitForReply()
+        let gate = Gate()
+        chat.drained = { await gate.wait() }
+        // New chat and attach each hold after the reply has ended, so only the switching guard refuses.
+        let clearing = Task { await chat.newChat() }
+        while gate.waiting < 1 { try await Task.sleep(for: .milliseconds(1)) }
+        #expect(!chat.isResponding && chat.isAvailable)
+        #expect(!chat.send("during new chat"))
+        gate.release(0)
+        await clearing.value
+        #expect(chat.messages.isEmpty)
+        let replacing = Task { await chat.attach { ScriptedResponder(updates: [.text("new")]) } }
+        while gate.waiting < 2 { try await Task.sleep(for: .milliseconds(1)) }
+        #expect(!chat.send("during attach"))
+        gate.release(1)
+        await replacing.value
+        #expect(chat.messages.isEmpty && chat.send("2"))
+        await chat.waitForReply()
+        #expect(chat.messages.last?.text == "new")
+    }
+
+    @Test func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
+        let chat = ChatController()
+        let gate = Gate()
+        chat.drained = { await gate.wait() }
+        let first = Task { await chat.attach { ScriptedResponder(updates: [.text("first")]) } }
+        while gate.waiting < 1 { try await Task.sleep(for: .milliseconds(1)) }
+        let second = Task { await chat.attach { ScriptedResponder(updates: [.text("second")]) } }
+        while gate.waiting < 2 { try await Task.sleep(for: .milliseconds(1)) }
+        gate.release(1)
+        await second.value
+        gate.release(0)
+        await first.value
+        #expect(chat.isAvailable && chat.send("q"))
+        await chat.waitForReply()
+        #expect(chat.messages.last?.text == "second")
+    }
 }
 
 @Suite struct TodoItemTests {
@@ -222,6 +263,57 @@ struct ScriptedResponder: ChatResponder {
         #expect(todo.run("after"))
         await todo.waitForResult()
         #expect(todo.item?.title == "new")
+    }
+
+    @Test func runIsRefusedAfterTheOldExtractionEndsUntilTheReplacementTakesOver() async throws {
+        let todo = TodoController()
+        await todo.attach { _ in TodoItem(title: "old", priority: .low, dueInDays: nil) }
+        #expect(todo.run("first"))
+        let gate = Gate()
+        todo.drained = { await gate.wait() }
+        let replacing = Task { await todo.attach { _ in TodoItem(title: "new", priority: .high, dueInDays: 1) } }
+        while gate.waiting < 1 { try await Task.sleep(for: .milliseconds(1)) }
+        // The old extraction has ended and its closure is still attached: only the switching guard refuses.
+        #expect(!todo.isWorking && todo.item?.title == "old")
+        #expect(!todo.run("during"))
+        gate.release(0)
+        await replacing.value
+        #expect(todo.run("after"))
+        await todo.waitForResult()
+        #expect(todo.item?.title == "new")
+    }
+
+    @Test func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
+        let todo = TodoController()
+        let gate = Gate()
+        todo.drained = { await gate.wait() }
+        let first = Task { await todo.attach { _ in TodoItem(title: "first", priority: .low, dueInDays: nil) } }
+        while gate.waiting < 1 { try await Task.sleep(for: .milliseconds(1)) }
+        let second = Task { await todo.attach { _ in TodoItem(title: "second", priority: .low, dueInDays: nil) } }
+        while gate.waiting < 2 { try await Task.sleep(for: .milliseconds(1)) }
+        gate.release(1)
+        await second.value
+        gate.release(0)
+        await first.value
+        #expect(todo.isAvailable && todo.run("q"))
+        await todo.waitForResult()
+        #expect(todo.item?.title == "second")
+    }
+}
+
+/// Holds each caller of `wait()` until the test releases it, in any order.
+@MainActor
+final class Gate {
+    private var waiters: [CheckedContinuation<Void, Never>?] = []
+    /// Callers that have arrived, released or not.
+    var waiting: Int { waiters.count }
+
+    func wait() async { await withCheckedContinuation { waiters.append($0) } }
+
+    /// Releases the caller that arrived `index`-th (from 0).
+    func release(_ index: Int) {
+        waiters[index]?.resume()
+        waiters[index] = nil
     }
 }
 

@@ -4,7 +4,8 @@
   api-freeze.py prune FREEZE_JSON MODULE FULL_DUMP OUT
       Reduces a swift-api-digester dump to the module's frozen declarations: drops imports, internal and package
       declarations (`isInternal`), every top-level declaration the freeze doesn't name, and the tool's arguments (they
-      hold local paths). Fails if a frozen name is missing or nothing is left.
+      hold local paths). Fails if a frozen name is missing, nothing is left, or what's left exposes an unfrozen Aether
+      type (in a signature, a generic constraint or a conformance).
   api-freeze.py diagnose BASELINE DIAGNOSTICS
       Reads `swift-api-digester -diagnose-sdk` output and fails on any finding, except a case added to an enum the
       baseline marks @nonexhaustive, which clients already handle with `@unknown default`.
@@ -39,17 +40,109 @@ def is_frozen(qualified, freeze):
     return parts[0] in names or (len(parts) > 1 and f"{parts[0]}.{parts[1]}" in names)
 
 
-def unfrozen_references(node, freeze):
-    """The Aether types a pruned dump's signatures name that the freeze doesn't cover. A frozen signature that exposes
-    an unfrozen type would let that type break the frozen API."""
-    found = set()
+def qualified_names(text):
+    """The module-qualified Aether types ("AetherKit.Outer.Inner") a printed type or generic signature names."""
+    return {re.sub(r"\.Type$", "", m.group(0)) for m in re.finditer(r"\bAether\w+(?:\.\w+)+", text)}
+
+
+def mangled_words(text):
+    """The words Swift's mangling can refer back to from an identifier: runs of two or more characters, split before an
+    uppercase letter that follows a non-uppercase one and at underscores and digits ("AetherLanguage": Aether,
+    Language)."""
+    words, start = [], None
+    for index, char in enumerate(text):
+        if start is None:
+            if not char.isdigit() and char != "_":
+                start = index
+        elif char == "_" or (char.isupper() and not text[index - 1].isupper()):
+            if index - start >= 2:
+                words.append(text[start:index])
+            start = None if char == "_" else index
+    if start is not None and len(text) - start >= 2:
+        words.append(text[start:])
+    return words
+
+
+def demangled_name(mangled):
+    """The qualified name of a conformance's protocol from its mangled name, "$s" then identifiers each followed by a
+    kind letter: "$s12AetherAssets14ModelTransportP" is "AetherAssets.ModelTransport". An identifier is a length and
+    the text, or "0" then references to earlier words (a-z, or A-Z for the last) each followed by a length and text, or
+    "0" for none: "$s14AetherLanguage0A9GenerableP" is "AetherLanguage.AetherGenerable". None when the module isn't an
+    Aether one; "?" when it is but the name uses a form this doesn't read (other substitutions, generics), so the
+    caller fails closed."""
+    if not re.match(r"\$s\d", mangled):
+        return None
+    position, parts, words = 2, [], []
+
+    def literal():
+        nonlocal position
+        length = re.match(r"\d+", mangled[position:])
+        if not length or length.group(0) == "0":
+            return None
+        start = position + len(length.group(0))
+        text = mangled[start:start + int(length.group(0))]
+        position = start + len(text)
+        words.extend(mangled_words(text))
+        return text
+
+    while position < len(mangled) and mangled[position].isdigit():
+        if mangled[position] == "0" and position + 1 < len(mangled) and mangled[position + 1].isalpha():
+            position += 1
+            name, more = "", True
+            while more:
+                while position < len(mangled) and mangled[position].isalpha():
+                    char = mangled[position]
+                    index = ord(char.lower()) - ord("a")
+                    if index >= len(words):
+                        return "?" if parts and parts[0].startswith("Aether") else None
+                    name += words[index]
+                    position += 1
+                    if char.isupper():
+                        more = False
+                        break
+                if position < len(mangled) and mangled[position] == "0":
+                    position += 1
+                    break
+                text = literal()
+                if text is None:
+                    return "?" if parts and parts[0].startswith("Aether") else None
+                name += text
+            parts.append(name)
+        else:
+            text = literal()
+            if text is None:
+                break
+            parts.append(text)
+        if not parts[0].startswith("Aether"):
+            return None
+        if position < len(mangled) and mangled[position] in "VOCPa":
+            position += 1
+    if not parts or not parts[0].startswith("Aether"):
+        return None
+    if position != len(mangled) or len(parts) < 2:
+        return "?"
+    return ".".join(parts)
+
+
+def unfrozen_references(node, freeze, module):
+    """The Aether types a pruned dump of `module` names that the freeze doesn't cover: in signatures, in generic
+    constraints, and as protocols the frozen types conform to. A frozen declaration that exposes an unfrozen type would
+    let that type break the frozen API. An extension of another module's type (`isExternal`) lists every conformance
+    visible to the build; only those to `module`'s own protocols are its API."""
+    names = set()
     if node.get("kind") == "TypeNominal":
-        for match in re.finditer(r"\bAether\w+(?:\.\w+)+", node.get("printedName", "")):
-            name = re.sub(r"\.Type$", "", match.group(0))
-            if not is_frozen(name, freeze):
-                found.add(name)
+        names |= qualified_names(node.get("printedName", ""))
+    for key in ("genericSig", "sugared_genericSig"):
+        names |= qualified_names(node.get(key, ""))
+    found = {name for name in names if not is_frozen(name, freeze)}
+    for conformance in node.get("conformances", []):
+        name = demangled_name(conformance.get("mangledName", ""))
+        if name == "?":
+            found.add(f"{conformance.get('name')} (conformance {conformance.get('mangledName')} unreadable)")
+        elif name and not (node.get("isExternal") and name.partition(".")[0] != module) and not is_frozen(name, freeze):
+            found.add(name)
     for child in node.get("children", []):
-        found |= unfrozen_references(child, freeze)
+        found |= unfrozen_references(child, freeze, module)
     return found
 
 
@@ -91,7 +184,7 @@ def prune(freeze_path, module, dump_path, out_path):
     if not declarations:
         fail(f"{module}: the dump has no frozen declarations")
     root["children"] = [strip_internal(d) for d in declarations]
-    unfrozen = sorted(unfrozen_references(root, freeze))
+    unfrozen = sorted(unfrozen_references(root, freeze, module))
     if unfrozen:
         fail(f"{module}: frozen declarations expose unfrozen types: {', '.join(unfrozen)} "
              "(freeze them in Scripts/api-freeze.json, or keep them out of frozen signatures)")
