@@ -70,8 +70,9 @@ for module in $modules; do
     if ! python3 -I Scripts/api-freeze.py diagnose "api/$module.json" "$work/$module.diagnostics.txt"; then
         status=1
     elif ! cmp -s "api/$module.json" "$work/current/$module.json"; then
-        # Additive, but not yet in the baseline: until it is, a later change could remove the addition unnoticed.
-        echo "::error::check-api: api/$module.json is stale: the frozen API gained declarations. Run Scripts/check-api.sh --update and commit api/."
+        # Compatible, but not yet in the baseline: until it is, a later change could undo it unnoticed. The change may be
+        # new declarations, or only attributes or conformances.
+        echo "::error::check-api: api/$module.json is stale: the frozen API changed compatibly (new declarations, or attribute or conformance changes). Run Scripts/check-api.sh --update and commit api/."
         diff "api/$module.json" "$work/current/$module.json" | head -40 || true
         status=1
     else

@@ -41,6 +41,8 @@ public final class TodoController {
     /// Attaches in progress; `run` refuses while any runs.
     @ObservationIgnored private var switching = 0
     @ObservationIgnored private var generation = 0
+    /// Tests only: runs once an attach has drained the old extraction, before it takes over.
+    @ObservationIgnored var drained: (@MainActor () async -> Void)?
 
     public init() {}
 
@@ -53,6 +55,7 @@ public final class TodoController {
         isAvailable = false
         task?.cancel()
         await task?.value
+        await drained?()
         guard mine == generation else { return }
         self.extract = extract
         isAvailable = extract != nil

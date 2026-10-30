@@ -94,7 +94,8 @@ why four stay exhaustive, how CI enforces it, and how to change the baseline int
   ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40936256797)), and its revert passed
   ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40937869455)). A public addition committed without
   `--update` failed with "api/AetherKit.json is stale"
-  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40948509843)), and its revert passed
+  ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40948509843)). With its revert (0d59a5f), the branch
+  passed: that run is on 063605a, the merge of `main` that followed the revert
   ([run](https://github.com/bubstackdev/aether-kit/actions/runs/40950658604)).
 - **Local trials** ([record](evidence/api-freeze-trials-2026-10-29.json)), each against the committed baseline:
   - fail: a removed method, a changed parameter type, `@nonexhaustive` added to an exhaustive enum, and a frozen

@@ -91,6 +91,8 @@ public final class ChatController {
     @ObservationIgnored private var switching = 0
     /// The latest attach; an earlier one that finishes waiting later doesn't overwrite it.
     @ObservationIgnored private var generation = 0
+    /// Tests only: runs once an attach or new chat has drained the old reply, before it takes over.
+    @ObservationIgnored var drained: (@MainActor () async -> Void)?
 
     public init() {}
 
@@ -168,6 +170,7 @@ public final class ChatController {
         task?.cancel()
         await task?.value
         task = nil
+        await drained?()
     }
 
     private func update(_ id: UUID, _ change: (inout ChatMessage) -> Void) {
