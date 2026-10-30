@@ -46,29 +46,27 @@ def qualified_names(text):
 
 
 def mangled_words(text):
-    """The words Swift's mangling can refer back to from an identifier: runs of two or more characters, split before an
-    uppercase letter that follows a non-uppercase one and at underscores and digits ("AetherLanguage": Aether,
-    Language)."""
+    """The words Swift's mangling can refer back to from an identifier's literal text, as the demangler collects them:
+    runs of two or more characters that don't start with a digit or underscore, ending at an underscore or at an
+    uppercase letter after a non-uppercase one ("AetherLanguage": Aether, Language; "Model2X" is one word)."""
     words, start = [], None
-    for index, char in enumerate(text):
-        if start is None:
-            if not char.isdigit() and char != "_":
-                start = index
-        elif char == "_" or (char.isupper() and not text[index - 1].isupper()):
+    for index, char in enumerate(text + "\0"):
+        if start is not None and (char in "_\0" or (char.isupper() and not text[index - 1].isupper())):
             if index - start >= 2:
                 words.append(text[start:index])
-            start = None if char == "_" else index
-    if start is not None and len(text) - start >= 2:
-        words.append(text[start:])
+            start = None
+        if start is None and not char.isdigit() and char not in "_\0":
+            start = index
     return words
 
 
 def demangled_name(mangled):
     """The qualified name of a conformance's protocol from its mangled name, "$s" then identifiers each followed by a
     kind letter: "$s12AetherAssets14ModelTransportP" is "AetherAssets.ModelTransport". An identifier is a length and
-    the text, or "0" then references to earlier words (a-z, or A-Z for the last) each followed by a length and text, or
-    "0" for none: "$s14AetherLanguage0A9GenerableP" is "AetherLanguage.AetherGenerable". None when the module isn't an
-    Aether one; "?" when it is but the name uses a form this doesn't read (other substitutions, generics), so the
+    its text, or, after a "0", any mix of references to earlier words (a-z, or A-Z for the last) and lengths with text,
+    ended by an uppercase reference or a "0": "$s14AetherLanguage0A9GenerableP" is "AetherLanguage.AetherGenerable",
+    "$s14AetherLanguage06GuidedA5ThingP" is "AetherLanguage.GuidedAetherThing". None when the module isn't an Aether
+    one; "?" when it is but the name uses a form this doesn't read (punycode, other substitutions, generics), so the
     caller fails closed."""
     if not re.match(r"\$s\d", mangled):
         return None
@@ -77,42 +75,50 @@ def demangled_name(mangled):
     def literal():
         nonlocal position
         length = re.match(r"\d+", mangled[position:])
-        if not length or length.group(0) == "0":
+        if not length or length.group(0).startswith("0"):
             return None
         start = position + len(length.group(0))
         text = mangled[start:start + int(length.group(0))]
+        if len(text) < int(length.group(0)):
+            return None
         position = start + len(text)
-        words.extend(mangled_words(text))
+        # The demangler keeps at most 26 words, one per reference letter.
+        words.extend(mangled_words(text)[:26 - len(words)])
         return text
 
-    while position < len(mangled) and mangled[position].isdigit():
-        if mangled[position] == "0" and position + 1 < len(mangled) and mangled[position + 1].isalpha():
-            position += 1
-            name, more = "", True
-            while more:
-                while position < len(mangled) and mangled[position].isalpha():
-                    char = mangled[position]
-                    index = ord(char.lower()) - ord("a")
-                    if index >= len(words):
-                        return "?" if parts and parts[0].startswith("Aether") else None
-                    name += words[index]
-                    position += 1
-                    if char.isupper():
-                        more = False
-                        break
-                if position < len(mangled) and mangled[position] == "0":
-                    position += 1
-                    break
-                text = literal()
-                if text is None:
-                    return "?" if parts and parts[0].startswith("Aether") else None
-                name += text
-            parts.append(name)
-        else:
+    def identifier():
+        """The next identifier, or None if it isn't in a form this reads."""
+        nonlocal position
+        if mangled[position] != "0":
+            return literal()
+        position += 1
+        if position >= len(mangled) or mangled[position] == "0":
+            return None  # punycode
+        name, substituting = "", True
+        while True:
+            while substituting and position < len(mangled) and mangled[position].isalpha():
+                char = mangled[position]
+                index = ord(char.lower()) - ord("a")
+                if index >= len(words):
+                    return None
+                name += words[index]
+                position += 1
+                substituting = char.islower()
+            if position < len(mangled) and mangled[position] == "0":
+                position += 1
+                return name or None
             text = literal()
             if text is None:
-                break
-            parts.append(text)
+                return None
+            name += text
+            if not substituting:
+                return name
+
+    while position < len(mangled) and mangled[position].isdigit():
+        name = identifier()
+        if name is None:
+            return "?" if parts and parts[0].startswith("Aether") else None
+        parts.append(name)
         if not parts[0].startswith("Aether"):
             return None
         if position < len(mangled) and mangled[position] in "VOCPa":
@@ -128,7 +134,8 @@ def unfrozen_references(node, freeze, module):
     """The Aether types a pruned dump of `module` names that the freeze doesn't cover: in signatures, in generic
     constraints, and as protocols the frozen types conform to. A frozen declaration that exposes an unfrozen type would
     let that type break the frozen API. An extension of another module's type (`isExternal`) lists every conformance
-    visible to the build; only those to `module`'s own protocols are its API."""
+    visible to the build; only those to `module`'s own protocols are its API. The dump doesn't say which module declared
+    a conformance, so `module`'s own conformance of another module's type to a third module's protocol isn't seen."""
     names = set()
     if node.get("kind") == "TypeNominal":
         names |= qualified_names(node.get("printedName", ""))
@@ -141,7 +148,8 @@ def unfrozen_references(node, freeze, module):
             found.add(f"{conformance.get('name')} (conformance {conformance.get('mangledName')} unreadable)")
         elif name and not (node.get("isExternal") and name.partition(".")[0] != module) and not is_frozen(name, freeze):
             found.add(name)
-    for child in node.get("children", []):
+    # A property's accessors sit under their own key; in a constrained extension only they carry the constraint.
+    for child in node.get("children", []) + node.get("accessors", []):
         found |= unfrozen_references(child, freeze, module)
     return found
 

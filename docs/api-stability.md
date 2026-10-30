@@ -69,7 +69,10 @@ Swift jobs, which includes every change under `Sources/`. **CI passed** requires
 4. fails if a frozen declaration exposes an `Aether` type the freeze doesn't cover, in a signature, a generic
    constraint or a protocol it conforms to (a frozen declaration must expose only frozen types, or the unfrozen one
    could break it). Conformances are read from their mangled names; one in a form the script doesn't read fails. An
-   extension of another module's type counts only its conformances to the module's own protocols;
+   extension of another module's type counts only its conformances to the module's own protocols. Two gaps remain:
+   the dump doesn't say which module declared a conformance, so a frozen module's own conformance of another module's
+   type to a third module's unfrozen protocol isn't seen; and the type a frozen module extends isn't itself checked
+   (`AetherLanguage` adds `installationManifest(in:)` to `AetherKit.LanguageModelManifest`, which isn't frozen);
 5. compares them with the committed baseline in [`api/`](../api) (`swift-api-digester -diagnose-sdk`), and fails on
    every finding except a case added to a `@nonexhaustive` enum;
 6. then fails if the baseline is stale: a compatible change (an addition, or an attribute or conformance the digester

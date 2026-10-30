@@ -117,6 +117,14 @@ class ExposureTests(unittest.TestCase):
         self.assertEqual(api_freeze.unfrozen_references({"children": [node]}, unfrozen, "AetherLanguage"),
                          {"AetherLanguage.AetherGenerable"})
 
+    def test_accessors_are_checked(self):
+        # A property in a constrained extension carries the constraint only on its accessors.
+        prop = {"kind": "Var", "name": "x", "children": [{"kind": "TypeNominal", "printedName": "Swift.Int"}],
+                "accessors": [{"kind": "Accessor", "name": "Get",
+                               "genericSig": "<Element where Element : AetherKit.TensorScalar>"}]}
+        root = {"children": [{"kind": "TypeDecl", "name": "Array", "isExternal": True, "children": [prop]}]}
+        self.assertEqual(api_freeze.unfrozen_references(root, self.FREEZE, "AetherLanguage"), {"AetherKit.TensorScalar"})
+
     def test_an_unreadable_aether_conformance_fails_closed(self):
         root = {"children": [{"kind": "TypeDecl", "name": "X", "conformances": [self.conformance("$s9AetherKit3FooVyxGP")]}]}
         self.assertEqual(len(api_freeze.unfrozen_references(root, self.FREEZE, "AetherKit")), 1)
@@ -130,6 +138,10 @@ class DemangleTests(unittest.TestCase):
             ("$s14AetherLanguage0A9GenerableP", "AetherLanguage.AetherGenerable"),
             ("$s14AetherLanguage0aB5ModelV12AvailabilityO", "AetherLanguage.AetherLanguageModel.Availability"),
             ("$s9AetherKit0A0P", "AetherKit.Aether"),
+            ("$s14AetherLanguage06GuidedA5ThingP", "AetherLanguage.GuidedAetherThing"),
+            ("$s14AetherLanguage09GenerableA0P", "AetherLanguage.GenerableAether"),
+            ("$s14AetherLanguage0aB5ModelV0B9ReadinessP", "AetherLanguage.AetherLanguageModel.LanguageReadiness"),
+            ("$s9AetherKit0018Stub_KitP", "?"),  # punycode
             ("$ss5ErrorP", None), ("$sSQ", None), ("$s10Foundation4DataV", None),
             ("$s9AetherKit3FooV3BarVAEP", "?"), ("$s9AetherKit0z3FooP", "?"),
         ]:

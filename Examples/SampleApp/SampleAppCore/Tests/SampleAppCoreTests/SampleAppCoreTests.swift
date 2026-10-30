@@ -166,7 +166,7 @@ struct ScriptedResponder: ChatResponder {
         #expect(!chat.isAvailable && chat.messages.isEmpty)
     }
 
-    @Test func sendIsRefusedWhileTheConversationIsReplacedEvenWithNoReplyRunning() async throws {
+    @Test(.timeLimit(.minutes(1))) func sendIsRefusedWhileTheConversationIsReplacedEvenWithNoReplyRunning() async throws {
         let chat = ChatController()
         await chat.attach { ScriptedResponder(updates: [.text("old")]) }
         chat.send("1"); await chat.waitForReply()
@@ -190,7 +190,7 @@ struct ScriptedResponder: ChatResponder {
         #expect(chat.messages.last?.text == "new")
     }
 
-    @Test func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
+    @Test(.timeLimit(.minutes(1))) func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
         let chat = ChatController()
         let gate = Gate()
         chat.drained = { await gate.wait() }
@@ -265,7 +265,7 @@ struct ScriptedResponder: ChatResponder {
         #expect(todo.item?.title == "new")
     }
 
-    @Test func runIsRefusedAfterTheOldExtractionEndsUntilTheReplacementTakesOver() async throws {
+    @Test(.timeLimit(.minutes(1))) func runIsRefusedAfterTheOldExtractionEndsUntilTheReplacementTakesOver() async throws {
         let todo = TodoController()
         await todo.attach { _ in TodoItem(title: "old", priority: .low, dueInDays: nil) }
         #expect(todo.run("first"))
@@ -283,7 +283,7 @@ struct ScriptedResponder: ChatResponder {
         #expect(todo.item?.title == "new")
     }
 
-    @Test func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
+    @Test(.timeLimit(.minutes(1))) func anEarlierAttachThatFinishesLaterDoesNotOverwriteALaterOne() async throws {
         let todo = TodoController()
         let gate = Gate()
         todo.drained = { await gate.wait() }
