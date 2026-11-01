@@ -27,6 +27,7 @@ func option(_ name: String) -> String? {
     let v = args[i + 1]; args.removeSubrange(i...(i + 1)); return v
 }
 let d1 = option("--layout") == "D1"
+let noReshapes = flag("--no-reshapes")
 let decodeOnly = flag("--decode-only")   // an asset with only `decode`: every step is one token through it
 let useDecode = flag("--decode") || decodeOnly
 let baseline = flag("--baseline")   // export_baseline.py: [1, 1] steps, position scalar, fixed-capacity KV states
@@ -81,7 +82,9 @@ func phase(_ name: String) {
 phase("before open")
 let loadStart = clock.now
 var options: SpecializationOptions = cpu ? .cpuOnly : SpecializationOptions(preferredComputeUnitKind: .gpu)
-options.expectFrequentReshapes = true
+// --no-reshapes: specialize without expectFrequentReshapes. The D1 asset with the externalized gated delta rule computes
+// wrong logits with the flag on (cosine 0.33-0.65 against the reference) and right ones without it.
+options.expectFrequentReshapes = !noReshapes
 let model = try await AIModel(contentsOf: assetURL, options: options)
 let mainFunction: InferenceFunction = try model.loadFunction(named: decodeOnly ? "decode" : "main")!
 let descriptor = model.functionDescriptor(for: decodeOnly ? "decode" : "main")!
@@ -294,7 +297,7 @@ func loadAverage() -> [Double] { var l = [Double](repeating: 0, count: 3); _ = g
 var report: [String: Any] = ["asset": assetURL.lastPathComponent,
                              "argv": CommandLine.arguments.dropFirst().map(redactedPath),
                              "assetIdentity": assetIdentity(), "fixedCapacity": fixedCapacity ?? NSNull(),
-                             "staticWidth": staticWidth ?? NSNull(), "layout": d1 ? "D1" : "S2", "loadAverageAtStart": loadAverage(),
+                             "staticWidth": staticWidth ?? NSNull(), "layout": d1 ? "D1" : "S2", "expectFrequentReshapes": !noReshapes, "loadAverageAtStart": loadAverage(),
                              "startedAt": ISO8601DateFormatter().string(from: Date()), "decodeFunction": useDecode, "compute": cpu ? "cpuOnly" : "preferGPU",
                              "chunk": chunk, "loadSeconds": loadSeconds, "device": AIModel.deviceArchitectureName,
                              "stateNames": states.map(\.name)]

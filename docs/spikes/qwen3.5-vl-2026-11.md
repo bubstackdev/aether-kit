@@ -1,6 +1,6 @@
 # Design note: Qwen3.5-4B image + text on a hybrid recurrent-state decoder (0.0.4)
 
-**Status: design, before code (2026-11-01).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
+**Status: design approved; stage 2 (text parity) done, S2 chosen (2026-11-01; [results](#stage-2-text-parity)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
 vision-language model in Kit, so a host (Atelier's describer) can drive it the way it drives Qwen3-VL-4B today
 through `VisionLanguageSession`. The recurrent-state runtime it needs is built once and serves Granite 4.0-H as well
 ([roadmap](../roadmap-0.0.4.md), [0.0.3 hybrid spike](hybrid-state-0.0.3.md)).
@@ -86,7 +86,7 @@ D1 is the expected winner (one copy, no padded decode); S2 is the fallback with 
   registration plus the `hybrid` block.
 - Outputs under `~/.cache/huggingface/aether-kit/qwen3.5-4b/` (references, exports, bundle). Never `/tmp`.
 
-### Reference environment (needs your OK)
+### Reference environment (approved 2026-11-01)
 
 Forge pins `transformers==4.57.3`, which has no `qwen3_5`; upstream Qwen3.5 is in 5.x. Bumping Forge's pin would move
 every 0.0.2/0.0.3 reference off its recorded version. **Proposal:** a second locked uv project,
@@ -156,3 +156,62 @@ Against upstream fp32, on the GPU, release builds:
 
 1. This note. 2. Decoder-only text parity (S2 and D1). 3. Vision + decoder parity on Orion. 4. Swift session with
 tok/s and wired GiB. Each stage is a local commit on `v0.0.4/qwen3.5-vl`; no push or PR without the lead's say-so.
+
+## Stage 2: text parity
+
+Runs on 2026-11-01, M5 Max, macOS 26B123, quiet host (1-minute load 1.7–2.3), every GPU run under `with-gpu-lock.sh`.
+Outputs and the environment of each are listed in `~/.cache/huggingface/aether-kit/qwen3.5-4b/README.md`.
+
+**Reference.** `reference_qwen35.py` in `Forge/reference-qwen35`, upstream fp32 on the CPU for everything (greedy too:
+25 min for 3 × 128 tokens plus the 4,096-token pass, so MPS wasn't needed). Teacher-forced argmax equals the greedy
+tokens on 32/32 rows per case.
+
+**Port.** `qwen35_hybrid.py`, float32 on the CPU, fed like the host feeds the asset (64-wide padded prefill, then
+one token per padded call), against the reference: min cosine 0.99999993, every argmax equal, on the 3 chat cases
+(32 rows each) and on 16 rows to 4,096 tokens (`Spikes/qwen35-vl/check_port.py`). On a random tiny model against
+upstream: cosine 1.0, and the padded recurrent state equals the unpadded one (`tiny_vs_upstream.py`).
+
+**Delta-rule form.** Three forms are implemented and all three are exact; they differ in speed:
+
+| Form | S2 W = 64 decode | Notes |
+|---|---|---|
+| `composite`, externalized (`gated_delta_update` composite graph) | **31–33 tok/s** | chosen; also fastest prefill |
+| `composite`, traced `while_loop` | ≈ 20 tok/s (tiny: 2.2× slower than externalized) | |
+| `chunk` (loop-free WY form, plain ops) | 20.3 tok/s | needs a stable inverse (below) |
+
+The `chunk` form first used the power series (I − N)⁻¹ = Σ Nᵏ by repeated squaring; on real weights it cancels in
+float32 (long-context cosine 0.96, then NaN). A blocked doubling inverse (`unit_lower_inverse`) is exact. W = 1
+ablations locate the cost: without the DeltaNet layers the 4B decodes at 56.7 tok/s (the weight-bandwidth floor),
+with their projections but no delta rule at 44.8, with the plain-ops rule at 21.9 and with the composite at 42.7.
+
+**Layouts.** Both qualify numerically through the Python runtime (forced min cosine ≥ 0.999997, 0 argmax mismatches,
+128-token greedy identical on all 3 cases, long rows min cosine ≥ 0.99979 with every argmax equal). Swift harness
+(`Spikes/qwen35-vl/harness`, capacity 4,608, warm medians):
+
+| | S2, W = 64 (externalized composite) | D1, W = 64 / q = 1 (externalized composite) |
+|---|---|---|
+| Numerics, Swift | identical to the Python run | **wrong with `expectFrequentReshapes`** (cosine 0.33–0.65); right without it |
+| Time to first token, 64 / 256 / 1,024 / 2,048 tokens | 38 / 129 / 495 / 983 ms | 37 / 130 / 498 / 991 ms (reshapes off) |
+| Decode after 256 / 2,048 tokens | 32.8 / 30.5 tok/s | 43.3 / 43.3 tok/s (reshapes off) |
+| Metal allocated after both widths ran | **9.4 GiB** (mapped file wired 9.0 GiB) | 18.3 GiB with reshapes off: the q = 1 specialization holds a second copy |
+
+**Decision: S2 at W = 64 with the externalized composite** (`text-s2-w64-composite`, the exporter's default; its own
+Python-runtime qualification is `runs/qualify-s2-w64-composite-python.json`; the Swift numbers above are from the
+identical graph exported one run earlier, which differs only in the composite's generated graph names). D1 is 32 %
+faster at decode but either wrong (reshapes on) or twice the memory (reshapes off), so it isn't usable beside Krea.
+For the describer's ~840-token image prompt and ~150-token replies that is about 0.4 s to first token and 4.5–5 s of
+decode.
+
+**Core AI defect (Apple Feedback candidate).** A dynamic-q graph containing the `gated_delta_update` composite,
+specialized for the GPU with `expectFrequentReshapes`, computes wrong logits (cosine 0.33–0.65 against the reference,
+greedy diverging within 4–16 tokens), while the same asset is right through the Python runtime (no reshape flag) and
+through Swift without the flag. This looks like F-P3-26 again. Repro: `export_qwen35_text.py --layout D1` (or
+`--tiny --layout D1 --static-width 8`), then the harness with and without `--no-reshapes`.
+
+**Export workarounds (labelled in code).** coreai-torch 0.4.2 can't lower `F.pad` by a symbolic amount (D1 uses a
+[W, s] selection matrix), and when it externalizes the composite in a dynamic-q graph it rebuilds the token dimension
+as a fresh symbol whose range has collapsed to the example width (`widen_collapsed_composite_dims`).
+
+**Open for later stages.** Wider W (128/256) for time to first token; whether the S2 decode rate (31–33 tok/s, 23 ms
+per padded call against 23 ms at W = 1 for everything but the delta rule) can improve with a smaller decode width
+without a second weight copy.

@@ -7,10 +7,12 @@ Runs in Forge's locked environment (`uv sync --frozen --project Forge`):
         --source-repository Qwen/Qwen3.5-4B --source-revision <sha> --license apache-2.0 --output <new dir>
     Forge/.venv/bin/python -I Forge/language/export_qwen35_text.py --tiny --static-width 8 --output <new dir>
 
-The contract is in `qwen35_hybrid.py`: one `main` at a fixed width W (S2), KV capacity dynamic, two declared recurrent
-states. `--delta-rule` picks the gated delta rule's form: `composite` (coreai-torch's `GatedDeltaUpdate`, a
-`while_loop`; with `--externalize-composite` it is emitted as a `gated_delta_update` composite graph) or `loop`
-(unrolled per token in the graph). Writes only under the new `--output` directory: `model.aimodel/`, `tokenizer/`
+The contract is in `qwen35_hybrid.py`: one `main` at a fixed width W (S2, the qualified layout) or with a dynamic q
+(D1, `--layout D1`), KV capacity dynamic, two declared recurrent states. `--delta-rule` picks the gated delta rule's
+form: `composite` (default: coreai-torch's `GatedDeltaUpdate`, emitted as a `gated_delta_update` composite graph;
+`--no-externalize-composite` traces its `while_loop` instead), `chunk` (loop-free WY form in plain ops) or `loop`
+(unrolled per token). On the 4B, M5 Max (docs/spikes/qwen3.5-vl-2026-11.md): S2 at W = 64 decodes at 31-33 tok/s with
+the externalized composite, 20 tok/s with `chunk` or the traced loop. Writes only under the new `--output` directory: `model.aimodel/`, `tokenizer/`
 (checkpoint exports) and `export-report.json` (versions, the environment, provenance, file hashes, the F-P2-20
 state-order lint). There is no cpu_only self-check: Core AI's cpu_only path fails a static q > 1 over dynamic KV
 (0.0.3 defect 5), so these graphs qualify natively against the upstream reference.
@@ -23,6 +25,7 @@ import datetime as dt
 import hashlib
 import importlib.metadata
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -64,6 +67,27 @@ def tiny_module(delta_rule: str, max_capacity: int = 16384) -> Qwen35HybridDecod
     return module.to(torch.float16)
 
 
+def widen_collapsed_composite_dims(max_width: int) -> None:
+    """Export workaround, not a fix (coreai-torch 0.4.2): when the D1 graph's `GatedDeltaUpdate` call is externalized,
+    coreai-torch rebuilds the composite's dynamic shapes from the call site's fake tensors, and the token dimension
+    arrives as a fresh symbol whose recorded range has collapsed to the example's width (VR[w, w]), so the composite
+    would be exported for that one width. A collapsed range is replaced by the D1 range 1..max_width; the native
+    checks (q = W and q = 1 against the reference) are what qualify the result."""
+    import coreai_torch._utils as utils
+    from torch.export import Dim
+
+    original = utils._dim_for_sym
+
+    def dim_for_sym(s, cache):
+        r = s.node.shape_env.var_to_range.get(s.node.expr)
+        key = str(s.node.expr)
+        if r is not None and int(r.lower) == int(r.upper) and key not in cache:
+            cache[key] = Dim(re.sub(r"[^a-zA-Z0-9_]", "_", key), min=1, max=max_width)
+        return original(s, cache)
+
+    utils._dim_for_sym = dim_for_sym
+
+
 def stage(name: str) -> None:
     print(f"[export] {name}", file=sys.stderr, flush=True)
 
@@ -97,8 +121,9 @@ def main() -> None:
     parser.add_argument("--layout", default="S2", choices=["S2", "D1"],
                         help="S2: static width W; D1: dynamic q with cache_positions [1, 2] = (start, valid count)")
     parser.add_argument("--max-capacity", type=int, default=16384)
-    parser.add_argument("--delta-rule", default="chunk", choices=DELTA_RULES)
-    parser.add_argument("--externalize-composite", action="store_true")
+    parser.add_argument("--delta-rule", default="composite", choices=DELTA_RULES)
+    parser.add_argument("--no-externalize-composite", dest="externalize_composite", action="store_false",
+                        help="trace GatedDeltaUpdate's while_loop instead of emitting the gated_delta_update composite")
     parser.add_argument("--source-repository", default="")
     parser.add_argument("--source-revision", default="")
     parser.add_argument("--license", default="")
@@ -107,8 +132,8 @@ def main() -> None:
         raise SystemExit("pass exactly one of --checkpoint or --tiny")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
-    if args.externalize_composite and args.delta_rule != "composite":
-        raise SystemExit("--externalize-composite needs --delta-rule composite")
+    if args.delta_rule != "composite":
+        args.externalize_composite = False
 
     import coreai_torch as ct
 
@@ -134,6 +159,8 @@ def main() -> None:
         from coreai_torch.composite_ops import GatedDeltaUpdate
         from coreai_torch.externalize import ExternalizeSpec, _patch_model_for_externalization, _subexport_and_restore
 
+        if args.layout == "D1":
+            widen_collapsed_composite_dims(args.static_width)
         _patch_model_for_externalization(wrapper, [ExternalizeSpec(GatedDeltaUpdate, composite_op_name="gated_delta_update",
                                                                    composite_attrs=["use_qk_l2_norm"])])
     stage("export main")
