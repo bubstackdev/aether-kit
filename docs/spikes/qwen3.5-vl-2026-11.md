@@ -1,6 +1,7 @@
 # Design note: Qwen3.5-4B image + text on a hybrid recurrent-state decoder (0.0.4)
 
-**Status: design approved; stage 2 (text parity) done, S2 chosen (2026-11-01; [results](#stage-2-text-parity)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
+**Status: design approved; stages 2 (text parity, S2 chosen) and 3 (image parity) done (2026-11-01;
+[stage 2](#stage-2-text-parity), [stage 3](#stage-3-image-parity-orion)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
 vision-language model in Kit, so a host (Atelier's describer) can drive it the way it drives Qwen3-VL-4B today
 through `VisionLanguageSession`. The recurrent-state runtime it needs is built once and serves Granite 4.0-H as well
 ([roadmap](../roadmap-0.0.4.md), [0.0.3 hybrid spike](hybrid-state-0.0.3.md)).
@@ -214,3 +215,22 @@ as a fresh symbol whose range has collapsed to the example width (`widen_collaps
 
 **Open for later stages.** Wider W (128/256) for time to first token; whether S2's decode (30–33 ms per padded 64-wide call, against
 23 ms for a static W = 1 call) can get closer to W = 1 without a second weight copy, for example with a smaller W.
+
+## Stage 3: image parity (Orion)
+
+**Reference.** `reference_qwen35_image.py` in `Forge/reference-qwen35`, upstream fp32 on the CPU (16 min): the
+describer's whole-picture outfit prompt (system instructions, image, request; `enable_thinking: false`) on
+`orion-woman.jpeg`, snapped to grid 48×36 (576×768, 432 image tokens) with the processor's own resize, 838 prompt
+tokens; 128 greedy tokens (end of sequence ignored) and 32 forced rows. Its reply equals the v0.7 screen's.
+
+**Ports, fp32 on the CPU, on the reference's pixels** (`Spikes/qwen35-vl/check_port_image.py`): vision tower (the
+Qwen3-VL port with zero DeepStack levels) against upstream's image embeddings: cosine 1.0 (row min 0.99999999);
+Kit's host M-RoPE positions equal upstream's rope index; text port in padded 64-wide prefill with aligned image rows:
+forced min cosine 0.99999999, 32/32 argmax.
+
+**Assets on the GPU** (Python runtime, `gpu_check.py image`): `vision/` (five static grid functions, 638 MB,
+`image_embeds` only; its cpu_only self-check worst cosine 1.0 at 7 places) and `text-s2-w64-composite/`.
+Encoder: embeddings cosine 0.99998 against upstream (row min 0.9928), 0.15 s per encode. Decoder with those rows:
+forced min cosine 0.99975, 0 argmax mismatches; **128-token greedy identical** to upstream.
+
+Kit's own preprocessing (Swift resize of the raw JPEG) and the full `VisionLanguageSession` path are stage 4.

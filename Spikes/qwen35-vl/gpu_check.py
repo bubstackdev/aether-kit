@@ -206,9 +206,93 @@ async def reference(args) -> dict:
             and all(d["argmaxEqual"] or d["nearTie"] for d in drift)}
 
 
+async def image(args) -> dict:
+    """Vision asset + text asset against the upstream image reference, on the reference's own pixels."""
+    from qwen3_vl_text import mrope_positions
+    from qwen3_vl_vision import function_name, host_inputs
+
+    import coreai.runtime as rt
+
+    ref = json.loads((args.reference / "reference.json").read_text())
+    report = json.loads((args.asset.parent / "export-report.json").read_text())
+    cfg, image_token = report["config"], report["imageTokenID"]
+    vocab = cfg["vocab_size"]
+    vision, vision_load = await load(args.vision)
+    model, load_s = await load(args.asset)
+    lin = cfg["layer_types"].count("linear_attention")
+    runner = Runner(model, args.width, args.capacity, report["layout"])
+    runner.configure((cfg["layer_types"].count("full_attention"), 1, cfg["num_key_value_heads"], args.capacity, cfg["head_dim"]),
+                     (lin, 1, 2 * cfg["linear_num_key_heads"] * cfg["linear_key_head_dim"]
+                      + cfg["linear_num_value_heads"] * cfg["linear_value_head_dim"], cfg["linear_conv_kernel_dim"] - 1),
+                     (lin, 1, cfg["linear_num_value_heads"], cfg["linear_key_head_dim"], cfg["linear_value_head_dim"]),
+                     cfg["hidden_size"])
+    cases = []
+    for c in ref["cases"]:
+        _, gh, gw = c["grid"]
+        pixels = np.fromfile(args.reference / c["pixels"]["file"], dtype="<f4").reshape(c["pixels"]["shape"])
+        want_embeds = np.fromfile(args.reference / c["imageEmbeds"]["file"], dtype="<f4").reshape(c["imageEmbeds"]["shape"])
+        tables = host_inputs(1, gh, gw)
+        fn = vision.load_function(function_name((gh, gw)))
+        t0 = time.time()
+        r = await fn({"pixels": rt.NDArray(pixels.astype(np.float16)), **{k: rt.NDArray(v) for k, v in tables.items()}}, {})
+        encode_s = time.time() - t0
+        embeds = r["image_embeds"].numpy().astype(np.float32)
+        ids, forced, greedy_ref = c["promptTokens"], c["forcedTokens"], c["greedyTokens"]
+        want = np.fromfile(args.reference / c["forcedLogits"]["file"], dtype="<f4").reshape(len(forced), vocab)
+        seq = ids + greedy_ref
+        rope = np.array(mrope_positions(seq, [tuple(c["grid"])], image_token, 2), np.int32).T
+
+        async def prefill():
+            runner.reset()
+            consumed, last = 0, None
+            for s0 in range(0, len(ids), args.width):
+                chunk = ids[s0:s0 + args.width]
+                rows = np.zeros((len(chunk), embeds.shape[1]), np.float16)
+                for i, t in enumerate(chunk):
+                    if t == image_token:
+                        rows[i], consumed = embeds[consumed], consumed + 1
+                last = await runner.step(chunk, rope=rope[:, s0:s0 + len(chunk)], image=rows)
+            return last, consumed
+
+        first, consumed = await prefill()
+        got = [first]
+        for i, t in enumerate(forced[:-1]):
+            p0 = len(ids) + i
+            got.append(await runner.step([t], rope=rope[:, p0:p0 + 1]))
+        cos = [cosine(x, y) for x, y in zip(got, want)]
+        mism = [i for i, (x, y) in enumerate(zip(got, want)) if int(np.argmax(x)) != int(np.argmax(y))]
+        ties = [i for i in mism if near_tie(want[i], int(np.argmax(got[i])))[0]]
+        logits, _ = await prefill()
+        generated, divergence = [], None
+        for i, expected in enumerate(greedy_ref):
+            token = int(np.argmax(logits))
+            if divergence is None and token != expected:
+                tie, margin = near_tie(logits, expected)
+                divergence = {"index": i, "nativeMargin": round(margin, 4), "acceptedNearTie": tie}
+                break
+            generated.append(token)
+            if i + 1 < len(greedy_ref):
+                p0 = len(ids) + i
+                logits = await runner.step([token], rope=rope[:, p0:p0 + 1])
+        case = {"name": c["name"], "grid": c["grid"], "promptTokens": len(ids), "imageRows": consumed,
+                "encodeSeconds": round(encode_s, 3), "imageEmbedsCosine": round(cosine(embeds, want_embeds), 7),
+                "imageEmbedsRowMinCosine": round(min(cosine(x, y) for x, y in zip(embeds, want_embeds)), 7),
+                "forcedRows": len(got), "minCosine": round(min(cos), 6), "argmaxMismatches": len(mism),
+                "acceptedNearTies": len(ties), "forcedPassed": min(cos) >= 0.995 and len(mism) == len(ties),
+                "greedyTokens": len(greedy_ref), "greedyIdentical": divergence is None, "greedyDivergence": divergence,
+                "greedyPassed": divergence is None or divergence["acceptedNearTie"]}
+        cases.append(case)
+        print(f"[image] {c['name']}: embeds cos {case['imageEmbedsCosine']} (row min {case['imageEmbedsRowMinCosine']}), "
+              f"forced min cos {case['minCosine']}, mismatches {len(mism)} (near ties {len(ties)}), "
+              f"greedy {'identical' if divergence is None else divergence}", flush=True)
+    return {"asset": str(args.asset), "vision": str(args.vision), "visionLoadSeconds": round(vision_load, 2),
+            "loadSeconds": round(load_s, 2), "width": args.width, "capacity": args.capacity, "cases": cases,
+            "passed": all(c["forcedPassed"] and c["greedyPassed"] and c["imageEmbedsCosine"] >= 0.999 for c in cases)}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["tiny", "reference"])
+    parser.add_argument("mode", choices=["tiny", "reference", "image"])
     parser.add_argument("asset", type=Path)
     parser.add_argument("reference", type=Path, nargs="?")
     parser.add_argument("--width", type=int, default=64)
@@ -216,8 +300,9 @@ def main() -> None:
     parser.add_argument("--delta-rule", default="composite")
     parser.add_argument("--layout", default="S2", choices=["S2", "D1"], help="tiny mode (reference mode reads the report)")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--vision", type=Path, help="image mode: the vision asset (vision.aimodel)")
     args = parser.parse_args()
-    result = asyncio.run(tiny(args) if args.mode == "tiny" else reference(args))
+    result = asyncio.run({"tiny": tiny, "reference": reference, "image": image}[args.mode](args))
     text = json.dumps(result, indent=1)
     if args.out:
         args.out.write_text(text + "\n")

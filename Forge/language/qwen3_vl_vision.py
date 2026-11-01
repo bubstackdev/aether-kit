@@ -6,7 +6,7 @@ imported, so this directory stays self-contained. The tower is its own asset wit
     encode(pixels [n, 1536], pos_index [n, 4] i32, pos_weight [n, 4] f32, patch_rc [n, 2] i32)
       -> image_embeds [n/4, d], deepstack [3, n/4, d]
 
-n is the patch count of one image; d is the vision config's `out_hidden_size` (the decoder's hidden size: 2048 for
+(Qwen3.5's tower is the same with `deepstack_visual_indexes: []`: its functions return `image_embeds` only.) n is the patch count of one image; d is the vision config's `out_hidden_size` (the decoder's hidden size: 2048 for
 Qwen3-VL-2B, 2560 for 4B). The asset has one static-shape function per fixed patch grid, `encode_<h>x<w>`
 (`IMAGE_GRIDS`); every image snaps to the grid nearest its aspect ratio (`nearest_grid`) and is resized to it exactly.
 A dynamic-shape export intermittently computed wrong outputs on the GPU even without `expectFrequentReshapes` (2.5 % of
@@ -206,6 +206,8 @@ class Qwen3VLVision(torch.nn.Module):
             x = block(x, cos, sin)
             if i in self.deepstack_at:
                 levels.append(self.deepstack[self.deepstack_at.index(i)](x))
+        if not self.deepstack_at:                         # Qwen3.5: no DeepStack, the asset outputs image_embeds only
+            return self.merger(x)
         return self.merger(x), torch.stack(levels)
 
     def example(self, grid: tuple[int, int]):

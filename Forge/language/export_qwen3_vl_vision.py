@@ -59,7 +59,8 @@ async def asset_outputs(asset: Path, grids: list[tuple[int, int]], feeds: list[d
     for g, f in zip(grids, feeds):
         fn = model.load_function(function_name(g))
         r = await fn({k: rt.NDArray(v) for k, v in f.items()}, {})
-        out.append((r["image_embeds"].numpy().astype(np.float32), r["deepstack"].numpy().astype(np.float32)))
+        deep = r["deepstack"].numpy().astype(np.float32) if "deepstack" in r else np.zeros((0,), np.float32)
+        out.append((r["image_embeds"].numpy().astype(np.float32), deep))
     return out
 
 
@@ -69,6 +70,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-repository", required=True)
     parser.add_argument("--source-revision", required=True)
+    parser.add_argument("--license", default="apache-2.0")
     parser.add_argument("--grids", default=",".join(f"{h}x{w}" for h, w in IMAGE_GRIDS),
                         help="fixed patch grids HxW, comma-separated (default: IMAGE_GRIDS)")
     args = parser.parse_args()
@@ -84,12 +86,13 @@ def main() -> None:
     module = Qwen3VLVision(dict(config["vision_config"]))
     load_weights(module, args.checkpoint)
     module = module.to(torch.float16).eval()
+    outputs = ["image_embeds", "deepstack"] if module.deepstack_at else ["image_embeds"]
     converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
     for g in grids:
         with torch.no_grad():
             ep = torch.export.export(module, module.example(g)).run_decompositions(ct.get_decomp_table())
         converter.add_exported_program(ep, input_names=["pixels", "pos_index", "pos_weight", "patch_rc"],
-                                       output_names=["image_embeds", "deepstack"], state_names=[],
+                                       output_names=outputs, state_names=[],
                                        entrypoint_name=function_name(g))
     program = converter.to_coreai()
     program.optimize()
@@ -102,7 +105,8 @@ def main() -> None:
     cases = []
     with torch.no_grad():
         for g, f, (emb, ds) in zip(grids, feeds, got):
-            e_emb, e_ds = module(*(torch.from_numpy(f[k]) for k in ("pixels", "pos_index", "pos_weight", "patch_rc")))
+            eager = module(*(torch.from_numpy(f[k]) for k in ("pixels", "pos_index", "pos_weight", "patch_rc")))
+            e_emb, e_ds = eager if module.deepstack_at else (eager, torch.zeros(0))
             e_emb, e_ds = e_emb.float().numpy(), e_ds.float().numpy()
             cases.append({"function": function_name(g), "grid": list(g), "patches": g[0] * g[1],
                           "imageEmbedsShape": list(emb.shape),
@@ -118,9 +122,10 @@ def main() -> None:
         "hostOS": subprocess.run(["sw_vers", "-buildVersion"], capture_output=True, text=True).stdout.strip(),
         "versions": {p: importlib.metadata.version(p) for p in ("torch", "coreai-torch", "coreai-core")},
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
-        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": "apache-2.0",
+        "source": {"repository": args.source_repository, "revision": args.source_revision, "license": args.license,
                    "checkpoint": str(args.checkpoint)},
         "visionConfig": config["vision_config"],
+        "outputs": outputs,
         "selfCheck": {"passed": worst >= 0.999, "worstCosine": worst, "bar": 0.999, "cases": cases,
                       "reference": "eager fp16-storage fp32-compute tower on random normalized pixels"},
         "modelFiles": {str(p.relative_to(asset)): sha256(p) for p in sorted(asset.rglob("*")) if p.is_file()},
