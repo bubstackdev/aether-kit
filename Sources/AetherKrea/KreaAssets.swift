@@ -13,8 +13,16 @@ public struct KreaModelAsset: Sendable {
     public func verify() throws { try verify(checkStop: { try Task.checkCancellation() }) }
 
     func verify(checkStop: () throws -> Void) throws {
-        do { try declared.verify(checkStop: checkStop) } catch let error as AssetStoreError { throw kreaError(error) }
+        defer { VerifiedFileHashes.flush() }
+        do {
+            try VerifiedFileHashes.verifyOnce(claimDigest, files: claimFiles) { try declared.verify(checkStop: checkStop) }
+        } catch let error as AssetStoreError { throw kreaError(error) }
     }
+
+    /// The verified-hash claim (``VerifiedFileHashes``): the declared stream and metadata digests, over the three files
+    /// `DeclaredModelAsset.verify` reads.
+    var claimDigest: String { "krea-model:\(declaredSHA256):\(metadataSHA256)" }
+    var claimFiles: [URL] { ["main.hash", "main.mlirb", "metadata.json"].map { url.appendingPathComponent($0) } }
 
     var declared: DeclaredModelAsset {
         DeclaredModelAsset(url: url, declaredSHA256: declaredSHA256, metadataSHA256: metadataSHA256)
@@ -473,8 +481,14 @@ func hashFile(_ url: URL, checkStop: () throws -> Void = { try Task.checkCancell
 /// Hashes independent streams on concurrent threads (`DeclaredModelAsset.verifyConcurrently`). Workers
 /// observe the calling task's cancellation. A failure stops only later assets, so the reported error
 /// is always the first failing asset in input order, matching a serial pass.
+/// Streams the assets not already verified with their files' current identities (``VerifiedFileHashes``), concurrently,
+/// and records each one that passes.
 private func verifyConcurrently(_ models: [KreaModelAsset]) throws {
-    do { try DeclaredModelAsset.verifyConcurrently(models.map(\.declared)) } catch let error as AssetStoreError { throw kreaError(error) }
+    defer { VerifiedFileHashes.flush() }
+    let claims = models.map { VerifiedFileHashes.claim($0.claimDigest, files: $0.claimFiles) }
+    let pending = models.indices.filter { index in claims[index].map { !VerifiedFileHashes.isVerified($0) } ?? true }
+    do { try DeclaredModelAsset.verifyConcurrently(pending.map { models[$0].declared }) } catch let error as AssetStoreError { throw kreaError(error) }
+    for index in pending { if let claim = claims[index] { VerifiedFileHashes.recordVerified(claim) } }
 }
 
 /// Krea's verification errors predate AetherAssets: shared verification failures surface as the

@@ -388,7 +388,13 @@ public struct H3EmbeddingTable: Sendable {
         var result = self; result.lease = lease; return result
     }
 
+    /// Hashes the table unless it was verified before with its file's current identity (``VerifiedFileHashes``).
     public func verify() throws {
+        defer { VerifiedFileHashes.flush() }
+        try VerifiedFileHashes.verifyOnce("h3-embedding:\(sha256):\(offset):\(rows)x\(width)", files: [url]) { try verifyBytes() }
+    }
+
+    private func verifyBytes() throws {
         if let lease {
             var hasher = SHA256(), consumed = 0
             while consumed < rows * width * 2 {

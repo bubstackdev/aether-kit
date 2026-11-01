@@ -131,7 +131,8 @@ public struct LanguageModelManifest: Codable, Sendable {
     /// `fileHash`, through ``VerifiedFileHashes``: an unchanged large file (same path, device, inode, size,
     /// modification and status-change times as when it was last hashed) isn't read again.
     static func verifiedHash(_ url: URL) throws -> String {
-        try VerifiedFileHashes.sha256(of: url, hash: fileHash)
+        defer { VerifiedFileHashes.flush() }
+        return try VerifiedFileHashes.sha256(of: url, hash: fileHash)
     }
 
     public static func fileHash(_ url: URL) throws -> String {

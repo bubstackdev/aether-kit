@@ -154,8 +154,18 @@ public struct H3TensorFile: Sendable {
         return try H3TensorData(spec: spec, bytes: data)
     }
     /// Reads the bytes straight into `destination` (exactly `spec.byteCount`), hashing them on the way when `verify`
-    /// is set. Native weight slots use this to avoid an intermediate copy; finite values are not re-checked here.
+    /// is set, unless the tensor was verified before with its files' current identities (``VerifiedFileHashes``).
+    /// Native weight slots use this to avoid an intermediate copy; finite values are not re-checked here.
     public func read(into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
+        guard verify, let claim = VerifiedFileHashes.claim("h3-tensor:\(sha256)", files: segments.map(\.url)) else {
+            return try readBytes(into: destination, verify: verify)
+        }
+        if VerifiedFileHashes.isVerified(claim) { return try readBytes(into: destination, verify: false) }
+        try readBytes(into: destination, verify: true)
+        VerifiedFileHashes.recordVerified(claim)
+    }
+
+    private func readBytes(into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
         try Task.checkCancellation()
         guard destination.count == spec.byteCount, let base = destination.baseAddress else {
             throw AetherError.invalidTensor("H3 tensor destination extent differs: \(name)")

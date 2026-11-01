@@ -104,4 +104,37 @@ import Testing
         let entries = try #require(entry?["entries"] as? [String: Any])
         #expect(entries.keys.contains(model.standardizedFileURL.resolvingSymlinksInPath().path))
     }
+
+    @Test func claimsCoverEveryFileAndRecordOnlyPassingChecks() throws {
+        let f = try Fixture()
+        let a = try f.write("a.bin", byte: 1, count: 1024), b = try f.write("b.bin", byte: 2, count: 1024)
+        var checks = 0
+        try VerifiedFileHashes.verifyOnce("digest", files: [a, b, a]) { checks += 1 }
+        try VerifiedFileHashes.verifyOnce("digest", files: [a, b]) { checks += 1 }
+        #expect(checks == 1)
+        // Another digest over the same files is another claim.
+        try VerifiedFileHashes.verifyOnce("other", files: [a, b]) { checks += 1 }
+        #expect(checks == 2)
+        // A failing check records nothing.
+        struct Mismatch: Error {}
+        #expect(throws: Mismatch.self) { try VerifiedFileHashes.verifyOnce("bad", files: [a]) { throw Mismatch() } }
+        #expect(throws: Mismatch.self) { try VerifiedFileHashes.verifyOnce("bad", files: [a]) { throw Mismatch() } }
+        // Any covered file changing (here the second) checks again, also in a new process.
+        let handle = try FileHandle(forWritingTo: b)
+        try handle.write(contentsOf: Data([9]))
+        try handle.close()
+        VerifiedFileHashes.flush()
+        VerifiedFileHashes.resetMemory()
+        try VerifiedFileHashes.verifyOnce("digest", files: [a, b]) { checks += 1 }
+        #expect(checks == 3)
+        VerifiedFileHashes.flush()
+        VerifiedFileHashes.resetMemory()
+        try VerifiedFileHashes.verifyOnce("digest", files: [a, b]) { checks += 1 }
+        #expect(checks == 3)
+        // A file that can't be identified is checked every time.
+        let missing = f.directory.appendingPathComponent("missing.bin")
+        try VerifiedFileHashes.verifyOnce("digest", files: [missing]) { checks += 1 }
+        try VerifiedFileHashes.verifyOnce("digest", files: [missing]) { checks += 1 }
+        #expect(checks == 5)
+    }
 }

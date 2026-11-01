@@ -9,6 +9,9 @@ let package = Package(
     targets: [
         .executableTarget(name: "open-timing", dependencies: [
             .product(name: "AetherLanguageCoreAI", package: "asset-hash-cache"),
-        ], path: "Sources", swiftSettings: [.swiftLanguageMode(.v5)]),
+        ], path: "Sources/open-timing", swiftSettings: [.swiftLanguageMode(.v5)]),
+        .executableTarget(name: "asset-verify-timing", dependencies: [
+            .product(name: "AetherKrea", package: "asset-hash-cache"), .product(name: "AetherH3", package: "asset-hash-cache"),
+        ], path: "Sources/asset-verify-timing", swiftSettings: [.swiftLanguageMode(.v5)]),
     ]
 )
