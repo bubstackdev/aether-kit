@@ -1,7 +1,7 @@
 # Design note: Qwen3.5-4B image + text on a hybrid recurrent-state decoder (0.0.4)
 
-**Status: design approved; stages 2 (text parity, S2 chosen) and 3 (image parity) done (2026-11-01;
-[stage 2](#stage-2-text-parity), [stage 3](#stage-3-image-parity-orion)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
+**Status: stages 2 (text parity, S2 chosen), 3 (image parity) and 4 (Kit session and bundle) done (2026-11-01;
+[stage 2](#stage-2-text-parity), [stage 3](#stage-3-image-parity-orion), [stage 4](#stage-4-kit-session-and-bundle)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
 vision-language model in Kit, so a host (Atelier's describer) can drive it the way it drives Qwen3-VL-4B today
 through `VisionLanguageSession`. The recurrent-state runtime it needs is built once and serves Granite 4.0-H as well
 ([roadmap](../roadmap-0.0.4.md), [0.0.3 hybrid spike](hybrid-state-0.0.3.md)).
@@ -234,3 +234,51 @@ Encoder: embeddings cosine 0.99998 against upstream (row min 0.9928), 0.15 s per
 forced min cosine 0.99975, 0 argmax mismatches; **128-token greedy identical** to upstream.
 
 Kit's own preprocessing (Swift resize of the raw JPEG) and the full `VisionLanguageSession` path are stage 4.
+
+## Stage 4: Kit session and bundle
+
+**Runtime** (`Sources/AetherLanguageCoreAI/HybridLanguageSession.swift`):
+- `LanguageHybridRegistration` (`AetherKit`, the `hybrid` block of `language-model.json`): layout `static-width`, the
+  width, the declared states (name, role `recurrent`, scalar type, shape) and an optional reshape request (default off).
+  Nothing is model-specific; Granite 4.0-H registers `convState`/`ssmState` the same way and its signature (no rotary
+  positions, no image rows) is accepted by the same checks (CPU-tested).
+- `LanguageHybridContract`: validation of `main` against the registration (required inputs, optional `rope_positions`
+  and `image_embeds`, exactly the declared states with their types and shapes, every token input W wide, the KV
+  capacity dynamic or static at the registered context), and the padded plan (W-wide chunks, never a step back).
+- `HybridLanguageSession`: Kit-owned KV at the registered context, declared-state buffers zeroed per request, one W-wide
+  call per chunk and per decode step, valid update rows copied after each join; GPU and resource admission and close
+  as the dense session has them. It conforms to `LanguageBackend` (so the `AetherLanguage` facade opens hybrid bundles),
+  `LanguageBackendQualification` and `VisionLanguageDecoding`: `VisionLanguageSession.open(bundle:)` picks it when the
+  manifest has a `hybrid` block, so a host's call shape is unchanged.
+- `LanguageVisionEncoder` accepts an encoder without DeepStack (zero levels). The dense and Qwen3-VL paths are
+  unchanged; every CPU suite passes (`swift test --triple arm64-apple-macosx27.0 --no-parallel`) and the frozen API
+  matches its baseline.
+
+**Static capacity.** With the KV capacity dynamic, every load's first request took 11.7 s (Core AI specializing the
+capacity on first use, never cached). Exported with a static capacity at the registered context
+(`--fixed-capacity 4096`), the graph has no dynamic dimension: the first open in a process namespace compiles
+(about 21 s, cached on disk), every later open takes 4.8 s and its first request 0.11 s. Most of the 4.8 s is
+`LanguageModelManifest.verify` hashing the 7.8 GB `main.mlirb`, as for every Kit language bundle.
+
+**Bundle** `~/.cache/huggingface/aether-kit/qwen3.5-4b-bundle-macos` (the Writer layout: `model.aimodel`,
+`vision.aimodel`, `tokenizer/`, `language-model.json`, both export reports), registered by
+`register_qwen3_vl_bundle.py` (which now writes the `hybrid` block for a hybrid export): context 4,096, W = 64, stop
+tokens `<|endoftext|>` and `<|im_end|>`, the five fixed grids, decoder `modelSHA256` `dccf1ca7…`, encoder `55965fa1…`.
+
+**Through the public API** (`Tests/AetherNativeTests/HybridVisionLanguageSessionTests.swift`,
+`runs/session-qwen35-bundle-c4096.json`):
+- `AetherLanguageTokenizers` renders every reference prompt exactly (the describer prompt with a system message and an
+  image, and the three chat prompts; thinking off).
+- Text through `HybridLanguageSession.open(bundle:)`: all three chat cases **identical to upstream** (96, 128 and 99
+  tokens, two ending at upstream's end of turn).
+- Image through `VisionLanguageSession.open(bundle:)` from the **raw JPEG**: identical to upstream for 12 tokens, then a
+  divergence at a reference near tie (margin 0.0016), the same on all three repeats. The reference here is upstream fed
+  Kit's own lossless decode of the JPEG (`reference-image-kit-decode-cpu/`), as the Qwen3-VL photos were qualified:
+  ImageIO and PIL decode this 366×480 JPEG differently (mean 1.1 levels, max 44), and upstream's reply changes with the
+  decode too (it opens with `{` instead of ```` ```json ````). On the same decode Kit's pixels match upstream's at
+  cosine 0.9999999, the encoder at 0.99993, and the decoder's 32 forced rows at min cosine 0.9994 with 31/32 argmax,
+  the miss being that near tie (`Spikes/qwen35-vl/kitcheck`).
+- Speed, warm: image request (preprocess, encode, 838-token prefill) to first token 0.46–0.55 s; decode 32.7–33.8 tok/s;
+  text to first token 30 ms (about 30 tokens).
+- Memory with the image session open and warm: Metal 10.5 GiB, wired mapped file 9.0 GiB, process footprint 1.1 GiB;
+  flat across repeats; released at unload.

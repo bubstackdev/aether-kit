@@ -9,6 +9,11 @@ image grids, one static-shape function each) and the tokenizer copy's `config.js
 `generation_config.json`; hashes the assets the way `LanguageModelManifest.verify` does, and records every tokenizer
 file (`tokenizerFiles`, by the same rules as `register_qwen3_bundle.py`) so `verifyTokenizer` checks the exact file set. The vision registration never
 requests `expectFrequentReshapes` (engine F-P3-26) and always lists its grids (dynamic-shape encoders are refused).
+
+A hybrid text export (Qwen3.5, `export_qwen35_text.py`: `"contract": "hybrid"` in its report) adds the `hybrid`
+registration from the report (static width and declared states). Its image rows travel in the W-wide chunks, so an
+image span isn't bounded by W: `maximumImageChunk` is the image-token budget. Without `generation_config.json` (Qwen3.5
+ships none) the stop tokens are the config's end of text and the tokenizer's end-of-turn token.
 """
 
 from __future__ import annotations
@@ -59,11 +64,20 @@ def main() -> None:
     tok = b / "tokenizer"
     config = json.loads((tok / "config.json").read_text())
     pre = json.loads((tok / "preprocessor_config.json").read_text())
-    generation = json.loads((tok / "generation_config.json").read_text())
-    eos = generation.get("eos_token_id", config["text_config"]["eos_token_id"])
-    stop = sorted(set(eos if isinstance(eos, list) else [eos]))
+    if (tok / "generation_config.json").exists():
+        generation = json.loads((tok / "generation_config.json").read_text())
+        eos = generation.get("eos_token_id", config["text_config"]["eos_token_id"])
+        stop = sorted(set(eos if isinstance(eos, list) else [eos]))
+    else:
+        eos = config["text_config"]["eos_token_id"]
+        vocabulary = json.loads((tok / "tokenizer.json").read_text())["added_tokens"]
+        turn_end = json.loads((tok / "tokenizer_config.json").read_text())["eos_token"]
+        stop = sorted(set((eos if isinstance(eos, list) else [eos]) + [t["id"] for t in vocabulary if t["content"] == turn_end]))
+    hybrid = report.get("contract") == "hybrid"
     vc = config["vision_config"]
-    bounds = report["exportBounds"]
+    bounds = dict(report["exportBounds"])
+    if hybrid:
+        bounds["maximumImageChunk"] = args.maximum_image_tokens
     vision_report = json.loads((b / "vision-export-report.json").read_text())
     grids = [{"height": g["height"], "width": g["width"]} for g in vision_report["imageGrids"]]
     budget = min(args.maximum_image_tokens, bounds["maximumImageChunk"])
@@ -102,6 +116,8 @@ def main() -> None:
             "imageGrids": grids,
         },
     }
+    if hybrid:
+        manifest["hybrid"] = {"layout": "static-width", "staticWidth": report["staticWidth"], "states": report["states"]}
     if args.base_model:
         manifest["baseModel"] = args.base_model
     (b / "language-model.json").write_text(json.dumps(manifest, indent=2) + "\n")

@@ -241,6 +241,12 @@ are the 2B's): model parity with forced-row cosine ≥ 0.99994, Kit preprocessin
 cosines and grids and forced-row cosine ≥ 0.99961, no argmax differences and greedy identical in all six runs,
 and the overlapped-prefill check with the two-image prompt.
 
+## Qwen3.5-4B (hybrid decoder)
+
+`Qwen/Qwen3.5-4B` uses this vision tower without DeepStack and a Gated DeltaNet hybrid text decoder; its bundle carries
+a `hybrid` registration and `VisionLanguageSession` opens it unchanged. See the
+[design and qualification](spikes/qwen3.5-vl-2026-11.md).
+
 ## Qwen3-VL-4B describer
 
 `huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated` (Apache-2.0, not gated; pinned revision

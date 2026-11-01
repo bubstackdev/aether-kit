@@ -85,16 +85,19 @@ public actor LanguageVisionEncoder {
             guard let d = model.functionDescriptor(for: name) else {
                 throw LanguageGenerationError.invalid("The vision encoder has no static function for grid \(grid.height)x\(grid.width)")
             }
+            // Qwen3-VL returns DeepStack levels beside the embeddings; Qwen3.5's tower has none (zero levels).
+            let outputNames = Set(d.outputNames)
+            let hasDeepstack = outputNames == ["image_embeds", "deepstack"]
             guard Set(d.inputNames) == ["pixels", "pos_index", "pos_weight", "patch_rc"],
-                  Set(d.outputNames) == ["image_embeds", "deepstack"], d.stateNames.isEmpty,
+                  hasDeepstack || outputNames == ["image_embeds"], d.stateNames.isEmpty,
                   case .ndArray(let pixels)? = d.inputDescriptor(of: "pixels"), pixels.scalarType == .float16,
                   case .ndArray(let index)? = d.inputDescriptor(of: "pos_index"),
                   case .ndArray(let weight)? = d.inputDescriptor(of: "pos_weight"),
                   case .ndArray(let rc)? = d.inputDescriptor(of: "patch_rc"),
                   case .ndArray(let embeds)? = d.outputDescriptor(of: "image_embeds"),
-                  case .ndArray(let deep)? = d.outputDescriptor(of: "deepstack"),
+                  let deep = Self.deepstackShape(d, present: hasDeepstack),
                   let found = LanguageVisionContract.staticLayout(grid: grid, mergeSize: configuration.mergeSize,
-                      inputs: [pixels.shape, index.shape, weight.shape, rc.shape], outputs: [embeds.shape, deep.shape]),
+                      inputs: [pixels.shape, index.shape, weight.shape, rc.shape], outputs: [embeds.shape, deep]),
                   layout == nil || layout! == found,
                   let function = try model.loadFunction(named: name)
             else { throw LanguageGenerationError.invalid("Unsupported static vision encoder contract for \(name)") }
@@ -145,9 +148,21 @@ public actor LanguageVisionEncoder {
         try Task.checkCancellation()
         let tokens = n / (configuration.mergeSize * configuration.mergeSize)
         let embeddings = try await Self.read(outputs["image_embeds"], shape: [tokens, hiddenSize])
-        let deepstack = try await Self.read(outputs["deepstack"], shape: [deepstackLevels, tokens, hiddenSize])
+        let deepstack = deepstackLevels == 0 ? []
+            : try await Self.read(outputs["deepstack"], shape: [deepstackLevels, tokens, hiddenSize])
         return try LanguageImageFeatures(grid: grid, mergeSize: configuration.mergeSize, hiddenSize: hiddenSize,
                                          deepstackLevels: deepstackLevels, embeddings: embeddings, deepstack: deepstack)
+    }
+
+    /// The DeepStack output's shape, or a zero-level shape [0, tokens, hidden] for an encoder without one (nil when the
+    /// declared output isn't an n-d array).
+    private static func deepstackShape(_ d: InferenceFunctionDescriptor, present: Bool) -> [Int]? {
+        guard present else {
+            guard case .ndArray(let embeds)? = d.outputDescriptor(of: "image_embeds"), embeds.shape.count == 2 else { return nil }
+            return [0, embeds.shape[0], embeds.shape[1]]
+        }
+        guard case .ndArray(let deep)? = d.outputDescriptor(of: "deepstack") else { return nil }
+        return deep.shape
     }
 
     /// Releases the model; later requests fail with `closed`.
@@ -195,7 +210,9 @@ enum LanguageVisionContract {
     /// (-1) dimension or mismatch.
     static func staticLayout(grid: Qwen3VLImagePreprocessor.Grid, mergeSize: Int, inputs: [[Int]], outputs: [[Int]])
         -> (row: Int, hidden: Int, levels: Int)? {
-        guard inputs.count == 4, outputs.count == 2, (inputs + outputs).allSatisfy({ $0.allSatisfy { $0 > 0 } }) else { return nil }
+        // Every dimension static and positive, except a DeepStack level count of 0 (an encoder without DeepStack).
+        guard inputs.count == 4, outputs.count == 2, outputs[1].count == 3, outputs[1][0] >= 0,
+              (inputs + [outputs[0], Array(outputs[1].dropFirst())]).allSatisfy({ $0.allSatisfy { $0 > 0 } }) else { return nil }
         let n = grid.height * grid.width, tokens = n / (mergeSize * mergeSize)
         let (pixels, index, weight, rc) = (inputs[0], inputs[1], inputs[2], inputs[3])
         let (embeds, deep) = (outputs[0], outputs[1])

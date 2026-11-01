@@ -106,7 +106,7 @@ public actor VisionLanguageSession {
         return try await open(textModel: textModel, visionModel: visionModel, registration: registration,
                               maximumContextLength: manifest.maximumContextLength, stopTokenIDs: Set(manifest.stopTokenIDs),
                               exportBounds: manifest.exportBounds, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes, gpu: gpu,
-                              encoderBudget: encoderBudget, decoderBudget: decoderBudget)
+                              encoderBudget: encoderBudget, decoderBudget: decoderBudget, hybrid: manifest.hybrid)
     }
 
     /// Raw-asset entry point for qualification before registration. The export bounds must
@@ -125,7 +125,7 @@ public actor VisionLanguageSession {
     static func open(textModel: URL, visionModel: URL, registration: LanguageVisionRegistration, maximumContextLength: Int,
                      stopTokenIDs: Set<Int>, exportBounds: LanguageExportBounds?, memoryGrowthBudgetBytes: Int?,
                      gpu: GPUAdmissionOwner?, encoderBudget: LanguageModelBudget?,
-                     decoderBudget: LanguageModelBudget?) async throws -> VisionLanguageSession {
+                     decoderBudget: LanguageModelBudget?, hybrid: LanguageHybridRegistration? = nil) async throws -> VisionLanguageSession {
         try registration.validate()
         try Self.requireImageBudget(registration: registration, bounds: exportBounds)
         let encoder = try await withReservedOpen(gpu, budget: encoderBudget) {
@@ -134,7 +134,18 @@ public actor VisionLanguageSession {
                                      imageGrids: Self.grids(of: registration)),
                 expectFrequentReshapes: try registration.encoderExpectsFrequentReshapes())
         }
-        let language = try await openBeside(encoder, close: { await $0.model.unload(); $0.residency?.release() }) {
+        let language: any VisionLanguageDecoding = try await openBeside(encoder, close: { await $0.model.unload(); $0.residency?.release() }) {
+            if let hybrid {
+                // A hybrid recurrent-state decoder (Qwen3.5): one fixed-width `main`, declared recurrent states.
+                let language = try await HybridLanguageSession.open(at: textModel, registration: hybrid,
+                    maximumContextLength: maximumContextLength, stopTokenIDs: stopTokenIDs, imageTokenID: registration.imageTokenID,
+                    gpu: gpu, budget: decoderBudget)
+                guard language.acceptsImages else {
+                    await language.unload()
+                    throw LanguageGenerationError.invalid("The text model has no image entry point")
+                }
+                return language
+            }
             let language = try await LanguageGenerationSession.open(at: textModel, maximumContextLength: maximumContextLength,
                                                                     stopTokenIDs: stopTokenIDs, memoryGrowthBudgetBytes: memoryGrowthBudgetBytes,
                                                                     exportBounds: exportBounds, gpu: gpu, budget: decoderBudget)

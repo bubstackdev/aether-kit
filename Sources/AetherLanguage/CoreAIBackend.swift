@@ -14,7 +14,12 @@ extension AetherLanguageModel {
         guard #available(macOS 27, iOS 27, *) else { throw AetherLanguageError.unavailable(.unsupportedOS) }
         let tokenizer = try await LanguageTokenizer.open(bundle: bundle)
         let bytes = try LanguageTokenizer.tokenBytes(bundle: bundle)
+        let codec = TokenizerCodec(tokenizer: tokenizer, bytes: bytes)
+        if try LanguageModelManifest.load(from: bundle).hybrid != nil {
+            // A hybrid recurrent-state decoder (Qwen3.5, Granite 4.0-H).
+            return LoadedLanguageModel(backend: try await HybridLanguageSession.open(bundle: bundle, platform: platform), codec: codec)
+        }
         let session = try await LanguageGenerationSession.open(bundle: bundle, platform: platform)
-        return LoadedLanguageModel(backend: session, codec: TokenizerCodec(tokenizer: tokenizer, bytes: bytes))
+        return LoadedLanguageModel(backend: session, codec: codec)
     }
 }

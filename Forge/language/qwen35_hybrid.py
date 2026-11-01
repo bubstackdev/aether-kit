@@ -380,10 +380,11 @@ class PaddedMain(torch.nn.Module):
                           recurrent_state)
 
 
-def padded_example(module: Qwen35HybridDecoder, width: int):
-    """(example, dynamic shapes) for `PaddedMain`: q fixed at `width`, a padded tail in the example, capacity dynamic."""
+def padded_example(module: Qwen35HybridDecoder, width: int, fixed_capacity: int | None = None):
+    """(example, dynamic shapes) for `PaddedMain`: q fixed at `width`, a padded tail in the example, capacity dynamic, or
+    static at `fixed_capacity` (then the graph has no dynamic dimension at all)."""
     cap_dim = torch.export.Dim("capacity", min=2, max=module.max_capacity)
-    kc, vc, cs, rs = module.empty_state(56)
+    kc, vc, cs, rs = module.empty_state(fixed_capacity or 56)
     start, n = 16, max(1, width - 3)
     positions = torch.full((1, width), -1, dtype=torch.int32)
     positions[0, :n] = torch.arange(start, start + n, dtype=torch.int32)
@@ -393,7 +394,8 @@ def padded_example(module: Qwen35HybridDecoder, width: int):
     rope[:, :n] = positions[0, :n]
     image = torch.zeros(width, module.cfg["hidden_size"], dtype=module.embed.weight.dtype)
     example = (ids, positions, rope, image, kc, vc, cs, rs)
-    return example, (None, None, None, None, {3: cap_dim}, {3: cap_dim}, None, None)
+    cache = None if fixed_capacity else {3: cap_dim}
+    return example, (None, None, None, None, cache, cache, None, None)
 
 
 def start_scalar_example(module: Qwen35HybridDecoder, max_width: int):

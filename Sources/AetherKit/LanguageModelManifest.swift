@@ -29,6 +29,9 @@ public struct LanguageModelManifest: Codable, Sendable {
     /// Image input (Qwen3-VL): the vision encoder asset and its preprocessing. Verified with the
     /// rest of the registration; see ``verifyVision(in:)``.
     public let vision: LanguageVisionRegistration?
+    /// A hybrid recurrent-state decoder (Qwen3.5, Granite 4.0-H): a fixed-width `main` and its declared recurrent
+    /// states. Absent for dense decoders, which keep the step contracts detected from their signature.
+    public let hybrid: LanguageHybridRegistration?
 
     public static func load(from directory: URL) throws -> Self {
         try JSONDecoder().decode(Self.self, from: Data(contentsOf: directory.appendingPathComponent("language-model.json")))
@@ -51,6 +54,12 @@ public struct LanguageModelManifest: Codable, Sendable {
               !sourceRepository.isEmpty, exportBounds?.isValid ?? true,
               maximumContextLength <= exportBounds?.maximumCacheCapacity ?? .max
         else { throw AetherError.invalidModel("invalid language model registration or platform") }
+        if let hybrid {
+            try hybrid.validate()
+            guard exportBounds?.maximumPrefillChunk == hybrid.staticWidth else {
+                throw AetherError.invalidModel("a hybrid registration's export bounds must declare its static width")
+            }
+        }
         if let vision {
             try vision.validate()
             guard exportBounds?.maximumImageChunk.map({ vision.maximumImageTokens <= $0 }) ?? false else {
@@ -173,6 +182,81 @@ public struct LanguageExportBounds: Codable, Sendable, Equatable {
     }
 
     public var isValid: Bool { maximumPrefillChunk > 0 && maximumCacheCapacity >= 2 && (maximumImageChunk ?? 1) > 0 }
+}
+
+/// A hybrid recurrent-state decoder's registration (docs/spikes/qwen3.5-vl-2026-11.md). Its `main` takes exactly
+/// `staticWidth` tokens per call (a prompt's tail and every decode step are padded with cache position -1), reads the
+/// attention layers' KV cache as read-only inputs at a fixed capacity (the registered context) and returns the chunk's
+/// update rows, and updates the declared recurrent states in place. The states are Kit-owned buffers, zeroed per
+/// request; recurrent state can't step back, so a request never resubmits rows. Nothing in it is model-specific: Qwen3.5
+/// declares `convState` and `recurrentState`, Granite 4.0-H `convState` and `ssmState`.
+public struct LanguageHybridRegistration: Codable, Sendable, Equatable {
+    public enum Layout: String, Codable, Sendable {
+        /// One `main` at a fixed width (the 0.0.3 spike's S2).
+        case staticWidth = "static-width"
+    }
+
+    public struct State: Codable, Sendable, Equatable {
+        public enum Role: String, Codable, Sendable {
+            /// Fixed size, written whole by every call, never truncated: reset per request.
+            case recurrent
+        }
+        public enum ScalarType: String, Codable, Sendable { case float16, float32 }
+        public let name: String
+        public let role: Role
+        public let scalarType: ScalarType
+        public let shape: [Int]
+
+        public init(name: String, role: Role = .recurrent, scalarType: ScalarType, shape: [Int]) {
+            self.name = name
+            self.role = role
+            self.scalarType = scalarType
+            self.shape = shape
+        }
+
+        /// The state's size in bytes, nil when it overflows.
+        public var byteCount: Int? {
+            shape.reduce(Optional(scalarType == .float32 ? 4 : 2)) { total, dimension in
+                guard let total else { return nil }
+                let (product, overflow) = total.multipliedReportingOverflow(by: dimension)
+                return overflow ? nil : product
+            }
+        }
+    }
+
+    public let layout: Layout
+    public let staticWidth: Int
+    public let states: [State]
+    /// The decoder's `expectFrequentReshapes` specialization request (default false: every call has one shape).
+    public let expectFrequentReshapes: Bool?
+
+    /// Input and output names the step contract owns; a state can't take one.
+    public static let reservedNames: Set<String> = ["input_ids", "cache_positions", "rope_positions", "image_embeds",
+                                                    "keyCache", "valueCache", "logits", "keyUpdate", "valueUpdate"]
+
+    public init(layout: Layout = .staticWidth, staticWidth: Int, states: [State], expectFrequentReshapes: Bool? = nil) {
+        self.layout = layout
+        self.staticWidth = staticWidth
+        self.states = states
+        self.expectFrequentReshapes = expectFrequentReshapes
+    }
+
+    /// The bytes of every declared state, nil when it overflows.
+    public var stateBytes: Int? {
+        states.reduce(Optional(0)) { total, state in
+            guard let total, let bytes = state.byteCount else { return nil }
+            let (sum, overflow) = total.addingReportingOverflow(bytes)
+            return overflow ? nil : sum
+        }
+    }
+
+    public func validate() throws {
+        let names = states.map(\.name)
+        guard staticWidth > 0, staticWidth <= 4096, !states.isEmpty, Set(names).count == names.count,
+              names.allSatisfy({ !$0.isEmpty && !Self.reservedNames.contains($0) }),
+              states.allSatisfy({ !$0.shape.isEmpty && $0.shape.allSatisfy { $0 > 0 } }), stateBytes != nil
+        else { throw AetherError.invalidModel("invalid hybrid registration") }
+    }
 }
 
 /// A fixed patch grid the vision encoder was exported for (one static-shape function each).

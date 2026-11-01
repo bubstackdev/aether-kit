@@ -121,6 +121,9 @@ def main() -> None:
     parser.add_argument("--layout", default="S2", choices=["S2", "D1"],
                         help="S2: static width W; D1: dynamic q with cache_positions [1, 2] = (start, valid count)")
     parser.add_argument("--max-capacity", type=int, default=16384)
+    parser.add_argument("--fixed-capacity", type=int,
+                        help="S2: a static KV capacity (the registered context), so no dimension is dynamic and Core AI "
+                             "specializes the whole graph at load instead of on each load's first call")
     parser.add_argument("--delta-rule", default="composite", choices=DELTA_RULES)
     parser.add_argument("--no-externalize-composite", dest="externalize_composite", action="store_false",
                         help="trace GatedDeltaUpdate's while_loop instead of emitting the gated_delta_update composite")
@@ -153,7 +156,7 @@ def main() -> None:
         module.start_scalar = True
         example, dynamic = start_scalar_example(module, args.static_width)
     else:
-        example, dynamic = padded_example(module, args.static_width)
+        example, dynamic = padded_example(module, args.static_width, args.fixed_capacity)
     wrapper = PaddedMain(module)
     if args.externalize_composite:
         from coreai_torch.composite_ops import GatedDeltaUpdate
@@ -188,7 +191,8 @@ def main() -> None:
 
     report = {
         "schema": 1,
-        "recipe": f"qwen35-hybrid-{args.layout.lower()}-w{args.static_width}-{args.delta_rule}" + ("-externalized" if args.externalize_composite else ""),
+        "recipe": f"qwen35-hybrid-{args.layout.lower()}-w{args.static_width}"
+                  + (f"-c{args.fixed_capacity}" if args.fixed_capacity else "") + f"-{args.delta_rule}" + ("-externalized" if args.externalize_composite else ""),
         "contract": "hybrid",
         "functions": ["main"],
         "layout": args.layout,
@@ -200,7 +204,8 @@ def main() -> None:
         "dtype": "float16 weights, KV and convState; float32 recurrentState and gated delta rule",
         "staticWidth": args.static_width,
         "exportBounds": {"maximumPrefillChunk": args.static_width, "maximumImageChunk": args.static_width,
-                         "maximumCacheCapacity": args.max_capacity},
+                         "maximumCacheCapacity": args.fixed_capacity or args.max_capacity},
+        "fixedCacheCapacity": args.fixed_capacity,
         "states": [{"name": "convState", "role": "recurrent", "scalarType": "float16", "shape": list(module.empty_state(1)[2].shape)},
                    {"name": "recurrentState", "role": "recurrent", "scalarType": "float32", "shape": list(module.empty_state(1)[3].shape)}],
         "imageTokenID": image_token,
