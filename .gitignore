@@ -14,4 +14,5 @@ Examples/LanguageDevice/LanguageDeviceProbe.xcodeproj/
 .worktrees/
 Forge/.venv/
 Forge/h3-oracle/.venv/
+Forge/reference-qwen35/.venv/
 Examples/SampleApp/SampleApp.xcodeproj/

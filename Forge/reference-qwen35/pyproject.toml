@@ -1,0 +1,25 @@
+# Upstream reference environment for Qwen3.5 only (development tooling; never required by SDK consumers).
+#
+# Forge's main environment pins transformers 4.57.3, which has no `qwen3_5`; bumping that pin would move every 0.0.2
+# and 0.0.3 reference off its recorded version. This second locked project runs only the upstream Qwen3.5 reference
+# scripts (Forge/language/reference_qwen35*.py). The port and the exporters stay in Forge's main environment.
+#
+#     uv sync --frozen --project Forge/reference-qwen35
+#     Forge/reference-qwen35/.venv/bin/python -I Forge/language/reference_qwen35.py ...
+#
+# torch, torchvision and Pillow match Forge's main pins.
+[project]
+name = "aether-kit-forge-reference-qwen35"
+version = "0.0.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.22.1",
+    "pillow==12.3.0",
+    "safetensors",
+    "numpy",
+]
+
+[tool.uv]
+package = false
