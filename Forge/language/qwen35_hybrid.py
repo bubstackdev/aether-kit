@@ -172,6 +172,7 @@ class GatedDeltaNet(torch.nn.Module):
         if delta_rule not in DELTA_RULES:
             raise ValueError(f"delta rule {delta_rule!r} is not one of {DELTA_RULES}")
         self.delta_rule = delta_rule
+        self.static_composite = False   # D1: run the composite at the static width (set by the exporter)
         if delta_rule == "composite":
             from coreai_torch.composite_ops import GatedDeltaUpdate
 
@@ -207,7 +208,17 @@ class GatedDeltaNet(torch.nn.Module):
         h0 = recurrent_state[slot:slot + 1, 0]                                         # [1, H, Dk, Dv] fp32
         args = (query.transpose(0, 1)[None], key.transpose(0, 1)[None], value.transpose(0, 1)[None],
                 g.transpose(0, 1)[None], beta.transpose(0, 1)[None], h0)
-        if self.delta_rule == "composite":
+        if self.delta_rule == "composite" and self.static_composite:
+            # D1: the composite runs at the static width W on rows placed by a [W, q] selection matrix (padding has
+            # g = 0, β = 0 and zero q, k, v, so it changes nothing), so its inputs carry no dynamic dimension: the
+            # dynamic-q composite computed wrong outputs under expectFrequentReshapes (docs/spikes/qwen3.5-vl-2026-11.md).
+            q_, k_, v_, g_, b_, state = args
+            rows = torch.cumsum(torch.ones_like(g_[0, 0], dtype=torch.int32), 0, dtype=torch.int32) - 1
+            place = (torch.arange(self.max_width, dtype=torch.int32)[:, None] == rows[None, :]).to(q_.dtype)
+            out, h = self.update(place @ q_, place @ k_, place @ v_, (place @ g_[..., None])[..., 0],
+                                 (place @ b_[..., None])[..., 0], state)
+            out = (place.transpose(0, 1) @ out.transpose(1, 2)).transpose(1, 2)            # [1, q, H, Dv]
+        elif self.delta_rule == "composite":
             out, h = self.update(*args)
         elif self.delta_rule == "chunk":
             out, h = delta_rule_chunk(*args, max_width=self.max_width)
@@ -398,12 +409,12 @@ def padded_example(module: Qwen35HybridDecoder, width: int, fixed_capacity: int 
     return example, (None, None, None, None, cache, cache, None, None)
 
 
-def start_scalar_example(module: Qwen35HybridDecoder, max_width: int):
+def start_scalar_example(module: Qwen35HybridDecoder, max_width: int, fixed_capacity: int | None = None):
     """(example, dynamic shapes) for D1: q dynamic (1..max_width) on input_ids, rope_positions and image_embeds,
     `cache_positions` [1, 2] = (start, valid count), capacity dynamic."""
     q_dim = torch.export.Dim("q", min=1, max=max_width)
     cap_dim = torch.export.Dim("capacity", min=2, max=module.max_capacity)
-    kc, vc, cs, rs = module.empty_state(56)
+    kc, vc, cs, rs = module.empty_state(fixed_capacity or 56)
     width, start = max(3, min(12, max_width - 1)), 16
     n = width - 1
     ids = torch.arange(width, dtype=torch.int32)[None] + 100
@@ -412,7 +423,8 @@ def start_scalar_example(module: Qwen35HybridDecoder, max_width: int):
     rope[:, :n] = torch.arange(start, start + n, dtype=torch.int32)
     image = torch.zeros(width, module.cfg["hidden_size"], dtype=module.embed.weight.dtype)
     example = (ids, torch.tensor([[start, n]], dtype=torch.int32), rope, image, kc, vc, cs, rs)
-    return example, ({1: q_dim}, None, {1: q_dim}, {0: q_dim}, {3: cap_dim}, {3: cap_dim}, None, None)
+    cache = None if fixed_capacity else {3: cap_dim}
+    return example, ({1: q_dim}, None, {1: q_dim}, {0: q_dim}, cache, cache, None, None)
 
 
 def name_map(module: Qwen35HybridDecoder) -> dict[str, tuple[str, str]]:

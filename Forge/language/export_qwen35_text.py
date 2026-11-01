@@ -25,7 +25,6 @@ import datetime as dt
 import hashlib
 import importlib.metadata
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -65,27 +64,6 @@ def tiny_module(delta_rule: str, max_capacity: int = 16384) -> Qwen35HybridDecod
             else:
                 p.normal_(0, 0.05)
     return module.to(torch.float16)
-
-
-def widen_collapsed_composite_dims(max_width: int) -> None:
-    """Export workaround, not a fix (coreai-torch 0.4.2): when the D1 graph's `GatedDeltaUpdate` call is externalized,
-    coreai-torch rebuilds the composite's dynamic shapes from the call site's fake tensors, and the token dimension
-    arrives as a fresh symbol whose recorded range has collapsed to the example's width (VR[w, w]), so the composite
-    would be exported for that one width. A collapsed range is replaced by the D1 range 1..max_width; the native
-    checks (q = W and q = 1 against the reference) are what qualify the result."""
-    import coreai_torch._utils as utils
-    from torch.export import Dim
-
-    original = utils._dim_for_sym
-
-    def dim_for_sym(s, cache):
-        r = s.node.shape_env.var_to_range.get(s.node.expr)
-        key = str(s.node.expr)
-        if r is not None and int(r.lower) == int(r.upper) and key not in cache:
-            cache[key] = Dim(re.sub(r"[^a-zA-Z0-9_]", "_", key), min=1, max=max_width)
-        return original(s, cache)
-
-    utils._dim_for_sym = dim_for_sym
 
 
 def stage(name: str) -> None:
@@ -146,7 +124,8 @@ def main() -> None:
     else:
         cfg, image_token = read_config(args.checkpoint)
         stage("load weights")
-        module = build(cfg, image_token, torch.float16, max_capacity=args.max_capacity, delta_rule=args.delta_rule)
+        module = build(cfg, image_token, torch.float16, max_capacity=args.max_capacity, delta_rule=args.delta_rule,
+                       max_width=args.static_width)
         load_weights(module, args.checkpoint)
     module = module.eval()
 
@@ -154,7 +133,10 @@ def main() -> None:
     asset = args.output / "model.aimodel"
     if args.layout == "D1":
         module.start_scalar = True
-        example, dynamic = start_scalar_example(module, args.static_width)
+        for layer in module.layers:
+            if layer.kind == "linear_attention":
+                layer.mixer.static_composite = args.delta_rule == "composite"
+        example, dynamic = start_scalar_example(module, args.static_width, args.fixed_capacity)
     else:
         example, dynamic = padded_example(module, args.static_width, args.fixed_capacity)
     wrapper = PaddedMain(module)
@@ -162,8 +144,6 @@ def main() -> None:
         from coreai_torch.composite_ops import GatedDeltaUpdate
         from coreai_torch.externalize import ExternalizeSpec, _patch_model_for_externalization, _subexport_and_restore
 
-        if args.layout == "D1":
-            widen_collapsed_composite_dims(args.static_width)
         _patch_model_for_externalization(wrapper, [ExternalizeSpec(GatedDeltaUpdate, composite_op_name="gated_delta_update",
                                                                    composite_attrs=["use_qk_l2_norm"])])
     stage("export main")

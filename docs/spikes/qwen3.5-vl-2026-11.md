@@ -282,3 +282,31 @@ tokens `<|endoftext|>` and `<|im_end|>`, the five fixed grids, decoder `modelSHA
   text to first token 30 ms (about 30 tokens).
 - Memory with the image session open and warm: Metal 10.5 GiB, wired mapped file 9.0 GiB, process footprint 1.1 GiB;
   flat across repeats; released at unload.
+
+## Decode and prefill speed (follow-up, 2026-11-01)
+
+The describe lane measured Qwen3.5 at about 34 ms per token in Atelier against VL-4B's 24 ms. Harness numbers (warm
+medians, `--no-reshapes` unless noted; prefill of 1,024 tokens):
+
+| Asset | Decode | Prefill 1,024 | Compiled | Notes |
+|---|---|---|---|---|
+| S2 W 64, capacity 4,096 (the first bundle) | 29.8 ms (33.6 tok/s) | 482 ms | 9.7 GB | |
+| **S2 W 64, capacity 2,048** | 29.2 ms (34.2–34.8 tok/s) | 464 ms | 9.7 GB | new bundle; public API: 27.8 ms (36.0 tok/s) |
+| S2 W 32, capacity 2,048 | 26.6 ms | 849 ms | | |
+| S2 W 16, capacity 2,048 | 24.0 ms | 1,525 ms | | |
+| D1, static-width composite, capacity 2,048 (reshapes on) | 26.0 ms | 505 ms | about 2× (16 GB) | parity on all 3 chat cases |
+| D1, static-width composite, capacity 4,096 (reshapes on) | 27.0 ms | 528 ms | about 2× (16 GB) | parity on all 3 chat cases; one resident copy (9.5 GiB Metal) |
+
+- **Where the time goes.** A static q = 1 call costs 23.4 ms, about the weight-bandwidth floor and the same as VL-4B's
+  24 ms. Every S2 decode step is a W-wide call, and the extra rows cost about 0.1 ms each: about 6 ms at W = 64. The
+  capacity costs about 0.6 ms per step between 4,096 and 2,048.
+- **Smaller W** trades decode for prefill almost one for one. For describer calls of about 1,000 prompt tokens, W = 64
+  stays best unless a call generates far more tokens than it reads.
+- **A second static q = 1 function** would wire a second copy of the weights: Core AI keeps a copy per function it runs
+  (Granite S1: 1,446 against 797 MiB; the Qwen3-VL two-function decoder), so it isn't an option.
+- **D1 fixed.** The D1 failure under `expectFrequentReshapes` was the dynamic-shape composite: with the composite run
+  at the static width on rows placed by a selection matrix, D1 is right with reshapes on and keeps one resident copy.
+  It saves about 3 ms per token against S2 at the same capacity, but its compiled package is about 2× (reshape-enabled
+  dynamic shapes, as for VL-4B), each load specializes its shapes on first use (1.6 s cold for the first 64-wide call
+  in the harness), and `HybridLanguageSession` would need a dynamic-width layout. Not adopted yet.
+- The `widen_collapsed_composite_dims` export workaround is gone: the static-width composite has no dynamic dimension.
