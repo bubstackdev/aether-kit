@@ -212,6 +212,5 @@ through Swift without the flag. This looks like F-P3-26 again. Repro: `export_qw
 [W, s] selection matrix), and when it externalizes the composite in a dynamic-q graph it rebuilds the token dimension
 as a fresh symbol whose range has collapsed to the example width (`widen_collapsed_composite_dims`).
 
-**Open for later stages.** Wider W (128/256) for time to first token; whether the S2 decode rate (31–33 tok/s, 23 ms
-per padded call against 23 ms at W = 1 for everything but the delta rule) can improve with a smaller decode width
-without a second weight copy.
+**Open for later stages.** Wider W (128/256) for time to first token; whether S2's decode (30–33 ms per padded 64-wide call, against
+23 ms for a static W = 1 call) can get closer to W = 1 without a second weight copy, for example with a smaller W.

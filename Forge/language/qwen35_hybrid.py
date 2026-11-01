@@ -109,7 +109,7 @@ def unit_lower_inverse(m: torch.Tensor) -> torch.Tensor:
 
 def delta_rule_chunk(q, k, v, g, beta, state, max_width: int):
     """The gated delta rule over the whole submission as one chunk (the WY form of upstream's chunked rule), no loop:
-    same arguments and result as `delta_rule_loop`. The submission (s <= max_width tokens) is padded to max_width
+    same arguments and result as `delta_rule_loop`. A submission of s < max_width tokens (D1) is padded to max_width
     tokens with g = 0, β = 0 and zero q, k, v, which change nothing, so every matrix below is a static W x W.
 
     With G the running sum of g and N the strictly lower matrix -β_i (k_i · k_j) exp(G_i - G_j), T = (I - N)⁻¹
@@ -120,9 +120,15 @@ def delta_rule_chunk(q, k, v, g, beta, state, max_width: int):
     width = 1
     while width < max_width:
         width *= 2
-    pad = width - s
-    q, k, v = (F.pad(t, (0, 0, 0, pad)) for t in (q, k, v))
-    g, beta = F.pad(g, (0, pad)), F.pad(beta, (0, pad))
+    if isinstance(s, int) and s == width:
+        place = None                                                                   # S2: already W wide
+    else:
+        # D1: a symbolic s. coreai-torch can't lower a pad by a symbolic amount, so the rows are placed with a
+        # [W, s] selection matrix instead (and taken back with its transpose).
+        rows = torch.cumsum(torch.ones_like(g[0, 0], dtype=torch.int32), 0, dtype=torch.int32) - 1
+        place = (torch.arange(width, dtype=torch.int32)[:, None] == rows[None, :]).to(q.dtype)
+        q, k, v = (place @ t for t in (q, k, v))
+        g, beta = (place @ g[..., None])[..., 0], (place @ beta[..., None])[..., 0]
     q, k = l2norm(q), l2norm(k)
     q = q * (q.shape[-1] ** -0.5)
     G = torch.cumsum(g, dim=-1)                                                        # [1, H, W]
@@ -139,7 +145,9 @@ def delta_rule_chunk(q, k, v, g, beta, state, max_width: int):
     out = (q * eg) @ state + attn @ u                                                  # [1, H, W, Dv]
     last = G[..., -1:]                                                                 # [1, H, 1]
     new = torch.exp(last)[..., None] * state + (k * torch.exp(last - G)[..., None]).transpose(-1, -2) @ u
-    return out[:, :, :s].transpose(1, 2), new
+    if place is not None:
+        out = place.transpose(0, 1) @ out
+    return out.transpose(1, 2), new
 
 
 class GatedDeltaNet(torch.nn.Module):
