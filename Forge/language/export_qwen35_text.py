@@ -97,7 +97,7 @@ def main() -> None:
     parser.add_argument("--layout", default="S2", choices=["S2", "D1"],
                         help="S2: static width W; D1: dynamic q with cache_positions [1, 2] = (start, valid count)")
     parser.add_argument("--max-capacity", type=int, default=16384)
-    parser.add_argument("--delta-rule", default="composite", choices=DELTA_RULES)
+    parser.add_argument("--delta-rule", default="chunk", choices=DELTA_RULES)
     parser.add_argument("--externalize-composite", action="store_true")
     parser.add_argument("--source-repository", default="")
     parser.add_argument("--source-revision", default="")

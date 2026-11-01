@@ -3,7 +3,7 @@
 
     Forge/reference-qwen35/.venv/bin/python -I Spikes/qwen35-vl/tiny_vs_upstream.py
 
-Upstream `Qwen3_5ForCausalLM` (random weights, float32) over a whole sequence vs the port (`delta_rule="loop"`) fed in
+Upstream `Qwen3_5ForCausalLM` (random weights, float32) over a whole sequence vs the port (`delta_rule` loop, or chunk as argv[1]) fed in
 padded fixed-width submissions (W = 8: the last one padded) and then one-token steps through the same W-wide padded
 call. Prints the worst cosine and argmax agreement of every row, and checks padded == unpadded on the port.
 """
@@ -18,6 +18,7 @@ from qwen35_hybrid import PREFIX, Qwen35HybridDecoder, name_map  # noqa: E402
 
 from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig  # noqa: E402
 
+RULE = sys.argv[1] if len(sys.argv) > 1 else "loop"   # the port's delta rule: loop or chunk
 torch.manual_seed(0)
 cfg = dict(vocab_size=512, hidden_size=128, intermediate_size=256, num_hidden_layers=8, num_attention_heads=4,
            num_key_value_heads=2, head_dim=64, linear_num_key_heads=2, linear_num_value_heads=4, linear_key_head_dim=32,
@@ -30,7 +31,7 @@ up = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**cfg)).eval()
 with torch.no_grad():
     for n, p in up.named_parameters():
         p.normal_(0, 0.3 if "norm" in n else 0.08)
-port = Qwen35HybridDecoder(cfg, image_token=511, max_capacity=64, delta_rule="loop").eval()
+port = Qwen35HybridDecoder(cfg, image_token=511, max_capacity=64, delta_rule=RULE).eval()
 sd = up.state_dict()
 names = name_map(port)
 params = dict(port.named_parameters())

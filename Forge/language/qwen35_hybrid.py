@@ -46,7 +46,7 @@ from granite_hybrid import after  # noqa: F401  (re-exported for the exporter's 
 from qwen3_vl_text import MRotaryEmbedding, mrope_axes
 
 PREFIX = "model.language_model."
-DELTA_RULES = ("composite", "loop")
+DELTA_RULES = ("chunk", "composite", "loop")
 
 
 class RMSNorm(torch.nn.Module):
@@ -85,10 +85,68 @@ def delta_rule_loop(q, k, v, g, beta, state):
     return torch.stack(outs, dim=1), state
 
 
+def unit_lower_inverse(m: torch.Tensor) -> torch.Tensor:
+    """Inverse of unit lower-triangular matrices m [..., W, W] (W a power of two) by blocked doubling: from the 1 x 1
+    diagonal blocks (all 1), each level joins pairs of inverted diagonal blocks A⁻¹, B⁻¹ with their off-diagonal block
+    C into [[A⁻¹, 0], [-B⁻¹ C A⁻¹, B⁻¹]]. log2(W) levels of small batched matmuls, no loop over rows, and no matrix
+    powers: the power series (I - N)⁻¹ = Σ Nᵏ cancels catastrophically in float32 on real weights (measured: logits
+    cosine 0.96, then NaN, on the 4B), this doesn't."""
+    width, lead = m.shape[-1], m.shape[:-2]
+    inverse = torch.ones(*lead, width, 1, 1, dtype=m.dtype)
+    b = 1
+    while b < width:
+        nb = width // (2 * b)
+        pick = torch.eye(nb, dtype=m.dtype).reshape(nb, 1, nb, 1)
+        blocks = (m.reshape(*lead, nb, 2 * b, nb, 2 * b) * pick).sum(dim=-2)          # diagonal 2b blocks [.., nb, 2b, 2b]
+        pairs = inverse.reshape(*lead, nb, 2, b, b)
+        a_inv, b_inv = pairs[..., 0, :, :], pairs[..., 1, :, :]
+        x = -(b_inv @ blocks[..., b:, :b] @ a_inv)
+        top = torch.cat((a_inv, torch.zeros_like(a_inv)), dim=-1)
+        inverse = torch.cat((top, torch.cat((x, b_inv), dim=-1)), dim=-2)
+        b *= 2
+    return inverse.reshape(*lead, width, width)
+
+
+def delta_rule_chunk(q, k, v, g, beta, state, max_width: int):
+    """The gated delta rule over the whole submission as one chunk (the WY form of upstream's chunked rule), no loop:
+    same arguments and result as `delta_rule_loop`. The submission (s <= max_width tokens) is padded to max_width
+    tokens with g = 0, β = 0 and zero q, k, v, which change nothing, so every matrix below is a static W x W.
+
+    With G the running sum of g and N the strictly lower matrix -β_i (k_i · k_j) exp(G_i - G_j), T = (I - N)⁻¹
+    (`unit_lower_inverse`). From the carried state S: u = T (β v) - T (β exp(G) k) S,
+    o = exp(G) q S + (q kᵀ ∘ D) u with D_ij = exp(G_i - G_j) for j <= i, S' = exp(G_last) S + (exp(G_last - G) k)ᵀ u.
+    The decay exponents are masked before exp, so no entry above the diagonal can overflow."""
+    s = q.shape[2]
+    width = 1
+    while width < max_width:
+        width *= 2
+    pad = width - s
+    q, k, v = (F.pad(t, (0, 0, 0, pad)) for t in (q, k, v))
+    g, beta = F.pad(g, (0, pad)), F.pad(beta, (0, pad))
+    q, k = l2norm(q), l2norm(k)
+    q = q * (q.shape[-1] ** -0.5)
+    G = torch.cumsum(g, dim=-1)                                                        # [1, H, W]
+    idx = torch.arange(width, dtype=torch.int32)
+    lower_incl = idx[None, :] <= idx[:, None]                                          # [W, W], j <= i
+    strict = idx[None, :] < idx[:, None]
+    decay = torch.exp(torch.where(lower_incl, G[..., :, None] - G[..., None, :], -1e4))
+    kb = k * beta[..., None]
+    n = torch.where(strict, -(kb @ k.transpose(-1, -2)) * decay, 0.0)
+    t = unit_lower_inverse(torch.eye(width, dtype=q.dtype) - n)
+    eg = torch.exp(G)[..., None]                                                       # [1, H, W, 1]
+    u = t @ (v * beta[..., None]) - (t @ (kb * eg)) @ state
+    attn = torch.where(lower_incl, (q @ k.transpose(-1, -2)) * decay, 0.0)
+    out = (q * eg) @ state + attn @ u                                                  # [1, H, W, Dv]
+    last = G[..., -1:]                                                                 # [1, H, 1]
+    new = torch.exp(last)[..., None] * state + (k * torch.exp(last - G)[..., None]).transpose(-1, -2) @ u
+    return out[:, :, :s].transpose(1, 2), new
+
+
 class GatedDeltaNet(torch.nn.Module):
-    def __init__(self, cfg: dict[str, Any], delta_rule: str) -> None:
+    def __init__(self, cfg: dict[str, Any], delta_rule: str, max_width: int = 64) -> None:
         super().__init__()
         hidden = cfg["hidden_size"]
+        self.max_width = max_width
         self.k_heads, self.v_heads = cfg["linear_num_key_heads"], cfg["linear_num_value_heads"]
         self.k_dim, self.v_dim = cfg["linear_key_head_dim"], cfg["linear_value_head_dim"]
         self.key_width, self.value_width = self.k_heads * self.k_dim, self.v_heads * self.v_dim
@@ -143,6 +201,8 @@ class GatedDeltaNet(torch.nn.Module):
                 g.transpose(0, 1)[None], beta.transpose(0, 1)[None], h0)
         if self.delta_rule == "composite":
             out, h = self.update(*args)
+        elif self.delta_rule == "chunk":
+            out, h = delta_rule_chunk(*args, max_width=self.max_width)
         else:
             out, h = delta_rule_loop(*args)
         recurrent_state[slot:slot + 1] = after(h.to(torch.float32), out)[None]
@@ -189,13 +249,13 @@ class Attention(torch.nn.Module):
 
 
 class Layer(torch.nn.Module):
-    def __init__(self, cfg: dict[str, Any], kind: str, delta_rule: str) -> None:
+    def __init__(self, cfg: dict[str, Any], kind: str, delta_rule: str, max_width: int) -> None:
         super().__init__()
         hidden, eps = cfg["hidden_size"], cfg["rms_norm_eps"]
         self.kind = kind
         self.input_norm = RMSNorm(hidden, eps)
         self.post_norm = RMSNorm(hidden, eps)
-        self.mixer = GatedDeltaNet(cfg, delta_rule) if kind == "linear_attention" else Attention(cfg)
+        self.mixer = GatedDeltaNet(cfg, delta_rule, max_width) if kind == "linear_attention" else Attention(cfg)
         inter = cfg["intermediate_size"]
         self.gate_proj = torch.nn.Linear(hidden, inter, bias=False)
         self.up_proj = torch.nn.Linear(hidden, inter, bias=False)
@@ -206,7 +266,8 @@ class Layer(torch.nn.Module):
 
 
 class Qwen35HybridDecoder(torch.nn.Module):
-    def __init__(self, cfg: dict[str, Any], image_token: int, max_capacity: int = 16384, delta_rule: str = "composite") -> None:
+    def __init__(self, cfg: dict[str, Any], image_token: int, max_capacity: int = 16384, delta_rule: str = "chunk",
+                 max_width: int = 64) -> None:
         super().__init__()
         self.cfg, self.image_token, self.max_capacity = cfg, image_token, max_capacity
         self.kinds = list(cfg["layer_types"])
@@ -215,7 +276,7 @@ class Qwen35HybridDecoder(torch.nn.Module):
         if not cfg.get("attn_output_gate", False) or cfg.get("attention_bias"):
             raise NotImplementedError("gated attention without bias only")
         self.embed = torch.nn.Embedding(cfg["vocab_size"], cfg["hidden_size"])
-        self.layers = torch.nn.ModuleList(Layer(cfg, kind, delta_rule) for kind in self.kinds)
+        self.layers = torch.nn.ModuleList(Layer(cfg, kind, delta_rule, max_width) for kind in self.kinds)
         self.norm = RMSNorm(cfg["hidden_size"], cfg["rms_norm_eps"])
         self.slot = [self.kinds[:i].count(kind) for i, kind in enumerate(self.kinds)]
         self.linear_layers, self.attention_layers = self.kinds.count("linear_attention"), self.kinds.count("full_attention")
@@ -368,14 +429,15 @@ def name_map(module: Qwen35HybridDecoder) -> dict[str, tuple[str, str]]:
 
 
 def build(cfg: dict[str, Any], image_token: int, dtype: torch.dtype, max_capacity: int = 16384,
-          delta_rule: str = "composite") -> Qwen35HybridDecoder:
+          delta_rule: str = "chunk", max_width: int = 64) -> Qwen35HybridDecoder:
     """An uninitialised decoder in `dtype` for `load_weights` to fill, built on the meta device (no float32 copy of a
     4B is allocated for an fp16 build)."""
     previous = torch.get_default_dtype()
     torch.set_default_dtype(dtype)
     try:
         with torch.device("meta"):
-            module = Qwen35HybridDecoder(cfg, image_token, max_capacity=max_capacity, delta_rule=delta_rule)
+            module = Qwen35HybridDecoder(cfg, image_token, max_capacity=max_capacity, delta_rule=delta_rule,
+                                         max_width=max_width)
     finally:
         torch.set_default_dtype(previous)
     module.to_empty(device="cpu")
