@@ -1,6 +1,6 @@
 # Design note: Qwen3.5-4B image + text on a hybrid recurrent-state decoder (0.0.4)
 
-**Status: stages 2 (text parity, S2 chosen), 3 (image parity) and 4 (Kit session and bundle) done (2026-11-01;
+**Status: parked (see [Outcome](#outcome-2026-11-01)); stages 2 (text parity, S2 chosen), 3 (image parity) and 4 (Kit session and bundle) done (2026-11-01;
 [stage 2](#stage-2-text-parity), [stage 3](#stage-3-image-parity-orion), [stage 4](#stage-4-kit-session-and-bundle)).** Branch `v0.0.4/qwen3.5-vl`. Goal: run base `Qwen/Qwen3.5-4B` as a
 vision-language model in Kit, so a host (Atelier's describer) can drive it the way it drives Qwen3-VL-4B today
 through `VisionLanguageSession`. The recurrent-state runtime it needs is built once and serves Granite 4.0-H as well
@@ -310,3 +310,18 @@ medians, `--no-reshapes` unless noted; prefill of 1,024 tokens):
   dynamic shapes, as for VL-4B), each load specializes its shapes on first use (1.6 s cold for the first 64-wide call
   in the harness), and `HybridLanguageSession` would need a dynamic-width layout. Not adopted yet.
 - The `widen_collapsed_composite_dims` export workaround is gone: the static-width composite has no dynamic dimension.
+
+## Outcome (2026-11-01)
+
+Parked by the PO's decision: Atelier v0.8 keeps Qwen3-VL-4B with the improved describe pipeline. On the describe lane's
+unseen pictures, through the same pipeline and calls:
+
+| | Recall | Precision | Time per describe |
+|---|---|---|---|
+| Qwen3-VL-4B abliterated (kept) | 0.89 | 0.83 | baseline |
+| Qwen3.5-4B, 2,048-context bundle | 0.97 | 0.71 | 4.4 s slower |
+
+Qwen3.5 found more but invented more, and it was slower. The branch stays local and unpushed. The bundles
+(`qwen3.5-4b-bundle-macos`, `qwen3.5-4b-c2048-bundle-macos`) and the references stay in
+`~/.cache/huggingface/aether-kit/` for a later revisit. The hybrid runtime (declared state roles, `HybridLanguageSession`)
+remains the starting point for the Granite 4.0-H item.
