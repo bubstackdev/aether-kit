@@ -35,8 +35,8 @@ public struct LanguageModelManifest: Codable, Sendable {
     }
     public func verify(in directory: URL, platform expectedPlatform: Platform) throws -> URL {
         let (model, tokenizer) = try locate(in: directory, platform: expectedPlatform)
-        guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
-              try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
+        guard try Self.verifiedHash(model.appendingPathComponent("main.mlirb")) == modelSHA256,
+              try Self.verifiedHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
             throw AetherError.invalidModel("language model or tokenizer checksum mismatch")
         }
         return model
@@ -74,7 +74,7 @@ public struct LanguageModelManifest: Codable, Sendable {
               !sourceRepository.isEmpty, tokenizerFiles.map({ !$0.isEmpty && $0.values.allSatisfy { Self.hex($0, count: 64) } }) ?? true
         else { throw AetherError.invalidModel("invalid language model registration") }
         let tokenizer = try Self.child(tokenizerDirectory, of: directory)
-        guard try Self.fileHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
+        guard try Self.verifiedHash(tokenizer.appendingPathComponent("tokenizer.json")) == tokenizerSHA256 else {
             throw AetherError.invalidModel("language tokenizer checksum mismatch")
         }
         if let tokenizerFiles {
@@ -92,7 +92,7 @@ public struct LanguageModelManifest: Codable, Sendable {
                 throw AetherError.invalidModel("registered tokenizer file \(missing) is missing")
             }
             for (path, hash) in tokenizerFiles where path != "tokenizer.json" {
-                guard try Self.fileHash(Self.child(path, of: tokenizer)) == hash else {
+                guard try Self.verifiedHash(Self.child(path, of: tokenizer)) == hash else {
                     throw AetherError.invalidModel("language tokenizer file \(path) checksum mismatch")
                 }
             }
@@ -122,10 +122,16 @@ public struct LanguageModelManifest: Codable, Sendable {
         guard let vision else { return nil }
         try vision.validate()
         let model = try Self.child(vision.modelDirectory, of: directory)
-        guard try Self.fileHash(model.appendingPathComponent("main.mlirb")) == vision.modelSHA256 else {
+        guard try Self.verifiedHash(model.appendingPathComponent("main.mlirb")) == vision.modelSHA256 else {
             throw AetherError.invalidModel("vision model checksum mismatch")
         }
         return model
+    }
+
+    /// `fileHash`, through ``VerifiedFileHashes``: an unchanged large file (same path, device, inode, size,
+    /// modification and status-change times as when it was last hashed) isn't read again.
+    static func verifiedHash(_ url: URL) throws -> String {
+        try VerifiedFileHashes.sha256(of: url, hash: fileHash)
     }
 
     public static func fileHash(_ url: URL) throws -> String {
