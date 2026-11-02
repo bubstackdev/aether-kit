@@ -1,0 +1,1387 @@
+{
+ "schema": 1,
+ "kind": "h3-presentation-gate",
+ "date": "2026-11-02",
+ "passed": true,
+ "profile": {
+  "location": "<kit-cache>/h3/profile-0.0.5/bundle.json",
+  "manifestSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+  "resourceIdentity": "h3.profile/2:1337264349ebf8bd8e445112e8b9016d758d76a1e0d8c76508c986d41dac9f35:turbo8",
+  "stack": [
+   "5af39db5 (Kit-owned clone of the qualified profile)",
+   "large-canvas overlay (tails, fixed audio decoders)",
+   "conditioner_vision overlay (this work)"
+  ]
+ },
+ "bars": "Decided by the user 2026-11-02 (plan D5, revised): exact keyframe/ids/tags/positions/pixels; tower per tensor <= 1.05x upstream bf16-vs-fp32 at the canvas; conditioner fed identical tower output: layers 0-3 and tap text rows <= 0.02; whole tap and image rows diagnostic.",
+ "script": "Scripts/qualify-h3-presentation.py",
+ "scriptSHA256": "e3ad02c30fbee0517d704908da50b0dd4449046dfb93e88c98dc2e705d976a97",
+ "native": "aether-probe h3-profile-presentation ... --vision|--conditioner under the GPU lock; every tower output equals the earlier export of the same graphs (byte-equal raw outputs at 960x544, 544x960, 1280x704 and 704x1280).",
+ "diagnosis": {
+  "upstreamTowerPrecision": "upstream bf16 tower vs upstream fed the fp32 tower output: tap 0.5513, image rows 0.6280, text rows 0.0016",
+  "kitVsUpstreamFullOracle": "tap 0.6084, image rows 0.6903, text rows 0.0081",
+  "kitVsUpstreamFedKitTower": "tap 0.0472, image rows 0.0518, text rows 0.0080; layers 0-3: 0.0028, 0.0039, 0.0045, 0.0054",
+  "reading": "Kit and upstream fed identical tower rows place the very large image-row activations on the same rows; the full-oracle distance comes from the tower rounding alone."
+ },
+ "gates": {
+  "vision-288x288": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "vision",
+   "canvas": "288x288",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "288x288",
+    "layers": 50,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "1f61d4438be1da65a42768a17edcbb8da2448b19cef43cb2f1c3af0517c5d879",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "58a908df503dd6cfd4491e88f4d60e23725cbb5078c3b10c21d0b250fa83e986",
+   "nativeManifestSHA256": "6487fd042d110b8553e1a47a4595761627a9c3376bd7a2287619d432d4dea148",
+   "visionReferenceManifestSHA256": "28c2e8b1e9f4c4777bee6d0deae32cdc2da32f3b65951de305ff6d04572c1485",
+   "substitutedManifestSHA256": null,
+   "nativeReport": {
+    "footprintPeakBytes": 1810712568,
+    "metalPeakBytes": 1533149184,
+    "mode": "vision",
+    "phases": [
+     {
+      "footprintEnd": 78906088,
+      "footprintPeak": 78906088,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 44,
+      "seconds": 1.0045944999999998
+     },
+     {
+      "footprintEnd": 1810712568,
+      "footprintPeak": 1810712568,
+      "metalEnd": 1530626048,
+      "metalPeak": 1533149184,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 26,
+      "seconds": 0.5974408339999999
+     },
+     {
+      "footprintEnd": 98714608,
+      "footprintPeak": 846808864,
+      "metalEnd": 39518208,
+      "metalPeak": 42860544,
+      "metalStart": 42860544,
+      "phase": "vision.released",
+      "samples": 44,
+      "seconds": 0.9949231249999997
+     },
+     {
+      "footprintEnd": 98714608,
+      "footprintPeak": 98714608,
+      "metalEnd": 39518208,
+      "metalPeak": 39518208,
+      "metalStart": 39518208,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.5830000001114684e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      288,
+      288,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      138
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      138
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      138
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      324,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.023976246895509725,
+     "cosine": 0.9997223763847245,
+     "max_abs": 0.6266031265258789,
+     "reference_max_abs": 28.80701446533203,
+     "finite": true,
+     "limit": 0.03481119192351838,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.009492215435127628,
+     "cosine": 0.9999593317486266,
+     "max_abs": 0.057677268981933594,
+     "reference_max_abs": 7.606385231018066,
+     "finite": true,
+     "limit": 0.01069664753790259,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.01198283484763773,
+     "cosine": 0.9999325209826285,
+     "max_abs": 0.199354887008667,
+     "reference_max_abs": 16.78877067565918,
+     "finite": true,
+     "limit": 0.016847628181533906,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.019359482928519064,
+     "cosine": 0.999818846273078,
+     "max_abs": 0.13605785369873047,
+     "reference_max_abs": 7.545506477355957,
+     "finite": true,
+     "limit": 0.02827404851254214,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.03808210373325309,
+      "cosine": 0.9992913754297753,
+      "max_abs": 1.21875,
+      "reference_max_abs": 28.875,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.013315113429781245,
+      "cosine": 0.9999171651028496,
+      "max_abs": 0.109375,
+      "reference_max_abs": 7.625,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.018745669219789336,
+      "cosine": 0.9998268359021637,
+      "max_abs": 0.4375,
+      "reference_max_abs": 16.75,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.03131720235268019,
+      "cosine": 0.9995191738379768,
+      "max_abs": 0.212158203125,
+      "reference_max_abs": 7.53125,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999481708971154,
+      "max_abs": 0.08652752637863159,
+      "relative_l2": 0.010187283369431038
+     },
+     "deepstack[1]": {
+      "cosine": 0.9998716809763657,
+      "max_abs": 0.3983116149902344,
+      "relative_l2": 0.016045360172889434
+     },
+     "deepstack[2]": {
+      "cosine": 0.9996374039525312,
+      "max_abs": 0.2843509316444397,
+      "relative_l2": 0.02692766525004013
+     },
+     "image_embeds": {
+      "cosine": 0.9994503378079029,
+      "max_abs": 1.0118942260742188,
+      "relative_l2": 0.03315351611763655
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 0.72318866000325,
+     "deepstack[0]": 0.9317710218615202,
+     "deepstack[1]": 0.7468099636606582,
+     "deepstack[2]": 0.7189439837711222
+    },
+    "tap": {}
+   }
+  },
+  "vision-960x544": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "vision",
+   "canvas": "960x544",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "960x544",
+    "layers": 50,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "1f61d4438be1da65a42768a17edcbb8da2448b19cef43cb2f1c3af0517c5d879",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "1fec9bebff4442551105f9658fbfc8dc9b1306e2302d76e618aed657aa7dd1ea",
+   "nativeManifestSHA256": "bbb45b682aeaf07cf7d2500e5c7e8c03dc842249e9fe1f304d27597d6c65481b",
+   "visionReferenceManifestSHA256": "b6009980c1be645db72f734886bbfdf0bf84412243ab128a2a0cc278a2ff6089",
+   "substitutedManifestSHA256": null,
+   "nativeReport": {
+    "footprintPeakBytes": 2005764184,
+    "metalPeakBytes": 1731198976,
+    "mode": "vision",
+    "phases": [
+     {
+      "footprintEnd": 93176576,
+      "footprintPeak": 93176576,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 31,
+      "seconds": 0.99525625
+     },
+     {
+      "footprintEnd": 1809352624,
+      "footprintPeak": 2005764184,
+      "metalEnd": 1411612672,
+      "metalPeak": 1731198976,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 31,
+      "seconds": 0.7119057079999997
+     },
+     {
+      "footprintEnd": 211731464,
+      "footprintPeak": 1084180352,
+      "metalEnd": 126550016,
+      "metalPeak": 147472384,
+      "metalStart": 147472384,
+      "phase": "vision.released",
+      "samples": 43,
+      "seconds": 1.0028412089999998
+     },
+     {
+      "footprintEnd": 211731464,
+      "footprintPeak": 211731464,
+      "metalEnd": 126550016,
+      "metalPeak": 126550016,
+      "metalStart": 126550016,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.3750000002209504e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      544,
+      960,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      567
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      2040,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.032320204872735445,
+     "cosine": 0.9994785945107161,
+     "max_abs": 2.397028923034668,
+     "reference_max_abs": 43.224388122558594,
+     "finite": true,
+     "limit": 0.04127185609085781,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010317585898355245,
+     "cosine": 0.9999525398558388,
+     "max_abs": 0.17756175994873047,
+     "reference_max_abs": 18.64503288269043,
+     "finite": true,
+     "limit": 0.01145883436432826,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.019555408354283647,
+     "cosine": 0.9998124194037604,
+     "max_abs": 1.1192231178283691,
+     "reference_max_abs": 20.78356170654297,
+     "finite": true,
+     "limit": 0.023995122948727625,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.03104054451736095,
+     "cosine": 0.9995212713111008,
+     "max_abs": 0.5357624888420105,
+     "reference_max_abs": 8.667380332946777,
+     "finite": true,
+     "limit": 0.038254800087160444,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.04852225438488411,
+      "cosine": 0.9988272618109323,
+      "max_abs": 3.0,
+      "reference_max_abs": 44.0,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.013822797883352516,
+      "cosine": 0.9999097420881784,
+      "max_abs": 0.25,
+      "reference_max_abs": 18.5,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.02671856739982165,
+      "cosine": 0.9996477552798231,
+      "max_abs": 1.171875,
+      "reference_max_abs": 20.75,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.04183029891717479,
+      "cosine": 0.9991312418442932,
+      "max_abs": 0.671875,
+      "reference_max_abs": 8.75,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999404802906132,
+      "max_abs": 0.24006175994873047,
+      "relative_l2": 0.010913175585074533
+     },
+     "deepstack[1]": {
+      "cosine": 0.9997388484136188,
+      "max_abs": 1.3067231178283691,
+      "relative_l2": 0.022852498046407262
+     },
+     "deepstack[2]": {
+      "cosine": 0.9993360936279074,
+      "max_abs": 0.5139518976211548,
+      "relative_l2": 0.036433142940152805
+     },
+     "image_embeds": {
+      "cosine": 0.9992272611236495,
+      "max_abs": 2.3216819763183594,
+      "relative_l2": 0.03930652961034077
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 0.8222604537499703,
+     "deepstack[0]": 0.9454247132673418,
+     "deepstack[1]": 0.855723007374156,
+     "deepstack[2]": 0.8519864610184729
+    },
+    "tap": {}
+   }
+  },
+  "vision-544x960": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "vision",
+   "canvas": "544x960",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "544x960",
+    "layers": 0,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "ee2af46ad84326373f6f766fdae5fd1daf9ba5b2871fa6d091c17357887d86f3",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "d7614656d7f32ccfa8d1eb58895a66b2a613b5169233f9e735058c39818ec757",
+   "nativeManifestSHA256": "a98f64e75edbcbf8de9aeb447de97370f2418d46de488c3db438a1d201c458e6",
+   "visionReferenceManifestSHA256": "272ac4a8497ba453d00ff52e168a136d9484de97777791bd9bf8704e026e699e",
+   "substitutedManifestSHA256": null,
+   "nativeReport": {
+    "footprintPeakBytes": 2012907608,
+    "metalPeakBytes": 1732247552,
+    "mode": "vision",
+    "phases": [
+     {
+      "footprintEnd": 93242112,
+      "footprintPeak": 93242112,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 43,
+      "seconds": 0.988781
+     },
+     {
+      "footprintEnd": 1966966872,
+      "footprintPeak": 2012907608,
+      "metalEnd": 1693433856,
+      "metalPeak": 1732247552,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 31,
+      "seconds": 0.6935340000000001
+     },
+     {
+      "footprintEnd": 212714552,
+      "footprintPeak": 1052706712,
+      "metalEnd": 127598592,
+      "metalPeak": 148520960,
+      "metalStart": 148520960,
+      "phase": "vision.released",
+      "samples": 43,
+      "seconds": 0.990733125
+     },
+     {
+      "footprintEnd": 212714552,
+      "footprintPeak": 212714552,
+      "metalEnd": 127598592,
+      "metalPeak": 127598592,
+      "metalStart": 127598592,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.2499999996483666e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      960,
+      544,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      567
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      2040,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.04651235803177988,
+     "cosine": 0.998926051332846,
+     "max_abs": 7.68596887588501,
+     "reference_max_abs": 41.05247497558594,
+     "finite": true,
+     "limit": 0.07905930285284869,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010096664583829608,
+     "cosine": 0.9999527799092582,
+     "max_abs": 0.11241072416305542,
+     "reference_max_abs": 12.19206428527832,
+     "finite": true,
+     "limit": 0.01133554373036009,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.01965464324641744,
+     "cosine": 0.9998095949953762,
+     "max_abs": 0.6858577728271484,
+     "reference_max_abs": 17.13789176940918,
+     "finite": true,
+     "limit": 0.022869717188768256,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.03151373835422833,
+     "cosine": 0.9995058616584933,
+     "max_abs": 0.6971758753061295,
+     "reference_max_abs": 8.431819915771484,
+     "finite": true,
+     "limit": 0.0349300246945004,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.08236726479100259,
+      "cosine": 0.9966234358961092,
+      "max_abs": 15.90625,
+      "reference_max_abs": 41.0,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.014288601293822673,
+      "cosine": 0.9999017915021422,
+      "max_abs": 0.15625,
+      "reference_max_abs": 12.25,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.02871013455893404,
+      "cosine": 0.9995932982372104,
+      "max_abs": 0.84375,
+      "reference_max_abs": 17.125,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.04319375354844736,
+      "cosine": 0.9990721813760305,
+      "max_abs": 1.078125,
+      "reference_max_abs": 8.4375,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999417261524216,
+      "max_abs": 0.1262199878692627,
+      "relative_l2": 0.010795755933676276
+     },
+     "deepstack[1]": {
+      "cosine": 0.9997629050479726,
+      "max_abs": 0.5579156875610352,
+      "relative_l2": 0.021780683036922148
+     },
+     "deepstack[2]": {
+      "cosine": 0.9994465124043838,
+      "max_abs": 1.0286909341812134,
+      "relative_l2": 0.03326669018523847
+     },
+     "image_embeds": {
+      "cosine": 0.9971649611310649,
+      "max_abs": 15.397706508636475,
+      "relative_l2": 0.07529457414557018
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 0.6177385098407698,
+     "deepstack[0]": 0.9352438723011584,
+     "deepstack[1]": 0.9023887457110188,
+     "deepstack[2]": 0.947306094437132
+    },
+    "tap": {}
+   }
+  },
+  "vision-1280x704": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "vision",
+   "canvas": "1280x704",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "1280x704",
+    "layers": 0,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "ee2af46ad84326373f6f766fdae5fd1daf9ba5b2871fa6d091c17357887d86f3",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "0ea0a355b7047f6b94d77f83f95c6d43d76cc3b7bbbd1a7ba9b60fbf78f666fc",
+   "nativeManifestSHA256": "27e3ae6e512a96693dff958139375fdee5035ca1f1a9e6dedd28e155bf59e3c3",
+   "visionReferenceManifestSHA256": "ec866a9661fd442ddbdaee314a7a9b5c4df5e20fec04c5b3a874777ea8b811aa",
+   "substitutedManifestSHA256": null,
+   "nativeReport": {
+    "footprintPeakBytes": 2205517960,
+    "metalPeakBytes": 1904394240,
+    "mode": "vision",
+    "phases": [
+     {
+      "footprintEnd": 91947776,
+      "footprintPeak": 91947776,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 43,
+      "seconds": 1.004818417
+     },
+     {
+      "footprintEnd": 2180303008,
+      "footprintPeak": 2205517960,
+      "metalEnd": 1830010880,
+      "metalPeak": 1904394240,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 36,
+      "seconds": 0.8381582089999999
+     },
+     {
+      "footprintEnd": 339461176,
+      "footprintPeak": 1314195328,
+      "metalEnd": 204144640,
+      "metalPeak": 240205824,
+      "metalStart": 240205824,
+      "phase": "vision.released",
+      "samples": 44,
+      "seconds": 1.0131300840000002
+     },
+     {
+      "footprintEnd": 339461176,
+      "footprintPeak": 339461176,
+      "metalEnd": 204144640,
+      "metalPeak": 204144640,
+      "metalStart": 204144640,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.3330000002985685e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      704,
+      1280,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      937
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      937
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      937
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      3520,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.04125372305393005,
+     "cosine": 0.9991572585451038,
+     "max_abs": 3.52484667301178,
+     "reference_max_abs": 30.143617630004883,
+     "finite": true,
+     "limit": 0.04605842762542195,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010411111477269835,
+     "cosine": 0.9999504643683811,
+     "max_abs": 0.17676663398742676,
+     "reference_max_abs": 22.054004669189453,
+     "finite": true,
+     "limit": 0.012016054004539325,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.021663154212714072,
+     "cosine": 0.9997712778567039,
+     "max_abs": 0.9530315399169922,
+     "reference_max_abs": 22.593921661376953,
+     "finite": true,
+     "limit": 0.027999378724364553,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.03835490677619732,
+     "cosine": 0.9992705547026893,
+     "max_abs": 0.8763684034347534,
+     "reference_max_abs": 11.572632789611816,
+     "finite": true,
+     "limit": 0.04468973751967097,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.054332933140124724,
+      "cosine": 0.9985281704767366,
+      "max_abs": 5.4140625,
+      "reference_max_abs": 30.0,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.014773277823352986,
+      "cosine": 0.999894334048018,
+      "max_abs": 0.25,
+      "reference_max_abs": 22.0,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.032399213345694726,
+      "cosine": 0.9994810934262436,
+      "max_abs": 1.25,
+      "reference_max_abs": 22.75,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.053603868095127315,
+      "cosine": 0.9985679621459969,
+      "max_abs": 1.12939453125,
+      "reference_max_abs": 11.5625,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999346633543429,
+      "max_abs": 0.15909194946289062,
+      "relative_l2": 0.011443860956704119
+     },
+     "deepstack[1]": {
+      "cosine": 0.9996445810909588,
+      "max_abs": 1.0585036277770996,
+      "relative_l2": 0.026666074975585288
+     },
+     "deepstack[2]": {
+      "cosine": 0.9990954741564991,
+      "max_abs": 0.7285848259925842,
+      "relative_l2": 0.04256165478063902
+     },
+     "image_embeds": {
+      "cosine": 0.9990405107373723,
+      "max_abs": 4.486299276351929,
+      "relative_l2": 0.04386516916706852
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 0.9404665213260137,
+     "deepstack[0]": 0.909755153147918,
+     "deepstack[1]": 0.8123863085417802,
+     "deepstack[2]": 0.9011610797060616
+    },
+    "tap": {}
+   }
+  },
+  "vision-704x1280": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "vision",
+   "canvas": "704x1280",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "704x1280",
+    "layers": 0,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "ee2af46ad84326373f6f766fdae5fd1daf9ba5b2871fa6d091c17357887d86f3",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "3ec82977e00bf48adfb2d06adf5bfe7ac3624e9fb5e690b110f4cd978398ad4e",
+   "nativeManifestSHA256": "1a12675b89845dbcade5c188b50f346973d0524100825e8512963b672464fab6",
+   "visionReferenceManifestSHA256": "f2940b388e76ebba99b29c5079dae638588b6699b713faab180bd07c7da09355",
+   "substitutedManifestSHA256": null,
+   "nativeReport": {
+    "footprintPeakBytes": 2211940464,
+    "metalPeakBytes": 1905442816,
+    "mode": "vision",
+    "phases": [
+     {
+      "footprintEnd": 91980520,
+      "footprintPeak": 91980520,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 42,
+      "seconds": 0.983908917
+     },
+     {
+      "footprintEnd": 2201045128,
+      "footprintPeak": 2211940464,
+      "metalEnd": 1838940160,
+      "metalPeak": 1905442816,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 42,
+      "seconds": 0.9593162910000002
+     },
+     {
+      "footprintEnd": 344097872,
+      "footprintPeak": 1277167536,
+      "metalEnd": 205193216,
+      "metalPeak": 241254400,
+      "metalStart": 241254400,
+      "phase": "vision.released",
+      "samples": 44,
+      "seconds": 1.015062958
+     },
+     {
+      "footprintEnd": 344097872,
+      "footprintPeak": 344097872,
+      "metalEnd": 205193216,
+      "metalPeak": 205193216,
+      "metalStart": 205193216,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.5409999997449972e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      1280,
+      704,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      937
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      937
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      937
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      3520,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.03750512729629272,
+     "cosine": 0.9993017899560788,
+     "max_abs": 3.2445240020751953,
+     "reference_max_abs": 35.821266174316406,
+     "finite": true,
+     "limit": 0.038285013755522304,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010185012031102423,
+     "cosine": 0.9999515298847462,
+     "max_abs": 0.2283782958984375,
+     "reference_max_abs": 18.800811767578125,
+     "finite": true,
+     "limit": 0.011268659958510625,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.019683232587279584,
+     "cosine": 0.9998089367732423,
+     "max_abs": 0.7251038551330566,
+     "reference_max_abs": 21.206356048583984,
+     "finite": true,
+     "limit": 0.023155146381345897,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.029042569254109495,
+     "cosine": 0.9995792229574256,
+     "max_abs": 0.6018889546394348,
+     "reference_max_abs": 9.560649871826172,
+     "finite": true,
+     "limit": 0.03565750881883346,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.048395032589856356,
+      "cosine": 0.998839996230666,
+      "max_abs": 3.171875,
+      "reference_max_abs": 36.0,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.013978860235678951,
+      "cosine": 0.9999061300927018,
+      "max_abs": 0.28125,
+      "reference_max_abs": 18.875,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.02798991910109959,
+      "cosine": 0.9996108740771446,
+      "max_abs": 0.75,
+      "reference_max_abs": 21.25,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.04237729581080614,
+      "cosine": 0.999105400683521,
+      "max_abs": 0.8212890625,
+      "reference_max_abs": 9.5625,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999424116472501,
+      "max_abs": 0.2283782958984375,
+      "relative_l2": 0.010732057103343452
+     },
+     "deepstack[1]": {
+      "cosine": 0.9997569112004199,
+      "max_abs": 0.7001023292541504,
+      "relative_l2": 0.022052520363186567
+     },
+     "deepstack[2]": {
+      "cosine": 0.9994232347500471,
+      "max_abs": 0.4577294588088989,
+      "relative_l2": 0.033959532208412815
+     },
+     "image_embeds": {
+      "cosine": 0.9993351387543874,
+      "max_abs": 2.018339157104492,
+      "relative_l2": 0.036461917862402195
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 1.0286109314882264,
+     "deepstack[0]": 0.9490270069406729,
+     "deepstack[1]": 0.8925615876604218,
+     "deepstack[2]": 0.8552111105616101
+    },
+    "tap": {}
+   }
+  },
+  "conditioner-960x544": {
+   "schema": 2,
+   "gate": "h3-presentation",
+   "passed": true,
+   "failures": [],
+   "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+   },
+   "mode": "conditioner",
+   "canvas": "960x544",
+   "profileSHA256": "c446cc345d1a376ab44604334569632808bfc7a4db8e3d836675d685f04b4307",
+   "referenceFields": {
+    "canvas": "960x544",
+    "layers": 50,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "1f61d4438be1da65a42768a17edcbb8da2448b19cef43cb2f1c3af0517c5d879",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+   },
+   "referenceManifestSHA256": "1fec9bebff4442551105f9658fbfc8dc9b1306e2302d76e618aed657aa7dd1ea",
+   "nativeManifestSHA256": "93374f7cd1a885ff11d7edf6b522070fb43fc47036c8933263cbab057f740195",
+   "visionReferenceManifestSHA256": "b6009980c1be645db72f734886bbfdf0bf84412243ab128a2a0cc278a2ff6089",
+   "substitutedManifestSHA256": "7c6b037aaed92de0411784780585f8683e84702bbca5c0570c675e77942b15e0",
+   "nativeReport": {
+    "footprintPeakBytes": 2525858312,
+    "metalPeakBytes": 2228879360,
+    "mode": "conditioner",
+    "phases": [
+     {
+      "footprintEnd": 93356800,
+      "footprintPeak": 93356800,
+      "metalEnd": 65536,
+      "metalPeak": 65536,
+      "metalStart": 65536,
+      "phase": "baseline",
+      "samples": 44,
+      "seconds": 1.009738875
+     },
+     {
+      "footprintEnd": 1670875080,
+      "footprintPeak": 1987430512,
+      "metalEnd": 1324449792,
+      "metalPeak": 1731198976,
+      "metalStart": 65536,
+      "phase": "vision",
+      "samples": 16,
+      "seconds": 0.363249417
+     },
+     {
+      "footprintEnd": 248087608,
+      "footprintPeak": 1195427736,
+      "metalEnd": 126550016,
+      "metalPeak": 147472384,
+      "metalStart": 147472384,
+      "phase": "vision.released",
+      "samples": 43,
+      "seconds": 1.011101333
+     },
+     {
+      "footprintEnd": 2429045256,
+      "footprintPeak": 2525858312,
+      "metalEnd": 2092630016,
+      "metalPeak": 2228879360,
+      "metalStart": 126550016,
+      "phase": "conditioner",
+      "samples": 227,
+      "seconds": 5.377012875
+     },
+     {
+      "footprintEnd": 213484672,
+      "footprintPeak": 2429045256,
+      "metalEnd": 14352384,
+      "metalPeak": 2092630016,
+      "metalStart": 2092630016,
+      "phase": "conditioner.released",
+      "samples": 43,
+      "seconds": 1.0082719169999992
+     },
+     {
+      "footprintEnd": 213484672,
+      "footprintPeak": 213484672,
+      "metalEnd": 14352384,
+      "metalPeak": 14352384,
+      "metalStart": 14352384,
+      "phase": "end",
+      "samples": 2,
+      "seconds": 2.665999998541224e-06
+     }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+   },
+   "checks": {
+    "keyframe0": {
+     "exact": true,
+     "shape": [
+      544,
+      960,
+      3
+     ]
+    },
+    "token_ids": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "text_token_tags": {
+     "exact": true,
+     "shape": [
+      567
+     ]
+    },
+    "position_ids": {
+     "exact": true,
+     "shape": [
+      3,
+      567
+     ]
+    },
+    "pixel_values": {
+     "exact": true,
+     "shape": [
+      2040,
+      1536
+     ]
+    },
+    "image_embeds": {
+     "relative_l2": 0.032320204872735445,
+     "cosine": 0.9994785945107161,
+     "max_abs": 2.397028923034668,
+     "reference_max_abs": 43.224388122558594,
+     "finite": true,
+     "limit": 0.04127185609085781,
+     "passed": true
+    },
+    "deepstack[0]": {
+     "relative_l2": 0.010317585898355245,
+     "cosine": 0.9999525398558388,
+     "max_abs": 0.17756175994873047,
+     "reference_max_abs": 18.64503288269043,
+     "finite": true,
+     "limit": 0.01145883436432826,
+     "passed": true
+    },
+    "deepstack[1]": {
+     "relative_l2": 0.019555408354283647,
+     "cosine": 0.9998124194037604,
+     "max_abs": 1.1192231178283691,
+     "reference_max_abs": 20.78356170654297,
+     "finite": true,
+     "limit": 0.023995122948727625,
+     "passed": true
+    },
+    "deepstack[2]": {
+     "relative_l2": 0.03104054451736095,
+     "cosine": 0.9995212713111008,
+     "max_abs": 0.5357624888420105,
+     "reference_max_abs": 8.667380332946777,
+     "finite": true,
+     "limit": 0.038254800087160444,
+     "passed": true
+    },
+    "layer00": {
+     "relative_l2": 0.002840065294939308,
+     "cosine": 0.9999959685240309,
+     "max_abs": 0.25,
+     "reference_max_abs": 57.0,
+     "finite": true,
+     "limit": 0.02,
+     "passed": true
+    },
+    "layer01": {
+     "relative_l2": 0.0038631524969410234,
+     "cosine": 0.9999925407354291,
+     "max_abs": 0.5,
+     "reference_max_abs": 87.5,
+     "finite": true,
+     "limit": 0.02,
+     "passed": true
+    },
+    "layer02": {
+     "relative_l2": 0.004545568213607616,
+     "cosine": 0.9999896747261636,
+     "max_abs": 1.0,
+     "reference_max_abs": 96.5,
+     "finite": true,
+     "limit": 0.02,
+     "passed": true
+    },
+    "layer03": {
+     "relative_l2": 0.005375023160066608,
+     "cosine": 0.999985557086395,
+     "max_abs": 1.0,
+     "reference_max_abs": 104.5,
+     "finite": true,
+     "limit": 0.02,
+     "passed": true
+    },
+    "tap[text rows]": {
+     "relative_l2": 0.008017457139172682,
+     "cosine": 0.9999974228150593,
+     "max_abs": 128.0,
+     "reference_max_abs": 16000.0,
+     "finite": true,
+     "limit": 0.02,
+     "passed": true
+    }
+   },
+   "diagnostics": {
+    "native_vs_upstream_bf16": {
+     "image_embeds": {
+      "relative_l2": 0.04852225438488411,
+      "cosine": 0.9988272618109323,
+      "max_abs": 3.0,
+      "reference_max_abs": 44.0,
+      "finite": true
+     },
+     "deepstack[0]": {
+      "relative_l2": 0.013822797883352516,
+      "cosine": 0.9999097420881784,
+      "max_abs": 0.25,
+      "reference_max_abs": 18.5,
+      "finite": true
+     },
+     "deepstack[1]": {
+      "relative_l2": 0.02671856739982165,
+      "cosine": 0.9996477552798231,
+      "max_abs": 1.171875,
+      "reference_max_abs": 20.75,
+      "finite": true
+     },
+     "deepstack[2]": {
+      "relative_l2": 0.04183029891717479,
+      "cosine": 0.9991312418442932,
+      "max_abs": 0.671875,
+      "reference_max_abs": 8.75,
+      "finite": true
+     }
+    },
+    "upstream_bf16_vs_fp32": {
+     "deepstack[0]": {
+      "cosine": 0.9999404802906132,
+      "max_abs": 0.24006175994873047,
+      "relative_l2": 0.010913175585074533
+     },
+     "deepstack[1]": {
+      "cosine": 0.9997388484136188,
+      "max_abs": 1.3067231178283691,
+      "relative_l2": 0.022852498046407262
+     },
+     "deepstack[2]": {
+      "cosine": 0.9993360936279074,
+      "max_abs": 0.5139518976211548,
+      "relative_l2": 0.036433142940152805
+     },
+     "image_embeds": {
+      "cosine": 0.9992272611236495,
+      "max_abs": 2.3216819763183594,
+      "relative_l2": 0.03930652961034077
+     }
+    },
+    "tower_ratio_to_upstream": {
+     "image_embeds": 0.8222604537499703,
+     "deepstack[0]": 0.9454247132673418,
+     "deepstack[1]": 0.855723007374156,
+     "deepstack[2]": 0.8519864610184729
+    },
+    "tap": {
+     "against_oracle": {
+      "tap": {
+       "relative_l2": 0.60787180036859,
+       "cosine": 0.8447293658405872,
+       "max_abs": 12911.0,
+       "reference_max_abs": 20096.0,
+       "finite": true
+      },
+      "tap[image rows]": {
+       "relative_l2": 0.6897219915800186,
+       "cosine": 0.8091356833218906,
+       "max_abs": 12911.0,
+       "reference_max_abs": 20096.0,
+       "finite": true
+      },
+      "tap[text rows]": {
+       "relative_l2": 0.008089176489709833,
+       "cosine": 0.99999684804042,
+       "max_abs": 128.0,
+       "reference_max_abs": 16000.0,
+       "finite": true
+      }
+     },
+     "against_substituted": {
+      "tap": {
+       "relative_l2": 0.04719217081777834,
+       "cosine": 0.9988992631706087,
+       "max_abs": 1376.0,
+       "reference_max_abs": 21248.0,
+       "finite": true
+      },
+      "tap[image rows]": {
+       "relative_l2": 0.05172701022621298,
+       "cosine": 0.9986721400515381,
+       "max_abs": 1376.0,
+       "reference_max_abs": 21248.0,
+       "finite": true
+      }
+     }
+    }
+   }
+  }
+ }
+}

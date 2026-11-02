@@ -1,10 +1,10 @@
 # H3 FL2VA conditioner presentation: implementation plan
 
-Status: plan, 2026-10-29, for review before any export or GPU work. It fixes the
+Status: done in 0.0.5 (2026-11-02); see [FL2VA conditioner presentation](h3-integration.md#fl2va-conditioner-presentation-005)
+for what was built and measured. The plan below is as written on 2026-10-29, with the user's decisions in section 6
+(D5 revised and D10 answered on 2026-11-02). It fixes the
 [known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29): Kit's FL2VA
-conditions on the prompt text alone, while upstream also presents each keyframe to the Qwen3-VL conditioner. Nothing
-here has been exported or run on the GPU. Figures are quoted from the cited files. Anything marked **unverified** is
-arithmetic or inference that a step below must measure.
+conditioned on the prompt text alone, while upstream also presents each keyframe to the Qwen3-VL conditioner.
 
 Upstream references are diffusers `7ecb1e1b` (`src/diffusers/...`) and transformers 5.20.1, the version pinned in
 `Forge/h3-oracle/uv.lock`, abbreviated `tf/` for `transformers/`. Kit references are repo-relative.
@@ -344,6 +344,16 @@ The user decided on 2026-10-29:
      (`Scripts/prepare-h3-vision-reference.py`: bf16 weights, fp32 compute) at relative L2 ≤ 0.03. The decisive gates
      are the conditioner tap and the denoising trajectory, against the full upstream oracle with the presentation.
      Every vision record keeps the native-vs-bf16 distance and upstream's bf16-vs-fp32 spread, as diagnostics.
+   - **Revised again, 2026-11-02, by the user, once every canvas had been run.** The native merger was 0.032–0.047
+     from fp32 at the real canvases. That is closer than upstream's own bf16 tower at four of five canvases, but over
+     0.03. The full-oracle tap was 0.61 (image rows 0.69, text rows 0.008), because which image rows carry very large
+     activations follows the tower's bf16 rounding: upstream's own bf16 and fp32 towers give taps 0.55 apart. The bars
+     are now:
+     (a) the tower, per canvas and tensor, at most 1.05× upstream's own bf16-vs-fp32 distance;
+     (b) the conditioner, fed identical tower output (`--part presentation --substitute-vision`): decoder layers 0–3
+         and the tap's text rows within 0.02, with the whole tap and its image rows as diagnostics;
+     (c) the trajectory at 0.02 with ids and tags exact, and the A/B review, as decisive.
+     All pass; the largest tower ratio is 1.03× (704×1280 merger).
    - **Upstream's merger spread grows with the canvas:** 0.033 at 288×288, 0.039 at 960×544, 0.075 at 544×960, 0.044
      at 1280×704 and 0.036 at 704×1280. Each other canvas still has to pass its own native run.
 6. **D6, profile identity: an overlay bundle** with `lineage`, with T2VA carried by an identity replay.
@@ -353,4 +363,6 @@ The user decided on 2026-10-29:
    in 0.0.4.
 9. **D9, admission: re-measure at the gate prompt and at a long prompt.**
 10. **D10, the effect on output: yes.** An A/B of old and new FL2VA renders goes to the user before the measured entry
-    is re-bundled.
+    is re-bundled. **Answered 2026-11-02:** after the side-by-side and a frame sheet (960×544×124, seed 1043), the user
+    chose the new presentation, and confirmed it on a corrected render: the first render reviewed had a probe bug that tokenized each keyframe label as the whole prompt (610 conditioning rows instead of 567). The new render keeps the keyframe's folded-paper crane, where the old one turned it into a
+    realistic bird. The entry is re-bundled under the final stack.
