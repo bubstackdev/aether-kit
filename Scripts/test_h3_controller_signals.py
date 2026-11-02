@@ -15,7 +15,8 @@ import time
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parent
-STUB = '#!/bin/sh\necho $$ > "$AETHER_TEST_STUB_PGID"\nexec sleep 60\n'
+# With AETHER_TEST_STUB_IGNORE_TERM the stub ignores SIGTERM, so a controller's cleanup sits in its grace period.
+STUB = '#!/bin/sh\n[ -n "$AETHER_TEST_STUB_IGNORE_TERM" ] && trap "" TERM\necho $$ > "$AETHER_TEST_STUB_PGID"\nexec sleep 60\n'
 
 
 def group_alive(pgid):
@@ -37,6 +38,7 @@ class ControllerTerminationTests(unittest.TestCase):
         (self.root / "Scripts").mkdir()
         for name in ("prepare-h3-profile-oracle.py", "h3_export_lib.py"):
             (self.root / "Scripts" / name).write_text("")
+        shutil.copy(SCRIPTS / "h3_controller.py", self.root / "Scripts" / "h3_controller.py")
         (self.root / "Package.swift").write_text("")
         for build in (".build/release", ".build/arm64-apple-macosx/release"):
             (self.root / build).mkdir(parents=True)
@@ -63,12 +65,16 @@ class ControllerTerminationTests(unittest.TestCase):
                 os.killpg(pgid, signal.SIGKILL)
         shutil.rmtree(self.root, ignore_errors=True)
 
-    def terminate(self, script, arguments, sig=signal.SIGTERM):
+    def terminate(self, script, arguments, sig=signal.SIGTERM, again=()):
         """Starts `script` with `arguments`, waits for its stub workload, sends `sig` to the controller alone and
-        returns the stub's process group once the controller has exited."""
+        returns the stub's process group once the controller has exited. With `again`, the stub ignores SIGTERM, so the
+        controller is still in its cleanup grace period when each of those further signals arrives a second later: they
+        must escalate the cleanup (the workload is killed well before the grace period ends), never abandon it."""
         shutil.copy(SCRIPTS / script, self.root / "Scripts" / script)
         pgid_file = self.root / f"stub-{script}.pgid"
         env = dict(os.environ, AETHER_TEST_STUB_PGID=str(pgid_file))
+        if again:
+            env["AETHER_TEST_STUB_IGNORE_TERM"] = "1"
         controller = subprocess.Popen([sys.executable, "-I", str(self.root / "Scripts" / script), *arguments], env=env,
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         try:
@@ -81,7 +87,16 @@ class ControllerTerminationTests(unittest.TestCase):
             self.stubs.append(pgid)
             self.assertTrue(group_alive(pgid))
             controller.send_signal(sig)
+            if again:
+                time.sleep(1)
+                self.assertIsNone(controller.poll(), f"{script} finished its cleanup without waiting for the workload")
+            for extra in again:
+                if controller.poll() is None:
+                    controller.send_signal(extra)
+            signalled = time.monotonic()
             controller.wait(timeout=30)
+            if again:
+                self.assertLess(time.monotonic() - signalled, 5, f"{script}'s further signals didn't escalate its cleanup")
         finally:
             if controller.poll() is None:
                 controller.kill()
@@ -135,6 +150,43 @@ class ControllerTerminationTests(unittest.TestCase):
         records = self.interrupted_records(work)
         self.assertTrue(records and all(r["joined"] and not r["passed"] for r in records))
 
+
+    # A second (and third) signal during the cleanup grace period: SIGTERM, SIGINT and SIGHUP alike.
+    def test_phases_second_signal(self):
+        output = self.root / "out/phases-twice"
+        self.terminate("qualify-h3-phases.py", ["--bundle", self.i("bundle.json"), "--phases", self.i("phases.json"),
+                                                "--cpu-record", self.i("cpu.json"), "--output", str(output), "--prepare-only"],
+                       again=(signal.SIGTERM,))
+        record = json.loads(Path(str(output) + "-controller.json").read_text())
+        self.assertTrue(record["interrupted"] and record["joined"] and not record["passed"])
+
+    def test_denoising_second_signal(self):
+        output = self.root / "out/denoising-twice"
+        self.terminate("qualify-h3-denoising.py", ["--bundle", self.i("bundle.json"), "--phases", self.i("phases.json"),
+                                                   "--cpu-record", self.i("cpu.json"), "--chain", self.i("chain.json"),
+                                                   "--modulations", self.i("modulations"), "--output", str(output), "--prepare-only"],
+                       sig=signal.SIGINT, again=(signal.SIGINT, signal.SIGHUP))
+        record = json.loads(Path(str(output) + "-controller.json").read_text())
+        self.assertTrue(record["interrupted"] and record["joined"] and not record["passed"])
+
+    def test_profile_graphs_second_signal(self):
+        work = self.root / "graphs-twice"
+        self.terminate("qualify-h3-profile-graphs.py", self.staged(work) + ["--keyframe", self.i("first-960x544.png")],
+                       again=(signal.SIGHUP,))
+        self.assertTrue(self.interrupted_records(work))
+
+    def test_profile_trajectory_second_signal(self):
+        work = self.root / "trajectory-twice"
+        self.terminate("qualify-h3-profile-trajectory.py", ["--task", "t2va"] + self.staged(work), again=(signal.SIGTERM,))
+        self.assertTrue(self.interrupted_records(work))
+
+    def test_memory_gate_second_signal(self):
+        work = self.root / "memory-twice"
+        self.terminate("qualify-h3-memory.py", ["--profile", self.i("profile.json"), "--prompt", self.i("prompt.txt"),
+                                                "--keyframes", self.i("first-960x544.png"), "--canvases", "960x544",
+                                                "--work", str(work)], again=(signal.SIGTERM, signal.SIGTERM))
+        records = self.interrupted_records(work)
+        self.assertTrue(records and all(r["joined"] and not r["passed"] for r in records))
 
 if __name__ == "__main__":
     unittest.main()

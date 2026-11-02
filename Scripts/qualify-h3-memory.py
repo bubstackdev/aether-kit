@@ -20,12 +20,14 @@ import getpass
 import hashlib
 import json
 import math
-import os
 import re
 from pathlib import Path
-import signal
 import subprocess
+import sys
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import h3_controller  # noqa: E402  (beside this script)
 
 BAR = 18 << 30                 # today's region: at most 960x544's pixels and 124 frames
 EXTENDED_BAR = 24 << 30        # beyond it (a larger canvas or a longer clip), decided 2026-10-29
@@ -134,53 +136,34 @@ def check_dump(fields, task, canvas, recipe, seed, frames):
         raise RuntimeError(f"{task} {canvas}: the dump is for {found}, but this gate requested {requested}")
 
 
-def stop_group(proc):
-    """Terminates the process group `proc` leads, then kills it if it hasn't exited within 15 s, and joins `proc`."""
-    for sig, grace in ((signal.SIGTERM, 15), (signal.SIGKILL, None)):
-        try:
-            os.killpg(proc.pid, sig)
-        except ProcessLookupError:
-            break
-        try:
-            proc.wait(timeout=grace)
-            break
-        except subprocess.TimeoutExpired:
-            pass
-    proc.wait()
-
-
 def run_owned(command, out, err, budget, record):
     """Runs `command` as its own process group (so a terminal's Ctrl-C reaches the gate, not the workload) and joins it.
 
-    However the wait ends (the budget, Ctrl-C or any other exception), a group still running is stopped and joined
-    before this returns or raises, so no workload, and no GPU lease, outlives the gate. Updates `record` with
-    `timedOut`, `interrupted`, `exitCode` and `joined`; returns the exit code and re-raises the interruption."""
-    proc = subprocess.Popen(command, stdout=out, stderr=err, start_new_session=True)
+    However the wait ends (the budget, Ctrl-C, SIGTERM, SIGHUP or any other exception), a group still running is
+    stopped and joined before this returns or raises, so no workload, and no GPU lease, outlives the gate; signals during
+    that cleanup escalate it rather than cut it short (h3_controller). Updates `record` with `timedOut`, `interrupted`,
+    `exitCode` and `joined`; returns the exit code and re-raises the interruption."""
+    proc = None
     try:
-        proc.wait(timeout=budget)
-    except subprocess.TimeoutExpired:
-        record["timedOut"] = True
+        proc = h3_controller.start(command, stdout=out, stderr=err)
+        try:
+            proc.wait(timeout=budget)
+        except subprocess.TimeoutExpired:
+            record["timedOut"] = True
     except BaseException:
         record["interrupted"] = True
         raise
     finally:
-        if proc.poll() is None or record.get("timedOut") or record.get("interrupted"):
-            stop_group(proc)
-        record.update(exitCode=proc.returncode, joined=True)
-    return proc.returncode
-
-
-def interrupt_on_termination():
-    """SIGTERM and SIGHUP interrupt this controller as Ctrl-C does, so its cleanup stops and joins the workload: the
-    workload runs in its own session and process group, so neither signal reaches it."""
-    def interrupt(signum, frame):
-        raise KeyboardInterrupt(f"signal {signum}")
-    for sig in (signal.SIGTERM, signal.SIGHUP):
-        signal.signal(sig, interrupt)
+        if proc is not None:
+            h3_controller.stop(proc, grace=15, force=bool(record.get("timedOut") or record.get("interrupted")))
+        if h3_controller.interrupted():
+            record["interrupted"] = True
+        record.update(exitCode=proc.returncode if proc else None, joined=True)
+    return record["exitCode"]
 
 
 def main():
-    interrupt_on_termination()
+    h3_controller.install()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--profile", type=Path, required=True)
     ap.add_argument("--prompt", type=Path, required=True)
@@ -273,7 +256,8 @@ def main():
                         raise
                 record.update(elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
                               sourcePinsUnchanged=all(sha(p) == v for p, v in pins.items()))
-                record["passed"] = record["exitCode"] == 0 and not record["timedOut"] and record["sourcePinsUnchanged"]
+                record["passed"] = (record["exitCode"] == 0 and not record["timedOut"] and not record.get("interrupted")
+                                    and record["sourcePinsUnchanged"])
                 record_path.write_text(json.dumps(record, indent=2) + "\n")
                 print(f"{name}: passed={record['passed']} {record['elapsedSeconds']} s", flush=True)
                 records[name] = record
