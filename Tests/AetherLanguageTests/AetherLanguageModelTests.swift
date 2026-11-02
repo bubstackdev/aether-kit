@@ -139,9 +139,9 @@ struct AetherLanguageModelTests {
         let first = Task { try await model.resources.withModel { _ in await trace.add("first"); await gate.wait() } }
         while await !trace.events.contains("first") { await Task.yield() }
         let unload = Task { await model.unload() }
-        try await Task.sleep(for: .milliseconds(50))
+        while await model.resources.waiters < 1 { await Task.yield() }
         let second = Task { try await model.resources.withModel { $0.backend as! FakeBackend } }
-        try await Task.sleep(for: .milliseconds(50))
+        while await model.resources.waiters < 2 { await Task.yield() }
         await gate.open()
         try await first.value
         await unload.value
