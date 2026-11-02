@@ -15,14 +15,16 @@ public struct KreaModelAsset: Sendable {
     func verify(checkStop: () throws -> Void) throws {
         defer { VerifiedFileHashes.flush() }
         do {
-            try VerifiedFileHashes.verifyOnce(claimDigest, files: claimFiles) { try declared.verify(checkStop: checkStop) }
+            try VerifiedFileHashes.verifyOnce(claimDigest, files: declared.files()) { files in
+                try declared.verify(files: files, checkStop: checkStop)
+            }
         } catch let error as AssetStoreError { throw kreaError(error) }
     }
 
     /// The verified-hash claim (``VerifiedFileHashes``): the declared stream and metadata digests, over the three files
-    /// `DeclaredModelAsset.verify` reads.
+    /// `DeclaredModelAsset.verify` reads (confined and resolved). The check reads the claim's own resolved files, so
+    /// the bytes hashed are those of the files whose identities are recorded.
     var claimDigest: String { "krea-model:\(declaredSHA256):\(metadataSHA256)" }
-    var claimFiles: [URL] { ["main.hash", "main.mlirb", "metadata.json"].map { url.appendingPathComponent($0) } }
 
     var declared: DeclaredModelAsset {
         DeclaredModelAsset(url: url, declaredSHA256: declaredSHA256, metadataSHA256: metadataSHA256)
@@ -485,10 +487,15 @@ func hashFile(_ url: URL, checkStop: () throws -> Void = { try Task.checkCancell
 /// and records each one that passes.
 private func verifyConcurrently(_ models: [KreaModelAsset]) throws {
     defer { VerifiedFileHashes.flush() }
-    let claims = models.map { VerifiedFileHashes.claim($0.claimDigest, files: $0.claimFiles) }
-    let pending = models.indices.filter { index in claims[index].map { !VerifiedFileHashes.isVerified($0) } ?? true }
-    do { try DeclaredModelAsset.verifyConcurrently(pending.map { models[$0].declared }) } catch let error as AssetStoreError { throw kreaError(error) }
-    for index in pending { if let claim = claims[index] { VerifiedFileHashes.recordVerified(claim) } }
+    do {
+        // An asset whose files can't be confined gets no claim; its own check reports that, in input order.
+        let claims = models.map { model in
+            (try? model.declared.files()).flatMap { VerifiedFileHashes.claim(model.claimDigest, files: $0) }
+        }
+        let pending = models.indices.filter { index in claims[index].map { !VerifiedFileHashes.isVerified($0) } ?? true }
+        try DeclaredModelAsset.verifyConcurrently(pending.map { models[$0].declared }, files: pending.map { claims[$0]?.urls })
+        for index in pending { if let claim = claims[index] { VerifiedFileHashes.recordVerified(claim) } }
+    } catch let error as AssetStoreError { throw kreaError(error) }
 }
 
 /// Krea's verification errors predate AetherAssets: shared verification failures surface as the

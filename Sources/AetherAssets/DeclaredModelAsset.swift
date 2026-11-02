@@ -42,11 +42,24 @@ public struct DeclaredModelAsset: Sendable, Equatable {
 
     /// `checkStop` runs between chunks; throw from it to stop hashing (cancellation or a superseded pass).
     /// Every file is resolved inside the asset directory; symlinks may not escape it.
-    public func verify(checkStop: () throws -> Void) throws {
-        let declaration = try Data(contentsOf: BundleFiles.confined("main.hash", in: url))
+    public func verify(checkStop: () throws -> Void) throws { try verify(files: files(), checkStop: checkStop) }
+
+    /// The files `verify` reads, resolved inside the asset directory: `main.hash`, `main.mlirb`, `metadata.json`.
+    package func files() throws -> [URL] {
+        try ["main.hash", "main.mlirb", "metadata.json"].map { try BundleFiles.confined($0, in: url) }
+    }
+
+    /// `verify`, reading exactly `files` (as ``files()`` gives them, or the same paths resolved again: each must still
+    /// lie inside the asset directory).
+    package func verify(files: [URL], checkStop: () throws -> Void) throws {
+        let base = url.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        guard files.count == 3, files.allSatisfy({ $0.pathComponents.count > base.count && $0.pathComponents.starts(with: base) }) else {
+            throw AssetStoreError.unsafePath(url.lastPathComponent)
+        }
+        let declaration = try Data(contentsOf: files[0])
         guard declaration.map({ String(format: "%02x", $0) }).joined() == declaredSHA256,
-              try BundleFiles.sha256(of: BundleFiles.confined("main.mlirb", in: url), checkStop: checkStop) == declaredSHA256,
-              try BundleFiles.sha256(of: BundleFiles.confined("metadata.json", in: url), checkStop: checkStop) == metadataSHA256 else {
+              try BundleFiles.sha256(of: files[1], checkStop: checkStop) == declaredSHA256,
+              try BundleFiles.sha256(of: files[2], checkStop: checkStop) == metadataSHA256 else {
             throw AssetStoreError.integrityMismatch("model hash mismatch: \(url.lastPathComponent)")
         }
     }
@@ -55,6 +68,13 @@ public struct DeclaredModelAsset: Sendable, Equatable {
     /// cancellation, and a failure stops only later assets, so the reported error is always the
     /// first failing asset in input order, as a serial pass would report it.
     public static func verifyConcurrently(_ assets: [DeclaredModelAsset]) throws {
+        try verifyConcurrently(assets, files: assets.map { _ in nil })
+    }
+
+    /// `verifyConcurrently`, each asset reading `files[index]` (``verify(files:checkStop:)``), or confining its own
+    /// files when nil.
+    package static func verifyConcurrently(_ assets: [DeclaredModelAsset], files: [[URL]?]) throws {
+        precondition(files.count == assets.count)
         struct Superseded: Error {}
         // `isCancelled` is documented as safe from other threads, and concurrentPerform returns
         // before the task reference expires.
@@ -65,10 +85,11 @@ public struct DeclaredModelAsset: Sendable, Equatable {
             let caller = CallerTask(task: task)
             DispatchQueue.concurrentPerform(iterations: assets.count) { index in
                 do {
-                    try assets[index].verify {
+                    let checkStop = {
                         if caller.task?.isCancelled == true { throw CancellationError() }
                         if failures.withLockUnchecked({ $0.keys.contains { $0 < index } }) { throw Superseded() }
                     }
+                    try assets[index].verify(files: files[index] ?? assets[index].files(), checkStop: checkStop)
                 } catch {
                     failures.withLockUnchecked { $0[index] = error }
                 }

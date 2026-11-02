@@ -39,6 +39,10 @@ public final class ExternalFileLease: Sendable {
 
     public func byteCount(of url: URL) throws -> UInt64 { try file(url).validatedByteCount() }
 
+    /// The pinned descriptor `read(into:from:offset:)` reads `url` from, valid while the lease lives: for identifying
+    /// the leased file itself (`fstat`), never its path.
+    package func descriptor(of url: URL) throws -> Int32 { try file(url).descriptor }
+
     /// No intermediate Data allocation. Concurrent calls have independent offsets; the pointer never escapes.
     public func read(into destination: UnsafeMutableRawBufferPointer, from url: URL, offset: UInt64) throws {
         try Task.checkCancellation()

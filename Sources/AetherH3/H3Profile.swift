@@ -388,34 +388,54 @@ public struct H3EmbeddingTable: Sendable {
         var result = self; result.lease = lease; return result
     }
 
-    /// Hashes the table unless it was verified before with its file's current identity (``VerifiedFileHashes``).
+    /// Hashes the table unless it was verified before with its file's current identity (``VerifiedFileHashes``). The
+    /// identity comes from `fstat` on the descriptor the bytes are hashed from: the lease's pinned one when leased.
     public func verify() throws {
         defer { VerifiedFileHashes.flush() }
-        try VerifiedFileHashes.verifyOnce("h3-embedding:\(sha256):\(offset):\(rows)x\(width)", files: [url]) { try verifyBytes() }
+        let fd: Int32
+        if let lease { fd = try lease.descriptor(of: url) } else {
+            fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+            guard fd >= 0 else { throw AetherError.invalidModel("H3 embedding table cannot be opened") }
+        }
+        defer { if lease == nil { close(fd) } }
+        let key = ["h3-embedding", sha256, url.path, String(offset), String(rows), String(width)].joined(separator: "\u{0}")
+        guard let claim = VerifiedFileHashes.claim(key, identities: [VerifiedFileHashes.Identity(descriptor: fd)]) else {
+            return try verifyBytes(fd)
+        }
+        if VerifiedFileHashes.isVerified(claim) { return }
+        try verifyBytes(fd)
+        VerifiedFileHashes.recordVerified(claim, current: [VerifiedFileHashes.Identity(descriptor: fd)])
     }
 
-    private func verifyBytes() throws {
-        if let lease {
-            var hasher = SHA256(), consumed = 0
-            while consumed < rows * width * 2 {
-                try autoreleasepool {
-                    var chunk = Data(count: min(8 << 20, rows * width * 2 - consumed))
-                    try chunk.withUnsafeMutableBytes { try lease.read(into: $0, from: url, offset: UInt64(offset + consumed)) }
-                    hasher.update(data: chunk); consumed += chunk.count
-                }
-            }
-            guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else { throw AetherError.invalidModel("H3 embedding table hash mismatch") }
-            return
-        }
-        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
-        try handle.seek(toOffset: UInt64(offset))
-        var hasher = SHA256(), remaining = rows * width * 2
-        while remaining > 0 {
-            try Task.checkCancellation()
-            guard let chunk = try autoreleasepool(invoking: { try handle.read(upToCount: min(remaining, 8 << 20)) }), !chunk.isEmpty else {
+    /// Hashes the table's range from `fd` (through the lease when leased, which also refuses a changed file).
+    private func verifyBytes(_ fd: Int32) throws {
+        var hasher = SHA256(), consumed = 0
+        let total = rows * width * 2
+        if lease == nil {
+            var info = stat()
+            guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, offset + total <= Int(info.st_size) else {
                 throw AetherError.invalidModel("H3 embedding table is short")
             }
-            hasher.update(data: chunk); remaining -= chunk.count
+        }
+        while consumed < total {
+            try Task.checkCancellation()
+            try autoreleasepool {
+                var chunk = Data(count: min(8 << 20, total - consumed))
+                try chunk.withUnsafeMutableBytes { buffer in
+                    if let lease {
+                        try lease.read(into: buffer, from: url, offset: UInt64(offset + consumed))
+                    } else {
+                        var done = 0
+                        while done < buffer.count {
+                            let count = pread(fd, buffer.baseAddress! + done, buffer.count - done, off_t(offset + consumed + done))
+                            if count < 0, errno == EINTR { continue }
+                            guard count > 0 else { throw AetherError.invalidModel("H3 embedding table is short") }
+                            done += count
+                        }
+                    }
+                }
+                hasher.update(data: chunk); consumed += chunk.count
+            }
         }
         guard hasher.finalize().map({ String(format: "%02x", $0) }).joined() == sha256 else { throw AetherError.invalidModel("H3 embedding table hash mismatch") }
     }

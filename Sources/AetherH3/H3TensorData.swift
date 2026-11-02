@@ -156,54 +156,100 @@ public struct H3TensorFile: Sendable {
     /// Reads the bytes straight into `destination` (exactly `spec.byteCount`), hashing them on the way when `verify`
     /// is set, unless the tensor was verified before with its files' current identities (``VerifiedFileHashes``).
     /// Native weight slots use this to avoid an intermediate copy; finite values are not re-checked here.
+    ///
+    /// The identities come from `fstat` on the descriptors the bytes are read from (the lease's pinned ones when
+    /// leased), so a path replaced meanwhile can't lend its identity to other bytes. A cached read checks them again
+    /// after copying; if anything changed, it reads again and hashes, and trusts nothing remembered.
     public func read(into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
-        guard verify, let claim = VerifiedFileHashes.claim("h3-tensor:\(sha256)", files: segments.map(\.url)) else {
-            return try readBytes(into: destination, verify: verify)
-        }
-        if VerifiedFileHashes.isVerified(claim) { return try readBytes(into: destination, verify: false) }
-        try readBytes(into: destination, verify: true)
-        VerifiedFileHashes.recordVerified(claim)
-    }
-
-    private func readBytes(into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
         try Task.checkCancellation()
-        guard destination.count == spec.byteCount, let base = destination.baseAddress else {
+        guard destination.count == spec.byteCount, destination.baseAddress != nil else {
             throw AetherError.invalidTensor("H3 tensor destination extent differs: \(name)")
         }
-        var hasher = SHA256(), written = 0
-        if let lease {
-            for segment in segments {
-                let buffer = UnsafeMutableRawBufferPointer(start: base + written, count: segment.length)
-                try lease.read(into: buffer, from: segment.url, offset: UInt64(segment.offset))
-                if verify { hasher.update(bufferPointer: UnsafeRawBufferPointer(buffer)) }
-                written += segment.length
-            }
-            if verify, hasher.finalize().map({ String(format: "%02x", $0) }).joined() != sha256 {
-                throw AetherError.invalidModel("H3 tensor hash mismatch: \(name)")
-            }
-            return
+        let source = try Source(self)
+        defer { source.close() }
+        guard verify, let claim = VerifiedFileHashes.claim(claimKey, identities: source.identities()) else {
+            return try copy(from: source, into: destination, verify: verify)
         }
-        var descriptors: [URL: Int32] = [:]
-        defer { for fd in descriptors.values { close(fd) } }
-        for segment in segments {
-            let fd: Int32
-            if let open = descriptors[segment.url] { fd = open } else {
-                let values = try segment.url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-                guard values.isRegularFile == true, let size = values.fileSize, segment.offset + segment.length <= size,
-                      !wholeFile || size == spec.byteCount else {
-                    throw AetherError.invalidTensor("H3 tensor segment lies outside its file: \(name)")
+        if VerifiedFileHashes.isVerified(claim) {
+            try copy(from: source, into: destination, verify: false)
+            VerifiedFileHashes.hooks.afterCachedRead?()
+            if claim.holds(source.identities()) { return }
+            return try copy(from: source, into: destination, verify: true)
+        }
+        try copy(from: source, into: destination, verify: true)
+        VerifiedFileHashes.recordVerified(claim, current: source.identities())
+    }
+
+    /// The verified-hash claim key: the digest, then every segment's file, offset and length in order.
+    var claimKey: String {
+        (["h3-tensor", sha256] + segments.flatMap { [$0.url.path, String($0.offset), String($0.length)] })
+            .joined(separator: "\u{0}")
+    }
+
+    /// The open descriptors a read uses, one per distinct file in first-use order: the lease's pinned ones, or files
+    /// opened for this read (closed by `close()`).
+    private struct Source {
+        let files: [URL]
+        let descriptors: [URL: Int32]
+        let lease: ExternalFileLease?
+
+        init(_ tensor: H3TensorFile) throws {
+            var files: [URL] = [], descriptors: [URL: Int32] = [:]
+            lease = tensor.lease
+            do {
+                for segment in tensor.segments where descriptors[segment.url] == nil {
+                    if let lease = tensor.lease {
+                        descriptors[segment.url] = try lease.descriptor(of: segment.url)
+                    } else {
+                        let fd = open(segment.url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+                        guard fd >= 0 else { throw AetherError.invalidTensor("H3 tensor file cannot be opened: \(tensor.name)") }
+                        descriptors[segment.url] = fd
+                    }
+                    files.append(segment.url)
                 }
-                fd = open(segment.url.path, O_RDONLY)
-                guard fd >= 0 else { throw AetherError.invalidTensor("H3 tensor file cannot be opened: \(name)") }
-                descriptors[segment.url] = fd
+                if tensor.lease == nil {
+                    for segment in tensor.segments {
+                        var info = stat()
+                        guard fstat(descriptors[segment.url]!, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+                              segment.offset + segment.length <= Int(info.st_size),
+                              !tensor.wholeFile || Int(info.st_size) == tensor.spec.byteCount else {
+                            throw AetherError.invalidTensor("H3 tensor segment lies outside its file: \(tensor.name)")
+                        }
+                    }
+                }
+            } catch {
+                if tensor.lease == nil { for fd in descriptors.values { Darwin.close(fd) } }
+                throw error
             }
-            var done = 0
-            while done < segment.length {
-                let count = pread(fd, base + written + done, min(segment.length - done, 64 << 20), off_t(segment.offset + done))
-                guard count > 0 else { throw AetherError.invalidTensor("H3 tensor segment is short: \(name)") }
-                done += count
+            self.files = files; self.descriptors = descriptors
+        }
+
+        func identities() -> [VerifiedFileHashes.Identity?] {
+            files.map { VerifiedFileHashes.Identity(descriptor: descriptors[$0]!) }
+        }
+
+        func close() { if lease == nil { for fd in descriptors.values { Darwin.close(fd) } } }
+    }
+
+    private func copy(from source: Source, into destination: UnsafeMutableRawBufferPointer, verify: Bool) throws {
+        try Task.checkCancellation()
+        guard let base = destination.baseAddress else { throw AetherError.invalidTensor("H3 tensor destination extent differs: \(name)") }
+        var hasher = SHA256(), written = 0
+        for segment in segments {
+            let buffer = UnsafeMutableRawBufferPointer(start: base + written, count: segment.length)
+            if let lease = source.lease {
+                try lease.read(into: buffer, from: segment.url, offset: UInt64(segment.offset))
+            } else {
+                let fd = source.descriptors[segment.url]!
+                var done = 0
+                while done < segment.length {
+                    let count = pread(fd, base + written + done, min(segment.length - done, 64 << 20), off_t(segment.offset + done))
+                    if count < 0, errno == EINTR { continue }
+                    guard count > 0 else { throw AetherError.invalidTensor("H3 tensor segment is short: \(name)") }
+                    done += count
+                }
             }
-            if verify { hasher.update(bufferPointer: UnsafeRawBufferPointer(start: base + written, count: segment.length)) }
+            if verify { hasher.update(bufferPointer: UnsafeRawBufferPointer(buffer)) }
             written += segment.length
             try Task.checkCancellation()
         }
