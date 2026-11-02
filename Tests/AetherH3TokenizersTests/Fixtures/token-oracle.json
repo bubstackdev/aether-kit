@@ -157,6 +157,28 @@
    ]
   },
   {
+   "prompt": "<Picture 1>: ",
+   "ids": [
+    21604,
+    3826,
+    220,
+    16,
+    26818,
+    220
+   ]
+  },
+  {
+   "prompt": "<Picture 2>: ",
+   "ids": [
+    21604,
+    3826,
+    220,
+    17,
+    26818,
+    220
+   ]
+  },
+  {
    "prompt": "integrated_multimodal_description: A painted paper bird unfolds its wings and gently lifts from a wooden desk. One continuous camera shot.\n\noverall_soundscape: Soft paper rustling and quiet room tone.\n\nnon_diegetic_music: No music.",
    "ids": [
     396,

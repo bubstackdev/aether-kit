@@ -78,18 +78,49 @@ private struct H3Timing: Codable { let name: String; let seconds: Double; var me
 /// Records what each stage returns, so a render can be compared stage by stage against the CPU oracle.
 @available(macOS 27, iOS 27, *)
 private actor H3RenderTape {
-    var tap: H3TensorData?, latents: H3Latents?, frames = Data(), pcm: H3AudioPCM?
-    func set(tap: H3TensorData) { self.tap = tap }
+    var tap: H3TensorData?, ids: [Int32]?, tags: [Int32]?, latents: H3Latents?, frames = Data(), pcm: H3AudioPCM?
+    func set(conditioning: H3Conditioning) { tap = conditioning.tap; ids = conditioning.ids; tags = conditioning.tags }
     func set(latents: H3Latents) { self.latents = latents }
     func append(_ batch: H3DecodedFrames) { for frame in batch.rgb { frames.append(contentsOf: frame) } }
     func set(pcm: H3AudioPCM) { self.pcm = pcm }
 }
+/// A render's conditioner, held to its dump: it forwards the conditioner's own preflight, and before the denoiser runs
+/// it requires the conditioning's ids, tags and row count to equal the dump's (its presentation's, under FL2VA), so a
+/// render can never condition on rows the dump and its CPU references did not lay out.
 @available(macOS 27, iOS 27, *)
-private struct TapeConditioner: H3PromptConditioner {
-    let inner: any H3PromptConditioner, tape: H3RenderTape
-    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
-        let tap = try await inner.encode(prompt, geometry: geometry, onLayer: onLayer); await tape.set(tap: tap); return tap
+struct H3DumpConditioner: H3PromptConditioner {
+    let inner: any H3PromptConditioner
+    let ids: [Int32], tags: [Int32]
+    let observe: @Sendable (H3Conditioning) async -> Void
+    init(_ inner: any H3PromptConditioner, dump: URL, observe: @escaping @Sendable (H3Conditioning) async -> Void = { _ in }) throws {
+        func ints(_ name: String) throws -> [Int32] { try H3RawDirectory.read(dump, name).bytes.withUnsafeBytes { Array($0.bindMemory(to: Int32.self)) } }
+        struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
+        let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
+        if manifest.tensors["presentation_ids"] != nil {
+            ids = try ints("presentation_ids"); tags = try ints("presentation_tags")
+        } else {
+            ids = try ints("ids"); tags = Array(repeating: 1, count: ids.count)
+        }
+        guard String(ids.count) == (try H3RawDirectory.field(dump, "tokens")) else { throw AetherError.invalidModel("dump ids differ from its token count") }
+        self.inner = inner; self.observe = observe
     }
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await encode(prompt, keyframes: [], geometry: geometry, onLayer: onLayer).tap
+    }
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        let conditioning = try await inner.encode(prompt, keyframes: keyframes, geometry: geometry, onLayer: onLayer)
+        guard conditioning.tags.count == tags.count else {
+            throw AetherError.invalidModel("the render's conditioning has \(conditioning.tags.count) rows, the dump \(tags.count)")
+        }
+        guard conditioning.tags == tags, let rendered = conditioning.ids, rendered == ids else {
+            throw AetherError.invalidModel("the render's conditioning ids or tags differ from the dump's")
+        }
+        await observe(conditioning)
+        return conditioning
+    }
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { inner.supports(geometry, keyframes: keyframes) }
+    func preflight(_ request: H3VideoRequest) throws { try inner.preflight(request) }
     func release() async { await inner.release() }
 }
 @available(macOS 27, iOS 27, *)
@@ -97,6 +128,10 @@ private struct TapeDenoiser: H3Denoiser {
     let inner: any H3Denoiser, tape: H3RenderTape
     var steps: Int { inner.steps }
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        let latents = try await inner.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: onStep)
+        await tape.set(latents: latents); return latents
+    }
+    func denoise(_ initial: H3Latents, conditioning: H3Conditioning, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
         let latents = try await inner.denoise(initial, conditioning: conditioning, geometry: geometry, onStep: onStep)
         await tape.set(latents: latents); return latents
     }
@@ -191,13 +226,25 @@ enum H3ProfileCommand {
         let first = try firstFrame.map { try keyframe($0, width: width, height: height) }
         let last = try lastFrame.map { try keyframe($0, width: width, height: height) }
         let anchors = [(H3Anchor.first, first), (.last, last)].compactMap { $1 == nil ? nil : $0 }
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: ids.count), anchors: anchors)
+        let frames = [first, last].compactMap { $0 }
+        // With a vision tower, FL2VA conditions on upstream's presentation: its rows and tags lay out the text.
+        let presentation = try frames.isEmpty ? nil : profile.conditionerVision.map { vision in
+            try H3Presentation(prompt: ids, keyframes: frames.map { ($0.width, $0.height) }, vision: vision.vision, tokenize: tokenizer.tokenIDs)
+        }
+        let textTags = presentation?.tags ?? Array(repeating: 1, count: ids.count)
+        let layout = try H3Layout(geometry: geometry, textTags: textTags, anchors: anchors)
         guard let schedule = profile.recipes[recipe]?.schedule else { throw AetherError.unsupported("profile has no \(recipe)") }
         let out = try H3RawDirectory(new: output)
         out.fields = ["profile_sha256": profile.manifestSHA256, "recipe": recipe, "seed": String(seed), "width": String(width),
-                      "height": String(height), "frames": String(geometry.frames), "tokens": String(ids.count), "rows": String(layout.rows),
+                      "height": String(height), "frames": String(geometry.frames), "tokens": String(textTags.count), "rows": String(layout.rows),
                       "steps": String(schedule.count), "prompt_sha256": h3SHA256(Data(text.utf8))]
         try out.put("ids", ints(ids, [ids.count]))
+        if let presentation {
+            out.fields["presentation"] = "upstream FL2VA: \(presentation.images.count) keyframe vision block(s)"
+            try out.put("presentation_ids", ints(presentation.ids, [presentation.count]))
+            try out.put("presentation_tags", ints(presentation.tags, [presentation.count]))
+            try out.put("presentation_positions", ints(presentation.positions.flatMap { $0 }, [3, presentation.count]))
+        }
         try out.put("positions", floats(layout.positions.values, [layout.rows, 3]))
         try out.put("token_tags", ints(layout.tokenTags, [layout.rows]))
         try out.put("text_indices", ints(layout.textIndices, [layout.textIndices.count]))
@@ -277,8 +324,10 @@ enum H3ProfileCommand {
                     recorder = made
                     observer = { @Sendable (event: H3DenoiserObservation) async throws -> Void in try await made.record(event) }
                 }
-                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens }, observer: observer)
-                let session = H3VideoSession(stages: H3VideoStages(conditioner: TapeConditioner(inner: stages.conditioner, tape: tape),
+                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: try await dumpTokenize(tokens, profile: profile),
+                                                        observer: observer)
+                let conditioner = try H3DumpConditioner(stages.conditioner, dump: dump) { await tape.set(conditioning: $0) }
+                let session = H3VideoSession(stages: H3VideoStages(conditioner: conditioner,
                                                                    keyframes: stages.keyframes,
                                                                    denoiser: TapeDenoiser(inner: stages.denoiser, tape: tape),
                                                                    video: stages.video, audio: stages.audio))
@@ -298,7 +347,10 @@ enum H3ProfileCommand {
                 }
                 await session.unload()
                 timings += await stageClock.timings
+                // The ids and tags the render conditioned on (checked against the dump before denoising), for the gates.
                 if let tap = await tape.tap { try out.put("tap", tap) }
+                if let ids = await tape.ids { try out.put("render_ids", ints(ids, [ids.count])) }
+                if let tags = await tape.tags { try out.put("render_tags", ints(tags, [tags.count])) }
                 if let latents = await tape.latents { try out.put("final_video", latents.video); try out.put("final_audio", latents.audio) }
                 try out.putBytes("frames", await tape.frames, dtype: "uint8", shape: [result.frames, geometry.height, geometry.width, 3])
                 if let pcm = await tape.pcm { try out.put("pcm", floats(pcm.channels[0] + pcm.channels[1], [2, pcm.sampleCount])) }
@@ -464,6 +516,16 @@ extension H3ProfileCommand {
 @available(macOS 27, iOS 27, *)
 extension H3ProfileCommand {
     /// The dump's first and last keyframes (FL2VA dumps), each if present.
+    /// The session tokenizer for a render from a dump: the request's prompt ("ids") is the dump's token ids, and every
+    /// other text (the keyframe labels of FL2VA's presentation) goes through the profile's tokenizer, as in an app.
+    static func dumpTokenize(_ tokens: [Int32], profile: H3Profile) async throws -> @Sendable (String) throws -> [Int32] {
+        let tokenizer = try await H3Tokenizer.open(directory: profile.tokenizer)
+        return dumpTokenize(tokens) { try tokenizer.tokenIDs($0) }
+    }
+    static func dumpTokenize(_ tokens: [Int32], tokenizer: @escaping @Sendable (String) throws -> [Int32]) -> @Sendable (String) throws -> [Int32] {
+        { $0 == "ids" ? tokens : try tokenizer($0) }
+    }
+
     static func dumpKeyframes(_ dump: URL, geometry: H3Geometry) throws -> (first: H3Keyframe?, last: H3Keyframe?) {
         struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))

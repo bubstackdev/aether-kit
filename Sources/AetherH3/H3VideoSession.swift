@@ -34,6 +34,10 @@ public struct H3VideoRequest: Sendable {
     }
     /// Whether the request conditions on a first frame, a last frame or both (FL2VA).
     public var hasKeyframes: Bool { firstFrame != nil || lastFrame != nil }
+    /// The keyframes in packed order (first, then last).
+    public var keyframes: [H3Keyframe] { [firstFrame, lastFrame].compactMap { $0 } }
+    /// The keyframes' anchors in packed order.
+    public var anchors: [H3Anchor] { [(H3Anchor.first, firstFrame), (.last, lastFrame)].compactMap { $1 == nil ? nil : $0 } }
 }
 
 /// Planar stereo float PCM at 32 kHz, as the source audio VAE returns it.
@@ -82,16 +86,65 @@ public struct H3VideoResult: Sendable {
 // MARK: Stages. Each acquires its native resources on first use and returns them on
 // `release()`, which must be idempotent. The session never has two stages acquired.
 
+/// The conditioner's output: the unnormalized tap `[1, T, 5120]` bf16 and each row's modality tag (1 text, 0 video:
+/// the rows of a keyframe's vision block), which the denoiser's layout takes.
+public struct H3Conditioning: Sendable {
+    public let tap: H3TensorData
+    public let tags: [Int32]
+    /// The token ids the conditioner read, one per row, when it reports them (for qualification).
+    public let ids: [Int32]?
+    public init(tap: H3TensorData, tags: [Int32], ids: [Int32]? = nil) throws {
+        guard tap.spec.shape.count == 3, tap.spec.shape[1] == tags.count, tags.allSatisfy({ $0 == 0 || $0 == 1 }),
+              ids.map({ $0.count == tags.count }) ?? true else {
+            throw AetherError.invalidTensor("H3 conditioning tags must be 0 or 1, one per tap row (and ids, when given, one per row)")
+        }
+        self.tap = tap; self.tags = tags; self.ids = ids
+    }
+    /// A text-only presentation: every row tagged as text.
+    public init(text tap: H3TensorData, ids: [Int32]? = nil) throws {
+        try self.init(tap: tap, tags: Array(repeating: 1, count: tap.spec.shape.count == 3 ? tap.spec.shape[1] : 0), ids: ids)
+    }
+}
+
 public protocol H3PromptConditioner: Sendable {
     /// Returns the conditioner tap for `prompt` at the geometry's text layout.
     func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData
+    /// Upstream's presentation of `keyframes` (packed order: first, then last) and `prompt`. The default serves a
+    /// text-only conditioner: no keyframes, every row text.
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning
+    /// Whether this conditioner can present `keyframes` at the geometry's canvas; the session refuses a request it
+    /// can't before any stage runs. The default serves a text-only conditioner: no keyframes.
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool
+    /// Checks, before any stage runs, everything about `request` the conditioner can decide without loading: its
+    /// presentation length and the packed rows it implies. Throws the refusal. The default checks nothing.
+    func preflight(_ request: H3VideoRequest) throws
     func release() async
+}
+extension H3PromptConditioner {
+    public func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { keyframes.isEmpty }
+    public func preflight(_ request: H3VideoRequest) throws {}
+    public func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                       onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        guard keyframes.isEmpty else { throw AetherError.unsupported("H3 conditioner cannot present keyframes") }
+        return try H3Conditioning(text: try await encode(prompt, geometry: geometry, onLayer: onLayer))
+    }
 }
 public protocol H3Denoiser: Sendable {
     var steps: Int { get }
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry,
                  onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents
+    /// Denoises against a tagged conditioning. The default serves a denoiser that lays every row out as text.
+    func denoise(_ initial: H3Latents, conditioning: H3Conditioning, geometry: H3Geometry,
+                 onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents
     func release() async
+}
+extension H3Denoiser {
+    public func denoise(_ initial: H3Latents, conditioning: H3Conditioning, geometry: H3Geometry,
+                        onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        guard conditioning.tags.allSatisfy({ $0 == 1 }) else { throw AetherError.unsupported("H3 denoiser cannot lay out vision rows") }
+        return try await denoise(initial, conditioning: conditioning.tap, geometry: geometry, onStep: onStep)
+    }
 }
 public protocol H3WindowDecoder: Sendable {
     /// Packed `[7*H/32*W/32, 96]` rows of one temporal window → CHW float32 `[3,22,H,W]`.
@@ -195,6 +248,11 @@ public actor H3VideoSession {
             throw AetherError.unsupported("H3 has no audio decoder for \(request.geometry.frames) frames "
                                           + "(\(request.geometry.audioLatentsPerChannel) latents per channel)")
         }
+        if !stages.conditioner.supports(request.geometry, keyframes: request.keyframes) {
+            throw AetherError.unsupported("H3 conditioner cannot present \(request.keyframes.count) keyframe(s) at "
+                                          + "\(request.geometry.width)x\(request.geometry.height)")
+        }
+        try stages.conditioner.preflight(request)
         // A request is checked and reserved against the one envelope that covers it.
         let resources = try resources?.resolved(for: request)
         try resources?.check(request)
@@ -244,7 +302,8 @@ public actor H3VideoSession {
             try begin(.encoding)
             try await onEvent(.stageStarted(.encoding))
             let conditioning = try await forwarding({ .conditionerLayer($0, of: $1) }, to: onEvent) { report in
-                try await stages.conditioner.encode(request.prompt, geometry: geometry, onLayer: report)
+                try await stages.conditioner.encode(request.prompt, keyframes: request.keyframes,
+                                                    geometry: geometry, onLayer: report)
             }
             await stages.conditioner.release(); finished(); try await onEvent(.stageReleased(.encoding))
 

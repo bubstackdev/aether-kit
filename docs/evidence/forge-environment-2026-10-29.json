@@ -1,0 +1,38 @@
+{
+  "schema": 2,
+  "kind": "forge-environment-reverification",
+  "date": "2026-10-29",
+  "why": "torchvision 0.28.0 (the release built for torch 2.13.0) joins Forge/h3-oracle so the FL2VA presentation oracle can run upstream's Qwen3VLProcessor, whose video processor needs torchvision; every other package is unchanged",
+  "previous": "docs/evidence/forge-environment-2026-10-27.json",
+  "environment": {
+    "project": "Forge/h3-oracle/pyproject.toml",
+    "lockSHA256": {
+      "before": "8594ed1a15c4cb2491de9e5f9fb0a89b4fb018083f2f1996255e3c20400ef85a",
+      "after": "c3bc1900a8780ba55131748bee8fd7d27a356d376fc8eb751f8a8762de9ad24f"
+    },
+    "lockChange": "uv lock: 'Added torchvision v0.28.0'; the locked name/version list differs from the previous lock by that one entry",
+    "torchvisionRequires": "numpy, torch==2.13.0, pillow!=8.3.*,>=5.3.0 (PyPI metadata), all already pinned"
+  },
+  "checks": {
+    "qwen3vl-processor-loads": {
+      "before": "AutoProcessor.from_pretrained(FL2VA/processor) raised ImportError: Qwen3VLVideoProcessor requires the Torchvision library",
+      "after": "Qwen3VLProcessor with Qwen2VLImageProcessor (torchvision backend); a 960x544 image gives image_grid_thw [[1, 34, 60]] and pixel_values [2040, 1536]",
+      "pilBackendMaxAbsDifference": 5.9138983488082886e-08,
+      "note": "the PIL-backend image processor differs from the torchvision backend upstream uses by up to 5.9e-8 on the same 960x544 image, so a PIL stand-in would not have been byte-identical"
+    },
+    "h3-fl2va-keyframe-condition": {
+      "case": "the 2026-10-27 re-verification's case, rerun in the new environment: prepare-h3-profile-oracle.py --part graphs on the same FL2VA dump",
+      "oracle": "H3_STAGING=<staging> Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py --part graphs --dump <scratch>/forge-h3-oracle-2026-10-27/dump-fl2va --run <scratch>/aether-kit-h3-2026-10-26/graphs-960-contexts/native-fl2va --text <same as --run> --output <scratch>/forge-h3-oracle-2026-10-29/oracle-graphs-fl2va --threads 8",
+      "textArgument": "the 2026-10-27 run passed graphs-960-contexts/oracle-text, which no longer exists; an FL2VA dump's graphs part reads only the keyframe (prepare-h3-profile-oracle.py graphs_part), so --text only needs a manifest",
+      "dumpKeyframeSHA256": "03484268e8fa3128e8e1e1dfea3b40a1479dd84ed685ab7badac3a0222579cc0",
+      "conditionSHA256": {
+        "recorded": "825842204bc1fb72a7232110203c718053a0e4d47db53ad13c2e89d39b9032dc",
+        "rerun": "825842204bc1fb72a7232110203c718053a0e4d47db53ad13c2e89d39b9032dc"
+      },
+      "conditionShape": [1, 24, 1, 34, 60],
+      "identical": true,
+      "usrBinTimeL": {"realSeconds": 23.43, "maximumResidentSetBytes": 3231105024, "peakMemoryFootprintBytes": 2433931792},
+      "stagingRead": "read only: exports/h3-fl2va/converted/vae"
+    }
+  }
+}

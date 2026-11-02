@@ -147,8 +147,10 @@ enum H3MemoryDiagnosis {
         defer { sampling.cancel() }
         await idle(timeline, "baseline", 1)
         timeline.mark("open")
-        let stages = try H3ProfileEngine.stages(profile: profile, recipe: f["recipe"]!, tokenize: { _ in tokens })
-        let session = H3VideoSession(stages: stages)
+        let stages = try H3ProfileEngine.stages(profile: profile, recipe: f["recipe"]!, tokenize: try await H3ProfileCommand.dumpTokenize(tokens, profile: profile))
+        let session = H3VideoSession(stages: H3VideoStages(conditioner: try H3DumpConditioner(stages.conditioner, dump: dump), keyframes: stages.keyframes,
+                                                           denoiser: stages.denoiser, video: stages.video, audio: stages.audio,
+                                                           resourceIdentity: stages.resourceIdentity))
         let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: UInt64(f["seed"]!)!, firstFrame: keyframes.first,
                                          lastFrame: keyframes.last, audio: true)
         _ = try await session.generate(request) { event in

@@ -30,6 +30,7 @@ struct AetherProbe {
               aether-probe h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png]
               aether-probe h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio]
               aether-probe h3-profile-decode PROFILE.json DUMP RENDER NEW_DIRECTORY [DECODER.aimodel SHA256]
+              aether-probe h3-profile-presentation PROFILE.json PROMPT.txt KEYFRAME.png NEW_DIRECTORY --vision|--conditioner
               aether-probe h3-memory-render PROFILE.json DUMP NEW_DIRECTORY [--spike-capture=GiB]
               aether-probe qualify-h3-session-lifecycle PROFILE.json DUMP NEW_DIRECTORY [--scenarios=NAME,...]
               aether-probe qualify-h3-denoising BUNDLE PHASES CPU_RECORD CHAIN MODULATION_DIRECTORY REFERENCES|- NEW_OUTPUT_DIRECTORY --prepare-only|--capture|--run
@@ -63,7 +64,7 @@ struct AetherProbe {
             language model through idle unload, a simulated pressure release and a refused load (docs/model-lifecycle.md).
 
             GPU commands (inspect, smoke, reply-installed, qualify-lifecycle, render-krea, render-krea-batch,
-            parity-krea, h3-profile-run, h3-profile-decode, h3-memory-render, h3-memory-encoder,
+            parity-krea, h3-profile-run, h3-profile-decode, h3-profile-presentation, h3-memory-render, h3-memory-encoder,
             qualify-h3-session-lifecycle, and the other qualify-h3*, benchmark-krea and benchmark-flux2 modes other than
             --prepare-only) take the
             shared GPU lease /tmp/atelier-gpu.lock themselves, waiting while Atelier or another tool holds it.
@@ -81,6 +82,7 @@ struct AetherProbe {
         if try await ReadinessCommand.run(arguments) { return }
         if try await LifecycleCommand.run(arguments) { return }
         if try await H3ProfileCommand.run(arguments) { return }
+        if try await H3PresentationCommand.run(arguments) { return }
         if try await H3MemoryDiagnosis.run(arguments) { return }
         if try await H3SessionLifecycleCommand.run(arguments) { return }
         if try await H3DenoisingCommand.run(arguments) { return }

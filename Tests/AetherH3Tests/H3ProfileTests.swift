@@ -43,5 +43,15 @@ func h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu() throws {
                      prepare.textParameters[0], prepare.textParameters[46]] { _ = try file.read() }
         #expect(try conditioner.embedding.rows([0, 151935]).spec.shape == [1, 2, 5120])
         if ProcessInfo.processInfo.environment["AETHER_H3_PROFILE_PARAMETERS"] != nil { try profile.verifyParameters() }
+        // The FL2VA presentation's vision tower, where the profile has one: a graph per declared canvas and every
+        // in-place weight reading back with its recorded hash.
+        if let vision = profile.conditionerVision {
+            for canvas in vision.functions.keys.sorted() {
+                let sides = canvas.split(separator: "x").map { Int($0)! }
+                #expect(try vision.function(width: sides[0], height: sides[1]).url.lastPathComponent == "conditioner-vision-\(canvas).aimodel")
+            }
+            #expect(vision.deepstackLevels == 3 && vision.hiddenSize == 5120)
+            for file in vision.parameters { _ = try file.read() }
+        }
     }
 }

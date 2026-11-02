@@ -205,8 +205,24 @@ private struct FakeKeyframeEncoder: H3KeyframeEncoder {
     func release() async { await log.release("keyframes") }
 }
 
-/// Checks the denoiser sees the anchors first, in packed order and declared on the latents, and returns the latents
-/// unchanged.
+/// Presents the keyframes it is given: the fake tap's first two rows tagged as a vision block.
+private struct PresentingConditioner: H3PromptConditioner {
+    let log: StageLog
+    var keyframes = 1
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await FakeConditioner(log: log).encode(prompt, geometry: geometry, onLayer: onLayer)
+    }
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        #expect(keyframes.count == self.keyframes)
+        return try H3Conditioning(tap: try await encode(prompt, geometry: geometry, onLayer: onLayer), tags: [0, 0, 1, 1])
+    }
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { true }
+    func release() async { await log.release("conditioner") }
+}
+
+/// Checks the denoiser sees the anchors first, in packed order and declared on the latents, and the presentation's
+/// tags, and returns the latents unchanged.
 private struct AnchorCheckingDenoiser: H3Denoiser {
     let log: StageLog
     var anchors: [H3Anchor] = [.first]
@@ -214,6 +230,10 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
     var expectedVideo: Data? = nil
     var steps: Int { 1 }
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        Issue.record("the session must hand the denoiser the tagged conditioning"); return initial
+    }
+    func denoise(_ initial: H3Latents, conditioning: H3Conditioning, geometry: H3Geometry, onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        #expect(conditioning.tags == [0, 0, 1, 1])
         await log.acquire("denoiser")
         let frameRows = (geometry.latentHeight / 2) * (geometry.latentWidth / 2)
         #expect(initial.anchors == anchors)
@@ -227,7 +247,7 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
 
 @Test func h3VideoSessionEncodesTheFirstFrameBeforeDenoisingAndDecodesOnlyGeneratedRows() async throws {
     let log = StageLog(), events = EventLog(), g = try geometry()
-    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: PresentingConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
                                                        denoiser: AnchorCheckingDenoiser(log: log), video: FakeWindowDecoder(log: log),
                                                        audio: FakeAudioDecoder(log: log)))
     let keyframe = try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: 9, count: g.width * g.height * 3))
@@ -238,6 +258,16 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
     let recorded = await events.events
     #expect(recorded.contains("start encodingKeyframe") && recorded.contains("released encodingKeyframe"))
     #expect(await log.maximumResident == 1)
+}
+
+@Test func h3VideoSessionRefusesFL2VAWithATextOnlyConditioner() async throws {
+    let log = StageLog(), g = try geometry()
+    let keyframe = try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: 9, count: g.width * g.height * 3))
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
+                                                       denoiser: FakeDenoiser(log: log), video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
+    await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe)) }
+    let entries = await log.entries
+    #expect(!entries.contains("acquire keyframes") && !entries.contains("acquire denoiser"))
 }
 
 @Test func h3VideoSessionRefusesKeyframesItCannotEncode() async throws {
@@ -260,7 +290,7 @@ func h3VideoSessionEncodesLastAndBothKeyframesInPackedOrderAndDecodesOnlyGenerat
                          bytes: [Float](repeating: value, count: 24 * g.latentHeight * g.latentWidth).withUnsafeBytes { Data($0) })
     }
     let expected = try g.initialLatents(seed: 5, conditions: anchors.map { ($0, try condition($0 == .first ? 3 : 7)) })
-    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: FakeKeyframeEncoder(log: log),
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: PresentingConditioner(log: log, keyframes: anchors.count), keyframes: FakeKeyframeEncoder(log: log),
                                                        denoiser: AnchorCheckingDenoiser(log: log, anchors: anchors, expectedVideo: expected.video.bytes),
                                                        video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
     func keyframe(_ value: UInt8) throws -> H3Keyframe { try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: value, count: g.width * g.height * 3)) }
@@ -291,7 +321,7 @@ private struct CancellingKeyframeEncoder: H3KeyframeEncoder {
 
 @Test func h3VideoSessionCancelledBetweenTheTwoKeyframeEncodesStopsBeforeTheLastAndReleasesEverything() async throws {
     let log = StageLog(), g = try geometry()
-    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), keyframes: CancellingKeyframeEncoder(log: log),
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: PresentingConditioner(log: log, keyframes: 2), keyframes: CancellingKeyframeEncoder(log: log),
                                                        denoiser: FakeDenoiser(log: log), video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
     func keyframe(_ value: UInt8) throws -> H3Keyframe { try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: value, count: g.width * g.height * 3)) }
     await #expect(throws: CancellationError.self) {
@@ -994,4 +1024,38 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     monitor.deliver(.normal)
     _ = try await session.generate(request)
     #expect(await log.entries.first == "acquire conditioner")
+}
+
+/// A presenting conditioner that refuses in preflight or cannot present at the canvas.
+private struct RefusingConditioner: H3PromptConditioner {
+    let log: StageLog
+    var canPresent = true
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await FakeConditioner(log: log).encode(prompt, geometry: geometry, onLayer: onLayer)
+    }
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        try H3Conditioning(tap: try await encode(prompt, geometry: geometry, onLayer: onLayer), tags: [0, 0, 1, 1])
+    }
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { canPresent }
+    func preflight(_ request: H3VideoRequest) throws {
+        if request.lastFrame != nil { throw AetherError.unsupported("too many packed rows") }
+    }
+    func release() async { await log.release("conditioner") }
+}
+
+@Test func h3VideoSessionAsksTheConditionerBeforeAnyStage() async throws {
+    let g = try geometry()
+    let keyframe = try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: 9, count: g.width * g.height * 3))
+    for canPresent in [false, true] {
+        let log = StageLog()
+        let session = H3VideoSession(stages: H3VideoStages(conditioner: RefusingConditioner(log: log, canPresent: canPresent),
+                                                           keyframes: FakeKeyframeEncoder(log: log), denoiser: FakeDenoiser(log: log),
+                                                           video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
+        // Unsupported canvas (supports false), or a request whose packed rows the conditioner refuses (preflight).
+        let request = try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe, lastFrame: canPresent ? keyframe : nil)
+        await #expect(throws: AetherError.self) { try await session.generate(request) }
+        #expect(await log.entries.isEmpty)
+        #expect(await session.state == .ready)
+    }
 }

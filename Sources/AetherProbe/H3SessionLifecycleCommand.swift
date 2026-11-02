@@ -68,11 +68,14 @@ enum H3SessionLifecycleCommand {
 
         let journal = H3NativeJournal(), trigger = H3NativeTrigger()
         let recorder = Mutex<H3TrajectoryRecorder?>(nil)
+        let tokenize = try await H3ProfileCommand.dumpTokenize(tokens, profile: profile)
         func makeSession() throws -> H3VideoSession {
-            let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens }, observer: { event in
+            let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: tokenize, observer: { event in
                 if let current = recorder.withLock({ $0 }) { try await current.record(event) }
             }, nativeObserver: { call in journal.add(.native(call)); trigger.observe(call) })
-            return H3VideoSession(stages: stages)
+            return H3VideoSession(stages: H3VideoStages(conditioner: try H3DumpConditioner(stages.conditioner, dump: dump), keyframes: stages.keyframes,
+                                                        denoiser: stages.denoiser, video: stages.video, audio: stages.audio,
+                                                        resourceIdentity: stages.resourceIdentity))
         }
         let baselineDirectory = output.appendingPathComponent("baseline")
         try FileManager.default.createDirectory(at: baselineDirectory, withIntermediateDirectories: false)
