@@ -13,7 +13,7 @@ Status: experimental, 0.0.2 checkpoint. Qualified on one Mac and one iPhone (see
 | Base model | `yl4579/StyleTTS2-LJSpeech` (StyleTTS 2 with an iSTFTNet vocoder) |
 | Reference code | `kokoro` 0.9.4 wheel (Apache-2.0, SHA-256 `a129dc63…5789efd`), used read-only by `Forge/kokoro` for export and references |
 
-AetherKit ships no weights. Users export a bundle themselves (see below), and those files keep their upstream license.
+AetherKit ships no Kokoro weights. Users export a bundle themselves (see below), and those files keep their upstream license. (Kit's only published weights are the Qwen3-0.6B sample bundle, [sample app](sample-app.md).)
 
 ## Phonemization: the licensing decision
 

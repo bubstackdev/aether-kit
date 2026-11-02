@@ -88,6 +88,7 @@ actor NativeH3Graph {
 
     /// Reads `files` into weight bank `bank` (0 or 1), skipping bindings it already holds.
     func load(_ files: [String: H3TensorFile], into bank: Int) throws {
+        defer { VerifiedFileHashes.flush() }   // the bank's newly verified tensors, in one store write
         for (name, file) in files.sorted(by: { $0.key < $1.key }) {
             try Task.checkCancellation()
             let slot = try buffer(banks[bank][name], file.spec)

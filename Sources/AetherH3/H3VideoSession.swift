@@ -32,6 +32,8 @@ public struct H3VideoRequest: Sendable {
         self.prompt = prompt; self.geometry = geometry; self.seed = seed
         self.firstFrame = firstFrame; self.lastFrame = lastFrame; self.audio = audio
     }
+    /// Whether the request conditions on a first frame, a last frame or both (FL2VA).
+    public var hasKeyframes: Bool { firstFrame != nil || lastFrame != nil }
 }
 
 /// Planar stereo float PCM at 32 kHz, as the source audio VAE returns it.
@@ -139,7 +141,8 @@ public protocol H3AudioDecoder: Sendable {
     func release() async
 }
 
-/// Encodes a first-frame keyframe (RGB8 at the clip size) into normalized condition latents `[1,24,1,H/16,W/16]` f32.
+/// Encodes one keyframe, first or last (RGB8 at the clip size), into normalized condition latents `[1,24,1,H/16,W/16]`
+/// f32. Both anchors use the same single-frame encode.
 public protocol H3KeyframeEncoder: Sendable {
     /// Whether an encoder exists for this canvas; the session refuses other canvases before any stage runs.
     func supports(_ geometry: H3Geometry) -> Bool
@@ -167,7 +170,9 @@ public struct H3VideoStages: Sendable {
 /// latents, denoising, windowed video decoding and optional audio decoding, strictly in
 /// sequence so at most one heavyweight stage is resident. One call at a time; cancellation
 /// is observed between stages, steps (by the denoiser) and decoder windows, and every
-/// acquired stage is released before the call returns or throws.
+/// acquired stage is released before the call returns or throws. Nothing stays loaded between
+/// calls, so the only lifecycle rule is the load gate: a generation started while memory pressure
+/// is critical is refused with `AetherError.memoryPressure` (docs/model-lifecycle.md).
 public actor H3VideoSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
@@ -177,23 +182,32 @@ public actor H3VideoSession {
     private let gpu: GPUAdmissionOwner?
     private var pendingGPU: GPUAdmissionAttempt?
     private var closingTask: Task<Void, Never>?
+    private let pressure: MemoryPressureMonitor
 
     /// `gpu` opts into a host-shared ``GPUAdmission``: each generation waits for (or, in fail-fast mode, requires) a
     /// grant before its first stage and holds it until every stage has been released. With admission, the operation's
     /// resource reservation is taken after the grant, and `unload()` withdraws a generation still waiting.
-    public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) { self.stages = stages; resources = nil; self.gpu = gpu }
+    public init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil) {
+        self.stages = stages; resources = nil; self.gpu = gpu; pressure = .shared
+    }
 
     public init(stages: H3VideoStages, resources: H3ResourceAdmission, gpu: GPUAdmissionOwner? = nil) throws {
         guard stages.resourceIdentity == resources.executionIdentity else {
             throw AetherError.invalidRequest("H3 resource profile belongs to different execution stages")
         }
-        self.stages = stages; self.resources = resources; self.gpu = gpu
+        self.stages = stages; self.resources = resources; self.gpu = gpu; pressure = .shared
+    }
+
+    /// A session reading memory pressure from `pressure` (tests).
+    package init(stages: H3VideoStages, gpu: GPUAdmissionOwner? = nil, pressure: MemoryPressureMonitor) {
+        self.stages = stages; resources = nil; self.gpu = gpu; self.pressure = pressure
     }
 
     public func generate(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler = { _ in }) async throws -> H3VideoResult {
         try Task.checkCancellation()
         guard state != .closing, state != .closed, stages != nil else { throw AetherError.sessionClosed }
         guard active == nil else { throw AetherError.sessionBusy }
+        guard pressure.level != .critical else { throw AetherError.memoryPressure }
         let task = try startRun(request, onEvent: onEvent)
         active = task; state = .running
         defer { active = nil; pendingGPU = nil; if state == .running { state = .ready } }
@@ -204,13 +218,13 @@ public actor H3VideoSession {
 
     private func startRun(_ request: H3VideoRequest, onEvent: @escaping H3VideoEventHandler) throws -> Task<H3VideoResult, any Error> {
         guard let stages else { throw AetherError.sessionClosed }
-        guard request.lastFrame == nil else { throw AetherError.unsupported("H3 last-frame conditioning is not implemented") }
-        guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
-        if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
+        guard !request.hasKeyframes || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
+        if request.hasKeyframes, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
         }
+        // A request is checked and reserved against the one envelope that covers it.
+        let resources = try resources?.resolved(for: request)
         try resources?.check(request)
-        let resources = resources
         let reserve: @Sendable () throws -> ResourceReservation? = {
             try resources.map { try $0.coordinator.reserve(bytes: $0.operationBytes) }
         }
@@ -265,12 +279,18 @@ public actor H3VideoSession {
             try Task.checkCancellation()
             var initial = try geometry.initialLatents(seed: request.seed)
             var conditionRows = 0
-            if let keyframe = request.firstFrame, let encoder = stages.keyframes {
+            if request.hasKeyframes, let encoder = stages.keyframes {
+                // One encoder stage for both keyframes, first then last (the pipeline's packed order).
                 try begin(.encodingKeyframe)
                 try await onEvent(.stageStarted(.encodingKeyframe))
-                let condition = try await encoder.encode(keyframe, geometry: geometry)
+                var first: H3TensorData?, last: H3TensorData?
+                if let keyframe = request.firstFrame { first = try await encoder.encode(keyframe, geometry: geometry) }
+                if let keyframe = request.lastFrame {
+                    try Task.checkCancellation()
+                    last = try await encoder.encode(keyframe, geometry: geometry)
+                }
                 await encoder.release(); finished(); try await onEvent(.stageReleased(.encodingKeyframe))
-                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: condition)
+                initial = try geometry.initialLatents(seed: request.seed, firstFrameCondition: first, lastFrameCondition: last)
                 conditionRows = initial.video.spec.shape[1] - geometry.targetVideoRows
             }
             try begin(.denoising)

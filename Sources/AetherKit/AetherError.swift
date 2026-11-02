@@ -7,6 +7,9 @@ public enum AetherError: Error, Sendable, Equatable, CustomStringConvertible {
     case unsupported(String)
     case sessionBusy
     case sessionClosed
+    /// The system reports critical memory pressure, so no new model load starts until it eases
+    /// (docs/model-lifecycle.md).
+    case memoryPressure
 
     public var description: String {
         switch self {
@@ -16,6 +19,7 @@ public enum AetherError: Error, Sendable, Equatable, CustomStringConvertible {
         case .unsupported(let reason): "Unsupported: \(reason)"
         case .sessionBusy: "This session already has an inference in progress."
         case .sessionClosed: "This session is closing or has been unloaded."
+        case .memoryPressure: "Memory pressure is critical; no model loads until it eases."
         }
     }
 }

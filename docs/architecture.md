@@ -51,6 +51,12 @@ Stage downloads, verify declared contents, then publish atomically. Identity inc
 
 Keep portable source assets separate from runtime specialization caches. Specialization is dependent on device/OS/options; an OS update may require regeneration. Atomic publication and eviction must respect active model leases. Schema migrations and failed downloads must leave previous complete bundles usable.
 
+### Verified-hash cache
+
+Bundles opened in place (language bundles, Krea, H3) are hashed on open. `VerifiedFileHashes` remembers a passing check by file identity (device, inode, size, modification and status-change times) so an unchanged multi-GB file isn't hashed again. Identities come from `fstat` on the descriptor the bytes are read from (a lease's pinned descriptor when leased), or from `lstat` on the resolved path that is then hashed; a cached read checks the identities again after copying and hashes if anything moved. A claim's key names the expected digest, the files and every byte range in order. Only files on local APFS or HFS+ volumes (`statfs`: `MNT_LOCAL` and the file system type) are remembered; everything else always hashes.
+
+The store, `~/Library/Caches/AetherKit/verified-file-hashes.json`, is per user and plain JSON, not signed. It is inside the same trust boundary as the bundle manifests and `main.hash` declarations that name the expected digests: a process that can write it can already write those (and the model files). It is safe to delete at any time; it only saves work. Processes writing it at once are last writer wins, which costs only re-hashing. Writes through a `MAP_SHARED` mapping can update a file's times late (at `msync` or unmap), so don't verify a file while something writes it through a mapping. A path check identifies the file, not the folders above it: swapping a parent folder during the hash and back leaves the file's identity unchanged, so a process with write access to the bundle could record another file's digest. That access is inside the same boundary; descriptor-based reads (H3 tensors) are not affected. Test processes use a per-process temporary store, never the user's.
+
 ## Decision register
 
 | ID | Proposal | Status / evidence needed |
@@ -69,4 +75,4 @@ Keep portable source assets separate from runtime specialization caches. Special
 | D12 | Qualify H3 outer modules independently before linking the denoising trajectory | [Outer-phase CPU readiness](h3-integration.md#outer-phase-binding-readiness) pins complete original CPU references and actual timestep/row-index bytes for prepare/time/heads; the BF16-preserving multi-output session passes CPU tests and the [30-submission native gate](h3-integration.md#outer-phase-qualification-2026-10-18), including 28 complete-tensor comparisons and ten cancellations. The linked trajectory follow-up is D13. |
 | D13 | Link runtime H3 contexts and gate all eight Turbo8 steps before conditioning/decoding | The [eight-step provided-conditioning gate](h3-integration.md#denoising-qualification-2026-10-18) passes 824 submissions, 464 scoped original-CPU comparisons and 864 repeated hashes with one resident block-weight set. Chunk-scoped model hashing removes the observed verification memory spike. Whole-run lifecycle, conditioner/taps, decoders and media acceptance remain pending. |
 
-Do not freeze illustrative type names or promise compatibility until the first real app exercises these contracts.
+The [sample app](sample-app.md) exercised the app-facing contracts in 0.0.4, and those are now frozen for 0.0.x ([API stability](api-stability.md)). Everything else stays unfrozen; don't promise compatibility for it until a real app exercises it.

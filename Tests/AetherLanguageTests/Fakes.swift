@@ -1,3 +1,4 @@
+import AetherKit
 @testable import AetherLanguage
 import AetherLanguageRuntime
 import AetherLanguageTokenizers
@@ -99,10 +100,11 @@ actor FakeBackend: LanguageBackend {
 
 enum FakeModel {
     static func make(context: Int = 2048, supportsReasoning: Bool = true, backend: FakeBackend? = nil,
+                     lifecycle: ModelLifecycle = ModelLifecycle(policy: .manual, monitor: MemoryPressureMonitor(systemSource: false)),
                      onLoad: @escaping @Sendable () async throws -> Void = {}) -> AetherLanguageModel {
         let backend = backend ?? FakeBackend(context: context) { _ in FakeVocabulary.tokens("Hello") }
         return AetherLanguageModel(bundle: URL(filePath: "/fake"), availability: .available, supportsReasoning: supportsReasoning,
-                                   contextLength: context) {
+                                   contextLength: context, lifecycle: lifecycle) {
             try await onLoad()
             return LoadedLanguageModel(backend: backend, codec: FakeCodec())
         }

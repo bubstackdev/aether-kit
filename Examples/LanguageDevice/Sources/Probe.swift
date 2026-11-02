@@ -20,6 +20,8 @@ private struct ProbeConfiguration: Decodable {
     let store: String?
     /// Readiness only: replaces the entry's memory requirement.
     let memoryBytes: UInt64?
+    /// Lifecycle only: the idle unload policy's seconds (default 10).
+    let idleSeconds: Int?
 }
 
 private struct Logits: Decodable { let file: String; let rows: Int; let vocab: Int }
@@ -76,6 +78,8 @@ struct DeviceReport: Codable {
     var preparation: PreparationResult?
     /// Mode "readiness": the states a `ModelReadiness` passed through (ReadinessProbe.swift).
     var readiness: ReadinessResult?
+    /// Mode "lifecycle": idle unload, reload and release under real memory pressure (LifecycleProbe.swift).
+    var lifecycle: LifecycleResult?
     var gate = "text: every teacher-forced row cosine >= 0.995 against the float32 reference, argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token in the reference top-5); greedy identical to the reference (its final stop token excluded) or first diverging at such a near-tie. vision: Kit decodes and preprocesses the photo the reference was made from; greedy identical or first diverging at a near-tie of the reference's teacher-forced row there"
     var passed = false
     var failures: [String] = []
@@ -100,6 +104,12 @@ func runLanguageDeviceProbe() async -> DeviceReport {
             try await runPreparation(assets: assets, store: configuration.store ?? "Models",
                                      cutAfter: configuration.cutAfterBytes, report: &report)
             report.passed = report.failures.isEmpty && report.preparation?.reply != nil
+            return report
+        }
+        if configuration.mode == "lifecycle" {
+            report.lifecycle = try await runLifecycle(assets: assets, store: configuration.store ?? "Models",
+                                                      idleSeconds: configuration.idleSeconds ?? 10)
+            report.passed = report.failures.isEmpty && report.lifecycle?.releasedUnderPressure == true
             return report
         }
         if configuration.mode == "readiness" {

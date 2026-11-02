@@ -66,6 +66,16 @@ private func tiled(_ root: URL, tails: [String], tileSize: Int = 256) -> [String
     guard case .tiled(_, _, let small)? = try split.keyframeEncoding(width: 288, height: 288) else { Issue.record("expected tiled 288"); return }
     #expect(small.tileCount == 4)
     guard case .whole? = try split.keyframeEncoding(width: 544, height: 960) else { Issue.record("expected whole 544x960"); return }
+    // A tail-only overlay canvas reuses the shared tile graph: 1280x704 is 7 x 4 source tiles.
+    let large = try profile(root, extra: tiled(root, tails: ["960x544", "1280x704", "704x1280"]))
+    guard case .tiled(let largeTile, let largeTail, let largeTiling)? = try large.keyframeEncoding(width: 1280, height: 704) else {
+        Issue.record("expected tiled 1280x704"); return
+    }
+    #expect(largeTile.url.lastPathComponent == "tile256.aimodel" && largeTail.url.lastPathComponent == "tail-1280x704.aimodel")
+    #expect(largeTiling.tileCount == 28 && largeTiling.xStarts.count == 7)
+    guard case .tiled(_, _, let portrait)? = try large.keyframeEncoding(width: 704, height: 1280) else { Issue.record("expected tiled 704x1280"); return }
+    #expect(portrait.tileCount == 28 && portrait.yStarts.count == 7)
+    #expect(try large.keyframeEncoding(width: 1344, height: 768) == nil)
     // Tiled entries outside the 256 px source tile contract are refused.
     #expect(throws: AetherError.self) { _ = try profile(root, extra: tiled(root, tails: ["960x544"], tileSize: 512)) }
     #expect(throws: AetherError.self) { _ = try profile(root, extra: tiled(root, tails: ["200x200"])) }

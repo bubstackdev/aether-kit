@@ -3,8 +3,8 @@
 Status: design approved and implemented, 2026-10-27: the seven facade commits ([Implementation status](#implementation-status))
 and [structured output](#structured-output). This is the third piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)). It builds on the
-[runtime seam](language-runtime-seam.md) (`AetherLanguageRuntime`) and on `AetherLanguageTokenizers`. Type names are
-illustrative until the facade has run in a real app (see [architecture](architecture.md)).
+[runtime seam](language-runtime-seam.md) (`AetherLanguageRuntime`) and on `AetherLanguageTokenizers`. Its API is
+frozen for 0.0.x since the [sample app](sample-app.md) ran it ([API stability](api-stability.md)).
 
 ## The finding that shapes this design
 

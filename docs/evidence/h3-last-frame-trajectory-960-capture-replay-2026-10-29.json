@@ -1,0 +1,393 @@
+{
+  "provenance": {
+    "profileIdentity": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+    "executionIdentity": "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8",
+    "recipe": "turbo8",
+    "conditionerPresentation": "text-only presentation (known deviation, PR #76)"
+  },
+  "record": "h3-last-frame-trajectory-960-capture-replay",
+  "date": "2026-10-29",
+  "scope": "The capture and replay stages of qualify-h3-profile-trajectory.py at 960x544x124 first+last (steps 0, 1, 7 captured). The CPU oracle stage is recorded separately; the gate record follows when steps 1 and 7 are referenced.",
+  "canvas": {
+    "width": "960",
+    "height": "544",
+    "frames": "124",
+    "rows": "20353",
+    "tokens": "49",
+    "seed": "1043",
+    "recipe": "turbo8",
+    "anchors": "first,last",
+    "profile_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce"
+  },
+  "boundaryHashes": {
+    "expected": 457,
+    "captured": 457,
+    "captureTrajectoryHashes": "457",
+    "replayTrajectoryHashes": "457",
+    "replayMismatches": "0",
+    "captureHashesSHA256": "b1124c2397a2d9e83e03f1afb54740fffaf8261d21269ebcf11036b06f7900ca",
+    "finalLatents": {
+      "video": "5a23bbc214f4e33e5092f9dd60dacf329149ce9abf1ab32a9ab48ed7df0095ab",
+      "audio": "3b745caa2c7759af41e9b4623fb13b79059139009b0258dd4d839a582fd2445c"
+    }
+  },
+  "renders": {
+    "capture": {
+      "timings": [
+        {
+          "memory": {
+            "metalAllocatedBytes": 368001024,
+            "physicalFootprintBytes": 753108288,
+            "processLifetimePeakFootprintBytes": 13598690928,
+            "processLifetimePeakResidentBytes": 10764255232,
+            "residentBytes": 403668992
+          },
+          "name": "render",
+          "seconds": 547.011337541
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 2818048,
+            "physicalFootprintBytes": 2142390480,
+            "processLifetimePeakFootprintBytes": 2153679056,
+            "processLifetimePeakResidentBytes": 2021097472,
+            "residentBytes": 2020720640
+          },
+          "name": "stage.encoding",
+          "seconds": 19.400608583
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 1219362816,
+            "physicalFootprintBytes": 1637401560,
+            "processLifetimePeakFootprintBytes": 2153679056,
+            "processLifetimePeakResidentBytes": 2035204096,
+            "residentBytes": 107986944
+          },
+          "name": "stage.encodingKeyframe",
+          "seconds": 8.695671167
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12265897984,
+            "physicalFootprintBytes": 12777426400,
+            "processLifetimePeakFootprintBytes": 13116313032,
+            "processLifetimePeakResidentBytes": 3492872192,
+            "residentBytes": 3457449984
+          },
+          "name": "step.1/8",
+          "seconds": 59.725560875
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 12504403424,
+            "processLifetimePeakFootprintBytes": 13388369376,
+            "processLifetimePeakResidentBytes": 3676307456,
+            "residentBytes": 3477962752
+          },
+          "name": "step.2/8",
+          "seconds": 56.820305667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13385420256,
+            "processLifetimePeakFootprintBytes": 13396266464,
+            "processLifetimePeakResidentBytes": 3689086976,
+            "residentBytes": 3478175744
+          },
+          "name": "step.3/8",
+          "seconds": 57.081298916
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13385747936,
+            "processLifetimePeakFootprintBytes": 13596659336,
+            "processLifetimePeakResidentBytes": 3689299968,
+            "residentBytes": 3478503424
+          },
+          "name": "step.4/8",
+          "seconds": 58.067633625
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 12798741984,
+            "processLifetimePeakFootprintBytes": 13596987016,
+            "processLifetimePeakResidentBytes": 3689627648,
+            "residentBytes": 3478700032
+          },
+          "name": "step.5/8",
+          "seconds": 59.786966792
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 12799380960,
+            "processLifetimePeakFootprintBytes": 13596987016,
+            "processLifetimePeakResidentBytes": 3689824256,
+            "residentBytes": 3479240704
+          },
+          "name": "step.6/8",
+          "seconds": 65.774601292
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13387435488,
+            "processLifetimePeakFootprintBytes": 13596987016,
+            "processLifetimePeakResidentBytes": 3690528768,
+            "residentBytes": 3480043520
+          },
+          "name": "step.7/8",
+          "seconds": 63.000260125
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 12800298464,
+            "processLifetimePeakFootprintBytes": 13598690928,
+            "processLifetimePeakResidentBytes": 3691200512,
+            "residentBytes": 3480059904
+          },
+          "name": "step.8/8",
+          "seconds": 59.36848325
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 6366625792,
+            "physicalFootprintBytes": 8162642224,
+            "processLifetimePeakFootprintBytes": 13598690928,
+            "processLifetimePeakResidentBytes": 3691200512,
+            "residentBytes": 1835352064
+          },
+          "name": "stage.denoising",
+          "seconds": 479.693081917
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 383975424,
+            "physicalFootprintBytes": 2220230792,
+            "processLifetimePeakFootprintBytes": 13598690928,
+            "processLifetimePeakResidentBytes": 10764255232,
+            "residentBytes": 1628340224
+          },
+          "name": "stage.decodingVideo",
+          "seconds": 38.531812541
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 368001024,
+            "physicalFootprintBytes": 753108288,
+            "processLifetimePeakFootprintBytes": 13598690928,
+            "processLifetimePeakResidentBytes": 10764255232,
+            "residentBytes": 403668992
+          },
+          "name": "stage.decodingAudio",
+          "seconds": 0.65790825
+        }
+      ],
+      "sampledPeak": {
+        "metalAllocatedBytes": 12975816704,
+        "physicalFootprintBytes": 13598674520,
+        "processLifetimePeakFootprintBytes": 13598690928,
+        "processLifetimePeakResidentBytes": 10764255232,
+        "residentBytes": 10710679552
+      }
+    },
+    "replay": {
+      "timings": [
+        {
+          "memory": {
+            "metalAllocatedBytes": 368001024,
+            "physicalFootprintBytes": 692487536,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 10761322496,
+            "residentBytes": 369917952
+          },
+          "name": "render",
+          "seconds": 503.049853792
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 2818048,
+            "physicalFootprintBytes": 2142914768,
+            "processLifetimePeakFootprintBytes": 2154203344,
+            "processLifetimePeakResidentBytes": 2021523456,
+            "residentBytes": 2021163008
+          },
+          "name": "stage.encoding",
+          "seconds": 19.819524334
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 1219362816,
+            "physicalFootprintBytes": 1435173848,
+            "processLifetimePeakFootprintBytes": 2154203344,
+            "processLifetimePeakResidentBytes": 2035679232,
+            "residentBytes": 109133824
+          },
+          "name": "stage.encodingKeyframe",
+          "seconds": 8.736312625
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 9994682368,
+            "physicalFootprintBytes": 11102473744,
+            "processLifetimePeakFootprintBytes": 12998708608,
+            "processLifetimePeakResidentBytes": 3493789696,
+            "residentBytes": 3466117120
+          },
+          "name": "step.1/8",
+          "seconds": 63.1704575
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 11532025856,
+            "physicalFootprintBytes": 12648533520,
+            "processLifetimePeakFootprintBytes": 13164940792,
+            "processLifetimePeakResidentBytes": 3679895552,
+            "residentBytes": 3475046400
+          },
+          "name": "step.2/8",
+          "seconds": 52.574612542
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13382798864,
+            "processLifetimePeakFootprintBytes": 13391072760,
+            "processLifetimePeakResidentBytes": 3686170624,
+            "residentBytes": 3475308544
+          },
+          "name": "step.3/8",
+          "seconds": 53.143865667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13382831632,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 3475341312
+          },
+          "name": "step.4/8",
+          "seconds": 53.088317583
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 12787928568,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 3467657216
+          },
+          "name": "step.5/8",
+          "seconds": 53.828408708
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 12266029056,
+            "physicalFootprintBytes": 13384781328,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 3477291008
+          },
+          "name": "step.6/8",
+          "seconds": 56.210143667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 11825496064,
+            "physicalFootprintBytes": 12944428560,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 3477225472
+          },
+          "name": "step.7/8",
+          "seconds": 53.7230765
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 11825627136,
+            "physicalFootprintBytes": 12944477712,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 3477389312
+          },
+          "name": "step.8/8",
+          "seconds": 52.492135
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 5926223872,
+            "physicalFootprintBytes": 8567146968,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 3689381888,
+            "residentBytes": 2089861120
+          },
+          "name": "stage.denoising",
+          "seconds": 438.2677775
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 383975424,
+            "physicalFootprintBytes": 2186004640,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 10761322496,
+            "residentBytes": 1594392576
+          },
+          "name": "stage.decodingVideo",
+          "seconds": 35.530690667
+        },
+        {
+          "memory": {
+            "metalAllocatedBytes": 368001024,
+            "physicalFootprintBytes": 692487536,
+            "processLifetimePeakFootprintBytes": 13596987064,
+            "processLifetimePeakResidentBytes": 10761322496,
+            "residentBytes": 369917952
+          },
+          "name": "stage.decodingAudio",
+          "seconds": 0.662780916
+        }
+      ],
+      "sampledPeak": {
+        "metalAllocatedBytes": 12975816704,
+        "physicalFootprintBytes": 13594037944,
+        "processLifetimePeakFootprintBytes": 13596987064,
+        "processLifetimePeakResidentBytes": 10761322496,
+        "residentBytes": 10708008960
+      }
+    }
+  },
+  "controllers": {
+    "dump-fl2va": {
+      "passed": true,
+      "startedAt": "2026-10-29T17:58:05.552093+00:00",
+      "exitCode": 0,
+      "endedAt": "2026-10-29T17:58:09.183544+00:00",
+      "elapsedSeconds": 3.631,
+      "sourcePinsUnchanged": true
+    },
+    "capture-fl2va": {
+      "passed": true,
+      "startedAt": "2026-10-29T17:58:09.203595+00:00",
+      "exitCode": 0,
+      "endedAt": "2026-10-29T18:20:38.393066+00:00",
+      "elapsedSeconds": 1349.178,
+      "sourcePinsUnchanged": true
+    },
+    "replay-fl2va": {
+      "passed": true,
+      "startedAt": "2026-10-29T18:20:38.411070+00:00",
+      "exitCode": 0,
+      "endedAt": "2026-10-29T18:48:35.893201+00:00",
+      "elapsedSeconds": 1677.463,
+      "sourcePinsUnchanged": true
+    }
+  },
+  "pinsDigest": "f86874cb22f1fbfec6b3d453ea24d7d8290a11a223c352949c816f23269746c2"
+}

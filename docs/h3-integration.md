@@ -11,7 +11,7 @@ The `AetherH3` SwiftPM product (experimental until 0.0.3) starts with CPU prepar
 ## Status: 2026-10-26
 
 **Known deviation, found 2026-10-29:** FL2VA's conditioner presentation omits upstream's keyframe vision blocks
-([below](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). A fix is planned for 0.0.4.
+([below](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). A fix was planned for 0.0.4 and moved to 0.0.5.
 
 **The 2026-10-18 records below are historical.** They cover block 0, lifecycle, the three-block chain, the fifty-block backbone, the outer phases and the eight-step provided-conditioning trajectory. Each describes exactly what ran against its pinned prototype bundles. Those bundles, oracles and the preparation cache lived under `/private/tmp`, and macOS temporary-file cleanup removed them. Only empty directory skeletons remain. The commands below that cite `/private/tmp/aether-h3-*` can no longer run. The assets were not regenerated: Core AI exports aren't byte-reproducible, so every pinned capture would have to be redone anyway. [The lost-asset record](evidence/h3-legacy-assets-lost-2026-10-26.json) lists the affected roots, the 64 citing records, the original identities and the regeneration route, should it ever be needed.
 
@@ -655,9 +655,9 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 ## Turbo4 and video-decode tiling measurements (0.0.3)
 
-**Turbo4 stays experimental in 0.0.3, outside measured admission.** The user's side-by-side review on 2026-10-28 judged it worth qualifying properly, which is planned for 0.0.4. The profile already carries Turbo4 tables, so a Turbo4 render needs no export: `h3-profile-dump ... turbo4` and `h3-profile-run --render`. At 960×544×124 a Turbo4 render takes about 227 s for T2VA and 242 s for FL2VA. Both pass the media audit. Against Turbo8 on the same seed and prompt, frame PSNR is 12–15 dB and luma SSIM 0.41–0.49, but the two schedules give different clips (the same scene and bird in a different pose), so those numbers measure difference, not quality; quality is a subjective review of the side-by-side clips. Turbo4 has no measured-admission entry (its execution identity ends in `turbo4`) and no CPU trajectory gate, so in 0.0.3 it is outside measured admission ([record](evidence/h3-turbo4-and-decode-tiling-2026-10-28.json)).
+**Turbo4 stays experimental in 0.0.3, outside measured admission.** The user's side-by-side review on 2026-10-28 judged it worth qualifying properly, which was planned for 0.0.4 and moved to 0.0.5. The profile already carries Turbo4 tables, so a Turbo4 render needs no export: `h3-profile-dump ... turbo4` and `h3-profile-run --render`. At 960×544×124 a Turbo4 render takes about 227 s for T2VA and 242 s for FL2VA. Both pass the media audit. Against Turbo8 on the same seed and prompt, frame PSNR is 12–15 dB and luma SSIM 0.41–0.49, but the two schedules give different clips (the same scene and bird in a different pose), so those numbers measure difference, not quality; quality is a subjective review of the side-by-side clips. Turbo4 has no measured-admission entry (its execution identity ends in `turbo4`) and no CPU trajectory gate, so in 0.0.3 it is outside measured admission ([record](evidence/h3-turbo4-and-decode-tiling-2026-10-28.json)).
 
-**Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
+**Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load was left for 0.0.4 and moved to 0.0.5.
 
 ## Known deviation: FL2VA conditioner presentation (found 2026-10-29)
 
@@ -680,7 +680,116 @@ Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes
   - The trajectory gate takes Kit's captured refined text, with every row tagged as text.
 
   They prove Kit computes its presentation correctly, not that it's upstream's.
-- **Fix, planned for 0.0.4** ([roadmap](roadmap-0.0.4.md)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
+- **Fix, moved from 0.0.4 to 0.0.5** ([roadmap](roadmap-0.0.4.md#moved-to-005)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
   positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
   changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
   conditioning follow the same text-only presentation.
+
+## Memory bars beyond 960×544 and 124 frames (decided 2026-10-29)
+
+The user decided this on 2026-10-29, with the Kit lead's terms. Each measured entry is held to its own bar, on the same measure as before: the Metal allocation peak over a complete render, sampled every 20 ms. Admission holds the entry's worst case to that bar: the largest per-stage max(Metal, footprint) sample, plus the 256 MiB margin and the operation bytes (`H3MeasuredResources.validate()`). The measured peak governs.
+
+- **18 GiB** covers today's region: 960×544, 544×960 and anything smaller, up to 124 frames. Entries without a `memory_bar_bytes` field decode to 18 GiB, so the bundled 0.0.3 entry is unchanged.
+- **24 GiB** covers a larger canvas (more pixels than 960×544) or a longer clip (more than 124 frames), and nothing else. `validate()` refuses a 24 GiB claim on an entry inside today's region, and a 24 GiB envelope never covers a request inside it, even where its canvases would.
+- **24 GiB entries need at least 64 GiB of physical memory** (`ProcessInfo.physicalMemory`, on iOS too). On a smaller device, `bundledEntries` leaves them out, and a request that only they cover is refused with the requirement named.
+- **Every entry comes from a measured record.** Nothing is interpolated or extrapolated.
+
+**Entries and envelopes.**
+- An identity may carry several entries. Each one lists its canvases, maximum frames and, optionally, `tasks`. Each becomes one `H3ResourceAdmission.Envelope`.
+- A request is covered by an envelope when:
+  - its task is listed;
+  - every stage it needs is measured;
+  - its length is at most the envelope's maximum;
+  - its canvas fits inside a listed canvas of the same orientation, with width and height each at most the listed ones (a square on either side matches any orientation).
+- So a landscape-only 960×544×243 entry doesn't cover 544×960×243, and nothing covers 1408×640.
+- Smaller canvases stay covered by 960×544. 960×544 at 125–141 frames falls under a 1280×704×141 entry.
+- The request is held to one covering envelope that the device's memory allows, 18 GiB entries first, then the cheapest. A request that no envelope covers is refused, naming the nearest envelope.
+- Coverage is narrower than before envelopes, when any canvas up to the entry's pixel count was admitted. Under the 0.0.3 entry, 1024×480, 640×800 and 576×576 are now refused.
+- `H3MeasuredResources.bundled(executionIdentity:deviceArchitecture:)` counts the recorded entries before the memory filter, and throws when there are several; `bundledAdmission` takes them all.
+- `validate()` also refuses canvases over the 1,032,192-pixel cap and the gate's `unrecorded` evidence.
+- `maximumPixels`, `maximumFrames` and `operationBytes` on an admission are union bounds for diagnostics. A UI offers what `admits(_:)` allows, not their combination.
+- Per-task entries let an FL2VA entry be re-measured and replaced without touching T2VA's. The memory gate writes one entry per task beside the combined one (`measuredEntriesByTask`).
+
+**Identity.** Entries are keyed to the exact identity they were measured under. The large-canvas overlay sits under the FL2VA conditioner overlay (agreed order: 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay). Until the final top identity is measured, these profiles have **no measured H3 memory**, and measured admission refuses them. The records below are keyed to the overlay they measured; they are evidence, not copies to bundle. They were written or edited by hand after the runs (each lists the fields in `editedAfterRun`); once the pause ends, the current gate script's evaluation is re-run over the same renders, with no re-render, so the records become script-generated. Absolute paths make a profile's identity depend on where it lives, which is a follow-up on the roadmap.
+
+## Larger canvas: 1280×704 and the 10 s clip (0.0.4, in progress)
+
+**Status (2026-10-29).** T2VA and FL2VA run natively at 1280×704 and 704×1280 × 141 frames, and T2VA at 960×544 × 243. Every T2VA worst case fits the 24 GiB bar. No entry is bundled yet: see **Identity** above. Every FL2VA number here is a **text-only presentation (known deviation, PR #76)**. It lacks upstream's keyframe vision blocks, so it is provisional, and FL2VA large-canvas entries wait for a re-measurement with them. The FL2VA render at 960×544 × 243 was stopped during a pause in other work, so it has no record.
+
+**Export ([record](evidence/h3-large-canvas-export-2026-10-29.json)).**
+- **Reused unchanged:** only graphs that depend on the canvas or clip length are new. The body (rows dynamic to 40,960, keeping `F.scaled_dot_product_attention`), heads, pack, text, conditioner and video decoder are reused as they are.
+- **Tails:** `export-h3-profile.py --stage video-encoder-first-tiled`, given a base that already has tiled entries, reuses the base's 256 px tile graph after a hash check and exports only the new canvases' tails. The tails are 1280×704, 704×1280, 1344×768 and 768×1344, 28 source tiles each, each byte-identical to `encode_vae_condition` on CPU. Their checks took 75.5, 65.9, 77.0 and 60.8 s.
+- **Audio decoders:** `--stage audio-decoder-fixed` adds static audio decoders for 235 and 405 latents per channel, each byte-identical to the pipeline's decode.
+- **Overlay:** `--stage overlay` writes the base bundle plus those keys only, refuses to replace any key, and records lineage.
+- **Identities:** the overlay `34c0c67e…` has parent `5af39db5…`, which is untouched. Every record carries the profile's adapter, the 544p Turbo LoRA `8step_v1.0`.
+- **Row limit:** by `H3Geometry` (rows = (5n + 2) · H/32 · W/32 for 17n + 5 frames), the 40,960-row limit fits 1280×704 at 141 frames and 1344×768 at 124.
+
+**Memory and time.**
+- Sources: the [1280×704 gate](evidence/h3-memory-gate-1280x704-2026-10-29.json), the [960×544×243 record](evidence/h3-memory-960x544-243-2026-10-29.json), and the per-render [timeline summaries](evidence/h3-large-canvas-timelines-2026-10-29.json) (each with its full timeline's SHA-256 and the dump's exact rows).
+- Conditions: Turbo8, M5 Max, busy host.
+- Rows are packed rows: video + audio + 49 text tokens, plus 880 first-frame rows for FL2VA.
+- Peaks are Metal / footprint in GiB; worst case is the admission number above.
+
+| Render | Rows | Keyframe | Denoising | Video decode | Steps (s) | Total (s) | Worst case |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T2VA 1280×704×141 | 37,479 | — | 20.18 / 21.22 | 9.52 / 17.20 | 112.8–141.9 | 1,096.0 | 21.78 (T2VA entry, both orientations) |
+| T2VA 704×1280×141 | 37,479 | — | 20.18 / 21.21 | 9.52 / 14.21 | 110.8–130.8 | 1,047.0 | (same entry) |
+| T2VA 960×544×243 | 37,579 | — | 20.22 / 21.26 | 9.55 / 14.25 | 129.0–151.8 | 1,203.6 | 21.76 |
+| FL2VA 1280×704×141, provisional | 38,359 | 2.05 / 1.91 (8.4 s) | 20.62 / 22.08 | 11.16 / 17.50 | 126.5–155.6 | 1,185.1 | 22.64 (FL2VA, both orientations) |
+| FL2VA 704×1280×141, provisional | 38,359 | 2.05 / 1.61 (9.2 s) | 20.62 / 21.69 | 10.00 / 17.50 | 124.3–141.7 | 1,167.7 | (same entry) |
+
+- **Rows:** 36,960 video + 470 audio + 49 text at 1280×704×141; 36,720 + 810 + 49 at 960×544×243.
+- **0.0.3 comparison:** the 0.0.3 gate measured 960×544 × 124 only (19,333 rows at 11.13 / 11.91 GiB), so there was no earlier 10 s record. Its entry (maximum 124 frames) already refuses 10 s.
+- **Denoising:** the plateau is steady from step 1 in every render.
+- **Video decode:** the decode stage's peak is the denoiser's memory not yet returned. The stage starts at that level (the `released.denoising` phase: 9.52 / 17.20 GiB in T2VA 1280×704) and ends at 0.36 GiB of Metal. Decode works in fixed 256 px × 22-frame windows, so its own memory should not grow with the canvas; a decode-only measurement to confirm that is pending.
+- **Keyframe:** the tiled first-frame encoder holds 2.05 GiB of Metal at 28 tiles, the same as at 15.
+
+## Last-frame and first+last keyframes (2026-10-29)
+
+**Status: implemented, qualification pending.** The 960×544 trajectory gate has references for step 0 only; steps 1 and 7 are pending a rerun. Every record below is labelled "text-only presentation (known deviation, PR #76)": see the presentation paragraph.
+
+`H3VideoSession` accepts `H3VideoRequest.lastFrame`, alone or with `firstFrame`. A clip can therefore end on a chosen picture, or start and end on chosen pictures. The model card lists the FL2VA checkpoint as taking zero, one or two images. The pinned Diffusers pipeline runs all of these as the single `fl2va` task:
+
+- **Layout:** there is one condition block per keyframe, in packed order (first, then last), between the text and the audio. Upstream places the last anchor at `n + Σspans − 5/3`, 5/3 before the end of the generated span. `H3Layout` already built this, and its fixtures match the pipeline for both layouts.
+- **Noise:** each condition is noised to `t = 0.999` by its own draw (`MiniMaxH3PrepareConditionLatentsStep`). The draws come in packed order, before the noise for the generated rows. `H3Geometry.initialLatents(seed:conditions:)` draws Kit's stream in that order, and `initialLatents(seed:firstFrameCondition:lastFrameCondition:)` is its convenience form. A first frame alone draws exactly the stream the first-frame path always drew. `h3FirstFrameLatentsDrawTheConditionNoiseFirstAndKeepTheT2VAStreamShape`, unchanged from before this work, rebuilds that stream from `H3Noise` and checks it value for value.
+- **Timesteps:** every condition row is held at `max(t, 0.999)`, so a last-only or first+last request has the same distinct row timesteps as a first-only one. The profile's `fl2va` step tables apply unchanged, and `H3Profile.steps` still checks them bit for bit against the layout.
+- **Encoding:** both keyframes use the same single-frame encode (`encode_vae_condition`, seed 42), so the tiled first-frame graphs encode the last frame too. The session runs one `encodingKeyframe` stage for both, first then last, and observes cancellation between the two encodes.
+
+No export, step table or download is new, and the work stays inside profile `5af39db5…`. A last-only request has the same row count as a first-only one, so the latents now declare their anchors (`H3Latents.anchors`) and the denoiser builds its layout from them, not from the row count. A hand-built first-frame `H3Latents` needs `anchors: [.first]`.
+
+**Conditioner presentation (known deviation, [PR #76](https://github.com/bubstackdev/aether-kit/pull/76)).** Last-frame and first+last requests keep the text-only presentation that first-frame requests already use; upstream's per-keyframe vision blocks are missing for every anchor combination. See [Known deviation: FL2VA conditioner presentation](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29) for upstream's presentation, why the gates did not catch it, and the planned fix.
+
+**Memory and time** ([record](evidence/h3-last-frame-memory-2026-10-29.json)). These are `h3-memory-render` runs on profile `5af39db5…`, Turbo8, seed 1043. The first frame is the crane keyframe, and the last frame is a synthetic camera push-in: the centre 60% of the same picture. The host was busy, so the times are not a quiet reference.
+
+| Stage, Metal / footprint GiB (wall s) | 288×288×22 | 960×544×124 |
+| --- | --- | --- |
+| Conditioner | 1.83 / 2.02 (20.1) | 1.83 / 2.01 (20.6) |
+| Keyframe encoder, both frames | 2.05 / 1.99 (2.9) | 2.05 / 1.89 (8.6) |
+| Denoising | 2.77 / 2.77 (49.8) | **12.08** / 12.55 (413.2) |
+| Video decode | 5.04 / 1.85 (8.2) | 5.93 / 8.04 (43.2) |
+| Audio decode | 0.72 / 0.78 (4.5) | 0.88 / 1.71 (5.5) |
+| Render | 85.5 s | 491 s |
+
+At 960×544, a first+last render peaks at 12.08 GiB Metal, against 11.84 GiB for a first frame alone (2026-10-28 gate). Each keyframe adds 510 rows: first-only has 19,843 rows, first+last 20,353, and T2VA 19,333. The bundled measured entry's denoising reservation (16.12 GiB) covers this. The keyframe-encoder stage, encoding two frames, peaked at 2,203,959,296 B, which is 2.34 MiB over the entry's previous 2,201,501,696 B. The entry's `encodingKeyframe` peak is raised to the measured value and cites this record. The entry stays keyed to `5af39db5…`. `Scripts/qualify-h3-memory.py` rebuilds the entry from its own renders, so a rerun needs `--last-keyframes` (one per canvas): it adds a first+last render to the matrix whose two-frame encoder peak the entry then covers. Without it, the script would reset this stage to the one-frame peak.
+
+**Keyframe adherence.** In the 960×544 first+last render, the first frame matches the first keyframe at 31.9 dB PSNR and the last frame matches the last keyframe at 34.8 dB. The last frame scores 10.3 dB against the first keyframe. At 288×288 the figures are 32.5, 30.8 and 13.8 dB.
+
+**Trajectory gates.** `qualify-h3-profile-trajectory.py` takes `--last-keyframe`. For FL2VA it also compares the captured step-0 condition rows with the pipeline's own VAE encode and noising, in anchor order (`step0/conditions`).
+
+- **960×544×124 first+last** (20,353 rows; steps 0, 1 and 7 captured): the capture and its replay agree on all 457 boundary hashes ([record](evidence/h3-last-frame-trajectory-960-capture-replay-2026-10-29.json)), and the layout and step-plan checks against the pipeline pass. Step 0 passes every comparison against the bf16 CPU modules ([record](evidence/h3-last-frame-oracle-960-step0-interrupted-2026-10-29.json)):
+
+  | Comparison, step 0 | Relative L2 |
+  | --- | --- |
+  | Condition rows | 0.021% |
+  | Packing | 0.0015% |
+  | Block 0 | 0.59% |
+  | Block 49 | 1.15% |
+  | Video heads | 0.17% |
+  | Audio heads | 0.19% |
+  | Scheduler updates | byte-identical |
+
+  First-only at the same step scored 0.60% and 1.12% for blocks 0 and 49 (bf16; 0.70% and 1.03% against float32), so first+last is on par. The oracle run was stopped for a host pause after step 0. **Steps 1 and 7 are pending**, and the feature is not qualified until they pass the same 0.02 bar.
+- **288×288×22** (all eight steps): the replay is exact, the condition rows measure 0.023%, and packing, block 0, heads and scheduler updates pass. Block 49 exceeds the 0.02 bar.
+  - First+last: 3.4–4.3% against bf16, 3.8–4.3% against float32.
+  - First-only control: 3.9–4.8% against bf16, 4.4–5.0% against float32. It ran on the identical harness, steps, seed and bar, without the last frame.
+  - The excess is therefore a property of this small canvas (771 and 852 rows), not of last-frame conditioning. The bar was qualified on the first-only 960×544 gate. Records: [first+last](evidence/h3-last-frame-trajectory-288-first-last-2026-10-29.json), [first-only control](evidence/h3-last-frame-trajectory-288-first-only-control-2026-10-29.json).

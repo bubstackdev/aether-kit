@@ -23,3 +23,5 @@ MiniMax H3 text-to-video-with-audio contracts and the video session API.
 - ``H3Geometry``
 - ``H3Schedule``
 - ``H3ResourceAdmission``
+- ``H3ResourceAdmission/Envelope``
+- ``H3MeasuredResources``

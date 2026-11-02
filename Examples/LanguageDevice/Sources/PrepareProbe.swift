@@ -81,6 +81,7 @@ func runPreparation(assets: URL, store storeName: String, cutAfter: UInt64?, rep
         case let .failed(error): result.terminal = "failed \(error)"
         case .cancelled: result.terminal = "cancelled"
         case .checking: break
+        @unknown default: break
         }
     }
     result.preparationSeconds = (ContinuousClock.now - started).seconds

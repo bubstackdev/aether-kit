@@ -63,6 +63,7 @@ public actor Flux2GenerationSession {
     public enum State: String, Sendable { case ready, running, closing, closed }
     public private(set) var state: State = .ready
     private let runner: Flux2Runner
+    private nonisolated let lifecycle: ModelLifecycle
     private let bundleFingerprint: String
     private let referenceFingerprint: String?
     private let limits: Flux2ReferenceLimits?
@@ -75,32 +76,51 @@ public actor Flux2GenerationSession {
     /// `gpu` opts into a host-shared ``GPUAdmission``: each operation waits for (or, in fail-fast mode, requires) a
     /// grant before any model work and holds it until the operation's native work has joined. With admission, the
     /// operation's resource reservation is taken after the grant, and `unload()` withdraws an operation still waiting.
+    /// `lifecycle` releases the models a session keeps between operations (the decoder, and every model in `resident`
+    /// mode) after an idle period or under memory pressure (docs/model-lifecycle.md).
     public init(assets: Flux2Assets, compute: ModelComputePolicy = .preferGPU, residency: Flux2Residency = .balanced,
-                resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
+                resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
+                lifecycle: ModelLifecyclePolicy = .platformDefault) {
         self.init(assets: assets, factory: NativeFlux2Factory(compute: compute, installation: nil),
-                  residency: residency, resources: resources, gpu: gpu)
+                  residency: residency, resources: resources, gpu: gpu, lifecycle: ModelLifecycle(policy: lifecycle))
     }
 
     /// Holds installation protection through every stage until terminal joined unload.
     public init(installed installation: AssetReadLease, compute: ModelComputePolicy = .preferGPU,
                 residency: Flux2Residency = .balanced, resources: Flux2ResourceAdmission? = nil,
-                gpu: GPUAdmissionOwner? = nil) throws {
+                gpu: GPUAdmissionOwner? = nil, lifecycle: ModelLifecyclePolicy = .platformDefault) throws {
         let assets = try Flux2Assets.open(in: installation)
         self.init(assets: assets, factory: NativeFlux2Factory(compute: compute, installation: InstallationAccess(installation)),
-                  residency: residency, resources: resources, gpu: gpu)
+                  residency: residency, resources: resources, gpu: gpu, lifecycle: ModelLifecycle(policy: lifecycle))
     }
 
     init(assets: Flux2Assets, factory: any Flux2ModelFactory, residency: Flux2Residency = .balanced,
-         resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil) {
+         resources: Flux2ResourceAdmission? = nil, gpu: GPUAdmissionOwner? = nil,
+         lifecycle: ModelLifecycle = ModelLifecycle(policy: .platformDefault)) {
         self.gpu = gpu
         bundleFingerprint = assets.fingerprint
         referenceFingerprint = assets.referenceFingerprint
         limits = assets.references
         self.resources = resources
         self.assets = assets
-        let budgeted: any Flux2ModelFactory = resources.map { BudgetedFlux2Factory(base: factory, resources: $0) } ?? factory
+        self.lifecycle = lifecycle
+        let gated = GatedFlux2Factory(base: factory, admitLoad: lifecycle.admitLoad)
+        let budgeted: any Flux2ModelFactory = resources.map { BudgetedFlux2Factory(base: gated, resources: $0) } ?? gated
         runner = Flux2Runner(assets: assets, factory: budgeted, residency: residency)
+        attachRelease()
     }
+
+    private nonisolated func attachRelease() {
+        lifecycle.setRelease { [weak self] reason in await self?.release(reason) ?? false }
+    }
+
+    /// When this session's kept models unload by themselves.
+    public nonisolated var lifecyclePolicy: ModelLifecyclePolicy { lifecycle.policy }
+    /// Whether models are kept loaded, serving an operation, or unloaded (and why).
+    public nonisolated var lifecycleState: ModelLifecycleState { lifecycle.current }
+    /// The lifecycle state, then each change. A slow reader sees the latest state.
+    public nonisolated var lifecycleStates: AsyncStream<ModelLifecycleState> { lifecycle.states }
+
 
     /// Encodes once and releases the text encoder before returning, even in resident mode.
     /// Retained denoisers are released first; the decoder remains available.
@@ -212,16 +232,31 @@ public actor Flux2GenerationSession {
         active = Task { _ = await task.result }
         pendingGPU = attempt
         state = .running
+        lifecycle.running()
         defer {
             active = nil
             pendingGPU = nil
             if state == .running { state = .ready }
         }
-        return try await withTaskCancellationHandler {
-            let value = try await task.value
-            try Task.checkCancellation()
-            return value
-        } onCancel: { task.cancel() }
+        let result = await withTaskCancellationHandler { await task.result } onCancel: { task.cancel() }
+        let holds = await runner.holdsModels
+        // Re-checked after the await: an unload that ran meanwhile has already reported.
+        if state == .running {
+            if holds { lifecycle.idle() } else { lifecycle.notLoaded() }
+        }
+        let value = try result.get()
+        try Task.checkCancellation()
+        return value
+    }
+
+    /// The lifecycle's idle or pressure release: unloads the models this session kept, if no operation is active, and
+    /// keeps the session ready. The state turns unloaded first, so an operation arriving during the unload reports
+    /// after it.
+    private func release(_ reason: ModelUnloadReason) async -> Bool {
+        guard state == .ready, active == nil, await runner.holdsModels, state == .ready, active == nil else { return false }
+        lifecycle.unloaded(reason)
+        await runner.release()
+        return true
     }
 
     /// Terminal close; waits for the active operation before releasing every model.
@@ -232,6 +267,7 @@ public actor Flux2GenerationSession {
         pendingGPU?.withdraw()
         if let active { _ = await active.result }
         await runner.unload()
+        lifecycle.unloaded(.requested)
         state = .closed
     }
 }
@@ -240,6 +276,18 @@ public actor Flux2GenerationSession {
 protocol Flux2ModelFactory: Sendable {
     func open(_ asset: DeclaredModelAsset, frequentReshapes: Bool) async throws -> any StagedModel
     func finish() async
+}
+
+/// Refuses to open a model while memory pressure is critical (docs/model-lifecycle.md).
+@available(macOS 27, iOS 27, *)
+private struct GatedFlux2Factory: Flux2ModelFactory {
+    let base: any Flux2ModelFactory
+    let admitLoad: @Sendable () throws -> Void
+    func open(_ asset: DeclaredModelAsset, frequentReshapes: Bool) async throws -> any StagedModel {
+        try admitLoad()
+        return try await base.open(asset, frequentReshapes: frequentReshapes)
+    }
+    func finish() async { await base.finish() }
 }
 @available(macOS 27, iOS 27, *)
 extension Flux2ModelFactory { func finish() async {} }
@@ -472,6 +520,20 @@ actor Flux2Runner {
             await releaseDenoisers()
             throw error
         }
+    }
+
+    var holdsModels: Bool { textEncoder != nil || decoder != nil || !denoisers.isEmpty }
+
+    /// Unloads every kept model without finishing the factory, so later operations open them again. The fields are
+    /// cleared before any suspension, so an operation interleaving here opens fresh models.
+    func release() async {
+        let held = [textEncoder, decoder].compactMap { $0 } + denoisers
+        textEncoder = nil
+        decoder = nil
+        decoderGrid = nil
+        denoisers = []
+        denoiserTokens = nil
+        for model in held { await model.unload() }
     }
 
     func unload() async {

@@ -68,6 +68,7 @@ def main():
     ap.add_argument("--staging", type=Path, required=True)
     ap.add_argument("--prompt", type=Path, required=True)
     ap.add_argument("--keyframe", type=Path, help="first frame (FL2VA), exactly WIDTHxHEIGHT")
+    ap.add_argument("--last-keyframe", type=Path, help="last frame (FL2VA, alone or with --keyframe), exactly WIDTHxHEIGHT")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--width", type=int, default=960)
     ap.add_argument("--height", type=int, default=544)
@@ -80,8 +81,9 @@ def main():
     ap.add_argument("--keep-captures", action="store_true")
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
     args = ap.parse_args()
-    if (args.task == "fl2va") != (args.keyframe is not None):
-        ap.error("--keyframe is required for fl2va and refused for t2va")
+    keyframes = [k for k in (args.keyframe, args.last_keyframe) if k is not None]
+    if (args.task == "fl2va") != bool(keyframes):
+        ap.error("--keyframe and/or --last-keyframe are required for fl2va and refused for t2va")
     root = Path(__file__).resolve().parent.parent
     probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     oracle = root / "Scripts/prepare-h3-profile-oracle.py"
@@ -90,7 +92,7 @@ def main():
     staging = args.staging.resolve()
     files = [probe, oracle, root / "Scripts/h3_export_lib.py", Path(__file__).resolve(), root / "Package.swift",
              args.profile.resolve(), args.prompt.resolve(), staging / "oracle-scripts/vendor/convert_minimax_h3_to_diffusers.py"]
-    files += [args.keyframe.resolve()] if args.keyframe else []
+    files += [k.resolve() for k in keyframes]
     for directory in ["Sources/AetherKit", "Sources/AetherAssets", "Sources/AetherCoreAI", "Sources/AetherH3",
                       "Sources/AetherH3CoreAI", "Sources/AetherH3Tokenizers", "Sources/AetherProbe"]:
         files.extend(sorted(p for p in (root / directory).rglob("*") if p.is_file()))
@@ -107,7 +109,8 @@ def main():
     t = args.task
     d = lambda name: str(work / name)
     dump = [str(probe), "h3-profile-dump", str(args.profile), str(args.prompt), str(args.width), str(args.height), str(args.frames),
-            str(args.seed), args.recipe, d(f"dump-{t}")] + ([str(args.keyframe)] if args.keyframe else [])
+            str(args.seed), args.recipe, d(f"dump-{t}")] + ([str(args.keyframe) if args.keyframe else "-"] if keyframes else []) \
+        + ([str(args.last_keyframe)] if args.last_keyframe else [])
     stages = [
         (f"dump-{t}", "cpu", 600, dump),
         (f"capture-{t}", "gpu", 7200, [str(probe), "h3-profile-run", str(args.profile), d(f"dump-{t}"), "-", d(f"capture-{t}"), "--render", f"--capture={args.steps}"]),
@@ -215,6 +218,8 @@ def main():
     selected = list(range(steps_total)) if args.steps == "all" else [int(s) for s in args.steps.split(",")]
     required = [f"step{s}/{n}" for s in selected for n in
                 ("packed", "block00", "block49", "heads_video", "heads_audio", "latents_out_video", "latents_out_audio")]
+    # FL2VA: the step-0 condition rows against the pipeline's own keyframe encode and noising.
+    required += ["step0/conditions"] if keyframes and 0 in selected else []
     comparisons = oracle_report.get("comparisons", {})
     for key in required:
         row = comparisons.get(key)

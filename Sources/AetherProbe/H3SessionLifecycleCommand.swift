@@ -58,8 +58,9 @@ enum H3SessionLifecycleCommand {
         let recipe = try H3RawDirectory.field(dump, "recipe"), seed = UInt64(try H3RawDirectory.field(dump, "seed"))!
         let ids = try H3RawDirectory.read(dump, "ids")
         let tokens = ids.bytes.withUnsafeBytes { Array($0.bindMemory(to: Int32.self)) }
-        let first = try H3ProfileCommand.dumpKeyframe(dump, geometry: geometry)
-        let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, firstFrame: first, audio: true)
+        let keyframes = try H3ProfileCommand.dumpKeyframes(dump, geometry: geometry)
+        let request = try H3VideoRequest(prompt: "ids", geometry: geometry, seed: seed, firstFrame: keyframes.first, lastFrame: keyframes.last, audio: true)
+        let first = keyframes.first ?? keyframes.last
         let device = MTLCreateSystemDefaultDevice()
         let report = H3SessionLifecycleReport(url: output.appendingPathComponent("report.json"))
         report.set("profile_sha256", profile.manifestSHA256); report.set("task", first == nil ? "t2va" : "fl2va")

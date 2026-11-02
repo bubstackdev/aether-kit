@@ -824,3 +824,43 @@ private struct DelayedKreaOpen: KreaModelFactory {
     #expect(admission.snapshot == .init(running: 1, queued: 0, holdsCrossProcessLease: false))
     other.release()
 }
+
+/// Waits until `states` reaches a state `done` accepts (at most 5 s).
+private func settleLifecycle(_ states: @escaping @Sendable () -> AsyncStream<ModelLifecycleState>,
+                             until done: @escaping @Sendable (ModelLifecycleState) -> Bool) async throws -> Bool {
+    try await withThrowingTaskGroup(of: Bool.self) { group in
+        group.addTask { for await state in states() where done(state) { return true }; return false }
+        group.addTask { try await Task.sleep(for: .seconds(5)); return false }
+        let reached = try await group.next() ?? false
+        group.cancelAll()
+        return reached
+    }
+}
+
+@Test func residentKreaModelsReleaseWhenIdle() async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let log = EventLog()
+    let monitor = MemoryPressureMonitor(systemSource: false)
+    let session = try KreaGenerationSession(assets: KreaAssets.open(at: fixture.root), factory: FakeFactory(log: log), residency: .resident,
+                                            lifecycle: ModelLifecycle(policy: ModelLifecyclePolicy(idleUnloadAfter: .milliseconds(20)), monitor: monitor))
+    let generate = {
+        _ = try await session.generate(configuration: KreaConfiguration(width: 16, height: 16),
+            prompt: KreaPrompt(tokenIDs: Array(repeating: 0, count: 35)),
+            noise: FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64)))
+    }
+    try await generate()
+    #expect(try await settleLifecycle({ session.lifecycleStates }) { $0 == .unloaded(.idle) })
+    // The state turns unloaded first; the models close right after.
+    let deadline = ContinuousClock.now + .seconds(5)
+    while !log.snapshot.contains("closeEncoder"), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(5)) }
+    #expect(log.snapshot.filter { $0 == "closeEncoder" }.count == 1)
+    #expect(await session.state == .ready)
+    try await generate()
+    #expect(log.snapshot.filter { $0 == "open:textEncoder.aimodel" }.count == 2)
+    monitor.deliver(.critical)
+    try await Task.sleep(for: .milliseconds(100))  // the pressure release, then the idle state
+    await #expect(throws: AetherError.memoryPressure) { try await generate() }
+    monitor.deliver(.normal)
+    await session.unload()
+}
