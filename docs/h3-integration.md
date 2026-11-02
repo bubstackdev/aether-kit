@@ -801,7 +801,18 @@ FL2VA now conditions on upstream's presentation ([plan](h3-fl2va-presentation-pl
 - **Profile.** The `conditioner_vision` overlay adds one static tower graph per canvas: 960×544, 544×960, 1280×704, 704×1280 and the 288×288 diagnostic canvas. Its weights are bound in place from the FL2VA checkpoint, and each graph is byte-identical on CPU to `Qwen3VLVisionModel.forward`. A profile without the overlay refuses FL2VA, as does a canvas without a tower graph.
 - **Final stack.** The 0.0.5 profile is 5af39db5, then the large-canvas overlay, then this overlay, in Kit's H3 home (`<kit-cache>/h3/profile-0.0.5`). Its location-free identity is `h3.profile/2:13372643…:turbo8`.
 - **API.** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning`: the tap plus the row tags. `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have defaults that serve text-only conditioners. `H3Presentation` builds ids, tags and positions, and `H3VisionInputs` the tower's pixels and host tables, both bit for bit upstream's.
-- **Rows.** A keyframe adds 518 rows at 960×544 (888 at 1280×704). The prompt budget is 4,096 rows less the presentation.
+- **Rows.** Each keyframe adds its presentation (518 rows at 960×544, 888 at 1280×704, 1,016 at 1344×768) and its condition rows (510, 880, 1,008). Two limits bind the prompt. The presentation and prompt must fit the profile's 4,096 text tokens, and the packed sequence must fit its 40,960 rows. At the larger canvases and longer clips the row limit binds first:
+
+| Request | Prompt tokens at most | Binding limit |
+| --- | ---: | --- |
+| 960×544 × 124, first only / first+last | 3,578 / 3,060 | text tokens |
+| 960×544 × 243, first only / first+last | 2,402 / 1,374 | packed rows |
+| 1280×704 × 124, first+last | 2,320 | text tokens |
+| 1280×704 × 141, first only | 1,762 | packed rows |
+| 1280×704 × 141, first+last | none (40,968 rows with 2 tokens) | packed rows: refused |
+| 1344×768 × 124, first only / first+last | 1,226 / none | packed rows |
+
+  Portrait canvases are the same as their landscape transposes. `H3VideoSession` refuses a request either limit excludes before any stage runs (`H3PromptConditioner.preflight`), naming the rows or tokens. It likewise refuses a keyframe at a canvas without a tower graph (`supports(_:keyframes:)`), and keyframes on a profile without `conditioner_vision`.
 
 ### Gates (bars decided by the user, 2026-11-02)
 

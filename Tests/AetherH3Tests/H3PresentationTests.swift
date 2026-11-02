@@ -126,3 +126,29 @@ private func canvas(_ text: String) -> (width: Int, height: Int) {
     #expect(h3BFloat16Bits(Float(bitPattern: 0x3F80_8001)) == 0x3F81)
     #expect(h3BFloat16Bits(-1) == 0xBF80)
 }
+
+/// The prompt budgets the H3 guide lists: the most prompt tokens a presentation leaves under the profile's 4,096 text
+/// tokens and 40,960 packed rows (nil: refused at any prompt length).
+@Test func h3PresentationPromptBudgetsMatchTheGuide() throws {
+    func budget(_ width: Int, _ height: Int, frames: Int, anchors: [H3Anchor]) throws -> Int? {
+        let g = try H3Geometry(width: width, height: height, requestedFrames: frames, diagnostic: true)
+        let presented = try H3Presentation(prompt: [1], keyframes: anchors.map { _ in (width, height) }, tokenize: { _ in [1, 2, 3, 4, 5, 6] }).count - 1
+        // Rows grow one per prompt token: the most the row limit leaves, measured at one token.
+        let withOne = try H3Layout(geometry: g, textTags: Array(repeating: 1, count: presented + 1), anchors: anchors).rows
+        let best = min(4_096 - presented, 40_960 - withOne + 1)
+        if best >= 1 {
+            #expect(try H3Layout(geometry: g, textTags: Array(repeating: 1, count: presented + best), anchors: anchors).rows <= 40_960)
+        }
+        return best >= 1 ? best : nil
+    }
+    #expect(try budget(960, 544, frames: 124, anchors: [.first]) == 3_578)
+    #expect(try budget(960, 544, frames: 124, anchors: [.first, .last]) == 3_060)
+    #expect(try budget(960, 544, frames: 243, anchors: [.first]) == 2_402)
+    #expect(try budget(960, 544, frames: 243, anchors: [.first, .last]) == 1_374)
+    #expect(try budget(1280, 704, frames: 124, anchors: [.first, .last]) == 2_320)
+    #expect(try budget(1280, 704, frames: 141, anchors: [.first]) == 1_762)
+    #expect(try budget(1280, 704, frames: 141, anchors: [.first, .last]) == nil)
+    #expect(try budget(1344, 768, frames: 124, anchors: [.first]) == 1_226)
+    #expect(try budget(1344, 768, frames: 124, anchors: [.first, .last]) == nil)
+    #expect(try budget(704, 1280, frames: 141, anchors: [.first]) == 1_762)
+}

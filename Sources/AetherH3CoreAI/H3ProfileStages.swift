@@ -91,6 +91,8 @@ actor H3ProfileConditioner: H3PromptConditioner {
     private let tokenize: @Sendable (String) throws -> [Int32]
     private let kernel: any H3ConditionerKernel
     private let vision: (entry: H3Profile.ConditionerVision, kernel: any H3VisionKernel)?
+    /// The denoiser's packed-row limits (`H3Profile.rowLimits`), checked before any stage runs; nil checks none.
+    private let rowLimits: ClosedRange<Int>?
     private var rope: (cos: H3TensorData, sin: H3TensorData)?
     private var embeddingVerified = false
 
@@ -98,11 +100,40 @@ actor H3ProfileConditioner: H3PromptConditioner {
          vision: (any H3VisionKernel)? = nil) throws {
         guard let conditioner = profile.conditioner else { throw AetherError.invalidModel("H3 profile has no conditioner") }
         self.init(conditioner: conditioner, limits: profile.textTokenLimits, tokenize: tokenize, kernel: kernel,
-                  vision: profile.conditionerVision.flatMap { entry in vision.map { (entry, $0) } })
+                  vision: profile.conditionerVision.flatMap { entry in vision.map { (entry, $0) } }, rowLimits: profile.rowLimits)
     }
     init(conditioner: H3Profile.Conditioner, limits: ClosedRange<Int>, tokenize: @escaping @Sendable (String) throws -> [Int32],
-         kernel: any H3ConditionerKernel, vision: (entry: H3Profile.ConditionerVision, kernel: any H3VisionKernel)? = nil) {
+         kernel: any H3ConditionerKernel, vision: (entry: H3Profile.ConditionerVision, kernel: any H3VisionKernel)? = nil,
+         rowLimits: ClosedRange<Int>? = nil) {
         self.conditioner = conditioner; self.limits = limits; self.tokenize = tokenize; self.kernel = kernel; self.vision = vision
+        self.rowLimits = rowLimits
+    }
+
+    /// Keyframes need the vision tower, with a graph for the canvas.
+    nonisolated func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool {
+        keyframes.isEmpty || vision?.entry.functions["\(geometry.width)x\(geometry.height)"] != nil
+    }
+
+    /// The presentation's length against the profile's text limits, and the packed rows it implies (text, condition
+    /// rows of each anchor, video and audio) against the denoiser's row limits. Tokenizes only.
+    nonisolated func preflight(_ request: H3VideoRequest) throws {
+        let ids = try tokenize(request.prompt)
+        var count = ids.count
+        if request.hasKeyframes {
+            guard let vision else { throw AetherError.unsupported("H3 profile has no keyframe vision encoder for FL2VA's presentation") }
+            count = try H3Presentation(prompt: ids, keyframes: request.keyframes.map { ($0.width, $0.height) }, vision: vision.entry.vision,
+                                       tokenize: tokenize).count
+        }
+        guard limits.contains(count) else {
+            throw AetherError.invalidRequest("H3 presentation has \(count) tokens (prompt \(ids.count)); the profile supports \(limits)")
+        }
+        if let rowLimits {
+            let rows = try H3Layout(geometry: request.geometry, textTags: Array(repeating: 1, count: count), anchors: request.anchors).rows
+            guard rowLimits.contains(rows) else {
+                throw AetherError.unsupported("H3 clip needs \(rows) packed rows (\(count) conditioning, \(request.anchors.count) keyframe(s)); "
+                                              + "the profile supports \(rowLimits)")
+            }
+        }
     }
 
     func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
@@ -112,7 +143,7 @@ actor H3ProfileConditioner: H3PromptConditioner {
     func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
                 onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
         let ids = try tokenize(prompt)
-        guard !keyframes.isEmpty else { return try H3Conditioning(text: try await tap(ids, onLayer: onLayer)) }
+        guard !keyframes.isEmpty else { return try H3Conditioning(text: try await tap(ids, onLayer: onLayer), ids: ids) }
         guard let vision else { throw AetherError.unsupported("H3 profile has no keyframe vision encoder for FL2VA's presentation") }
         let presentation = try H3Presentation(prompt: ids, keyframes: keyframes.map { ($0.width, $0.height) }, vision: vision.entry.vision,
                                               tokenize: tokenize)
@@ -136,7 +167,7 @@ actor H3ProfileConditioner: H3PromptConditioner {
         } catch { await vision.kernel.release(); throw error }
         await vision.kernel.release()
         let tap = try await tap(presentation.ids, presentation: presentation, images: images, levels: vision.entry.deepstackLevels, onLayer: onLayer)
-        return try H3Conditioning(tap: tap, tags: presentation.tags)
+        return try H3Conditioning(tap: tap, tags: presentation.tags, ids: presentation.ids)
     }
 
     /// `presentation` nil: a text-only prompt (rotary rows 0..<T). Otherwise the image rows and M-RoPE tables.
