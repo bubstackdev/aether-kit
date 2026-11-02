@@ -539,6 +539,22 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
                             operationBytes: operation, evidence: "fixture")
 }
 
+/// Review L5: declarations whose canvases or byte sums don't fit are refused with typed errors instead of trapping.
+@Test func h3ResourceDeclarationsThatOverflowAreRefusedNotTrapped() throws {
+    let huge = "999999999999999999999999999999x544"
+    #expect(throws: AetherError.self) { _ = try entry([huge], frames: 124, denoising: gib) }
+    #expect(throws: AetherError.self) { _ = try entry(["4294967296x4294967296"], frames: 124, denoising: gib) }
+    #expect(H3MeasuredResources.pixels(huge) == nil && H3MeasuredResources.pixels("4294967296x4294967296") == nil)
+    #expect(throws: AetherError.self) { _ = try measured(denoising: .max) }
+    #expect(throws: AetherError.self) { _ = try measured(denoising: .max - H3MeasuredResources.marginBytes, operation: 1) }
+    #expect(throws: AetherError.self) { _ = try measured(operation: .max) }
+    let stages: [H3VideoStage: UInt64] = [.encoding: 1, .denoising: .max - 1, .decodingVideo: 1]
+    #expect(throws: AetherError.self) {
+        _ = try H3ResourceAdmission.Envelope(maximumPixels: 64 * 32, maximumFrames: 56, operationBytes: 2, stageBytes: stages)
+    }
+    _ = try H3ResourceAdmission.Envelope(maximumPixels: 64 * 32, maximumFrames: 56, operationBytes: 1, stageBytes: stages)
+}
+
 @Test func h3MeasuredAdmissionReservesEveryMeasuredStagePeakAndRefusesARunThatWillNotFit() async throws {
     let entry = try measured()
     // An 18 GiB host budget admits the run; every stage reservation covers its measured peak plus the margin.

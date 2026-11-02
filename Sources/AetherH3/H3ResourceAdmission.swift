@@ -31,6 +31,8 @@ public struct H3ResourceAdmission: Sendable {
             guard (1...1_032_192).contains(maximumPixels), (1...360).contains(maximumFrames), !tasks.isEmpty, operationBytes > 0,
                   canvases.allSatisfy({ canvas in H3MeasuredResources.pixels(canvas).map { $0 <= maximumPixels } ?? false }), memoryBarBytes > 0,
                   stageBytes.values.allSatisfy({ $0 > 0 }),
+                  // Admission adds the operation to a stage; no sum may overflow.
+                  !operationBytes.addingReportingOverflow(stageBytes.values.max() ?? 0).overflow,
                   Set([H3VideoStage.encoding, .denoising, .decodingVideo]).isSubset(of: Set(stageBytes.keys)) else {
                 throw AetherError.invalidRequest("invalid H3 resource envelope")
             }
