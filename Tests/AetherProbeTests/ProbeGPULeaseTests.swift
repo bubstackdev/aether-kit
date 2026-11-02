@@ -23,6 +23,18 @@ import Testing
     }
 }
 
+@Test func batchRendersWithFlagsAnywhereAreGPUCommands() {
+    let batch = ["render-krea-batch", "b", "o", "prompt", "512", "512", "1,2"]
+    for arguments in [batch + ["shape.json", "--steps=16"], ["render-krea-batch", "--steps=16"] + batch.dropFirst(),
+                      batch + ["--ref=a.png", "--ref=b.png"], batch + ["shape.json", "--ref=a.png"],
+                      ["render-krea-batch", "--ref=a.png", "--steps=4"] + batch.dropFirst() + ["shape.json"]] {
+        #expect(ProbeGPULease.usesGPU(arguments), "\(arguments)")
+    }
+    for typo in [batch + ["--steps=many"], batch + ["--steps=4", "--steps=8"], batch + ["--ref="], batch + ["shape.json", "extra"]] {
+        #expect(!ProbeGPULease.usesGPU(typo), "\(typo)")
+    }
+}
+
 @Test func malformedGPUCommandsTakeNoLeaseSoTheirUsageErrorIsImmediate() {
     for typo in [["inspect"], ["smoke", "m", "fastest"], ["render-krea", "b", "o.png", "prompt", "512", "wide", "7"],
                  ["render-krea", "b"], ["render-krea-batch", "b", "o", " ", "512", "512", "1"], ["parity-krea", "b", "l", "f", "s", "o", "maybe"],
