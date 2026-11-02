@@ -153,6 +153,28 @@ struct LanguageJSONSchemaConstraintTests {
         #expect(try accepts("-3", negative) == (true, true) && accepts("-1", negative).0 == false && accepts("3", negative).0 == false)
     }
 
+    /// Bounds past what the grammar writes (18 integer digits, or 9 + 9 for numbers) and counts past `Int` compile:
+    /// they bound nothing, or are refused as empty ranges, instead of trapping in an `Int64` or `Int` conversion.
+    @Test func extremeGuidesCompileInsteadOfTrapping() throws {
+        let open = AetherGenerationSchema.object(name: "Extremes", properties: [
+            .init(name: "a", type: Int.self, guides: [.maximum(Int.max)]), .init(name: "b", type: Int.self, guides: [.range(Int.min...Int.max)]),
+            .init(name: "c", type: Double.self, guides: [.maximum(1e12)]), .init(name: "d", type: Double.self, guides: [.minimum(-1e300)]),
+            .init(name: "e", type: [String].self, guides: [.maximumCount(Int.max)]),
+        ])
+        let reply = #"{"a": 999999999999999999, "b": -999999999999999999, "c": 999999999.5, "d": -3, "e": ["red"]}"#
+        #expect(try accepts(reply, open) == (true, true))
+        func refuses(_ json: String) -> Bool {
+            guard let schema = try? AetherGenerationSchema(json: Data(json.utf8)) else { Issue.record("unparsed \(json)"); return false }
+            return (try? LanguageJSONGrammar(schema: schema)) == nil
+        }
+        #expect(refuses(#"{"type": "integer", "minimum": 1e19}"#))
+        #expect(refuses(#"{"type": "integer", "maximum": -1e30}"#))
+        #expect(refuses(#"{"type": "number", "minimum": 1e12}"#))
+        #expect(refuses(#"{"type": "array", "items": {"type": "string"}, "minItems": 1e300}"#))
+        #expect(refuses(#"{"type": "array", "items": {"type": "string"}, "minItems": 1.5}"#))
+        #expect(!refuses(#"{"type": "array", "items": {"type": "string"}, "maxItems": 1e300}"#))
+    }
+
     /// Seeded random walks over the synthetic vocabulary: at every step the trie walk equals simulating every token,
     /// the allowed set is never empty, and every walk ends in JSON that parses and decodes into the type.
     @Test func randomWalksMatchBruteForceAndDecode() throws {

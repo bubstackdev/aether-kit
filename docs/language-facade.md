@@ -317,7 +317,8 @@ accepts next, and only the stop IDs once the value is complete, so the existing 
 - **Strings:** JSON escapes and strictly valid UTF-8 (RFC 3629).
 - **Numbers:** integers up to 18 digits; numbers with up to 9 integer and 9 fraction digits, and no exponents. Bounds are
   checked with exact fixed-point arithmetic, so a prefix is allowed only if some completion lands in range, and the
-  reply never reaches a dead end.
+  reply never reaches a dead end. A bound past those digit limits (`.maximum(Int.max)`, say) bounds nothing, and one
+  that leaves no writable value is refused with `unsupportedSchema`; so is a `minItems` past `Int`.
 
 **The schema subset is what FoundationModels' `@Generable` emits,** as the probes recorded:
 - objects with `properties`, `required`, `additionalProperties: false` and `x-order`;
