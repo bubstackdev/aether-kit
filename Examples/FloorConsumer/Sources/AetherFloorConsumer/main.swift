@@ -1,3 +1,5 @@
+import AetherDiffusion
+import AetherSDTurbo
 import AetherLanguage
 import Foundation
 
@@ -18,3 +20,8 @@ case .unavailable(let reason): "\(reason)"
 }
 print("OS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
 print("AetherLanguage availability: \(availability)")
+
+// The new image adapter's portable types also link below the native runtime's OS floor.
+print("SD-Turbo source: \(SDTurboBundle.sourceRevision)")
+let diffusionSchedule = try EpsilonSchedule(timesteps: [999], sigmas: [1, 0], initialNoiseSigma: 1)
+print("Diffusion schedule: \(diffusionSchedule.timesteps.count) steps")

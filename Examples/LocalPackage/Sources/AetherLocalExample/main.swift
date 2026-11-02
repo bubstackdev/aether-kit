@@ -1,3 +1,6 @@
+import AetherDiffusion
+import AetherDiffusionCoreAI
+import AetherSDTurbo
 import AetherAssets
 import AetherFlux2
 import AetherFlux2CoreAI
@@ -76,5 +79,21 @@ func flux2ReadmeExample(bundleURL: URL, picture: CGImage, outputURL: URL) async 
     let prompt = try await session.prepare(prompt: tokenizer.prepare("Turn this photo into a watercolor painting"))
     _ = try await session.generate(configuration: try Flux2Configuration(width: 512, height: 512, seed: 8),
                                    preparedPrompt: prompt, references: references)
+    await session.unload()
+}
+
+// Type-check the SD-Turbo guide from outside the package, without loading weights.
+func sdTurboExample(bundleURL: URL, outputURL: URL) async throws {
+    let bundle = try SDTurboBundle(at: bundleURL)
+    let tokenizer = try SDTurboTokenizer.open(bundle: bundle)
+    let session = try bundle.makeSession()
+    do {
+        let image = try await session.generate(tokenIDs: tokenizer.prepare("A blue ceramic teapot"),
+            noise: bundle.noise(seed: 42), schedule: bundle.schedule(steps: 2))
+        try image.savePNG(to: outputURL)
+    } catch {
+        await session.unload()
+        throw error
+    }
     await session.unload()
 }
