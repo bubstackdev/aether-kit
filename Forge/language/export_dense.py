@@ -29,7 +29,8 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from qwen3_decode import CONTRACTS, MAX_PREFILL_CHUNK, POSITION_INPUT, Qwen3Decoder, load_weights, read_config  # noqa: E402
+from dense_decode import CONTRACTS, MAX_PREFILL_CHUNK, POSITION_INPUT, DenseDecoder, read_config
+from dense_families import FAMILIES
 
 TINY = {"vocab_size": 512, "hidden_size": 256, "num_attention_heads": 4, "num_key_value_heads": 2, "head_dim": 64,
         "num_hidden_layers": 2, "intermediate_size": 512, "rms_norm_eps": 1e-6, "rope_theta": 1_000_000.0,
@@ -91,7 +92,7 @@ def plan(prompt: list[int], chunks: list[int]) -> list[tuple[int, list[int]]]:
     return out
 
 
-def eager_run(module: Qwen3Decoder, prompt: list[int], chunks: list[int], decode: int, capacity: int):
+def eager_run(module: DenseDecoder, prompt: list[int], chunks: list[int], decode: int, capacity: int):
     """Last-row logits after prefill and after each greedy decode step, plus cache snapshots."""
     kc, vc = module.empty_state(capacity)
     rows, snaps, ids = [], [], list(prompt)
@@ -158,7 +159,7 @@ def cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-12))
 
 
-def self_check(asset: Path, module: Qwen3Decoder, vocab: int, chunks: list[int], decode: int, capacity: int) -> dict:
+def self_check(asset: Path, module: DenseDecoder, vocab: int, chunks: list[int], decode: int, capacity: int) -> dict:
     span = max(2, min(vocab, 100_000) - 1000) if vocab > 2000 else vocab
     base = 1000 if vocab > 2000 else 0
     prompt = [base + (97 * i + 31) % span for i in range(19)]
@@ -187,7 +188,7 @@ def self_check(asset: Path, module: Qwen3Decoder, vocab: int, chunks: list[int],
 
 def main(default_architecture="qwen3") -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--architecture", choices=("qwen3", "olmo2"), default=default_architecture)
+    parser.add_argument("--architecture", choices=tuple(FAMILIES), default=default_architecture)
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--tiny", action="store_true", help="random-weight two-layer model (contract spike)")
     parser.add_argument("--contract", choices=CONTRACTS, default="bucketed",
@@ -196,7 +197,7 @@ def main(default_architecture="qwen3") -> None:
     parser.add_argument("--attention-precision", choices=("float32", "float16"), default="float32",
                         help="SDPA arithmetic only; float32 avoids CPU fp16 near-tie reversals (weights/cache stay fp16)")
     parser.add_argument("--max-prefill-chunk", type=int, default=MAX_PREFILL_CHUNK)
-    parser.add_argument("--max-capacity", type=int, default=16384)
+    parser.add_argument("--max-capacity", type=int, help="defaults to the family context limit")
     parser.add_argument("--source-repository", default="")
     parser.add_argument("--source-revision", default="")
     parser.add_argument("--no-self-check", action="store_true",
@@ -211,12 +212,11 @@ def main(default_architecture="qwen3") -> None:
 
     torch.manual_seed(0)
     cfg = dict(TINY) if args.tiny else read_config(args.checkpoint)
-    decoder, weight_loader = Qwen3Decoder, load_weights
-    if args.architecture == "olmo2":
-        from olmo2_decode import Olmo2Decoder, load_weights as olmo2_load_weights
-        decoder, weight_loader = Olmo2Decoder, olmo2_load_weights
-        if args.tiny:
-            cfg.update(model_type="olmo2", rope_theta=500000.0, tie_word_embeddings=False)
+    family = FAMILIES[args.architecture]
+    decoder, weight_loader = family.implementation()
+    if args.tiny:
+        cfg.update(family.tiny_overrides)
+    args.max_capacity = args.max_capacity or min(family.maximum_context, cfg.get("n_positions", family.maximum_context))
     module = decoder(cfg, args.contract, max_capacity=args.max_capacity, attention_precision=args.attention_precision)
     if args.tiny:
         with torch.no_grad():

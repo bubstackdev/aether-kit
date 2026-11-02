@@ -14,7 +14,7 @@ import unittest
 
 class DenseExportTests(unittest.TestCase):
     def test_strict_coreai_parity_with_fp32_attention(self):
-        for family in ('qwen3', 'olmo2'):
+        for family in ('qwen3', 'olmo2', 'gpt2'):
             with self.subTest(family=family), tempfile.TemporaryDirectory() as directory:
                 output = Path(directory) / 'bundle'
                 result = subprocess.run([sys.executable, '-I', str(Path(__file__).with_name(f'export_{family}.py')),

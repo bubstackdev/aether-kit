@@ -27,7 +27,8 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from qwen3_decode import Qwen3Decoder, load_weights, read_config  # noqa: E402
+from dense_decode import DenseDecoder, read_config
+from dense_families import FAMILIES
 
 PROMPT = "Explain, in a few sentences, why the sky is blue during the day and red at sunset."
 
@@ -40,7 +41,7 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def eager_rows(module: Qwen3Decoder, prompt: list[int], forced: list[int], chunk: int) -> np.ndarray:
+def eager_rows(module: DenseDecoder, prompt: list[int], forced: list[int], chunk: int) -> np.ndarray:
     """Last-row logits after a chunked prefill, then after each forced token."""
     kc, vc = module.empty_state(len(prompt) + len(forced) + 8)
     rows = []
@@ -62,15 +63,16 @@ def eager_rows(module: Qwen3Decoder, prompt: list[int], forced: list[int], chunk
     return np.stack(rows)
 
 
-def compare(a: np.ndarray, b: np.ndarray) -> dict:
+def compare(a: np.ndarray, b: np.ndarray, rtol: float = 0.0) -> dict:
     cos = [float(x @ y / (np.linalg.norm(x) * np.linalg.norm(y))) for x, y in zip(a, b)]
     return {"minCosine": round(min(cos), 8), "maxAbs": round(float(np.abs(a - b).max()), 6),
-            "argmaxEqualRows": int(sum(int(np.argmax(x)) == int(np.argmax(y)) for x, y in zip(a, b))), "rows": len(a)}
+            "argmaxEqualRows": int(sum(int(np.argmax(x)) == int(np.argmax(y)) for x, y in zip(a, b))), "rows": len(a),
+            "withinFloat32Tolerance": bool(np.all(np.abs(a - b) < 0.0005 + rtol * np.abs(b)))}
 
 
 def main(default_architecture="qwen3") -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--architecture", choices=("qwen3", "olmo2"), default=default_architecture)
+    parser.add_argument("--architecture", choices=tuple(FAMILIES), default=default_architecture)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--source-repository", required=True)
     parser.add_argument("--source-revision", required=True)
@@ -91,8 +93,10 @@ def main(default_architecture="qwen3") -> None:
     torch.set_num_threads(max(1, torch.get_num_threads()))
     tokenizer = AutoTokenizer.from_pretrained(args.checkpoint)
     message = args.prompt * args.prompt_repeat
-    text = tokenizer.apply_chat_template([{"role": "user", "content": message}], tokenize=False,
+    family = FAMILIES[args.architecture]
+    text = (tokenizer.apply_chat_template([{"role": "user", "content": message}], tokenize=False,
                                          add_generation_prompt=True, enable_thinking=False)
+            if family.prompt_style == "chat" else message)
     prompt = tokenizer(text, add_special_tokens=False)["input_ids"]
     model = AutoModelForCausalLM.from_pretrained(args.checkpoint, torch_dtype=torch.float32).eval()
     with torch.no_grad():
@@ -108,17 +112,15 @@ def main(default_architecture="qwen3") -> None:
     del model, out, full
     gc.collect()
 
-    decoder, weight_loader = Qwen3Decoder, load_weights
-    if args.architecture == "olmo2":
-        from olmo2_decode import Olmo2Decoder, load_weights as olmo2_load_weights
-        decoder, weight_loader = Olmo2Decoder, olmo2_load_weights
+    family = FAMILIES[args.architecture]
+    decoder, weight_loader = family.implementation()
     cfg = read_config(args.checkpoint)
     port = {}
     for contract, chunk in (("running", 7), ("bucketed", 8)):
-        module = decoder(cfg, contract)
+        module = decoder(cfg, contract, max_capacity=min(family.maximum_context, cfg.get("n_positions", family.maximum_context)))
         weight_loader(module, args.checkpoint)
         module = module.float().eval()
-        port[contract] = compare(eager_rows(module, prompt, forced, chunk), reference)
+        port[contract] = compare(eager_rows(module, prompt, forced, chunk), reference, rtol=family.reference_rtol)
         del module
 
     args.output.mkdir(parents=True)
@@ -134,6 +136,7 @@ def main(default_architecture="qwen3") -> None:
         "scriptSHA256": {p.name: sha256(p) for p in sorted(Path(__file__).resolve().parent.glob("*.py"))},
         "checkpointSHA256": {p.name: sha256(p) for p in sorted(args.checkpoint.glob("*.safetensors"))},
         "prompt": message,
+        "promptStyle": family.prompt_style,
         "promptTokens": prompt,
         "greedyTokens": greedy,
         "greedyText": tokenizer.decode(greedy),
@@ -142,8 +145,9 @@ def main(default_architecture="qwen3") -> None:
                          "vocab": int(reference.shape[1]), "sha256": sha256(logits_path),
                          "rowMeaning": "row r = logits after prompt + forcedTokens[:r]"},
         "eagerPortVsReference": port,
+        "eagerTolerance": {"atol": 0.0005, "rtol": family.reference_rtol, "argmax": "all rows equal"},
     }
-    record["passed"] = all(v["minCosine"] >= 0.999999 and v["maxAbs"] < 0.0005 and v["argmaxEqualRows"] == v["rows"] for v in port.values())
+    record["passed"] = all(v["minCosine"] >= 0.999999 and v["withinFloat32Tolerance"] and v["argmaxEqualRows"] == v["rows"] for v in port.values())
     (args.output / "reference.json").write_text(json.dumps(record, indent=2) + "\n")
     print(json.dumps({"greedyText": record["greedyText"], "eagerPortVsReference": port}, indent=1))
 

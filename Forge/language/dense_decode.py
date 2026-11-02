@@ -20,6 +20,7 @@ Qwen3-VL's directly constructed blocks also retain that qualified path.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -104,7 +105,7 @@ class AttentionBlock(torch.nn.Module):
 
 
 class DenseDecoder(torch.nn.Module):
-    def __init__(self, cfg: dict[str, Any], contract: str, max_capacity: int = 16384, *, block_factory, attention_precision="float32") -> None:
+    def __init__(self, cfg: dict[str, Any], contract: str, max_capacity: int = 16384, *, block_factory, attention_precision="float32", norm_factory=None, rotary=True) -> None:
         super().__init__()
         if contract not in CONTRACTS:
             raise ValueError(f"unknown contract {contract!r}")
@@ -118,25 +119,32 @@ class DenseDecoder(torch.nn.Module):
         self.blocks = torch.nn.ModuleList(block_factory(cfg) for _ in range(cfg["num_hidden_layers"]))
         for block in self.blocks:
             block.attention_precision = attention_precision
-        self.norm = RMSNorm(cfg["hidden_size"], cfg["rms_norm_eps"])
+        self.norm = norm_factory() if norm_factory else RMSNorm(cfg["hidden_size"], cfg["rms_norm_eps"])
         self.tied = bool(cfg.get("tie_word_embeddings", False))
         self.lm_head = None if self.tied else torch.nn.Linear(cfg["hidden_size"], cfg["vocab_size"], bias=False)
         self.head_dim = cfg.get("head_dim") or cfg["hidden_size"] // cfg["num_attention_heads"]
-        self.rope = RotaryEmbedding(self.head_dim, float(cfg["rope_theta"]))
+        self.rope = RotaryEmbedding(self.head_dim, float(cfg["rope_theta"])) if rotary else None
         self.max_capacity = max_capacity
 
     def head(self, x):
         return F.linear(self.norm(x), self.embed.weight if self.tied else self.lm_head.weight)
 
+    def embed_inputs(self, input_ids, positions):
+        """Family hook for token/absolute-position embeddings before shared cache execution."""
+        return self.embed(input_ids)
+
+    def rotary_inputs(self, positions, dtype):
+        return self.rope(positions, dtype) if self.rope is not None else (None, None)
+
     def forward(self, input_ids, position_ids, key_cache, value_cache):
         q_len = input_ids.shape[1]
-        x = self.embed(input_ids)
         if self.contract == "running":
             total = position_ids.shape[1]
             positions = position_ids[0]
             new_positions = positions[total - q_len:]
             mask = positions[None, :] <= new_positions[:, None]      # data-derived lower-right causal (F-P2-6)
-            cos, sin = self.rope(new_positions, x.dtype)
+            x = self.embed_inputs(input_ids, new_positions)
+            cos, sin = self.rotary_inputs(new_positions, x.dtype)
             for i, block in enumerate(self.blocks):
                 x = block.running(x, cos, sin, key_cache, value_cache, i, total - q_len, total, mask)
             return self.head(x)
@@ -146,7 +154,8 @@ class DenseDecoder(torch.nn.Module):
         cache_visible = key_positions[None, :] < new_positions[:1, None]         # rows before the chunk, [1, cap]
         chunk_visible = new_positions[None, :] <= new_positions[:, None]         # causal within the chunk, [q, q]
         visible = torch.cat((cache_visible.expand(q_len, -1), chunk_visible), dim=1)  # [q, cap + q]
-        cos, sin = self.rope(new_positions, x.dtype)
+        x = self.embed_inputs(input_ids, new_positions)
+        cos, sin = self.rotary_inputs(new_positions, x.dtype)
         keys, values = [], []
         for i, block in enumerate(self.blocks):
             x, k, v = block.bucketed(x, cos, sin, key_cache, value_cache, i, visible)
@@ -187,7 +196,15 @@ class DenseDecoder(torch.nn.Module):
         return logits[0, -1]
 
 
-def load_weights(module: DenseDecoder, checkpoint: Path, names: dict[str, tuple[str, int]]) -> None:
+@dataclass(frozen=True)
+class TensorMapping:
+    """Checkpoint tensor destination; Conv1D checkpoints store linear weights transposed."""
+    parameter: str
+    row: int = 0
+    transpose: bool = False
+
+
+def load_weights(module: DenseDecoder, checkpoint: Path, names: dict[str, tuple[str, int] | TensorMapping], *, ignored_names=()) -> None:
     from safetensors import safe_open
 
     params = dict(module.named_parameters())
@@ -199,14 +216,17 @@ def load_weights(module: DenseDecoder, checkpoint: Path, names: dict[str, tuple[
         for f in files:
             with safe_open(f, framework="pt") as st:
                 for key in st.keys():
-                    if key == "lm_head.weight" and module.tied:
+                    if key in ignored_names or (key == "lm_head.weight" and module.tied):
                         continue
                     if key not in names:
                         raise KeyError(f"unexpected checkpoint tensor {key}")
-                    dst, row = names[key]
+                    mapping = names[key]
+                    dst, row = (mapping.parameter, mapping.row) if isinstance(mapping, TensorMapping) else mapping
                     t = st.get_tensor(key)
+                    if isinstance(mapping, TensorMapping) and mapping.transpose:
+                        t = t.T
                     target = params[dst]
-                    if tuple(t.shape[1:]) != tuple(target.shape[1:]) or row + t.shape[0] > target.shape[0]:
+                    if t.ndim != target.ndim or tuple(t.shape[1:]) != tuple(target.shape[1:]) or row + t.shape[0] > target.shape[0]:
                         raise ValueError(f"{key}: {tuple(t.shape)} does not fit {dst} {tuple(target.shape)} at row {row}")
                     target[row:row + t.shape[0]].copy_(t.to(target.dtype))
                     loaded[dst] = loaded.get(dst, 0) + t.shape[0]
