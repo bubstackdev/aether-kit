@@ -30,6 +30,7 @@ struct AetherProbe {
               aether-probe h3-profile-dump PROFILE.json PROMPT.txt WIDTH HEIGHT FRAMES SEED RECIPE NEW_DIRECTORY [FIRST_FRAME.png]
               aether-probe h3-profile-run PROFILE.json DUMP REFERENCES|- NEW_DIRECTORY --graphs|--render [--no-audio]
               aether-probe h3-profile-decode PROFILE.json DUMP RENDER NEW_DIRECTORY [DECODER.aimodel SHA256]
+              aether-probe h3-profile-identity PROFILE.json [RECIPE]
               aether-probe h3-memory-render PROFILE.json DUMP NEW_DIRECTORY [--spike-capture=GiB]
               aether-probe qualify-h3-session-lifecycle PROFILE.json DUMP NEW_DIRECTORY [--scenarios=NAME,...]
               aether-probe qualify-h3-denoising BUNDLE PHASES CPU_RECORD CHAIN MODULATION_DIRECTORY REFERENCES|- NEW_OUTPUT_DIRECTORY --prepare-only|--capture|--run
@@ -56,6 +57,7 @@ struct AetherProbe {
             inspect specializes/loads the model; it is not a static file inspection.
             prepare-krea reads local assets/tokenizer and prepares inputs without native inference.
             verify-krea hashes all six model streams and can read tens of GB.
+            h3-profile-identity prints a profile's identities, measured admission's location-free one included; CPU only.
             catalog-entry prints the pinned catalog entry an app prepares the bundle from (docs/model-preparation.md).
             prepare-model qualifies preparation over HTTPS (HF_TOKEN for a gated repository); reply-installed opens the
             installation through the language facade and is a GPU command. readiness prints the states a model's

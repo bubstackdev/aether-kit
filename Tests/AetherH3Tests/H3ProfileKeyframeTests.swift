@@ -90,3 +90,28 @@ extension H3Profile.KeyframeEncoding: Equatable {
         }
     }
 }
+
+@Test func h3ProfileContentIdentityIgnoresWhereTheFilesLiveButNotWhatTheyAre() throws {
+    func directory() throws -> URL {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root
+    }
+    let here = try directory(), there = try directory()
+    defer { try? FileManager.default.removeItem(at: here); try? FileManager.default.removeItem(at: there) }
+    // The same profile at two locations, one of them recording where it was copied from.
+    let a = try profile(here, extra: tiled(here, tails: ["960x544"]))
+    let b = try profile(there, extra: tiled(there, tails: ["960x544"]).merging(["lineage": ["base_bundle": here.path, "base_bundle_sha256": a.manifestSHA256]]) { _, new in new })
+    #expect(a.manifestSHA256 != b.manifestSHA256)
+    #expect(a.contentSHA256 == b.contentSHA256 && h3IsContentSHA256(a.contentSHA256))
+    // A different graph, or a different setting, is a different profile.
+    var other = tiled(here, tails: ["960x544"])
+    other["video_encoder_first_tiled"] = (other["video_encoder_first_tiled"] as! [String: Any]).merging(["tile_size": 256, "moments_channels": 48,
+        "tile": ["path": here.appendingPathComponent("tile256.aimodel").path, "function": "main", "sha256": String(repeating: "1", count: 64)]]) { _, new in new }
+    #expect(try profile(here, extra: other).contentSHA256 != a.contentSHA256)
+    #expect(try profile(here, extra: tiled(here, tails: ["960x544", "288x288"])).contentSHA256 != a.contentSHA256)
+}
+
+private func h3IsContentSHA256(_ value: String) -> Bool {
+    value.utf8.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+}

@@ -526,9 +526,10 @@ actor NativeH3AudioKernel: H3AudioKernel {
 /// the conditioner's token ids (`AetherH3Tokenizers.H3Tokenizer.tokenIDs`).
 @available(macOS 27, iOS 27, *)
 public enum H3ProfileEngine {
-    /// Includes exact profile declarations and selected schedule; no model is loaded.
+    /// Includes exact profile declarations and selected schedule, not where the profile's files live
+    /// (`H3Profile.contentSHA256`); no model is loaded.
     public static func resourceIdentity(profile: H3Profile, recipe: String = "turbo8") -> String {
-        "h3.profile/1:" + profile.manifestSHA256 + ":" + recipe
+        "h3.profile/2:" + profile.contentSHA256 + ":" + recipe
     }
 
     /// `observer` (qualification only) receives the denoiser's boundary tensors, and `nativeObserver` (qualification only)

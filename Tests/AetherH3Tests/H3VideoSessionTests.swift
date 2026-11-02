@@ -793,7 +793,7 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
 /// orientations, T2VA and FL2VA) keeps its 18 GiB bar and reservations on any device memory. Coverage is narrower than
 /// before envelopes: a canvas must fit inside 960x544 or 544x960, so 1024x480, 640x800 and 576x576 are now refused.
 @Test func h3BundledQualifiedEntryKeepsItsBarAndReservations() throws {
-    let identity = "h3.profile/1:5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce:turbo8"
+    let identity = "h3.profile/2:0707647b14538914a8ed282f41346c5c0906e1f6c8277029eff9c7847da80f62:turbo8"
     let recorded = try H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: "h17c", physicalMemoryBytes: 8 << 30)
     #expect(Set(recorded.stagePeakBytes.keys) == ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"])
     #expect(recorded.maximumFrames == 124 && recorded.canvases == ["960x544", "544x960"] && recorded.tasks == nil)
