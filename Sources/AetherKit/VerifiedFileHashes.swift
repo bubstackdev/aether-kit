@@ -34,7 +34,9 @@ import MachO
 /// The store is safe to delete at any time; it only ever saves work. Processes writing it concurrently are last writer
 /// wins, which costs only re-hashing what the lost records covered. Writes through a `MAP_SHARED` mapping can update a
 /// file's modification and status-change times late (at `msync` or unmap), so a file being written through a mapping
-/// must not be verified while that is going on; model files are written once and then only read.
+/// must not be verified while that is going on; model files are written once and then only read. A path check
+/// identifies the file, not its parent folders: swapping a parent during the hash and back leaves the file's identity
+/// unchanged. That needs write access to the bundle, inside the same boundary; descriptor-based reads are unaffected.
 package enum VerifiedFileHashes {
     package struct Identity: Codable, Equatable, Sendable {
         let device: Int64
