@@ -314,7 +314,7 @@ accepts next, and only the stop IDs once the value is complete, so the existing 
 **What the model may write:**
 - **One canonical layout:** `{"key": value, "key2": value}`, a space after each colon and comma and no other whitespace.
 - **Properties:** every property in `x-order`. An optional property is always written, as a value or `null`.
-- **Strings:** JSON escapes and strictly valid UTF-8 (RFC 3629).
+- **Strings:** JSON escapes and strictly valid UTF-8 (RFC 3629). A `\u` surrogate escape must be a high-low pair, as JSON decoders require.
 - **Numbers:** integers up to 18 digits; numbers with up to 9 integer and 9 fraction digits, and no exponents. Bounds are
   checked with exact fixed-point arithmetic, so a prefix is allowed only if some completion lands in range, and the
   reply never reaches a dead end. A bound past those digit limits (`.maximum(Int.max)`, say) bounds nothing, and one

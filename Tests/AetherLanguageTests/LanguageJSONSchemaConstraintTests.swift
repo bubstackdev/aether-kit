@@ -224,6 +224,26 @@ struct LanguageJSONSchemaConstraintTests {
                                           "DiscriminatedValue", "DiscriminatedValue2", "DiscriminatedValue3"])
     }
 
+    /// Review M5: `\u` escapes pair UTF-16 surrogates as JSON decoders require. A string the matcher completes always
+    /// decodes, and one that decodes always completes; a prefix that can't pair is refused at once, never a dead end.
+    @Test func unicodeEscapesPairSurrogatesAsDecodersDo() throws {
+        let schema = try AetherGenerationSchema(json: Data(#"{"type": "string"}"#.utf8))
+        let units = ["0041", "00e9", "D800", "dbff", "D83D", "DC00", "dfff", "DE00", "E000", "FFFF"]
+        let escapes = units.map { "\\u\($0)" } + units.flatMap { a in units.map { b in "\\u\(a)\\u\(b)" } }
+            + units.map { "\\u\($0)x" } + units.map { "\\u\($0)\\n" }
+        for escape in escapes {
+            let text = "\"\(escape)\""
+            let decodes = (try? JSONDecoder().decode(String.self, from: Data(text.utf8))) != nil
+            #expect(try accepts(text, schema) == (decodes, decodes), "\(text)")
+        }
+        #expect(try accepts(#""\uD83D\uDE00""#, schema) == (true, true))
+        #expect(try accepts(#""\uD83D"#, schema) == (true, false), "a high surrogate is a prefix of a pair")
+        #expect(try accepts(#""\uD83D\"#, schema) == (true, false) && accepts(#""\uD83D\uD"#, schema) == (true, false))
+        for deadEnd in [#""\uD83D""#, #""\uD83D\n"#, #""\uD83D\u0"#, #""\uD83D\uDB"#, #""\uDC"#, #""\udf"#] {
+            #expect(try accepts(deadEnd, schema).prefix == false, "\(deadEnd)")
+        }
+    }
+
     /// Seeded random walks over the synthetic vocabulary: at every step the trie walk equals simulating every token,
     /// the allowed set is never empty, and every walk ends in JSON that parses and decodes into the type.
     @Test func randomWalksMatchBruteForceAndDecode() throws {
