@@ -70,7 +70,17 @@ def group_rss_bytes(pgid):
     return total
 
 
+def interrupt_on_termination():
+    """SIGTERM and SIGHUP interrupt this controller as Ctrl-C does, so its cleanup stops and joins the workload: the
+    workload runs in its own session and process group, so neither signal reaches it."""
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt(f"signal {signum}")
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, interrupt)
+
+
 def main():
+    interrupt_on_termination()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--profile", type=Path, required=True, help="schema-3 bundle.json (read in place)")
     ap.add_argument("--python", type=Path, required=True, help="oracle interpreter (torch, pinned Diffusers 7ecb1e1b)")

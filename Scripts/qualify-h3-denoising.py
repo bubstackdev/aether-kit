@@ -24,7 +24,17 @@ def sha(path):
     return h.hexdigest()
 
 
+def interrupt_on_termination():
+    """SIGTERM and SIGHUP interrupt this controller as Ctrl-C does, so its cleanup stops and joins the workload: the
+    workload runs in its own session and process group, so neither signal reaches it."""
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt(f"signal {signum}")
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, interrupt)
+
+
 def main():
+    interrupt_on_termination()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--phases", type=Path, required=True)
@@ -96,23 +106,30 @@ def main():
 
     start = time.monotonic()
     with Path(str(output) + "-stdout.json").open("xb") as stdout, Path(str(output) + "-stderr.log").open("xb") as stderr:
-        proc = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
-        controller["pid"] = proc.pid
-        save()
-        print(json.dumps({"pid": proc.pid, "budgetSeconds": budget, "gpuWorkRequested": args.run or args.capture or args.lifecycle}), flush=True)
+        proc = None
         try:
-            proc.wait(timeout=budget - 10)
-        except subprocess.TimeoutExpired:
-            controller["timedOut"] = True
+            proc = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
+            controller["pid"] = proc.pid
+            save()
+            print(json.dumps({"pid": proc.pid, "budgetSeconds": budget, "gpuWorkRequested": args.run or args.capture or args.lifecycle}), flush=True)
+            try:
+                proc.wait(timeout=budget - 10)
+            except subprocess.TimeoutExpired:
+                controller["timedOut"] = True
+        except BaseException:
+            # Ctrl-C, SIGTERM or SIGHUP (interrupt_on_termination): recorded, after the cleanup below, then re-raised.
+            controller["interrupted"] = True
+            raise
         finally:
-            if proc.poll() is None:
+            if proc is not None and proc.poll() is None:
                 os.killpg(proc.pid, signal.SIGTERM)
                 try:
                     proc.wait(timeout=8)
                 except subprocess.TimeoutExpired:
                     os.killpg(proc.pid, signal.SIGKILL)
-            proc.wait()
-            controller.update(joined=True, exitCode=proc.returncode, elapsedSeconds=time.monotonic() - start)
+            if proc is not None:
+                proc.wait()
+            controller.update(joined=proc is not None, exitCode=proc.returncode if proc else None, elapsedSeconds=time.monotonic() - start)
             controller["sourcePinsUnchanged"] = all(sha(p) == digest for p, digest in pins.items())
             save()
     try:

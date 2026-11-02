@@ -59,7 +59,17 @@ def group_rss_bytes(pgid):
     return sum(int(f[0]) * 1024 for f in (line.split() for line in out.splitlines()) if len(f) == 2 and f[1] == str(pgid))
 
 
+def interrupt_on_termination():
+    """SIGTERM and SIGHUP interrupt this controller as Ctrl-C does, so its cleanup stops and joins the workload: the
+    workload runs in its own session and process group, so neither signal reaches it."""
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt(f"signal {signum}")
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, interrupt)
+
+
 def main():
+    interrupt_on_termination()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--task", choices=["t2va", "fl2va"], required=True)
     ap.add_argument("--steps", default="all", help="steps to reference: all or S,S,... (every step is hashed and replayed)")
