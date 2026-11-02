@@ -51,6 +51,35 @@ struct LanguageCacheTests {
         }
     }
 
+    @Test func paddedAndPermutedCachesPreserveUpdatesAndGrowth() {
+        let shape = [2, 1, 2, 3, 3]
+        let sourceStrides = [30, 30, 15, 5, 1]
+        let nextShape = [2, 1, 2, 6, 3]
+        // A noncontiguous channel axis as well as token padding; different layout after growth.
+        let nextStrides = [96, 96, 48, 8, 2]
+        var old = [Float16](repeating: -99, count: 60)
+        let update: [Float16] = (0..<24).map { Float16($0 + 1) }
+        update.withUnsafeBufferPointer { u in
+            old.withUnsafeMutableBufferPointer { c in
+                LanguageCachePlan.writeUpdateTensor(u.baseAddress!, shape: [2, 1, 2, 2, 3],
+                    strides: [12, 12, 6, 3, 1], into: c.baseAddress!, capacity: 3, start: 0, cacheStrides: sourceStrides)
+            }
+        }
+        var grown = [Float16](repeating: 777, count: 192)
+        old.withUnsafeBufferPointer { source in
+            grown.withUnsafeMutableBufferPointer { destination in
+                LanguageCachePlan.relayoutStrided(from: source.baseAddress!, to: destination.baseAddress!,
+                    destinationBytes: destination.count * MemoryLayout<Float16>.size, shape: nextShape,
+                    sourceStrides: sourceStrides, destinationStrides: nextStrides, validTokens: 2)
+            }
+        }
+        var expected = [Float16](repeating: 0, count: grown.count)
+        for l in 0..<shape[0] { for h in 0..<shape[2] { for t in 0..<2 { for e in 0..<shape[4] {
+            expected[l * nextStrides[0] + h * nextStrides[2] + t * nextStrides[3] + e * nextStrides[4]] = update[l * 12 + h * 6 + t * 3 + e]
+        } } } }
+        #expect(grown == expected, "valid tokens survive; stale rows and all padding are cleared")
+    }
+
     /// Contiguous update rows take one copy per row; the result equals the per-token placement, including at the
     /// cache's first and last rows and for one-token (decode) updates with a padded token stride.
     @Test func contiguousUpdateRowsMatchPerTokenPlacement() {

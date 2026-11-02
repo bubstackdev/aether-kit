@@ -84,3 +84,10 @@ licensed under Apache-2.0. No GPT-2 weights or tokenizer assets are distributed.
 The pinned openai-community/gpt2 checkpoint at revision
 607a30d783dfa663caf39e06633721c8d4cfcd7e retains its MIT terms
 (https://github.com/openai/gpt-2/blob/master/LICENSE).
+
+Phi language export graphs (Forge/language/phi_decode.py) reimplement the Phi
+forward pass in Hugging Face Transformers 4.57.3
+(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/phi),
+Apache-2.0, copyright Microsoft and the HuggingFace Inc. team. No Phi weights
+or tokenizer assets are distributed. The microsoft/phi-2 checkpoint at revision
+9a5117d15e407c48fa40f8adbac1244abae52d6f retains its MIT terms.

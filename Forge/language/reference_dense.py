@@ -63,11 +63,11 @@ def eager_rows(module: DenseDecoder, prompt: list[int], forced: list[int], chunk
     return np.stack(rows)
 
 
-def compare(a: np.ndarray, b: np.ndarray, rtol: float = 0.0) -> dict:
+def compare(a: np.ndarray, b: np.ndarray, rtol: float = 0.0, atol: float = 0.0005) -> dict:
     cos = [float(x @ y / (np.linalg.norm(x) * np.linalg.norm(y))) for x, y in zip(a, b)]
     return {"minCosine": round(min(cos), 8), "maxAbs": round(float(np.abs(a - b).max()), 6),
             "argmaxEqualRows": int(sum(int(np.argmax(x)) == int(np.argmax(y)) for x, y in zip(a, b))), "rows": len(a),
-            "withinFloat32Tolerance": bool(np.all(np.abs(a - b) < 0.0005 + rtol * np.abs(b)))}
+            "withinFloat32Tolerance": bool(np.all(np.abs(a - b) < atol + rtol * np.abs(b)))}
 
 
 def main(default_architecture="qwen3") -> None:
@@ -120,7 +120,7 @@ def main(default_architecture="qwen3") -> None:
         module = decoder(cfg, contract, max_capacity=min(family.maximum_context, cfg.get("n_positions", family.maximum_context)))
         weight_loader(module, args.checkpoint)
         module = module.float().eval()
-        port[contract] = compare(eager_rows(module, prompt, forced, chunk), reference, rtol=family.reference_rtol)
+        port[contract] = compare(eager_rows(module, prompt, forced, chunk), reference, rtol=family.reference_rtol, atol=family.reference_atol)
         del module
 
     args.output.mkdir(parents=True)
@@ -145,7 +145,7 @@ def main(default_architecture="qwen3") -> None:
                          "vocab": int(reference.shape[1]), "sha256": sha256(logits_path),
                          "rowMeaning": "row r = logits after prompt + forcedTokens[:r]"},
         "eagerPortVsReference": port,
-        "eagerTolerance": {"atol": 0.0005, "rtol": family.reference_rtol, "argmax": "all rows equal"},
+        "eagerTolerance": {"atol": family.reference_atol, "rtol": family.reference_rtol, "argmax": "all rows equal"},
     }
     record["passed"] = all(v["minCosine"] >= 0.999999 and v["withinFloat32Tolerance"] and v["argmaxEqualRows"] == v["rows"] for v in port.values())
     (args.output / "reference.json").write_text(json.dumps(record, indent=2) + "\n")
