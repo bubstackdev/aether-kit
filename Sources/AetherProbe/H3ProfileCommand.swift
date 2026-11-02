@@ -298,7 +298,8 @@ enum H3ProfileCommand {
                     recorder = made
                     observer = { @Sendable (event: H3DenoiserObservation) async throws -> Void in try await made.record(event) }
                 }
-                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: { _ in tokens }, observer: observer)
+                let stages = try H3ProfileEngine.stages(profile: profile, recipe: recipe, tokenize: try await dumpTokenize(tokens, profile: profile),
+                                                        observer: observer)
                 let session = H3VideoSession(stages: H3VideoStages(conditioner: TapeConditioner(inner: stages.conditioner, tape: tape),
                                                                    keyframes: stages.keyframes,
                                                                    denoiser: TapeDenoiser(inner: stages.denoiser, tape: tape),
@@ -319,7 +320,13 @@ enum H3ProfileCommand {
                 }
                 await session.unload()
                 timings += await stageClock.timings
-                if let tap = await tape.tap { try out.put("tap", tap) }
+                if let tap = await tape.tap {
+                    // The render must condition on exactly the rows the dump laid out (its presentation included).
+                    guard tap.spec.shape.count == 3, String(tap.spec.shape[1]) == (try H3RawDirectory.field(dump, "tokens")) else {
+                        throw AetherError.invalidModel("the render's conditioning has \(tap.spec.shape) rows, the dump \(try H3RawDirectory.field(dump, "tokens"))")
+                    }
+                    try out.put("tap", tap)
+                }
                 if let latents = await tape.latents { try out.put("final_video", latents.video); try out.put("final_audio", latents.audio) }
                 try out.putBytes("frames", await tape.frames, dtype: "uint8", shape: [result.frames, geometry.height, geometry.width, 3])
                 if let pcm = await tape.pcm { try out.put("pcm", floats(pcm.channels[0] + pcm.channels[1], [2, pcm.sampleCount])) }
@@ -472,6 +479,13 @@ extension H3ProfileCommand {
 @available(macOS 27, iOS 27, *)
 extension H3ProfileCommand {
     /// The dump's first and last keyframes (FL2VA dumps), each if present.
+    /// The session tokenizer for a render from a dump: the request's prompt ("ids") is the dump's token ids, and every
+    /// other text (the keyframe labels of FL2VA's presentation) goes through the profile's tokenizer, as in an app.
+    static func dumpTokenize(_ tokens: [Int32], profile: H3Profile) async throws -> @Sendable (String) throws -> [Int32] {
+        let tokenizer = try await H3Tokenizer.open(directory: profile.tokenizer)
+        return { $0 == "ids" ? tokens : try tokenizer.tokenIDs($0) }
+    }
+
     static func dumpKeyframes(_ dump: URL, geometry: H3Geometry) throws -> (first: H3Keyframe?, last: H3Keyframe?) {
         struct Manifest: Decodable { let tensors: [String: H3RawEntry] }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: dump.appendingPathComponent("manifest.json")))
