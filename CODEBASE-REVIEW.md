@@ -2,7 +2,7 @@
 
 Reviewed on 2026-10-30 against commit `46d0e7d` (`Merge pull request #64 from bubstackdev/v0.0.3/ttft`). The checkout was clean at the start, with no nonignored untracked source files. This audit changes only this report.
 
-**Status (0.0.5), 2026-11-02:** every finding was rechecked against `0f4dfbf` (0.0.4). Twelve still applied and are fixed on `v0.0.5/review-fixes`, each with a regression test; M3 had already been fixed on main and gains its test. Each finding's status line names the commit and test.
+**Status (0.0.5), 2026-11-02:** every finding was rechecked against `0f4dfbf` (0.0.4). Twelve still applied and are fixed on `v0.0.5/review-fixes`, each with a regression test. M3 had already been fixed on main and gains its test. The local-line review's M1 is added below and fixed too. Each finding's status line names the commit and test.
 
 **Results: 7 Medium and 6 Low findings. No Critical or High findings were verified.** Severity reflects this repository's local Apple SDK and experimental developer-tool context, including its documented use of trusted local model manifests. It does not assume a network-facing service or hostile remote model distribution.
 
@@ -165,6 +165,14 @@ Native stages select a fixed audio decoder only at final audio decoding, after c
 **Suggested fix:** Expose profile-specific geometry/support validation and invoke it before any stage loads, including whether requested audio has a matching fixed decoder. Test rejection using fake stages that assert no work or frame delivery begins.
 
 **Status (0.0.5):** Fixed in `4d07a60`: `H3AudioDecoder.supports(_:)` (default true) lets the session refuse a request with audio before any stage loads; the profile decoder answers from its static lengths. Tests: `h3AudioWithoutADecoderForItsLengthIsRefusedBeforeAnyStage` (`Tests/AetherH3Tests/H3VideoSessionTests.swift`) and `h3NativeAudioDecodingSupportsOnlyTheProfilesStaticLengths` (`Tests/AetherH3CoreAITests/H3ProfileStagesTests.swift`). No render was run.
+
+## From the local-line review (M1)
+
+### LL-M1. Controller termination leaves the detached probe without its watchdog
+
+From the earlier review on `local-line-2026-10-26` (its `CODEBASE-REVIEW.md`, finding M1), added for 0.0.5. `qualify-h3-phases.py` and `qualify-h3-denoising.py` start the probe in its own session and rely on a `finally` block for cleanup, but install no SIGTERM or SIGHUP handler. A controller that is terminated exits without that cleanup, and the probe keeps running with no budget. M7 above covers only Ctrl-C in the memory gate. The profile-graphs and profile-trajectory controllers and the memory gate had the same gap.
+
+**Status (0.0.5):** from the local-line review (M1). It still applied on `0f4dfbf` in all five controllers. Fixed in `b5e3c04`: each controller turns SIGTERM and SIGHUP into its Ctrl-C path, so the workload's process group is stopped, joined and recorded as interrupted. Test: `Scripts/test_h3_controller_signals.py` runs each controller in a scratch repository with a sleeping stub probe and checks that the stub's group is gone after the signal. All five cases fail against `0f4dfbf`. No GPU work was run.
 
 ## Scope, methods, and limitations
 
