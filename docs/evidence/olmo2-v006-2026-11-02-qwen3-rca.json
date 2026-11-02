@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "kind": "qwen3-fp16-sdpa-rca",
+  "baselineCommit": "6b20db1",
+  "reproduction": "export_qwen3.py --tiny --max-capacity 512 --max-prefill-chunk 64",
+  "baselineAndRefactoredFP16SelfChecksIdentical": true,
+  "baseline": {
+    "passed": false,
+    "promptTokens": 19,
+    "chunks": [
+      8,
+      4,
+      1,
+      2
+    ],
+    "capacity": 64,
+    "decodeSteps": 4,
+    "steps": [
+      {
+        "step": 0,
+        "cosine": 0.999961,
+        "maxAbs": 0.02051,
+        "argmaxEqual": false,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.03174
+      },
+      {
+        "step": 1,
+        "cosine": 0.999978,
+        "maxAbs": 0.01685,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.03174
+      },
+      {
+        "step": 2,
+        "cosine": 0.999943,
+        "maxAbs": 0.02411,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.03174
+      },
+      {
+        "step": 3,
+        "cosine": 0.99998,
+        "maxAbs": 0.01645,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.03174
+      },
+      {
+        "step": 4,
+        "cosine": 0.999965,
+        "maxAbs": 0.01758,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.03174
+      }
+    ]
+  },
+  "fixedFloat32Attention": {
+    "passed": true,
+    "promptTokens": 19,
+    "chunks": [
+      8,
+      4,
+      1,
+      2
+    ],
+    "capacity": 64,
+    "decodeSteps": 4,
+    "steps": [
+      {
+        "step": 0,
+        "cosine": 0.999954,
+        "maxAbs": 0.02295,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.02832
+      },
+      {
+        "step": 1,
+        "cosine": 0.999976,
+        "maxAbs": 0.01758,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.02832
+      },
+      {
+        "step": 2,
+        "cosine": 0.999952,
+        "maxAbs": 0.02344,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.02832
+      },
+      {
+        "step": 3,
+        "cosine": 0.999978,
+        "maxAbs": 0.0166,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.02832
+      },
+      {
+        "step": 4,
+        "cosine": 0.999966,
+        "maxAbs": 0.02051,
+        "argmaxEqual": true,
+        "lostCacheRows": 0,
+        "cacheMaxAbs": 0.02832
+      }
+    ]
+  },
+  "identicalStoredWeightsFloat32Row0Top2": [
+    {
+      "token": 211,
+      "logit": 2.06082820892334
+    },
+    {
+      "token": 398,
+      "logit": 2.0575919151306152
+    }
+  ],
+  "row0Before": {
+    "eagerToken": 211,
+    "nativeToken": 398,
+    "eagerLogits": {
+      "211": 2.0625,
+      "398": 2.056640625
+    },
+    "nativeLogits": {
+      "211": 2.056640625,
+      "398": 2.06640625
+    }
+  },
+  "isolatedSDPA": {
+    "float16": {
+      "maxAbs": 0.003662109375,
+      "rmse": 0.0006057147984392941
+    },
+    "float32": {
+      "maxAbs": 0.0,
+      "rmse": 0.0
+    }
+  },
+  "fix": "Explicitly promote Q/K/V for SDPA to float32; cast attention result to original dtype. Keep fp16 weights/cache/residuals and the strict existing self-check thresholds.",
+  "regression": "Forge/language/test_dense_export.py asserts native/reference token 211 for the failing row and exact argmax agreement for all checked rows of both families.",
+  "limits": "The isolated probe establishes a Core AI CPU fp16 SDPA precision difference. It does not establish the proprietary runtime internal accumulation strategy or bitwise parity of the whole decoder."
+}

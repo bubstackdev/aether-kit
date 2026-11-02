@@ -64,3 +64,12 @@ Apache License 2.0, copyright The HuggingFace Team and IBM: layer structure,
 multipliers and the Mamba-2 SSD maths. They are written for AetherKit, not copied.
 The checkpoint, ibm-granite/granite-4.0-h-350m at revision
 3b17b717b8f2f5d305b0a92c1491e239aeda19c8, is Apache-2.0 and is not distributed.
+
+OLMo2 language export graphs (Forge/language/olmo2_decode.py) reimplement the
+OLMo2 forward pass in Hugging Face Transformers 4.57.3
+(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/olmo2),
+licensed under Apache-2.0. The upstream modules attribute the Allen Institute
+for Artificial Intelligence and Hugging Face contributors. No OLMo2 weights
+or tokenizer assets are distributed; the pinned allenai/OLMo-2-0425-1B-Instruct
+checkpoint retains its Apache-2.0 terms. Tokenizer fixtures contain only small
+synthetic text examples and upstream token IDs.
