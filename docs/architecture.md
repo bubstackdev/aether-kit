@@ -51,6 +51,12 @@ Stage downloads, verify declared contents, then publish atomically. Identity inc
 
 Keep portable source assets separate from runtime specialization caches. Specialization is dependent on device/OS/options; an OS update may require regeneration. Atomic publication and eviction must respect active model leases. Schema migrations and failed downloads must leave previous complete bundles usable.
 
+### Verified-hash cache
+
+Bundles opened in place (language bundles, Krea, H3) are hashed on open. `VerifiedFileHashes` remembers a passing check by file identity (device, inode, size, modification and status-change times) so an unchanged multi-GB file isn't hashed again. Identities come from `fstat` on the descriptor the bytes are read from (a lease's pinned descriptor when leased), or from `lstat` on the resolved path that is then hashed; a cached read checks the identities again after copying and hashes if anything moved. A claim's key names the expected digest, the files and every byte range in order. Only files on local APFS or HFS+ volumes (`statfs`: `MNT_LOCAL` and the file system type) are remembered; everything else always hashes.
+
+The store, `~/Library/Caches/AetherKit/verified-file-hashes.json`, is per user and plain JSON, not signed. It is inside the same trust boundary as the bundle manifests and `main.hash` declarations that name the expected digests: a process that can write it can already write those (and the model files). It is safe to delete at any time; it only saves work. Processes writing it at once are last writer wins, which costs only re-hashing. Writes through a `MAP_SHARED` mapping can update a file's times late (at `msync` or unmap), so don't verify a file while something writes it through a mapping. A path check identifies the file, not the folders above it: swapping a parent folder during the hash and back leaves the file's identity unchanged, so a process with write access to the bundle could record another file's digest. That access is inside the same boundary; descriptor-based reads (H3 tensors) are not affected. Test processes use a per-process temporary store, never the user's.
+
 ## Decision register
 
 | ID | Proposal | Status / evidence needed |
