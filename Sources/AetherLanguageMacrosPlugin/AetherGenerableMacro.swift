@@ -101,7 +101,8 @@ public struct AetherGenerableMacro: ExtensionMacro {
 
     private struct EnumCase {
         let name: String
-        let values: [(key: String, type: TypeSyntax)]
+        /// Each value's JSON key, and its Swift argument label (`nil` for an unlabelled value, whose key is `value`).
+        let values: [(key: String, label: String?, type: TypeSyntax)]
     }
 
     private static func enumMembers(_ enumeration: EnumDeclSyntax, description: String?, access: String) throws -> String {
@@ -110,10 +111,11 @@ public struct AetherGenerableMacro: ExtensionMacro {
             guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else { continue }
             for element in caseDecl.elements {
                 let parameters = element.parameterClause?.parameters ?? []
-                if parameters.count > 1, parameters.contains(where: { $0.firstName == nil }) {
+                let labels = parameters.map { $0.firstName.flatMap { $0.tokenKind == .wildcard ? nil : $0.text } }
+                if parameters.count > 1, labels.contains(nil) {
                     throw MacroError(description: "@AetherGenerable needs labels on case '\(element.name.text)''s values")
                 }
-                let values = parameters.map { (key: $0.firstName?.text ?? "value", type: $0.type.trimmed) }
+                let values = zip(parameters, labels).map { (key: $1 ?? "value", label: $1, type: $0.type.trimmed) }
                 cases.append(EnumCase(name: element.name.text, values: values))
             }
         }
@@ -149,7 +151,7 @@ public struct AetherGenerableMacro: ExtensionMacro {
                 let decode = value.type.is(OptionalTypeSyntax.self)
                     ? "try container.decodeIfPresent(\(typeExpression(value.type).dropLast()).self, forKey: \(literal(value.key)))"
                     : "try container.decode(\(value.type.trimmedDescription).self, forKey: \(literal(value.key)))"
-                return value.key == "value" && item.values.count == 1 ? decode : "\(value.key): \(decode)"
+                return value.label.map { "\($0): \(decode)" } ?? decode
             }
             return "        case \(literal(item.name)): self = .\(item.name)(\(arguments.joined(separator: ", ")))"
         }.joined(separator: "\n")
