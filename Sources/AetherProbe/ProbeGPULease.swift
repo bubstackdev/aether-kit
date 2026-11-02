@@ -19,8 +19,8 @@ enum ProbeGPULease {
         case "render-krea":
             return (7...8).contains(count) && Int(arguments[4]) != nil && Int(arguments[5]) != nil && UInt64(arguments[6]) != nil
         case "render-krea-batch":
-            return (7...8).contains(count) && Int(arguments[4]) != nil && Int(arguments[5]) != nil
-                && !arguments[3].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            // Its flags may appear anywhere and repeat, so classify with the batch parser itself.
+            return (try? KreaBatchOptions(arguments)) != nil
         case "parity-krea":
             return count == 7 && ["provided", "encoded"].contains(arguments[6])
         case "h3-profile-run":

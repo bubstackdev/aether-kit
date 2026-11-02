@@ -93,22 +93,22 @@ struct LanguageJSONGrammar: Sendable {
                 }
                 return add(.string)
             case "integer":
-                let minimum = try bound(schema["minimum"]).map { Int64(($0).rounded(.up)) }
-                let maximum = try bound(schema["maximum"]).map { Int64(($0).rounded(.down)) }
+                let minimum = try limit(schema["minimum"], scale: 1, rounding: .up, kind: "integer")
+                let maximum = try limit(schema["maximum"], scale: 1, rounding: .down, kind: "integer")
                 if let minimum, let maximum, minimum > maximum { throw AetherLanguageError.unsupportedSchema("an empty integer range") }
                 return add(.integer(minimum: minimum, maximum: maximum))
             case "number":
                 let scale = Double(LanguageJSONGrammar.numberScale)
-                let minimum = try bound(schema["minimum"]).map { Int64(($0 * scale).rounded(.up)) }
-                let maximum = try bound(schema["maximum"]).map { Int64(($0 * scale).rounded(.down)) }
+                let minimum = try limit(schema["minimum"], scale: scale, rounding: .up, kind: "number")
+                let maximum = try limit(schema["maximum"], scale: scale, rounding: .down, kind: "number")
                 if let minimum, let maximum, minimum > maximum { throw AetherLanguageError.unsupportedSchema("an empty number range") }
                 return add(.number(minimum: minimum, maximum: maximum))
             case "boolean": return add(.choice([Array("false".utf8), Array("true".utf8)]))
             case "null": return null()
             case "array":
                 guard let items = schema["items"] else { throw AetherLanguageError.unsupportedSchema("an array needs items") }
-                let minimum = try count(schema["minItems"]) ?? 0
-                let maximum = try count(schema["maxItems"])
+                let minimum = try count(schema["minItems"], isMinimum: true) ?? 0
+                let maximum = try count(schema["maxItems"], isMinimum: false)
                 if let maximum, maximum < minimum { throw AetherLanguageError.unsupportedSchema("an empty count range") }
                 let item = try compile(items)
                 return add(.array(item: item, minimum: minimum, maximum: maximum))
@@ -160,10 +160,34 @@ struct LanguageJSONGrammar: Sendable {
             return number
         }
 
-        private func count(_ value: JSONValue?) throws -> Int? {
+        /// A bound in the grammar's fixed point (`scale` units per 1), rounded inward. Every value the grammar writes has
+        /// a magnitude below 10^18 in those units (18 integer digits, or 9 + 9 for numbers), so a bound beyond that
+        /// excludes nothing (`nil`) or everything (an empty range), and the rest convert to `Int64` exactly.
+        private func limit(_ value: JSONValue?, scale: Double, rounding: FloatingPointRoundingRule, kind: String) throws -> Int64? {
+            guard let number = try bound(value) else { return nil }
+            let scaled = (number * scale).rounded(rounding)
+            let producible = 1e18
+            let isMinimum = rounding == .up
+            if scaled >= producible {
+                if isMinimum { throw AetherLanguageError.unsupportedSchema("an empty \(kind) range") }
+                return nil
+            }
+            if scaled <= -producible {
+                if isMinimum { return nil }
+                throw AetherLanguageError.unsupportedSchema("an empty \(kind) range")
+            }
+            return Int64(scaled)
+        }
+
+        private func count(_ value: JSONValue?, isMinimum: Bool) throws -> Int? {
             guard let number = try bound(value) else { return nil }
             guard number >= 0, number == number.rounded() else { throw AetherLanguageError.unsupportedSchema("counts must be whole numbers") }
-            return Int(number)
+            // Past `Int` (`Int.max` itself arrives as 2^63): as a maximum it bounds nothing; no reply can reach it as a minimum.
+            guard let count = Int(exactly: number) else {
+                if isMinimum { throw AetherLanguageError.unsupportedSchema("an empty count range") }
+                return nil
+            }
+            return count
         }
 
         /// A JSON string literal's bytes.

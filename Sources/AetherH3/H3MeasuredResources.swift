@@ -114,8 +114,10 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         guard memoryBarBytes == Self.memoryBarBytes || isBeyondBaseline else {
             throw AetherError.invalidModel("the 24 GiB H3 bar applies only beyond 960x544's pixels or 124 frames")
         }
-        let worst = stagePeakBytes.values.max()! + Self.marginBytes + operationBytes
-        guard worst <= memoryBarBytes else {
+        // Checked: the inputs are arbitrary UInt64 values from a local declaration, and an overflow is over any bar.
+        let (peak, overflow) = stagePeakBytes.values.max()!.addingReportingOverflow(Self.marginBytes)
+        let (worst, overflowAgain) = peak.addingReportingOverflow(operationBytes)
+        guard !overflow, !overflowAgain, worst <= memoryBarBytes else {
             throw AetherError.unsupported("H3 measured peak \(worst) bytes exceeds the \(memoryBarBytes)-byte memory bar")
         }
     }
