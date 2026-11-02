@@ -84,6 +84,7 @@ def main():
     ap.add_argument("--cpu-rss-limit-gb", type=float, default=20.0)
     ap.add_argument("--keep-captures", action="store_true")
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before taking it again")
     args = ap.parse_args()
     keyframes = [k for k in (args.keyframe, args.last_keyframe) if k is not None]
     if (args.task == "fl2va") != bool(keyframes):
@@ -134,6 +135,7 @@ def main():
     ]
     optional = {f"float32-{t}"}
     records = {}
+    released = None    # when this gate last released the GPU lock
     for name, kind, budget, command in stages:
         record_path = work / "controllers" / f"{name}.json"
         output = work / name
@@ -147,6 +149,9 @@ def main():
             output.rename(work / f"{name}.failed-{int(time.time())}")
         if kind == "gpu":
             command = [str(args.gpu_lock), f"h3-trajectory: {name}", *command]
+            # The lock is shared with other users of this Mac: give them a turn between this gate's GPU stages.
+            if released is not None:
+                time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
         record = dict(schema=1, stage=name, kind=kind, command=command, budgetSeconds=budget, pinsDigest=digest,
                       gpuLock=kind == "gpu", passed=False, joined=False, timedOut=False)
         if kind == "cpu":
@@ -196,6 +201,8 @@ def main():
                         os.killpg(proc.pid, signal.SIGKILL)
                 proc.wait()
         record.update(joined=True, exitCode=proc.returncode, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
+        if kind == "gpu":
+            released = time.monotonic()
         if kind == "cpu":
             record["sampledPeakGroupRSSBytes"] = peak
         record["sourcePinsUnchanged"] = all(sha(p) == v for p, v in pins.items())
