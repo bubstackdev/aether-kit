@@ -194,6 +194,13 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
           # Swift Testing adds this suffix to the requested xUnit filename.
           test -s "$RUNNER_TEMP/aether-ci/tests-swift-testing.xml"
+      - name: Qualification controller supervision
+        run: |
+          # The H3 controllers stop and join their workload on Ctrl-C, SIGTERM or SIGHUP, and a further signal during
+          # cleanup escalates it, never abandons it. Stub workloads only: no model, GPU or network.
+          for test in Scripts/test_qualify_h3_memory.py Scripts/test_h3_controller_signals.py; do
+            python3 -I "$test" -v
+          done 2>&1 | tee "$RUNNER_TEMP/aether-ci/controllers.log"
       - name: Independent foundation consumer
         run: |
           swift run --package-path Examples/Foundations --force-resolved-versions -c release \
