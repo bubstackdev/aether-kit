@@ -54,8 +54,15 @@ protocol H3TileKernel: Sendable {
 /// Channel-major rows `[2, Na, 32]` f32 -> planar PCM `[2, 800 Na]` f32.
 @available(macOS 27, iOS 27, *)
 protocol H3AudioKernel: Sendable {
+    /// Whether a decoder exists for `latents` (Na per channel).
+    func supports(latents: Int) -> Bool
     func decode(_ rows: H3TensorData) async throws -> H3TensorData
     func release() async
+}
+
+@available(macOS 27, iOS 27, *)
+extension H3AudioKernel {
+    func supports(latents: Int) -> Bool { true }
 }
 
 @available(macOS 27, iOS 27, *)
@@ -299,6 +306,7 @@ actor H3ProfileAudioDecoder: H3AudioDecoder {
     private let kernel: any H3AudioKernel
     private let hop: Int
     init(kernel: any H3AudioKernel, hop: Int = 800) { self.kernel = kernel; self.hop = hop }
+    nonisolated func supports(_ geometry: H3Geometry) -> Bool { kernel.supports(latents: geometry.audioLatentsPerChannel) }
     func decode(_ latents: H3TensorData, geometry: H3Geometry) async throws -> H3AudioPCM {
         let na = geometry.audioLatentsPerChannel
         guard latents.spec == (try H3TensorSpec(scalarType: .float32, shape: [1, 2 * na, 32])) else {
@@ -511,6 +519,8 @@ actor NativeH3AudioKernel: H3AudioKernel {
     private let observer: H3NativeCallObserver?
     private var graph: (latents: Int, graph: NativeH3Graph)?
     init(_ decoder: H3Profile.AudioDecoder, observer: H3NativeCallObserver? = nil) { self.decoder = decoder; self.observer = observer }
+    /// Native runs use only the static-length decoders.
+    nonisolated func supports(latents: Int) -> Bool { decoder.fixed[latents] != nil }
     func decode(_ rows: H3TensorData) async throws -> H3TensorData {
         let na = rows.spec.shape[1], hop = decoder.hop
         if graph?.latents != na { graph = nil; graph = (na, try await NativeH3Graph.open(try decoder.model(latents: na), role: "audio", observer: observer)) }

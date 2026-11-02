@@ -1,0 +1,27 @@
+{
+  "source": {
+    "repository": "microsoft/phi-2",
+    "revision": "9a5117d15e407c48fa40f8adbac1244abae52d6f",
+    "license": "mit"
+  },
+  "versions": {
+    "torch": "2.11.0",
+    "transformers": "4.57.3"
+  },
+  "promptTokens": 7,
+  "oracle": "Transformers float32 CPU: full sequence versus cached chunks",
+  "chunks": {
+    "7": {
+      "minCosine": 0.99999994,
+      "maxAbs": 0.003997,
+      "argmaxEqualRows": 64,
+      "rows": 64
+    },
+    "8": {
+      "minCosine": 0.99999994,
+      "maxAbs": 0.003997,
+      "argmaxEqualRows": 64,
+      "rows": 64
+    }
+  }
+}

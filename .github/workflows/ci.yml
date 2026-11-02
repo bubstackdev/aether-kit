@@ -81,7 +81,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
       SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
     steps:
@@ -129,7 +129,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
       SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
     steps:
@@ -167,7 +167,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
       SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
     steps:
@@ -194,6 +194,13 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/aether-ci/contracts.log"
           # Swift Testing adds this suffix to the requested xUnit filename.
           test -s "$RUNNER_TEMP/aether-ci/tests-swift-testing.xml"
+      - name: Qualification controller supervision
+        run: |
+          # The H3 controllers stop and join their workload's whole process group on Ctrl-C, SIGTERM or SIGHUP; a
+          # further signal during cleanup is queued and never abandons it. Stub workloads only: no model, GPU or network.
+          for test in Scripts/test_qualify_h3_memory.py Scripts/test_h3_controller_signals.py; do
+            python3 -I "$test" -v
+          done 2>&1 | tee "$RUNNER_TEMP/aether-ci/controllers.log"
       - name: Independent foundation consumer
         run: |
           swift run --package-path Examples/Foundations --force-resolved-versions -c release \
@@ -222,7 +229,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
       CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.build/clang-module-cache
       SWIFT_MODULECACHE_PATH: ${{ github.workspace }}/.build/swift-module-cache
     steps:
@@ -267,6 +274,10 @@ jobs:
     # launches if CoreAI is weak-linked. GitHub retires its macos-14 image on 2026-11-02, so macOS 15 is the oldest hosted
     # OS left. (There is no iOS 17 simulator launch: CoreAI isn't in the iOS Simulator SDK, so nothing that links the
     # facade builds for the simulator; docs/deployment-floor.md.)
+    # Not on pull requests: GitHub's hosted macos-15 queue held PRs 20-60+ min for a job that runs in under one. It runs
+    # on every main push, merge-queue check and manual run, and a release is tagged only on a main commit whose push run
+    # passed it (Scripts/check-release-ci.sh; docs/ci.md).
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: macos-15
     timeout-minutes: 15
     steps:
@@ -302,6 +313,7 @@ jobs:
           CONTRACTS_RESULT: ${{ needs.contracts.result }}
           API_RESULT: ${{ needs.api.result }}
           FLOOR_RESULT: ${{ needs.floor-launch.result }}
+          EVENT: ${{ github.event_name }}
         run: |
           echo "Change scope: $CHANGES_RESULT (Swift jobs: $SWIFT)"
           echo "Workflow validation: $WORKFLOW_RESULT"
@@ -313,6 +325,8 @@ jobs:
           [[ "$CHANGES_RESULT" == success && "$WORKFLOW_RESULT" == success ]]
           # The Swift jobs must all succeed, or, only for a documentation-only pull request, all be skipped.
           if [[ "$SWIFT" == false ]]; then expected=skipped; else expected=success; fi
-          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$API_RESULT" "$FLOOR_RESULT"; do
+          for result in "$FLOOR_MACOS_RESULT" "$FLOOR_IOS_RESULT" "$CONTRACTS_RESULT" "$API_RESULT"; do
             [[ "$result" == "$expected" ]]
           done
+          # The macOS 15 launch is skipped on every pull request and must succeed everywhere else.
+          if [[ "$EVENT" == pull_request ]]; then [[ "$FLOOR_RESULT" == skipped ]]; else [[ "$FLOOR_RESULT" == "$expected" ]]; fi
