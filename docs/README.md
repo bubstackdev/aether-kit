@@ -94,6 +94,8 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 
 [OLMo 2 1B Instruct](spikes/olmo2-2026-11.md): post-sublayer normalization, full-projection Q/K norms, shared dense export contracts, an independent Transformers oracle, and native Aether integration. Includes the Qwen3 fp16 attention mismatch RCA and precision fix.
 
+[GPT-2](../Spikes/gpt2/README.md): learned absolute position embeddings, LayerNorm with bias, biased projections, GELU and transposed checkpoint matrices through the shared dense exporter; a completion model, run through `LanguageGenerationSession`.
+
 [Phi-2](../Spikes/phi2/README.md): partial rotary embeddings, biased output heads, and parallel attention/MLP residuals through the shared dense exporter and existing Swift completion runtime. Reproduction scripts and qualification evidence live alongside the spike.
 
 ## 0.0.6 image model spike (2026-11-02)
@@ -101,3 +103,7 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 [SD-Turbo and spatial latent diffusion](spikes/sd-turbo-2026-11.md): a U-Net port,
 shared epsilon/Euler runtime and Core AI stage bindings, local CLIP tokenizer,
 pinned conversion tooling and independent full-trajectory qualification.
+
+## 0.0.5 release (2026-11-02)
+
+[Release notes](release-notes/0.0.5.md) and the [changelog](../CHANGELOG.md). H3's [FL2VA conditioner presentation](h3-integration.md#fl2va-conditioner-presentation-005), with its [plan](h3-fl2va-presentation-plan.md) and the user's bars, and [last-frame and first+last keyframes](h3-integration.md#last-frame-and-firstlast-keyframes-2026-10-29); the [codebase review](../CODEBASE-REVIEW.md) and its fixes; and the four v0.0.6 spikes above, merged early. What's still open from the 0.0.5 list is in the [notes](release-notes/0.0.5.md#still-open-from-the-005-list). <!-- TODO #81: link the larger-canvas section once #81 has updated it. -->

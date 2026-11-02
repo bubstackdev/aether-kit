@@ -108,6 +108,12 @@ references, native qualification and a guide.
 
 By the rule above, these weren't merged by the tag and move to 0.0.5, unchanged in scope unless noted.
 
+**Status at the 0.0.5 release** (2026-11-02, [release notes](release-notes/0.0.5.md)): the FL2VA conditioner
+presentation (#91) and last-frame conditioning (#78) shipped. <!-- TODO #81: "The larger-canvas measurements shipped
+(#81), and the location-free H3 profile identity answers the identity half of profile paths relative to
+`bundle.json`; the paths themselves are still absolute." if #81 is merged by the tag. --> Every other item below is
+still open.
+
 - **H3 FL2VA conditioner presentation** ([item](#parallel-track-hardening-and-coverage),
   [known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)).
 - **H3 last-frame conditioning** ([item](#parallel-track-hardening-and-coverage),
