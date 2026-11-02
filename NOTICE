@@ -91,3 +91,10 @@ forward pass in Hugging Face Transformers 4.57.3
 Apache-2.0, copyright Microsoft and the HuggingFace Inc. team. No Phi weights
 or tokenizer assets are distributed. The microsoft/phi-2 checkpoint at revision
 9a5117d15e407c48fa40f8adbac1244abae52d6f retains its MIT terms.
+
+SD-Turbo spike (v0.0.6)
+The optional SD-Turbo port uses stabilityai/sd-turbo at revision
+b261bac6fd2cf515557d5d0707481eafa0485ec2. Model assets are not included in
+this repository and retain the Stability AI Community License. The exporter
+copies the checkpoint's LICENSE.md into the generated bundle. Forge uses the
+existing pinned Diffusers and Transformers packages for model definitions.
