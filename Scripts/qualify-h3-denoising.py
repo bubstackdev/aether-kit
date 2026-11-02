@@ -115,16 +115,15 @@ def main():
             raise
         finally:
             # A workload h3_controller.start stopped itself (a signal while starting) is joined too.
-            if proc is not None:
-                h3_controller.stop(proc, grace=8, force=controller.get("interrupted", False))
+            controller["joined"] = h3_controller.stop(proc, grace=8) if proc is not None else True
             if h3_controller.interrupted():
                 controller["interrupted"] = True
-            controller.update(joined=True, exitCode=proc.returncode if proc else None, elapsedSeconds=time.monotonic() - start)
+            controller.update(exitCode=proc.returncode if proc else None, elapsedSeconds=time.monotonic() - start)
             controller["sourcePinsUnchanged"] = all(sha(p) == digest for p, digest in pins.items())
             save()
     try:
         report = json.loads((output / "report.json").read_text())
-        controller["passed"] = (proc.returncode == 0 and not controller["timedOut"] and not controller.get("interrupted")
+        controller["passed"] = (proc.returncode == 0 and controller["joined"] and not controller["timedOut"] and not controller.get("interrupted")
                                 and controller["sourcePinsUnchanged"]
                                 and report.get("passed") is (not args.capture)
                                 and report.get("stage") == ("complete" if args.run or args.lifecycle else "capturedAwaitingCPUReferences" if args.capture else "ready")

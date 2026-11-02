@@ -193,11 +193,10 @@ def main():
             except KeyboardInterrupt:
                 record["interrupted"] = True
             finally:
-                if proc is not None:
-                    h3_controller.stop(proc, grace=15, force=record.get("interrupted", False))
+                record["joined"] = h3_controller.stop(proc, grace=15) if proc is not None else True
                 if h3_controller.interrupted():
                     record["interrupted"] = True
-        record.update(joined=True, exitCode=proc.returncode if proc else None, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
+        record.update(exitCode=proc.returncode if proc else None, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
         if kind == "cpu":
             record["sampledPeakGroupRSSBytes"] = peak
         record["sourcePinsUnchanged"] = all(sha(p) == digest for p, digest in pins.items())
@@ -208,7 +207,7 @@ def main():
             record["outputError"] = m.get("report", {}).get("error") if isinstance(m.get("report"), dict) else None
         except (OSError, ValueError) as error:
             record["outputError"] = f"manifest unreadable: {error}"
-        record["passed"] = (record["exitCode"] == 0 and not record["timedOut"] and not record.get("rssLimitExceeded")
+        record["passed"] = (record["exitCode"] == 0 and record["joined"] and not record["timedOut"] and not record.get("rssLimitExceeded")
                             and not record.get("interrupted") and record["sourcePinsUnchanged"] and record.get("outputError") is None)
         record_path.write_text(json.dumps(record, indent=2) + "\n")
         print(f"{name}: passed={record['passed']} exit={record['exitCode']} {record['elapsedSeconds']} s", flush=True)

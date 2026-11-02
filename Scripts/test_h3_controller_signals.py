@@ -11,10 +11,13 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS))
+import h3_controller  # noqa: E402
 # With AETHER_TEST_STUB_IGNORE_TERM the stub ignores SIGTERM, so a controller's cleanup sits in its grace period.
 STUB = '#!/bin/sh\n[ -n "$AETHER_TEST_STUB_IGNORE_TERM" ] && trap "" TERM\necho $$ > "$AETHER_TEST_STUB_PGID"\nexec sleep 60\n'
 
@@ -68,8 +71,8 @@ class ControllerTerminationTests(unittest.TestCase):
     def terminate(self, script, arguments, sig=signal.SIGTERM, again=()):
         """Starts `script` with `arguments`, waits for its stub workload, sends `sig` to the controller alone and
         returns the stub's process group once the controller has exited. With `again`, the stub ignores SIGTERM, so the
-        controller is still in its cleanup grace period when each of those further signals arrives a second later: they
-        must escalate the cleanup (the workload is killed well before the grace period ends), never abandon it."""
+        controller is still in its cleanup grace period when those further signals arrive a second later: they must
+        not cut the cleanup short, so the controller exits only after its SIGKILL at the grace deadline."""
         shutil.copy(SCRIPTS / script, self.root / "Scripts" / script)
         pgid_file = self.root / f"stub-{script}.pgid"
         env = dict(os.environ, AETHER_TEST_STUB_PGID=str(pgid_file))
@@ -93,10 +96,8 @@ class ControllerTerminationTests(unittest.TestCase):
             for extra in again:
                 if controller.poll() is None:
                     controller.send_signal(extra)
-            signalled = time.monotonic()
-            controller.wait(timeout=30)
-            if again:
-                self.assertLess(time.monotonic() - signalled, 5, f"{script}'s further signals didn't escalate its cleanup")
+                    time.sleep(0.2)
+            controller.wait(timeout=40)
         finally:
             if controller.poll() is None:
                 controller.kill()
@@ -187,6 +188,74 @@ class ControllerTerminationTests(unittest.TestCase):
                                                 "--work", str(work)], again=(signal.SIGTERM, signal.SIGTERM))
         records = self.interrupted_records(work)
         self.assertTrue(records and all(r["joined"] and not r["passed"] for r in records))
+
+
+def reset_controller_state():
+    h3_controller.pending.clear()
+    h3_controller._state.update(exiting=False, starting=False, stopping=False)
+
+
+class StopTests(unittest.TestCase):
+    """h3_controller.stop() waits for the whole group, not just its leader."""
+
+    def setUp(self):
+        reset_controller_state()
+        self.directory = Path(tempfile.mkdtemp(prefix="h3-controller-stop-"))
+        self.procs = []
+
+    def tearDown(self):
+        for proc in self.procs:   # only groups this test started, should a check have failed
+            if group_alive(proc.pid):
+                os.killpg(proc.pid, signal.SIGKILL)
+            proc.poll()
+        reset_controller_state()
+        shutil.rmtree(self.directory, ignore_errors=True)
+
+    def start(self, script):
+        proc = h3_controller.start(["/bin/sh", "-c", script])
+        self.procs.append(proc)
+        time.sleep(0.5)   # let the shells set their traps
+        return proc
+
+    def test_a_leader_that_exits_on_sigterm_does_not_end_the_wait(self):
+        # lockf leads a GPU wrapper's group and exits at once on SIGTERM while its child runs on.
+        proc = self.start('(trap "" TERM; exec sleep 30) & wait')
+        started = time.monotonic()
+        self.assertTrue(h3_controller.stop(proc, grace=2))
+        self.assertFalse(group_alive(proc.pid))
+        self.assertGreaterEqual(time.monotonic() - started, 1.9, "the TERM-ignoring child was killed before the grace period")
+
+    def test_a_wrapper_releases_before_the_group_is_killed_even_after_a_second_signal(self):
+        # Like with-gpu-lock.sh: the leader exits on SIGTERM; the wrapper shell stops its TERM-ignoring command with its
+        # own SIGKILL a second later, then releases. A second signal meanwhile must not kill the wrapper first.
+        released = self.directory / "released"
+        wrapper = self.directory / "wrapper.sh"
+        wrapper.write_text("""trap 'kill -TERM $c; sleep 1; kill -KILL $c; wait $c; echo released > "$1"; exit 130' TERM\n"""
+                           """sh -c 'trap "" TERM; exec sleep 30' &\nc=$!\nwait $c\n""")
+        proc = self.start(f'sh {wrapper} {released} & wait')
+        previous = {sig: signal.getsignal(sig) for sig in h3_controller.SIGNALS}
+        h3_controller.install()
+        try:
+            timer = threading.Timer(0.3, lambda: os.kill(os.getpid(), signal.SIGTERM))
+            timer.start()
+            started = time.monotonic()
+            joined = h3_controller.stop(proc, grace=5)
+            timer.join()
+        finally:
+            for sig, handler in previous.items():
+                signal.signal(sig, handler)
+        self.assertTrue(joined and not group_alive(proc.pid))
+        self.assertTrue(released.exists(), "the wrapper was killed before it released")
+        self.assertLess(time.monotonic() - started, 5, "the group should empty once the wrapper releases")
+        self.assertTrue(h3_controller.interrupted(), "the second signal is queued, not lost")
+
+    def test_an_interrupted_controller_starts_nothing(self):
+        marker = self.directory / "started"
+        h3_controller.pending.append(signal.SIGTERM)
+        with self.assertRaises(KeyboardInterrupt):
+            h3_controller.start(["/bin/sh", "-c", f"touch {marker}"])
+        time.sleep(0.3)
+        self.assertFalse(marker.exists())
 
 if __name__ == "__main__":
     unittest.main()

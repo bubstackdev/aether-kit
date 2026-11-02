@@ -141,7 +141,7 @@ def run_owned(command, out, err, budget, record):
 
     However the wait ends (the budget, Ctrl-C, SIGTERM, SIGHUP or any other exception), a group still running is
     stopped and joined before this returns or raises, so no workload, and no GPU lease, outlives the gate; signals during
-    that cleanup escalate it rather than cut it short (h3_controller). Updates `record` with `timedOut`, `interrupted`,
+    that cleanup are queued, never cut it short (h3_controller). Updates `record` with `timedOut`, `interrupted`,
     `exitCode` and `joined`; returns the exit code and re-raises the interruption."""
     proc = None
     try:
@@ -154,11 +154,10 @@ def run_owned(command, out, err, budget, record):
         record["interrupted"] = True
         raise
     finally:
-        if proc is not None:
-            h3_controller.stop(proc, grace=15, force=bool(record.get("timedOut") or record.get("interrupted")))
+        record["joined"] = h3_controller.stop(proc, grace=15) if proc is not None else True
         if h3_controller.interrupted():
             record["interrupted"] = True
-        record.update(exitCode=proc.returncode if proc else None, joined=True)
+        record["exitCode"] = proc.returncode if proc else None
     return record["exitCode"]
 
 
@@ -256,7 +255,7 @@ def main():
                         raise
                 record.update(elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
                               sourcePinsUnchanged=all(sha(p) == v for p, v in pins.items()))
-                record["passed"] = (record["exitCode"] == 0 and not record["timedOut"] and not record.get("interrupted")
+                record["passed"] = (record["exitCode"] == 0 and record["joined"] and not record["timedOut"] and not record.get("interrupted")
                                     and record["sourcePinsUnchanged"])
                 record_path.write_text(json.dumps(record, indent=2) + "\n")
                 print(f"{name}: passed={record['passed']} {record['elapsedSeconds']} s", flush=True)
