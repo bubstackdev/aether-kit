@@ -709,12 +709,17 @@ public actor H3ProfileQualifier {
     }
     /// Upstream's FL2VA presentation of `keyframes` and the prompt `ids`, exactly as the session's conditioner stage
     /// computes it; `tokenize` tokenizes the keyframe labels.
+    /// `layers` names decoder layers whose outputs (before any DeepStack add, as upstream's layer hooks record them)
+    /// are returned in `outputs`, for locating where a native tap departs from the oracle's.
     public func conditioning(ids: [Int32], keyframes: [H3Keyframe], tokenize: @escaping @Sendable (String) throws -> [Int32],
-                             onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in }) async throws -> H3Conditioning {
+                             layers: Set<Int> = [], onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in })
+        async throws -> (conditioning: H3Conditioning, outputs: [Int: H3TensorData]) {
         let prompt = "\u{0}ids"
-        let stage = try H3ProfileConditioner(profile: profile, tokenize: { $0 == prompt ? ids : try tokenize($0) }, kernel: conditioner,
+        let recorder = H3LayerRecorder(inner: conditioner, layers: layers)
+        let stage = try H3ProfileConditioner(profile: profile, tokenize: { $0 == prompt ? ids : try tokenize($0) }, kernel: recorder,
                                              vision: profile.conditionerVision.map { NativeH3VisionKernel($0) })
-        return try await stage.encode(prompt, keyframes: keyframes, geometry: try H3Geometry(), onLayer: onLayer)
+        let conditioning = try await stage.encode(prompt, keyframes: keyframes, geometry: try H3Geometry(), onLayer: onLayer)
+        return (conditioning, await recorder.store.outputs)
     }
     public func refine(_ tap: H3TensorData) async throws -> H3TensorData { try await denoiser.refine(tap) }
     public func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
@@ -742,4 +747,22 @@ public actor H3ProfileQualifier {
 extension H3Packing {
     /// Public for probes: the gather permutation of `layout` (see `H3Packing.gather`).
     public static func gatherIndices(_ layout: H3Layout) throws -> [Int32] { try gather(layout) }
+}
+
+/// Passes conditioner layers through and keeps the outputs of the listed ones (qualification only).
+@available(macOS 27, iOS 27, *)
+private struct H3LayerRecorder: H3ConditionerKernel {
+    actor Store {
+        private(set) var outputs: [Int: H3TensorData] = [:]
+        func keep(_ index: Int, _ hidden: H3TensorData) { outputs[index] = hidden }
+    }
+    let inner: any H3ConditionerKernel
+    let layers: Set<Int>
+    let store = Store()
+    func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        let output = try await inner.layer(index, hidden: hidden, cos: cos, sin: sin)
+        if layers.contains(index) { await store.keep(index, output) }
+        return output
+    }
+    func release() async { await inner.release() }
 }

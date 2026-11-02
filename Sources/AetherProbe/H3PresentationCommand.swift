@@ -66,11 +66,14 @@ enum H3PresentationCommand {
         try out.put("deepstack", images.deepstack)
         if conditioner {
             timeline.mark("conditioner")
-            let result = try await qualifier.conditioning(ids: ids, keyframes: [keyframe], tokenize: tokenizer.tokenIDs)
+            // Layers 0-3 and 49, the decoder-layer outputs the presentation oracle records.
+            let (result, layers) = try await qualifier.conditioning(ids: ids, keyframes: [keyframe], tokenize: tokenizer.tokenIDs,
+                                                                    layers: [0, 1, 2, 3, 49])
             timeline.mark("conditioner.released")
             await qualifier.release(); try? await Task.sleep(for: .seconds(1))
             guard result.tags == presentation.tags else { throw AetherError.invalidModel("conditioner tags differ from the presentation") }
             try out.put("tap", result.tap)
+            for (index, hidden) in layers.sorted(by: { $0.key < $1.key }) { try out.put(String(format: "layer%02d", index), hidden) }
         }
         timeline.mark("end"); timeline.sample()
         let samples = timeline.samples
