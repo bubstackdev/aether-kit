@@ -844,7 +844,23 @@ Records: [presentation gate](evidence/h3-presentation-gate-2026-11-02.json).
 
 **Native cost.** The tower takes under 2 s per keyframe on the GPU and is released before the conditioner layers run.
 
-**Trajectory** (960×544×124 first+last; steps 0, 1 and 7): TRAJECTORY-RESULT.
+**Trajectory** (960×544×124 first+last, 21,389 rows of which 1,085 are conditioning; steps 0, 1 and 7; [record](evidence/h3-profile-trajectory-fl2va-first-last-0.0.5-2026-11-02.json)). It passes:
+- The dump's ids, tags and M-RoPE positions equal upstream's presentation exactly, and the layout and step plan match the pipeline's.
+- All 457 boundary hashes replay exactly. Capture and replay peaked at 12.56 GiB of Metal.
+- Every comparison is within the 0.02 bar:
+
+| Comparison | Step 0 | Step 1 | Step 7 |
+| --- | --- | --- | --- |
+| Packing | 0.0015% | 0.0016% | 0.0016% |
+| Block 0 | 0.58% | 0.56% | 0.53% |
+| Block 49 | 1.76% | 1.85% | 1.70% |
+| Video heads | 0.17% | 0.17% | 0.16% |
+| Audio heads | 0.18% | 0.20% | 0.19% |
+| Scheduler updates | byte-identical | byte-identical | byte-identical |
+
+The condition rows match the pipeline's own encode at 0.021%. Block 49 sits higher than the text-only first+last gate's 1.15% at step 0. The float32 diagnostic puts native at 1.6–1.8% from float32 there, so the bf16 reference and native are about equally far from exact. Kit's refined text against the refiner on upstream's own tap is 0.20 (cosine 0.979); that is the tower-rounding effect above, recorded and not gated. The oracle ran beside the memory gate's GPU renders.
+
+This qualifies last-frame and first+last conditioning at 960×544 under the 0.0.5 presentation.
 
 **A/B review (D10, 2026-11-02).** Old and new FL2VA renders, same seed (1043), prompt, crane keyframe, canvas and Turbo8:
 - The old render turns the folded-paper crane into a realistic white bird. The new one stays a folded-paper crane, keeping the keyframe's paper and facets.
