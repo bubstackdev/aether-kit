@@ -12,6 +12,7 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ### Changed
 
+- **H3 measured admission is keyed by a location-free identity:** `H3ProfileEngine.resourceIdentity` is now `h3.profile/2:<H3Profile.contentSHA256>:<recipe>`. `contentSHA256` hashes the manifest without its `path` fields, tokenizer directory or `lineage`, so a profile copied to another path, Mac or user keeps its measured entries ([guide](docs/h3-integration.md#measured-admission)). The bundled 0.0.3 entry is re-keyed (`0707647b…`, the content of 5af39db5 and of the c49d8dbf original). `aether-probe h3-profile-identity` prints a profile's identities. **Source change:** entries written with `h3.profile/1:` identities no longer match.
 - **H3 FL2VA needs the vision overlay:** a profile without `conditioner_vision` (every 0.0.4 profile) refuses FL2VA, as does a canvas without a tower graph. T2VA is unchanged. **Source change:** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning` (the tap and the row tags), and `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have default implementations for text-only conditioners, so existing conformances compile. An FL2VA request has 518 more rows per 960×544 keyframe (888 at 1280×704) and a correspondingly smaller prompt budget.
 
 ### Fixed
