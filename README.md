@@ -2,21 +2,21 @@
 
 Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
-**Status: 0.0.3 experimental developer preview.** APIs may change in any 0.0.x release, and there is no compatibility promise yet. No model weights are distributed. See the [release notes](docs/release-notes/0.0.3.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
+**Status: 0.0.4 experimental developer preview.** The language facade, model preparation, readiness and lifecycle API is frozen for the rest of 0.0.x ([API stability](docs/api-stability.md)); every other API may still change in any 0.0.x release. Kit publishes one sample bundle, Qwen3-0.6B converted from `Qwen/Qwen3-0.6B` under Apache-2.0, and distributes no other weights ([sample app](docs/sample-app.md)). See the [release notes](docs/release-notes/0.0.4.md), the [changelog](CHANGELOG.md) and [known limitations](#known-limitations).
 
 | Product | Maturity | What it provides |
 | --- | --- | --- |
-| `AetherKit` | Preview | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, PCM audio with WAV output, language model registration, the shared GPU lease and opt-in GPU admission. No Core AI dependency. |
-| `AetherAssets` | Preview | Immutable local asset installation: staged SHA-256-verified import, installation IDs, reader leases, abandoned-stage recovery. No Core AI dependency. |
+| `AetherKit` | Preview; lifecycle types **API frozen** (0.0.4) | Owned float32/fp16/int32 tensors, typed errors, decoded RGB/PNG images, PCM audio with WAV output, language model registration, the shared GPU lease and opt-in GPU admission, and the managed lifecycle policy: idle unload and memory-pressure release ([lifecycle](docs/model-lifecycle.md)). No Core AI dependency. |
+| `AetherAssets` | Preview; preparation and readiness **API frozen** (0.0.4) | Immutable local asset installation: staged SHA-256-verified import, installation IDs, reader leases, abandoned-stage recovery. Model preparation from pinned catalog entries, with resumable and iOS background downloads, and typed readiness ([preparation](docs/model-preparation.md), [readiness](docs/model-readiness.md)). No Core AI dependency. |
 | `AetherCoreAI` | Preview | Local Core AI model loading and introspection, a stateless typed reference executor, installed-asset model sessions and optional shared resource reservations. |
 | `AetherKrea` | Preview | Krea bundle validation, prompt/conditioning and reference-image contracts, refine schedules, rotary inputs and seeded noise. |
 | `AetherKreaTokenizers` | Preview | Optional local tokenizer adapter (Hugging Face `Tokenizers`); never downloads files. |
 | `AetherKreaCoreAI` | Preview | Krea 2 Turbo text-to-image, with reference images and image-to-image refine: Qwen text encoder → four denoiser segments → Euler sampling → VAE decode. |
 | `AetherLanguageTokenizers` | **Experimental** (0.0.2) | A language model's local tokenizer and own chat template: chat messages (with image placeholders) to rendered token IDs, and tokens back to text. Never downloads. |
 | `AetherLanguageRuntime` | **Experimental** (0.0.3) | Backend-neutral language runtime at the macOS 14 / iOS 17 floor: the `LanguageBackend` protocol, a seeded sampler, token constraints and the shared decode loop. No Core AI dependency ([design](docs/language-runtime-seam.md)). |
-| `AetherLanguage` | **Experimental** (0.0.3) | The app-facing text facade in FoundationModels' shape: availability without loading, sessions, streaming, sampling, reasoning and structured output into `Decodable` types. Links at the floor; runs a model on macOS 27 / iOS 27 ([design](docs/language-facade.md)). |
+| `AetherLanguage` | **API frozen** (0.0.4) | The app-facing text facade in FoundationModels' shape: availability without loading, sessions, streaming, sampling, reasoning and structured output into `Decodable` types. Links at the floor; runs a model on macOS 27 / iOS 27 ([design](docs/language-facade.md)). |
 | `AetherLanguageFoundationModels` | **Experimental** (0.0.3) | `AetherLanguageModel` as a FoundationModels `LanguageModel`, including `@Generable` guided generation (macOS 27 / iOS 27). |
-| `AetherLanguageMacros` | **Experimental** (0.0.3) | `@AetherGenerable` and `@AetherGuide`, which write a type's generation schema. A separate product, so apps that don't use it don't build swift-syntax. |
+| `AetherLanguageMacros` | **API frozen** (0.0.4) | `@AetherGenerable` and `@AetherGuide`, which write a type's generation schema. A separate product, so apps that don't use it don't build swift-syntax. |
 | `AetherLanguageCoreAI` | **Experimental** | Local dense-language generation with a growable KV cache, streaming tokens and explicit unload; sampling and token constraints; Qwen3-VL image + text prompts with one or more images (`VisionLanguageSession`); optional resource admission. |
 | `AetherVision` | **Experimental** | Core-AI-independent image decoding (EXIF orientation, an alpha policy that drops alpha like upstream by default) and Qwen3-VL preprocessing. |
 | `AetherH3`, `AetherH3Tokenizers` | Preview (0.0.3) | MiniMax H3 CPU contracts: geometry, packing, schedules, profile validation, stitching, video request types and a local tokenizer. |
@@ -31,13 +31,13 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 
 - Package floor: macOS 14 and iOS 17, so apps can link the language facade there; it reports "unsupported OS" below 27. Everything that runs a model (Core AI, the `*CoreAI` products, the FoundationModels adapter) needs Apple silicon and macOS 27 or iOS 27 at runtime, and its declarations are `@available(macOS 27, iOS 27, *)` ([deployment floor](docs/deployment-floor.md)).
 - Xcode 27.1 / Swift 6.4. Several targets enable Swift's experimental `Lifetimes` feature, which Core AI's span-based APIs require, so older toolchains are unsupported.
-- **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434).** Other Macs are expected to work but are unqualified. iOS is unqualified in this repository, except Kokoro speech on two iPhones and the Qwen3-0.6B on one (iPhone18,2, iOS 27.2).
+- **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434)**; the 0.0.4 preparation, readiness, lifecycle and sample-app qualifications ran on macOS 27.2 (26B123). Other Macs are expected to work but are unqualified. iOS is unqualified in this repository, except Kokoro speech on two iPhones and the Qwen3-0.6B on one (iPhone18,2, iOS 27.2), and the 0.0.4 preparation, readiness, lifecycle and sample app on an iPhone19,4 (iOS 27.2).
 - Model assets: your own local Core AI exports (see [Models and assets](#models-and-assets)).
 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/bubstackdev/aether-kit", exact: "0.0.3")
+.package(url: "https://github.com/bubstackdev/aether-kit", exact: "0.0.4")
 ```
 
 ```swift
@@ -133,7 +133,7 @@ Measured 2026-10-26 on the M5 Max, float32, durations on CPU and decoder on GPU 
 
 ## Models and assets
 
-AetherKit loads local Core AI exports that you supply and never downloads weights.
+AetherKit loads local Core AI exports. You supply them, or an app downloads one with `ModelPreparation` from a pinned catalog entry ([model preparation](docs/model-preparation.md)). Kit publishes one sample bundle: Qwen3-0.6B, converted from `Qwen/Qwen3-0.6B` under Apache-2.0, at [`aether-models/aether-kit-qwen3-0.6b`](https://huggingface.co/aether-models/aether-kit-qwen3-0.6b), which `Examples/SampleApp` downloads. It distributes no other weights.
 
 - **Krea:** a bundle directory containing `aether.json` (the recipe), `metadata.json`, six or seven `.aimodel` assets with `main.hash` declarations, and `tokenizer/`. It can optionally be installed through `AetherAssets`. A full written bundle specification isn't published yet.
 - **Language:** a registered bundle with `language-model.json`.
@@ -166,18 +166,18 @@ Real-weight suites are opt-in and skipped by default:
 - `AETHER_NATIVE_LANGUAGE_QUALIFICATION`, `AETHER_NATIVE_LANGUAGE_MEMORY_BUDGET`, `AETHER_NATIVE_LANGUAGE_OVERLAP` and the other `AETHER_NATIVE_LANGUAGE_*` suites
 - `AETHER_NATIVE_QWEN3VL`, `AETHER_NATIVE_QWEN3VL_SESSION` and `AETHER_NATIVE_VL_MEMORY`
 
-Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Python export and reference tooling runs in Forge's locked environments: `uv sync --frozen --project Forge` (language, Qwen3-VL, Kokoro and FLUX.2) and `uv sync --frozen --project Forge/h3-oracle` (H3). Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.3 release notes](docs/release-notes/0.0.3.md) and the [0.0.3 roadmap](docs/roadmap-0.0.3.md).
+Run one at a time; [Krea generation](docs/krea-generation.md) has the commands. GPU-using probe commands, the benchmark script and the native suites take the shared GPU lease (`/tmp/atelier-gpu.lock`) themselves and wait while Atelier or another tool holds it; see [GPU lease and admission](docs/gpu-lease.md) for the `AETHER_GPU_LEASE*` overrides and the opt-in session admission. Python export and reference tooling runs in Forge's locked environments: `uv sync --frozen --project Forge` (language, Qwen3-VL, Kokoro and FLUX.2) and `uv sync --frozen --project Forge/h3-oracle` (H3). Engineering records and evidence are indexed in [docs](docs/README.md); release status is in the [0.0.4 release notes](docs/release-notes/0.0.4.md) and the [0.0.4 roadmap](docs/roadmap-0.0.4.md).
 
 ## Known limitations
 
 - **Single qualified Mac:** one M5 Max running macOS 27.0.1. iOS is unqualified here, except Kokoro speech, which passed on an iPhone19,4 (iOS 27.1) and an iPhone18,2 (iOS 27.2), and the Qwen3-0.6B on the iPhone18,2. The Qwen3-VL-2B doesn't open at an iPhone's default memory limits ([on-device host](docs/language-generation.md#on-device-host-003)).
-- **No Krea bundle specification**, and no hosted assets or download transport.
+- **No Krea bundle specification.** Kit hosts one sample bundle (Qwen3-0.6B); apps host every other model themselves and pin it in a catalog entry ([model preparation](docs/model-preparation.md)).
 - **Slow first image:** model first-load dominates the first image in a process.
 - **Krea progress callbacks are synchronous:** a slow observer stalls sampling.
 - **Resource admission reserves caller estimates;** it is not measured footprint enforcement, and qualified estimates aren't shipped (except H3's measured admission entry).
 - **Language:** Core AI retains Metal memory on every input-shape change until a model is released. Sessions bound it by reloading the model once a growth budget (2 GiB by default) is spent, at idle where possible; this is a workaround, not a fix. Bucketed decode runs at about 0.88× the speed of an unrecycled running-contract step (Qwen3-0.6B fp16), and on long prompts bucketed time to first token stays above the running contract's: 147–155 ms against 83 ms at 2,048 tokens on the Qwen3-0.6B, since 0.0.3's long-prompt plan ([time to first token](docs/language-generation.md#time-to-first-token)). 0.0.1-contract assets reload every 128 submissions.
 - **Qwen3-VL:** a one-function export wires one copy of the decoder's weights, about 8.2 GiB for an image request on the 4B; 0.0.2 two-function bundles still wire a copy per function (about 16 GiB). Opening a decoder reads its whole compiled file into the page cache (15 GiB for the one-function 4B). Images snap to five fixed grids (stretching by up to about 15%, more beyond 16:9). Prompts may carry several images. Resource admission is per process. Qualified on macOS only ([limits](docs/qwen3-vl.md#limits-and-follow-ups)).
-- **H3:** Preview since 0.0.3. Measured admission knows one profile on one Mac (`5af39db5`, Turbo8, M5 Max) and refuses others, and Turbo4 stays outside it; its 16.6 GiB worst case covers an unexplained step-0 transient (up to 16.12 GiB) seen in two renders. The qualified profile is a local export outside this repository; profile paths relative to `bundle.json` are a follow-up. The 2026-10-18 gates are historical, because their assets were lost.
+- **H3:** Preview since 0.0.3. Measured admission knows one profile on one Mac (`5af39db5`, Turbo8, M5 Max) and refuses others, and Turbo4 stays outside it; its 16.6 GiB worst case covers an unexplained step-0 transient (up to 16.12 GiB) seen in two renders. Since 0.0.4 a request must fit inside a listed canvas of the same orientation. FL2VA's conditioner sees the prompt text alone, where upstream also presents each keyframe as image tokens; the fix is planned for 0.0.5 ([known deviation](docs/h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). The qualified profile is a local export outside this repository; profile paths relative to `bundle.json` are a follow-up. The 2026-10-18 gates are historical, because their assets were lost.
 - **Kokoro:** phoneme input only; the app supplies G2P. The decoder specializes once per length bucket on the GPU (about 1–6 s each), and larger buckets hold several GB of Metal memory while loaded (bucket 2048 alone adds about 8 GB); the process footprint falls to under 0.3 GB within 2 s of unload. Sessions therefore cap utterances at 1024 frames (about 25.6 s) by default on macOS and 512 (about 12.8 s) on iOS, where two iPhones were qualified; `frameCap: .extended` raises the cap to 2048, and longer segments are refused with their length and the cap. The duration graph runs on the CPU because its GPU specialization fails on macOS 27.0.1. 0.0.2 ships the float32 decoder only; the float16/int8 export flags are experimental and fail qualification.
 - **CI scope:** PR checks cover weight-free contracts and consumer integration. Real-weight GPU qualification remains an explicit local operation.
 

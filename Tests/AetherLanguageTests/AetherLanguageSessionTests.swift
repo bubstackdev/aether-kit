@@ -143,6 +143,57 @@ struct AetherLanguageSessionTests {
         #expect(collected.content == reply)
     }
 
+    @Test func anIteratedStreamReportsItsStopReasonAndUsage() async throws {
+        let backend = FakeBackend { _ in FakeVocabulary.tokens("Hello there, friend.") }
+        let session = AetherLanguageSession(model: FakeModel.make(backend: backend))
+        var iterator = session.streamResponse(to: "q").makeAsyncIterator()
+        #expect(iterator.response == nil)
+        var streamed = ""
+        while let snapshot = try await iterator.next() {
+            streamed = snapshot.content
+            #expect(iterator.response == nil || snapshot.content == "Hello there, friend.")
+        }
+        let finished = try #require(iterator.response)
+        #expect(finished.content == streamed && streamed == "Hello there, friend.")
+        #expect(finished.stopReason == .endOfTurn)
+        #expect(finished.usage.promptTokens > 0 && finished.usage.outputTokens > 0)
+        #expect(finished.transcriptEntries == [.prompt("q"), .response(streamed)])
+
+        var limited = session.streamResponse(to: "again", options: .init(maximumResponseTokens: 2)).makeAsyncIterator()
+        while try await limited.next() != nil {}
+        let cut = try #require(limited.response)
+        #expect(cut.stopReason == .outputLimit && cut.usage.outputTokens == 2)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aFailedOrCancelledStreamHasNoResponse() async throws {
+        let small = FakeBackend(context: 64) { _ in FakeVocabulary.tokens("x") }
+        let tight = AetherLanguageSession(model: FakeModel.make(context: 64, backend: small))
+        var failing = tight.streamResponse(to: String(repeating: "long ", count: 20)).makeAsyncIterator()
+        do {
+            while try await failing.next() != nil {}
+            Issue.record("expected contextWindowExceeded")
+        } catch AetherLanguageError.contextWindowExceeded {}
+        #expect(failing.response == nil)
+
+        let slow = FakeBackend(stepDelay: .milliseconds(10)) { _ in FakeVocabulary.tokens(String(repeating: "word ", count: 100)) }
+        let session = AetherLanguageSession(model: FakeModel.make(backend: slow))
+        let cancelled = Task { () -> (sawText: Bool, response: Bool) in
+            var iterator = session.streamResponse(to: "q").makeAsyncIterator()
+            var sawText = false
+            do {
+                while let snapshot = try await iterator.next() {
+                    if !sawText && !snapshot.content.isEmpty {
+                        sawText = true
+                        withUnsafeCurrentTask { $0?.cancel() }
+                    }
+                }
+            } catch {}
+            return (sawText, iterator.response != nil)
+        }
+        let result = await cancelled.value
+        #expect(result.sawText && !result.response)
+    }
+
     @Test(.timeLimit(.minutes(1))) func abandoningAStreamCancelsTheRequest() async throws {
         let backend = FakeBackend(stepDelay: .milliseconds(10)) { _ in FakeVocabulary.tokens(String(repeating: "word ", count: 100)) }
         let session = AetherLanguageSession(model: FakeModel.make(backend: backend))

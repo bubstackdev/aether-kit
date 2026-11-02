@@ -13,6 +13,8 @@ case .unavailable(.unsupportedPlatform): "unsupportedPlatform"
 case .unavailable(.bundleMissing): "bundleMissing"
 case .unavailable(.bundleInvalid(let reason)): "bundleInvalid(\(reason))"
 case .unavailable(.unsupportedTemplate): "unsupportedTemplate"
+// UnavailableReason is @nonexhaustive: later 0.0.x releases may add reasons.
+case .unavailable(let reason): "\(reason)"
 }
 print("OS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
 print("AetherLanguage availability: \(availability)")

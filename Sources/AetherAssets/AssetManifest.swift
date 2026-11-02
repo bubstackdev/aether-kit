@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-public enum AssetStoreError: Error, Sendable, Equatable {
+@nonexhaustive public enum AssetStoreError: Error, Sendable, Equatable {
     case invalidManifest(String)
     case integrityMismatch(String)
     case unsafePath(String)

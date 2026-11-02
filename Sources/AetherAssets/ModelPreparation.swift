@@ -20,7 +20,7 @@ public struct TransportRequest: Sendable, Equatable {
     }
 }
 
-public enum PreparationError: Error, Sendable, Equatable {
+@nonexhaustive public enum PreparationError: Error, Sendable, Equatable {
     case insufficientSpace(needed: UInt64, available: UInt64)
     case integrityMismatch(path: String)
     case http(status: Int, path: String)
@@ -40,7 +40,7 @@ public enum PreparationError: Error, Sendable, Equatable {
     }
 }
 
-public enum PreparationEvent: Sendable, Equatable {
+@nonexhaustive public enum PreparationEvent: Sendable, Equatable {
     case checking
     /// Overall and per-file download progress. Coalesced; each file's final count is always delivered.
     case downloading(path: String, fileBytes: UInt64, fileTotal: UInt64, bytesDone: UInt64, bytesTotal: UInt64)

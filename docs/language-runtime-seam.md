@@ -3,8 +3,8 @@
 Status: design approved and all seven commits implemented, 2026-10-27 (see [Implementation plan](#implementation-plan));
 commit 6 followed the decoder rework. This is the first piece of the 0.0.3 app-facing language
 track ([roadmap](roadmap-0.0.3.md#parallel-track-an-app-facing-language-product)): a sampler and logits hook, and a
-`LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. Type names are
-illustrative until the facade has run in a real app (see [architecture](architecture.md)).
+`LanguageBackend` protocol that the `AetherLanguage` facade can drive without knowing about Core AI. `AetherLanguageRuntime`
+itself is not frozen; the facade above it is ([API stability](api-stability.md)).
 
 ## Where things stand
 

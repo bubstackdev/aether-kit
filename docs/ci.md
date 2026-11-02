@@ -10,11 +10,12 @@ A pull request that changes only documentation (`docs/`, top-level Markdown, `LI
 | Workflow validation | `ubuntu-24.04` | All workflows pass checksum-pinned actionlint 1.7.12, including its available shell checks. |
 | Package floor (macOS 14) | `xcode-27` (Apple silicon), Xcode 27.1 | `Scripts/check-floor.sh --macos`: `annotate-floor.py --check`, every product at macOS 14, and `Examples/FloorConsumer` weak-linking CoreAI, which it runs and stages for the launch job. |
 | Package floor (iOS 17) | `xcode-27`, Xcode 27.1 | `Scripts/check-floor.sh --ios`: every library at iOS 17, and the floor consumer's iOS 17 device build weak-linking CoreAI. |
-| Release contracts and consumers | `xcode-27`, Xcode 27.1 | The complete weight-free Release suite built at macOS 27, then `Examples/Foundations` and `Examples/LocalPackage` as separate consumer packages. |
+| Release contracts and consumers | `xcode-27`, Xcode 27.1 | The complete weight-free Release suite built at macOS 27, then `Examples/Foundations` and `Examples/LocalPackage` as separate consumer packages, and the sample app's logic tests (`Examples/SampleApp/SampleAppCore`). |
+| Public API (frozen) | `xcode-27`, Xcode 27.1 | `Scripts/check-api.sh`: the frozen API ([API stability](api-stability.md)), dumped with `swift-api-digester` and compared with the committed baseline in `api/`. A breaking difference fails; additions pass. A missing tool, baseline or dump fails rather than skips. |
 | Launch without CoreAI (macOS 15) | `macos-15` (Apple silicon) | The macOS 14 floor consumer staged by the macOS floor job launches on macOS 15, which has no CoreAI, and prints `AetherLanguage availability: unsupportedOS`. GitHub retires its `macos-14` image on 2026-11-02, so nothing launches it on macOS 14 itself ([deployment floor](deployment-floor.md)). |
 | **CI passed** | `ubuntu-24.04` | Change scope and workflow validation succeeded, and every Swift job succeeded, or, for a PR the change scope cleared, every Swift job was skipped. A failed or cancelled job, or a skip anywhere else, cannot produce a passing gate. |
 
-The three `xcode-27` jobs run in parallel, each from a clean checkout, so a run takes about as long as its slowest job rather than the sum.
+The four `xcode-27` jobs run in parallel, each from a clean checkout, so a run takes about as long as its slowest job rather than the sum.
 
 Each `xcode-27` job checks the host and SDK before building (`Scripts/check-ci-host.sh`). `Scripts/check-cpu.sh` clears inherited `AETHER_*` opt-ins, so external fixtures and model qualification cannot activate accidentally. Every Swift command uses its committed `Package.resolved` with `--force-resolved-versions`. Dependency repository caches reduce network work; compiler outputs and model assets are not cached. Every Swift job that runs builds from a clean checkout and executes its checks.
 
@@ -32,6 +33,8 @@ sh Scripts/check-floor.sh /tmp/aether-floor-stage   # both halves; then Scripts/
 sh Scripts/check-cpu.sh --force-resolved-versions --xunit-output /tmp/aether-tests.xml
 swift run --package-path Examples/Foundations --force-resolved-versions -c release
 swift run --package-path Examples/LocalPackage --force-resolved-versions -c release
+swift test --package-path Examples/SampleApp/SampleAppCore --force-resolved-versions
+sh Scripts/check-api.sh
 ```
 
 To run manually on GitHub after the workflow lands on `main`:
