@@ -8,10 +8,10 @@ A pull request that changes only documentation (`docs/`, top-level Markdown, `LI
 | --- | --- | --- |
 | Change scope | `ubuntu-24.04` | Whether the Swift jobs run (above). |
 | Workflow validation | `ubuntu-24.04` | All workflows pass checksum-pinned actionlint 1.7.12, including its available shell checks. |
-| Package floor (macOS 14) | `xcode-27` (Apple silicon), Xcode 27.1 | `Scripts/check-floor.sh --macos`: `annotate-floor.py --check`, every product at macOS 14, and `Examples/FloorConsumer` weak-linking CoreAI, which it runs and stages for the launch job. |
-| Package floor (iOS 17) | `xcode-27`, Xcode 27.1 | `Scripts/check-floor.sh --ios`: every library at iOS 17, and the floor consumer's iOS 17 device build weak-linking CoreAI. |
-| Release contracts and consumers | `xcode-27`, Xcode 27.1 | The complete weight-free Release suite built at macOS 27, then `Examples/Foundations` and `Examples/LocalPackage` as separate consumer packages, and the sample app's logic tests (`Examples/SampleApp/SampleAppCore`). |
-| Public API (frozen) | `xcode-27`, Xcode 27.1 | `Scripts/check-api.sh`: the frozen API ([API stability](api-stability.md)), dumped with `swift-api-digester` and compared with the committed baseline in `api/`. A breaking difference fails; additions pass. A missing tool, baseline or dump fails rather than skips. |
+| Package floor (macOS 14) | `xcode-27` (Apple silicon), Xcode 27.2 | `Scripts/check-floor.sh --macos`: `annotate-floor.py --check`, every product at macOS 14, and `Examples/FloorConsumer` weak-linking CoreAI, which it runs and stages for the launch job. |
+| Package floor (iOS 17) | `xcode-27`, Xcode 27.2 | `Scripts/check-floor.sh --ios`: every library at iOS 17, and the floor consumer's iOS 17 device build weak-linking CoreAI. |
+| Release contracts and consumers | `xcode-27`, Xcode 27.2 | The complete weight-free Release suite built at macOS 27, then `Examples/Foundations` and `Examples/LocalPackage` as separate consumer packages, and the sample app's logic tests (`Examples/SampleApp/SampleAppCore`). |
+| Public API (frozen) | `xcode-27`, Xcode 27.2 | `Scripts/check-api.sh`: the frozen API ([API stability](api-stability.md)), dumped with `swift-api-digester` and compared with the committed baseline in `api/`. A breaking difference fails; additions pass. A missing tool, baseline or dump fails rather than skips. |
 | Launch without CoreAI (macOS 15) | `macos-15` (Apple silicon); not on pull requests | The macOS 14 floor consumer staged by the macOS floor job launches on macOS 15, which has no CoreAI, and prints `AetherLanguage availability: unsupportedOS`. GitHub retires its `macos-14` image on 2026-11-02, so nothing launches it on macOS 14 itself ([deployment floor](deployment-floor.md)). |
 | **CI passed** | `ubuntu-24.04` | Change scope and workflow validation succeeded, and every Swift job succeeded, or, for a PR the change scope cleared, every Swift job was skipped. On a pull request the macOS 15 launch must be skipped; everywhere else it must succeed. A failed or cancelled job, or a skip anywhere else, cannot produce a passing gate. |
 
@@ -27,10 +27,10 @@ Each `xcode-27` job uploads its toolchain information and logs, with xUnit resul
 
 ## Reproduce a run
 
-Use Apple silicon with macOS 27, Xcode 27.1 and Swift 6.4:
+Use Apple silicon with macOS 27, Xcode 27.2 and Swift 6.4 (GitHub's `xcode-27` image carries 27.2 at `/Applications/Xcode_27.2.app`; until GitHub refreshes the image it is the 27.2 Release Candidate, 27B48):
 
 ```sh
-export DEVELOPER_DIR=/Applications/Xcode_27.1.app/Contents/Developer
+export DEVELOPER_DIR=/Applications/Xcode_27.2.app/Contents/Developer
 sh Scripts/check-floor.sh /tmp/aether-floor-stage   # both halves; then Scripts/launch-floor-consumer.sh /tmp/aether-floor-stage on macOS 14
 sh Scripts/check-cpu.sh --force-resolved-versions --xunit-output /tmp/aether-tests.xml
 swift run --package-path Examples/Foundations --force-resolved-versions -c release
