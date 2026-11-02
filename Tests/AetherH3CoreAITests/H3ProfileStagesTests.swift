@@ -411,6 +411,17 @@ private struct AudioKernel: H3AudioKernel {
     }
 }
 
+/// Review L6: native audio decoding supports exactly the profile's static lengths, so the session can refuse others first.
+@Test func h3NativeAudioDecodingSupportsOnlyTheProfilesStaticLengths() throws {
+    let fixed = try [37: asset("audio-na37"), 207: asset("audio-na207")]
+    let profileDecoder = H3Profile.AudioDecoder(model: try asset("audio"), fixed: fixed, sampleRate: 32000, hop: 800, channels: 2)
+    let decoder = H3ProfileAudioDecoder(kernel: NativeH3AudioKernel(profileDecoder))
+    let fiveSeconds = try H3Geometry(width: 960, height: 544, requestedFrames: 120)
+    let longer = try H3Geometry(width: 960, height: 544, requestedFrames: 125)
+    #expect(fiveSeconds.audioLatentsPerChannel == 207 && longer.frames == 141 && longer.audioLatentsPerChannel == 235)
+    #expect(decoder.supports(fiveSeconds) && !decoder.supports(longer))
+}
+
 /// Opt-in, CPU only: with `AETHER_H3_PROFILE` set to a measured profile on its measured device, the session's
 /// admission comes from the recorded memory measurements, one envelope per entry; elsewhere it is refused.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"] != nil))

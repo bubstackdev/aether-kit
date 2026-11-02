@@ -97,8 +97,15 @@ public protocol H3WindowDecoder: Sendable {
     func release() async
 }
 public protocol H3AudioDecoder: Sendable {
+    /// Whether this decoder can decode the geometry's audio (a profile's fixed decoders cover some lengths only); the
+    /// session refuses a request with audio it can't decode before any stage runs. Defaults to true.
+    func supports(_ geometry: H3Geometry) -> Bool
     func decode(_ latents: H3TensorData, geometry: H3Geometry) async throws -> H3AudioPCM
     func release() async
+}
+
+extension H3AudioDecoder {
+    public func supports(_ geometry: H3Geometry) -> Bool { true }
 }
 
 /// Encodes a first-frame keyframe (RGB8 at the clip size) into normalized condition latents `[1,24,1,H/16,W/16]` f32.
@@ -181,6 +188,10 @@ public actor H3VideoSession {
         guard request.firstFrame == nil || stages.keyframes != nil else { throw AetherError.unsupported("H3 session has no keyframe encoder") }
         if request.firstFrame != nil, let encoder = stages.keyframes, !encoder.supports(request.geometry) {
             throw AetherError.unsupported("H3 has no keyframe encoder for \(request.geometry.width)x\(request.geometry.height)")
+        }
+        if request.audio, !stages.audio.supports(request.geometry) {
+            throw AetherError.unsupported("H3 has no audio decoder for \(request.geometry.frames) frames "
+                                          + "(\(request.geometry.audioLatentsPerChannel) latents per channel)")
         }
         // A request is checked and reserved against the one envelope that covers it.
         let resources = try resources?.resolved(for: request)

@@ -61,6 +61,9 @@ private struct FakeWindowDecoder: H3WindowDecoder {
 private struct FakeAudioDecoder: H3AudioDecoder {
     let log: StageLog
     var samples: Int? = nil
+    /// Audio latents per channel this decoder has; nil for any.
+    var lengths: Set<Int>? = nil
+    func supports(_ geometry: H3Geometry) -> Bool { lengths?.contains(geometry.audioLatentsPerChannel) ?? true }
     func decode(_ latents: H3TensorData, geometry: H3Geometry) async throws -> H3AudioPCM {
         await log.acquire("audio")
         let count = samples ?? Int((geometry.durationSeconds * Double(H3AudioPCM.sampleRate)).rounded())
@@ -282,6 +285,21 @@ private struct AnchorCheckingDenoiser: H3Denoiser {
     #expect(await session.state == .ready)
 }
 
+
+/// Review L6: audio the decoder can't decode is refused before any stage runs, not after the whole render.
+@Test func h3AudioWithoutADecoderForItsLengthIsRefusedBeforeAnyStage() async throws {
+    let g = try geometry(), log = StageLog()
+    #expect(g.audioLatentsPerChannel == 65)
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log, lengths: [37, 207])))
+    await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1)) }
+    #expect(await log.entries.isEmpty)
+    #expect(await session.state == .ready)
+    // Without audio the same clip runs; the audio decoder is never acquired.
+    let result = try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1, audio: false))
+    let entries = await log.entries
+    #expect(!result.audio && !entries.isEmpty && !entries.contains("acquire audio"))
+}
 
 private func stageEstimates(audio: Bool = true) -> [H3VideoStage: UInt64] {
     var stages: [H3VideoStage: UInt64] = [.encoding: 20, .denoising: 40, .decodingVideo: 30]
