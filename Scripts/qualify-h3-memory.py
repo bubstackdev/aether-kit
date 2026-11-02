@@ -104,6 +104,14 @@ def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def memory_level():
+    """kern.memorystatus_level: the percent of memory the kernel considers available (None if unreadable)."""
+    try:
+        return int(subprocess.run(["sysctl", "-n", "kern.memorystatus_level"], capture_output=True, text=True, check=True).stdout)
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return None
+
+
 def stage_of(phase):
     if phase.startswith("stage."):
         name = phase.split(".")[1]
@@ -126,6 +134,9 @@ def main():
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
     ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before the next render takes it")
+    ap.add_argument("--minimum-memory-level", type=int, default=40,
+                    help="wait before each render until kern.memorystatus_level (percent of memory available) is at least this")
+    ap.add_argument("--host-note", help="recorded in the gate: what else ran on the host (for example a concurrent CPU oracle)")
     ap.add_argument("--spike-capture", type=float, metavar="GIB",
                     help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
                          "denoising sample's Metal allocation exceeds GIB (written beside the render as render-*.spike/)")
@@ -198,6 +209,11 @@ def main():
                 if name.startswith("render") and released is not None:
                     # The lock is shared with Atelier and other agents on this Mac: give them a turn between renders.
                     time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
+                if name.startswith("render"):
+                    # Never start a render on a host already short of memory; wait for it to recover.
+                    while (level := memory_level()) is not None and level < args.minimum_memory_level:
+                        print(f"{name}: memory level {level} below {args.minimum_memory_level}; waiting", flush=True)
+                        time.sleep(30)
                 print(f"{name}: start", flush=True)
                 start = time.monotonic()
                 with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:
@@ -339,7 +355,7 @@ def main():
             failures.append(f"{task} admission estimate {task_worst / (1 << 30):.2f} GiB exceeds the {bar >> 30} GiB bar")
         per_task[task] = dict(entry=measured_entry(peaks, carried_bytes, [task]), admissionWorstCaseBytes=task_worst)
     bundle = json.loads(args.profile.read_text())
-    gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
+    gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures, hostNote=args.host_note,
                 spikeCapture=dict(thresholdGiB=args.spike_capture, triggers=spikes) if args.spike_capture else None,
                 carriedRecords=carried_records, carriedStagePeaks=carried_peaks,
                 memoryBarBytes=bar, minimumPhysicalMemoryBytes=EXTENDED_PHYSICAL if bar != BAR else 0,
