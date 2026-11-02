@@ -84,6 +84,8 @@ def main():
             failures.append("a --conditioner run needs --substituted (upstream's step on this run's tower outputs)")
         else:
             sub_manifest, sub = load(args.substituted)
+            if not torch.equal(sub("token_ids"), ref("token_ids")):
+                failures.append("--substituted presented other token ids than the reference")
             for name in ("image_embeds", "deepstack"):
                 if not torch.equal(sub(name), run(name)):
                     failures.append(f"--substituted was not fed this run's {name}")

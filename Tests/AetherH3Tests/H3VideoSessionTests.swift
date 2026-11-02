@@ -217,6 +217,7 @@ private struct PresentingConditioner: H3PromptConditioner {
         #expect(keyframes.count == self.keyframes)
         return try H3Conditioning(tap: try await encode(prompt, geometry: geometry, onLayer: onLayer), tags: [0, 0, 1, 1])
     }
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { true }
     func release() async { await log.release("conditioner") }
 }
 
@@ -1023,4 +1024,38 @@ private func request(_ width: Int, _ height: Int, _ frames: Int, first: Bool = f
     monitor.deliver(.normal)
     _ = try await session.generate(request)
     #expect(await log.entries.first == "acquire conditioner")
+}
+
+/// A presenting conditioner that refuses in preflight or cannot present at the canvas.
+private struct RefusingConditioner: H3PromptConditioner {
+    let log: StageLog
+    var canPresent = true
+    func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await FakeConditioner(log: log).encode(prompt, geometry: geometry, onLayer: onLayer)
+    }
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
+        try H3Conditioning(tap: try await encode(prompt, geometry: geometry, onLayer: onLayer), tags: [0, 0, 1, 1])
+    }
+    func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool { canPresent }
+    func preflight(_ request: H3VideoRequest) throws {
+        if request.lastFrame != nil { throw AetherError.unsupported("too many packed rows") }
+    }
+    func release() async { await log.release("conditioner") }
+}
+
+@Test func h3VideoSessionAsksTheConditionerBeforeAnyStage() async throws {
+    let g = try geometry()
+    let keyframe = try H3Keyframe(width: g.width, height: g.height, rgb: [UInt8](repeating: 9, count: g.width * g.height * 3))
+    for canPresent in [false, true] {
+        let log = StageLog()
+        let session = H3VideoSession(stages: H3VideoStages(conditioner: RefusingConditioner(log: log, canPresent: canPresent),
+                                                           keyframes: FakeKeyframeEncoder(log: log), denoiser: FakeDenoiser(log: log),
+                                                           video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log)))
+        // Unsupported canvas (supports false), or a request whose packed rows the conditioner refuses (preflight).
+        let request = try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: keyframe, lastFrame: canPresent ? keyframe : nil)
+        await #expect(throws: AetherError.self) { try await session.generate(request) }
+        #expect(await log.entries.isEmpty)
+        #expect(await session.state == .ready)
+    }
 }

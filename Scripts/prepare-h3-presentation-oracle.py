@@ -37,9 +37,33 @@ def raw(directory: Path, name: str):
     return torch.frombuffer(bytearray(data), dtype=getattr(torch, entry["dtype"])).view(entry["shape"]).clone(), manifest
 
 
+# Synthetic vision-input canvases: grids below and above the 48x48 learned table (960x544's 60 columns need the
+# bilinear downsampling taps), both orientations, and every canvas the profile exports a tower for.
+VISION_CANVASES = ((320, 224), (288, 288), (960, 544), (544, 960), (1280, 704), (704, 1280), (1344, 768), (768, 1344))
+
+
+def vision_cases(processor, side, merge):
+    from PIL import Image
+    from transformers.vision_utils import get_vision_interpolation_indices_and_weights, get_vision_position_ids
+    vision = []
+    for width, height in VISION_CANVASES:
+        rgb = ((np.arange(height * width * 3) * 7 + 3) % 256).astype(np.uint8).reshape(height, width, 3)
+        out = processor.image_processor(images=[Image.fromarray(rgb)], return_tensors="pt")
+        grid = out["image_grid_thw"]
+        index, weight = get_vision_interpolation_indices_and_weights(grid, num_grid_per_side=side, mode="bilinear",
+                                                                   align_corners=True, spatial_merge_size=merge)
+        rc = get_vision_position_ids(grid, merge)
+        vision.append(dict(width=width, height=height, grid=grid[0, 1:].tolist(),
+                           pixels_sha256=digest(out["pixel_values"].to(torch.bfloat16)),
+                           pos_index_sha256=digest(index.to(torch.int32)), pos_weight_sha256=digest(weight.to(torch.float32)),
+                           patch_rc_sha256=digest(rc.to(torch.int32)), pos_weight_dtype=str(weight.dtype)))
+    return vision
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--presentation", type=Path, nargs="+", required=True)
+    ap.add_argument("--presentation", type=Path, nargs="+")
+    ap.add_argument("--vision-only", action="store_true", help="rewrite only the existing --output fixture's vision cases")
     ap.add_argument("--output", type=Path, required=True)
     args = ap.parse_args()
     from PIL import Image
@@ -53,6 +77,13 @@ def main():
     processor = Qwen3VLProcessor.from_pretrained(SNAPSHOT_ROOT / "FL2VA/processor")
     vc = config.vision_config
     side, merge = int(vc.num_position_embeddings ** 0.5), vc.spatial_merge_size
+    if args.vision_only:
+        oracle = json.loads(args.output.read_text())
+        oracle["vision"] = vision_cases(processor, side, merge)
+        args.output.write_text(json.dumps(oracle, indent=1) + "\n")
+        return
+    if not args.presentation:
+        ap.error("--presentation is required unless --vision-only")
 
     presentations, embedded = [], None
     for directory in args.presentation:
@@ -73,18 +104,7 @@ def main():
 
     labels = {f"<Picture {i}>: ": tokenizer(f"<Picture {i}>: ", add_special_tokens=False)["input_ids"] for i in (1, 2)}
 
-    vision = []
-    for width, height in ((320, 224), (288, 288)):
-        rgb = ((np.arange(height * width * 3) * 7 + 3) % 256).astype(np.uint8).reshape(height, width, 3)
-        out = processor.image_processor(images=[Image.fromarray(rgb)], return_tensors="pt")
-        grid = out["image_grid_thw"]
-        index, weight = get_vision_interpolation_indices_and_weights(grid, num_grid_per_side=side, mode="bilinear",
-                                                                   align_corners=True, spatial_merge_size=merge)
-        rc = get_vision_position_ids(grid, merge)
-        vision.append(dict(width=width, height=height, grid=grid[0, 1:].tolist(),
-                           pixels_sha256=digest(out["pixel_values"].to(torch.bfloat16)),
-                           pos_index_sha256=digest(index.to(torch.int32)), pos_weight_sha256=digest(weight.to(torch.float32)),
-                           patch_rc_sha256=digest(rc.to(torch.int32)), pos_weight_dtype=str(weight.dtype)))
+    vision = vision_cases(processor, side, merge)
 
     rotary = Qwen3VLTextRotaryEmbedding(config.text_config)
     positions = torch.tensor(embedded["positions"])

@@ -631,3 +631,41 @@ func h3MeasuredAdmissionForTheExportedProfile() throws {
         #expect(admission.executionIdentity == identity && admission.envelopes.count == measured!.count)
     }
 }
+
+@Test func h3ProfileConditionerPreflightRefusesWhatItCannotPresentBeforeLoading() throws {
+    let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
+    let placeholder = try H3TensorFile(name: "w0", url: root, spec: H3TensorSpec(scalarType: .bfloat16, shape: [1]), sha256: zeroHash)
+    let conditioner = H3Profile.Conditioner(
+        embedding: try H3EmbeddingTable(url: root, offset: 0, rows: 9, width: 5120, byteCount: 9 * 5120 * 2, sha256: zeroHash),
+        layer: try H3ModelAsset(url: root, function: "main", sha256: zeroHash),
+        parameters: Array(repeating: [placeholder], count: 50), tap: 50, ropeCos: placeholder, ropeSin: placeholder)
+    var vision = H3Presentation.Vision()
+    vision.visionStart = 6; vision.imagePad = 7; vision.visionEnd = 8
+    let entry = H3Profile.ConditionerVision(functions: ["288x288": try H3ModelAsset(url: root, function: "main", sha256: zeroHash)], parameters: [],
+                                            vision: vision, deepstackLevels: 3, hiddenSize: 5120)
+    let tokenize: @Sendable (String) throws -> [Int32] = { $0.hasPrefix("<Picture") ? [4, 5] : [1, 2, 3] }
+    let calls = Calls()
+    func stage(limits: ClosedRange<Int> = 2...4096, rows: ClosedRange<Int>? = nil, vision withVision: Bool = true) -> H3ProfileConditioner {
+        H3ProfileConditioner(conditioner: conditioner, limits: limits, tokenize: tokenize, kernel: LayerKernel(calls: calls, expectedCos: Data()),
+                             vision: withVision ? (entry, VisionKernel(calls: calls)) : nil, rowLimits: rows)
+    }
+    let g = try H3Geometry(width: 288, height: 288, requestedFrames: 39, diagnostic: true)
+    let frame = try H3Keyframe(width: 288, height: 288, rgb: [UInt8](repeating: 9, count: 288 * 288 * 3))
+    let first = try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: frame)
+    let both = try H3VideoRequest(prompt: "p", geometry: g, seed: 1, firstFrame: frame, lastFrame: frame)
+    // Canvases: a keyframe needs a tower graph for the canvas; T2VA needs none.
+    #expect(stage().supports(g, keyframes: [frame]))
+    #expect(stage().supports(try H3Geometry(width: 544, height: 960, requestedFrames: 39, diagnostic: true), keyframes: []))
+    let other = try H3Geometry(width: 544, height: 960, requestedFrames: 39, diagnostic: true)
+    #expect(!stage().supports(other, keyframes: [try H3Keyframe(width: 544, height: 960, rgb: [UInt8](repeating: 9, count: 544 * 960 * 3))]))
+    #expect(!stage(vision: false).supports(g, keyframes: [frame]))
+    // The presentation's length: 3 prompt + (2 + 1 + 81 + 1) per 288x288 keyframe.
+    #expect(throws: Never.self) { try stage().preflight(first) }
+    #expect(throws: AetherError.self) { try stage(limits: 2...64).preflight(first) }
+    #expect(throws: AetherError.self) { try stage(vision: false).preflight(first) }
+    // Packed rows: the layout of the presentation, its anchors, video and audio, against the denoiser's limit.
+    let needed = try H3Layout(geometry: g, textTags: Array(repeating: 1, count: 3 + 2 * 85), anchors: [.first, .last]).rows
+    #expect(throws: Never.self) { try stage(rows: 1...needed).preflight(both) }
+    #expect(throws: AetherError.self) { try stage(rows: 1...(needed - 1)).preflight(both) }
+    #expect(throws: Never.self) { try stage(rows: 1...(needed - 1)).preflight(first) }
+}
