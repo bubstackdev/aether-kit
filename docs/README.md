@@ -90,9 +90,11 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 
 [Release notes](release-notes/0.0.4.md), the [0.0.4 roadmap](roadmap-0.0.4.md) with what shipped and what [moved to 0.0.5](roadmap-0.0.4.md#moved-to-005), and the [changelog](../CHANGELOG.md). New guides, the app-readiness gate: [model preparation](model-preparation.md), [model readiness](model-readiness.md), [managed lifecycle](model-lifecycle.md), the [sample app](sample-app.md) and [API stability](api-stability.md) (the 0.0.x freeze). Also the [H3 fused attention spike](spikes/h3-attention-2026-10.md) and H3's [per-entry memory bars](h3-integration.md#memory-bars-beyond-960544-and-124-frames-decided-2026-10-29).
 
-## 0.0.6 language model spike (2026-11-02)
+## 0.0.6 language model spikes (2026-11-02)
 
 [OLMo 2 1B Instruct](spikes/olmo2-2026-11.md): post-sublayer normalization, full-projection Q/K norms, shared dense export contracts, an independent Transformers oracle, and native Aether integration. Includes the Qwen3 fp16 attention mismatch RCA and precision fix.
+
+[Phi-2](../Spikes/phi2/README.md): partial rotary embeddings, biased output heads, and parallel attention/MLP residuals through the shared dense exporter and existing Swift completion runtime. Reproduction scripts and qualification evidence live alongside the spike.
 
 ## 0.0.6 image model spike (2026-11-02)
 

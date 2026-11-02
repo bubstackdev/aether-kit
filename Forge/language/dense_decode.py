@@ -69,6 +69,12 @@ def rotate(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tenso
     return x * cos + torch.cat((-x[..., half:], x[..., :half]), dim=-1) * sin
 
 
+def rotate_prefix(x, cos, sin):
+    """Rotate only the leading rotary dimensions; preserve the remaining channels."""
+    dim = cos.shape[-1]
+    return torch.cat((rotate(x[..., :dim], cos[:, None, :], sin[:, None, :]), x[..., dim:]), dim=-1)
+
+
 class AttentionBlock(torch.nn.Module):
     """Shared attention/cache execution; subclasses supply project and finish."""
 
@@ -105,7 +111,10 @@ class AttentionBlock(torch.nn.Module):
 
 
 class DenseDecoder(torch.nn.Module):
-    def __init__(self, cfg: dict[str, Any], contract: str, max_capacity: int = 16384, *, block_factory, attention_precision="float32", norm_factory=None, rotary=True) -> None:
+    """Shared cache execution; families choose final norm, rotary width and output bias."""
+
+    def __init__(self, cfg: dict[str, Any], contract: str, max_capacity: int = 16384, *, block_factory,
+                 attention_precision="float32", norm_factory=None, rotary=True, rotary_dim=None, head_bias=False) -> None:
         super().__init__()
         if contract not in CONTRACTS:
             raise ValueError(f"unknown contract {contract!r}")
@@ -122,12 +131,13 @@ class DenseDecoder(torch.nn.Module):
         self.norm = norm_factory() if norm_factory else RMSNorm(cfg["hidden_size"], cfg["rms_norm_eps"])
         self.tied = bool(cfg.get("tie_word_embeddings", False))
         self.lm_head = None if self.tied else torch.nn.Linear(cfg["hidden_size"], cfg["vocab_size"], bias=False)
+        self.head_bias = torch.nn.Parameter(torch.zeros(cfg["vocab_size"])) if head_bias else None
         self.head_dim = cfg.get("head_dim") or cfg["hidden_size"] // cfg["num_attention_heads"]
-        self.rope = RotaryEmbedding(self.head_dim, float(cfg["rope_theta"])) if rotary else None
+        self.rope = RotaryEmbedding(rotary_dim if rotary_dim is not None else self.head_dim, float(cfg["rope_theta"])) if rotary else None
         self.max_capacity = max_capacity
 
     def head(self, x):
-        return F.linear(self.norm(x), self.embed.weight if self.tied else self.lm_head.weight)
+        return F.linear(self.norm(x), self.embed.weight if self.tied else self.lm_head.weight, self.head_bias)
 
     def embed_inputs(self, input_ids, positions):
         """Family hook for token/absolute-position embeddings before shared cache execution."""

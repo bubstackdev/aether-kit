@@ -275,6 +275,8 @@ def main(default_architecture="qwen3") -> None:
                    "checkpoint": None if args.tiny else str(args.checkpoint)},
         "selfCheck": None,
     }
+    if hasattr(module, "arithmetic_policy"):
+        report["arithmeticPolicy"] = module.arithmetic_policy
     if not args.tiny:
         tok = args.output / "tokenizer"
         tok.mkdir()
