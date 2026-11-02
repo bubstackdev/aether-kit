@@ -2,7 +2,7 @@
 
 Port `openai-community/gpt2` (124M) at revision
 `607a30d783dfa663caf39e06633721c8d4cfcd7e` to the existing Aether language runtime.
-This is a development spike; it adds no shipped catalog entry or model download.
+This is a development spike with a published, pinned macOS bundle and catalog entry.
 The checkpoint has a 1,024-token learned position table and MIT license.
 
 ## Why this model
@@ -104,3 +104,33 @@ contract. Both registered-bundle GPU cases pass the native policy above.
 See [qualification.json](evidence/qualification.json) for hashes and the numerical
 results, and the adjacent reference/native/export reports for the source records.
 The exported local bundle remains in `.local/bundle-exact/` in this spike worktree.
+
+## Published bundle
+
+The bundle is public at [aether-models/aether-kit-gpt2](https://huggingface.co/aether-models/aether-kit-gpt2).
+Pin downloads to revision `102d60f338bc5eff7c38aaeb2c0c4e2f76851a3f` and use the `mac/` subdirectory.
+[`catalog-macos.json`](catalog-macos.json) is a ready `ModelCatalogEntry` for
+Aether's verified preparation/installation flow. GPT-2 remains completion-only;
+open the installed bundle through `LanguageGenerationSession`, rather than the
+chat facade.
+
+[Publication verification](evidence/huggingface.json) records every hosted file's
+size and SHA-256. Small files were downloaded without authentication and checked;
+the hosted model's LFS SHA-256 and size match the qualified local bytes. The Hub
+repository includes the original license, conversion attribution, model card,
+export provenance, and compact qualification evidence. No iOS bundle is published.
+
+```python
+from huggingface_hub import snapshot_download
+snapshot_download(
+    "aether-models/aether-kit-gpt2",
+    revision="102d60f338bc5eff7c38aaeb2c0c4e2f76851a3f",
+    allow_patterns=["mac/**", "LICENSE", "NOTICE"],
+    local_dir="gpt2-kit",
+)
+```
+
+Open the downloaded `gpt2-kit/mac` directory with the completion API above.
+
+Before merging the publication update, the full weight-free Swift Release suite
+passed 712 tests across 18 test executables (`sh Scripts/check-cpu.sh --skip-build`).

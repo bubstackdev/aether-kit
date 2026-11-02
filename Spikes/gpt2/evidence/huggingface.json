@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "repository": "aether-models/aether-kit-gpt2",
+  "revision": "102d60f338bc5eff7c38aaeb2c0c4e2f76851a3f",
+  "url": "https://huggingface.co/aether-models/aether-kit-gpt2",
+  "sourceCommit": "20bbc96fd24bb106ee6e6f18cecb3dfaddfd2f07",
+  "public": true,
+  "verified": true,
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 1403,
+      "sha256": "0dbeda4bc78823b1d67ec0ee414d8690ee4cad826bc9c147b215adc3af202436",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "NOTICE",
+      "size": 507,
+      "sha256": "b934984207ce2478cf53bbc2f43f65d6442721bd723044119991d843864861fc",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "README.md",
+      "size": 3862,
+      "sha256": "a2631d3454c25ba5367c1742c6c97ab39af559de7ada4489ab56172ccf3ec5e1",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/export-report.json",
+      "size": 7323,
+      "sha256": "84dcdb5498f49c5eed529be6a5a439044b653c553e0c04acccc9fc4f049860b1",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/language-model.json",
+      "size": 1189,
+      "sha256": "8a18de4250b763ce1c73a3f7507a1492d8cb4e80ec474fc2d28e71dd7b26f63a",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/main.hash",
+      "size": 32,
+      "sha256": "6edab09b42478045121a3abf8a13cff090fa28997fbe5f5f897f49595cc0f240",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/main.mlirb",
+      "size": 248944119,
+      "sha256": "f04fefaa3a7e69f3e4da783ce1ac5aef7f80e0bc70e441db452ec691e7429316",
+      "verification": "remote LFS SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/metadata.json",
+      "size": 105,
+      "sha256": "a1e268eb9bf6c3541f776ba24b530e16133c6fdb4bef1d08b5a3e93a56fe0c22",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/config.json",
+      "size": 665,
+      "sha256": "0daed7749b4f02b8f76240d5444551d7b08712dab4d0adb8239c56ba823bb7b4",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/generation_config.json",
+      "size": 124,
+      "sha256": "ed0b32ac72c0f5f44a719abb2d7786ea5146c871f83717b7f2018065954de02b",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/merges.txt",
+      "size": 456318,
+      "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/tokenizer.json",
+      "size": 1355256,
+      "sha256": "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/tokenizer_config.json",
+      "size": 26,
+      "sha256": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/vocab.json",
+      "size": 1042301,
+      "sha256": "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/export-report.json",
+      "size": 7323,
+      "sha256": "84dcdb5498f49c5eed529be6a5a439044b653c553e0c04acccc9fc4f049860b1",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/long-native.json",
+      "size": 1589,
+      "sha256": "1f65094b84f602a7ff777f9969a4b96a614cce5cf5fb4fabaf4fca99fa67fcdd",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/long-reference.json",
+      "size": 16571,
+      "sha256": "575b99e708fc533032e28017d4cf32243b287c81e31fde771a1a7eab002017d7",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/qualification.json",
+      "size": 8573,
+      "sha256": "0c1e1e59d880b41a074a304de49ff51df2c84a24d8cc79ff3374a36f5af6d8e0",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/short-native.json",
+      "size": 1462,
+      "sha256": "72144ef967712b3f56173cf0cddb87282a80f19a56e9acd25b87da927cc7a97f",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/short-reference.json",
+      "size": 6708,
+      "sha256": "312416b991eb5594a908ba70a5d728ccdf9049ca2e59a74272f37954dda5a4e6",
+      "verification": "unauthenticated download bytes SHA-256 and size"
+    }
+  ],
+  "modelSHA256": "f04fefaa3a7e69f3e4da783ce1ac5aef7f80e0bc70e441db452ec691e7429316"
+}
