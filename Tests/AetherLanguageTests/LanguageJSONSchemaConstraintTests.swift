@@ -175,6 +175,55 @@ struct LanguageJSONSchemaConstraintTests {
         #expect(!refuses(#"{"type": "array", "items": {"type": "string"}, "maxItems": 1e300}"#))
     }
 
+    /// Review M4: two enums with a case of one name both define `DiscriminatedValue`, and two types can share a name;
+    /// each keeps its own schema instead of the last one overwriting the others.
+    @Test func definitionsWithOneNameKeepTheirOwnSchemas() throws {
+        func union(_ name: String, _ type: (some AetherGenerable).Type) -> AetherGenerationSchema {
+            .union(name: name, cases: [.init(name: "value", values: [.init(name: "value", type: type)])])
+        }
+        struct Named<Payload: AetherGenerable>: AetherGenerable {
+            init(from decoder: any Decoder) throws {}
+            static var generationSchema: AetherGenerationSchema { .object(name: "Item", properties: [.init(name: "x", type: Payload.self)]) }
+        }
+        enum First: AetherGenerable {
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("First", Int.self) }
+        }
+        enum Second: AetherGenerable {
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("Second", String.self) }
+        }
+        enum Outer: AetherGenerable {  // its `value` case holds an enum with a `value` case of its own
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("Outer", Second.self) }
+        }
+        let schema = AetherGenerationSchema.object(name: "Root", properties: [
+            .init(name: "first", type: First.self), .init(name: "second", type: Second.self), .init(name: "outer", type: Outer.self),
+            .init(name: "number", type: Named<Int>.self), .init(name: "text", type: Named<String>.self),
+            .init(name: "again", type: First.self),
+        ])
+        let good = #"{"first": {"type": "value", "value": 1}, "second": {"type": "value", "value": "a"}, "#
+            + #""outer": {"type": "value", "value": {"type": "value", "value": "b"}}, "number": {"x": 2}, "text": {"x": "c"}, "#
+            + #""again": {"type": "value", "value": 3}}"#
+        #expect(try accepts(good, schema) == (true, true))
+        for bad in [
+            good.replacingOccurrences(of: #""first": {"type": "value", "value": 1}"#, with: #""first": {"type": "value", "value": "1"}"#),
+            good.replacingOccurrences(of: #""second": {"type": "value", "value": "a"}"#, with: #""second": {"type": "value", "value": 1}"#),
+            good.replacingOccurrences(of: #""value": {"type": "value", "value": "b"}"#, with: #""value": "b""#),
+            good.replacingOccurrences(of: #""number": {"x": 2}"#, with: #""number": {"x": "2"}"#),
+            good.replacingOccurrences(of: #""text": {"x": "c"}"#, with: #""text": {"x": 3}"#),
+        ] {
+            #expect(try accepts(bad, schema).complete == false, "\(bad)")
+        }
+        // Distinct schemas under one name are renamed apart; the same schema used twice is defined once.
+        guard case .object(let definitions)? = schema.document["$defs"] else { Issue.record("no $defs"); return }
+        #expect(Set(definitions.keys) == ["First", "Second", "Outer", "Item", "Item2",
+                                          "DiscriminatedValue", "DiscriminatedValue2", "DiscriminatedValue3"])
+    }
+
     /// Seeded random walks over the synthetic vocabulary: at every step the trie walk equals simulating every token,
     /// the allowed set is never empty, and every walk ends in JSON that parses and decodes into the type.
     @Test func randomWalksMatchBruteForceAndDecode() throws {

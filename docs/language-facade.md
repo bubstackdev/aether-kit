@@ -327,7 +327,9 @@ accepts next, and only the stop IDs once the value is complete, so the existing 
 - `boolean`;
 - `array` with `minItems` and `maxItems`;
 - `anyOf` (enums with associated values, as `Discriminated…` objects with a `type` const);
-- definitions under `$defs`, referenced with `$ref`, recursion included.
+- definitions under `$defs`, referenced with `$ref`, recursion included. When two different schemas would take one
+  definition name (two enums with a `value` case are both `DiscriminatedValue`; two types can share a name), Kit's
+  builders number the later one (`DiscriminatedValue2`) so each keeps its own; other names match FoundationModels'.
 
 Regex guides (`pattern`) and anything else outside the subset are refused at request time: `unsupportedSchema`, or
 through the adapter, FoundationModels' `LanguageModelError.unsupportedGenerationGuide`. The output is never left
