@@ -65,7 +65,7 @@ other families retain their existing tolerances. Native fp16 follows the existin
 language qualification policy (cosine >= 0.995; differing argmax only when the
 reference probability margin is < 0.1 and native choice is in the reference top
 five). Free generation is compared at its first divergence and must repeat across
-prefill widths 7 and 16. No iOS qualification or hosted bundle is claimed.
+prefill widths 7 and 16. No iOS qualification is claimed.
 
 ## Precision findings
 
@@ -112,5 +112,36 @@ qualification also passes, checking the preserved contiguous cache path.
 The usable local registered bundle is `.local/phi2-qualified/bundle` in this
 worktree. No model weights or tokenizer assets are committed. The local output
 also retains upstream logits for rerunning native qualification. This is a
-macOS spike; iOS, interleaved cache storage and hosted distribution remain outside
-its qualification.
+macOS spike; iOS and interleaved cache storage remain outside its qualification.
+
+## Published bundle
+
+The bundle is public at [aether-models/aether-kit-phi2](https://huggingface.co/aether-models/aether-kit-phi2).
+Pin downloads to revision `986b7a8373e30a9542218a8bbc15c2acdd3af4d3` and use `mac/`.
+[`catalog-macos.json`](catalog-macos.json) is a ready `ModelCatalogEntry` for
+Aether's verified preparation and installation flow. Open the installed bundle
+through `LanguageGenerationSession`; Phi-2 remains completion-only. Use an Aether
+Kit checkout containing commit `1881cf4` or a descendant, which adds the required
+stride-aware cache handling; published 0.0.4 does not include it.
+
+[Publication verification](evidence/huggingface.json) records all staged files'
+sizes and SHA-256 values. Small files were downloaded anonymously and checked;
+the hosted compiled model's LFS SHA-256 and size match the qualified local bytes.
+The HF repository includes the original MIT license, conversion attribution, model
+card, export provenance and compact qualification evidence. No iOS bundle is published.
+
+```python
+from huggingface_hub import snapshot_download
+snapshot_download(
+    "aether-models/aether-kit-phi2",
+    revision="986b7a8373e30a9542218a8bbc15c2acdd3af4d3",
+    allow_patterns=["mac/**", "LICENSE", "NOTICE"],
+    local_dir="phi2-kit",
+)
+```
+
+Open `phi2-kit/mac` with the completion API above.
+
+Before merging the publication update, the combined tree including SD-Turbo passed
+722 reported Swift Release tests across 19 test executables, and the frozen API
+matched its committed baseline.
