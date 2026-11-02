@@ -10,6 +10,9 @@ let package = Package(
     name: "AetherKit",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
+        .library(name: "AetherDiffusion", targets: ["AetherDiffusion"]),
+        .library(name: "AetherDiffusionCoreAI", targets: ["AetherDiffusionCoreAI"]),
+        .library(name: "AetherSDTurbo", targets: ["AetherSDTurbo"]),
         .library(name: "AetherKit", targets: ["AetherKit"]),
         .library(name: "AetherAssets", targets: ["AetherAssets"]),
         .library(name: "AetherCoreAI", targets: ["AetherCoreAI"]),
@@ -39,6 +42,10 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-syntax", exact: "604.0.0"),
     ],
     targets: [
+        .target(name: "AetherDiffusion", dependencies: ["AetherKit"]),
+        .target(name: "AetherDiffusionCoreAI", dependencies: ["AetherDiffusion", "AetherKit", "AetherCoreAI"]),
+        .target(name: "AetherSDTurbo", dependencies: ["AetherDiffusion", "AetherDiffusionCoreAI", "AetherKit"]),
+        .testTarget(name: "AetherDiffusionTests", dependencies: ["AetherDiffusion", "AetherDiffusionCoreAI", "AetherSDTurbo", "AetherKit", "AetherCoreAI"]),
         .target(name: "AetherKit"),
         .target(name: "AetherVision"),
         .target(name: "AetherAssets"),

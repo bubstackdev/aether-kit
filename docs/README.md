@@ -93,3 +93,9 @@ The [language runtime seam](language-runtime-seam.md) is the first piece of the 
 ## 0.0.6 language model spike (2026-11-02)
 
 [OLMo 2 1B Instruct](spikes/olmo2-2026-11.md): post-sublayer normalization, full-projection Q/K norms, shared dense export contracts, an independent Transformers oracle, and native Aether integration. Includes the Qwen3 fp16 attention mismatch RCA and precision fix.
+
+## 0.0.6 image model spike (2026-11-02)
+
+[SD-Turbo and spatial latent diffusion](spikes/sd-turbo-2026-11.md): a U-Net port,
+shared epsilon/Euler runtime and Core AI stage bindings, local CLIP tokenizer,
+pinned conversion tooling and independent full-trajectory qualification.

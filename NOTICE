@@ -84,3 +84,10 @@ licensed under Apache-2.0. No GPT-2 weights or tokenizer assets are distributed.
 The pinned openai-community/gpt2 checkpoint at revision
 607a30d783dfa663caf39e06633721c8d4cfcd7e retains its MIT terms
 (https://github.com/openai/gpt-2/blob/master/LICENSE).
+
+SD-Turbo spike (v0.0.6)
+The optional SD-Turbo port uses stabilityai/sd-turbo at revision
+b261bac6fd2cf515557d5d0707481eafa0485ec2. Model assets are not included in
+this repository and retain the Stability AI Community License. The exporter
+copies the checkpoint's LICENSE.md into the generated bundle. Forge uses the
+existing pinned Diffusers and Transformers packages for model definitions.

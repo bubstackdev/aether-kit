@@ -19,6 +19,7 @@ from pathlib import Path
 ATTRIBUTE = "@available(macOS 27, iOS 27, *)"
 GATED_TARGETS = [
     "Sources/AetherCoreAI",
+    "Sources/AetherDiffusionCoreAI",
     "Sources/AetherLanguageCoreAI",
     "Sources/AetherH3CoreAI",
     "Sources/AetherKreaCoreAI",
