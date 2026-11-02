@@ -125,6 +125,7 @@ def main():
     ap.add_argument("--recipe", default="turbo8")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before the next render takes it")
     ap.add_argument("--spike-capture", type=float, metavar="GIB",
                     help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
                          "denoising sample's Metal allocation exceeds GIB (written beside the render as render-*.spike/)")
@@ -170,6 +171,7 @@ def main():
     last_keyframes = {k.stem.split("-")[-1]: k.resolve() for k in args.last_keyframes}
 
     runs, records = [], {}
+    released = None    # when this gate last released the GPU lock
     for canvas in args.canvases.split(","):
         width, height = canvas.split("x")
         for task in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()):
@@ -193,6 +195,9 @@ def main():
                     output.rename(work / f"{name}.failed-{int(time.time())}")
                 record = dict(schema=1, stage=name, command=command, budgetSeconds=budget, pinsDigest=digest, startedAt=now(),
                               gpuLock=name.startswith("render"), passed=False, timedOut=False)
+                if name.startswith("render") and released is not None:
+                    # The lock is shared with Atelier and other agents on this Mac: give them a turn between renders.
+                    time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
                 print(f"{name}: start", flush=True)
                 start = time.monotonic()
                 with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:
@@ -207,6 +212,8 @@ def main():
                         except subprocess.TimeoutExpired:
                             os.killpg(proc.pid, signal.SIGKILL)
                     proc.wait()
+                if name.startswith("render"):
+                    released = time.monotonic()
                 record.update(exitCode=proc.returncode, joined=True, elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
                               sourcePinsUnchanged=all(sha(p) == v for p, v in pins.items()))
                 record["passed"] = proc.returncode == 0 and not record["timedOut"] and record["sourcePinsUnchanged"]
