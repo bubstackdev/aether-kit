@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "repository": "aether-models/aether-kit-olmo-2-1b-instruct",
+  "revision": "659c554f2f917f036d8fa6716476a3a56020c66b",
+  "url": "https://huggingface.co/aether-models/aether-kit-olmo-2-1b-instruct",
+  "sourceCommit": "867b6fe0d56ed16079cfa987cef75297dcc0acde",
+  "public": true,
+  "verified": true,
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "NOTICE",
+      "size": 714,
+      "sha256": "c6f7107d1149e4c8eed5114aa4b14ad5419c834c3d39b4bbb56d593b98bd4bfa",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "README.md",
+      "size": 3623,
+      "sha256": "835be3cf4641ff293f1b9524a731ccbc10338496539e8cd7a542f62ad24c69f8",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/export-report.json",
+      "size": 5307,
+      "sha256": "75225f05646207498d0a32598699ce7a0c562601b71a26c52e5dd575f637b6b4",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/language-model.json",
+      "size": 1213,
+      "sha256": "7487d9d82d81fe9f7cb2894780b91259d8bdabe589d88c6c6e363df34c30e44b",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/main.hash",
+      "size": 32,
+      "sha256": "49e6ae5dc295a03b3a92825c0e612b1c882bf1051f34782418b9c07fde5635f6",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/main.mlirb",
+      "size": 2969981766,
+      "sha256": "6e3aca1b961acf4f206db3684bd13e77f6f7043de2ab02b805b821d13f8d70ab",
+      "verification": "remote LFS SHA-256 and size"
+    },
+    {
+      "path": "mac/model.aimodel/metadata.json",
+      "size": 105,
+      "sha256": "5580dbece7d7ad3db6cf169a09c011cea1f7ef48110557ab60c740a68b37f7a7",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/config.json",
+      "size": 625,
+      "sha256": "0d15ebb6cb8d998513b46ef337214176a6fd59fe5f16b30387c70d5f87795a9c",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/generation_config.json",
+      "size": 121,
+      "sha256": "437b97826bb4430c205083a0986fbe31f4959cffbe445e47fb7c5192fdcb8d58",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/special_tokens_map.json",
+      "size": 581,
+      "sha256": "78afb564e81264029b25f9caf24bda2521d5bdaeff5cd3fdbc01d3da2e8ce2f2",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/tokenizer.json",
+      "size": 7137177,
+      "sha256": "73fd5254624f39a88e3faac6a8e11300fc3c735ed37880d4f4f08db898eaecca",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/tokenizer_config.json",
+      "size": 4884,
+      "sha256": "50c412c57d832057a3d5db42064c741f751e570f7c8788f037bfb0d2dd6e5f49",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "mac/tokenizer/vocab.json",
+      "size": 1611056,
+      "sha256": "9e14712c91b37c7aab74b1306baa46ac342d620637a4b44523cdc3aec7d24195",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/chat.json",
+      "size": 2933,
+      "sha256": "524f1062b726365d23e33f044e65dfb7d6bc0f10abb2c52b5ee2fab150fe163a",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/cpu.json",
+      "size": 1233,
+      "sha256": "371d0a50b218a763e940324ca7b917201df00cc4d1d3cae135e6353c071da891",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/facade.json",
+      "size": 2178,
+      "sha256": "bda15d83dbbf9dde40947e369fa3a13e6fdae62b2aed4f36dc8bdaa3bfa69e91",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/native.json",
+      "size": 22647,
+      "sha256": "ac81b4fead8438b16c9002dc2c89fffa291021b42759627d058712ab87a47458",
+      "verification": "downloaded bytes SHA-256 and size"
+    },
+    {
+      "path": "verification/reference.json",
+      "size": 5746,
+      "sha256": "fc42f77c5eee8e768d06263f7dcb141d399fe63841ae1e85c0334f81214a971f",
+      "verification": "downloaded bytes SHA-256 and size"
+    }
+  ],
+  "modelSHA256": "6e3aca1b961acf4f206db3684bd13e77f6f7043de2ab02b805b821d13f8d70ab"
+}
