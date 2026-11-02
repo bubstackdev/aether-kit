@@ -17,9 +17,11 @@ public actor DiffusionSession {
     private let backend: any EpsilonDiffusionBackend
     private var active: Task<GeneratedImage, any Error>?
     private var closing = false
+    private var closeTask: Task<Void, Never>?
     private let gpu: GPUAdmissionOwner?
     private var pending: GPUAdmissionAttempt?
 
+    /// The session requires exclusive ownership of its backend for the entire generation, including between stages.
     public init(backend: any EpsilonDiffusionBackend, gpu: GPUAdmissionOwner? = nil) {
         self.backend = backend; self.gpu = gpu
     }
@@ -35,6 +37,7 @@ public actor DiffusionSession {
         let task = Task {
             let grant = try await attempt?.admit(orThrow: { AetherError.sessionClosed })
             defer { grant?.release() }
+            let result: GeneratedImage
             do {
                 let conditioning = try await backend.encode(tokenIDs)
                 var x = try FloatTensor(shape: noise.shape, values: noise.values.map { $0 * schedule.initialNoiseSigma })
@@ -46,24 +49,35 @@ public actor DiffusionSession {
                     try progress(step, x)
                 }
                 try Task.checkCancellation()
-                let result = try await backend.decode(x)
-                await backend.unload()
-                try Task.checkCancellation()
-                return result
+                result = try await backend.decode(x)
             } catch {
                 await backend.unload()
                 throw error
             }
+            await backend.unload()
+            try Task.checkCancellation()
+            return result
         }
         active = task; pending = attempt
         defer { active = nil; pending = nil }
-        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        return try await withTaskCancellationHandler {
+            let result = await task.result
+            // The task has joined every submitted backend call before releasing the operation's resources.
+            try Task.checkCancellation()
+            return try result.get()
+        } onCancel: { task.cancel() }
     }
 
     /// Terminal close. Rejects new work and joins submitted native calls before releasing stages.
     public func unload() async {
+        if let closeTask { await closeTask.value; return }
         closing = true; pending?.withdraw()
-        if let active { _ = await active.result }
-        await backend.unload()
+        let operation = active, backend = backend
+        let task = Task {
+            if let operation { _ = await operation.result }
+            await backend.unload()
+        }
+        closeTask = task
+        await task.value
     }
 }

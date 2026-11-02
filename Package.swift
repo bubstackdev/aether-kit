@@ -44,7 +44,7 @@ let package = Package(
     targets: [
         .target(name: "AetherDiffusion", dependencies: ["AetherKit"]),
         .target(name: "AetherDiffusionCoreAI", dependencies: ["AetherDiffusion", "AetherKit", "AetherCoreAI"]),
-        .target(name: "AetherSDTurbo", dependencies: ["AetherDiffusion", "AetherDiffusionCoreAI", "AetherKit"]),
+        .target(name: "AetherSDTurbo", dependencies: ["AetherDiffusion", "AetherDiffusionCoreAI", "AetherKit", "AetherAssets"]),
         .testTarget(name: "AetherDiffusionTests", dependencies: ["AetherDiffusion", "AetherDiffusionCoreAI", "AetherSDTurbo", "AetherKit", "AetherCoreAI"]),
         .target(name: "AetherKit"),
         .target(name: "AetherVision"),

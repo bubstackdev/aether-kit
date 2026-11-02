@@ -60,6 +60,14 @@ func sdTurboNativeParity() async throws {
         let decoderMetric = compare(image.values, decoded.pixelsCHW.values)
         #expect(decoderMetric.rmse <= 0.01)
         let noise = try read(dir, "noise.f32", latentShape)
+        if c.steps == 4 {
+            await #expect(throws: CancellationError.self) {
+                try await session.generate(tokenIDs: ids, noise: noise, schedule: s) { step, _ in
+                    if step == 0 { withUnsafeCurrentTask { $0?.cancel() } }
+                }
+            }
+            report.append(["case": c.id, "stage": "cancellation", "afterStep": 0, "recovery": "following full generation"])
+        }
         let result = try await session.generate(tokenIDs: ids, noise: noise, schedule: s)
         let metric = compare(image.values, result.pixelsCHW.values)
         #expect(metric.rmse <= 0.03)
@@ -72,6 +80,10 @@ func sdTurboNativeParity() async throws {
         report.append(["case": c.id, "stage": "pipeline", "textCosine": textMetric.cosine, "decoderRMSE": decoderMetric.rmse, "cosine": metric.cosine, "rmse": metric.rmse])
     }
     await session.unload()
+    await session.unload()
+    let ids = try tokenizer.prepare("Closed session")
+    let schedule = try bundle.schedule(steps: 1), noise = try bundle.noise(seed: 0)
+    await #expect(throws: AetherError.sessionClosed) { try await session.generate(tokenIDs: ids, noise: noise, schedule: schedule) }
     let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
     try data.write(to: root.appendingPathComponent("native-report.json"))
 }

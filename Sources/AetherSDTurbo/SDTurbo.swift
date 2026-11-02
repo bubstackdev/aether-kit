@@ -2,7 +2,7 @@ import AetherDiffusion
 import AetherDiffusionCoreAI
 import AetherKit
 import Foundation
-import CryptoKit
+import AetherAssets
 
 /// Spike bundle contract. Native geometry and schedules are explicit, never inferred from filenames.
 public struct SDTurboBundle: Sendable {
@@ -21,6 +21,7 @@ public struct SDTurboBundle: Sendable {
             let schedules: [String: EpsilonSchedule]; let files: [String: String]
         }
         guard root.isFileURL else { throw AetherError.invalidModel("bundle must be local") }
+        let root = root.standardizedFileURL.resolvingSymlinksInPath()
         let m = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: root.appendingPathComponent("diffusion.json")))
         guard m.schema == 1, m.family == "sd-turbo", m.source.repository == "stabilityai/sd-turbo",
               m.source.revision == Self.sourceRevision, m.latentChannels == 4, m.latentScale == 8,
@@ -31,6 +32,27 @@ public struct SDTurboBundle: Sendable {
               ["textEncoder.aimodel", "denoiser.aimodel", "decoder.aimodel", "tokenizer"].allSatisfy({ dir in
                   m.files.keys.contains { $0.hasPrefix(dir + "/") }
               }) else { throw AetherError.invalidModel("unsupported SD-Turbo bundle contract") }
+        // Native loaders may read every file in an asset directory. Reject undeclared files,
+        // rather than allowing a manifest to omit a corrupt weight shard from verification.
+        guard let entries = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) else {
+            throw AetherError.invalidModel("cannot enumerate SD-Turbo bundle")
+        }
+        var actualFiles: Set<String> = []
+        for case let file as URL in entries {
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true else { throw AetherError.invalidModel("bundle contains a symlink") }
+            if values.isRegularFile == true {
+                // Foundation's directory enumerator may spell /var as /private/var.
+                let canonical = file.standardizedFileURL.resolvingSymlinksInPath()
+                guard canonical.path.hasPrefix(root.path + "/") else { throw AetherError.invalidModel("bundle file escapes root") }
+                let relative = String(canonical.path.dropFirst(root.path.count + 1))
+                if relative != "diffusion.json" { actualFiles.insert(relative) }
+            }
+        }
+        let declaredFiles = Set(m.files.keys)
+        guard actualFiles == declaredFiles else {
+            throw AetherError.invalidModel("bundle file inventory mismatch; missing: \(declaredFiles.subtracting(actualFiles).sorted()); undeclared: \(actualFiles.subtracting(declaredFiles).sorted())")
+        }
         for (path, expected) in m.files {
             guard !path.hasPrefix("/"), !path.contains("\\"), path.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else {
                 throw AetherError.invalidModel("unsafe bundle path")
@@ -39,10 +61,7 @@ public struct SDTurboBundle: Sendable {
             guard file.resolvingSymlinksInPath().path.hasPrefix(root.resolvingSymlinksInPath().path + "/") else {
                 throw AetherError.invalidModel("bundle file escapes root")
             }
-            let handle = try FileHandle(forReadingFrom: file); defer { try? handle.close() }
-            var hash = SHA256()
-            while let chunk = try handle.read(upToCount: 4 << 20), !chunk.isEmpty { hash.update(data: chunk) }
-            guard hash.finalize().map({ String(format: "%02x", $0) }).joined() == expected else {
+            guard try BundleFiles.sha256(of: file) == expected else {
                 throw AetherError.invalidModel("bundle checksum mismatch: \(path)")
             }
         }

@@ -139,6 +139,8 @@ def main():
     prompts = [
         "A small red wooden cabin beside a lake, mountains, daylight.",
         "A blue ceramic teapot on a wooden table.",
+        "A lighthouse on a rocky coast at sunrise.",
+        "A watercolor painting of an orange fox in a snowy forest.",
     ]
     cases = []
     text = CLIPTextModel.from_pretrained(
@@ -165,7 +167,7 @@ def main():
             {
                 "id": str(i),
                 "prompt": prompt,
-                "steps": 1 if i == 0 else 4,
+                "steps": [1, 4, 2, 3][i],
                 "ids": ids.flatten().tolist(),
             }
         )

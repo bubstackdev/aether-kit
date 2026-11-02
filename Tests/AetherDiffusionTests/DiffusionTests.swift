@@ -131,9 +131,54 @@ private actor GateBackend: EpsilonDiffusionBackend {
     try Data([1]).write(to: root.appendingPathComponent(paths[0]))
     #expect(throws: (any Error).self) { try SDTurboBundle(at: root) }
     try Data().write(to: root.appendingPathComponent(paths[0]))
+    // Omitted native assets must not bypass checksum verification.
+    var declared = Dictionary(uniqueKeysWithValues: paths.map { ($0, emptyHash) })
+    declared["denoiser.aimodel/metadata"] = emptyHash
+    try Data().write(to: root.appendingPathComponent("denoiser.aimodel/metadata"))
+    manifest["files"] = declared; try save()
+    _ = try SDTurboBundle(at: root)
+    declared.removeValue(forKey: "denoiser.aimodel/file")
+    manifest["files"] = declared; try save()
+    #expect(throws: (any Error).self) { try SDTurboBundle(at: root) }
+    try FileManager.default.removeItem(at: root.appendingPathComponent("denoiser.aimodel/metadata"))
+    manifest["files"] = Dictionary(uniqueKeysWithValues: paths.map { ($0, emptyHash) })
     manifest["width"] = 513; try save()
     #expect(throws: (any Error).self) { try SDTurboBundle(at: root) }
     manifest["width"] = 512
     manifest["files"] = ["../escape": emptyHash]; try save()
     #expect(throws: (any Error).self) { try SDTurboBundle(at: root) }
+}
+
+@Test func queuedDiffusionUnloadWithdrawsBeforeAnyBackendWork() async throws {
+    let gpu = try GPUAdmission(), backend = ToyBackend()
+    let held = try await gpu.owner("blocker").admit()
+    defer { held.release() }
+    let session = DiffusionSession(backend: backend, gpu: gpu.owner("diffusion"))
+    let ids = try Int32Tensor(shape: [1, 1], values: [0]), noise = try FloatTensor(shape: [1, 1, 1, 1], values: [0])
+    let schedule = try EpsilonSchedule(timesteps: [1], sigmas: [1, 0], initialNoiseSigma: 1)
+    let operation = Task { try await session.generate(tokenIDs: ids, noise: noise, schedule: schedule) }
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while gpu.snapshot.queued == 0, ContinuousClock.now < deadline { await Task.yield() }
+    try #require(gpu.snapshot.queued == 1)
+    await session.unload()
+    await #expect(throws: AetherError.sessionClosed) { try await operation.value }
+    #expect(await backend.calls.isEmpty)
+    #expect(gpu.snapshot.queued == 0)
+}
+
+@Test func cancelledDiffusionKeepsGPUAdmissionUntilBackendJoins() async throws {
+    let gpu = try GPUAdmission(), backend = GateBackend()
+    let session = DiffusionSession(backend: backend, gpu: gpu.owner("diffusion"))
+    let ids = try Int32Tensor(shape: [1, 1], values: [0]), noise = try FloatTensor(shape: [1, 1, 1, 1], values: [0])
+    let schedule = try EpsilonSchedule(timesteps: [1], sigmas: [1, 0], initialNoiseSigma: 1)
+    let operation = Task { try await session.generate(tokenIDs: ids, noise: noise, schedule: schedule) }
+    await backend.waitForEntry()
+    operation.cancel()
+    #expect(gpu.snapshot.running == 1)
+    #expect(await backend.releases == 0)
+    await backend.resume()
+    await #expect(throws: CancellationError.self) { try await operation.value }
+    #expect(gpu.snapshot.running == 0)
+    #expect(await backend.releases == 1)
+    await session.unload()
 }
