@@ -4,6 +4,10 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 
 ## Unreleased (0.0.5)
 
+### Added
+
+- **H3 last-frame and first+last keyframes** ([guide](docs/h3-integration.md#last-frame-and-firstlast-keyframes-2026-10-29)): `H3VideoSession` accepts `H3VideoRequest.lastFrame`, alone or with `firstFrame`, so a clip can end on a chosen picture or start and end on chosen pictures. It uses the same FL2VA task, checkpoint, profile and step tables. Each keyframe is encoded by the same graphs, noised to t = 0.999 by its own draw in packed order (first, then last) and held at that level. `H3Latents.anchors` declares the anchors the condition rows belong to. `H3Geometry.initialLatents(seed:conditions:)` draws the stream, with `initialLatents(seed:firstFrameCondition:lastFrameCondition:)` as its convenience form; a first frame alone gives the same stream as before. **Source change:** a hand-built first-frame `H3Latents` now needs `anchors: [.first]`, or the denoiser refuses it because it no longer infers anchors from the row count. `aether-probe h3-profile-dump` takes `[FIRST.png|-] [LAST.png]`. The trajectory gate takes `--last-keyframe` and checks the step-0 condition rows against the pipeline's own encode. The bundled measured entry's `encodingKeyframe` peak rises by 2.34 MiB to the two-frame measurement. The conditioner presentation stays text-only (known deviation, PR #76). Qualification at 960×544 is pending: step 0 passes, and steps 1 and 7 are still to run.
+
 ### Fixed
 
 From the [codebase review](CODEBASE-REVIEW.md) of 2026-10-30, each with a regression test:
