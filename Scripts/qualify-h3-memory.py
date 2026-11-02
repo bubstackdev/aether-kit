@@ -110,6 +110,66 @@ def stage_of(phase):
     return None
 
 
+def snapped_frames(requested):
+    """H3's clip length for `requested` frames (H3Geometry): 17n + 5, rounded up."""
+    return 17 * ((max(0, requested - 5) + 16) // 17) + 5
+
+
+def resumable(record_path, command, accepted):
+    """A controller's earlier record, if its stage can be reused: it passed under accepted render pins and ran exactly
+    `command`, which names the canvas, frames, seed, recipe and paths (the pins cover only files). Otherwise None."""
+    if not record_path.exists():
+        return None
+    previous = json.loads(record_path.read_text())
+    if previous.get("passed") and previous.get("pinsDigest") in accepted and previous.get("command") == command:
+        return previous
+    return None
+
+
+def check_dump(fields, task, canvas, recipe, seed, frames):
+    """Raises unless a dump's manifest fields are for the requested recipe, seed and snapped frame count."""
+    requested = dict(recipe=recipe, seed=str(seed), frames=str(snapped_frames(frames)))
+    found = {k: fields.get(k) for k in requested}
+    if found != requested:
+        raise RuntimeError(f"{task} {canvas}: the dump is for {found}, but this gate requested {requested}")
+
+
+def stop_group(proc):
+    """Terminates the process group `proc` leads, then kills it if it hasn't exited within 15 s, and joins `proc`."""
+    for sig, grace in ((signal.SIGTERM, 15), (signal.SIGKILL, None)):
+        try:
+            os.killpg(proc.pid, sig)
+        except ProcessLookupError:
+            break
+        try:
+            proc.wait(timeout=grace)
+            break
+        except subprocess.TimeoutExpired:
+            pass
+    proc.wait()
+
+
+def run_owned(command, out, err, budget, record):
+    """Runs `command` as its own process group (so a terminal's Ctrl-C reaches the gate, not the workload) and joins it.
+
+    However the wait ends (the budget, Ctrl-C or any other exception), a group still running is stopped and joined
+    before this returns or raises, so no workload, and no GPU lease, outlives the gate. Updates `record` with
+    `timedOut`, `interrupted`, `exitCode` and `joined`; returns the exit code and re-raises the interruption."""
+    proc = subprocess.Popen(command, stdout=out, stderr=err, start_new_session=True)
+    try:
+        proc.wait(timeout=budget)
+    except subprocess.TimeoutExpired:
+        record["timedOut"] = True
+    except BaseException:
+        record["interrupted"] = True
+        raise
+    finally:
+        if proc.poll() is None or record.get("timedOut") or record.get("interrupted"):
+            stop_group(proc)
+        record.update(exitCode=proc.returncode, joined=True)
+    return proc.returncode
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--profile", type=Path, required=True)
@@ -131,7 +191,7 @@ def main():
     root = Path(__file__).resolve().parent.parent
     # Each gate is held to one bar, chosen by its region: an extended entry needs a larger canvas or a longer clip.
     pixels = max(int(w) * int(h) for w, h in (c.split("x") for c in args.canvases.split(",")))
-    snapped = 17 * ((max(0, args.frames - 5) + 16) // 17) + 5
+    snapped = snapped_frames(args.frames)
     bar = EXTENDED_BAR if pixels > 960 * 544 or snapped > 124 else BAR
     probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     work = args.work.resolve()
@@ -175,13 +235,16 @@ def main():
                     str(work / f"dump-{stem}")] + ([str(keyframes[canvas])] if task == "fl2va" else [])
             render = [str(args.gpu_lock), f"h3-memory-gate: {stem}", str(probe), "h3-memory-render", str(args.profile), str(work / f"dump-{stem}"),
                       str(work / f"render-{stem}")] + ([f"--spike-capture={args.spike_capture}"] if args.spike_capture else [])
+            # A stage resumes only if every stage before it resumed too: a render reads its dump, so a new dump means a
+            # new render.
+            reran = False
             for name, command, budget in ((f"dump-{stem}", dump, 600), (f"render-{stem}", render, 7200)):
                 record_path = work / "controllers" / f"{name}.json"
-                if record_path.exists():
-                    previous = json.loads(record_path.read_text())
-                    if previous.get("passed") and previous.get("pinsDigest") in accepted:
-                        records[name] = previous
-                        continue
+                previous = None if reran else resumable(record_path, command, accepted)
+                if previous:
+                    records[name] = previous
+                    continue
+                reran = True
                 output = work / name
                 if output.exists():
                     output.rename(work / f"{name}.failed-{int(time.time())}")
@@ -190,20 +253,17 @@ def main():
                 print(f"{name}: start", flush=True)
                 start = time.monotonic()
                 with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:
-                    proc = subprocess.Popen(command, stdout=out, stderr=err, start_new_session=True)
                     try:
-                        proc.wait(timeout=budget)
-                    except subprocess.TimeoutExpired:
-                        record["timedOut"] = True
-                        os.killpg(proc.pid, signal.SIGTERM)
-                        try:
-                            proc.wait(timeout=15)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(proc.pid, signal.SIGKILL)
-                    proc.wait()
-                record.update(exitCode=proc.returncode, joined=True, elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
+                        run_owned(command, out, err, budget, record)
+                    except BaseException:
+                        # The workload is stopped and joined; keep a failed record of the interruption, then stop.
+                        record.update(elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now())
+                        record_path.write_text(json.dumps(record, indent=2) + "\n")
+                        print(f"{name}: interrupted; its process group was stopped", flush=True)
+                        raise
+                record.update(elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
                               sourcePinsUnchanged=all(sha(p) == v for p, v in pins.items()))
-                record["passed"] = proc.returncode == 0 and not record["timedOut"] and record["sourcePinsUnchanged"]
+                record["passed"] = record["exitCode"] == 0 and not record["timedOut"] and record["sourcePinsUnchanged"]
                 record_path.write_text(json.dumps(record, indent=2) + "\n")
                 print(f"{name}: passed={record['passed']} {record['elapsedSeconds']} s", flush=True)
                 records[name] = record
@@ -235,6 +295,7 @@ def main():
         in_render = [s for s in samples if s["phase"] not in ("start", "baseline")]
         metal_peak = max(s["metal"] for s in in_render)
         dump = json.loads((work / f"dump-{task}-{canvas}" / "manifest.json").read_text())
+        check_dump(dump["fields"], task, canvas, args.recipe, args.seed, args.frames)
         width, height, frames = (int(dump["fields"][k]) for k in ("width", "height", "frames"))
         na = round(frames / 24 * 40)
         tensor_bytes = lambda name: (lambda e: 4 * math.prod(e["shape"]) if e["dtype"] == "float32" else 0)(dump["tensors"][name])
