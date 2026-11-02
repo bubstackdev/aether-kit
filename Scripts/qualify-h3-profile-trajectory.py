@@ -5,6 +5,10 @@ original-precision CPU references at the captured contexts.
 Stages run strictly in order, each an owned process group with a wall budget, joined before the next starts:
 
   dump            aether-probe h3-profile-dump (CPU): token ids, layout, step plan, seeded latents (+ first frame, FL2VA).
+  presentation    FL2VA on a profile with a keyframe vision tower: prepare-h3-profile-oracle.py --part presentation (CPU),
+                  upstream's own presentation and conditioner tap from the prompt and keyframes alone. The oracle then
+                  requires the dump's ids and tags to equal it, lays out its tags, and compares the captured refined text
+                  with the original refiner on its tap.
   capture         aether-probe h3-profile-run --render --capture=STEPS (GPU, under ~/.cache/aether-kit/with-gpu-lock.sh):
                   a complete H3VideoSession render whose opt-in denoiser observer hashes every trajectory boundary
                   (refined text; per step input latents, packed sequence, all 50 block outputs, heads, updated latents)
@@ -68,6 +72,7 @@ def main():
     ap.add_argument("--staging", type=Path, required=True)
     ap.add_argument("--prompt", type=Path, required=True)
     ap.add_argument("--keyframe", type=Path, help="first frame (FL2VA), exactly WIDTHxHEIGHT")
+    ap.add_argument("--last-keyframe", type=Path, help="last frame (FL2VA, alone or with --keyframe), exactly WIDTHxHEIGHT")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--width", type=int, default=960)
     ap.add_argument("--height", type=int, default=544)
@@ -79,9 +84,11 @@ def main():
     ap.add_argument("--cpu-rss-limit-gb", type=float, default=20.0)
     ap.add_argument("--keep-captures", action="store_true")
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before taking it again")
     args = ap.parse_args()
-    if (args.task == "fl2va") != (args.keyframe is not None):
-        ap.error("--keyframe is required for fl2va and refused for t2va")
+    keyframes = [k for k in (args.keyframe, args.last_keyframe) if k is not None]
+    if (args.task == "fl2va") != bool(keyframes):
+        ap.error("--keyframe and/or --last-keyframe are required for fl2va and refused for t2va")
     root = Path(__file__).resolve().parent.parent
     probe = root / ".build/release/aether-probe"   # both build engines link .build/release
     oracle = root / "Scripts/prepare-h3-profile-oracle.py"
@@ -90,7 +97,7 @@ def main():
     staging = args.staging.resolve()
     files = [probe, oracle, root / "Scripts/h3_export_lib.py", Path(__file__).resolve(), root / "Package.swift",
              args.profile.resolve(), args.prompt.resolve(), staging / "oracle-scripts/vendor/convert_minimax_h3_to_diffusers.py"]
-    files += [args.keyframe.resolve()] if args.keyframe else []
+    files += [k.resolve() for k in keyframes]
     for directory in ["Sources/AetherKit", "Sources/AetherAssets", "Sources/AetherCoreAI", "Sources/AetherH3",
                       "Sources/AetherH3CoreAI", "Sources/AetherH3Tokenizers", "Sources/AetherProbe"]:
         files.extend(sorted(p for p in (root / directory).rglob("*") if p.is_file()))
@@ -107,19 +114,28 @@ def main():
     t = args.task
     d = lambda name: str(work / name)
     dump = [str(probe), "h3-profile-dump", str(args.profile), str(args.prompt), str(args.width), str(args.height), str(args.frames),
-            str(args.seed), args.recipe, d(f"dump-{t}")] + ([str(args.keyframe)] if args.keyframe else [])
+            str(args.seed), args.recipe, d(f"dump-{t}")] + ([str(args.keyframe) if args.keyframe else "-"] if keyframes else []) \
+        + ([str(args.last_keyframe)] if args.last_keyframe else [])
+    presenting = t == "fl2va" and "conditioner_vision" in json.loads(args.profile.read_text())
+    presentation = ([str(args.python), "-I", "-B", str(oracle), "--part", "presentation", "--prompt", str(args.prompt.resolve()),
+                     "--canvas", f"{args.width}x{args.height}", "--output", d(f"presentation-{t}"), "--threads", str(args.threads)]
+                    + (["--keyframe", str(args.keyframe.resolve())] if args.keyframe else [])
+                    + (["--last-keyframe", str(args.last_keyframe.resolve())] if args.last_keyframe else []))
+    upstream = ["--presentation", d(f"presentation-{t}")] if presenting else []
     stages = [
         (f"dump-{t}", "cpu", 600, dump),
+        *([(f"presentation-{t}", "cpu", 3600, presentation)] if presenting else []),
         (f"capture-{t}", "gpu", 7200, [str(probe), "h3-profile-run", str(args.profile), d(f"dump-{t}"), "-", d(f"capture-{t}"), "--render", f"--capture={args.steps}"]),
         (f"replay-{t}", "gpu", 7200, [str(probe), "h3-profile-run", str(args.profile), d(f"dump-{t}"), "-", d(f"replay-{t}"), "--render", f"--replay={d(f'capture-{t}')}"]),
         (f"oracle-{t}", "cpu", 6 * 3600, [str(args.python), "-I", "-B", str(oracle), "--part", "trajectory", "--dump", d(f"dump-{t}"), "--run", d(f"capture-{t}"),
-                                          "--steps", args.steps, "--output", d(f"oracle-{t}"), "--threads", str(args.threads)]),
+                                          "--steps", args.steps, "--output", d(f"oracle-{t}"), "--threads", str(args.threads), *upstream]),
         # Diagnostic only, never an acceptance criterion: native blocks against the same modules in float32.
         (f"float32-{t}", "cpu", 3600, [str(args.python), "-I", "-B", str(oracle), "--part", "trajectory", "--float32-diagnostic", "--dump", d(f"dump-{t}"),
-                                       "--run", d(f"capture-{t}"), "--steps", args.steps, "--output", d(f"float32-{t}"), "--threads", str(args.threads)]),
+                                       "--run", d(f"capture-{t}"), "--steps", args.steps, "--output", d(f"float32-{t}"), "--threads", str(args.threads), *upstream]),
     ]
     optional = {f"float32-{t}"}
     records = {}
+    released = None    # when this gate last released the GPU lock
     for name, kind, budget, command in stages:
         record_path = work / "controllers" / f"{name}.json"
         output = work / name
@@ -133,6 +149,9 @@ def main():
             output.rename(work / f"{name}.failed-{int(time.time())}")
         if kind == "gpu":
             command = [str(args.gpu_lock), f"h3-trajectory: {name}", *command]
+            # The lock is shared with other users of this Mac: give them a turn between this gate's GPU stages.
+            if released is not None:
+                time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
         record = dict(schema=1, stage=name, kind=kind, command=command, budgetSeconds=budget, pinsDigest=digest,
                       gpuLock=kind == "gpu", passed=False, joined=False, timedOut=False)
         if kind == "cpu":
@@ -182,6 +201,8 @@ def main():
                         os.killpg(proc.pid, signal.SIGKILL)
                 proc.wait()
         record.update(joined=True, exitCode=proc.returncode, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
+        if kind == "gpu":
+            released = time.monotonic()
         if kind == "cpu":
             record["sampledPeakGroupRSSBytes"] = peak
         record["sourcePinsUnchanged"] = all(sha(p) == v for p, v in pins.items())
@@ -215,6 +236,15 @@ def main():
     selected = list(range(steps_total)) if args.steps == "all" else [int(s) for s in args.steps.split(",")]
     required = [f"step{s}/{n}" for s in selected for n in
                 ("packed", "block00", "block49", "heads_video", "heads_audio", "latents_out_video", "latents_out_audio")]
+    # FL2VA: the step-0 condition rows against the pipeline's own keyframe encode and noising.
+    required += ["step0/conditions"] if keyframes and 0 in selected else []
+    # Upstream's presentation: ids, tags and positions must equal it. Kit's refined text against the original refiner on
+    # upstream's own tap is recorded but not gated: the tap's image rows follow the vision tower's bf16 rounding
+    # chaotically (upstream's own bf16 and fp32 towers give taps 0.55 apart), so the conditioner is gated on its own
+    # (qualify-h3-presentation.py) and this gate isolates the denoiser on the captured refined text.
+    presentation_checks = oracle_report.get("presentation")
+    if presenting and not (presentation_checks and all(presentation_checks.get(k) for k in ("ids", "tags", "positions"))):
+        failures.append(f"presentation checks {presentation_checks}")
     comparisons = oracle_report.get("comparisons", {})
     for key in required:
         row = comparisons.get(key)
@@ -247,9 +277,11 @@ def main():
                                     captureHashesSHA256=hashlib.sha256(json.dumps(capture_hashes, sort_keys=True).encode()).hexdigest(),
                                     finalLatents={k: capture_hashes.get(f"step{steps_total - 1}_latents_out_{k}") for k in ("video", "audio")}),
                 comparisons={k: comparisons[k] for k in required if k in comparisons},
+                refinedDiagnostic=comparisons.get("refined"),
                 float32Diagnostics=(manifest(f"float32-{t}")["report"].get("float32_diagnostics")
                                     if records.get(f"float32-{t}", {}).get("passed") else dict(unavailable=records.get(f"float32-{t}", {}).get("outputError") or "stage failed")),
                 oracleTimings={k: v for k, v in oracle_report.items() if k.endswith("_seconds")}, layoutChecks=layout,
+                presentation=dict(presentation_checks, report=manifest(f"presentation-{t}")["report"]) if presenting else None,
                 oracleFields=manifest(f"oracle-{t}")["fields"],
                 nativeReports={"capture": capture.get("report"), "replay": replay.get("report")}, controllers=records,
                 pinsDigest=digest, pinsUnchanged=pins_unchanged, filesSHA256=pins,

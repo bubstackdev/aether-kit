@@ -1,6 +1,7 @@
 # Development tooling only: the H3 (MiniMax H3) CPU oracle and profile export, never required by SDK consumers.
 # Pinned to exactly the environment that produced the 2026-10-26 H3 evidence (every installed package at its version;
-# diffusers at the public huggingface/diffusers commit carrying the MiniMax H3 modules):
+# diffusers at the public huggingface/diffusers commit carrying the MiniMax H3 modules), plus torchvision 0.28.0 (the
+# release built for torch 2.13), added 2026-10-29 so the FL2VA presentation oracle runs upstream's Qwen3-VL processor:
 #
 #     uv sync --frozen --project Forge/h3-oracle
 #     Forge/h3-oracle/.venv/bin/python -I -B Scripts/prepare-h3-profile-oracle.py ...
@@ -55,6 +56,7 @@ dependencies = [
     "sympy==1.14.0",
     "tokenizers==0.23.3",
     "torch==2.13.0",
+    "torchvision==0.28.0",
     "tqdm==4.70.1",
     "transformers==5.20.1",
     "truststore==0.10.5",

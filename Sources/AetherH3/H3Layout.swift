@@ -3,7 +3,11 @@ import AetherKit
 import Foundation
 
 /// Keyframe row placement only; this module does not encode keyframe images.
-public enum H3Anchor: Sendable, Equatable { case first, last }
+public enum H3Anchor: Sendable, Equatable {
+    case first, last
+    /// Whether `anchors` is a packed order the pipeline produces: none, one, or first then last.
+    static func isPackedOrder(_ anchors: [H3Anchor]) -> Bool { anchors.count < 2 || anchors == [.first, .last] }
+}
 
 /// Packed text, optional condition video, stereo audio and target video row plan.
 /// Coordinates use source float64 arithmetic and narrow once to float32 for rotary input.
@@ -25,7 +29,7 @@ public struct H3Layout: Sendable {
 
     public init(geometry: H3Geometry, textTags: [Int32], anchors: [H3Anchor] = []) throws {
         guard (1...4096).contains(textTags.count), textTags.allSatisfy({ $0 == 0 || $0 == 1 }),
-              anchors.count <= 2, anchors.count < 2 || anchors == [.first, .last] else {
+              H3Anchor.isPackedOrder(anchors) else {
             throw AetherError.invalidRequest("H3 requires 1...4096 text tags (0/1), with keyframes ordered first then last")
         }
         let n = textTags.count, h = geometry.latentHeight, w = geometry.latentWidth
@@ -54,6 +58,10 @@ public struct H3Layout: Sendable {
                 }
             }
         }
+        // A last anchor sits 5/3 before the end of the generated span, as upstream places it. Upstream sums the spans
+        // with numpy's pairwise summation and this sums sequentially; the float64 results can differ in the last ulp from
+        // 16 latent frames on, which the single narrowing to float32 absorbs (the pipeline-captured fixtures and the
+        // gate's layout checks compare the float32 positions exactly).
         for (i, anchor) in anchors.enumerated() {
             let time = anchor == .first ? Double(n) : Double(n) + spans.reduce(0, +) - 5.0 / 3.0
             frame(start: n + i * frameRows, time: time)

@@ -13,6 +13,13 @@ protocol H3ConditionerKernel: Sendable {
     func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData
     func release() async
 }
+/// Keyframe vision-tower calls (`H3Profile.ConditionerVision`): one keyframe's inputs at its canvas -> the merger rows
+/// `[n/4, 5120]` and DeepStack `[levels, n/4, 5120]`, both bf16.
+@available(macOS 27, iOS 27, *)
+protocol H3VisionKernel: Sendable {
+    func encode(_ inputs: H3VisionInputs, width: Int, height: Int) async throws -> (embeddings: H3TensorData, deepstack: H3TensorData)
+    func release() async
+}
 /// Denoiser graph calls.
 @available(macOS 27, iOS 27, *)
 protocol H3DenoiserKernels: Sendable {
@@ -67,27 +74,67 @@ func h3Tensor(_ shape: [Int], _ values: [Float]) throws -> H3TensorData {
     try H3TensorData(spec: H3TensorSpec(scalarType: .float32, shape: shape), bytes: values.withUnsafeBytes { Data($0) })
 }
 
-/// Reads token embeddings in place and streams the 50 conditioner layers; returns the unnormalized tap.
+/// Reads token embeddings in place and streams the 50 conditioner layers; returns the unnormalized tap. With keyframes,
+/// the presentation is upstream's (`H3Presentation`): each keyframe's vision-tower rows replace its image-pad embeddings,
+/// the rotary tables follow the M-RoPE positions, and DeepStack level k is added at the image rows after layer k.
 @available(macOS 27, iOS 27, *)
 actor H3ProfileConditioner: H3PromptConditioner {
     private let conditioner: H3Profile.Conditioner
     private let limits: ClosedRange<Int>
     private let tokenize: @Sendable (String) throws -> [Int32]
     private let kernel: any H3ConditionerKernel
+    private let vision: (entry: H3Profile.ConditionerVision, kernel: any H3VisionKernel)?
     private var rope: (cos: H3TensorData, sin: H3TensorData)?
     private var embeddingVerified = false
 
-    init(profile: H3Profile, tokenize: @escaping @Sendable (String) throws -> [Int32], kernel: any H3ConditionerKernel) throws {
+    init(profile: H3Profile, tokenize: @escaping @Sendable (String) throws -> [Int32], kernel: any H3ConditionerKernel,
+         vision: (any H3VisionKernel)? = nil) throws {
         guard let conditioner = profile.conditioner else { throw AetherError.invalidModel("H3 profile has no conditioner") }
-        self.init(conditioner: conditioner, limits: profile.textTokenLimits, tokenize: tokenize, kernel: kernel)
+        self.init(conditioner: conditioner, limits: profile.textTokenLimits, tokenize: tokenize, kernel: kernel,
+                  vision: profile.conditionerVision.flatMap { entry in vision.map { (entry, $0) } })
     }
     init(conditioner: H3Profile.Conditioner, limits: ClosedRange<Int>, tokenize: @escaping @Sendable (String) throws -> [Int32],
-         kernel: any H3ConditionerKernel) {
-        self.conditioner = conditioner; self.limits = limits; self.tokenize = tokenize; self.kernel = kernel
+         kernel: any H3ConditionerKernel, vision: (entry: H3Profile.ConditionerVision, kernel: any H3VisionKernel)? = nil) {
+        self.conditioner = conditioner; self.limits = limits; self.tokenize = tokenize; self.kernel = kernel; self.vision = vision
     }
 
     func encode(_ prompt: String, geometry: H3Geometry, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
+        try await encode(prompt, keyframes: [], geometry: geometry, onLayer: onLayer).tap
+    }
+
+    func encode(_ prompt: String, keyframes: [H3Keyframe], geometry: H3Geometry,
+                onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Conditioning {
         let ids = try tokenize(prompt)
+        guard !keyframes.isEmpty else { return try H3Conditioning(text: try await tap(ids, onLayer: onLayer)) }
+        guard let vision else { throw AetherError.unsupported("H3 profile has no keyframe vision encoder for FL2VA's presentation") }
+        let presentation = try H3Presentation(prompt: ids, keyframes: keyframes.map { ($0.width, $0.height) }, vision: vision.entry.vision,
+                                              tokenize: tokenize)
+        guard limits.contains(presentation.count) else {
+            throw AetherError.invalidRequest("H3 presentation has \(presentation.count) tokens (prompt \(ids.count)); the profile supports \(limits)")
+        }
+        // Every keyframe's tower call first, then the tower is released before the layers stream.
+        var images: [(embeddings: H3TensorData, deepstack: H3TensorData)] = []
+        do {
+            for (keyframe, image) in zip(keyframes, presentation.images) {
+                try Task.checkCancellation()
+                let inputs = try H3VisionInputs(rgb: keyframe.rgb, width: keyframe.width, height: keyframe.height, vision: vision.entry.vision)
+                let result = try await vision.kernel.encode(inputs, width: keyframe.width, height: keyframe.height)
+                let hidden = vision.entry.hiddenSize, levels = vision.entry.deepstackLevels
+                guard result.embeddings.spec == (try H3TensorSpec(scalarType: .bfloat16, shape: [image.tokens, hidden])),
+                      result.deepstack.spec == (try H3TensorSpec(scalarType: .bfloat16, shape: [levels, image.tokens, hidden])) else {
+                    throw AetherError.invalidTensor("H3 keyframe vision output shape differs")
+                }
+                images.append(result)
+            }
+        } catch { await vision.kernel.release(); throw error }
+        await vision.kernel.release()
+        let tap = try await tap(presentation.ids, presentation: presentation, images: images, levels: vision.entry.deepstackLevels, onLayer: onLayer)
+        return try H3Conditioning(tap: tap, tags: presentation.tags)
+    }
+
+    /// `presentation` nil: a text-only prompt (rotary rows 0..<T). Otherwise the image rows and M-RoPE tables.
+    private func tap(_ ids: [Int32], presentation: H3Presentation? = nil, images: [(embeddings: H3TensorData, deepstack: H3TensorData)] = [],
+                     levels: Int = 0, onLayer: @escaping @Sendable (Int, Int) -> Void) async throws -> H3TensorData {
         guard limits.contains(ids.count) else { throw AetherError.invalidRequest("H3 prompt has \(ids.count) tokens; the profile supports \(limits)") }
         if !embeddingVerified { try conditioner.embedding.verify(); embeddingVerified = true }
         if rope == nil { rope = (try conditioner.ropeCos.read(), try conditioner.ropeSin.read()) }
@@ -95,20 +142,61 @@ actor H3ProfileConditioner: H3PromptConditioner {
         func prefix(_ table: H3TensorData) throws -> H3TensorData {
             try H3TensorData(spec: H3TensorSpec(scalarType: .bfloat16, shape: [1, t, 128]), bytes: table.bytes.prefix(t * rowBytes))
         }
-        let cos = try prefix(rope!.cos), sin = try prefix(rope!.sin)
+        let section = H3Presentation.Vision().mropeSection
+        let cos = try presentation.map { try $0.rotary(rope!.cos, section: section) } ?? prefix(rope!.cos)
+        let sin = try presentation.map { try $0.rotary(rope!.sin, section: section) } ?? prefix(rope!.sin)
         var hidden = try conditioner.embedding.rows(ids)
         let spec = hidden.spec
+        if let presentation {
+            hidden = try H3ImageRows.scatter(images.map(\.embeddings), into: hidden, at: presentation.images)
+        }
         for index in 0..<conditioner.parameters.count {
             try Task.checkCancellation()
             hidden = try await kernel.layer(index, hidden: hidden, cos: cos, sin: sin)
             guard hidden.spec == spec else {
                 throw AetherError.invalidTensor("H3 conditioner layer output shape differs")
             }
+            if let presentation, index < levels {
+                hidden = try H3ImageRows.add(images.map(\.deepstack), level: index, levels: levels, to: hidden, at: presentation.images)
+            }
             onLayer(index + 1, conditioner.parameters.count)
         }
         return hidden
     }
-    func release() async { await kernel.release(); rope = nil }
+    func release() async { await kernel.release(); await vision?.kernel.release(); rope = nil }
+}
+
+/// Host-side image rows of the presentation, in bf16 as upstream computes them: the merger rows replace the image-pad
+/// embeddings (`masked_scatter`), and DeepStack adds in float32 rounded to nearest-even bf16 (torch's bf16 add).
+@available(macOS 27, iOS 27, *)
+enum H3ImageRows {
+    static func scatter(_ embeddings: [H3TensorData], into hidden: H3TensorData, at images: [H3Presentation.Image]) throws -> H3TensorData {
+        let width = hidden.spec.shape[2], rowBytes = width * 2
+        var bytes = hidden.bytes
+        for (rows, image) in zip(embeddings, images) {
+            guard rows.spec.shape == [image.tokens, width] else { throw AetherError.invalidTensor("H3 image rows differ from their span") }
+            bytes.replaceSubrange((bytes.startIndex + image.start * rowBytes)..<(bytes.startIndex + (image.start + image.tokens) * rowBytes), with: rows.bytes)
+        }
+        return try H3TensorData(spec: hidden.spec, bytes: bytes)
+    }
+    static func add(_ deepstack: [H3TensorData], level: Int, levels: Int, to hidden: H3TensorData, at images: [H3Presentation.Image]) throws -> H3TensorData {
+        let width = hidden.spec.shape[2]
+        var bytes = hidden.bytes
+        for (features, image) in zip(deepstack, images) {
+            guard features.spec.shape == [levels, image.tokens, width] else { throw AetherError.invalidTensor("H3 DeepStack rows differ from their span") }
+            features.bytes.withUnsafeBytes { source in
+                bytes.withUnsafeMutableBytes { target in
+                    let add = source.bindMemory(to: UInt16.self), out = target.bindMemory(to: UInt16.self)
+                    let from = level * image.tokens * width, to = image.start * width
+                    for i in 0..<(image.tokens * width) {
+                        let sum = Float(bitPattern: UInt32(out[to + i]) << 16) + Float(bitPattern: UInt32(add[from + i]) << 16)
+                        out[to + i] = h3BFloat16Bits(sum)
+                    }
+                }
+            }
+        }
+        return try H3TensorData(spec: hidden.spec, bytes: bytes)
+    }
 }
 
 /// Packed-sequence helpers shared by the denoiser and its tests.
@@ -212,13 +300,17 @@ actor H3ProfileDenoiser: H3Denoiser {
 
     func denoise(_ initial: H3Latents, conditioning: H3TensorData, geometry: H3Geometry,
                  onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        try await denoise(initial, conditioning: try H3Conditioning(text: conditioning), geometry: geometry, onStep: onStep)
+    }
+
+    func denoise(_ initial: H3Latents, conditioning tagged: H3Conditioning, geometry: H3Geometry,
+                 onStep: @escaping @Sendable (Int, Int) -> Void) async throws -> H3Latents {
+        let conditioning = tagged.tap
         guard conditioning.spec.scalarType == .bfloat16, conditioning.spec.shape.count == 3, conditioning.spec.shape[0] == 1,
               conditioning.spec.shape[2] == 5120 else { throw AetherError.invalidTensor("H3 conditioning must be the [1,T,5120] bf16 tap") }
         let t = conditioning.spec.shape[1]
-        // Keyframe anchors lead the video rows: none (T2VA) or one first frame (FL2VA).
-        let frameRows = (geometry.latentHeight / 2) * (geometry.latentWidth / 2)
-        let anchors: [H3Anchor] = initial.video.spec.shape[1] == geometry.targetVideoRows + frameRows ? [.first] : []
-        let layout = try H3Layout(geometry: geometry, textTags: Array(repeating: 1, count: t), anchors: anchors)
+        // Keyframe anchors lead the video rows: none (T2VA), or first, last or both (FL2VA), as the latents declare them.
+        let layout = try H3Layout(geometry: geometry, textTags: tagged.tags, anchors: initial.anchors)
         guard initial.video.spec.shape == [1, layout.videoIndices.count, 96],
               initial.audio.spec.shape == [1, layout.audioIndices.count, 32] else {
             throw AetherError.invalidTensor("H3 initial latents differ from the layout")
@@ -425,6 +517,32 @@ actor NativeH3ConditionerKernel: H3ConditionerKernel {
     func release() async { graph = nil }
 }
 
+/// The keyframe vision tower: the canvas's static graph, weights bound in place, kept until `release()`.
+@available(macOS 27, iOS 27, *)
+actor NativeH3VisionKernel: H3VisionKernel {
+    private let vision: H3Profile.ConditionerVision
+    private let observer: H3NativeCallObserver?
+    private var graph: (canvas: String, graph: NativeH3Graph)?
+    init(_ vision: H3Profile.ConditionerVision, observer: H3NativeCallObserver? = nil) { self.vision = vision; self.observer = observer }
+    func encode(_ inputs: H3VisionInputs, width: Int, height: Int) async throws -> (embeddings: H3TensorData, deepstack: H3TensorData) {
+        let canvas = "\(width)x\(height)"
+        if graph?.canvas != canvas {
+            graph = nil
+            graph = (canvas, try await NativeH3Graph.open(try vision.function(width: width, height: height), role: "vision", observer: observer,
+                                                          frequentReshapes: false))
+        }
+        var bound: [String: NativeH3Graph.Input] = ["pixels": .data(inputs.pixels), "pos_index": .data(inputs.positionIndex),
+                                                    "pos_weight": .data(inputs.positionWeight), "patch_rc": .data(inputs.patchCoordinates)]
+        for file in vision.parameters { bound[file.name] = .file(file) }
+        let tokens = inputs.gridHeight * inputs.gridWidth / (vision.vision.mergeSize * vision.vision.mergeSize)
+        let result = try await graph!.graph.run(bound, outputs: [
+            "image_embeds": try H3TensorSpec(scalarType: .bfloat16, shape: [tokens, vision.hiddenSize]),
+            "deepstack": try H3TensorSpec(scalarType: .bfloat16, shape: [vision.deepstackLevels, tokens, vision.hiddenSize])])
+        return (result["image_embeds"]!, result["deepstack"]!)
+    }
+    func release() async { graph = nil }
+}
+
 @available(macOS 27, iOS 27, *)
 actor NativeH3DenoiserKernels: H3DenoiserKernels {
     private let profile: H3Profile
@@ -542,7 +660,8 @@ public enum H3ProfileEngine {
         }
         return H3VideoStages(
             conditioner: try H3ProfileConditioner(profile: profile, tokenize: tokenize,
-                                                  kernel: NativeH3ConditionerKernel(conditioner, observer: nativeObserver)),
+                                                  kernel: NativeH3ConditionerKernel(conditioner, observer: nativeObserver),
+                                                  vision: profile.conditionerVision.map { NativeH3VisionKernel($0, observer: nativeObserver) }),
             keyframes: profile.keyframeEncoders.isEmpty && profile.tiledKeyframeEncoder == nil ? nil
                 : H3ProfileKeyframeEncoder(profile: profile, observer: nativeObserver),
             denoiser: try H3ProfileDenoiser(profile: profile, recipe: recipe, kernels: try NativeH3DenoiserKernels(profile, observer: nativeObserver),
@@ -579,6 +698,30 @@ public actor H3ProfileQualifier {
     public func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
         try await conditioner.layer(index, hidden: hidden, cos: cos, sin: sin)
     }
+    /// The keyframe vision tower's merger rows and DeepStack for one keyframe at its canvas (opened per call, released after).
+    public func vision(_ keyframe: H3Keyframe) async throws -> (embeddings: H3TensorData, deepstack: H3TensorData) {
+        guard let entry = profile.conditionerVision else { throw AetherError.unsupported("H3 profile has no keyframe vision encoder") }
+        let kernel = NativeH3VisionKernel(entry)
+        do {
+            let inputs = try H3VisionInputs(rgb: keyframe.rgb, width: keyframe.width, height: keyframe.height, vision: entry.vision)
+            let result = try await kernel.encode(inputs, width: keyframe.width, height: keyframe.height)
+            await kernel.release(); return result
+        } catch { await kernel.release(); throw error }
+    }
+    /// Upstream's FL2VA presentation of `keyframes` and the prompt `ids`, exactly as the session's conditioner stage
+    /// computes it; `tokenize` tokenizes the keyframe labels.
+    /// `layers` names decoder layers whose outputs (before any DeepStack add, as upstream's layer hooks record them)
+    /// are returned in `outputs`, for locating where a native tap departs from the oracle's.
+    public func conditioning(ids: [Int32], keyframes: [H3Keyframe], tokenize: @escaping @Sendable (String) throws -> [Int32],
+                             layers: Set<Int> = [], onLayer: @escaping @Sendable (Int, Int) -> Void = { _, _ in })
+        async throws -> (conditioning: H3Conditioning, outputs: [Int: H3TensorData]) {
+        let prompt = "\u{0}ids"
+        let recorder = H3LayerRecorder(inner: conditioner, layers: layers)
+        let stage = try H3ProfileConditioner(profile: profile, tokenize: { $0 == prompt ? ids : try tokenize($0) }, kernel: recorder,
+                                             vision: profile.conditionerVision.map { NativeH3VisionKernel($0) })
+        let conditioning = try await stage.encode(prompt, keyframes: keyframes, geometry: try H3Geometry(), onLayer: onLayer)
+        return (conditioning, await recorder.store.outputs)
+    }
     public func refine(_ tap: H3TensorData) async throws -> H3TensorData { try await denoiser.refine(tap) }
     public func pack(video: H3TensorData, audio: H3TensorData, text: H3TensorData, gather: H3TensorData) async throws -> H3TensorData {
         try await denoiser.pack(video: video, audio: audio, text: text, gather: gather)
@@ -605,4 +748,22 @@ public actor H3ProfileQualifier {
 extension H3Packing {
     /// Public for probes: the gather permutation of `layout` (see `H3Packing.gather`).
     public static func gatherIndices(_ layout: H3Layout) throws -> [Int32] { try gather(layout) }
+}
+
+/// Passes conditioner layers through and keeps the outputs of the listed ones (qualification only).
+@available(macOS 27, iOS 27, *)
+private struct H3LayerRecorder: H3ConditionerKernel {
+    actor Store {
+        private(set) var outputs: [Int: H3TensorData] = [:]
+        func keep(_ index: Int, _ hidden: H3TensorData) { outputs[index] = hidden }
+    }
+    let inner: any H3ConditionerKernel
+    let layers: Set<Int>
+    let store = Store()
+    func layer(_ index: Int, hidden: H3TensorData, cos: H3TensorData, sin: H3TensorData) async throws -> H3TensorData {
+        let output = try await inner.layer(index, hidden: hidden, cos: cos, sin: sin)
+        if layers.contains(index) { await store.keep(index, output) }
+        return output
+    }
+    func release() async { await inner.release() }
 }

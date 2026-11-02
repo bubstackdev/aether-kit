@@ -39,7 +39,7 @@ public struct H3ResourceAdmission: Sendable {
             self.minimumPhysicalMemoryBytes = minimumPhysicalMemoryBytes
         }
 
-        /// The request's task (FL2VA with a first frame, else T2VA) is listed, every stage it needs has a reservation,
+        /// The request's task (FL2VA with a first or last frame, else T2VA) is listed, every stage it needs has a reservation,
         /// its length is at most `maximumFrames`, and its canvas fits inside a listed canvas of the same orientation
         /// (width and height each at most the listed ones; a square canvas on either side matches any orientation).
         /// An envelope without listed canvases covers any canvas up to `maximumPixels`. An envelope above the 18 GiB bar
@@ -60,10 +60,10 @@ public struct H3ResourceAdmission: Sendable {
 
         func coversIgnoringRegion(_ request: H3VideoRequest) -> Bool {
             let w = request.geometry.width, h = request.geometry.height
-            let task: H3Profile.Task = request.firstFrame == nil ? .t2va : .fl2va
+            let task: H3Profile.Task = request.hasKeyframes ? .fl2va : .t2va
             guard tasks.contains(task), request.geometry.frames <= maximumFrames,
                   !request.audio || stageBytes[.decodingAudio] != nil,
-                  request.firstFrame == nil || stageBytes[.encodingKeyframe] != nil else { return false }
+                  !request.hasKeyframes || stageBytes[.encodingKeyframe] != nil else { return false }
             guard !canvases.isEmpty else { return w * h <= maximumPixels }
             return canvases.contains { canvas in
                 let s = canvas.split(separator: "x").map { Int($0)! }, width = s[0], height = s[1]
@@ -74,7 +74,7 @@ public struct H3ResourceAdmission: Sendable {
         /// The largest reservation among the stages `request` uses.
         public func peakStageBytes(_ request: H3VideoRequest) -> UInt64 {
             var used: [H3VideoStage] = [.encoding, .denoising, .decodingVideo]
-            if request.firstFrame != nil { used.append(.encodingKeyframe) }
+            if request.hasKeyframes { used.append(.encodingKeyframe) }
             if request.audio { used.append(.decodingAudio) }
             return used.compactMap { stageBytes[$0] }.max() ?? 0
         }
@@ -130,7 +130,7 @@ public struct H3ResourceAdmission: Sendable {
         if let chosen = allowed.min(by: { a, b in
             (a.memoryBarBytes, a.operationBytes + a.peakStageBytes(request)) < (b.memoryBarBytes, b.operationBytes + b.peakStageBytes(request))
         }) { return chosen }
-        let g = request.geometry, task = request.firstFrame == nil ? "t2va" : "fl2va"
+        let g = request.geometry, task = request.hasKeyframes ? "fl2va" : "t2va"
         let asked = "\(g.width)x\(g.height) x \(g.frames) frames (\(task)\(request.audio ? ", audio" : ""))"
         if let needed = covering.map(\.minimumPhysicalMemoryBytes).min() {
             throw AetherError.unsupported("H3 \(asked) needs at least \(needed >> 30) GiB of physical memory; this device has \(physicalMemoryBytes >> 30) GiB")
@@ -149,7 +149,7 @@ public struct H3ResourceAdmission: Sendable {
         let today = envelopes.filter { !$0.isExtended }
         let candidates = Envelope.insideToday(request) && !today.isEmpty ? today : envelopes
         func stretch(_ e: Envelope) -> Double {
-            let task: H3Profile.Task = request.firstFrame == nil ? .t2va : .fl2va
+            let task: H3Profile.Task = request.hasKeyframes ? .fl2va : .t2va
             let frames = max(0, Double(g.frames) / Double(e.maximumFrames) - 1)
             let missing = (e.tasks.contains(task) ? 0 : 1) + (!request.audio || e.stageBytes[.decodingAudio] != nil ? 0 : 1)
             let sides = e.canvases.isEmpty ? [max(0, Double(g.width * g.height) / Double(e.maximumPixels) - 1)]
@@ -169,7 +169,7 @@ public struct H3ResourceAdmission: Sendable {
     }
 
     /// Before anything is reserved: some envelope admits the request (every stage it needs has a reservation: the
-    /// first-frame encoder for FL2VA, the audio decoder when audio is produced), and the operation plus the largest
+    /// keyframe encoder for FL2VA, the audio decoder when audio is produced), and the operation plus the largest
     /// of those stages fits the coordinator's capacity, so a run that can never fit is refused before any stage loads.
     func check(_ request: H3VideoRequest) throws {
         let envelope = try envelope(for: request)

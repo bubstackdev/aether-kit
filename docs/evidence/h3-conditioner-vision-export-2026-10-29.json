@@ -1,0 +1,141 @@
+{
+ "schema": 1,
+ "kind": "h3-conditioner-vision-export",
+ "date": "2026-10-29",
+ "command": "Forge/h3-oracle/.venv/bin/python -I -B Scripts/export-h3-profile.py --snapshot <FL2VA snapshot 42ed227e> --converter <staging>/oracle-scripts/vendor --output <cache>/h3/profile-vision-2026-10-29 --stage conditioner-vision --canvases 960x544,544x960,1280x704,704x1280,288x288 --base-bundle <cache>/h3/profile-c49d8dbf/bundle.json",
+ "recipe": "upstream Qwen3VLVisionModel modules in bf16, every weight lifted and bound in place from FL2VA/text_encoder shard 14; host taps/weights from get_vision_interpolation_indices_and_weights (float32) and patch (row, column) from get_vision_position_ids, merge-window order; attention over the one image",
+ "exportScriptSHA256": "3f21b412a06914fbc10ac2093e0f53f4a38f6273f08dee94dd2d150ecba2ba1f",
+ "cpuChecks": {
+  "1280x704": {
+   "grid": [
+    44,
+    80
+   ],
+   "patches": 3520,
+   "tokens": 880,
+   "byteIdentical": true,
+   "relativeL2": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "seconds": 174.1
+  },
+  "288x288": {
+   "grid": [
+    18,
+    18
+   ],
+   "patches": 324,
+   "tokens": 81,
+   "byteIdentical": true,
+   "relativeL2": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "seconds": 5.3
+  },
+  "544x960": {
+   "grid": [
+    60,
+    34
+   ],
+   "patches": 2040,
+   "tokens": 510,
+   "byteIdentical": true,
+   "relativeL2": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "seconds": 48.0
+  },
+  "704x1280": {
+   "grid": [
+    80,
+    44
+   ],
+   "patches": 3520,
+   "tokens": 880,
+   "byteIdentical": true,
+   "relativeL2": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "seconds": 197.3
+  },
+  "960x544": {
+   "grid": [
+    34,
+    60
+   ],
+   "patches": 2040,
+   "tokens": 510,
+   "byteIdentical": true,
+   "relativeL2": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "seconds": 35.4
+  }
+ },
+ "cpuCheckReference": "Qwen3VLVisionModel.forward (transformers 5.20.1) on the same bf16 pixels (8-bit levels, (x/127.5 - 1) in bf16), merger and the three DeepStack levels; byte_identical covers all four outputs",
+ "functions": {
+  "1280x704": {
+   "sha256": "ce1cfd2b35e1e0b6cf1d72cf4d2225c7e22de8566a8924a81a61b629be6f1d99",
+   "exportSeconds": 3.4
+  },
+  "288x288": {
+   "sha256": "d5827b7986f2bf422c00e27b9a48374556f7a24401668d9baa073d493d8a3282",
+   "exportSeconds": 4.1
+  },
+  "544x960": {
+   "sha256": "db379764b240d65dfb27d5e7459a1c79568a9ce3d84ef5748d93f2a7d7346f83",
+   "exportSeconds": 5.6
+  },
+  "704x1280": {
+   "sha256": "994d3c1083b0b75cc52e035128adfb8f601b2c4dde1fe3641d62c53c5799b12e",
+   "exportSeconds": 3.7
+  },
+  "960x544": {
+   "sha256": "3751d619ad60c7dfd154bb5da78279d8a51d223e6d059e5c1eee3eab4a1d5202",
+   "exportSeconds": 3.5
+  }
+ },
+ "parameters": {
+  "count": 351,
+  "bytes": 1190533600,
+  "dtype": "bfloat16",
+  "source": "FL2VA/text_encoder model-00014-of-00014.safetensors, model.visual.*"
+ },
+ "overlay": {
+  "bundleSHA256": "037e464ff419966739e71e4a9b5bc1284ef356dae4dd9b46c050baaf7fb74887",
+  "baseBundleSHA256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+  "change": "added conditioner_vision (the Qwen3-VL vision tower per canvas, weights in place); every other entry is the base bundle's",
+  "baseLineageKept": true,
+  "note": "the overlay's bundle.json carries absolute paths, so the profile identity is its own; the base export is never written"
+ },
+ "usrBinTimeL": {
+  "firstGridTrial": {
+   "canvas": "960x544",
+   "realSeconds": 45.01,
+   "maximumResidentSetBytes": 3615719424,
+   "peakMemoryFootprintBytes": 1970270280
+  },
+  "allFiveCanvases": {
+   "realSeconds": 487.83,
+   "maximumResidentSetBytes": 3788963840,
+   "peakMemoryFootprintBytes": 2120020280
+  }
+ },
+ "swiftCheck": "AETHER_H3_PROFILE=<overlay bundle.json> h3ExportedProfileTablesMatchTheLayoutForTheFirstClipMenu passes: the overlay opens, every vision function is declared per canvas, every model stream and table hashes, and all 351 in-place vision weights read back with their recorded hashes",
+ "noRuntime": "no Core AI runtime, specialisation or GPU was used"
+}

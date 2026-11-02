@@ -124,6 +124,25 @@ public struct H3Profile: Sendable {
         return keyframeEncoders[canvas].map { .whole($0) }
     }
     public let audioDecoder: AudioDecoder?
+    /// The Qwen3-VL vision tower of upstream's FL2VA presentation (`H3Presentation`): one static graph per canvas, keyed
+    /// "WIDTHxHEIGHT", over shared bf16 weights bound in place. Nil in profiles from before the presentation.
+    public struct ConditionerVision: Sendable {
+        /// pixels `[n, 1536]` bf16, pos_index `[n, 4]` i32, pos_weight `[n, 4]` f32, patch_rc `[n, 2]` i32 + `parameters`
+        /// -> image_embeds `[n/4, 5120]` bf16, deepstack `[levels, n/4, 5120]` bf16.
+        public let functions: [String: H3ModelAsset]
+        public let parameters: [H3TensorFile]
+        public let vision: H3Presentation.Vision
+        /// DeepStack levels, added after decoder layers 0..<levels at the image rows.
+        public let deepstackLevels: Int
+        public let hiddenSize: Int
+        public func function(width: Int, height: Int) throws -> H3ModelAsset {
+            guard let model = functions["\(width)x\(height)"] else {
+                throw AetherError.unsupported("H3 profile has no keyframe vision encoder for \(width)x\(height)")
+            }
+            return model
+        }
+    }
+    public private(set) var conditionerVision: ConditionerVision?
 
     /// `contentSHA256` of a manifest's bytes.
     public static func contentSHA256(manifest data: Data) throws -> String {
@@ -240,6 +259,28 @@ public struct H3Profile: Sendable {
             }
             return AudioDecoder(model: try a.model.asset(path), fixed: fixed, sampleRate: a.sample_rate, hop: a.hop, channels: a.channels)
         }
+        conditionerVision = try m.conditioner_vision.map { v in
+            let p = v.presentation
+            guard v.dtype == "bfloat16", v.patch_size == 16, v.merge_size == 2, v.temporal_patch_size == 2, v.table_side == 48,
+                  v.out_hidden == 5120, v.deepstack_levels == 3, v.pixel_mean == [0.5, 0.5, 0.5], v.pixel_std == [0.5, 0.5, 0.5],
+                  v.mrope_section == [24, 20, 20], v.mrope_interleaved, p.label == "<Picture {index}>: ", p.text_tag == 1, p.video_tag == 0,
+                  !v.functions.isEmpty, !v.parameters.isEmpty,
+                  v.parameters.enumerated().allSatisfy({ $1.name == "w\($0)" && $1.dtype == "bfloat16" }) else {
+                throw AetherError.invalidModel("H3 conditioner vision entry lacks the pinned Qwen3-VL presentation contract")
+            }
+            var vision = H3Presentation.Vision()
+            vision.visionStart = p.vision_start; vision.imagePad = p.image_pad; vision.visionEnd = p.vision_end
+            for (canvas, grid) in v.grids {
+                let sides = canvas.split(separator: "x").compactMap { Int($0) }
+                guard v.functions[canvas] != nil, sides.count == 2, grid.count == 2, String(sides[0]) + "x" + String(sides[1]) == canvas,
+                      try vision.grid(width: sides[0], height: sides[1]) == (height: grid[0], width: grid[1]) else {
+                    throw AetherError.invalidModel("invalid H3 conditioner vision canvas \(canvas)")
+                }
+            }
+            guard Set(v.grids.keys) == Set(v.functions.keys) else { throw AetherError.invalidModel("H3 conditioner vision canvases differ") }
+            return ConditionerVision(functions: try v.functions.mapValues { try $0.asset(path) }, parameters: try v.parameters.map { try $0.file(path) },
+                                     vision: vision, deepstackLevels: v.deepstack_levels, hiddenSize: v.out_hidden)
+        }
         guard audioDecoder != nil || m.missing.contains("audio_decoder") else {
             throw AetherError.invalidModel("H3 profile omits its audio decoder without declaring it missing")
         }
@@ -280,6 +321,7 @@ public struct H3Profile: Sendable {
     /// Profile graphs, tokenizer and schedule tables keep their existing caller-owned immutability contract.
     public func protectingWeights() throws -> Self {
         let weights = parameters.flatMap { $0 } + (conditioner?.parameters.flatMap { $0 } ?? []) + (prepare?.textParameters ?? [])
+            + (conditionerVision?.parameters ?? [])
         let urls = weights.flatMap { $0.segments.map { $0.url } } + (conditioner.map { [$0.embedding.url] } ?? [])
         let lease = try ExternalFileLease(files: urls)
         var result = self
@@ -288,6 +330,10 @@ public struct H3Profile: Sendable {
             result.conditioner = Conditioner(embedding: try c.embedding.holding(lease), layer: c.layer,
                                              parameters: try c.parameters.map { try $0.map { try $0.holding(lease) } },
                                              tap: c.tap, ropeCos: c.ropeCos, ropeSin: c.ropeSin)
+        }
+        if let v = conditionerVision {
+            result.conditionerVision = ConditionerVision(functions: v.functions, parameters: try v.parameters.map { try $0.holding(lease) },
+                                                         vision: v.vision, deepstackLevels: v.deepstackLevels, hiddenSize: v.hiddenSize)
         }
         if let prepare {
             result.prepare = Prepare(text: prepare.text, textParameters: try prepare.textParameters.map { try $0.holding(lease) }, pack: prepare.pack)
@@ -317,6 +363,7 @@ public struct H3Profile: Sendable {
             + keyframeEncoders.keys.sorted().map { keyframeEncoders[$0]! }
             + (tiledKeyframeEncoder.map { t in [t.tile] + t.tails.keys.sorted().map { t.tails[$0]! } } ?? [])
             + (audioDecoder.map { audio in [audio.model] + audio.fixed.keys.sorted().map { audio.fixed[$0]! } } ?? [])
+            + (conditionerVision.map { v in v.functions.keys.sorted().map { v.functions[$0]! } } ?? [])
         for model in all where seen.insert(model.url.path).inserted { try model.verify() }
         try conditioner?.embedding.verify()
         if let conditioner { for file in [conditioner.ropeCos, conditioner.ropeSin] { _ = try file.read() } }
@@ -324,7 +371,7 @@ public struct H3Profile: Sendable {
 
     /// Hashes every in-place weight binding (≈ 90 GB of reads for a complete profile).
     public func verifyParameters() throws {
-        let all = parameters + (conditioner?.parameters ?? []) + [prepare?.textParameters ?? []]
+        let all = parameters + (conditioner?.parameters ?? []) + [prepare?.textParameters ?? []] + [conditionerVision?.parameters ?? []]
         for group in all { for file in group { try autoreleasepool { _ = try file.read() } } }
     }
 
@@ -384,6 +431,15 @@ public struct H3Profile: Sendable {
         let recipes: [String: RecipeEntry]; let video_decoder: Decoder; let audio_decoder: AudioEntry?
         let video_encoder_first: [String: Asset]?
         let video_encoder_first_tiled: TiledEncoderEntry?
+        let conditioner_vision: VisionEntry?
+    }
+    private struct PresentationEntry: Decodable {
+        let label: String; let vision_start: Int32; let image_pad: Int32; let vision_end: Int32; let text_tag: Int32; let video_tag: Int32
+    }
+    private struct VisionEntry: Decodable {
+        let functions: [String: Asset]; let parameters: [Tensor]; let grids: [String: [Int]]; let patch_size: Int; let merge_size: Int
+        let temporal_patch_size: Int; let table_side: Int; let deepstack_levels: Int; let out_hidden: Int; let pixel_mean: [Float]
+        let pixel_std: [Float]; let dtype: String; let mrope_section: [Int]; let mrope_interleaved: Bool; let presentation: PresentationEntry
     }
     private struct TiledEncoderEntry: Decodable { let tile: Asset; let tile_size: Int; let moments_channels: Int; let tails: [String: Asset] }
 }
