@@ -123,6 +123,39 @@ struct AetherLanguageModelTests {
         try await second.value
         #expect(await trace.events == ["first:start", "first:end", "second"])
     }
+
+    /// Review M3: a request queued behind an unload must not keep the backend that unload closes; it loads a new one.
+    @Test(.timeLimit(.minutes(1))) func aRequestQueuedBehindAnUnloadLoadsAFreshBackend() async throws {
+        let backends = BackendLog()
+        let model = AetherLanguageModel(bundle: URL(filePath: "/fake"), availability: .available, supportsReasoning: true,
+                                        contextLength: 2048, lifecycle: ModelLifecycle(policy: .manual,
+                                        monitor: MemoryPressureMonitor(systemSource: false))) {
+            let backend = FakeBackend { _ in FakeVocabulary.tokens("Hello") }
+            await backends.add(backend)
+            return LoadedLanguageModel(backend: backend, codec: FakeCodec())
+        }
+        let trace = Trace()
+        let gate = Gate()
+        let first = Task { try await model.resources.withModel { _ in await trace.add("first"); await gate.wait() } }
+        while await !trace.events.contains("first") { await Task.yield() }
+        let unload = Task { await model.unload() }
+        try await Task.sleep(for: .milliseconds(50))
+        let second = Task { try await model.resources.withModel { $0.backend as! FakeBackend } }
+        try await Task.sleep(for: .milliseconds(50))
+        await gate.open()
+        try await first.value
+        await unload.value
+        let used = try await second.value
+        let loaded = await backends.all
+        #expect(loaded.count == 2 && used === loaded.last, "the later request loads again after the unload")
+        let (closed, current) = (await loaded[0].unloads, await used.unloads)
+        #expect(closed == 1 && current == 0, "the later request never runs on the closed backend")
+    }
+}
+
+private actor BackendLog {
+    private(set) var all: [FakeBackend] = []
+    func add(_ backend: FakeBackend) { all.append(backend) }
 }
 
 actor Trace {
