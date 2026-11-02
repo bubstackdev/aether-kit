@@ -202,7 +202,7 @@ with nothing heavy alongside. All three rounds completed and the guard never tri
 at launch. Without that, an over-budget model isn't refused before it loads, and it can abort inside Core AI's
 compiler instead of failing cleanly: on an iPhone18,2 at the default limit, the VL-2B aborted with `std::bad_alloc`
 while opening ([on-device host](language-generation.md#on-device-host-003)). An iOS open-time check calibrated from
-a measured on-device peak is planned for 0.0.4.
+a measured on-device peak was planned for 0.0.4 and moved to 0.0.5.
 
 - **Open admission.** With `gpu:`, `LanguageGenerationSession.open` and `VisionLanguageSession.open` load and
   specialize under a grant: the VL encoder under one, then the decoder under its own. Cancelling an opening that

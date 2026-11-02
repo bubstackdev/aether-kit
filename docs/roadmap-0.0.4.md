@@ -1,8 +1,9 @@
 # 0.0.4 roadmap
 
-Status: draft, 2026-10-28, written right after the [0.0.3 release](release-notes/0.0.3.md). The user decided its shape
-the same day: **app readiness gates the 0.0.4 tag**, and three 0.0.3 spikes become products alongside it with a
-hardening track. Anything in a parallel track that isn't done by the tag moves to 0.0.5. As before, every item needs
+Status: **released 2026-11-02** ([release notes](release-notes/0.0.4.md)). Every piece of the release gate shipped;
+the parallel-track items that weren't merged by the tag [moved to 0.0.5](#moved-to-005). Written 2026-10-28, right
+after the [0.0.3 release](release-notes/0.0.3.md). The user decided its shape the same day: **app readiness gates the
+0.0.4 tag**, and three 0.0.3 spikes become products alongside it with a hardening track. Anything in a parallel track that isn't done by the tag moves to 0.0.5. As before, every item needs
 AetherKit's own implementation, independent references and qualification, and model licenses are confirmed against their
 cards before adoption.
 
@@ -16,7 +17,7 @@ idle. The gate is those pieces plus a sample app that proves them together.
 | --- | --- |
 | Model preparation | Implemented and qualified 2026-10-29 ([model preparation](model-preparation.md)). Import, installation, progress, verification and download, shipping together. Builds on `AetherAssets`' staged SHA-256-verified installation and reader leases. Download transport is pluggable. Kit publishes one sample bundle, Qwen3-0.6B, converted from `Qwen/Qwen3-0.6B` under Apache-2.0, and otherwise distributes none. |
 | Typed readiness | One state per model that an app can show: not installed, installing (with progress), verifying, ready, unsupported (OS, platform, memory), failed. `availability` stays the no-load check. Implemented 2026-10-29 ([model readiness](model-readiness.md)). |
-| Managed lifecycle | Lazy loading, idle unload and a memory-pressure response, for language, Qwen3-VL and the generative products. It folds in the language memory budget, which reloads a model once Core AI's retention spends its growth allowance. |
+| Managed lifecycle | Implemented and qualified 2026-10-29 ([managed lifecycle](model-lifecycle.md)). Lazy loading, idle unload and a memory-pressure response, for language, Qwen3-VL and the generative products. It folds in the language memory budget, which reloads a model once Core AI's retention spends its growth allowance. |
 | Sample app and API freeze | Implemented and qualified 2026-10-29 ([sample app](sample-app.md), [API stability](api-stability.md)). `Examples/SampleApp`, one SwiftUI app for iOS and a sandboxed Mac, downloads Qwen3-0.6B from Kit's public sample bundle, checks it, chats with it, runs structured output and shows its lifecycle; it was qualified on a Mac and an iPhone. The facade, preparation, readiness and lifecycle API freezes for 0.0.x: later 0.0.x releases add to it without breaking it, and CI enforces that against a committed baseline. |
 
 ## Parallel track: products from 0.0.3 spikes
@@ -91,6 +92,42 @@ references, native qualification and a guide.
   failures. Measure whether a single input (a `[1, 1]` start) changes anything for dense models (retention, prefill
   speed, the unexplained `Input has no defining op` compile message), then decide on a v2 contract. 0.0.2 and 0.0.3
   bundles keep working either way.
+
+## Shipped in 0.0.4
+
+- **The whole release gate:** [model preparation](model-preparation.md) (#72), [typed readiness](model-readiness.md)
+  (#74), the [managed lifecycle](model-lifecycle.md) (#79), and the [sample app](sample-app.md) with the
+  [API freeze](api-stability.md) (#80, #82).
+- **H3 fused attention:** done with no re-export ([spike](spikes/h3-attention-2026-10.md), #75).
+- **H3 per-entry memory bars and the larger-canvas export** (#77): overlay profiles with the 1280×704, 704×1280,
+  1344×768 and 768×1344 tails and the 141- and 243-frame audio decoders, and measured admission held to one covering
+  envelope under each entry's bar. No larger-canvas entry is bundled.
+- **The H3 FL2VA conditioner deviation, disclosed** (#76), and the floor launch moved to `macos-15` (#73).
+
+## Moved to 0.0.5
+
+By the rule above, these weren't merged by the tag and move to 0.0.5, unchanged in scope unless noted.
+
+- **H3 FL2VA conditioner presentation** ([item](#parallel-track-hardening-and-coverage),
+  [known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)).
+- **H3 last-frame conditioning** ([item](#parallel-track-hardening-and-coverage),
+  [draft PR #78](https://github.com/bubstackdev/aether-kit/pull/78)).
+- **H3 larger-canvas measurements** and bundled entries under the final overlay stack
+  ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress),
+  [draft PR #81](https://github.com/bubstackdev/aether-kit/pull/81)). The export work (#77) shipped.
+- **H3 Turbo4 qualification**, the step-0 transient and profile paths relative to `bundle.json`
+  ([item](#parallel-track-hardening-and-coverage)).
+- **Shared declared residency** ([proposal](shared-residency-proposal.md)).
+- **TripoSR, ACE-Step 1.5 and Granite 4.0-H products**, with the start-scalar dynamic-q re-qualification
+  ([track](#parallel-track-products-from-003-spikes)).
+- **iOS open-time memory check** and the VL-2B iPhone run with the extended-virtual-addressing entitlement
+  ([item](#parallel-track-hardening-and-coverage)).
+- **FLUX.2 on iOS** ([item](#parallel-track-hardening-and-coverage)).
+- **The MLX backend** for older OSes ([item](#parallel-track-hardening-and-coverage),
+  [spike](spikes/mlx-backend-2026-10.md)).
+- **Exporter safety**, **Core AI retention on shape changes** and the **Kokoro fp16 decoder**
+  ([track](#parallel-track-hardening-and-coverage)).
+- **Spikes:** quantization and one length input for dense language contracts ([spikes](#spikes)).
 
 ## Open questions
 

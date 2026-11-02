@@ -517,7 +517,7 @@ launch ([batch summary](evidence/iphone-batch-2026-10-28.json)):
   failure is attributed to exhausting the app's virtual address space at default limits. It isn't a compiler failure
   as such: the allocation that failed happened to be MetalPerformanceShadersGraph's, during Core AI's model
   specialization. It wasn't a jetsam kill, and it wasn't a refusal by Kit, which can't catch the abort
-  ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). The fix is planned for 0.0.4:
+  ([crash excerpt](evidence/qwen3-vl-2b-iphone18-default-limit-abort-2026-10-28.json)). The fix, planned for 0.0.4, moved to 0.0.5:
   the extended-virtual-addressing entitlement (`com.apple.developer.kernel.extended-virtual-addressing`) alongside the
   increased memory limit, and an open-time check that counts mapped bytes, not only footprint.
 
