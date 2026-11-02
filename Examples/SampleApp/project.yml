@@ -1,0 +1,52 @@
+# AetherKit's sample app (docs/sample-app.md): one SwiftUI app for iOS and macOS that downloads Qwen3-0.6B from the
+# public Hugging Face bundle through ModelPreparation, shows its readiness, chats with it, runs one structured-output
+# request, and shows its lifecycle. XcodeGen spec: run `xcodegen generate` here; the generated SampleApp.xcodeproj is
+# git-ignored. The app's logic is the SampleAppCore package beside this file (tested with `swift test`).
+#
+# Signing: nothing here names a team or profile. Select your team in the generated project, or pass DEVELOPMENT_TEAM (and,
+# for manual signing, CODE_SIGN_STYLE=Manual and PROVISIONING_PROFILE_SPECIFIER) to xcodebuild. The app needs no
+# capabilities beyond App Sandbox on the Mac (with outgoing network connections), so a wildcard development profile
+# works on iOS; change PRODUCT_BUNDLE_IDENTIFIER to one of your own.
+name: SampleApp
+options:
+  deploymentTarget:
+    iOS: "27.0"
+    macOS: "27.0"
+packages:
+  AetherKit:
+    path: ../..
+  SampleAppCore:
+    path: SampleAppCore
+targets:
+  SampleApp:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: Sources
+    dependencies:
+      - package: SampleAppCore
+      - package: AetherKit
+        product: AetherKit
+      - package: AetherKit
+        product: AetherAssets
+      - package: AetherKit
+        product: AetherLanguage
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.aether.sample-app
+        PRODUCT_NAME: AetherSample
+        MARKETING_VERSION: "0.0.4"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Aether Sample
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        SWIFT_VERSION: "6.0"
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+        CODE_SIGN_STYLE: Automatic
+        # The Mac build is sandboxed; iOS apps always are.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": SampleApp-macOS.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"

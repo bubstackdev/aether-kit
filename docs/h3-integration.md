@@ -11,7 +11,7 @@ The `AetherH3` SwiftPM product (experimental until 0.0.3) starts with CPU prepar
 ## Status: 2026-10-26
 
 **Known deviation, found 2026-10-29:** FL2VA's conditioner presentation omits upstream's keyframe vision blocks
-([below](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). A fix is planned for 0.0.4.
+([below](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)). A fix was planned for 0.0.4 and moved to 0.0.5.
 
 **The 2026-10-18 records below are historical.** They cover block 0, lifecycle, the three-block chain, the fifty-block backbone, the outer phases and the eight-step provided-conditioning trajectory. Each describes exactly what ran against its pinned prototype bundles. Those bundles, oracles and the preparation cache lived under `/private/tmp`, and macOS temporary-file cleanup removed them. Only empty directory skeletons remain. The commands below that cite `/private/tmp/aether-h3-*` can no longer run. The assets were not regenerated: Core AI exports aren't byte-reproducible, so every pinned capture would have to be redone anyway. [The lost-asset record](evidence/h3-legacy-assets-lost-2026-10-26.json) lists the affected roots, the 64 citing records, the original identities and the regeneration route, should it ever be needed.
 
@@ -655,9 +655,9 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 ## Turbo4 and video-decode tiling measurements (0.0.3)
 
-**Turbo4 stays experimental in 0.0.3, outside measured admission.** The user's side-by-side review on 2026-10-28 judged it worth qualifying properly, which is planned for 0.0.4. The profile already carries Turbo4 tables, so a Turbo4 render needs no export: `h3-profile-dump ... turbo4` and `h3-profile-run --render`. At 960×544×124 a Turbo4 render takes about 227 s for T2VA and 242 s for FL2VA. Both pass the media audit. Against Turbo8 on the same seed and prompt, frame PSNR is 12–15 dB and luma SSIM 0.41–0.49, but the two schedules give different clips (the same scene and bird in a different pose), so those numbers measure difference, not quality; quality is a subjective review of the side-by-side clips. Turbo4 has no measured-admission entry (its execution identity ends in `turbo4`) and no CPU trajectory gate, so in 0.0.3 it is outside measured admission ([record](evidence/h3-turbo4-and-decode-tiling-2026-10-28.json)).
+**Turbo4 stays experimental in 0.0.3, outside measured admission.** The user's side-by-side review on 2026-10-28 judged it worth qualifying properly, which was planned for 0.0.4 and moved to 0.0.5. The profile already carries Turbo4 tables, so a Turbo4 render needs no export: `h3-profile-dump ... turbo4` and `h3-profile-run --render`. At 960×544×124 a Turbo4 render takes about 227 s for T2VA and 242 s for FL2VA. Both pass the media audit. Against Turbo8 on the same seed and prompt, frame PSNR is 12–15 dB and luma SSIM 0.41–0.49, but the two schedules give different clips (the same scene and bird in a different pose), so those numbers measure difference, not quality; quality is a subjective review of the side-by-side clips. Turbo4 has no measured-admission entry (its execution identity ends in `turbo4`) and no CPU trajectory gate, so in 0.0.3 it is outside measured admission ([record](evidence/h3-turbo4-and-decode-tiling-2026-10-28.json)).
 
-**Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load is 0.0.4 work.
+**Video decode is GPU- and per-call-bound.** `h3-profile-decode` on the T2VA 960×544×124 render takes 34.2 s: the first tile 5.2 s (graph load and specialization), 104 warm tiles at 0.244 s each, stitching 3.1 s and RGB8 conversion 0.4 s. A thread sample during the tile loop shows the decoding task in Kit host work about 11% of the time and otherwise waiting on the GPU, with MPSGraph encoding each tile call on several threads. Overlapping host stitching with the next tile could save at most about 4 s (about 1% of a render), so 0.0.3 makes no host change; cutting the per-call cost (fewer, larger tiles or several tiles per call, which needs an export) and the first-tile load was left for 0.0.4 and moved to 0.0.5.
 
 ## Known deviation: FL2VA conditioner presentation (found 2026-10-29)
 
@@ -680,7 +680,7 @@ Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes
   - The trajectory gate takes Kit's captured refined text, with every row tagged as text.
 
   They prove Kit computes its presentation correctly, not that it's upstream's.
-- **Fix, planned for 0.0.4** ([roadmap](roadmap-0.0.4.md)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
+- **Fix, moved from 0.0.4 to 0.0.5** ([roadmap](roadmap-0.0.4.md#moved-to-005)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
   positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
   changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
   conditioning follow the same text-only presentation.

@@ -1,5 +1,5 @@
 /// Failures of the language facade.
-public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
+@nonexhaustive public enum AetherLanguageError: Error, Sendable, CustomStringConvertible {
     /// The model can't serve requests here (``AetherLanguageModel/availability``).
     case unavailable(AetherLanguageModel.UnavailableReason)
     /// Verifying or loading the bundle failed; the underlying error says why. The next request tries again.

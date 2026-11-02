@@ -17,7 +17,7 @@ It is not product work: Forge gains the exporter, but Kit's runtime is unchanged
 **The cause is our export, not Core AI** (follow-up bug hunt, 2026-10-28). `main` carries the same dynamic q on two inputs, `input_ids` [1, q] and `cache_positions` [1, q]. torch knows the two are equal, but coreai-torch emits two independent dynamic dimensions, so every q-dependent shape becomes a broadcast between two unrelated symbols, nesting one level per layer.
 - **Fix:** pass the chunk's start position as a [1, 1] scalar and build the positions in the graph.
 - **Result:** both failures go away (see [Contracts tried](#contracts-tried)).
-- **Why the verdict stands:** that start-scalar dynamic contract is measured but not parity-qualified, so the 0.0.3 verdict stays on the static-width contract, which is. Re-qualifying the dynamic one is planned for 0.0.4.
+- **Why the verdict stands:** that start-scalar dynamic contract is measured but not parity-qualified, so the 0.0.3 verdict stays on the static-width contract, which is. Re-qualifying the dynamic one was planned for 0.0.4 and moved to 0.0.5.
 
 Both static-width layouts open in seconds and match the float32 reference. On a quiet M5 Max:
 

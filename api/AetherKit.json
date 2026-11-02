@@ -1,0 +1,1683 @@
+{
+ "ABIRoot": {
+  "children": [
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Platform",
+            "printedName": "AetherKit.LanguageModelManifest.Platform",
+            "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Platform",
+              "printedName": "AetherKit.LanguageModelManifest.Platform",
+              "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherKit.LanguageModelManifest.Platform.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherKit.LanguageModelManifest.Platform.Type) -> AetherKit.LanguageModelManifest.Platform"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO5macosyA2EmF",
+        "moduleName": "AetherKit",
+        "name": "macos",
+        "printedName": "macos",
+        "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO5macosyA2EmF"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Platform",
+            "printedName": "AetherKit.LanguageModelManifest.Platform",
+            "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Platform",
+              "printedName": "AetherKit.LanguageModelManifest.Platform",
+              "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherKit.LanguageModelManifest.Platform.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherKit.LanguageModelManifest.Platform.Type) -> AetherKit.LanguageModelManifest.Platform"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO3iosyA2EmF",
+        "moduleName": "AetherKit",
+        "name": "ios",
+        "printedName": "ios",
+        "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO3iosyA2EmF"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Platform",
+            "printedName": "AetherKit.LanguageModelManifest.Platform",
+            "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherKit.LanguageModelManifest.Platform?",
+          "usr": "s:Sq"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Inlinable"
+        ],
+        "declKind": "Constructor",
+        "implicit": true,
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO8rawValueAESgSS_tcfc",
+        "moduleName": "AetherKit",
+        "name": "init",
+        "printedName": "init(rawValue:)",
+        "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO8rawValueAESgSS_tcfc"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declKind": "TypeAlias",
+        "implicit": true,
+        "kind": "TypeAlias",
+        "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO8RawValuea",
+        "moduleName": "AetherKit",
+        "name": "RawValue",
+        "printedName": "RawValue",
+        "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO8RawValuea"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "Inlinable"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO8rawValueSSvg",
+          "moduleName": "AetherKit",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO8rawValueSSvg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declKind": "Var",
+        "implicit": true,
+        "kind": "Var",
+        "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO8rawValueSSvp",
+        "moduleName": "AetherKit",
+        "name": "rawValue",
+        "printedName": "rawValue",
+        "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO8rawValueSSvp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSe",
+        "name": "Decodable",
+        "printedName": "Decodable",
+        "usr": "s:Se"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSE",
+        "name": "Encodable",
+        "printedName": "Encodable",
+        "usr": "s:SE"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSQ",
+        "name": "Equatable",
+        "printedName": "Equatable",
+        "usr": "s:SQ"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSH",
+        "name": "Hashable",
+        "printedName": "Hashable",
+        "usr": "s:SH"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeWitness",
+          "name": "RawValue",
+          "printedName": "RawValue"
+         }
+        ],
+        "kind": "Conformance",
+        "mangledName": "$sSY",
+        "name": "RawRepresentable",
+        "printedName": "RawRepresentable",
+        "usr": "s:SY"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declAttributes": [
+       "Nonexhaustive"
+      ],
+      "declKind": "Enum",
+      "enumRawTypeName": "String",
+      "isEnumExhaustive": true,
+      "kind": "TypeDecl",
+      "mangledName": "$s9AetherKit21LanguageModelManifestV8PlatformO",
+      "moduleName": "AetherKit",
+      "name": "Platform",
+      "printedName": "Platform",
+      "usr": "s:9AetherKit21LanguageModelManifestV8PlatformO"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSe",
+      "name": "Decodable",
+      "printedName": "Decodable",
+      "usr": "s:Se"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSE",
+      "name": "Encodable",
+      "printedName": "Encodable",
+      "usr": "s:SE"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit21LanguageModelManifestV",
+    "moduleName": "AetherKit",
+    "name": "LanguageModelManifest",
+    "printedName": "LanguageModelManifest",
+    "usr": "s:9AetherKit21LanguageModelManifestV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Duration",
+            "printedName": "Swift.Duration",
+            "usr": "s:s8DurationV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Duration?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvg",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Duration",
+            "printedName": "Swift.Duration",
+            "usr": "s:s8DurationV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Duration?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvs",
+        "moduleName": "AetherKit",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Duration",
+          "printedName": "Swift.Duration",
+          "usr": "s:s8DurationV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Duration?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvp",
+      "moduleName": "AetherKit",
+      "name": "idleUnloadAfter",
+      "printedName": "idleUnloadAfter",
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV15idleUnloadAfters8DurationVSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvg",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvs",
+        "moduleName": "AetherKit",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvp",
+      "moduleName": "AetherKit",
+      "name": "releaseUnderMemoryPressure",
+      "printedName": "releaseUnderMemoryPressure",
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV26releaseUnderMemoryPressureSbvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecyclePolicy",
+        "printedName": "AetherKit.ModelLifecyclePolicy",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Duration",
+          "printedName": "Swift.Duration",
+          "usr": "s:s8DurationV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Duration?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15idleUnloadAfter26releaseUnderMemoryPressureACs8DurationVSg_Sbtcfc",
+      "moduleName": "AetherKit",
+      "name": "init",
+      "printedName": "init(idleUnloadAfter:releaseUnderMemoryPressure:)",
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV15idleUnloadAfter26releaseUnderMemoryPressureACs8DurationVSg_Sbtcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelLifecyclePolicy",
+          "printedName": "AetherKit.ModelLifecyclePolicy",
+          "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15platformDefaultACvgZ",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV15platformDefaultACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecyclePolicy",
+        "printedName": "AetherKit.ModelLifecyclePolicy",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV15platformDefaultACvpZ",
+      "moduleName": "AetherKit",
+      "name": "platformDefault",
+      "printedName": "platformDefault",
+      "static": true,
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV15platformDefaultACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelLifecyclePolicy",
+          "printedName": "AetherKit.ModelLifecyclePolicy",
+          "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit20ModelLifecyclePolicyV6manualACvgZ",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV6manualACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecyclePolicy",
+        "printedName": "AetherKit.ModelLifecyclePolicy",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV6manualACvpZ",
+      "moduleName": "AetherKit",
+      "name": "manual",
+      "printedName": "manual",
+      "static": true,
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV6manualACvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecyclePolicy",
+        "printedName": "AetherKit.ModelLifecyclePolicy",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecyclePolicy",
+        "printedName": "AetherKit.ModelLifecyclePolicy",
+        "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s9AetherKit20ModelLifecyclePolicyV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherKit",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:9AetherKit20ModelLifecyclePolicyV23__derived_struct_equalsySbAC_ACtFZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit20ModelLifecyclePolicyV",
+    "moduleName": "AetherKit",
+    "name": "ModelLifecyclePolicy",
+    "printedName": "ModelLifecyclePolicy",
+    "usr": "s:9AetherKit20ModelLifecyclePolicyV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelUnloadReason",
+          "printedName": "AetherKit.ModelUnloadReason",
+          "usr": "s:9AetherKit17ModelUnloadReasonO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelUnloadReason",
+            "printedName": "AetherKit.ModelUnloadReason",
+            "usr": "s:9AetherKit17ModelUnloadReasonO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelUnloadReason.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelUnloadReason.Type) -> AetherKit.ModelUnloadReason"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO9requestedyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "requested",
+      "printedName": "requested",
+      "usr": "s:9AetherKit17ModelUnloadReasonO9requestedyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelUnloadReason",
+          "printedName": "AetherKit.ModelUnloadReason",
+          "usr": "s:9AetherKit17ModelUnloadReasonO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelUnloadReason",
+            "printedName": "AetherKit.ModelUnloadReason",
+            "usr": "s:9AetherKit17ModelUnloadReasonO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelUnloadReason.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelUnloadReason.Type) -> AetherKit.ModelUnloadReason"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO4idleyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "idle",
+      "printedName": "idle",
+      "usr": "s:9AetherKit17ModelUnloadReasonO4idleyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelUnloadReason",
+          "printedName": "AetherKit.ModelUnloadReason",
+          "usr": "s:9AetherKit17ModelUnloadReasonO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelUnloadReason",
+            "printedName": "AetherKit.ModelUnloadReason",
+            "usr": "s:9AetherKit17ModelUnloadReasonO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelUnloadReason.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelUnloadReason.Type) -> AetherKit.ModelUnloadReason"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO14memoryPressureyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "memoryPressure",
+      "printedName": "memoryPressure",
+      "usr": "s:9AetherKit17ModelUnloadReasonO14memoryPressureyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelUnloadReason",
+        "printedName": "AetherKit.ModelUnloadReason",
+        "usr": "s:9AetherKit17ModelUnloadReasonO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelUnloadReason",
+        "printedName": "AetherKit.ModelUnloadReason",
+        "usr": "s:9AetherKit17ModelUnloadReasonO"
+       }
+      ],
+      "declAttributes": [
+       "Implements",
+       "Semantics"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO21__derived_enum_equalsySbAC_ACtFZ",
+      "moduleName": "AetherKit",
+      "name": "__derived_enum_equals",
+      "printedName": "__derived_enum_equals(_:_:)",
+      "static": true,
+      "usr": "s:9AetherKit17ModelUnloadReasonO21__derived_enum_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherKit",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:9AetherKit17ModelUnloadReasonO4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit17ModelUnloadReasonO9hashValueSivg",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:9AetherKit17ModelUnloadReasonO9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s9AetherKit17ModelUnloadReasonO9hashValueSivp",
+      "moduleName": "AetherKit",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:9AetherKit17ModelUnloadReasonO9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declAttributes": [
+     "Nonexhaustive"
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit17ModelUnloadReasonO",
+    "moduleName": "AetherKit",
+    "name": "ModelUnloadReason",
+    "printedName": "ModelUnloadReason",
+    "usr": "s:9AetherKit17ModelUnloadReasonO"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelLifecycleState",
+            "printedName": "AetherKit.ModelLifecycleState",
+            "usr": "s:9AetherKit19ModelLifecycleStateO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ModelUnloadReason",
+              "printedName": "AetherKit.ModelUnloadReason",
+              "usr": "s:9AetherKit17ModelUnloadReasonO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherKit.ModelUnloadReason?",
+            "usr": "s:Sq"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherKit.ModelUnloadReason?) -> AetherKit.ModelLifecycleState"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelLifecycleState",
+            "printedName": "AetherKit.ModelLifecycleState",
+            "usr": "s:9AetherKit19ModelLifecycleStateO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelLifecycleState.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelLifecycleState.Type) -> (AetherKit.ModelUnloadReason?) -> AetherKit.ModelLifecycleState"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19ModelLifecycleStateO8unloadedyAcA0C12UnloadReasonOSgcACmF",
+      "moduleName": "AetherKit",
+      "name": "unloaded",
+      "printedName": "unloaded",
+      "usr": "s:9AetherKit19ModelLifecycleStateO8unloadedyAcA0C12UnloadReasonOSgcACmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelLifecycleState",
+          "printedName": "AetherKit.ModelLifecycleState",
+          "usr": "s:9AetherKit19ModelLifecycleStateO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelLifecycleState",
+            "printedName": "AetherKit.ModelLifecycleState",
+            "usr": "s:9AetherKit19ModelLifecycleStateO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelLifecycleState.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelLifecycleState.Type) -> AetherKit.ModelLifecycleState"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19ModelLifecycleStateO7loadingyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "loading",
+      "printedName": "loading",
+      "usr": "s:9AetherKit19ModelLifecycleStateO7loadingyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelLifecycleState",
+          "printedName": "AetherKit.ModelLifecycleState",
+          "usr": "s:9AetherKit19ModelLifecycleStateO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelLifecycleState",
+            "printedName": "AetherKit.ModelLifecycleState",
+            "usr": "s:9AetherKit19ModelLifecycleStateO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelLifecycleState.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelLifecycleState.Type) -> AetherKit.ModelLifecycleState"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19ModelLifecycleStateO6loadedyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "loaded",
+      "printedName": "loaded",
+      "usr": "s:9AetherKit19ModelLifecycleStateO6loadedyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ModelLifecycleState",
+          "printedName": "AetherKit.ModelLifecycleState",
+          "usr": "s:9AetherKit19ModelLifecycleStateO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ModelLifecycleState",
+            "printedName": "AetherKit.ModelLifecycleState",
+            "usr": "s:9AetherKit19ModelLifecycleStateO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.ModelLifecycleState.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.ModelLifecycleState.Type) -> AetherKit.ModelLifecycleState"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19ModelLifecycleStateO7runningyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "running",
+      "printedName": "running",
+      "usr": "s:9AetherKit19ModelLifecycleStateO7runningyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecycleState",
+        "printedName": "AetherKit.ModelLifecycleState",
+        "usr": "s:9AetherKit19ModelLifecycleStateO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ModelLifecycleState",
+        "printedName": "AetherKit.ModelLifecycleState",
+        "usr": "s:9AetherKit19ModelLifecycleStateO"
+       }
+      ],
+      "declAttributes": [
+       "Implements",
+       "Semantics"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s9AetherKit19ModelLifecycleStateO21__derived_enum_equalsySbAC_ACtFZ",
+      "moduleName": "AetherKit",
+      "name": "__derived_enum_equals",
+      "printedName": "__derived_enum_equals(_:_:)",
+      "static": true,
+      "usr": "s:9AetherKit19ModelLifecycleStateO21__derived_enum_equalsySbAC_ACtFZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declAttributes": [
+     "Nonexhaustive"
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit19ModelLifecycleStateO",
+    "moduleName": "AetherKit",
+    "name": "ModelLifecycleState",
+    "printedName": "ModelLifecycleState",
+    "usr": "s:9AetherKit19ModelLifecycleStateO"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureLevel",
+            "printedName": "AetherKit.MemoryPressureLevel",
+            "usr": "s:9AetherKit19MemoryPressureLevelO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.MemoryPressureLevel.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.MemoryPressureLevel.Type) -> AetherKit.MemoryPressureLevel"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO6normalyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "normal",
+      "printedName": "normal",
+      "usr": "s:9AetherKit19MemoryPressureLevelO6normalyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureLevel",
+            "printedName": "AetherKit.MemoryPressureLevel",
+            "usr": "s:9AetherKit19MemoryPressureLevelO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.MemoryPressureLevel.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.MemoryPressureLevel.Type) -> AetherKit.MemoryPressureLevel"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO7warningyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "warning",
+      "printedName": "warning",
+      "usr": "s:9AetherKit19MemoryPressureLevelO7warningyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureLevel",
+            "printedName": "AetherKit.MemoryPressureLevel",
+            "usr": "s:9AetherKit19MemoryPressureLevelO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherKit.MemoryPressureLevel.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherKit.MemoryPressureLevel.Type) -> AetherKit.MemoryPressureLevel"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO8criticalyA2CmF",
+      "moduleName": "AetherKit",
+      "name": "critical",
+      "printedName": "critical",
+      "usr": "s:9AetherKit19MemoryPressureLevelO8criticalyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "MemoryPressureLevel",
+        "printedName": "AetherKit.MemoryPressureLevel",
+        "usr": "s:9AetherKit19MemoryPressureLevelO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "MemoryPressureLevel",
+        "printedName": "AetherKit.MemoryPressureLevel",
+        "usr": "s:9AetherKit19MemoryPressureLevelO"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO1loiySbAC_ACtFZ",
+      "moduleName": "AetherKit",
+      "name": "<",
+      "printedName": "<(_:_:)",
+      "static": true,
+      "usr": "s:9AetherKit19MemoryPressureLevelO1loiySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherKit.MemoryPressureLevel?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Inlinable"
+      ],
+      "declKind": "Constructor",
+      "implicit": true,
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO8rawValueACSgSi_tcfc",
+      "moduleName": "AetherKit",
+      "name": "init",
+      "printedName": "init(rawValue:)",
+      "usr": "s:9AetherKit19MemoryPressureLevelO8rawValueACSgSi_tcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO8RawValuea",
+      "moduleName": "AetherKit",
+      "name": "RawValue",
+      "printedName": "RawValue",
+      "usr": "s:9AetherKit19MemoryPressureLevelO8RawValuea"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Inlinable"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit19MemoryPressureLevelO8rawValueSivg",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:9AetherKit19MemoryPressureLevelO8rawValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s9AetherKit19MemoryPressureLevelO8rawValueSivp",
+      "moduleName": "AetherKit",
+      "name": "rawValue",
+      "printedName": "rawValue",
+      "usr": "s:9AetherKit19MemoryPressureLevelO8rawValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSL",
+      "name": "Comparable",
+      "printedName": "Comparable",
+      "usr": "s:SL"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "RawValue",
+        "printedName": "RawValue"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$sSY",
+      "name": "RawRepresentable",
+      "printedName": "RawRepresentable",
+      "usr": "s:SY"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "enumRawTypeName": "Int",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit19MemoryPressureLevelO",
+    "moduleName": "AetherKit",
+    "name": "MemoryPressureLevel",
+    "printedName": "MemoryPressureLevel",
+    "usr": "s:9AetherKit19MemoryPressureLevelO"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit14MemoryPressureO5levelAA0cD5LevelOvgZ",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:9AetherKit14MemoryPressureO5levelAA0cD5LevelOvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "MemoryPressureLevel",
+        "printedName": "AetherKit.MemoryPressureLevel",
+        "usr": "s:9AetherKit19MemoryPressureLevelO"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit14MemoryPressureO5levelAA0cD5LevelOvpZ",
+      "moduleName": "AetherKit",
+      "name": "level",
+      "printedName": "level",
+      "static": true,
+      "usr": "s:9AetherKit14MemoryPressureO5levelAA0cD5LevelOvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureLevel",
+            "printedName": "AetherKit.MemoryPressureLevel",
+            "usr": "s:9AetherKit19MemoryPressureLevelO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "AsyncStream",
+          "printedName": "_Concurrency.AsyncStream<AetherKit.MemoryPressureLevel>",
+          "usr": "s:ScS"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s9AetherKit14MemoryPressureO6levelsScSyAA0cD5LevelOGvgZ",
+        "moduleName": "AetherKit",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:9AetherKit14MemoryPressureO6levelsScSyAA0cD5LevelOGvgZ"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureLevel",
+          "printedName": "AetherKit.MemoryPressureLevel",
+          "usr": "s:9AetherKit19MemoryPressureLevelO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "AsyncStream",
+        "printedName": "_Concurrency.AsyncStream<AetherKit.MemoryPressureLevel>",
+        "usr": "s:ScS"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s9AetherKit14MemoryPressureO6levelsScSyAA0cD5LevelOGvpZ",
+      "moduleName": "AetherKit",
+      "name": "levels",
+      "printedName": "levels",
+      "static": true,
+      "usr": "s:9AetherKit14MemoryPressureO6levelsScSyAA0cD5LevelOGvpZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s9AetherKit14MemoryPressureO",
+    "moduleName": "AetherKit",
+    "name": "MemoryPressure",
+    "printedName": "MemoryPressure",
+    "usr": "s:9AetherKit14MemoryPressureO"
+   }
+  ],
+  "json_format_version": 8,
+  "kind": "Root",
+  "name": "AetherKit",
+  "printedName": "AetherKit"
+ }
+}

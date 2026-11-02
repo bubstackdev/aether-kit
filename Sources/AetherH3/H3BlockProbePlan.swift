@@ -11,12 +11,24 @@ public struct H3ModelAsset: Sendable {
         guard url.isFileURL, !function.isEmpty, h3IsSHA256(sha256) else { throw AetherError.invalidModel("invalid H3 model identity") }
         self.url = url.standardizedFileURL; self.function = function; self.sha256 = sha256
     }
+    /// Hashes the stream unless it was verified before with its files' current identities (``VerifiedFileHashes``).
+    /// The check reads the resolved files whose identities the claim records.
     public func verify() throws {
-        guard try Data(contentsOf: url.appendingPathComponent("main.hash")) == Data((0..<32).map {
+        defer { VerifiedFileHashes.flush() }
+        try VerifiedFileHashes.verifyOnce("h3-model:\(sha256)",
+                                          files: [url.appendingPathComponent("main.hash"), url.appendingPathComponent("main.mlirb")]) {
+            try verifyStream($0)
+        }
+    }
+
+    /// `files`: the declaration and the stream.
+    private func verifyStream(_ files: [URL]) throws {
+        guard files.count == 2 else { throw AetherError.invalidModel("H3 model declaration and stream are one file") }
+        guard try Data(contentsOf: files[0]) == Data((0..<32).map {
             let start = sha256.index(sha256.startIndex, offsetBy: $0 * 2)
             return UInt8(sha256[start..<sha256.index(start, offsetBy: 2)], radix: 16)!
         }) else { throw AetherError.invalidModel("H3 model declaration differs from manifest") }
-        let file = try FileHandle(forReadingFrom: url.appendingPathComponent("main.mlirb"))
+        let file = try FileHandle(forReadingFrom: files[1])
         defer { try? file.close() }
         var hasher = SHA256()
         // FileHandle bridges through Foundation autoreleased storage. A long

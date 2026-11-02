@@ -263,3 +263,24 @@ struct BundleFixture {
     }
     await #expect(throws: CancellationError.self) { try await task.value }
 }
+
+/// A cached Krea check covers the resolved files it hashed: retargeting an in-bundle link checks the new target.
+@Test func kreaVerificationFollowsARetargetedStreamLink() throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    let directory = fixture.root.appendingPathComponent("textEncoder.aimodel")
+    let stream = directory.appendingPathComponent("main.mlirb")
+    let good = directory.appendingPathComponent("good.mlirb"), bad = directory.appendingPathComponent("bad.mlirb")
+    try FileManager.default.moveItem(at: stream, to: good)
+    try Data("tampered stream".utf8).write(to: bad)
+    try FileManager.default.createSymbolicLink(at: stream, withDestinationURL: good)
+    let assets = try KreaAssets.open(at: fixture.root)
+    try assets.verify()
+    try assets.verify()
+    try FileManager.default.removeItem(at: stream)
+    try FileManager.default.createSymbolicLink(at: stream, withDestinationURL: bad)
+    #expect(throws: AetherError.self) { try assets.verify() }
+    try FileManager.default.removeItem(at: stream)
+    try FileManager.default.createSymbolicLink(at: stream, withDestinationURL: good)
+    try assets.verify()
+}

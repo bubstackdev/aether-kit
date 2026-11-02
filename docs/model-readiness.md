@@ -3,7 +3,8 @@
 Status: implemented and qualified 2026-10-29: weight-free CPU tests, and runs on the Mac and an iPhone
 ([Qualification](#qualification)). This is the second piece of the 0.0.4 release gate, app readiness
 ([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)), after [model preparation](model-preparation.md). The user decided
-the four choices below on 2026-10-29. Type names may still change once the API has run in the sample app.
+the four choices below on 2026-10-29. The API is frozen for 0.0.x ([API stability](api-stability.md)), and the
+[sample app](sample-app.md) uses it.
 
 ## Quick start
 

@@ -2,8 +2,8 @@
 
 Status: implemented, 2026-10-28; qualified 2026-10-29. Weight-free CPU tests, a real-network run on the Mac and an
 iPhone background transfer pass ([Qualification](#qualification)). This is the first piece of the 0.0.4 release gate, app readiness
-([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)). The user decided the four choices below on 2026-10-28. Type
-names may still change once the API has run in the sample app.
+([roadmap](roadmap-0.0.4.md#release-gate-app-readiness)). The user decided the four choices below on 2026-10-28. The API
+is frozen for 0.0.x ([API stability](api-stability.md)), and the [sample app](sample-app.md) uses it.
 
 ## Quick start
 

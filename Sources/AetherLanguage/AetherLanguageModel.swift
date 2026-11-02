@@ -19,7 +19,7 @@ public struct AetherLanguageModel: Sendable {
         case unavailable(UnavailableReason)
     }
 
-    public enum UnavailableReason: Sendable, Equatable {
+    @nonexhaustive public enum UnavailableReason: Sendable, Equatable {
         /// No backend runs on this OS: the Core AI backend needs macOS 27 or iOS 27.
         case unsupportedOS
         /// The registration is for the other platform (for example a macOS export on an iPhone).
