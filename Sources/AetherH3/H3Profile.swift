@@ -242,8 +242,11 @@ public struct H3Profile: Sendable {
                 throw AetherError.invalidModel("H3 tiled first-frame encoder lacks the 256 px source tile contract")
             }
             for canvas in t.tails.keys {
-                let sides = canvas.split(separator: "x").map { Int($0)! }
-                guard sides[0] % 16 == 0, sides[1] % 16 == 0 else { throw AetherError.invalidModel("invalid H3 tiled encoder canvas \(canvas)") }
+                // The pattern admits any digits; a side too long for Int is refused, not trapped on.
+                let sides = canvas.split(separator: "x").compactMap { Int($0) }
+                guard sides.count == 2, sides[0] % 16 == 0, sides[1] % 16 == 0 else {
+                    throw AetherError.invalidModel("invalid H3 tiled encoder canvas \(canvas)")
+                }
                 _ = try H3SpatialTiling.source(width: sides[0], height: sides[1])
             }
             return TiledKeyframeEncoder(tile: try t.tile.asset(path), tileSize: t.tile_size, tails: try t.tails.mapValues { try $0.asset(path) })

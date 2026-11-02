@@ -29,10 +29,12 @@ import math
 import os
 from pathlib import Path
 import re
-import signal
 import subprocess
 import sys
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import h3_controller  # noqa: E402  (beside this script)
 
 LIMIT = 0.02
 REQUIRED = {
@@ -71,6 +73,7 @@ def group_rss_bytes(pgid):
 
 
 def main():
+    h3_controller.install()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--profile", type=Path, required=True, help="schema-3 bundle.json (read in place)")
     ap.add_argument("--python", type=Path, required=True, help="oracle interpreter (torch, pinned Diffusers 7ecb1e1b)")
@@ -168,10 +171,11 @@ def main():
         start = time.monotonic()
         peak = 0
         with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:
-            proc = subprocess.Popen(command, stdout=out, stderr=err, env=env, start_new_session=True)
-            record["pid"] = proc.pid
-            record_path.write_text(json.dumps(record, indent=2) + "\n")
+            proc = None
             try:
+                proc = h3_controller.start(command, stdout=out, stderr=err, env=env)
+                record["pid"] = proc.pid
+                record_path.write_text(json.dumps(record, indent=2) + "\n")
                 while proc.poll() is None:
                     if time.monotonic() - start > budget - 10:
                         record["timedOut"] = True
@@ -189,14 +193,10 @@ def main():
             except KeyboardInterrupt:
                 record["interrupted"] = True
             finally:
-                if proc.poll() is None:
-                    os.killpg(proc.pid, signal.SIGTERM)
-                    try:
-                        proc.wait(timeout=15)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(proc.pid, signal.SIGKILL)
-                proc.wait()
-        record.update(joined=True, exitCode=proc.returncode, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
+                record["joined"] = h3_controller.stop(proc, grace=15) if proc is not None else True
+                if h3_controller.interrupted():
+                    record["interrupted"] = True
+        record.update(exitCode=proc.returncode if proc else None, endedAt=now(), elapsedSeconds=round(time.monotonic() - start, 3))
         if kind == "cpu":
             record["sampledPeakGroupRSSBytes"] = peak
         record["sourcePinsUnchanged"] = all(sha(p) == digest for p, digest in pins.items())
@@ -207,11 +207,13 @@ def main():
             record["outputError"] = m.get("report", {}).get("error") if isinstance(m.get("report"), dict) else None
         except (OSError, ValueError) as error:
             record["outputError"] = f"manifest unreadable: {error}"
-        record["passed"] = (proc.returncode == 0 and not record["timedOut"] and not record.get("rssLimitExceeded")
+        record["passed"] = (record["exitCode"] == 0 and record["joined"] and not record["timedOut"] and not record.get("rssLimitExceeded")
                             and not record.get("interrupted") and record["sourcePinsUnchanged"] and record.get("outputError") is None)
         record_path.write_text(json.dumps(record, indent=2) + "\n")
-        print(f"{name}: passed={record['passed']} exit={proc.returncode} {record['elapsedSeconds']} s", flush=True)
+        print(f"{name}: passed={record['passed']} exit={record['exitCode']} {record['elapsedSeconds']} s", flush=True)
         records[name] = record
+        if record.get("interrupted"):
+            return 130
         if not record["passed"]:
             return 1
         if name == args.stop_after:

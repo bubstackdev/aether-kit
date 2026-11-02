@@ -6,7 +6,7 @@ import Tokenizers
 /// and `chat_template.jinja` or `chat_template.json` when the checkpoint keeps its template there). Never
 /// downloads files. Rendering uses the model's own template, so a hybrid Qwen3 renders its empty think block when
 /// thinking is off, an instruct-only Qwen3 renders none, and Qwen3-VL renders its image placeholders. Exactness against
-/// upstream is verified for Qwen3-family templates; other templates render through swift-jinja unverified.
+/// upstream is verified for Qwen3-family and OLMo2 templates; other templates render through swift-jinja unverified.
 public struct LanguageTokenizer: Sendable {
     private let tokenizer: any Tokenizer
     /// The model's chat template as upstream Transformers renders it (see `template(in:)`), nil when it has none.

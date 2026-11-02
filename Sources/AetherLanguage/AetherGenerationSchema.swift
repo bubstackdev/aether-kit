@@ -89,14 +89,19 @@ public struct AetherGenerationSchema: Sendable, Hashable, Codable, CustomStringC
 
     /// A struct: an object whose properties appear in this order (`x-order`); optional properties aren't `required`.
     public static func object(name: String, description: String? = nil, properties: [Property]) -> Self {
+        var definitions: [String: JSONValue] = [:]
+        let nodes = properties.map { property in
+            var nodes = [property.node]
+            merge(property.definitions, into: &definitions, referencedFrom: &nodes)
+            return (property.name, nodes[0])
+        }
         var document: [String: JSONValue] = [
             "type": .string("object"), "title": .string(name), "additionalProperties": .bool(false),
-            "properties": .object(Dictionary(properties.map { ($0.name, $0.node) }, uniquingKeysWith: { $1 })),
+            "properties": .object(Dictionary(nodes, uniquingKeysWith: { $1 })),
             "required": .array(properties.filter { !$0.optional }.map { .string($0.name) }),
             "x-order": .array(properties.map { .string($0.name) }),
         ]
         if let description { document["description"] = .string(description) }
-        let definitions = properties.reduce(into: [String: JSONValue]()) { $0.merge($1.definitions) { $1 } }
         if !definitions.isEmpty { document["$defs"] = .object(definitions) }
         return Self(document: document, referenced: true)
     }
@@ -125,11 +130,10 @@ public struct AetherGenerationSchema: Sendable, Hashable, Codable, CustomStringC
         for item in cases {
             let caseName = "Discriminated" + item.name.prefix(1).uppercased() + item.name.dropFirst()
             let discriminant = Property(constant: item.name)
-            let object = Self.object(name: caseName, properties: [discriminant] + item.values)
-            var body = object.document
-            if case .object(let nested)? = body.removeValue(forKey: "$defs") { definitions.merge(nested) { $1 } }
-            definitions[caseName] = .object(body)
-            alternatives.append(.object(["$ref": .string("#/$defs/\(caseName)")]))
+            let (reference, caseDefinitions) = Self.object(name: caseName, properties: [discriminant] + item.values).embedded()
+            var references = [reference]
+            merge(caseDefinitions, into: &definitions, referencedFrom: &references)
+            alternatives.append(references[0])
         }
         var document: [String: JSONValue] = ["title": .string(name), "anyOf": .array(alternatives)]
         if let description { document["description"] = .string(description) }
@@ -148,8 +152,40 @@ public struct AetherGenerationSchema: Sendable, Hashable, Codable, CustomStringC
             body.removeValue(forKey: "description")
             return (.object(body), definitions)
         }
-        definitions[name] = .object(body)
-        return (.object(["$ref": .string("#/$defs/\(name)")]), definitions)
+        var bodies = [JSONValue.object(body)]
+        var hoisted = [name: bodies[0]]
+        Self.merge(definitions, into: &hoisted, referencedFrom: &bodies)
+        hoisted[name] = bodies[0]
+        return (.object(["$ref": .string("#/$defs/\(name)")]), hoisted)
+    }
+
+    /// Adds `incoming` definitions to `definitions`. A name `definitions` already holds with a different schema (two
+    /// enums with a `value` case are both `DiscriminatedValue`; two types can share a name) is renamed, in `incoming`
+    /// and in `nodes`, which refer to it, so neither overwrites the other. Names that don't collide are kept, so the
+    /// schema still matches FoundationModels' for the same types.
+    private static func merge(_ incoming: [String: JSONValue], into definitions: inout [String: JSONValue],
+                              referencedFrom nodes: inout [JSONValue]) {
+        var renamed: [String: String] = [:]
+        var taken = Set(definitions.keys).union(incoming.keys)
+        // A definition that refers to a renamed one differs from its namesake too, even with identical text.
+        var changed = true
+        while changed {
+            changed = false
+            for (name, schema) in incoming.sorted(by: { $0.key < $1.key }) where renamed[name] == nil {
+                guard let existing = definitions[name],
+                      existing != schema || !schema.references.isDisjoint(with: renamed.keys) else { continue }
+                var suffix = 2
+                while taken.contains("\(name)\(suffix)") { suffix += 1 }
+                renamed[name] = "\(name)\(suffix)"
+                taken.insert("\(name)\(suffix)")
+                changed = true
+            }
+        }
+        for (name, schema) in incoming {
+            let key = renamed[name] ?? name
+            if definitions[key] == nil { definitions[key] = schema.renamingReferences(renamed) }
+        }
+        nodes = nodes.map { $0.renamingReferences(renamed) }
     }
 
     /// Primitive schemas.
@@ -284,6 +320,32 @@ package enum JSONValue: Sendable, Hashable, Codable {
         case .string(let value): try container.encode(value)
         case .array(let value): try container.encode(value)
         case .object(let value): try container.encode(value)
+        }
+    }
+
+    /// The definition names this value's `$ref`s point to, at any depth.
+    var references: Set<String> {
+        switch self {
+        case .object(let object):
+            var names = object.values.reduce(into: Set<String>()) { $0.formUnion($1.references) }
+            if case .string(let reference)? = object["$ref"], reference.hasPrefix("#/$defs/") { names.insert(String(reference.dropFirst(8))) }
+            return names
+        case .array(let values): return values.reduce(into: Set<String>()) { $0.formUnion($1.references) }
+        default: return []
+        }
+    }
+
+    /// This value with each `$ref` to a definition in `names` pointing at its new name.
+    func renamingReferences(_ names: [String: String]) -> JSONValue {
+        guard !names.isEmpty else { return self }
+        switch self {
+        case .object(let object):
+            var result = object.mapValues { $0.renamingReferences(names) }
+            if case .string(let reference)? = object["$ref"], reference.hasPrefix("#/$defs/"),
+               let name = names[String(reference.dropFirst(8))] { result["$ref"] = .string("#/$defs/\(name)") }
+            return .object(result)
+        case .array(let values): return .array(values.map { $0.renamingReferences(names) })
+        default: return self
         }
     }
 

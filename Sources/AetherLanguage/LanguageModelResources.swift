@@ -120,6 +120,9 @@ actor LanguageModelResources {
         return true
     }
 
+    /// Requests (and unloads) waiting for the slot; tests order their queue positions by it.
+    package var waiters: Int { waiting.count }
+
     private func acquire() async throws {
         guard running else { running = true; return }
         let id = nextWaiter

@@ -79,6 +79,8 @@ private func tiled(_ root: URL, tails: [String], tileSize: Int = 256) -> [String
     // Tiled entries outside the 256 px source tile contract are refused.
     #expect(throws: AetherError.self) { _ = try profile(root, extra: tiled(root, tails: ["960x544"], tileSize: 512)) }
     #expect(throws: AetherError.self) { _ = try profile(root, extra: tiled(root, tails: ["200x200"])) }
+    // Review L5: a side too long for Int is refused rather than trapping.
+    #expect(throws: AetherError.self) { _ = try profile(root, extra: tiled(root, tails: ["999999999999999999999999999999x544"])) }
 }
 
 extension H3Profile.KeyframeEncoding: Equatable {

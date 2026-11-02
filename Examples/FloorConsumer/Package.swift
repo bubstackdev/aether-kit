@@ -10,6 +10,8 @@ let package = Package(
     dependencies: [.package(name: "AetherKit", path: "../..")],
     targets: [
         .executableTarget(name: "AetherFloorConsumer", dependencies: [
+            .product(name: "AetherSDTurbo", package: "AetherKit"),
+            .product(name: "AetherDiffusion", package: "AetherKit"),
             .product(name: "AetherLanguage", package: "AetherKit"),
         ])
     ]

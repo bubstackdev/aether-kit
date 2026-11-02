@@ -13,6 +13,8 @@ import Testing
 
 @Generable enum FMWeapon { case sword(edge: Int), bow, staff(Double) }
 @AetherGenerable enum KitWeapon: Equatable { case sword(edge: Int), bow, staff(Double) }
+// Review L2: an explicit `value:` label is kept in the decoder's call (this didn't compile), unlike a bare value.
+@AetherGenerable enum KitLabeled: Equatable { case data(value: Int), plain(Int), wild(_ x: Int) }
 
 @Generable(description: "A colour swatch") struct FMSwatch {
     var name: String
@@ -103,6 +105,10 @@ struct AetherGenerableMacroTests {
         #expect(kit.maybeSwatch == KitSwatch(name: "x", red: 255) && kit.moods == [.calm, .stormy] && kit.nested == [[1], []])
         for (text, expected) in [(#"{"type": "bow"}"#, KitWeapon.bow), (#"{"type": "staff", "value": 1.5}"#, .staff(1.5))] {
             #expect(try JSONDecoder().decode(KitWeapon.self, from: Data(text.utf8)) == expected)
+        }
+        for (text, expected) in [(#"{"type": "data", "value": 1}"#, KitLabeled.data(value: 1)), (#"{"type": "plain", "value": 2}"#, .plain(2)),
+                                 (#"{"type": "wild", "value": 3}"#, .wild(3))] {
+            #expect(try JSONDecoder().decode(KitLabeled.self, from: Data(text.utf8)) == expected)
         }
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(KitWeapon.self, from: Data(#"{"type": "axe"}"#.utf8)) }
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(KitMood.self, from: Data(#""angry""#.utf8)) }

@@ -131,6 +131,24 @@ private func session(_ factory: FakeFactory, bundle: FakeBundle, resources: Koko
     await speech.unload()
 }
 
+/// Review L3: phonemes parsed with another vocabulary are refused even when it uses the same ids for other symbols.
+@Test func phonemesFromAVocabularyWithTheSameIDsButAnotherMappingAreRefused() async throws {
+    let bundle = try FakeBundle.make()
+    defer { bundle.remove() }
+    let log = EventLog()
+    let speech = try session(FakeFactory(log: log), bundle: bundle)
+    var entries = try CPUFixture.load().vocabulary
+    let (first, second) = (try #require(entries["ð"]), try #require(entries["ə"]))
+    (entries["ð"], entries["ə"]) = (second, first)
+    let swapped = try KokoroPhonemes("ðə", vocabulary: KokoroVocabulary(entries))
+    let own = try speech.phonemes("ðə").tokenIDs
+    #expect(Set(swapped.tokenIDs) == Set(own) && swapped.tokenIDs != own)
+    await #expect(throws: AetherError.self) { try await speech.synthesize(swapped, configuration: try KokoroSpeechConfiguration()) }
+    #expect(log.snapshot.isEmpty, "refused before any model opens")
+    _ = try await speech.synthesize(try speech.phonemes("ðə"), configuration: try KokoroSpeechConfiguration())
+    await speech.unload()
+}
+
 @Test func admissionReservesModelResidencyScratchAndOperationStorage() async throws {
     let bundle = try FakeBundle.make()
     defer { bundle.remove() }

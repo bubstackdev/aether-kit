@@ -449,7 +449,6 @@ private actor KokoroRunner {
     var durations: (any KokoroExecutable)?
     var decoder: (any KokoroExecutable)?
     var styles: [KokoroVoice: KokoroVoiceStyles] = [:]
-    let validTokens: Set<Int32>
     /// Throws while memory pressure is critical, before any model opens.
     let admitLoad: @Sendable () throws -> Void
 
@@ -457,7 +456,6 @@ private actor KokoroRunner {
         self.assets = assets
         self.factory = factory
         self.admitLoad = admitLoad
-        validTokens = Set(assets.vocabulary.tokens.values).union([KokoroVocabulary.boundaryToken])
     }
 
     var holdsModels: Bool { durations != nil || decoder != nil }
@@ -475,7 +473,8 @@ private actor KokoroRunner {
         _ phonemes: KokoroPhonemes, configuration: KokoroSpeechConfiguration, limits: FrameLimits,
         framesPredicted: @Sendable ([Int]) throws -> Void
     ) async throws -> KokoroSpeech {
-        guard phonemes.tokenIDs.allSatisfy(validTokens.contains) else {
+        // The same ids, not just ids this vocabulary uses: another vocabulary can map the same ids to other symbols.
+        guard (try? KokoroPhonemes(phonemes.string, vocabulary: assets.vocabulary))?.tokenIDs == phonemes.tokenIDs else {
             throw AetherError.invalidRequest("phonemes were parsed with a different vocabulary")
         }
         let style = try voiceStyles(configuration.voice).style(for: phonemes)

@@ -661,7 +661,8 @@ Validation runs at 288×288×22 on profile `5af39db5…` pass every check: FL2VA
 
 ## Known deviation: FL2VA conditioner presentation (found 2026-10-29)
 
-Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes to the conditioner too.
+**Fixed in 0.0.5:** see [FL2VA conditioner presentation](#fl2va-conditioner-presentation-005). Through 0.0.4, Kit's
+FL2VA conditioned on the prompt text alone, while upstream presents the keyframes to the conditioner too.
 
 - **Upstream** (diffusers `7ecb1e1b`, `modular_pipelines/minimax_h3/encoders.py`, `MiniMaxH3FL2VATextEncoderStep`):
   before the prompt, each keyframe gets a `"<Picture i>: "` label and a vision block: `<|vision_start|>`,
@@ -680,10 +681,9 @@ Kit's FL2VA conditions on the prompt text alone. Upstream presents the keyframes
   - The trajectory gate takes Kit's captured refined text, with every row tagged as text.
 
   They prove Kit computes its presentation correctly, not that it's upstream's.
-- **Fix, moved from 0.0.4 to 0.0.5** ([roadmap](roadmap-0.0.4.md#moved-to-005)): the Qwen3-VL vision tower in the conditioner, with M-RoPE
-  positions for the vision tokens, and upstream's presentation. That adds image-token rows to every FL2VA request,
-  changes the profile and resets FL2VA's qualification evidence. Until then, last-frame and first-plus-last
-  conditioning follow the same text-only presentation.
+- **Fix, in 0.0.5:** the Qwen3-VL vision tower in the conditioner, with M-RoPE positions for the vision tokens, and
+  upstream's presentation for every keyframe (first, last or both). It adds image-token rows to every FL2VA request,
+  changes the profile and resets FL2VA's qualification evidence.
 
 ## Memory bars beyond 960×544 and 124 frames (decided 2026-10-29)
 
@@ -746,7 +746,7 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 
 ## Last-frame and first+last keyframes (2026-10-29)
 
-**Status: implemented, qualification pending.** The 960×544 trajectory gate has references for step 0 only; steps 1 and 7 are pending a rerun. Every record below is labelled "text-only presentation (known deviation, PR #76)": see the presentation paragraph.
+**Status: implemented; qualified at 960×544 under the 0.0.5 presentation** (see [FL2VA conditioner presentation](#fl2va-conditioner-presentation-005)). The text-only gate below has references for step 0 only. Every record below is labelled "text-only presentation (known deviation, PR #76)": see the presentation paragraph.
 
 `H3VideoSession` accepts `H3VideoRequest.lastFrame`, alone or with `firstFrame`. A clip can therefore end on a chosen picture, or start and end on chosen pictures. The model card lists the FL2VA checkpoint as taking zero, one or two images. The pinned Diffusers pipeline runs all of these as the single `fl2va` task:
 
@@ -757,7 +757,7 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 
 No export, step table or download is new, and the work stays inside profile `5af39db5…`. A last-only request has the same row count as a first-only one, so the latents now declare their anchors (`H3Latents.anchors`) and the denoiser builds its layout from them, not from the row count. A hand-built first-frame `H3Latents` needs `anchors: [.first]`.
 
-**Conditioner presentation (known deviation, [PR #76](https://github.com/bubstackdev/aether-kit/pull/76)).** Last-frame and first+last requests keep the text-only presentation that first-frame requests already use; upstream's per-keyframe vision blocks are missing for every anchor combination. See [Known deviation: FL2VA conditioner presentation](#known-deviation-fl2va-conditioner-presentation-found-2026-10-29) for upstream's presentation, why the gates did not catch it, and the planned fix.
+**Conditioner presentation.** From 0.0.5, last-frame and first+last requests are presented as upstream presents them: one labelled vision block per keyframe, in packed order. The records in this section predate that and are labelled "text-only presentation". The 960×544 first+last trajectory gate under the new presentation is in [FL2VA conditioner presentation](#fl2va-conditioner-presentation-005).
 
 **Memory and time** ([record](evidence/h3-last-frame-memory-2026-10-29.json)). These are `h3-memory-render` runs on profile `5af39db5…`, Turbo8, seed 1043. The first frame is the crane keyframe, and the last frame is a synthetic camera push-in: the centre 60% of the same picture. The host was busy, so the times are not a quiet reference.
 
@@ -793,3 +793,78 @@ At 960×544, a first+last render peaks at 12.08 GiB Metal, against 11.84 GiB for
   - First+last: 3.4–4.3% against bf16, 3.8–4.3% against float32.
   - First-only control: 3.9–4.8% against bf16, 4.4–5.0% against float32. It ran on the identical harness, steps, seed and bar, without the last frame.
   - The excess is therefore a property of this small canvas (771 and 852 rows), not of last-frame conditioning. The bar was qualified on the first-only 960×544 gate. Records: [first+last](evidence/h3-last-frame-trajectory-288-first-last-2026-10-29.json), [first-only control](evidence/h3-last-frame-trajectory-288-first-only-control-2026-10-29.json).
+
+## FL2VA conditioner presentation (0.0.5)
+
+FL2VA now conditions on upstream's presentation ([plan](h3-fl2va-presentation-plan.md)). Before the prompt, each keyframe (first, then last) gets its `"<Picture i>: "` label and a vision block whose rows come from Qwen3-VL's vision tower. The block is tagged as video, the rows take M-RoPE positions, and DeepStack is added after conditioner layers 0–2. T2VA is unchanged.
+
+- **Profile.** The `conditioner_vision` overlay adds one static tower graph per canvas: 960×544, 544×960, 1280×704, 704×1280 and the 288×288 diagnostic canvas. Its weights are bound in place from the FL2VA checkpoint, and each graph is byte-identical on CPU to `Qwen3VLVisionModel.forward`. A profile without the overlay refuses FL2VA, as does a canvas without a tower graph.
+- **Final stack.** The 0.0.5 profile is 5af39db5, then the large-canvas overlay, then this overlay, in Kit's H3 home (`<kit-cache>/h3/profile-0.0.5`). Its location-free identity is `h3.profile/2:13372643…:turbo8`.
+- **API.** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning`: the tap plus the row tags. `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have defaults that serve text-only conditioners. `H3Presentation` builds ids, tags and positions, and `H3VisionInputs` the tower's pixels and host tables, both bit for bit upstream's.
+- **Rows.** A keyframe adds 518 rows at 960×544 (888 at 1280×704). The prompt budget is 4,096 rows less the presentation.
+
+### Gates (bars decided by the user, 2026-11-02)
+
+The plan's first bars (D5) set the tower at 0.03 and the tap at 0.02 against the full upstream oracle. No bf16 implementation can meet them:
+
+- **Tower:** upstream's own bf16 tower is 0.033–0.075 from the fp32 computation of the same weights.
+- **Tap:** a few image rows of upstream's tap carry very large activations, and which rows get them follows the tower's bf16 rounding. Upstream with its own bf16 tower and upstream fed the fp32 tower's output give taps 0.55 apart (image rows 0.63, text rows 0.0016).
+
+The user replaced them with these bars:
+
+- **Exact:** keyframe bytes, token ids, tags, M-RoPE positions and the tower's bf16 pixels.
+- **Tower:** per canvas and tensor, native vs fp32 at most 1.05× upstream's own bf16 vs fp32.
+- **Conditioner:** fed identical tower output (upstream's step on the native tower's rows, `--part presentation --substitute-vision`), decoder layers 0–3 and the tap's text rows within 0.02. The whole tap and its image rows are diagnostics.
+- **Decisive:** the denoiser trajectory at 0.02, with ids and tags exact, and the user's A/B review.
+
+**Tower, native vs fp32, with upstream's bf16 vs fp32 and the ratio:**
+
+| Canvas | Merger | DeepStack 0 | DeepStack 1 | DeepStack 2 |
+| --- | --- | --- | --- | --- |
+| 288×288 | 0.0240 / 0.0332 (0.72×) | 0.0095 / 0.0102 (0.93×) | 0.0120 / 0.0160 (0.75×) | 0.0194 / 0.0269 (0.72×) |
+| 960×544 | 0.0323 / 0.0393 (0.82×) | 0.0103 / 0.0109 (0.95×) | 0.0196 / 0.0229 (0.86×) | 0.0310 / 0.0364 (0.85×) |
+| 544×960 | 0.0465 / 0.0753 (0.62×) | 0.0101 / 0.0108 (0.94×) | 0.0197 / 0.0218 (0.90×) | 0.0315 / 0.0333 (0.95×) |
+| 1280×704 | 0.0413 / 0.0439 (0.94×) | 0.0104 / 0.0114 (0.91×) | 0.0217 / 0.0267 (0.81×) | 0.0384 / 0.0426 (0.90×) |
+| 704×1280 | 0.0375 / 0.0365 (1.03×) | 0.0102 / 0.0107 (0.95×) | 0.0197 / 0.0221 (0.89×) | 0.0290 / 0.0340 (0.86×) |
+
+**Conditioner at 960×544** (567 rows, 510 image rows), fed identical tower output:
+
+| Layer | 0 | 1 | 2 | 3 | Tap, text rows |
+| --- | --- | --- | --- | --- | --- |
+| Relative L2 | 0.0028 | 0.0039 | 0.0045 | 0.0054 | 0.0080 |
+
+The drift grows smoothly with depth, with no jump. Diagnostics:
+
+| Tap | Whole | Image rows | Text rows |
+| --- | --- | --- | --- |
+| Fed identical tower output | 0.047 | 0.052 | 0.0080 |
+| Against the full oracle | 0.61 | 0.69 | 0.0081 |
+
+Records: [presentation gate](evidence/h3-presentation-gate-2026-11-02.json).
+
+**Native cost.** The tower takes under 2 s per keyframe on the GPU and is released before the conditioner layers run.
+
+**Trajectory** (960×544×124 first+last, 21,389 rows of which 1,085 are conditioning; steps 0, 1 and 7; [record](evidence/h3-profile-trajectory-fl2va-first-last-0.0.5-2026-11-02.json)). It passes:
+- The dump's ids, tags and M-RoPE positions equal upstream's presentation exactly, and the layout and step plan match the pipeline's.
+- All 457 boundary hashes replay exactly. Capture and replay peaked at 12.56 GiB of Metal.
+- Every comparison is within the 0.02 bar:
+
+| Comparison | Step 0 | Step 1 | Step 7 |
+| --- | --- | --- | --- |
+| Packing | 0.0015% | 0.0016% | 0.0016% |
+| Block 0 | 0.58% | 0.56% | 0.53% |
+| Block 49 | 1.76% | 1.85% | 1.70% |
+| Video heads | 0.17% | 0.17% | 0.16% |
+| Audio heads | 0.18% | 0.20% | 0.19% |
+| Scheduler updates | byte-identical | byte-identical | byte-identical |
+
+The condition rows match the pipeline's own encode at 0.021%. Block 49 sits higher than the text-only first+last gate's 1.15% at step 0. The float32 diagnostic puts native at 1.6–1.8% from float32 there, so the bf16 reference and native are about equally far from exact. Kit's refined text against the refiner on upstream's own tap is 0.20 (cosine 0.979); that is the tower-rounding effect above, recorded and not gated. The oracle ran beside the memory gate's GPU renders.
+
+This qualifies last-frame and first+last conditioning at 960×544 under the 0.0.5 presentation.
+
+**A/B review (D10, 2026-11-02).** Old and new FL2VA renders, same seed (1043), prompt, crane keyframe, canvas and Turbo8:
+- The old render turns the folded-paper crane into a realistic white bird. The new one stays a folded-paper crane, keeping the keyframe's paper and facets.
+- Both pass the media audit. The new render's Metal peak is 12.08 GiB (was 11.84), and it took 411 s.
+- **The user chose the new presentation.** The first render sent for review had a probe bug: each keyframe label was tokenized as the whole prompt (610 conditioning rows instead of 567; fixed, and a render now refuses rows that differ from its dump). The user confirmed the choice on the corrected render, which this paragraph describes (2026-11-02). Record: [A/B](evidence/h3-fl2va-ab-2026-11-02.json).
+
+**Audio level.** The new render's audio is 4 dB quieter (RMS −46 against −42 dBFS). The final stack's audio decoders, body and heads are byte-identical to 0.0.4's. A replay of the qualified T2VA capture on the final stack reproduces all 457 boundary hashes, with audio at −53.21 / −53.11 dBFS RMS, exactly as in the 0.0.4 audit ([record](evidence/h3-t2va-identity-0.0.5-2026-11-02.json)). So T2VA, and every graph FL2VA shares with it, is unchanged; the FL2VA difference is what the clip conditions on.

@@ -54,13 +54,29 @@ enum LanguageCachePlan {
     }
 
     /// Writes a bucketed step's `[layers, batch, heads, count, width]` update (any strides) into a
-    /// contiguous `[layers·batch·heads, capacity, width]` cache at `start..<start + count`. Rows
+    /// `[layers, batch, heads, capacity, width]` cache at `start..<start + count`. `cacheStrides`
+    /// may specify a padded or permuted destination; nil retains contiguous storage. Source rows
     /// whose strides nest are copied as one run of rows; otherwise each (layer, batch, head) row
     /// is placed separately.
     static func writeUpdateTensor<Scalar>(_ update: UnsafePointer<Scalar>, shape: [Int], strides: [Int],
-                                          into cache: UnsafeMutablePointer<Scalar>, capacity: Int, start: Int) {
+                                          into cache: UnsafeMutablePointer<Scalar>, capacity: Int, start: Int,
+                                          cacheStrides: [Int]? = nil) {
         precondition(shape.count == 5 && strides.count == 5)
         let (layers, batch, heads, count, width) = (shape[0], shape[1], shape[2], shape[3], shape[4])
+        precondition(start >= 0 && start + count <= capacity)
+        if let destination = cacheStrides, destination != self.strides([layers, batch, heads, capacity, width]) {
+            precondition(destination.count == 5 && destination.allSatisfy { $0 > 0 })
+            for l in 0..<layers { for b in 0..<batch { for h in 0..<heads { for t in 0..<count {
+                let source = update + l * strides[0] + b * strides[1] + h * strides[2] + t * strides[3]
+                let target = cache + l * destination[0] + b * destination[1] + h * destination[2] + (start + t) * destination[3]
+                if strides[4] == 1 && destination[4] == 1 {
+                    target.update(from: source, count: width)
+                } else {
+                    for e in 0..<width { target[e * destination[4]] = source[e * strides[4]] }
+                }
+            } } } }
+            return
+        }
         if strides[0] == strides[1] * batch && strides[1] == strides[2] * heads {
             writeUpdate(update, rowStride: strides[2], tokenStride: strides[3], elementStride: strides[4],
                         into: cache, rows: layers * batch * heads, capacity: capacity, width: width, start: start, count: count)
@@ -72,6 +88,19 @@ enum LanguageCachePlan {
                         tokenStride: strides[3], elementStride: strides[4], into: cache + row * capacity * width,
                         rows: 1, capacity: capacity, width: width, start: start, count: count)
         } } }
+    }
+
+    /// Copies only materialized tokens between arbitrary noninterleaved cache layouts.
+    /// Clear padding and unused rows as well: masked NaNs must not enter attention.
+    static func relayoutStrided(from source: UnsafePointer<Float16>, to destination: UnsafeMutablePointer<Float16>,
+                                destinationBytes: Int, shape: [Int], sourceStrides: [Int], destinationStrides: [Int],
+                                validTokens: Int) {
+        UnsafeMutableRawPointer(destination).initializeMemory(as: UInt8.self, repeating: 0, count: destinationBytes)
+        guard validTokens > 0 else { return }
+        var updateShape = shape
+        updateShape[3] = validTokens
+        writeUpdateTensor(source, shape: updateShape, strides: sourceStrides, into: destination,
+                          capacity: shape[3], start: 0, cacheStrides: destinationStrides)
     }
 
     static func strides(_ shape: [Int]) -> [Int] {

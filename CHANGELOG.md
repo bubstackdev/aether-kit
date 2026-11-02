@@ -2,11 +2,26 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
-## Unreleased
+## Unreleased (0.0.5)
 
 ### Added
 
+- **H3 FL2VA conditioner presentation** ([guide](docs/h3-integration.md#fl2va-conditioner-presentation-005)): FL2VA now conditions on upstream's presentation, fixing the deviation found in 0.0.3. Each keyframe (first, last or both) gets its `"<Picture i>: "` label and a vision block from Qwen3-VL's vision tower, tagged as video, with M-RoPE positions and DeepStack after conditioner layers 0–2. `export-h3-profile.py --stage conditioner-vision` adds the tower as an overlay, one static graph per canvas, weights bound in place, each byte-identical to upstream on CPU. `H3Presentation` and `H3VisionInputs` reproduce upstream's ids, tags, positions, pixels and tables bit for bit. `aether-probe h3-profile-presentation` and `Scripts/qualify-h3-presentation.py` gate the tower and the conditioner natively against bars the user decided on 2026-11-02. The tower is held per canvas to 1.05× upstream's own bf16 spread; the conditioner, fed identical tower output, to 0.02 at layers 0–3 and on the tap's text rows. The trajectory gate takes upstream's presentation as its reference. In the user's A/B review, the new presentation kept the keyframe's look where the old one drifted, and the user chose it. The first render reviewed had a probe-only label bug (fixed); the user confirmed the choice on the corrected render.
+
 - **H3 last-frame and first+last keyframes** ([guide](docs/h3-integration.md#last-frame-and-firstlast-keyframes-2026-10-29)): `H3VideoSession` accepts `H3VideoRequest.lastFrame`, alone or with `firstFrame`, so a clip can end on a chosen picture or start and end on chosen pictures. It uses the same FL2VA task, checkpoint, profile and step tables. Each keyframe is encoded by the same graphs, noised to t = 0.999 by its own draw in packed order (first, then last) and held at that level. `H3Latents.anchors` declares the anchors the condition rows belong to. `H3Geometry.initialLatents(seed:conditions:)` draws the stream, with `initialLatents(seed:firstFrameCondition:lastFrameCondition:)` as its convenience form; a first frame alone gives the same stream as before. **Source change:** a hand-built first-frame `H3Latents` now needs `anchors: [.first]`, or the denoiser refuses it because it no longer infers anchors from the row count. `aether-probe h3-profile-dump` takes `[FIRST.png|-] [LAST.png]`. The trajectory gate takes `--last-keyframe` and checks the step-0 condition rows against the pipeline's own encode. The bundled measured entry's `encodingKeyframe` peak rises by 2.34 MiB to the two-frame measurement. The conditioner presentation stays text-only (known deviation, PR #76). Qualification at 960×544 is pending: step 0 passes, and steps 1 and 7 are still to run.
+
+### Changed
+
+- **H3 FL2VA needs the vision overlay:** a profile without `conditioner_vision` (every 0.0.4 profile) refuses FL2VA, as does a canvas without a tower graph. T2VA is unchanged. **Source change:** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning` (the tap and the row tags), and `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have default implementations for text-only conditioners, so existing conformances compile. An FL2VA request has 518 more rows per 960×544 keyframe (888 at 1280×704) and a correspondingly smaller prompt budget.
+
+### Fixed
+
+From the [codebase review](CODEBASE-REVIEW.md) of 2026-10-30, each with a regression test:
+
+- **Language:** numeric guides past the grammar's digit limits (`.maximum(Int.max)`, a `Double` `.maximum(1e12)`) and counts past `Int` no longer crash schema compilation; they bound nothing or are refused with `unsupportedSchema`. Two enums with a case of one name (both `DiscriminatedValue`), or two types with one name, no longer overwrite each other's schema: the later definition is numbered. A `\u` surrogate escape must be a high-low pair, so the constraint can't complete a string `JSONDecoder` rejects. `@AetherGenerable` keeps an explicit `value:` label (`case data(value: Int)` failed to compile).
+- **Speech:** extreme finite Kokoro durations throw instead of trapping, and the session refuses phonemes tokenized with another vocabulary mapping that uses the same ids.
+- **H3:** a request with audio is refused before any stage loads when no audio decoder covers its length (`H3AudioDecoder.supports(_:)`, default true); it used to fail after the whole render. Malformed resource declarations (overflowing byte sums, an oversized tiled-encoder canvas) throw instead of trapping.
+- **Tools:** `aether-probe` takes the GPU lease for `render-krea-batch` with `--steps=N` or `--ref=IMAGE` flags anywhere; it ran without it. `h3-profile-decode` decodes FL2VA renders (it refused their condition rows). The H3 qualification controllers (phases, denoising, profile graphs and trajectory, memory gate) stop their workload's process group on Ctrl-C, SIGTERM or SIGHUP, and wait for the whole group, not only its leader. A further signal during that cleanup is queued; it never abandons the workload. The memory gate resumes a stage only for the same command, frames, seed and recipe.
 
 ## 0.0.4 — 2026-11-02
 

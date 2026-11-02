@@ -64,6 +64,14 @@ import Testing
     #expect(throws: AetherError.self) { try KokoroAlignment.frames(durationSums: [3, 3], speed: 1, maximumFrames: 5) }
     #expect(throws: AetherError.self) { try KokoroAlignment.frames(durationSums: [.nan], speed: 1, maximumFrames: 5) }
     #expect(throws: AetherError.self) { try KokoroAlignment.frames(durationSums: [], speed: 1, maximumFrames: 5) }
+    // Review M6: extreme finite durations throw instead of trapping in the Int conversion or the sum.
+    for (sums, speed) in [([Float.greatestFiniteMagnitude], Float(1)), ([3e38], 0.25), ([9.3e18], 1), ([4e18, 4e18, 4e18], 1),
+                          ([1e30, 1], 1)] {
+        #expect(throws: AetherError.self) { try KokoroAlignment.frames(durationSums: sums, speed: speed, maximumFrames: .max) }
+        #expect(throws: AetherError.self) { try KokoroAlignment.frames(durationSums: sums, speed: speed, maximumFrames: 4096) }
+    }
+    #expect(try KokoroAlignment.frames(durationSums: [-Float.greatestFiniteMagnitude, 2], speed: 1, maximumFrames: .max) == [1, 2])
+    #expect(try KokoroAlignment.frames(durationSums: [3, 2], speed: 1, maximumFrames: 5) == [3, 2])
 }
 
 @Test func alignmentGathersTokenColumnsIntoFrames() throws {

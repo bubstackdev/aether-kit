@@ -7,6 +7,9 @@ let package = Package(
     dependencies: [.package(name: "AetherKit", path: "../..")],
     targets: [
         .executableTarget(name: "AetherLocalExample", dependencies: [
+            .product(name: "AetherDiffusion", package: "AetherKit"),
+            .product(name: "AetherDiffusionCoreAI", package: "AetherKit"),
+            .product(name: "AetherSDTurbo", package: "AetherKit"),
             .product(name: "AetherKit", package: "AetherKit"),
             .product(name: "AetherAssets", package: "AetherKit"),
             .product(name: "AetherCoreAI", package: "AetherKit"),

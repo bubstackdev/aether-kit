@@ -9,11 +9,13 @@ import argparse
 import datetime
 import hashlib
 import json
-import os
 from pathlib import Path
-import signal
 import subprocess
+import sys
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import h3_controller  # noqa: E402  (beside this script)
 
 
 def sha(path):
@@ -25,6 +27,7 @@ def sha(path):
 
 
 def main():
+    h3_controller.install()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--phases", type=Path, required=True)
@@ -96,28 +99,31 @@ def main():
 
     start = time.monotonic()
     with Path(str(output) + "-stdout.json").open("xb") as stdout, Path(str(output) + "-stderr.log").open("xb") as stderr:
-        proc = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
-        controller["pid"] = proc.pid
-        save()
-        print(json.dumps({"pid": proc.pid, "budgetSeconds": budget, "gpuWorkRequested": args.run or args.capture or args.lifecycle}), flush=True)
+        proc = None
         try:
-            proc.wait(timeout=budget - 10)
-        except subprocess.TimeoutExpired:
-            controller["timedOut"] = True
+            proc = h3_controller.start(command, stdout=stdout, stderr=stderr)
+            controller["pid"] = proc.pid
+            save()
+            print(json.dumps({"pid": proc.pid, "budgetSeconds": budget, "gpuWorkRequested": args.run or args.capture or args.lifecycle}), flush=True)
+            try:
+                proc.wait(timeout=budget - 10)
+            except subprocess.TimeoutExpired:
+                controller["timedOut"] = True
+        except BaseException:
+            # Ctrl-C, SIGTERM or SIGHUP (h3_controller): recorded, after the cleanup below, then re-raised.
+            controller["interrupted"] = True
+            raise
         finally:
-            if proc.poll() is None:
-                os.killpg(proc.pid, signal.SIGTERM)
-                try:
-                    proc.wait(timeout=8)
-                except subprocess.TimeoutExpired:
-                    os.killpg(proc.pid, signal.SIGKILL)
-            proc.wait()
-            controller.update(joined=True, exitCode=proc.returncode, elapsedSeconds=time.monotonic() - start)
+            # A workload h3_controller.start stopped itself (a signal while starting) is joined too.
+            controller["joined"] = h3_controller.stop(proc, grace=8) if proc is not None else True
+            if h3_controller.interrupted():
+                controller["interrupted"] = True
+            controller.update(exitCode=proc.returncode if proc else None, elapsedSeconds=time.monotonic() - start)
             controller["sourcePinsUnchanged"] = all(sha(p) == digest for p, digest in pins.items())
             save()
     try:
         report = json.loads((output / "report.json").read_text())
-        controller["passed"] = (proc.returncode == 0 and not controller["timedOut"]
+        controller["passed"] = (proc.returncode == 0 and controller["joined"] and not controller["timedOut"] and not controller.get("interrupted")
                                 and controller["sourcePinsUnchanged"]
                                 and report.get("passed") is (not args.capture)
                                 and report.get("stage") == ("complete" if args.run or args.lifecycle else "capturedAwaitingCPUReferences" if args.capture else "ready")
