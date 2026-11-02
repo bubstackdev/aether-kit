@@ -246,7 +246,7 @@ def main():
     # chaotically (upstream's own bf16 and fp32 towers give taps 0.55 apart), so the conditioner is gated on its own
     # (qualify-h3-presentation.py) and this gate isolates the denoiser on the captured refined text.
     presentation_checks = oracle_report.get("presentation")
-    if presenting and not (presentation_checks and all(presentation_checks.get(k) for k in ("ids", "tags", "positions"))):
+    if presenting and not (presentation_checks and all(presentation_checks.get(k) for k in ("ids", "tags", "positions", "render_ids", "render_tags"))):
         failures.append(f"presentation checks {presentation_checks}")
     comparisons = oracle_report.get("comparisons", {})
     for key in required:

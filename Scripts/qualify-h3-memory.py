@@ -220,6 +220,9 @@ def main():
     for k in args.keyframes:
         keyframes[k.stem.split("-")[-1]] = k.resolve()
     last_keyframes = {k.stem.split("-")[-1]: k.resolve() for k in args.last_keyframes}
+    stray = sorted(set(last_keyframes) - set(args.canvases.split(",")))
+    if stray:
+        ap.error(f"--last-keyframes names canvases outside --canvases: {stray}")
 
     runs, records = [], {}
     for canvas in args.canvases.split(","):
@@ -396,6 +399,9 @@ def main():
                 marginBytes=MARGIN, admissionWorstCaseBytes=worst, renders=renders, measuredResources=entry, measuredEntriesByTask=per_task,
                 controllers=records,
                 pinsDigest=digest, pinsUnchanged=pins_unchanged, filesSHA256=pins, scriptSHA256=sha(Path(__file__).resolve()),
+                keyframeCoverage=("FL2VA entries cover first-only, last-only and first+last requests. A last-only request has a first-only "
+                                  "request's rows and one keyframe encode, so the first-only render covers it; the first+last render, run "
+                                  "for each canvas given --last-keyframes, covers the two-keyframe presentation and encode."),
                 scope=("Complete H3VideoSession renders (conditioner, first-frame encoder for FL2VA, eight Turbo steps, video and audio decode) "
                        "at the requested canvases and length; per-stage peaks attribute residual memory from the previous stage to the next stage."))
     (work / "gate.json").write_text(json.dumps(gate, indent=2) + "\n")

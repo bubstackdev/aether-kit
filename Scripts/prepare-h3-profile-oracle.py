@@ -544,6 +544,9 @@ def trajectory_part(dump, out, run, steps, float32_diagnostic=False, presentatio
         exact = dict(ids=bool(torch.equal(presentation.get("token_ids").reshape(-1).int(), dump.get("presentation_ids").int())),
                      tags=bool(torch.equal(tags.reshape(-1).int(), dump.get("presentation_tags").int())),
                      positions=bool(torch.equal(presentation.get("position_ids").reshape(3, -1).int(), dump.get("presentation_positions").int())))
+        # The render's own conditioning ids and tags (h3-profile-run records what the session's conditioner read).
+        exact.update(render_ids=run.has("render_ids") and bool(torch.equal(run.get("render_ids").int(), presentation.get("token_ids").reshape(-1).int())),
+                     render_tags=run.has("render_tags") and bool(torch.equal(run.get("render_tags").int(), tags.reshape(-1).int())))
         report["presentation"] = dict(exact, oracle=str(presentation.path), tokens=int(tags.numel()))
         assert all(exact.values()), exact
         tags = tags.reshape(-1)
