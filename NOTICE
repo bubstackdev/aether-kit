@@ -8,13 +8,16 @@ references. The retained prototype identifies upstream revision
 Original Aether / Atelier sources are copyright their respective contributors.
 The accompanying LICENSE preserves the Apache License, Version 2.0.
 
-Sample model bundle: AetherKit publishes one set of weights, a Core AI conversion
+Sample model bundle: AetherKit publishes a Core AI conversion
 of Qwen3-0.6B (https://huggingface.co/Qwen/Qwen3-0.6B, revision
 c1899de289a04d12100db370d81485cdf75e47ca, Copyright 2024 Alibaba Cloud, Apache
 License 2.0), at https://huggingface.co/aether-models/aether-kit-qwen3-0.6b with
 that repository's own LICENSE and NOTICE. The weights are not in this
-repository; Examples/SampleApp downloads them. AetherKit distributes no other
-weights.
+repository; Examples/SampleApp downloads them. Additional converted spike bundles are published at
+https://huggingface.co/aether-models/aether-kit-olmo-2-1b-instruct (Apache-2.0)
+and https://huggingface.co/aether-models/aether-kit-gpt2 (Modified MIT). Each
+repository carries its own LICENSE and NOTICE; their weights and tokenizer
+assets are not included in this source repository.
 
 This repository contains no model weights, tokenizer files, adapters or
 upstream Core AI Models runtime implementation. External assets retain their
@@ -64,3 +67,34 @@ Apache License 2.0, copyright The HuggingFace Team and IBM: layer structure,
 multipliers and the Mamba-2 SSD maths. They are written for AetherKit, not copied.
 The checkpoint, ibm-granite/granite-4.0-h-350m at revision
 3b17b717b8f2f5d305b0a92c1491e239aeda19c8, is Apache-2.0 and is not distributed.
+
+OLMo2 language export graphs (Forge/language/olmo2_decode.py) reimplement the
+OLMo2 forward pass in Hugging Face Transformers 4.57.3
+(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/olmo2),
+licensed under Apache-2.0. The upstream modules attribute the Allen Institute
+for Artificial Intelligence and Hugging Face contributors. No OLMo2 weights
+or tokenizer assets are distributed; the pinned allenai/OLMo-2-0425-1B-Instruct
+checkpoint retains its Apache-2.0 terms. Tokenizer fixtures contain only small
+synthetic text examples and upstream token IDs.
+
+GPT-2 language export graphs (Forge/language/gpt2_decode.py) reimplement the
+GPT-2 forward pass in Hugging Face Transformers 4.57.3
+(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/gpt2),
+licensed under Apache-2.0. No GPT-2 weights or tokenizer assets are distributed.
+The pinned openai-community/gpt2 checkpoint at revision
+607a30d783dfa663caf39e06633721c8d4cfcd7e retains its MIT terms
+(https://github.com/openai/gpt-2/blob/master/LICENSE).
+
+Phi language export graphs (Forge/language/phi_decode.py) reimplement the Phi
+forward pass in Hugging Face Transformers 4.57.3
+(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/phi),
+Apache-2.0, copyright Microsoft and the HuggingFace Inc. team. No Phi weights
+or tokenizer assets are distributed. The microsoft/phi-2 checkpoint at revision
+9a5117d15e407c48fa40f8adbac1244abae52d6f retains its MIT terms.
+
+SD-Turbo spike (v0.0.6)
+The optional SD-Turbo port uses stabilityai/sd-turbo at revision
+b261bac6fd2cf515557d5d0707481eafa0485ec2. Model assets are not included in
+this repository and retain the Stability AI Community License. The exporter
+copies the checkpoint's LICENSE.md into the generated bundle. Forge uses the
+existing pinned Diffusers and Transformers packages for model definitions.

@@ -44,7 +44,7 @@ struct AetherProbe {
               aether-probe prepare-krea BUNDLE PROMPT [WIDTH HEIGHT]
               aether-probe verify-krea BUNDLE
               aether-probe render-krea BUNDLE OUTPUT.png PROMPT WIDTH HEIGHT SEED [SHAPE.json]
-              aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json]
+              aether-probe render-krea-batch BUNDLE NEW_OUTPUT_DIRECTORY PROMPT WIDTH HEIGHT SEED[,SEED...] [SHAPE.json] [--steps=N] [--ref=IMAGE ...]
               aether-probe parity-krea BUNDLE LAB FIXTURES SHAPE.json OUTPUT_DIRECTORY provided|encoded
               aether-probe benchmark-krea BUNDLE PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run
               aether-probe benchmark-flux2 BUNDLE T2I_FIXTURE REFERENCE_FIXTURE|- PLAN.json SOURCE_ROOT OUTPUT_DIRECTORY --prepare-only|--run

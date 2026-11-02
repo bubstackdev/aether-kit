@@ -2,7 +2,7 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
-## Unreleased
+## Unreleased (0.0.5)
 
 ### Added
 
@@ -13,6 +13,15 @@ All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x rel
 ### Changed
 
 - **H3 FL2VA needs the vision overlay:** a profile without `conditioner_vision` (every 0.0.4 profile) refuses FL2VA, as does a canvas without a tower graph. T2VA is unchanged. **Source change:** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning` (the tap and the row tags), and `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have default implementations for text-only conditioners, so existing conformances compile. An FL2VA request has 518 more rows per 960×544 keyframe (888 at 1280×704) and a correspondingly smaller prompt budget.
+
+### Fixed
+
+From the [codebase review](CODEBASE-REVIEW.md) of 2026-10-30, each with a regression test:
+
+- **Language:** numeric guides past the grammar's digit limits (`.maximum(Int.max)`, a `Double` `.maximum(1e12)`) and counts past `Int` no longer crash schema compilation; they bound nothing or are refused with `unsupportedSchema`. Two enums with a case of one name (both `DiscriminatedValue`), or two types with one name, no longer overwrite each other's schema: the later definition is numbered. A `\u` surrogate escape must be a high-low pair, so the constraint can't complete a string `JSONDecoder` rejects. `@AetherGenerable` keeps an explicit `value:` label (`case data(value: Int)` failed to compile).
+- **Speech:** extreme finite Kokoro durations throw instead of trapping, and the session refuses phonemes tokenized with another vocabulary mapping that uses the same ids.
+- **H3:** a request with audio is refused before any stage loads when no audio decoder covers its length (`H3AudioDecoder.supports(_:)`, default true); it used to fail after the whole render. Malformed resource declarations (overflowing byte sums, an oversized tiled-encoder canvas) throw instead of trapping.
+- **Tools:** `aether-probe` takes the GPU lease for `render-krea-batch` with `--steps=N` or `--ref=IMAGE` flags anywhere; it ran without it. `h3-profile-decode` decodes FL2VA renders (it refused their condition rows). The H3 qualification controllers (phases, denoising, profile graphs and trajectory, memory gate) stop their workload's process group on Ctrl-C, SIGTERM or SIGHUP, and wait for the whole group, not only its leader. A further signal during that cleanup is queued; it never abandons the workload. The memory gate resumes a stage only for the same command, frames, seed and recipe.
 
 ## 0.0.4 — 2026-11-02
 

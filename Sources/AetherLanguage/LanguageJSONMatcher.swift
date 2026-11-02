@@ -24,8 +24,13 @@ struct LanguageJSONMatcher: Hashable, Sendable {
         /// Inside a string; `pending` continuation bytes are due for the current UTF-8 scalar, the next one in
         /// `low...high` (RFC 3629: no overlong forms, surrogates or code points past U+10FFFF).
         case body(pending: Int, low: UInt8 = 0x80, high: UInt8 = 0xBF)
-        case escape
-        case unicode(remaining: Int)
+        /// After `\`; after a high-surrogate escape, only the `u` of its low surrogate may follow.
+        case escape(afterHighSurrogate: Bool = false)
+        /// A `\u` escape with `remaining` hex digits due and the UTF-16 `value` read so far.
+        case unicode(remaining: Int, value: UInt16 = 0, afterHighSurrogate: Bool = false)
+        /// A high-surrogate escape (`\uD800`–`\uDBFF`) was read: a low-surrogate escape (`\uDC00`–`\uDFFF`) must
+        /// follow, as JSON decoders require; a lone surrogate of either kind is refused.
+        case lowSurrogateDue
     }
 
     enum ArrayPhase: Hashable, Sendable { case open, afterOpen, afterItem, afterComma }
@@ -126,7 +131,7 @@ struct LanguageJSONMatcher: Hashable, Sendable {
                 } else if byte == UInt8(ascii: "\"") {
                     // The string ends.
                 } else if byte == UInt8(ascii: "\\") {
-                    stack.append(.string(.escape))
+                    stack.append(.string(.escape()))
                 } else if byte < 0x20 {
                     return []
                 } else if byte < 0x80 {
@@ -136,13 +141,27 @@ struct LanguageJSONMatcher: Hashable, Sendable {
                 } else {
                     return []
                 }
-            case .escape:
-                if byte == UInt8(ascii: "u") { stack.append(.string(.unicode(remaining: 4))) }
-                else if Array("\"\\/bfnrt".utf8).contains(byte) { stack.append(.string(.body(pending: 0))) }
+            case .escape(let afterHigh):
+                if byte == UInt8(ascii: "u") { stack.append(.string(.unicode(remaining: 4, afterHighSurrogate: afterHigh))) }
+                else if !afterHigh, Array("\"\\/bfnrt".utf8).contains(byte) { stack.append(.string(.body(pending: 0))) }
                 else { return [] }
-            case .unicode(let remaining):
-                guard Self.isHex(byte) else { return [] }
-                stack.append(.string(remaining > 1 ? .unicode(remaining: remaining - 1) : .body(pending: 0)))
+            case .lowSurrogateDue:
+                guard byte == UInt8(ascii: "\\") else { return [] }
+                stack.append(.string(.escape(afterHighSurrogate: true)))
+            case .unicode(let remaining, let value, let afterHigh):
+                guard let digit = Self.hexValue(byte) else { return [] }
+                let value = value << 4 | UInt16(digit)
+                // The first two digits decide the kind, so a prefix that can't complete validly is refused at once.
+                switch remaining {
+                case 4: if afterHigh, value != 0xD { return [] }
+                case 3: if afterHigh != (0xDC...0xDF).contains(value) { return [] }
+                default: break
+                }
+                if remaining > 1 {
+                    stack.append(.string(.unicode(remaining: remaining - 1, value: value, afterHighSurrogate: afterHigh)))
+                } else {
+                    stack.append(.string((0xD800...0xDBFF).contains(value) ? .lowSurrogateDue : .body(pending: 0)))
+                }
             }
             return [stack]
 
@@ -208,9 +227,13 @@ struct LanguageJSONMatcher: Hashable, Sendable {
         }
     }
 
-    private static func isHex(_ byte: UInt8) -> Bool {
-        (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(byte) || (UInt8(ascii: "a")...UInt8(ascii: "f")).contains(byte)
-            || (UInt8(ascii: "A")...UInt8(ascii: "F")).contains(byte)
+    private static func hexValue(_ byte: UInt8) -> UInt8? {
+        switch byte {
+        case UInt8(ascii: "0")...UInt8(ascii: "9"): byte - UInt8(ascii: "0")
+        case UInt8(ascii: "a")...UInt8(ascii: "f"): byte - UInt8(ascii: "a") + 10
+        case UInt8(ascii: "A")...UInt8(ascii: "F"): byte - UInt8(ascii: "A") + 10
+        default: nil
+        }
     }
 }
 

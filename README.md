@@ -30,7 +30,7 @@ Generative AI on Apple Core AI, with model-specific execution for Apple silicon.
 ## Requirements
 
 - Package floor: macOS 14 and iOS 17, so apps can link the language facade there; it reports "unsupported OS" below 27. Everything that runs a model (Core AI, the `*CoreAI` products, the FoundationModels adapter) needs Apple silicon and macOS 27 or iOS 27 at runtime, and its declarations are `@available(macOS 27, iOS 27, *)` ([deployment floor](docs/deployment-floor.md)).
-- Xcode 27.1 / Swift 6.4. Several targets enable Swift's experimental `Lifetimes` feature, which Core AI's span-based APIs require, so older toolchains are unsupported.
+- Xcode 27.2 / Swift 6.4. Several targets enable Swift's experimental `Lifetimes` feature, which Core AI's span-based APIs require, so older toolchains are unsupported.
 - **Qualified on one Apple M5 Max (64 GB) running macOS 27.0.1 (26A434)**; the 0.0.4 preparation, readiness, lifecycle and sample-app qualifications ran on macOS 27.2 (26B123). Other Macs are expected to work but are unqualified. iOS is unqualified in this repository, except Kokoro speech on two iPhones and the Qwen3-0.6B on one (iPhone18,2, iOS 27.2), and the 0.0.4 preparation, readiness, lifecycle and sample app on an iPhone19,4 (iOS 27.2).
 - Model assets: your own local Core AI exports (see [Models and assets](#models-and-assets)).
 
@@ -152,7 +152,7 @@ swift run -c release aether-probe doctor
 
 Tests build at macOS 27: run them through `Scripts/check.sh` or `Scripts/check-cpu.sh`, or pass `--triple arm64-apple-macosx27.0` to `swift test` yourself. A bare `swift test` fails with `'RunTestsWithTheOS27Triple' is only available in macOS 27 or newer` ([why](docs/deployment-floor.md#tests-build-at-os-27)).
 
-`Scripts/check.sh` uses SwiftPM's default build engine. Set `AETHER_BUILD_SYSTEM=native` in restricted sandboxes where the default engine's `dsymutil` step can't run. Both check scripts forward arguments to `swift test` (for example, `--filter` or `--xunit-output`). [GitHub CI](docs/ci.md) runs the weight-free Release suite and both independent consumers on GitHub's Apple silicon `xcode-27` runner with Xcode 27.1, for PRs targeting `main` and pushes to `main`.
+`Scripts/check.sh` uses SwiftPM's default build engine. Set `AETHER_BUILD_SYSTEM=native` in restricted sandboxes where the default engine's `dsymutil` step can't run. Both check scripts forward arguments to `swift test` (for example, `--filter` or `--xunit-output`). [GitHub CI](docs/ci.md) runs the weight-free Release suite and both independent consumers on GitHub's Apple silicon `xcode-27` runner with Xcode 27.2, for PRs targeting `main` and pushes to `main`.
 
 Real-weight suites are opt-in and skipped by default:
 

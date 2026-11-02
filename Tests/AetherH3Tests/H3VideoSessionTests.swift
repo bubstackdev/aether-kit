@@ -63,6 +63,9 @@ private struct FakeWindowDecoder: H3WindowDecoder {
 private struct FakeAudioDecoder: H3AudioDecoder {
     let log: StageLog
     var samples: Int? = nil
+    /// Audio latents per channel this decoder has; nil for any.
+    var lengths: Set<Int>? = nil
+    func supports(_ geometry: H3Geometry) -> Bool { lengths?.contains(geometry.audioLatentsPerChannel) ?? true }
     func decode(_ latents: H3TensorData, geometry: H3Geometry) async throws -> H3AudioPCM {
         await log.acquire("audio")
         let count = samples ?? Int((geometry.durationSeconds * Double(H3AudioPCM.sampleRate)).rounded())
@@ -428,6 +431,21 @@ private struct CancellingKeyframeEncoder: H3KeyframeEncoder {
 }
 
 
+/// Review L6: audio the decoder can't decode is refused before any stage runs, not after the whole render.
+@Test func h3AudioWithoutADecoderForItsLengthIsRefusedBeforeAnyStage() async throws {
+    let g = try geometry(), log = StageLog()
+    #expect(g.audioLatentsPerChannel == 65)
+    let session = H3VideoSession(stages: H3VideoStages(conditioner: FakeConditioner(log: log), denoiser: FakeDenoiser(log: log),
+                                                       video: FakeWindowDecoder(log: log), audio: FakeAudioDecoder(log: log, lengths: [37, 207])))
+    await #expect(throws: AetherError.self) { try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1)) }
+    #expect(await log.entries.isEmpty)
+    #expect(await session.state == .ready)
+    // Without audio the same clip runs; the audio decoder is never acquired.
+    let result = try await session.generate(try H3VideoRequest(prompt: "p", geometry: g, seed: 1, audio: false))
+    let entries = await log.entries
+    #expect(!result.audio && !entries.isEmpty && !entries.contains("acquire audio"))
+}
+
 private func stageEstimates(audio: Bool = true) -> [H3VideoStage: UInt64] {
     var stages: [H3VideoStage: UInt64] = [.encoding: 20, .denoising: 40, .decodingVideo: 30]
     if audio { stages[.decodingAudio] = 15 }
@@ -682,6 +700,22 @@ private func measured(denoising: UInt64 = 13_800 * (1 << 20), operation: UInt64 
                             stagePeakBytes: ["encoding": 1_830 * (1 << 20), "encodingKeyframe": 2_050 * (1 << 20), "denoising": denoising,
                                              "decodingVideo": 5_780 * (1 << 20), "decodingAudio": 1_030 * (1 << 20)],
                             operationBytes: operation, evidence: "fixture")
+}
+
+/// Review L5: declarations whose canvases or byte sums don't fit are refused with typed errors instead of trapping.
+@Test func h3ResourceDeclarationsThatOverflowAreRefusedNotTrapped() throws {
+    let huge = "999999999999999999999999999999x544"
+    #expect(throws: AetherError.self) { _ = try entry([huge], frames: 124, denoising: gib) }
+    #expect(throws: AetherError.self) { _ = try entry(["4294967296x4294967296"], frames: 124, denoising: gib) }
+    #expect(H3MeasuredResources.pixels(huge) == nil && H3MeasuredResources.pixels("4294967296x4294967296") == nil)
+    #expect(throws: AetherError.self) { _ = try measured(denoising: .max) }
+    #expect(throws: AetherError.self) { _ = try measured(denoising: .max - H3MeasuredResources.marginBytes, operation: 1) }
+    #expect(throws: AetherError.self) { _ = try measured(operation: .max) }
+    let stages: [H3VideoStage: UInt64] = [.encoding: 1, .denoising: .max - 1, .decodingVideo: 1]
+    #expect(throws: AetherError.self) {
+        _ = try H3ResourceAdmission.Envelope(maximumPixels: 64 * 32, maximumFrames: 56, operationBytes: 2, stageBytes: stages)
+    }
+    _ = try H3ResourceAdmission.Envelope(maximumPixels: 64 * 32, maximumFrames: 56, operationBytes: 1, stageBytes: stages)
 }
 
 @Test func h3MeasuredAdmissionReservesEveryMeasuredStagePeakAndRefusesARunThatWillNotFit() async throws {

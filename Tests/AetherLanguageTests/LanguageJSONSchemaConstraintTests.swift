@@ -153,6 +153,97 @@ struct LanguageJSONSchemaConstraintTests {
         #expect(try accepts("-3", negative) == (true, true) && accepts("-1", negative).0 == false && accepts("3", negative).0 == false)
     }
 
+    /// Bounds past what the grammar writes (18 integer digits, or 9 + 9 for numbers) and counts past `Int` compile:
+    /// they bound nothing, or are refused as empty ranges, instead of trapping in an `Int64` or `Int` conversion.
+    @Test func extremeGuidesCompileInsteadOfTrapping() throws {
+        let open = AetherGenerationSchema.object(name: "Extremes", properties: [
+            .init(name: "a", type: Int.self, guides: [.maximum(Int.max)]), .init(name: "b", type: Int.self, guides: [.range(Int.min...Int.max)]),
+            .init(name: "c", type: Double.self, guides: [.maximum(1e12)]), .init(name: "d", type: Double.self, guides: [.minimum(-1e300)]),
+            .init(name: "e", type: [String].self, guides: [.maximumCount(Int.max)]),
+        ])
+        let reply = #"{"a": 999999999999999999, "b": -999999999999999999, "c": 999999999.5, "d": -3, "e": ["red"]}"#
+        #expect(try accepts(reply, open) == (true, true))
+        func refuses(_ json: String) -> Bool {
+            guard let schema = try? AetherGenerationSchema(json: Data(json.utf8)) else { Issue.record("unparsed \(json)"); return false }
+            return (try? LanguageJSONGrammar(schema: schema)) == nil
+        }
+        #expect(refuses(#"{"type": "integer", "minimum": 1e19}"#))
+        #expect(refuses(#"{"type": "integer", "maximum": -1e30}"#))
+        #expect(refuses(#"{"type": "number", "minimum": 1e12}"#))
+        #expect(refuses(#"{"type": "array", "items": {"type": "string"}, "minItems": 1e300}"#))
+        #expect(refuses(#"{"type": "array", "items": {"type": "string"}, "minItems": 1.5}"#))
+        #expect(!refuses(#"{"type": "array", "items": {"type": "string"}, "maxItems": 1e300}"#))
+    }
+
+    /// Review M4: two enums with a case of one name both define `DiscriminatedValue`, and two types can share a name;
+    /// each keeps its own schema instead of the last one overwriting the others.
+    @Test func definitionsWithOneNameKeepTheirOwnSchemas() throws {
+        func union(_ name: String, _ type: (some AetherGenerable).Type) -> AetherGenerationSchema {
+            .union(name: name, cases: [.init(name: "value", values: [.init(name: "value", type: type)])])
+        }
+        struct Named<Payload: AetherGenerable>: AetherGenerable {
+            init(from decoder: any Decoder) throws {}
+            static var generationSchema: AetherGenerationSchema { .object(name: "Item", properties: [.init(name: "x", type: Payload.self)]) }
+        }
+        enum First: AetherGenerable {
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("First", Int.self) }
+        }
+        enum Second: AetherGenerable {
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("Second", String.self) }
+        }
+        enum Outer: AetherGenerable {  // its `value` case holds an enum with a `value` case of its own
+            init(from decoder: any Decoder) throws { self = .none }
+            case none
+            static var generationSchema: AetherGenerationSchema { union("Outer", Second.self) }
+        }
+        let schema = AetherGenerationSchema.object(name: "Root", properties: [
+            .init(name: "first", type: First.self), .init(name: "second", type: Second.self), .init(name: "outer", type: Outer.self),
+            .init(name: "number", type: Named<Int>.self), .init(name: "text", type: Named<String>.self),
+            .init(name: "again", type: First.self),
+        ])
+        let good = #"{"first": {"type": "value", "value": 1}, "second": {"type": "value", "value": "a"}, "#
+            + #""outer": {"type": "value", "value": {"type": "value", "value": "b"}}, "number": {"x": 2}, "text": {"x": "c"}, "#
+            + #""again": {"type": "value", "value": 3}}"#
+        #expect(try accepts(good, schema) == (true, true))
+        for bad in [
+            good.replacingOccurrences(of: #""first": {"type": "value", "value": 1}"#, with: #""first": {"type": "value", "value": "1"}"#),
+            good.replacingOccurrences(of: #""second": {"type": "value", "value": "a"}"#, with: #""second": {"type": "value", "value": 1}"#),
+            good.replacingOccurrences(of: #""value": {"type": "value", "value": "b"}"#, with: #""value": "b""#),
+            good.replacingOccurrences(of: #""number": {"x": 2}"#, with: #""number": {"x": "2"}"#),
+            good.replacingOccurrences(of: #""text": {"x": "c"}"#, with: #""text": {"x": 3}"#),
+        ] {
+            #expect(try accepts(bad, schema).complete == false, "\(bad)")
+        }
+        // Distinct schemas under one name are renamed apart; the same schema used twice is defined once.
+        guard case .object(let definitions)? = schema.document["$defs"] else { Issue.record("no $defs"); return }
+        #expect(Set(definitions.keys) == ["First", "Second", "Outer", "Item", "Item2",
+                                          "DiscriminatedValue", "DiscriminatedValue2", "DiscriminatedValue3"])
+    }
+
+    /// Review M5: `\u` escapes pair UTF-16 surrogates as JSON decoders require. A string the matcher completes always
+    /// decodes, and one that decodes always completes; a prefix that can't pair is refused at once, never a dead end.
+    @Test func unicodeEscapesPairSurrogatesAsDecodersDo() throws {
+        let schema = try AetherGenerationSchema(json: Data(#"{"type": "string"}"#.utf8))
+        let units = ["0041", "00e9", "D800", "dbff", "D83D", "DC00", "dfff", "DE00", "E000", "FFFF"]
+        let escapes = units.map { "\\u\($0)" } + units.flatMap { a in units.map { b in "\\u\(a)\\u\(b)" } }
+            + units.map { "\\u\($0)x" } + units.map { "\\u\($0)\\n" }
+        for escape in escapes {
+            let text = "\"\(escape)\""
+            let decodes = (try? JSONDecoder().decode(String.self, from: Data(text.utf8))) != nil
+            #expect(try accepts(text, schema) == (decodes, decodes), "\(text)")
+        }
+        #expect(try accepts(#""\uD83D\uDE00""#, schema) == (true, true))
+        #expect(try accepts(#""\uD83D"#, schema) == (true, false), "a high surrogate is a prefix of a pair")
+        #expect(try accepts(#""\uD83D\"#, schema) == (true, false) && accepts(#""\uD83D\uD"#, schema) == (true, false))
+        for deadEnd in [#""\uD83D""#, #""\uD83D\n"#, #""\uD83D\u0"#, #""\uD83D\uDB"#, #""\uDC"#, #""\udf"#] {
+            #expect(try accepts(deadEnd, schema).prefix == false, "\(deadEnd)")
+        }
+    }
+
     /// Seeded random walks over the synthetic vocabulary: at every step the trie walk equals simulating every token,
     /// the allowed set is never empty, and every walk ends in JSON that parses and decodes into the type.
     @Test func randomWalksMatchBruteForceAndDecode() throws {

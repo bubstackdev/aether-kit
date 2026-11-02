@@ -590,7 +590,7 @@ public actor LanguageGenerationSession {
             contract.positionInputName: InferenceFunction.AsyncValue(NDArray(scalars: positions, shape: [1, positions.count]))
         ]
         if !contract.cachesAreStates {
-            // Read-only, zero-copy contiguous views of the Kit-owned caches (their allocation tracks the
+            // Read-only, zero-copy views of the Kit-owned caches (their allocation tracks the
             // real length in 256-row steps); nothing writes them until the join.
             inputs["keyCache"] = InferenceFunction.AsyncValue(unsafeBuffer: keys, scalarType: .float16,
                 shape: keyDescriptor.shape, strides: keyDescriptor.preferredStrides, interleaveLayout: keyDescriptor.interleaveLayout)
@@ -659,27 +659,26 @@ public actor LanguageGenerationSession {
     }
 
     /// Bucketed contract: copies the joined step's update rows into the caches at
-    /// `position..<position + count`. The caches stay row-major `[layers·1·heads, capacity, dim]`.
+    /// `position..<position + count`, honoring Core AI's preferred noninterleaved cache strides.
     private func writeUpdates(_ outputs: [String: InferenceFunction.AsyncValue], position: Int, count: Int) async throws {
         guard let keys, let values else { throw LanguageGenerationError.invalid("Missing KV caches") }
         let shape = keyDescriptor.shape
-        guard keyDescriptor.preferredStrides == LanguageCachePlan.strides(shape),
-              valueDescriptor.preferredStrides == LanguageCachePlan.strides(valueDescriptor.shape)
-        else { throw LanguageGenerationError.invalid("Cache updates require contiguous row-major caches") }
+        guard keyDescriptor.interleaveLayout == nil, valueDescriptor.interleaveLayout == nil
+        else { throw LanguageGenerationError.invalid("Cache updates require noninterleaved caches") }
         // Validate both outputs before writing either, so a malformed step leaves the caches untouched.
-        var updates: [(NDArray, any MTLBuffer)] = []
-        for (name, buffer) in [("keyUpdate", keys), ("valueUpdate", values)] {
+        var updates: [(NDArray, any MTLBuffer, [Int])] = []
+        for (name, buffer, descriptor) in [("keyUpdate", keys, keyDescriptor), ("valueUpdate", values, valueDescriptor)] {
             guard let value = outputs[name], let update = try await value.ndArray, update.scalarType == .float16,
                   update.shape == [shape[0], shape[1], shape[2], count, shape[4]]
             else { throw LanguageGenerationError.invalid("Unexpected cache update") }
-            updates.append((update, buffer))
+            updates.append((update, buffer, descriptor.preferredStrides))
         }
-        for (update, buffer) in updates {
+        for (update, buffer, cacheStrides) in updates {
             let cache = buffer.contents().bindMemory(to: Float16.self, capacity: buffer.length / MemoryLayout<Float16>.size)
             update.view(as: Float16.self).withUnsafePointer { pointer, updateShape, strides in
                 LanguageCachePlan.writeUpdateTensor(pointer, shape: (0..<updateShape.count).map { updateShape[$0] },
                                                     strides: (0..<strides.count).map { strides[$0] }, into: cache,
-                                                    capacity: shape[3], start: position)
+                                                    capacity: shape[3], start: position, cacheStrides: cacheStrides)
             }
         }
     }
@@ -852,21 +851,28 @@ public actor LanguageGenerationSession {
         shape[3] = next
         let kd = keyTemplate.resolvingDynamicDimensions(shape)
         let vd = valueTemplate.resolvingDynamicDimensions(shape)
-        guard keyDescriptor.preferredStrides == LanguageCachePlan.strides(keyDescriptor.shape),
-              valueDescriptor.preferredStrides == LanguageCachePlan.strides(valueDescriptor.shape),
-              kd.preferredStrides == LanguageCachePlan.strides(shape), vd.preferredStrides == LanguageCachePlan.strides(shape)
-        else { throw LanguageGenerationError.invalid("Growing KV caches require contiguous row-major storage") }
+        guard keyDescriptor.interleaveLayout == nil, valueDescriptor.interleaveLayout == nil,
+              kd.interleaveLayout == nil, vd.interleaveLayout == nil
+        else { throw LanguageGenerationError.invalid("Growing KV caches require noninterleaved storage") }
         try requireAvailableMemory(for: kd, vd)
         guard let newKeys = device.makeBuffer(length: kd.minimumByteCount, options: .storageModeShared),
               let newValues = device.makeBuffer(length: vd.minimumByteCount, options: .storageModeShared)
         else { throw LanguageGenerationError.invalid("Could not grow KV caches") }
-        let rows = shape[0] * shape[1] * shape[2]
-        let rowBytesPerToken = shape[4] * MemoryLayout<Float16>.size
-        // Prefixes copied and the rest zeroed in one pass (the masked rows must be zero, never stale or NaN).
-        LanguageCachePlan.relayout(from: oldKeys.contents(), to: newKeys.contents(), destinationBytes: newKeys.length, rows: rows,
-            oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
-        LanguageCachePlan.relayout(from: oldValues.contents(), to: newValues.contents(), destinationBytes: newValues.length, rows: rows,
-            oldCapacity: allocatedCapacity, newCapacity: next, validTokens: materializedTokens, tokenBytes: rowBytesPerToken)
+        for (old, new, previous, nextDescriptor) in [(oldKeys, newKeys, keyDescriptor, kd), (oldValues, newValues, valueDescriptor, vd)] {
+            if previous.preferredStrides == LanguageCachePlan.strides(previous.shape),
+               nextDescriptor.preferredStrides == LanguageCachePlan.strides(shape) {
+                // Preserve the qualified contiguous fast path.
+                LanguageCachePlan.relayout(from: old.contents(), to: new.contents(), destinationBytes: new.length,
+                    rows: shape[0] * shape[1] * shape[2], oldCapacity: allocatedCapacity, newCapacity: next,
+                    validTokens: materializedTokens, tokenBytes: shape[4] * MemoryLayout<Float16>.size)
+            } else {
+                LanguageCachePlan.relayoutStrided(
+                    from: old.contents().bindMemory(to: Float16.self, capacity: old.length / MemoryLayout<Float16>.size),
+                    to: new.contents().bindMemory(to: Float16.self, capacity: new.length / MemoryLayout<Float16>.size), destinationBytes: new.length, shape: shape,
+                    sourceStrides: previous.preferredStrides, destinationStrides: nextDescriptor.preferredStrides,
+                    validTokens: materializedTokens)
+            }
+        }
         keys = newKeys; values = newValues; keyDescriptor = kd; valueDescriptor = vd
         allocatedCapacity = next
         growthCount += 1

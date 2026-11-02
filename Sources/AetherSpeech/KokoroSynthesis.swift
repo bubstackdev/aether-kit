@@ -29,10 +29,24 @@ public enum KokoroAlignment {
         guard !durationSums.isEmpty, durationSums.allSatisfy(\.isFinite), speed.isFinite, speed > 0 else {
             throw AetherError.invalidTensor("duration sums must be finite and speed positive")
         }
-        let frames = durationSums.map { max(1, Int(($0 / speed).rounded(.toNearestOrEven))) }
-        let total = frames.reduce(0, +)
-        guard total <= maximumFrames else {
-            throw AetherError.invalidRequest("utterance needs \(total) frames; at most \(maximumFrames) are supported, split the phonemes")
+        // Checked before converting or adding, so an extreme finite duration throws rather than trapping.
+        func tooLong(_ total: String) -> AetherError {
+            .invalidRequest("utterance needs \(total) frames; at most \(maximumFrames) are supported, split the phonemes")
+        }
+        var frames: [Int] = []
+        frames.reserveCapacity(durationSums.count)
+        var total = 0
+        for sum in durationSums {
+            let rounded = (sum / speed).rounded(.toNearestOrEven)
+            // Every finite Float below 2^63 converts to Int; the division can also overflow to infinity.
+            guard rounded < Float(Int.max) else { throw tooLong("more than \(Int.max)") }
+            let count = rounded < 1 ? 1 : Int(rounded)
+            guard count <= maximumFrames - total else {
+                let (needed, overflow) = total.addingReportingOverflow(count)
+                throw tooLong(overflow ? "more than \(Int.max)" : "\(needed)")
+            }
+            total += count
+            frames.append(count)
         }
         return frames
     }

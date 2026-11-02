@@ -418,6 +418,18 @@ enum H3ProfileCommand {
 
 @available(macOS 27, iOS 27, *)
 extension H3ProfileCommand {
+    /// The generated rows of a render's packed `final_video`. An FL2VA render (its dump's `anchors` is `first`) keeps
+    /// the keyframe's condition rows, one latent frame, in front; they are dropped, as the session drops them before
+    /// decoding (`latents[ncv:]`). The row count must be exactly the dump's geometry, with or without them.
+    static func generatedVideoRows(_ packed: [Float], geometry: H3Geometry, anchored: Bool) throws -> [Float] {
+        let conditionRows = anchored ? geometry.rowsPerLatentFrame : 0
+        guard packed.count == (conditionRows + geometry.targetVideoRows) * 96 else {
+            throw AetherError.invalidTensor("the render's final_video has \(packed.count / 96) rows; this \(anchored ? "FL2VA" : "T2VA") "
+                                            + "dump needs \(conditionRows + geometry.targetVideoRows)")
+        }
+        return Array(packed.dropFirst(conditionRows * 96))
+    }
+
     /// Video decode only, from a render's final latents, with the GPU tile calls and the CPU work timed apart.
     static func decode(profile url: URL, dump: URL, render: URL, output: URL, decoder: H3ModelAsset?) async throws {
         let profile = try H3Profile(url: url)
@@ -434,7 +446,8 @@ extension H3ProfileCommand {
         func seconds(_ d: Duration) -> Double { Double(d.components.seconds) + Double(d.components.attoseconds) / 1e18 }
         var gpu: [Double] = [], extract = 0.0, stitch = 0.0, rgb = 0.0
         let qualifier = try H3ProfileQualifier(profile: profile, videoDecoder: decoder)
-        let packed = try H3RawDirectory.read(render, "final_video").floatValues()
+        let packed = try generatedVideoRows(try H3RawDirectory.read(render, "final_video").floatValues(), geometry: geometry,
+                                            anchored: (try? H3RawDirectory.field(dump, "anchors")) == "first")
         let tiling = try H3SpatialTiling.source(width: geometry.width, height: geometry.height)
         var video = try H3VideoStitcher(geometry: geometry)
         var frames = Data()

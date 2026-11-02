@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-11-02T18:43:08.188400+00:00",
+  "status": "macOS spike qualified; completion API only",
+  "source": {
+    "repository": "microsoft/phi-2",
+    "revision": "9a5117d15e407c48fa40f8adbac1244abae52d6f",
+    "license": "mit"
+  },
+  "modelSHA256": "8b2a3f6388406f183163440449aced556008f05e6b7a0308b1d423bc2ce79085",
+  "architectureAdditions": [
+    "partial rotary dimensions and shared prefix rotation",
+    "optional output-head bias",
+    "parallel residual family block",
+    "noninterleaved strided KV updates and growth"
+  ],
+  "arithmeticPolicy": {
+    "residuals": "float32",
+    "projections": "float32",
+    "normalization": "float32",
+    "weights": "float16",
+    "cache": "float16",
+    "logits": "float16",
+    "rotaryFrequencyInitialization": "float32"
+  },
+  "swiftRegression": {
+    "reportedTests": 714,
+    "testExecutables": 18,
+    "configuration": "Release, arm64-apple-macosx27.0",
+    "passed": true,
+    "logSHA256": "e5709cb19629857c6858980ecfff094986687a5dba4eeda21ac06dcdd31ad04a"
+  },
+  "pythonRegression": {
+    "testMethods": 10,
+    "passed": true,
+    "families": [
+      "qwen3",
+      "olmo2",
+      "gpt2",
+      "phi"
+    ]
+  },
+  "coreAICPU": {
+    "passed": true,
+    "minimumCosine": 0.99298,
+    "exactArgmax": true,
+    "lostCacheRows": 0
+  },
+  "cases": {
+    "short": {
+      "promptTokens": 7,
+      "eagerPortVsReference": {
+        "running": {
+          "minCosine": 0.99999994,
+          "maxAbs": 0.003997,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        },
+        "bucketed": {
+          "minCosine": 0.99999996,
+          "maxAbs": 0.003875,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        }
+      },
+      "nativeMinimumCosine": 0.9984728627398196,
+      "nativeForcedRows": 64,
+      "nativeArgmaxMismatches": 0,
+      "nativeGreedyIdentical": true,
+      "cacheGrowths": 0,
+      "allocatedCapacity": 256,
+      "passed": true
+    },
+    "long": {
+      "promptTokens": 280,
+      "eagerPortVsReference": {
+        "running": {
+          "minCosine": 0.99999995,
+          "maxAbs": 0.008103,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        },
+        "bucketed": {
+          "minCosine": 0.99999995,
+          "maxAbs": 0.008518,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        }
+      },
+      "nativeMinimumCosine": 0.9991725048462431,
+      "nativeForcedRows": 64,
+      "nativeArgmaxMismatches": 0,
+      "nativeGreedyIdentical": true,
+      "cacheGrowths": 0,
+      "allocatedCapacity": 512,
+      "passed": true
+    },
+    "growth": {
+      "promptTokens": 224,
+      "eagerPortVsReference": {
+        "running": {
+          "minCosine": 0.99999995,
+          "maxAbs": 0.005407,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        },
+        "bucketed": {
+          "minCosine": 0.99999996,
+          "maxAbs": 0.006926,
+          "argmaxEqualRows": 64,
+          "rows": 64,
+          "withinFloat32Tolerance": true
+        }
+      },
+      "nativeMinimumCosine": 0.9990648427426364,
+      "nativeForcedRows": 64,
+      "nativeArgmaxMismatches": 0,
+      "nativeGreedyIdentical": true,
+      "cacheGrowths": 3,
+      "allocatedCapacity": 512,
+      "passed": true
+    }
+  },
+  "float32Tolerance": {
+    "phiAtol": 0.01,
+    "rtol": 0,
+    "minimumCosine": 0.999999,
+    "argmax": "all rows equal",
+    "upstreamOnlyMaxAbs": 0.008141040802001953
+  },
+  "contiguousCacheNativeRegression": {
+    "family": "gpt2",
+    "passed": true
+  },
+  "localBundle": ".local/phi2-qualified/bundle",
+  "limitations": [
+    "no iOS qualification",
+    "base completion model; no chat template",
+    "no hosted bundle",
+    "interleaved KV storage remains unsupported"
+  ]
+}
