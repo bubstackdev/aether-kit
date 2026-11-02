@@ -798,8 +798,8 @@ At 960×544, a first+last render peaks at 12.08 GiB Metal, against 11.84 GiB for
 
 FL2VA now conditions on upstream's presentation ([plan](h3-fl2va-presentation-plan.md)). Before the prompt, each keyframe (first, then last) gets its `"<Picture i>: "` label and a vision block whose rows come from Qwen3-VL's vision tower. The block is tagged as video, the rows take M-RoPE positions, and DeepStack is added after conditioner layers 0–2. T2VA is unchanged.
 
-- **Profile.** The `conditioner_vision` overlay adds one static tower graph per canvas: 960×544, 544×960, 1280×704, 704×1280 and the 288×288 diagnostic canvas. Its weights are bound in place from the FL2VA checkpoint, and each graph is byte-identical on CPU to `Qwen3VLVisionModel.forward`. A profile without the overlay refuses FL2VA, as does a canvas without a tower graph.
-- **Final stack.** The 0.0.5 profile is 5af39db5, then the large-canvas overlay, then this overlay, in Kit's H3 home (`<kit-cache>/h3/profile-0.0.5`). Its location-free identity is `h3.profile/2:13372643…:turbo8`.
+- **Profile.** The `conditioner_vision` overlay adds one static tower graph per canvas: 960×544, 544×960, 1280×704, 704×1280, 1344×768, 768×1344 and the 288×288 diagnostic canvas. Its weights are bound in place from the FL2VA checkpoint, and each graph is byte-identical on CPU to `Qwen3VLVisionModel.forward`. A profile without the overlay refuses FL2VA, as does a canvas without a tower graph.
+- **Final stack.** The 0.0.5 profile is 5af39db5, then the large-canvas overlay, then this overlay, in Kit's H3 home (`<kit-cache>/h3/profile-0.0.5`). Its location-free identity is `h3.profile/2:2a2d5198…:turbo8`. The trajectory gate, the A/B and the T2VA identity replay below ran on its first build, which lacked only the 1344×768 and 768×1344 tower graphs. Every tower output that build shares with the final one is byte-equal.
 - **API.** `H3PromptConditioner.encode(_:keyframes:geometry:onLayer:)` returns an `H3Conditioning`: the tap plus the row tags. `H3Denoiser.denoise(_:conditioning:geometry:onStep:)` takes it. Both have defaults that serve text-only conditioners. `H3Presentation` builds ids, tags and positions, and `H3VisionInputs` the tower's pixels and host tables, both bit for bit upstream's.
 - **Rows.** Each keyframe adds its presentation (518 rows at 960×544, 888 at 1280×704, 1,016 at 1344×768) and its condition rows (510, 880, 1,008). Two limits bind the prompt. The presentation and prompt must fit the profile's 4,096 text tokens, and the packed sequence must fit its 40,960 rows. At the larger canvases and longer clips the row limit binds first:
 
@@ -837,6 +837,8 @@ The user replaced them with these bars:
 | 544×960 | 0.0465 / 0.0753 (0.62×) | 0.0101 / 0.0108 (0.94×) | 0.0197 / 0.0218 (0.90×) | 0.0315 / 0.0333 (0.95×) |
 | 1280×704 | 0.0413 / 0.0439 (0.94×) | 0.0104 / 0.0114 (0.91×) | 0.0217 / 0.0267 (0.81×) | 0.0384 / 0.0426 (0.90×) |
 | 704×1280 | 0.0375 / 0.0365 (1.03×) | 0.0102 / 0.0107 (0.95×) | 0.0197 / 0.0221 (0.89×) | 0.0290 / 0.0340 (0.86×) |
+| 1344×768 | 0.0359 / 0.0414 (0.87×) | 0.0104 / 0.0112 (0.93×) | 0.0209 / 0.0240 (0.87×) | 0.0324 / 0.0397 (0.82×) |
+| 768×1344 | 0.0356 / 0.0455 (0.78×) | 0.0103 / 0.0114 (0.90×) | 0.0208 / 0.0260 (0.80×) | 0.0310 / 0.0389 (0.80×) |
 
 **Conditioner at 960×544** (567 rows, 510 image rows), fed identical tower output:
 
