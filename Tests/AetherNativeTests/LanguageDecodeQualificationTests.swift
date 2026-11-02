@@ -77,7 +77,7 @@ private struct LanguageQualificationReport: Codable {
     var device = LanguageGenerationSession.deviceArchitectureName
     var referenceSHA256: [String: String] = [:]
     var tolerance = "per forced row: cosine >= 0.995 against float32 reference; argmax equal unless a near-tie (reference top-1 minus top-2 probability < 0.1 and native token within reference top-5); greedy continuation identical to the reference's, or first diverging at a reference near-tie by the same rule (judged on the reference's teacher-forced row at that index, where both prefixes are equal)"
-    var stopTokenNote = "Long runs register stop id 151935 (an unused padding row of the 151936-row head) so decoding is not cut short by EOS"
+    var stopTokenNote = "Qualification disables ordinary EOS using the final vocabulary row; use a checkpoint with an unused final padding row."
     var hostLoad = "Shared host: GPU jobs of cooperating agents are serialized by a lock, other host work is not; timings are paired and interleaved observations, not benchmark records"
     var bucketed = ContractReport()
     var running: ContractReport?
@@ -146,9 +146,9 @@ private func qualify(model: URL, reference: LanguageReference, forced: [Float], 
     report.modelFileSHA256 = try sha256(model.appendingPathComponent("main.mlirb"))
     let vocab = reference.forcedLogits.vocab
 
-    // Teacher-forced rows and the short greedy continuation, with registered EOS.
+    // Teacher-forced rows and a fixed-length greedy continuation (ordinary EOS disabled).
     let bounds = try exportBounds(for: model)
-    let session = try await LanguageGenerationSession.open(at: model, maximumContextLength: 2048, exportBounds: bounds)
+    let session = try await LanguageGenerationSession.open(at: model, maximumContextLength: 2048, stopTokenIDs: [vocab - 1], exportBounds: bounds)
     report.contract = session.contract.rawValue
     let rows = try await session.teacherForcedLogits(prompt: reference.promptTokens, continuation: Array(reference.forcedTokens.dropLast()))
     report.forcedRows = rows.enumerated().map { index, row in
@@ -160,7 +160,7 @@ private func qualify(model: URL, reference: LanguageReference, forced: [Float], 
     report.forcedNearTies = report.forcedRows.filter(\.nearTie).count
     await session.unload()
 
-    let open = { try await LanguageGenerationSession.open(at: model, maximumContextLength: 2048, stopTokenIDs: [151935], exportBounds: bounds) }
+    let open = { try await LanguageGenerationSession.open(at: model, maximumContextLength: 2048, stopTokenIDs: [vocab - 1], exportBounds: bounds) }
     let greedy = try await open()
     report.greedyTokens = try await greedy.generate(prompt: reference.promptTokens, maximumTokens: reference.greedyTokens.count).tokens
     report.greedyFirstDivergence = zip(report.greedyTokens, reference.greedyTokens).enumerated().first { $0.element.0 != $0.element.1 }?.offset
@@ -197,21 +197,21 @@ private func exportBounds(for model: URL) throws -> LanguageExportBounds? {
 /// The sessions compared for timing: the bucketed export, the running export with its default
 /// recycling (what 0.0.1 consumers get), and the running export with recycling and memory-budget
 /// reloads disabled (its pure per-step cost; the native shape cache then grows for the whole run).
-private func timingSessions(bucketed: URL, running: URL, context: Int) async throws -> [(String, LanguageGenerationSession)] {
-    [("bucketed", try await LanguageGenerationSession.open(at: bucketed, maximumContextLength: context, stopTokenIDs: [151935],
+private func timingSessions(bucketed: URL, running: URL, context: Int, stopTokenID: Int) async throws -> [(String, LanguageGenerationSession)] {
+    [("bucketed", try await LanguageGenerationSession.open(at: bucketed, maximumContextLength: context, stopTokenIDs: [stopTokenID],
                                                          exportBounds: try exportBounds(for: bucketed))),
-     ("running", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [151935],
+     ("running", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [stopTokenID],
                                                         exportBounds: try exportBounds(for: running))),
-     ("runningNoRecycle", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [151935],
+     ("runningNoRecycle", try await LanguageGenerationSession.open(at: running, maximumContextLength: context, stopTokenIDs: [stopTokenID],
                                                                  maximumSubmissionsPerModel: .max, memoryGrowthBudgetBytes: nil,
                                                                  exportBounds: try exportBounds(for: running)))]
 }
 
 /// Before/after timing on a shared host: all sessions stay resident and every round runs each
 /// contract on each prompt, rotating which goes first, so host drift hits them alike.
-private func pairedTiming(bucketed: URL, running: URL, prompts: [String: [Int]], rounds: Int,
+private func pairedTiming(bucketed: URL, running: URL, prompts: [String: [Int]], rounds: Int, stopTokenID: Int,
                           into report: inout LanguageQualificationReport) async throws {
-    let sessions = try await timingSessions(bucketed: bucketed, running: running, context: 2048)
+    let sessions = try await timingSessions(bucketed: bucketed, running: running, context: 2048, stopTokenID: stopTokenID)
     let labels = prompts.keys.sorted()
     for (_, session) in sessions { for label in labels { _ = try await session.generate(prompt: prompts[label]!, maximumTokens: 256) } }
     for round in 0..<rounds {
@@ -233,9 +233,9 @@ private func pairedTiming(bucketed: URL, running: URL, prompts: [String: [Int]],
 
 /// Long context: one request per session with a prompt filling `context - 1024` tokens, then 512
 /// decoded tokens, sampling the process footprint (all sessions resident; the bucketed one first).
-private func longContextProbe(bucketed: URL, running: URL, prompt: [Int], context: Int,
+private func longContextProbe(bucketed: URL, running: URL, prompt: [Int], context: Int, stopTokenID: Int,
                               into report: inout LanguageQualificationReport) async throws {
-    let sessions = try await timingSessions(bucketed: bucketed, running: running, context: context)
+    let sessions = try await timingSessions(bucketed: bucketed, running: running, context: context, stopTokenID: stopTokenID)
     let long = Array(Array(repeating: prompt, count: (context - 1024) / prompt.count + 1).joined().prefix(context - 1024))
     for (name, session) in sessions {
         let clock = TokenClock()
@@ -286,11 +286,11 @@ func languageBucketedDecodeQualification() async throws {
             try await pairedTiming(bucketed: URL(filePath: try #require(nativeEnvironment["AETHER_LANGUAGE_BUCKETED_MODEL"])),
                                    running: URL(filePath: running),
                                    prompts: ["short": reference.promptTokens, "long": longPrompt],
-                                   rounds: Int(nativeEnvironment["AETHER_LANGUAGE_TIMING_ROUNDS"] ?? "") ?? 6, into: &report)
+                                   rounds: Int(nativeEnvironment["AETHER_LANGUAGE_TIMING_ROUNDS"] ?? "") ?? 6, stopTokenID: reference.forcedLogits.vocab - 1, into: &report)
             if let context = Int(nativeEnvironment["AETHER_LANGUAGE_LONG_CONTEXT"] ?? "") {
                 report.stage = "long context"
                 try await longContextProbe(bucketed: URL(filePath: try #require(nativeEnvironment["AETHER_LANGUAGE_BUCKETED_MODEL"])),
-                                           running: URL(filePath: running), prompt: reference.promptTokens, context: context,
+                                           running: URL(filePath: running), prompt: reference.promptTokens, context: context, stopTokenID: reference.forcedLogits.vocab - 1,
                                            into: &report)
             }
         }

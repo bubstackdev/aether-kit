@@ -1,0 +1,75 @@
+{
+  "displayName" : "GPT-2 124M",
+  "manifest" : {
+    "assetIdentity" : "aether-language/1:8a18de4250b763ce1c73a3f7507a1492d8cb4e80ec474fc2d28e71dd7b26f63a",
+    "executionContract" : "aether.language-bundle/1",
+    "files" : [
+      {
+        "byteCount" : 1189,
+        "path" : "language-model.json",
+        "sha256" : "8a18de4250b763ce1c73a3f7507a1492d8cb4e80ec474fc2d28e71dd7b26f63a"
+      },
+      {
+        "byteCount" : 32,
+        "path" : "model.aimodel/main.hash",
+        "sha256" : "6edab09b42478045121a3abf8a13cff090fa28997fbe5f5f897f49595cc0f240"
+      },
+      {
+        "byteCount" : 248944119,
+        "path" : "model.aimodel/main.mlirb",
+        "sha256" : "f04fefaa3a7e69f3e4da783ce1ac5aef7f80e0bc70e441db452ec691e7429316"
+      },
+      {
+        "byteCount" : 105,
+        "path" : "model.aimodel/metadata.json",
+        "sha256" : "a1e268eb9bf6c3541f776ba24b530e16133c6fdb4bef1d08b5a3e93a56fe0c22"
+      },
+      {
+        "byteCount" : 665,
+        "path" : "tokenizer/config.json",
+        "sha256" : "0daed7749b4f02b8f76240d5444551d7b08712dab4d0adb8239c56ba823bb7b4"
+      },
+      {
+        "byteCount" : 124,
+        "path" : "tokenizer/generation_config.json",
+        "sha256" : "ed0b32ac72c0f5f44a719abb2d7786ea5146c871f83717b7f2018065954de02b"
+      },
+      {
+        "byteCount" : 456318,
+        "path" : "tokenizer/merges.txt",
+        "sha256" : "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+      },
+      {
+        "byteCount" : 1355256,
+        "path" : "tokenizer/tokenizer.json",
+        "sha256" : "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6"
+      },
+      {
+        "byteCount" : 26,
+        "path" : "tokenizer/tokenizer_config.json",
+        "sha256" : "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f"
+      },
+      {
+        "byteCount" : 1042301,
+        "path" : "tokenizer/vocab.json",
+        "sha256" : "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783"
+      }
+    ],
+    "requiredFeatures" : [
+
+    ],
+    "schemaVersion" : 1
+  },
+  "requirements" : {
+    "platforms" : [
+      "macos"
+    ]
+  },
+  "schemaVersion" : 1,
+  "source" : {
+    "kind" : "huggingFace",
+    "repository" : "aether-models/aether-kit-gpt2",
+    "revision" : "102d60f338bc5eff7c38aaeb2c0c4e2f76851a3f",
+    "subdirectory" : "mac"
+  }
+}
