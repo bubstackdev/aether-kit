@@ -112,7 +112,7 @@ By the rule above, these weren't merged by the tag and move to 0.0.5, unchanged 
 presentation (#91), last-frame conditioning (#78) and the larger-canvas measurements with bundled entries under the
 final stack (#81) shipped. The location-free H3 profile identity (#81) answers the identity half of profile paths
 relative to `bundle.json`; the paths themselves are still absolute. Turbo4 gains measured entries for memory
-<!-- TODO Turbo4: confirm once A4 and B4 are bundled -->, but its CPU trajectory gate is still open. Every other item
+at 960×544 and 544×960 (gates A4 and B4), but its CPU trajectory gate is still open. Every other item
 below is still open.
 
 - **H3 FL2VA conditioner presentation** ([item](#parallel-track-hardening-and-coverage),
