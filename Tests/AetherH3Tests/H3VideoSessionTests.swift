@@ -1059,3 +1059,51 @@ private struct RefusingConditioner: H3PromptConditioner {
         #expect(await session.state == .ready)
     }
 }
+
+/// The 0.0.5 final stack's bundled entries (`h3.profile/2:2a2d5198…`): 18 GiB envelopes for the 5 s region and
+/// 24 GiB envelopes for 10 s clips, per task. Every ordinary 5 s clip must stay on an 18 GiB envelope (a 24 GiB one
+/// never covers it), and 10 s clips need a 64 GiB Mac.
+@Test func h3BundledFinalStackAdmitsFiveAndTenSecondClipsOnTheirOwnBars() throws {
+    let identity = "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8"
+    let budget = try ResourceCoordinator(capacityBytes: 64 << 30)
+    let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
+                                                       physicalMemoryBytes: 64 << 30)
+    let keyframe = try H3Keyframe(width: 960, height: 544, rgb: [UInt8](repeating: 0, count: 960 * 544 * 3))
+    func both(_ frames: Int) throws -> H3VideoRequest {
+        try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 960, height: 544, requestedFrames: frames, diagnostic: true), seed: 1,
+                           firstFrame: keyframe, lastFrame: keyframe, audio: true)
+    }
+    let fiveSecond = [try request(960, 544, 124, audio: true), try request(544, 960, 124, audio: true),
+                      try request(960, 544, 124, first: true, audio: true), try both(124)]
+    for clip in fiveSecond {
+        let envelope = try mac.envelope(for: clip)
+        #expect(envelope.memoryBarBytes == H3MeasuredResources.memoryBarBytes, "\(clip.geometry.width)x\(clip.geometry.height)x\(clip.geometry.frames)")
+    }
+    let tenSecond = [try request(960, 544, 243, audio: true), try request(544, 960, 243, audio: true),
+                     try request(960, 544, 243, first: true, audio: true), try request(544, 960, 243, first: true, audio: true), try both(243)]
+    for clip in tenSecond {
+        let envelope = try mac.envelope(for: clip)
+        #expect(envelope.memoryBarBytes == H3MeasuredResources.extendedMemoryBarBytes)
+    }
+    // FL2VA is held to its own entries; T2VA's are cheaper.
+    let t2va = try mac.envelope(for: tenSecond[0]), fl2va = try mac.envelope(for: tenSecond[2])
+    #expect(t2va.tasks == [.t2va] && fl2va.tasks == [.fl2va])
+    // The larger canvas: 1280x704 and 704x1280 up to 141 frames (first+last up to 124, where its rows fit), on 24 GiB envelopes.
+    let large = [try request(1280, 704, 124, audio: true), try request(704, 1280, 141, audio: true), try request(1280, 704, 141, first: true, audio: true)]
+    for clip in large {
+        let envelope = try mac.envelope(for: clip)
+        #expect(envelope.memoryBarBytes == H3MeasuredResources.extendedMemoryBarBytes)
+    }
+    let wide = try H3Keyframe(width: 1280, height: 704, rgb: [UInt8](repeating: 0, count: 1280 * 704 * 3))
+    let largeBoth = try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 1280, height: 704, requestedFrames: 124, diagnostic: true), seed: 1,
+                                       firstFrame: wide, lastFrame: wide, audio: true)
+    let largeBothEnvelope = try mac.envelope(for: largeBoth)
+    #expect(largeBothEnvelope.maximumFrames == 124)
+    // Nothing covers 1344x768 or more than 141 frames at 1280x704.
+    let unmeasured = try request(1344, 768, 124, audio: true), longer = try request(1280, 704, 158, audio: true)
+    #expect(!mac.admits(unmeasured) && !mac.admits(longer))
+    // On a 32 GiB device only the 5 s envelopes remain: 10 s clips are refused, 5 s clips admitted.
+    let small = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
+                                                         physicalMemoryBytes: 32 << 30)
+    #expect(fiveSecond.allSatisfy(small.admits) && !tenSecond.contains(where: small.admits) && !large.contains(where: small.admits))
+}
