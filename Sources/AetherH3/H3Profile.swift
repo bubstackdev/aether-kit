@@ -68,6 +68,12 @@ public struct H3Profile: Sendable {
 
     public let header: H3ExportHeader?
     public let manifestSHA256: String
+    /// The manifest's fingerprint without its file locations: the SHA-256 of the manifest with every `path` field,
+    /// the tokenizer directory and the `lineage` record left out, serialized with sorted keys. Every referenced file
+    /// is still pinned by its own `sha256` (the tokenizer by `snapshot`), so two copies of a profile at different
+    /// paths, on different Macs or under different users, share it, while any change to a graph, weight, table or
+    /// setting changes it. Measured admission is keyed by it.
+    public let contentSHA256: String
     /// Every H3 clip model identity starts with this prefix (and nothing else does), so hosts can key the licence
     /// credit on it.
     public static let modelIdentityPrefix = "minimax-h3."
@@ -138,10 +144,27 @@ public struct H3Profile: Sendable {
     }
     public private(set) var conditionerVision: ConditionerVision?
 
+    /// `contentSHA256` of a manifest's bytes.
+    public static func contentSHA256(manifest data: Data) throws -> String {
+        func located(_ value: Any) -> Any {
+            if let object = value as? [String: Any] {
+                return object.filter { !($0.key == "path" && $0.value is String) }.mapValues(located)
+            }
+            if let array = value as? [Any] { return array.map(located) }
+            return value
+        }
+        guard var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AetherError.invalidModel("H3 profile manifest is not a JSON object")
+        }
+        object["tokenizer"] = nil; object["lineage"] = nil
+        return h3SHA256(try JSONSerialization.data(withJSONObject: located(object), options: [.sortedKeys, .withoutEscapingSlashes]))
+    }
+
     public init(url: URL) throws {
         guard url.isFileURL else { throw AetherError.invalidModel("H3 profiles must be local") }
         let data = try Data(contentsOf: url)
         manifestSHA256 = h3SHA256(data)
+        contentSHA256 = try Self.contentSHA256(manifest: data)
         let m: Manifest
         do { m = try JSONDecoder().decode(Manifest.self, from: data) } catch let error as DecodingError {
             throw AetherError.invalidModel("H3 profile manifest is malformed: \(error)")

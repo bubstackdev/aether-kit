@@ -57,7 +57,7 @@ references, native qualification and a guide.
   follow-ups. Overlays (the larger canvas, the FL2VA conditioner) inherit the location-dependent identity: moving a
   profile changes its identity and orphans its measured entries.
 - **For Atelier** (user decision, 2026-10-29), for Atelier's v0.6, with the features that use them in its v0.7:
-  - **H3 at a larger canvas** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress)):
+  - **H3 at a larger canvas** ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-export-005-measurements)):
     first-frame encoder and tail exports for 1280×704 and 704×1280, measured, and added to measured admission under
     per-entry memory bars (18 GiB for today's region, 24 GiB beyond it with at least 64 GiB of physical memory, decided
     2026-10-29). Entries are bundled once measured under the final overlay stack.
@@ -120,7 +120,7 @@ below is still open.
 - **H3 last-frame conditioning** ([item](#parallel-track-hardening-and-coverage),
   [draft PR #78](https://github.com/bubstackdev/aether-kit/pull/78)).
 - **H3 larger-canvas measurements** and bundled entries under the final overlay stack
-  ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-in-progress),
+  ([section](h3-integration.md#larger-canvas-1280704-and-the-10-s-clip-004-export-005-measurements),
   [draft PR #81](https://github.com/bubstackdev/aether-kit/pull/81)). The export work (#77) shipped.
 - **H3 Turbo4 qualification**, the step-0 transient and profile paths relative to `bundle.json`
   ([item](#parallel-track-hardening-and-coverage)).
