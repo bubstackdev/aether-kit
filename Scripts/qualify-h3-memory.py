@@ -188,6 +188,8 @@ def main():
     ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before the next render takes it")
     ap.add_argument("--minimum-memory-level", type=int, default=40,
                     help="wait before each render until kern.memorystatus_level (percent of memory available) is at least this")
+    ap.add_argument("--memory-wait-seconds", type=float, default=3600.0,
+                    help="fail the render's stage when memory hasn't recovered to --minimum-memory-level within this long")
     ap.add_argument("--host-note", help="recorded in the gate: what else ran on the host (for example a concurrent CPU oracle)")
     ap.add_argument("--spike-capture", type=float, metavar="GIB",
                     help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
@@ -262,16 +264,26 @@ def main():
                 output = work / name
                 if output.exists():
                     output.rename(work / f"{name}.failed-{int(time.time())}")
-                record = dict(schema=1, stage=name, command=command, budgetSeconds=budget, pinsDigest=digest, startedAt=now(),
+                record = dict(schema=1, stage=name, command=command, budgetSeconds=budget, pinsDigest=digest,
                               gpuLock=name.startswith("render"), passed=False, timedOut=False)
+                waited = time.monotonic()
                 if name.startswith("render") and released is not None:
                     # The lock is shared with Atelier and other agents on this Mac: give them a turn between renders.
                     time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
                 if name.startswith("render"):
-                    # Never start a render on a host already short of memory; wait for it to recover.
+                    # Never start a render on a host already short of memory; wait for it to recover, up to a cap.
+                    record.update(minimumMemoryLevel=args.minimum_memory_level, memoryLevelBeforeWait=memory_level())
                     while (level := memory_level()) is not None and level < args.minimum_memory_level:
+                        if time.monotonic() - waited > args.memory_wait_seconds:
+                            record.update(error=f"memory level {level} stayed below {args.minimum_memory_level} for "
+                                                f"{args.memory_wait_seconds} s", waitedSeconds=round(time.monotonic() - waited, 1), endedAt=now())
+                            record_path.write_text(json.dumps(record, indent=2) + "\n")
+                            print(f"{name}: {record['error']}", flush=True)
+                            return 1
                         print(f"{name}: memory level {level} below {args.minimum_memory_level}; waiting", flush=True)
                         time.sleep(30)
+                    record["memoryLevelAtStart"] = memory_level()
+                record.update(waitedSeconds=round(time.monotonic() - waited, 1), startedAt=now())
                 print(f"{name}: start", flush=True)
                 start = time.monotonic()
                 with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:

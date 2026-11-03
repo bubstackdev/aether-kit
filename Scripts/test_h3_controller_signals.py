@@ -257,5 +257,51 @@ class StopTests(unittest.TestCase):
         time.sleep(0.3)
         self.assertFalse(marker.exists())
 
+
+class GroupSignalPermissionTests(unittest.TestCase):
+    """macOS returns EPERM from killpg when a group holds only zombies or unsignalable members (seen 2026-11-02 at
+    the end of a memory-gate render that had exited 0): stop() must neither raise nor wait out its grace periods."""
+
+    def setUp(self):
+        self.killpg, self.states = h3_controller.os.killpg, h3_controller._group_states
+        h3_controller.pending.clear()
+
+    def tearDown(self):
+        h3_controller.os.killpg, h3_controller._group_states = self.killpg, self.states
+        h3_controller.pending.clear()
+
+    def refuse(self, pgid, sig):
+        raise PermissionError(1, "Operation not permitted")
+
+    def test_a_finished_group_that_refuses_signals_is_stopped_at_once(self):
+        proc = h3_controller.start(["/bin/sh", "-c", "exit 0"])
+        proc.wait()
+        h3_controller.os.killpg = self.refuse
+        h3_controller._group_states = lambda pgid: ["Z"]
+        started = time.monotonic()
+        self.assertTrue(h3_controller.stop(proc, grace=15))
+        self.assertLess(time.monotonic() - started, 2, "a zombie-only group must not wait out the grace period")
+        self.assertFalse(h3_controller.interrupted())
+
+    def test_a_refusing_group_with_a_live_member_is_still_alive(self):
+        proc = h3_controller.start(["/bin/sh", "-c", "exit 0"])
+        proc.wait()
+        h3_controller.os.killpg = self.refuse
+        h3_controller._group_states = lambda pgid: ["Z", "S"]
+        self.assertTrue(h3_controller._group_alive(proc))
+        h3_controller._group_states = lambda pgid: []
+        self.assertFalse(h3_controller._group_alive(proc))
+        h3_controller._signal_group(proc, signal.SIGTERM)   # never raises
+
+    def test_group_states_lists_a_running_group(self):
+        proc = h3_controller.start(["/bin/sh", "-c", "sleep 5"])
+        try:
+            states = h3_controller._group_states(proc.pid)
+            self.assertTrue(states and all(not s.startswith("Z") for s in states), states)
+        finally:
+            self.assertTrue(h3_controller.stop(proc, grace=1))
+        self.assertEqual(h3_controller._group_states(proc.pid), [])
+
+
 if __name__ == "__main__":
     unittest.main()

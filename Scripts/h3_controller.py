@@ -65,6 +65,15 @@ def start(command, **kwargs):
     return proc
 
 
+def _group_states(pgid):
+    """The `ps` state of each process in group `pgid` (empty when none is left, None when `ps` can't say)."""
+    try:
+        listing = subprocess.run(["ps", "-A", "-o", "pgid=,stat="], capture_output=True, text=True, timeout=10, check=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return [state for group, state in (line.split(None, 1) for line in listing.splitlines() if line.strip()) if int(group) == pgid]
+
+
 def _group_alive(proc):
     proc.poll()   # a reaped leader no longer holds the group open
     try:
@@ -73,7 +82,10 @@ def _group_alive(proc):
     except ProcessLookupError:
         return False
     except PermissionError:
-        return True
+        # macOS refuses to signal a group that holds only zombies (or members this user can't signal): it is alive
+        # only while some member hasn't exited.
+        states = _group_states(proc.pid)
+        return states is None or any(not state.startswith("Z") for state in states)
 
 
 def _signal_group(proc, sig):
@@ -81,6 +93,9 @@ def _signal_group(proc, sig):
         os.killpg(proc.pid, sig)
     except ProcessLookupError:
         pass
+    except PermissionError:
+        # EPERM: only zombies (or unsignalable members) are left. Nothing to signal; `stop()` waits on `_group_alive`.
+        proc.poll()
 
 
 def _wait_for_group(proc, seconds):
