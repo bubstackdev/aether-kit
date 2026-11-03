@@ -169,6 +169,14 @@ enum H3ProfileCommand {
                               references: arguments[3] == "-" ? nil : URL(fileURLWithPath: arguments[3]), output: URL(fileURLWithPath: arguments[4]),
                               render: arguments[5] == "--render", audio: !arguments.contains("--no-audio"), capture: capture, replay: replay)
             return true
+        case "h3-profile-identity":
+            // CPU only, nothing loaded or hashed: the identities a profile is known by, measured admission's included.
+            guard arguments.count == 2 || arguments.count == 3 else { throw AetherError.invalidRequest("use h3-profile-identity PROFILE.json [RECIPE]") }
+            let profile = try H3Profile(url: URL(fileURLWithPath: arguments[1]))
+            let identities = ["manifest_sha256": profile.manifestSHA256, "content_sha256": profile.contentSHA256, "model_identity": profile.modelIdentity,
+                              "resource_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: arguments.count == 3 ? arguments[2] : "turbo8")]
+            print(String(decoding: try JSONSerialization.data(withJSONObject: identities, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]), as: UTF8.self))
+            return true
         case "h3-weights-bench":
             // CPU only: how long one denoising step's per-block weight reads take (what NativeH3Graph does per block call).
             guard arguments.count == 3, let passes = Int(arguments[2]) else { throw AetherError.invalidRequest("use h3-weights-bench PROFILE.json PASSES") }

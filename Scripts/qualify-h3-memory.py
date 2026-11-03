@@ -106,6 +106,14 @@ def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def memory_level():
+    """kern.memorystatus_level: the percent of memory the kernel considers available (None if unreadable)."""
+    try:
+        return int(subprocess.run(["sysctl", "-n", "kern.memorystatus_level"], capture_output=True, text=True, check=True).stdout)
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return None
+
+
 def stage_of(phase):
     if phase.startswith("stage."):
         name = phase.split(".")[1]
@@ -177,6 +185,12 @@ def main():
     ap.add_argument("--recipe", default="turbo8")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--gpu-lock", type=Path, default=Path.home() / ".cache/aether-kit/with-gpu-lock.sh")
+    ap.add_argument("--gpu-yield", type=float, default=90.0, help="seconds to wait after releasing the GPU lock before the next render takes it")
+    ap.add_argument("--minimum-memory-level", type=int, default=40,
+                    help="wait before each render until kern.memorystatus_level (percent of memory available) is at least this")
+    ap.add_argument("--memory-wait-seconds", type=float, default=3600.0,
+                    help="fail the render's stage when memory hasn't recovered to --minimum-memory-level within this long after the GPU yield")
+    ap.add_argument("--host-note", help="recorded in the gate: what else ran on the host (for example a concurrent CPU oracle)")
     ap.add_argument("--spike-capture", type=float, metavar="GIB",
                     help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
                          "denoising sample's Metal allocation exceeds GIB (written beside the render as render-*.spike/)")
@@ -225,6 +239,7 @@ def main():
         ap.error(f"--last-keyframes names canvases outside --canvases: {stray}")
 
     runs, records = [], {}
+    released = None    # when this gate last released the GPU lock
     for canvas in args.canvases.split(","):
         width, height = canvas.split("x")
         for task in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()):
@@ -249,8 +264,27 @@ def main():
                 output = work / name
                 if output.exists():
                     output.rename(work / f"{name}.failed-{int(time.time())}")
-                record = dict(schema=1, stage=name, command=command, budgetSeconds=budget, pinsDigest=digest, startedAt=now(),
+                record = dict(schema=1, stage=name, command=command, budgetSeconds=budget, pinsDigest=digest,
                               gpuLock=name.startswith("render"), passed=False, timedOut=False)
+                waited = time.monotonic()
+                if name.startswith("render") and released is not None:
+                    # The lock is shared with Atelier and other agents on this Mac: give them a turn between renders.
+                    time.sleep(max(0.0, args.gpu_yield - (time.monotonic() - released)))
+                if name.startswith("render"):
+                    # Never start a render on a host already short of memory; wait for it to recover, up to a cap.
+                    record.update(minimumMemoryLevel=args.minimum_memory_level, memoryLevelBeforeWait=memory_level())
+                    memory_wait = time.monotonic()   # the cap counts from the end of the GPU yield
+                    while (level := memory_level()) is not None and level < args.minimum_memory_level:
+                        if time.monotonic() - memory_wait > args.memory_wait_seconds:
+                            record.update(error=f"memory level {level} stayed below {args.minimum_memory_level} for "
+                                                f"{args.memory_wait_seconds} s", waitedSeconds=round(time.monotonic() - waited, 1), endedAt=now())
+                            record_path.write_text(json.dumps(record, indent=2) + "\n")
+                            print(f"{name}: {record['error']}", flush=True)
+                            return 1
+                        print(f"{name}: memory level {level} below {args.minimum_memory_level}; waiting", flush=True)
+                        time.sleep(30)
+                    record["memoryLevelAtStart"] = memory_level()
+                record.update(waitedSeconds=round(time.monotonic() - waited, 1), startedAt=now())
                 print(f"{name}: start", flush=True)
                 start = time.monotonic()
                 with (work / "controllers" / f"{name}.stdout.log").open("wb") as out, (work / "controllers" / f"{name}.stderr.log").open("wb") as err:
@@ -262,6 +296,8 @@ def main():
                         record_path.write_text(json.dumps(record, indent=2) + "\n")
                         print(f"{name}: interrupted; its process group was stopped", flush=True)
                         raise
+                if name.startswith("render"):
+                    released = time.monotonic()
                 record.update(elapsedSeconds=round(time.monotonic() - start, 3), endedAt=now(),
                               sourcePinsUnchanged=all(sha(p) == v for p, v in pins.items()))
                 record["passed"] = (record["exitCode"] == 0 and record["joined"] and not record["timedOut"] and not record.get("interrupted")
@@ -389,7 +425,7 @@ def main():
             failures.append(f"{task} admission estimate {task_worst / (1 << 30):.2f} GiB exceeds the {bar >> 30} GiB bar")
         per_task[task] = dict(entry=measured_entry(peaks, carried_bytes, [task]), admissionWorstCaseBytes=task_worst)
     bundle = json.loads(args.profile.read_text())
-    gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures,
+    gate = dict(schema=1, gate="h3-memory", completedAt=now(), passed=not failures, failures=failures, hostNote=args.host_note,
                 spikeCapture=dict(thresholdGiB=args.spike_capture, triggers=spikes) if args.spike_capture else None,
                 carriedRecords=carried_records, carriedStagePeaks=carried_peaks,
                 memoryBarBytes=bar, minimumPhysicalMemoryBytes=EXTENDED_PHYSICAL if bar != BAR else 0,
