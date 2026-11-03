@@ -71,7 +71,10 @@ def _group_states(pgid):
         listing = subprocess.run(["ps", "-A", "-o", "pgid=,stat="], capture_output=True, text=True, timeout=10, check=True).stdout
     except (OSError, subprocess.SubprocessError):
         return None
-    return [state for group, state in (line.split(None, 1) for line in listing.splitlines() if line.strip()) if int(group) == pgid]
+    try:
+        return [state for group, state in (line.split(None, 1) for line in listing.splitlines() if line.strip()) if int(group) == pgid]
+    except ValueError:   # a line `ps` printed without a group and a state
+        return None
 
 
 def _group_alive(proc):

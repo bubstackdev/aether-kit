@@ -1106,4 +1106,16 @@ private struct RefusingConditioner: H3PromptConditioner {
     let small = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
                                                          physicalMemoryBytes: 32 << 30)
     #expect(fiveSecond.allSatisfy(small.admits) && !tenSecond.contains(where: small.admits) && !large.contains(where: small.admits))
+    // Turbo4 (Atelier's quick preview) has its own entries: 5 s clips on 18 GiB, 10 s clips on 24 GiB; no larger canvas.
+    let turbo4 = try H3MeasuredResources.bundledAdmission(executionIdentity: identity.replacingOccurrences(of: ":turbo8", with: ":turbo4"),
+                                                          deviceArchitecture: "h17c", coordinator: budget, physicalMemoryBytes: 64 << 30)
+    for clip in fiveSecond {
+        let envelope = try turbo4.envelope(for: clip)
+        #expect(envelope.memoryBarBytes == H3MeasuredResources.memoryBarBytes)
+    }
+    for clip in tenSecond {
+        let envelope = try turbo4.envelope(for: clip)
+        #expect(envelope.memoryBarBytes == H3MeasuredResources.extendedMemoryBarBytes)
+    }
+    #expect(!large.contains(where: turbo4.admits))
 }

@@ -189,7 +189,7 @@ def main():
     ap.add_argument("--minimum-memory-level", type=int, default=40,
                     help="wait before each render until kern.memorystatus_level (percent of memory available) is at least this")
     ap.add_argument("--memory-wait-seconds", type=float, default=3600.0,
-                    help="fail the render's stage when memory hasn't recovered to --minimum-memory-level within this long")
+                    help="fail the render's stage when memory hasn't recovered to --minimum-memory-level within this long after the GPU yield")
     ap.add_argument("--host-note", help="recorded in the gate: what else ran on the host (for example a concurrent CPU oracle)")
     ap.add_argument("--spike-capture", type=float, metavar="GIB",
                     help="pass --spike-capture=GIB to every render: a one-shot thread sample, vmmap and footprint the first time a "
@@ -273,8 +273,9 @@ def main():
                 if name.startswith("render"):
                     # Never start a render on a host already short of memory; wait for it to recover, up to a cap.
                     record.update(minimumMemoryLevel=args.minimum_memory_level, memoryLevelBeforeWait=memory_level())
+                    memory_wait = time.monotonic()   # the cap counts from the end of the GPU yield
                     while (level := memory_level()) is not None and level < args.minimum_memory_level:
-                        if time.monotonic() - waited > args.memory_wait_seconds:
+                        if time.monotonic() - memory_wait > args.memory_wait_seconds:
                             record.update(error=f"memory level {level} stayed below {args.minimum_memory_level} for "
                                                 f"{args.memory_wait_seconds} s", waitedSeconds=round(time.monotonic() - waited, 1), endedAt=now())
                             record_path.write_text(json.dumps(record, indent=2) + "\n")

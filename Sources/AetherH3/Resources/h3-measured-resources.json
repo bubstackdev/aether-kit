@@ -188,6 +188,90 @@
         "fl2va"
       ],
       "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2204059952,
+        "denoising": 17307844608,
+        "decodingVideo": 8757398408,
+        "decodingAudio": 2001750584
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.5-turbo4-2026-11-02.json",
+      "tasks": [
+        "t2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2634369544,
+        "encodingKeyframe": 2211364864,
+        "denoising": 17307844608,
+        "decodingVideo": 11248749376,
+        "decodingAudio": 2080033144
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.5-turbo4-2026-11-02.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2204027208,
+        "denoising": 22858518680,
+        "decodingVideo": 15725988528,
+        "decodingAudio": 1679867904
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.5-turbo4-243-2026-11-02.json",
+      "tasks": [
+        "t2va"
+      ],
+      "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2635418192,
+        "encodingKeyframe": 2320518240,
+        "denoising": 24049848784,
+        "decodingVideo": 19989220328,
+        "decodingAudio": 3078409144
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.5-turbo4-243-2026-11-02.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
     }
   ]
 }

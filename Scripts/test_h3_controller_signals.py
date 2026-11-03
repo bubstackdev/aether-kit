@@ -293,6 +293,14 @@ class GroupSignalPermissionTests(unittest.TestCase):
         self.assertFalse(h3_controller._group_alive(proc))
         h3_controller._signal_group(proc, signal.SIGTERM)   # never raises
 
+    def test_a_malformed_ps_listing_reads_as_unknown(self):
+        run = h3_controller.subprocess.run
+        h3_controller.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout="  123 S\nnot-a-group\n", stderr="")
+        try:
+            self.assertIsNone(h3_controller._group_states(123))
+        finally:
+            h3_controller.subprocess.run = run
+
     def test_group_states_lists_a_running_group(self):
         proc = h3_controller.start(["/bin/sh", "-c", "sleep 5"])
         try:
