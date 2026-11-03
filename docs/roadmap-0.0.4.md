@@ -109,10 +109,11 @@ references, native qualification and a guide.
 By the rule above, these weren't merged by the tag and move to 0.0.5, unchanged in scope unless noted.
 
 **Status at the 0.0.5 release** (2026-11-02, [release notes](release-notes/0.0.5.md)): the FL2VA conditioner
-presentation (#91) and last-frame conditioning (#78) shipped. <!-- TODO #81: "The larger-canvas measurements shipped
-(#81), and the location-free H3 profile identity answers the identity half of profile paths relative to
-`bundle.json`; the paths themselves are still absolute." if #81 is merged by the tag. --> Every other item below is
-still open.
+presentation (#91), last-frame conditioning (#78) and the larger-canvas measurements with bundled entries under the
+final stack (#81) shipped. The location-free H3 profile identity (#81) answers the identity half of profile paths
+relative to `bundle.json`; the paths themselves are still absolute. Turbo4 gains measured entries for memory
+<!-- TODO Turbo4: confirm once A4 and B4 are bundled -->, but its CPU trajectory gate is still open. Every other item
+below is still open.
 
 - **H3 FL2VA conditioner presentation** ([item](#parallel-track-hardening-and-coverage),
   [known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)).
