@@ -120,9 +120,9 @@ The bundle is public at [aether-models/aether-kit-phi2](https://huggingface.co/a
 Pin downloads to revision `986b7a8373e30a9542218a8bbc15c2acdd3af4d3` and use `mac/`.
 [`catalog-macos.json`](catalog-macos.json) is a ready `ModelCatalogEntry` for
 Aether's verified preparation and installation flow. Open the installed bundle
-through `LanguageGenerationSession`; Phi-2 remains completion-only. Use an Aether
-Kit checkout containing commit `1881cf4` or a descendant, which adds the required
-stride-aware cache handling; published 0.0.4 does not include it.
+through `LanguageGenerationSession`; Phi-2 remains completion-only. Use AetherKit 0.0.5
+or later (commit `1881cf4` adds the required stride-aware cache handling); 0.0.4
+does not include it.
 
 [Publication verification](evidence/huggingface.json) records all staged files'
 sizes and SHA-256 values. Small files were downloaded anonymously and checked;
