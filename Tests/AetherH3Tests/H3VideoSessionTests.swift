@@ -517,12 +517,16 @@ private func budgetStages(_ log: StageLog, conditioner: (any H3PromptConditioner
     let session = try H3VideoSession(stages: budgetStages(log), resources: admission(budget, audio: false))
     for request in [
         try H3VideoRequest(prompt: "p", geometry: geometry(), seed: 1), // Missing audio estimate.
-        try H3VideoRequest(prompt: "long prompt", geometry: geometry(), seed: 1, audio: false),
         try H3VideoRequest(prompt: "p", geometry: H3Geometry(width: 96, height: 32, requestedFrames: 39, diagnostic: true), seed: 1, audio: false),
         try H3VideoRequest(prompt: "p", geometry: H3Geometry(width: 64, height: 32, requestedFrames: 40, diagnostic: true), seed: 1, audio: false),
     ] {
         await #expect(throws: AetherError.self) { try await session.generate(request) }
     }
+    // A prompt over the byte limit is typed, with the limit and its own bytes.
+    await #expect(throws: H3LimitExceeded.promptBytes(limit: 4, bytes: 11)) {
+        try await session.generate(H3VideoRequest(prompt: "long prompt", geometry: geometry(), seed: 1, audio: false))
+    }
+    #expect(H3LimitExceeded.promptBytes(limit: 4, bytes: 11).description == "H3 prompt exceeds 4 UTF-8 bytes (it has 11)")
     #expect(await log.entries.isEmpty)
     #expect(budget.snapshot.reservedBytes == 0)
     await session.unload()

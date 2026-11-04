@@ -137,7 +137,9 @@ private struct VisionKernel: H3VisionKernel {
     let before = await calls.log.count
     let tight = H3ProfileConditioner(conditioner: conditioner, limits: 2...64, tokenize: tokenize, kernel: LayerKernel(calls: calls, expectedCos: Data()),
                                      vision: (entry, VisionKernel(calls: calls)))
-    await #expect(throws: AetherError.self) { _ = try await tight.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in } }
+    await #expect(throws: H3LimitExceeded.presentationTokens(limit: 2...64, prompt: 3, keyframes: 85)) {
+        _ = try await tight.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in }
+    }
     #expect(await calls.log.count == before)
 }
 
@@ -632,7 +634,7 @@ func h3MeasuredAdmissionForTheExportedProfile() throws {
     }
 }
 
-@Test func h3ProfileConditionerPreflightRefusesWhatItCannotPresentBeforeLoading() throws {
+@Test func h3ProfileConditionerPreflightRefusesWhatItCannotPresentBeforeLoading() async throws {
     let root = try scratch(); defer { try? FileManager.default.removeItem(at: root) }
     let placeholder = try H3TensorFile(name: "w0", url: root, spec: H3TensorSpec(scalarType: .bfloat16, shape: [1]), sha256: zeroHash)
     let conditioner = H3Profile.Conditioner(
@@ -661,11 +663,33 @@ func h3MeasuredAdmissionForTheExportedProfile() throws {
     #expect(!stage(vision: false).supports(g, keyframes: [frame]))
     // The presentation's length: 3 prompt + (2 + 1 + 81 + 1) per 288x288 keyframe.
     #expect(throws: Never.self) { try stage().preflight(first) }
-    #expect(throws: AetherError.self) { try stage(limits: 2...64).preflight(first) }
+    #expect(throws: H3LimitExceeded.presentationTokens(limit: 2...64, prompt: 3, keyframes: 85)) { try stage(limits: 2...64).preflight(first) }
     #expect(throws: AetherError.self) { try stage(vision: false).preflight(first) }
-    // Packed rows: the layout of the presentation, its anchors, video and audio, against the denoiser's limit.
+    await #expect(throws: H3LimitExceeded.presentationTokens(limit: 2...64, prompt: 3, keyframes: 85)) {
+        _ = try await stage(limits: 2...64).encode("p", keyframes: [frame], geometry: g) { _, _ in }
+    }
+    // T2VA: the presentation is the prompt alone.
+    let text = try H3VideoRequest(prompt: "p", geometry: g, seed: 1)
+    #expect(throws: H3LimitExceeded.presentationTokens(limit: 1...2, prompt: 3, keyframes: 0)) { try stage(limits: 1...2).preflight(text) }
+    // Packed rows: the layout of the presentation, its anchors, video and audio, against the denoiser's limit, split
+    // into the clip's rows and the prompt's.
     let needed = try H3Layout(geometry: g, textTags: Array(repeating: 1, count: 3 + 2 * 85), anchors: [.first, .last]).rows
     #expect(throws: Never.self) { try stage(rows: 1...needed).preflight(both) }
-    #expect(throws: AetherError.self) { try stage(rows: 1...(needed - 1)).preflight(both) }
+    #expect(throws: H3LimitExceeded.packedRows(limit: 1...(needed - 1), clip: needed - 3, prompt: 3)) {
+        try stage(rows: 1...(needed - 1)).preflight(both)
+    }
     #expect(throws: Never.self) { try stage(rows: 1...(needed - 1)).preflight(first) }
+    // The clip alone (no prompt can fit) against a prompt that pushes it over.
+    func rows(_ limit: ClosedRange<Int>) throws -> H3LimitExceeded {
+        do { try stage(rows: limit).preflight(both) } catch let error as H3LimitExceeded { return error }
+        throw AetherError.invalidRequest("expected a row refusal")
+    }
+    guard case .packedRows(let alone, let clip, _) = try rows(1...(needed - 3)) else { Issue.record("expected packed rows"); return }
+    #expect(clip >= alone.upperBound)
+    guard case .packedRows(let pushed, let clip, _) = try rows(1...(needed - 1)) else { Issue.record("expected packed rows"); return }
+    #expect(clip < pushed.upperBound)
+    #expect(H3LimitExceeded.packedRows(limit: 1...40_960, clip: 40_966, prompt: 2).description
+            == "H3 clip needs 40968 packed rows (40966 for the clip, 2 for the prompt); the profile supports 1...40960")
+    #expect(H3LimitExceeded.presentationTokens(limit: 1...4096, prompt: 4000, keyframes: 170).description
+            == "H3 presentation has 4170 tokens (prompt 4000); the profile supports 1...4096")
 }

@@ -115,7 +115,8 @@ actor H3ProfileConditioner: H3PromptConditioner {
     }
 
     /// The presentation's length against the profile's text limits, and the packed rows it implies (text, condition
-    /// rows of each anchor, video and audio) against the denoiser's row limits. Tokenizes only.
+    /// rows of each anchor, video and audio) against the denoiser's row limits, refused as `H3LimitExceeded`. Tokenizes
+    /// only.
     nonisolated func preflight(_ request: H3VideoRequest) throws {
         let ids = try tokenize(request.prompt)
         var count = ids.count
@@ -125,14 +126,11 @@ actor H3ProfileConditioner: H3PromptConditioner {
                                        tokenize: tokenize).count
         }
         guard limits.contains(count) else {
-            throw AetherError.invalidRequest("H3 presentation has \(count) tokens (prompt \(ids.count)); the profile supports \(limits)")
+            throw H3LimitExceeded.presentationTokens(limit: limits, prompt: ids.count, keyframes: count - ids.count)
         }
         if let rowLimits {
             let rows = try H3Layout(geometry: request.geometry, textTags: Array(repeating: 1, count: count), anchors: request.anchors).rows
-            guard rowLimits.contains(rows) else {
-                throw AetherError.unsupported("H3 clip needs \(rows) packed rows (\(count) conditioning, \(request.anchors.count) keyframe(s)); "
-                                              + "the profile supports \(rowLimits)")
-            }
+            guard rowLimits.contains(rows) else { throw H3LimitExceeded.packedRows(limit: rowLimits, clip: rows - ids.count, prompt: ids.count) }
         }
     }
 
@@ -148,7 +146,7 @@ actor H3ProfileConditioner: H3PromptConditioner {
         let presentation = try H3Presentation(prompt: ids, keyframes: keyframes.map { ($0.width, $0.height) }, vision: vision.entry.vision,
                                               tokenize: tokenize)
         guard limits.contains(presentation.count) else {
-            throw AetherError.invalidRequest("H3 presentation has \(presentation.count) tokens (prompt \(ids.count)); the profile supports \(limits)")
+            throw H3LimitExceeded.presentationTokens(limit: limits, prompt: ids.count, keyframes: presentation.count - ids.count)
         }
         // Every keyframe's tower call first, then the tower is released before the layers stream.
         var images: [(embeddings: H3TensorData, deepstack: H3TensorData)] = []

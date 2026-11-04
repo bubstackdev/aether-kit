@@ -16,6 +16,7 @@ MiniMax H3 text-to-video-with-audio contracts and the video session API.
 - ``H3VideoRequest``
 - ``H3VideoResult``
 - ``H3Keyframe``
+- ``H3LimitExceeded``
 
 ### Profiles and contracts
 
