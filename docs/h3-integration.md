@@ -834,7 +834,7 @@ FL2VA now conditions on upstream's presentation ([plan](h3-fl2va-presentation-pl
 | 1280×704 × 141, first+last | none (40,968 rows with 2 tokens) | packed rows: refused |
 | 1344×768 × 124, first only / first+last | 1,226 / none | packed rows |
 
-  Portrait canvases are the same as their landscape transposes. `H3VideoSession` refuses a request either limit excludes before any stage runs (`H3PromptConditioner.preflight`), naming the rows or tokens. It likewise refuses a keyframe at a canvas without a tower graph (`supports(_:keyframes:)`), and keyframes on a profile without `conditioner_vision`.
+  Portrait canvases are the same as their landscape transposes. `H3VideoSession` refuses a request either limit excludes before any stage runs (`H3PromptConditioner.preflight`) with a typed `H3LimitExceeded` (0.0.6): `presentationTokens(limit:prompt:keyframes:)` or `packedRows(limit:clip:prompt:)`, each with the limit and the request's numbers split between the prompt and the rest. A request whose `clip` rows reach the limit fits no prompt (the size and length alone don't fit); otherwise a shorter prompt fits. `H3ResourceAdmission` refuses a prompt over its byte limit as `promptBytes(limit:bytes:)`. Callers switch on the case, never on the message. It likewise refuses a keyframe at a canvas without a tower graph (`supports(_:keyframes:)`), and keyframes on a profile without `conditioner_vision`.
 
 ### Gates (bars decided by the user, 2026-11-02)
 

@@ -122,10 +122,11 @@ public struct H3ResourceAdmission: Sendable {
     public func admits(_ request: H3VideoRequest) -> Bool { (try? envelope(for: request)) != nil }
 
     /// The envelope `request` is held to: covering, allowed by physical memory, the 18 GiB class first, then the
-    /// cheapest. Refusals name the physical-memory requirement or the nearest envelope.
+    /// cheapest. A prompt over ``maximumPromptUTF8Bytes`` is ``H3LimitExceeded/promptBytes(limit:bytes:)``; other
+    /// refusals name the physical-memory requirement or the nearest envelope.
     public func envelope(for request: H3VideoRequest) throws -> Envelope {
         guard request.prompt.utf8.count <= maximumPromptUTF8Bytes else {
-            throw AetherError.invalidRequest("H3 prompt exceeds \(maximumPromptUTF8Bytes) UTF-8 bytes")
+            throw H3LimitExceeded.promptBytes(limit: maximumPromptUTF8Bytes, bytes: request.prompt.utf8.count)
         }
         let covering = envelopes.filter { $0.covers(request) }
         let allowed = covering.filter { physicalMemoryBytes >= $0.minimumPhysicalMemoryBytes }

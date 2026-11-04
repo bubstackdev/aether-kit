@@ -117,7 +117,8 @@ public protocol H3PromptConditioner: Sendable {
     /// can't before any stage runs. The default serves a text-only conditioner: no keyframes.
     func supports(_ geometry: H3Geometry, keyframes: [H3Keyframe]) -> Bool
     /// Checks, before any stage runs, everything about `request` the conditioner can decide without loading: its
-    /// presentation length and the packed rows it implies. Throws the refusal. The default checks nothing.
+    /// presentation length and the packed rows it implies. Throws the refusal, ``H3LimitExceeded`` for a length or row
+    /// limit. The default checks nothing.
     func preflight(_ request: H3VideoRequest) throws
     func release() async
 }
