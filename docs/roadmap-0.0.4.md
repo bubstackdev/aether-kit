@@ -115,6 +115,9 @@ relative to `bundle.json`; the paths themselves are still absolute. Turbo4 gains
 at 960×544 and 544×960 (gates A4 and B4), but its CPU trajectory gate is still open. Every other item
 below is still open.
 
+**Status at the 0.0.6 release** (2026-11-03, [release notes](release-notes/0.0.6.md)): 0.0.6 ships typed H3 limit
+refusals (#94) for Atelier, and none of the items below; each is still open as at 0.0.5.
+
 - **H3 FL2VA conditioner presentation** ([item](#parallel-track-hardening-and-coverage),
   [known deviation](h3-integration.md#known-deviation-fl2va-conditioner-presentation-found-2026-10-29)).
 - **H3 last-frame conditioning** ([item](#parallel-track-hardening-and-coverage),

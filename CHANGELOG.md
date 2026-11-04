@@ -2,13 +2,13 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
-## 0.0.6 — unreleased
+## 0.0.6 — 2026-11-03
 
-See the [draft release notes](docs/release-notes/0.0.6.md).
+Sixth experimental developer preview: typed H3 limit refusals for Atelier. The frozen API is unchanged. See the [release notes](docs/release-notes/0.0.6.md).
 
 ### Added
 
-- **Typed H3 limit refusals:** `AetherH3`'s new `H3LimitExceeded` (`Error`, `Sendable`, `Equatable`, `@nonexhaustive`) replaces the `AetherError.invalidRequest` and `.unsupported` strings for the three length refusals: `promptBytes(limit:bytes:)` from `H3ResourceAdmission`, and `presentationTokens(limit:prompt:keyframes:)` and `packedRows(limit:clip:prompt:)` from the profile conditioner's preflight (and its encode). The row case splits the rows the clip needs alone (video, audio and keyframes) from the prompt's, so a caller can tell a size or length that fits no prompt from a prompt that pushes it over. **Source change:** code that caught these as `AetherError` or matched their text catches `H3LimitExceeded` instead. The frozen API is unchanged.
+- **Typed H3 limit refusals** (#94): `AetherH3`'s new `H3LimitExceeded` (`Error`, `Sendable`, `Equatable`, `@nonexhaustive`) replaces the `AetherError.invalidRequest` and `.unsupported` strings for the three length refusals: `promptBytes(limit:bytes:)` from `H3ResourceAdmission`, and `presentationTokens(limit:prompt:keyframes:)` and `packedRows(limit:clip:prompt:)` from the profile conditioner's preflight (and its encode). The row case splits the rows the clip needs alone (video, audio and keyframes) from the prompt's, so a caller can tell a size or length that fits no prompt from a prompt that pushes it over. **Source change:** code that caught these as `AetherError` or matched their text catches `H3LimitExceeded` instead. The frozen API is unchanged.
 
 ## 0.0.5 — 2026-11-02
 

@@ -107,3 +107,10 @@ pinned conversion tooling and independent full-trajectory qualification.
 ## 0.0.5 release (2026-11-02)
 
 [Release notes](release-notes/0.0.5.md) and the [changelog](../CHANGELOG.md). H3's [FL2VA conditioner presentation](h3-integration.md#fl2va-conditioner-presentation-005), with its [plan](h3-fl2va-presentation-plan.md) and the user's bars, and [last-frame and first+last keyframes](h3-integration.md#last-frame-and-firstlast-keyframes-2026-10-29); the [codebase review](../CODEBASE-REVIEW.md) and its fixes; and the four v0.0.6 spikes above, merged early. What's still open from the 0.0.5 list is in the [notes](release-notes/0.0.5.md#still-open-from-the-005-list). H3's [0.0.5 measurements](h3-integration.md#005-measurements-final-stack) bundle measured admission for the final stack, keyed by a [location-free identity](h3-integration.md#measured-admission).
+
+## 0.0.6 release (2026-11-03)
+
+[Release notes](release-notes/0.0.6.md) and the [changelog](../CHANGELOG.md). H3's length refusals are typed
+(`H3LimitExceeded`, [guide](h3-integration.md#fl2va-conditioner-presentation-005)), so apps tell a size or length
+that fits no prompt from a prompt that pushes a clip over without parsing messages. The 0.0.5 list is
+[still open](release-notes/0.0.6.md#still-open-from-the-005-list).
