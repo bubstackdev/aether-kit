@@ -49,8 +49,9 @@ Stages (each records its outputs, with SHA-256, in OUTPUT/build.json):
   video-encoder-first-tiled  The first-frame encoder as one shared 256 px tile graph plus one small tail graph per
                  --canvases entry. With a --base-bundle that already has tiled entries, the base's tile graph is reused
                  (only the new tails are exported) and the bundle is left to `overlay`.
-  overlay        Write OUTPUT/bundle.json = --base-bundle plus the tails and fixed audio decoders this OUTPUT's build.json
-                 records, which must be new keys. Every other entry, and every base file, stays the base's.
+  overlay        Write OUTPUT/bundle.json = --base-bundle plus the tails, fixed audio decoders and vision-tower canvases this
+                 OUTPUT's build.json records, which must be new keys (new tower canvases must bind the base tower's own
+                 weights and constants). Every other entry, and every base file, stays the base's.
   finalize       Write OUTPUT/bundle.json (schema 3) from build.json, re-hashing every referenced asset stream, table
                  file and in-place weight range. `complete` is true only when every required part exists.
   video-decoder  Export the 256 px spatial-tile window decoder: packed rows [448,96] f32 -> pixels [1,3,22,256,256] f32
@@ -943,7 +944,8 @@ def main():
         bundle, meta = json.loads(base_path.read_text()), json.loads((out / "build.json").read_text())
         assert bundle["schema"] == 3 and bundle["complete"], "overlay needs a complete schema-3 base"
         # Only these build.json records become bundle entries; anything else would be silently dropped, so refuse it.
-        unhandled = set(meta) - {"schema", "snapshot", "diffusers_commit", "video_encoder_first_tiled", "audio_decoder_fixed"}
+        unhandled = set(meta) - {"schema", "snapshot", "diffusers_commit", "converted_vae", "video_encoder_first_tiled", "audio_decoder_fixed",
+                                 "conditioner_vision"}
         if unhandled:
             raise SystemExit(f"overlay does not add build.json records {sorted(unhandled)}; export them into a separate OUTPUT")
         entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
@@ -958,14 +960,32 @@ def main():
                 assert key not in tiled["tails"], f"the base already has a {key} tail"
                 tiled["tails"][key] = checked(asset); added.append(f"video_encoder_first_tiled.tails.{key}")
             tiled["tails"] = dict(sorted(tiled["tails"].items()))
+        if "conditioner_vision" in meta:
+            # New canvases of the base's own tower: the same weights bound in place and the same constants, so only the
+            # per-canvas graphs and grids are added (the host computes each canvas's tables).
+            vision, new = bundle.get("conditioner_vision"), meta["conditioner_vision"]
+            assert vision, "the base has no conditioner_vision to add canvases to"
+            for key in vision:
+                if key not in ("functions", "grids", "parameters"):
+                    assert new[key] == vision[key], f"conditioner_vision.{key} differs from the base's"
+            assert [{k: t[k] for k in ("name", "segments", "dtype", "shape", "sha256")} for t in new["parameters"]] == vision["parameters"], \
+                "the new canvases bind other weights than the base's tower"
+            for key, asset in sorted(new["functions"].items()):
+                assert key not in vision["functions"], f"the base already has a {key} tower graph"
+                vision["functions"][key] = checked(asset); vision["grids"][key] = new["grids"][key]
+                added.append(f"conditioner_vision.functions.{key}")
+            vision["functions"], vision["grids"] = dict(sorted(vision["functions"].items())), dict(sorted(vision["grids"].items()))
         for key, asset in sorted(meta.get("audio_decoder_fixed", {}).items()):
             fixed = bundle["audio_decoder"].setdefault("fixed", {})
             assert key not in fixed, f"the base already has a fixed audio decoder for {key} latents"
             fixed[key] = checked(asset); added.append(f"audio_decoder.fixed.{key}")
         bundle["audio_decoder"]["fixed"] = dict(sorted(bundle["audio_decoder"].get("fixed", {}).items(), key=lambda kv: int(kv[0])))
         assert added, "build.json records nothing to add"
-        bundle["lineage"] = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path), added=added,
-                                 change="added entries only; every other entry is the base bundle's")
+        lineage = dict(base_bundle=str(base_path), base_bundle_sha256=h.sha256_file(base_path), added=added,
+                       change="added entries only; every other entry is the base bundle's")
+        if "lineage" in bundle:
+            lineage["base_lineage"] = bundle["lineage"]
+        bundle["lineage"] = lineage
         (out / "bundle.json").write_text(json.dumps(bundle, indent=1))
         print(json.dumps(dict(bundle=str(out / "bundle.json"), sha256=h.sha256_file(out / "bundle.json"), added=added)), flush=True)
     elif args.stage == "video-decoder":
