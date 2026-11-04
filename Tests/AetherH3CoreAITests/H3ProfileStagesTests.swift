@@ -137,7 +137,9 @@ private struct VisionKernel: H3VisionKernel {
     let before = await calls.log.count
     let tight = H3ProfileConditioner(conditioner: conditioner, limits: 2...64, tokenize: tokenize, kernel: LayerKernel(calls: calls, expectedCos: Data()),
                                      vision: (entry, VisionKernel(calls: calls)))
-    await #expect(throws: AetherError.self) { _ = try await tight.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in } }
+    await #expect(throws: H3LimitExceeded.presentationTokens(limit: 2...64, prompt: 3, keyframes: 85)) {
+        _ = try await tight.encode("p", keyframes: [keyframe], geometry: geometry) { _, _ in }
+    }
     #expect(await calls.log.count == before)
 }
 
