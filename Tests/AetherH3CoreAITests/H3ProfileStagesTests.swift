@@ -624,7 +624,9 @@ private struct AudioKernel: H3AudioKernel {
 func h3MeasuredAdmissionForTheExportedProfile() throws {
     let profile = try H3Profile(url: URL(fileURLWithPath: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"]!))
     let identity = H3ProfileEngine.resourceIdentity(profile: profile)
-    let measured = try? H3MeasuredResources.bundledEntries(executionIdentity: identity, deviceArchitecture: H3ProfileEngine.deviceArchitecture)
+    let measured = try? H3MeasuredResources.bundledEntries(executionIdentity: identity,
+                                                           scopedIdentity: { try H3ProfileEngine.scopedResourceIdentity(profile: profile, canvases: $0) },
+                                                           deviceArchitecture: H3ProfileEngine.deviceArchitecture)
     let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
     if measured == nil {
         #expect(throws: AetherError.self) { _ = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget) }

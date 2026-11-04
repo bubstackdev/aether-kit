@@ -20,7 +20,9 @@
       "evidence": "docs/evidence/h3-memory-gate-review-2026-10-28.json; encodingKeyframe raised to the first+last peak in docs/evidence/h3-last-frame-memory-2026-10-29.json"
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -40,7 +42,9 @@
       ]
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -61,7 +65,9 @@
       ]
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -82,7 +88,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -104,7 +112,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "1280x704",
@@ -125,7 +135,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "1280x704",
@@ -147,7 +159,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "1280x704",
@@ -168,7 +182,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+      "execution_identity": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
       "device_architecture": "h17c",
       "canvases": [
         "1280x704",
@@ -190,7 +206,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -210,7 +228,9 @@
       ]
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -231,7 +251,9 @@
       ]
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",
@@ -252,7 +274,9 @@
       "memory_bar_bytes": 25769803776
     },
     {
-      "execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
+      "execution_identity": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo4",
       "device_architecture": "h17c",
       "canvases": [
         "960x544",

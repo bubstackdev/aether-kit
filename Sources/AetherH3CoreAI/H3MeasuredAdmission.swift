@@ -23,6 +23,7 @@ extension H3ProfileEngine {
                                          maximumPromptUTF8Bytes: Int = 16_384,
                                          physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3ResourceAdmission {
         try H3MeasuredResources.bundledAdmission(executionIdentity: resourceIdentity(profile: profile, recipe: recipe),
+                                                 scopedIdentity: { try scopedResourceIdentity(profile: profile, canvases: $0, recipe: recipe) },
                                                  deviceArchitecture: deviceArchitecture, coordinator: coordinator,
                                                  maximumPromptUTF8Bytes: maximumPromptUTF8Bytes, physicalMemoryBytes: physicalMemoryBytes)
     }

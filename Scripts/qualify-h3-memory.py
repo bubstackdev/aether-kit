@@ -393,8 +393,20 @@ def main():
     # The entries cite the record this run writes (docs/evidence/RECORD); without --record they are not bundleable.
     evidence = f"docs/evidence/{args.record}" if args.record else "unrecorded"
 
+    # 0.0.7: entries are keyed by the profile's identity scoped to the measured canvases (H3Profile.scopedContentSHA256),
+    # so a profile that only adds other canvases keeps them; the whole-profile identity is kept as provenance.
+    scoped = None
+    if identity:
+        out = subprocess.run([str(probe), "h3-profile-identity", str(args.profile), args.recipe, f"--canvases={args.canvases}"],
+                             capture_output=True, text=True, check=True).stdout
+        fields = json.loads(out)
+        if fields["resource_identity"] != identity:
+            raise RuntimeError(f"the renders were measured on {identity}, the profile is {fields['resource_identity']}")
+        scoped = fields["scoped_resource_identity"]
+
     def measured_entry(stage_bytes, operation_bytes, tasks=None):
-        e = dict(execution_identity=identity, device_architecture=architecture, canvases=args.canvases.split(","),
+        e = dict(execution_identity=scoped, identity_scope="canvases", measured_execution_identity=identity,
+                 device_architecture=architecture, canvases=args.canvases.split(","),
                  maximum_frames=maximum_frames, stage_peak_bytes={k: stage_bytes[k] for k in STAGES if k in stage_bytes},
                  operation_bytes=operation_bytes, evidence=evidence)
         if tasks:

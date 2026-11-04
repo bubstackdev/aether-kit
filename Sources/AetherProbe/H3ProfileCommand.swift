@@ -171,10 +171,20 @@ enum H3ProfileCommand {
             return true
         case "h3-profile-identity":
             // CPU only, nothing loaded or hashed: the identities a profile is known by, measured admission's included.
-            guard arguments.count == 2 || arguments.count == 3 else { throw AetherError.invalidRequest("use h3-profile-identity PROFILE.json [RECIPE]") }
-            let profile = try H3Profile(url: URL(fileURLWithPath: arguments[1]))
-            let identities = ["manifest_sha256": profile.manifestSHA256, "content_sha256": profile.contentSHA256, "model_identity": profile.modelIdentity,
-                              "resource_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: arguments.count == 3 ? arguments[2] : "turbo8")]
+            // --canvases=A,B adds the identity scoped to those canvases (a measured entry with identity_scope: canvases).
+            let canvases = arguments.first { $0.hasPrefix("--canvases=") }.map { String($0.dropFirst("--canvases=".count)).split(separator: ",").map(String.init) }
+            let positional = arguments.filter { !$0.hasPrefix("--canvases=") }
+            guard positional.count == 2 || positional.count == 3, canvases.map({ !$0.isEmpty }) ?? true else {
+                throw AetherError.invalidRequest("use h3-profile-identity PROFILE.json [RECIPE] [--canvases=WxH,...]")
+            }
+            let profile = try H3Profile(url: URL(fileURLWithPath: positional[1]))
+            let recipe = positional.count == 3 ? positional[2] : "turbo8"
+            var identities = ["manifest_sha256": profile.manifestSHA256, "content_sha256": profile.contentSHA256, "model_identity": profile.modelIdentity,
+                              "resource_identity": H3ProfileEngine.resourceIdentity(profile: profile, recipe: recipe)]
+            if let canvases {
+                identities["scoped_resource_identity"] = try H3ProfileEngine.scopedResourceIdentity(profile: profile, canvases: canvases, recipe: recipe)
+                identities["scoped_canvases"] = canvases.joined(separator: ",")
+            }
             print(String(decoding: try JSONSerialization.data(withJSONObject: identities, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]), as: UTF8.self))
             return true
         case "h3-weights-bench":

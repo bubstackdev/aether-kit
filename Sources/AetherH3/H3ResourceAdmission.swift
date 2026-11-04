@@ -24,10 +24,13 @@ public struct H3ResourceAdmission: Sendable {
         public let memoryBarBytes: UInt64
         /// Physical memory the device must have for this envelope to be used; 0 for none.
         public let minimumPhysicalMemoryBytes: UInt64
+        /// Covers only the listed canvases themselves, never one that merely fits inside (a canvas-scoped entry: its
+        /// identity vouches only for its own canvases' graphs).
+        public let exactCanvases: Bool
 
         public init(canvases: [String] = [], maximumPixels: Int, maximumFrames: Int, tasks: Set<H3Profile.Task> = Set(H3Profile.Task.allCases),
                     operationBytes: UInt64, stageBytes: [H3VideoStage: UInt64], memoryBarBytes: UInt64 = H3MeasuredResources.memoryBarBytes,
-                    minimumPhysicalMemoryBytes: UInt64 = 0) throws {
+                    minimumPhysicalMemoryBytes: UInt64 = 0, exactCanvases: Bool = false) throws {
             guard (1...1_032_192).contains(maximumPixels), (1...360).contains(maximumFrames), !tasks.isEmpty, operationBytes > 0,
                   canvases.allSatisfy({ canvas in H3MeasuredResources.pixels(canvas).map { $0 <= maximumPixels } ?? false }), memoryBarBytes > 0,
                   stageBytes.values.allSatisfy({ $0 > 0 }),
@@ -38,7 +41,7 @@ public struct H3ResourceAdmission: Sendable {
             }
             self.canvases = canvases; self.maximumPixels = maximumPixels; self.maximumFrames = maximumFrames; self.tasks = tasks
             self.operationBytes = operationBytes; self.stageBytes = stageBytes; self.memoryBarBytes = memoryBarBytes
-            self.minimumPhysicalMemoryBytes = minimumPhysicalMemoryBytes
+            self.minimumPhysicalMemoryBytes = minimumPhysicalMemoryBytes; self.exactCanvases = exactCanvases
         }
 
         /// The request's task (FL2VA with a first or last frame, else T2VA) is listed, every stage it needs has a reservation,
@@ -67,6 +70,7 @@ public struct H3ResourceAdmission: Sendable {
                   !request.audio || stageBytes[.decodingAudio] != nil,
                   !request.hasKeyframes || stageBytes[.encodingKeyframe] != nil else { return false }
             guard !canvases.isEmpty else { return w * h <= maximumPixels }
+            if exactCanvases { return canvases.contains("\(w)x\(h)") }
             return canvases.contains { canvas in
                 let s = canvas.split(separator: "x").map { Int($0)! }, width = s[0], height = s[1]
                 return w <= width && h <= height && (w == h || width == height || (w > h) == (width > height))
