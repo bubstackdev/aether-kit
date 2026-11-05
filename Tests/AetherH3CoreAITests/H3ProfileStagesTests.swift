@@ -619,20 +619,33 @@ private struct AudioKernel: H3AudioKernel {
 }
 
 /// Opt-in, CPU only: with `AETHER_H3_PROFILE` set to a measured profile on its measured device, the session's
-/// admission comes from the recorded memory measurements, one envelope per entry; elsewhere it is refused.
+/// admission comes from the recorded memory measurements, one envelope per entry, for each recipe; elsewhere it is
+/// refused. `AETHER_H3_PROFILE_ENTRIES` (`turbo8=12,turbo4=6`) pins the entry counts, so a run shows the entries were
+/// found rather than refused.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"] != nil))
 func h3MeasuredAdmissionForTheExportedProfile() throws {
-    let profile = try H3Profile(url: URL(fileURLWithPath: ProcessInfo.processInfo.environment["AETHER_H3_PROFILE"]!))
-    let identity = H3ProfileEngine.resourceIdentity(profile: profile)
-    let measured = try? H3MeasuredResources.bundledEntries(executionIdentity: identity,
-                                                           scopedIdentity: { try H3ProfileEngine.scopedResourceIdentity(profile: profile, canvases: $0) },
-                                                           deviceArchitecture: H3ProfileEngine.deviceArchitecture)
-    let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
-    if measured == nil {
-        #expect(throws: AetherError.self) { _ = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget) }
-    } else {
-        let admission = try H3ProfileEngine.measuredAdmission(profile: profile, coordinator: budget)
-        #expect(admission.executionIdentity == identity && admission.envelopes.count == measured!.count)
+    let environment = ProcessInfo.processInfo.environment
+    let profile = try H3Profile(url: URL(fileURLWithPath: environment["AETHER_H3_PROFILE"]!))
+    let pinned = Dictionary(uniqueKeysWithValues: (environment["AETHER_H3_PROFILE_ENTRIES"] ?? "").split(separator: ",").compactMap {
+        let pair = $0.split(separator: "=")
+        return pair.count == 2 ? (String(pair[0]), Int(pair[1])) : nil
+    })
+    for recipe in ["turbo8", "turbo4"] {
+        let identity = H3ProfileEngine.resourceIdentity(profile: profile, recipe: recipe)
+        let measured = try? H3MeasuredResources.bundledEntries(
+            executionIdentity: identity,
+            scopedIdentity: { try H3ProfileEngine.scopedResourceIdentity(profile: profile, canvases: $0, recipe: recipe) },
+            deviceArchitecture: H3ProfileEngine.deviceArchitecture)
+        if let expected = pinned[recipe] {
+            #expect(measured?.count == expected, "\(identity) on \(H3ProfileEngine.deviceArchitecture)")
+        }
+        let budget = try ResourceCoordinator(capacityBytes: H3MeasuredResources.memoryBarBytes)
+        if measured == nil {
+            #expect(throws: AetherError.self) { _ = try H3ProfileEngine.measuredAdmission(profile: profile, recipe: recipe, coordinator: budget) }
+        } else {
+            let admission = try H3ProfileEngine.measuredAdmission(profile: profile, recipe: recipe, coordinator: budget)
+            #expect(admission.executionIdentity == identity && admission.envelopes.count == measured!.count)
+        }
     }
 }
 
