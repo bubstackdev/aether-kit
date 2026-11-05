@@ -946,6 +946,12 @@ def main():
         # Only these build.json records become bundle entries; anything else would be silently dropped, so refuse it.
         unhandled = set(meta) - {"schema", "snapshot", "diffusers_commit", "converted_vae", "video_encoder_first_tiled", "audio_decoder_fixed",
                                  "conditioner_vision"}
+        # `converted_vae` (from convert-vae into this OUTPUT) is a working input, not a bundle entry: no graph reads it at
+        # run time. It is accepted only as the conversion the new tails were checked against (each tail is byte-identical
+        # to encode_vae_condition on it), so it must be the one the tiled stage recorded; nothing is added for it.
+        if "converted_vae" in meta:
+            assert meta.get("video_encoder_first_tiled", {}).get("converted_vae") == meta["converted_vae"]["path"], \
+                "converted_vae is not the conversion the tails were checked against; convert into the tails' own OUTPUT"
         if unhandled:
             raise SystemExit(f"overlay does not add build.json records {sorted(unhandled)}; export them into a separate OUTPUT")
         entry = lambda a: dict(path=a["path"], function=a["function"], sha256=a["sha256"])
@@ -965,6 +971,10 @@ def main():
             # per-canvas graphs and grids are added (the host computes each canvas's tables).
             vision, new = bundle.get("conditioner_vision"), meta["conditioner_vision"]
             assert vision, "the base has no conditioner_vision to add canvases to"
+            # The same keys both ways: the record's own build-only keys aside, a key in either alone is a different tower.
+            build_only = {"checks", "tables", "bindings", "recipe_sha256"}
+            assert set(new) - build_only == set(vision), \
+                f"conditioner_vision keys differ from the base's: {sorted((set(new) - build_only) ^ set(vision))}"
             for key in vision:
                 if key not in ("functions", "grids", "parameters"):
                     assert new[key] == vision[key], f"conditioner_vision.{key} differs from the base's"
