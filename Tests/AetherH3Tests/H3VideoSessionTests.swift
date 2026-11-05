@@ -1064,14 +1064,170 @@ private struct RefusingConditioner: H3PromptConditioner {
     }
 }
 
-/// The 0.0.5 final stack's bundled entries (`h3.profile/2:2a2d5198…`): 18 GiB envelopes for the 5 s region and
-/// 24 GiB envelopes for 10 s clips, per task. Every ordinary 5 s clip must stay on an 18 GiB envelope (a 24 GiB one
-/// never covers it), and 10 s clips need a 64 GiB Mac.
+/// 0.0.7: the 704x704 overlay (`h3.profile/2:30e0c142…`) keeps every 0.0.5 entry through its scopes and adds the square:
+/// Turbo8 T2VA and FL2VA at 5 s on 18 GiB and 10 s on 24 GiB; Turbo4 FL2VA only, 5 s on 18 GiB and 10 s on 24 GiB.
+@Test func h3BundledSquareCanvasAdmitsFiveAndTenSecondSquares() throws {
+    let identity = "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8"
+    let square = "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6"
+    func scope(_ recipe: String) -> ([String]) throws -> String {
+        { canvases in canvases == ["704x704"] ? square + ":" + recipe : try finalStackScope(recipe)(canvases) }
+    }
+    let budget = try ResourceCoordinator(capacityBytes: 64 << 30)
+    let keyframe = try H3Keyframe(width: 704, height: 704, rgb: [UInt8](repeating: 0, count: 704 * 704 * 3))
+    func clip(_ frames: Int, keyframes: Int) throws -> H3VideoRequest {
+        try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 704, height: 704, requestedFrames: frames, diagnostic: true), seed: 1,
+                           firstFrame: keyframes > 0 ? keyframe : nil, lastFrame: keyframes > 1 ? keyframe : nil, audio: true)
+    }
+    for (recipe, tasks) in [("turbo8", [0, 1, 2]), ("turbo4", [1, 2])] {
+        let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity.replacingOccurrences(of: ":turbo8", with: ":" + recipe),
+                                                           scopedIdentity: scope(recipe), deviceArchitecture: "h17c", coordinator: budget,
+                                                           physicalMemoryBytes: 64 << 30)
+        for keyframes in tasks {
+            let five = try mac.envelope(for: try clip(124, keyframes: keyframes)), ten = try mac.envelope(for: try clip(243, keyframes: keyframes))
+            #expect(five.memoryBarBytes == H3MeasuredResources.memoryBarBytes && five.canvases == ["704x704"], "\(recipe) \(keyframes)")
+            #expect(ten.memoryBarBytes == H3MeasuredResources.extendedMemoryBarBytes && ten.canvases == ["704x704"], "\(recipe) \(keyframes)")
+        }
+        if recipe == "turbo4" { #expect(!mac.admits(try clip(124, keyframes: 0))) }
+        // The 0.0.5 entries still apply on the overlay, through their scopes.
+        #expect(mac.admits(try request(960, 544, 124, first: true, audio: true)))
+    }
+    // The 0.0.5 stack itself has no square (its 704x704 scope is another identity).
+    let finalStack = try H3MeasuredResources.bundledAdmission(executionIdentity: "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+                                                              scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c", coordinator: budget,
+                                                              physicalMemoryBytes: 64 << 30)
+    #expect(!finalStack.admits(try clip(124, keyframes: 1)))
+}
+
+/// 0.0.7: a manifest's canvas-scoped fingerprint. Adding (or changing) another canvas leaves an existing scope
+/// unchanged while the whole-profile fingerprint changes; changing a shared graph changes every scope; locations and
+/// lineage play no part, as in `contentSHA256`.
+@Test func h3ScopedFingerprintIgnoresOtherCanvasesButNotSharedGraphs() throws {
+    func manifest(_ edit: (inout [String: Any]) -> Void = { _ in }) throws -> Data {
+        func asset(_ sha: String) -> [String: Any] { ["path": "/models/\(sha).aimodel", "function": "main", "sha256": String(repeating: sha, count: 64)] }
+        var m: [String: Any] = [
+            "schema": 3, "body": asset("b"), "heads": asset("c"), "video_decoder": ["model": asset("d"), "tile": 256],
+            "video_encoder_first": ["960x544": asset("e"), "544x960": asset("f")],
+            "video_encoder_first_tiled": ["tile": asset("1"), "tails": ["960x544": asset("2"), "544x960": asset("3"), "1280x704": asset("4")]],
+            "conditioner_vision": ["functions": ["960x544": asset("5"), "544x960": asset("6"), "1280x704": asset("7")],
+                                   "grids": ["960x544": [34, 60], "544x960": [60, 34], "1280x704": [44, 80]], "patch_size": 16],
+            "lineage": ["base_bundle": "/somewhere/bundle.json"], "tokenizer": "/somewhere/tokenizer"]
+        edit(&m)
+        return try JSONSerialization.data(withJSONObject: m)
+    }
+    func scoped(_ data: Data, _ canvases: Set<String>) throws -> String { try H3Profile.scopedContentSHA256(manifest: data, canvases: canvases) }
+    let pairs: [Set<String>] = [["960x544", "544x960"], ["1280x704"]]
+    let base = try manifest()
+    // Adding a canvas (its tower graph, grid and tail) changes the whole fingerprint, never an existing scope.
+    let added = try manifest { m in
+        var vision = m["conditioner_vision"] as! [String: Any], tiled = m["video_encoder_first_tiled"] as! [String: Any]
+        var functions = vision["functions"] as! [String: Any], grids = vision["grids"] as! [String: Any], tails = tiled["tails"] as! [String: Any]
+        functions["704x704"] = ["function": "main", "sha256": String(repeating: "8", count: 64)]; grids["704x704"] = [44, 44]
+        tails["704x704"] = ["function": "main", "sha256": String(repeating: "9", count: 64)]
+        vision["functions"] = functions; vision["grids"] = grids; tiled["tails"] = tails
+        m["conditioner_vision"] = vision; m["video_encoder_first_tiled"] = tiled
+    }
+    #expect(try H3Profile.contentSHA256(manifest: added) != H3Profile.contentSHA256(manifest: base))
+    for pair in pairs { #expect(try scoped(added, pair) == scoped(base, pair)) }
+    // A canvas the base doesn't have is not the scope it would have with that canvas's graphs.
+    #expect(try scoped(added, ["704x704"]) != scoped(base, ["704x704"]))
+    // A shared graph or setting changes every scope.
+    for key in ["body", "heads", "video_decoder", "video_encoder_first_tiled", "conditioner_vision"] {
+        let changed = try manifest { m in
+            switch key {
+            case "video_decoder": m[key] = ["model": ["function": "main", "sha256": String(repeating: "a", count: 64)], "tile": 256]
+            case "video_encoder_first_tiled":
+                var tiled = m[key] as! [String: Any]; tiled["tile"] = ["function": "main", "sha256": String(repeating: "a", count: 64)]; m[key] = tiled
+            case "conditioner_vision":
+                var vision = m[key] as! [String: Any]; vision["patch_size"] = 14; m[key] = vision
+            default: m[key] = ["function": "main", "sha256": String(repeating: "a", count: 64)]
+            }
+        }
+        for pair in pairs { #expect(try scoped(changed, pair) != scoped(base, pair), "\(key) \(pair)") }
+    }
+    // A listed canvas's own graph changes its scope only.
+    let retail = try manifest { m in
+        var tiled = m["video_encoder_first_tiled"] as! [String: Any], tails = tiled["tails"] as! [String: Any]
+        tails["544x960"] = ["function": "main", "sha256": String(repeating: "a", count: 64)]; tiled["tails"] = tails; m["video_encoder_first_tiled"] = tiled
+    }
+    let retailScopes = (try scoped(retail, pairs[0]), try scoped(retail, pairs[1])), baseScopes = (try scoped(base, pairs[0]), try scoped(base, pairs[1]))
+    #expect(retailScopes.0 != baseScopes.0 && retailScopes.1 == baseScopes.1)
+    // Locations, the tokenizer and lineage never count.
+    let moved = try manifest { m in m["lineage"] = ["base_bundle": "/elsewhere"]; m["tokenizer"] = "/elsewhere/tokenizer" }
+    let movedScope = try scoped(moved, pairs[0]), movedWhole = try H3Profile.contentSHA256(manifest: moved), baseWhole = try H3Profile.contentSHA256(manifest: base)
+    #expect(movedScope == baseScopes.0 && movedWhole == baseWhole)
+}
+
+/// 0.0.7: a canvas-scoped entry matches a profile only through that profile's scoped identity for the entry's own
+/// canvases, covers only those canvases (never one that fits inside them), and carries a scoped identity.
+@Test func h3ScopedEntryCoversOnlyItsOwnCanvases() throws {
+    let stages = ["encoding": UInt64(1 << 30), "denoising": 8 << 30, "decodingVideo": 2 << 30]
+    let scopedID = "h3.profile/3:" + String(repeating: "a", count: 64) + ":turbo8", whole = "h3.profile/2:" + String(repeating: "b", count: 64) + ":turbo8"
+    let entry = try H3MeasuredResources(executionIdentity: scopedID, deviceArchitecture: "fixture", canvases: ["960x544", "544x960"], maximumFrames: 124,
+                                        stagePeakBytes: stages, operationBytes: 1 << 30, evidence: "docs/evidence/fixture.json",
+                                        identityScope: .canvases, measuredExecutionIdentity: whole)
+    let budget = try ResourceCoordinator(capacityBytes: 18 << 30)
+    // It matches through the scope only: the profile's whole identity, or another scope, finds nothing.
+    let matched = try H3MeasuredResources.entries([entry], executionIdentity: whole, scopedIdentity: { _ in scopedID }, deviceArchitecture: "fixture")
+    #expect(matched.count == 1)
+    #expect(throws: AetherError.self) { _ = try H3MeasuredResources.entries([entry], executionIdentity: scopedID, deviceArchitecture: "fixture") }
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources.entries([entry], executionIdentity: whole, scopedIdentity: { _ in "h3.profile/3:" + String(repeating: "c", count: 64) + ":turbo8" },
+                                            deviceArchitecture: "fixture")
+    }
+    let admission = try H3MeasuredResources.admission(entries: matched, executionIdentity: whole, coordinator: budget)
+    #expect(admission.executionIdentity == whole)
+    let listed = [try request(960, 544, 124), try request(544, 960, 124)]
+    let inside = [try request(704, 544, 124), try request(288, 288, 22), try request(544, 544, 124)]
+    #expect(listed.allSatisfy(admission.admits) && !inside.contains(where: admission.admits))
+    // An unscoped entry of the same numbers still covers what fits inside its canvases.
+    let unscoped = try H3MeasuredResources(executionIdentity: whole, deviceArchitecture: "fixture", canvases: ["960x544", "544x960"], maximumFrames: 124,
+                                           stagePeakBytes: stages, operationBytes: 1 << 30, evidence: "docs/evidence/fixture.json")
+    let unscopedAdmission = try unscoped.admission(coordinator: budget), tiny = try request(288, 288, 22)
+    #expect(unscopedAdmission.admits(tiny))
+    // The identity must match the scope.
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources(executionIdentity: whole, deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124, stagePeakBytes: stages,
+                                    operationBytes: 1 << 30, evidence: "docs/evidence/fixture.json", identityScope: .canvases)
+    }
+    #expect(throws: AetherError.self) {
+        _ = try H3MeasuredResources(executionIdentity: scopedID, deviceArchitecture: "fixture", canvases: ["960x544"], maximumFrames: 124, stagePeakBytes: stages,
+                                    operationBytes: 1 << 30, evidence: "docs/evidence/fixture.json")
+    }
+}
+
+/// The 0.0.5 final stack's canvas-scoped identities (0.0.7): `H3Profile.scopedContentSHA256` of its manifest for each
+/// measured canvas pair, which every profile that only adds other canvases shares.
+private let finalStackScopes = ["960x544,544x960": "h3.profile/3:9f66fe91548f8aaa72848cc1001aebb119430d01c6670b9bbe98a79ccfc5eb54",
+                                "1280x704,704x1280": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a"]
+private func finalStackScope(_ recipe: String) -> ([String]) throws -> String {
+    { canvases in
+        // A real profile has a scope for any canvases; the 0.0.5 stack's for others matches no bundled entry.
+        (finalStackScopes[canvases.joined(separator: ",")] ?? "h3.profile/3:not-measured-on-0.0.5:" + canvases.joined(separator: ",")) + ":" + recipe
+    }
+}
+
+/// The 0.0.5 final stack's bundled entries (measured on `h3.profile/2:2a2d5198…`, keyed by their canvas-scoped
+/// identities since 0.0.7): 18 GiB envelopes for the 5 s region and 24 GiB envelopes for 10 s clips, per task. Every
+/// ordinary 5 s clip must stay on an 18 GiB envelope (a 24 GiB one never covers it), and 10 s clips need a 64 GiB Mac.
 @Test func h3BundledFinalStackAdmitsFiveAndTenSecondClipsOnTheirOwnBars() throws {
     let identity = "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8"
     let budget = try ResourceCoordinator(capacityBytes: 64 << 30)
-    let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
-                                                       physicalMemoryBytes: 64 << 30)
+    let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c",
+                                                       coordinator: budget, physicalMemoryBytes: 64 << 30)
+    #expect(mac.executionIdentity == identity)
+    // Without the profile's scopes, a lookup says scoped entries need them rather than calling the profile unmeasured.
+    let scopedOnly = AetherError.invalidRequest("measured H3 entries on h17c are canvas-scoped: pass scopedIdentity "
+                                                + "(H3ProfileEngine.scopedResourceIdentity) to find the ones for \(identity)")
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget) }
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundledEntries(executionIdentity: identity, deviceArchitecture: "h17c") }
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: "h17c") }
+    // With them, the single-entry lookup finds the scoped entries too (several here, so it points at bundledAdmission).
+    #expect(throws: AetherError.invalidRequest("8 measured H3 entries for \(identity); use bundledAdmission")) {
+        _ = try H3MeasuredResources.bundled(executionIdentity: identity, scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c")
+    }
+    // An unscoped identity keeps its own lookup with no scope (the 0.0.3 entry).
+    #expect(try H3MeasuredResources.bundled(executionIdentity: "h3.profile/2:0707647b14538914a8ed282f41346c5c0906e1f6c8277029eff9c7847da80f62:turbo8",
+                                            deviceArchitecture: "h17c", physicalMemoryBytes: 8 << 30).canvases == ["960x544", "544x960"])
     let keyframe = try H3Keyframe(width: 960, height: 544, rgb: [UInt8](repeating: 0, count: 960 * 544 * 3))
     func both(_ frames: Int) throws -> H3VideoRequest {
         try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 960, height: 544, requestedFrames: frames, diagnostic: true), seed: 1,
@@ -1103,16 +1259,20 @@ private struct RefusingConditioner: H3PromptConditioner {
                                        firstFrame: wide, lastFrame: wide, audio: true)
     let largeBothEnvelope = try mac.envelope(for: largeBoth)
     #expect(largeBothEnvelope.maximumFrames == 124)
-    // Nothing covers 1344x768 or more than 141 frames at 1280x704.
+    // Nothing covers 1344x768 or more than 141 frames at 1280x704; and a scoped entry vouches only for its own
+    // canvases, so a square that fits inside 1280x704 (or a canvas inside 960x544) is not covered either.
     let unmeasured = try request(1344, 768, 124, audio: true), longer = try request(1280, 704, 158, audio: true)
     #expect(!mac.admits(unmeasured) && !mac.admits(longer))
+    let square = try request(704, 704, 124, audio: true), small288 = try request(288, 288, 22, audio: true)
+    #expect(!mac.admits(square) && !mac.admits(small288))
     // On a 32 GiB device only the 5 s envelopes remain: 10 s clips are refused, 5 s clips admitted.
-    let small = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget,
-                                                         physicalMemoryBytes: 32 << 30)
+    let small = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c",
+                                                         coordinator: budget, physicalMemoryBytes: 32 << 30)
     #expect(fiveSecond.allSatisfy(small.admits) && !tenSecond.contains(where: small.admits) && !large.contains(where: small.admits))
     // Turbo4 (Atelier's quick preview) has its own entries: 5 s clips on 18 GiB, 10 s clips on 24 GiB; no larger canvas.
     let turbo4 = try H3MeasuredResources.bundledAdmission(executionIdentity: identity.replacingOccurrences(of: ":turbo8", with: ":turbo4"),
-                                                          deviceArchitecture: "h17c", coordinator: budget, physicalMemoryBytes: 64 << 30)
+                                                          scopedIdentity: finalStackScope("turbo4"), deviceArchitecture: "h17c", coordinator: budget,
+                                                          physicalMemoryBytes: 64 << 30)
     for clip in fiveSecond {
         let envelope = try turbo4.envelope(for: clip)
         #expect(envelope.memoryBarBytes == H3MeasuredResources.memoryBarBytes)

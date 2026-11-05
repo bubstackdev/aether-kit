@@ -1,0 +1,209 @@
+{
+  "schema": 2,
+  "gate": "h3-presentation",
+  "passed": true,
+  "failures": [],
+  "limits": {
+    "towerRatio": 1.05,
+    "towerReference": "upstream bf16 weights, fp32 compute; bar = ratio x upstream bf16's distance",
+    "layers": 0.02,
+    "layersReference": "upstream's step fed the native tower outputs (--substituted)",
+    "decided": "2026-11-02, the user (plan D5, revised)"
+  },
+  "mode": "vision",
+  "canvas": "704x704",
+  "profileSHA256": "9fadf81f9a3186a2910618e6158d8fe0b8aafe6a6e5b2ebb72e418b00d6ca094",
+  "referenceFields": {
+    "canvas": "704x704",
+    "layers": 4,
+    "prompt_sha256": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "oracle_sha256": "0b49e3627fb30044bdcdb6afe85b1916cd7314f035d424a5ef583d76b84e70c1",
+    "diffusers_commit": "7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941",
+    "torch": "2.13.0"
+  },
+  "referenceManifestSHA256": "cebcc10bc2e56aba1dd048a2c107498c0b045c9846fa0126724fa1528b58a550",
+  "nativeManifestSHA256": "249e792d18d366299ccad451621fcd19d974e220d495c4448b783db12bf8f91b",
+  "visionReferenceManifestSHA256": "61f23185fad34bca2cd2d7a29bea2e6b5a43c1d5d03a914fba3b4ff690140c93",
+  "substitutedManifestSHA256": null,
+  "nativeReport": {
+    "footprintPeakBytes": 1950795888,
+    "metalPeakBytes": 1705476096,
+    "mode": "vision",
+    "phases": [
+      {
+        "footprintEnd": 108118808,
+        "footprintPeak": 108118808,
+        "metalEnd": 65536,
+        "metalPeak": 65536,
+        "metalStart": 65536,
+        "phase": "baseline",
+        "samples": 43,
+        "seconds": 0.984152958
+      },
+      {
+        "footprintEnd": 1937574000,
+        "footprintPeak": 1950795888,
+        "metalEnd": 1677000704,
+        "metalPeak": 1705476096,
+        "metalStart": 65536,
+        "phase": "vision",
+        "samples": 39,
+        "seconds": 0.8920787080000001
+      },
+      {
+        "footprintEnd": 130761784,
+        "footprintPeak": 1016678296,
+        "metalEnd": 116064256,
+        "metalPeak": 135921664,
+        "metalStart": 135921664,
+        "phase": "vision.released",
+        "samples": 45,
+        "seconds": 1.03231975
+      },
+      {
+        "footprintEnd": 130761784,
+        "footprintPeak": 130761784,
+        "metalEnd": 116064256,
+        "metalPeak": 116064256,
+        "metalStart": 116064256,
+        "phase": "end",
+        "samples": 2,
+        "seconds": 4.124999999799428e-06
+      }
+    ],
+    "visionSpecialization": "gpu, expectFrequentReshapes false"
+  },
+  "checks": {
+    "keyframe0": {
+      "exact": true,
+      "shape": [
+        704,
+        704,
+        3
+      ]
+    },
+    "token_ids": {
+      "exact": true,
+      "shape": [
+        541
+      ]
+    },
+    "text_token_tags": {
+      "exact": true,
+      "shape": [
+        541
+      ]
+    },
+    "position_ids": {
+      "exact": true,
+      "shape": [
+        3,
+        541
+      ]
+    },
+    "pixel_values": {
+      "exact": true,
+      "shape": [
+        1936,
+        1536
+      ]
+    },
+    "image_embeds": {
+      "relative_l2": 0.031652829303286056,
+      "cosine": 0.9995038298066378,
+      "max_abs": 1.3925704956054688,
+      "reference_max_abs": 32.839630126953125,
+      "finite": true,
+      "limit": 0.04823440622632416,
+      "passed": true
+    },
+    "deepstack[0]": {
+      "relative_l2": 0.00985973453223237,
+      "cosine": 0.9999552343236421,
+      "max_abs": 0.09287166595458984,
+      "reference_max_abs": 14.357638359069824,
+      "finite": true,
+      "limit": 0.011479095649285901,
+      "passed": true
+    },
+    "deepstack[1]": {
+      "relative_l2": 0.018759529037829206,
+      "cosine": 0.9998268469805687,
+      "max_abs": 0.6323599815368652,
+      "reference_max_abs": 22.312747955322266,
+      "finite": true,
+      "limit": 0.026594514895565878,
+      "passed": true
+    },
+    "deepstack[2]": {
+      "relative_l2": 0.02866657770898889,
+      "cosine": 0.9995901319933281,
+      "max_abs": 0.4043344259262085,
+      "reference_max_abs": 9.411664009094238,
+      "finite": true,
+      "limit": 0.04217929391392103,
+      "passed": true
+    }
+  },
+  "diagnostics": {
+    "native_vs_upstream_bf16": {
+      "image_embeds": {
+        "relative_l2": 0.04992801360562886,
+        "cosine": 0.9987597442069068,
+        "max_abs": 2.25,
+        "reference_max_abs": 34.0,
+        "finite": true
+      },
+      "deepstack[0]": {
+        "relative_l2": 0.013938651631318648,
+        "cosine": 0.9999055064835408,
+        "max_abs": 0.1484375,
+        "reference_max_abs": 14.4375,
+        "finite": true
+      },
+      "deepstack[1]": {
+        "relative_l2": 0.029901461551418783,
+        "cosine": 0.9995580164923626,
+        "max_abs": 0.96875,
+        "reference_max_abs": 22.375,
+        "finite": true
+      },
+      "deepstack[2]": {
+        "relative_l2": 0.04651236339562349,
+        "cosine": 0.9989229510747489,
+        "max_abs": 0.734375,
+        "reference_max_abs": 9.375,
+        "finite": true
+      }
+    },
+    "upstream_bf16_vs_fp32": {
+      "deepstack[0]": {
+        "cosine": 0.9999404049150026,
+        "max_abs": 0.12961596250534058,
+        "relative_l2": 0.010932472046938953
+      },
+      "deepstack[1]": {
+        "cosine": 0.9996792223694683,
+        "max_abs": 0.7821533679962158,
+        "relative_l2": 0.025328109424348454
+      },
+      "deepstack[2]": {
+        "cosine": 0.9991928667279474,
+        "max_abs": 0.7990400791168213,
+        "relative_l2": 0.040170756108496214
+      },
+      "image_embeds": {
+        "cosine": 0.9989450485130583,
+        "max_abs": 2.482563018798828,
+        "relative_l2": 0.045937529739356345
+      }
+    },
+    "tower_ratio_to_upstream": {
+      "image_embeds": 0.6890407360360941,
+      "deepstack[0]": 0.901876034066152,
+      "deepstack[1]": 0.7406604544986397,
+      "deepstack[2]": 0.71361807658198
+    },
+    "tap": {}
+  }
+}

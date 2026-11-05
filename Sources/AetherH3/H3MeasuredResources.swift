@@ -25,10 +25,21 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     /// Today's region, held to `memoryBarBytes`: at most these pixels (960x544) and frames.
     public static let baselinePixels = 960 * 544
     public static let baselineFrames = 124
+    /// The prefix of a canvas-scoped execution identity (`identity_scope: canvases`).
+    public static let scopedIdentityPrefix = "h3.profile/3:"
     /// Added to every measured stage peak (sampling can miss short peaks between 20 ms samples).
     public static let marginBytes: UInt64 = 256 << 20
 
+    /// What `executionIdentity` fingerprints: the whole profile (nil, `h3.profile/2:…`), or (`canvases`,
+    /// `h3.profile/3:…`) the profile scoped to this entry's own canvases (`H3Profile.scopedContentSHA256`), so a profile
+    /// that only adds other canvases keeps the entry, and the entry covers only the canvases it lists.
+    public enum IdentityScope: String, Sendable { case canvases }
+
     public let executionIdentity: String
+    /// Nil: `executionIdentity` is the whole profile's. `canvases`: it is the profile scoped to `canvases`.
+    public let identityScope: IdentityScope?
+    /// For a scoped entry, the whole-profile identity of the profile the render was measured on (provenance only).
+    public let measuredExecutionIdentity: String?
     public let deviceArchitecture: String
     /// Canvases measured, "WIDTHxHEIGHT". A request is covered by a listed canvas of the same orientation that it fits
     /// inside (see `H3ResourceAdmission.Envelope.covers`).
@@ -52,12 +63,15 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         case executionIdentity = "execution_identity", deviceArchitecture = "device_architecture", canvases, tasks
         case maximumFrames = "maximum_frames", stagePeakBytes = "stage_peak_bytes", operationBytes = "operation_bytes"
         case memoryBarBytes = "memory_bar_bytes", evidence
+        case identityScope = "identity_scope", measuredExecutionIdentity = "measured_execution_identity"
     }
 
     public init(executionIdentity: String, deviceArchitecture: String, canvases: [String], maximumFrames: Int,
                 tasks: Set<H3Profile.Task>? = nil, stagePeakBytes: [String: UInt64], operationBytes: UInt64,
-                memoryBarBytes: UInt64 = H3MeasuredResources.memoryBarBytes, evidence: String) throws {
+                memoryBarBytes: UInt64 = H3MeasuredResources.memoryBarBytes, evidence: String,
+                identityScope: IdentityScope? = nil, measuredExecutionIdentity: String? = nil) throws {
         self.executionIdentity = executionIdentity; self.deviceArchitecture = deviceArchitecture; self.canvases = canvases
+        self.identityScope = identityScope; self.measuredExecutionIdentity = measuredExecutionIdentity
         self.maximumFrames = maximumFrames; self.tasks = tasks; self.stagePeakBytes = stagePeakBytes; self.operationBytes = operationBytes
         self.memoryBarBytes = memoryBarBytes; self.evidence = evidence
         try validate()
@@ -66,6 +80,11 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         executionIdentity = try c.decode(String.self, forKey: .executionIdentity)
+        identityScope = try c.decodeIfPresent(String.self, forKey: .identityScope).map { name in
+            guard let scope = IdentityScope(rawValue: name) else { throw AetherError.invalidModel("unknown H3 identity scope \(name)") }
+            return scope
+        }
+        measuredExecutionIdentity = try c.decodeIfPresent(String.self, forKey: .measuredExecutionIdentity)
         deviceArchitecture = try c.decode(String.self, forKey: .deviceArchitecture)
         canvases = try c.decode([String].self, forKey: .canvases)
         maximumFrames = try c.decode(Int.self, forKey: .maximumFrames)
@@ -84,6 +103,8 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(executionIdentity, forKey: .executionIdentity); try c.encode(deviceArchitecture, forKey: .deviceArchitecture)
+        try c.encodeIfPresent(identityScope?.rawValue, forKey: .identityScope)
+        try c.encodeIfPresent(measuredExecutionIdentity, forKey: .measuredExecutionIdentity)
         try c.encode(canvases, forKey: .canvases); try c.encode(maximumFrames, forKey: .maximumFrames)
         try c.encodeIfPresent(tasks.map { $0.map(\.rawValue).sorted() }, forKey: .tasks)
         try c.encode(stagePeakBytes, forKey: .stagePeakBytes); try c.encode(operationBytes, forKey: .operationBytes)
@@ -107,6 +128,11 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
               Set(["encoding", "denoising", "decodingVideo"]).isSubset(of: Set(stagePeakBytes.keys)),
               !evidence.isEmpty, evidence != "unrecorded", !evidence.hasPrefix("/"), !evidence.hasPrefix("~") else {
             throw AetherError.invalidModel("invalid H3 measured resource entry")
+        }
+        // A scoped entry carries a scoped identity (and its whole-profile provenance); an unscoped one a whole-profile one.
+        guard identityScope == nil ? !executionIdentity.hasPrefix(Self.scopedIdentityPrefix) && measuredExecutionIdentity == nil
+                : executionIdentity.hasPrefix(Self.scopedIdentityPrefix) && measuredExecutionIdentity.map({ !$0.hasPrefix(Self.scopedIdentityPrefix) }) ?? true else {
+            throw AetherError.invalidModel("H3 measured entry's identity doesn't match its scope")
         }
         guard [Self.memoryBarBytes, Self.extendedMemoryBarBytes].contains(memoryBarBytes) else {
             throw AetherError.invalidModel("H3 measured entry names an unknown memory bar \(memoryBarBytes)")
@@ -141,7 +167,7 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
         return try H3ResourceAdmission.Envelope(canvases: canvases, maximumPixels: maximumPixels, maximumFrames: maximumFrames,
                                                 tasks: tasks ?? Set(H3Profile.Task.allCases), operationBytes: operationBytes,
                                                 stageBytes: stages, memoryBarBytes: memoryBarBytes,
-                                                minimumPhysicalMemoryBytes: minimumPhysicalMemoryBytes)
+                                                minimumPhysicalMemoryBytes: minimumPhysicalMemoryBytes, exactCanvases: identityScope == .canvases)
     }
 
     /// An admission holding requests to this one entry.
@@ -154,17 +180,21 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     /// An admission over several entries of one identity and device, one envelope per entry. Entries this device's
     /// physical memory does not allow stay listed, so a request only they cover is refused naming the requirement;
     /// at least one entry must be allowed.
-    public static func admission(entries: [H3MeasuredResources], coordinator: ResourceCoordinator, maximumPromptUTF8Bytes: Int = 16_384,
+    /// `executionIdentity` (the whole profile's, which the session checks) is given when the entries were matched to a
+    /// profile, scoped ones included; without it every entry must carry the same identity.
+    public static func admission(entries: [H3MeasuredResources], executionIdentity given: String? = nil, coordinator: ResourceCoordinator,
+                                 maximumPromptUTF8Bytes: Int = 16_384,
                                  physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3ResourceAdmission {
-        guard let first = entries.first,
-              entries.allSatisfy({ $0.executionIdentity == first.executionIdentity && $0.deviceArchitecture == first.deviceArchitecture }) else {
+        guard let first = entries.first, entries.allSatisfy({ $0.deviceArchitecture == first.deviceArchitecture }),
+              given != nil || entries.allSatisfy({ $0.executionIdentity == first.executionIdentity }) else {
             throw AetherError.invalidModel("H3 measured entries must share one identity and device")
         }
+        let identity = given ?? first.executionIdentity
         guard let needed = entries.map(\.minimumPhysicalMemoryBytes).min(), physicalMemoryBytes >= needed else {
-            throw AetherError.unsupported("measured H3 memory for \(first.executionIdentity) needs at least "
+            throw AetherError.unsupported("measured H3 memory for \(identity) needs at least "
                                           + "\(entries.map(\.minimumPhysicalMemoryBytes).min()! >> 30) GiB of physical memory")
         }
-        return try H3ResourceAdmission(coordinator: coordinator, executionIdentity: first.executionIdentity,
+        return try H3ResourceAdmission(coordinator: coordinator, executionIdentity: identity,
                                        maximumPromptUTF8Bytes: maximumPromptUTF8Bytes, envelopes: entries.map { try $0.envelope() },
                                        physicalMemoryBytes: physicalMemoryBytes)
     }
@@ -183,9 +213,12 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
 
     /// The entries of `entries` for this identity and device that this device's physical memory allows. Throws when
     /// none is recorded, or when every recorded one needs more physical memory (naming the requirement).
-    public static func entries(_ entries: [H3MeasuredResources], executionIdentity: String, deviceArchitecture: String,
+    /// `scopedIdentity` gives the profile's canvas-scoped identity for a scoped entry's canvases
+    /// (`H3ProfileEngine.scopedResourceIdentity`); without it no scoped entry matches.
+    public static func entries(_ entries: [H3MeasuredResources], executionIdentity: String,
+                               scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
                                physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> [H3MeasuredResources] {
-        let recorded = entries.filter { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }
+        let recorded = try matching(entries, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture)
         guard !recorded.isEmpty else { throw AetherError.unsupported("no measured H3 memory for \(executionIdentity) on \(deviceArchitecture)") }
         let allowed = recorded.filter { physicalMemoryBytes >= $0.minimumPhysicalMemoryBytes }
         guard !allowed.isEmpty else {
@@ -196,38 +229,62 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     }
 
     /// The bundled entries this device may use for this identity (see `entries(_:executionIdentity:deviceArchitecture:physicalMemoryBytes:)`).
-    public static func bundledEntries(executionIdentity: String, deviceArchitecture: String,
+    public static func bundledEntries(executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
                                       physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> [H3MeasuredResources] {
-        try entries(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: physicalMemoryBytes)
+        try entries(bundled(), executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture,
+                    physicalMemoryBytes: physicalMemoryBytes)
     }
 
     /// The one entry of `entries` recorded for this identity and device, if this device's physical memory allows it.
     /// Throws when none is recorded, when several are (counted before the memory filter, so the answer does not depend
     /// on the device), or when the one recorded needs more physical memory.
-    public static func entry(_ entries: [H3MeasuredResources], executionIdentity: String, deviceArchitecture: String,
-                             physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
-        let recorded = entries.filter { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }
+    public static func entry(_ entries: [H3MeasuredResources], executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil,
+                             deviceArchitecture: String, physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
+        let recorded = try matching(entries, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture)
         guard recorded.count <= 1 else {
             throw AetherError.invalidRequest("\(recorded.count) measured H3 entries for \(executionIdentity); use bundledAdmission")
         }
-        return try Self.entries(recorded, executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture,
+        return try Self.entries(recorded, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture,
                                 physicalMemoryBytes: physicalMemoryBytes)[0]
+    }
+
+    /// The entries of `entries` recorded for this profile and device: an unscoped one by `executionIdentity`, a scoped one
+    /// by the profile's scope for its own canvases (`scopedIdentity`). Without `scopedIdentity`, when nothing unscoped
+    /// matches but the device has scoped entries, it throws rather than report the profile as unmeasured: a scoped entry
+    /// can only be found through the profile's scope (`H3ProfileEngine.scopedResourceIdentity`).
+    static func matching(_ entries: [H3MeasuredResources], executionIdentity: String, scopedIdentity: (([String]) throws -> String)?,
+                         deviceArchitecture: String) throws -> [H3MeasuredResources] {
+        let recorded = try entries.filter { entry in
+            guard entry.deviceArchitecture == deviceArchitecture else { return false }
+            switch entry.identityScope {
+            case nil: return entry.executionIdentity == executionIdentity
+            case .canvases: return try scopedIdentity.map { try $0(entry.canvases) == entry.executionIdentity } ?? false
+            }
+        }
+        if recorded.isEmpty, scopedIdentity == nil,
+           entries.contains(where: { $0.deviceArchitecture == deviceArchitecture && $0.identityScope == .canvases }) {
+            throw AetherError.invalidRequest("measured H3 entries on \(deviceArchitecture) are canvas-scoped: pass scopedIdentity "
+                                             + "(H3ProfileEngine.scopedResourceIdentity) to find the ones for \(executionIdentity)")
+        }
+        return recorded
     }
 
     /// The one bundled entry this device may use for this identity (see `entry(_:executionIdentity:deviceArchitecture:physicalMemoryBytes:)`);
     /// an identity with several entries is admitted through `bundledAdmission`.
-    public static func bundled(executionIdentity: String, deviceArchitecture: String,
+    public static func bundled(executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
                                physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
-        try entry(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: physicalMemoryBytes)
+        try entry(bundled(), executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture,
+                  physicalMemoryBytes: physicalMemoryBytes)
     }
 
     /// The admission over every bundled entry for this identity and device. Entries this device's physical memory does
     /// not allow are kept as envelopes it refuses with the requirement named; at least one entry must be allowed.
-    public static func bundledAdmission(executionIdentity: String, deviceArchitecture: String, coordinator: ResourceCoordinator,
-                                        maximumPromptUTF8Bytes: Int = 16_384,
+    public static func bundledAdmission(executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
+                                        coordinator: ResourceCoordinator, maximumPromptUTF8Bytes: Int = 16_384,
                                         physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3ResourceAdmission {
-        let recorded = try entries(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: .max)
-        return try admission(entries: recorded, coordinator: coordinator, maximumPromptUTF8Bytes: maximumPromptUTF8Bytes,
-                             physicalMemoryBytes: physicalMemoryBytes)
+        let recorded = try entries(bundled(), executionIdentity: executionIdentity, scopedIdentity: scopedIdentity,
+                                   deviceArchitecture: deviceArchitecture, physicalMemoryBytes: .max)
+        return try admission(entries: recorded, executionIdentity: executionIdentity, coordinator: coordinator,
+                             maximumPromptUTF8Bytes: maximumPromptUTF8Bytes, physicalMemoryBytes: physicalMemoryBytes)
     }
 }

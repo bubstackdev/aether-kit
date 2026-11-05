@@ -689,6 +689,12 @@ public enum H3ProfileEngine {
         "h3.profile/2:" + profile.contentSHA256 + ":" + recipe
     }
 
+    /// `resourceIdentity` scoped to `canvases` (`H3Profile.scopedContentSHA256`), the key of a measured entry with
+    /// `identity_scope: canvases`.
+    public static func scopedResourceIdentity(profile: H3Profile, canvases: [String], recipe: String = "turbo8") throws -> String {
+        H3MeasuredResources.scopedIdentityPrefix + (try profile.scopedContentSHA256(canvases: Set(canvases))) + ":" + recipe
+    }
+
     /// `observer` (qualification only) receives the denoiser's boundary tensors, and `nativeObserver` (qualification only)
     /// every native submission of every stage's graphs; omit both for generation.
     public static func stages(profile: H3Profile, recipe: String = "turbo8",

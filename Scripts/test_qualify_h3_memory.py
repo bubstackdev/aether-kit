@@ -29,6 +29,38 @@ def group_alive(pgid):
         return True
 
 
+class TaskSelectionTests(unittest.TestCase):
+    """0.0.7 review: --tasks selects renders, and an entry claims only what its own renders measured."""
+
+    def test_every_task_by_default_and_first_last_only_with_a_last_keyframe(self):
+        self.assertEqual(gate.planned_renders("t2va,fl2va,fl2va-firstlast", ["704x704"], {"704x704": "last.png"}),
+                         [("t2va", "704x704"), ("fl2va", "704x704"), ("fl2va-firstlast", "704x704")])
+        self.assertEqual(gate.planned_renders("t2va,fl2va,fl2va-firstlast", ["960x544", "544x960"], {}),
+                         [("t2va", "960x544"), ("fl2va", "960x544"), ("t2va", "544x960"), ("fl2va", "544x960")])
+
+    def test_first_last_without_fl2va_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "fl2va-firstlast without fl2va"):
+            gate.planned_renders("fl2va-firstlast", ["704x704"], {"704x704": "last.png"})
+        with self.assertRaisesRegex(ValueError, "fl2va-firstlast without fl2va"):
+            gate.planned_renders("t2va,fl2va-firstlast", ["704x704"], {"704x704": "last.png"})
+
+    def test_a_selection_with_no_render_is_refused(self):
+        # fl2va-firstlast needs a last keyframe, so with fl2va filtered too nothing is left; an empty or unknown list refuses.
+        with self.assertRaisesRegex(ValueError, "must name"):
+            gate.planned_renders("", ["704x704"], {})
+        with self.assertRaisesRegex(ValueError, "must name"):
+            gate.planned_renders("t2va,flva", ["704x704"], {})
+        # A valid selection that still leaves nothing (no canvas) refuses before anything runs, never at runs[0].
+        with self.assertRaisesRegex(ValueError, "leaves no render"):
+            gate.planned_renders("t2va,fl2va", [], {})
+
+    def test_an_entry_claims_a_task_only_from_its_own_render_on_every_canvas(self):
+        self.assertEqual(gate.claimed_tasks([("fl2va", "704x704"), ("fl2va-firstlast", "704x704")], ["704x704"]), ["fl2va"])
+        self.assertEqual(gate.claimed_tasks([("fl2va-firstlast", "704x704")], ["704x704"]), [])
+        self.assertEqual(gate.claimed_tasks([("t2va", "960x544"), ("fl2va", "960x544"), ("t2va", "544x960")], ["960x544", "544x960"]), ["t2va"])
+        self.assertEqual(gate.claimed_tasks([("t2va", "704x704"), ("fl2va", "704x704")], ["704x704"]), ["fl2va", "t2va"])
+
+
 class SupervisionTests(unittest.TestCase):
     """Review M7: an interrupted gate stops and joins the workload's own process group."""
 

@@ -74,6 +74,8 @@ public struct H3Profile: Sendable {
     /// paths, on different Macs or under different users, share it, while any change to a graph, weight, table or
     /// setting changes it. Measured admission is keyed by it.
     public let contentSHA256: String
+    /// The manifest's bytes, for `scopedContentSHA256(canvases:)`.
+    private let manifestData: Data
     /// Every H3 clip model identity starts with this prefix (and nothing else does), so hosts can key the licence
     /// credit on it.
     public static let modelIdentityPrefix = "minimax-h3."
@@ -146,6 +148,38 @@ public struct H3Profile: Sendable {
 
     /// `contentSHA256` of a manifest's bytes.
     public static func contentSHA256(manifest data: Data) throws -> String {
+        try fingerprint(try locationFree(manifest: data))
+    }
+
+    /// The manifest maps keyed by canvas ("WIDTHxHEIGHT"): each holds one canvas's graph or grid, used only by a
+    /// render at that canvas (the vision kernel and keyframe kernels open only the request's).
+    public static let canvasKeyedPaths: [[String]] = [["conditioner_vision", "functions"], ["conditioner_vision", "grids"],
+                                                      ["video_encoder_first"], ["video_encoder_first_tiled", "tails"]]
+
+    /// `contentSHA256` scoped to `canvases`: the same fingerprint with each of `canvasKeyedPaths` cut down to those
+    /// canvases. Every other key is exactly as in `contentSHA256`, so a change to a shared graph, weight, table or
+    /// setting changes every scope, and a change to a listed canvas's graph changes its scope, while adding (or
+    /// changing) another canvas leaves it unchanged. Measured entries with `identity_scope: canvases` are keyed by it.
+    public static func scopedContentSHA256(manifest data: Data, canvases: Set<String>) throws -> String {
+        var object = try locationFree(manifest: data)
+        for path in canvasKeyedPaths {
+            func scoped(_ value: Any, _ rest: ArraySlice<String>) -> Any {
+                guard var map = value as? [String: Any] else { return value }
+                guard let key = rest.first else { return map.filter { canvases.contains($0.key) } }
+                if let inner = map[key] { map[key] = scoped(inner, rest.dropFirst()) }
+                return map
+            }
+            if let top = object[path[0]] { object[path[0]] = scoped(top, path.dropFirst()) }
+        }
+        return try fingerprint(object)
+    }
+
+    /// The scoped fingerprint of this profile for `canvases` (`scopedContentSHA256(manifest:canvases:)`).
+    public func scopedContentSHA256(canvases: Set<String>) throws -> String {
+        try Self.scopedContentSHA256(manifest: manifestData, canvases: canvases)
+    }
+
+    private static func locationFree(manifest data: Data) throws -> [String: Any] {
         func located(_ value: Any) -> Any {
             if let object = value as? [String: Any] {
                 return object.filter { !($0.key == "path" && $0.value is String) }.mapValues(located)
@@ -157,14 +191,18 @@ public struct H3Profile: Sendable {
             throw AetherError.invalidModel("H3 profile manifest is not a JSON object")
         }
         object["tokenizer"] = nil; object["lineage"] = nil
-        return h3SHA256(try JSONSerialization.data(withJSONObject: located(object), options: [.sortedKeys, .withoutEscapingSlashes]))
+        return located(object) as! [String: Any]
+    }
+
+    private static func fingerprint(_ object: [String: Any]) throws -> String {
+        h3SHA256(try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]))
     }
 
     public init(url: URL) throws {
         guard url.isFileURL else { throw AetherError.invalidModel("H3 profiles must be local") }
         let data = try Data(contentsOf: url)
         manifestSHA256 = h3SHA256(data)
-        contentSHA256 = try Self.contentSHA256(manifest: data)
+        contentSHA256 = try Self.contentSHA256(manifest: data); manifestData = data
         let m: Manifest
         do { m = try JSONDecoder().decode(Manifest.self, from: data) } catch let error as DecodingError {
             throw AetherError.invalidModel("H3 profile manifest is malformed: \(error)")

@@ -710,7 +710,7 @@ The user decided this on 2026-10-29, with the Kit lead's terms. Each measured en
 - `maximumPixels`, `maximumFrames` and `operationBytes` on an admission are union bounds for diagnostics. A UI offers what `admits(_:)` allows, not their combination.
 - Per-task entries let an FL2VA entry be re-measured and replaced without touching T2VA's. The memory gate writes one entry per task beside the combined one (`measuredEntriesByTask`).
 
-**Identity.** Entries are keyed to the exact identity they were measured under. Since 0.0.5 that identity is location-free (see [measured admission](#measured-admission)), so moving a profile no longer orphans its entries. The 0.0.5 final stack is 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay with seven tower canvases (`h3.profile/2:2a2d5198…`), in Kit's H3 home. Every bundled entry for it was measured on it (see [the 0.0.5 measurements](#005-measurements-final-stack)). The 2026-10-29 records below were keyed to overlays that are no longer the top of the stack, and their FL2VA renders used the text-only presentation: they are history, not bundled.
+**Identity.** Entries are keyed to the exact identity they were measured under. Since 0.0.5 that identity is location-free (see [measured admission](#measured-admission)), so moving a profile no longer orphans its entries. Since 0.0.7 the bundled entries carry a canvas-scoped identity instead, so a profile that only adds canvases keeps them (see [the square canvas](#square-canvas-704704-and-canvas-scoped-identity-007)). The 0.0.5 final stack is 5af39db5, then the large-canvas overlay, then the FL2VA conditioner overlay with seven tower canvases (`h3.profile/2:2a2d5198…`), in Kit's H3 home. Every bundled entry for it was measured on it (see [the 0.0.5 measurements](#005-measurements-final-stack)). The 2026-10-29 records below were keyed to overlays that are no longer the top of the stack, and their FL2VA renders used the text-only presentation: they are history, not bundled.
 
 ## Larger canvas: 1280×704 and the 10 s clip (0.0.4 export; 0.0.5 measurements)
 
@@ -765,6 +765,48 @@ Each value is the larger orientation's. Records: [A](evidence/h3-memory-gate-0.0
 - **Not covered:** 1344×768 and 768×1344 have tower graphs and keyframe tails but no measured entry, so measured admission refuses them (unmeasured).
 - **Video decode alone** ([record](evidence/h3-decode-only-0.0.5-2026-11-02.json)): 5.04 GiB of Metal at every canvas. Footprint is 1.30 GiB at 960×544 × 124 and 1.71 GiB at 1280×704 × 141. Time is 29 s and 71 s for 105 and 224 tiles. The decode stage's larger peaks in the gates are the denoiser's memory not yet returned.
 - **First+last trajectory on the final stack** ([record](evidence/h3-profile-trajectory-fl2va-first-last-0.0.5-2a2d5198-2026-11-02.json)): a fresh capture and replay under the current gate, which also requires the render's own ids and tags to equal upstream's presentation. It passes, with no open items. All 457 hashes replay, block 49 is 1.70–1.85% and block 0 0.53–0.58%, the condition rows are at 0.021%, and the render peaked at 12.56 GiB.
+
+## Square canvas 704×704 and canvas-scoped identity (0.0.7)
+
+**Status: exported, qualified and measured (2026-11-04).** A square clip canvas, for square keyframes that 960×544 crops hard (a 1024² picture loses about 43% of its height at 16:9). 704×704 is 22×22 latents: 484 rows per latent frame, so 5 s (124 frames, n = 7) is 17,908 video rows and 10 s (243, n = 14) is 34,848, both inside the 40,960-row limit (768×768 would not fit 10 s: 41,472). At 495,616 pixels it is inside today's region (at most 960×544's pixels), so a 5 s square is held to the 18 GiB bar and 10 s to the 24 GiB bar.
+
+**Export (CPU only).** Only the two canvas-keyed graphs are new: everything else (body, heads, pack, text, conditioner, video and audio decoders, and the 256 px keyframe tile graph) is the 0.0.5 stack's, reused after its hash check.
+
+| Graph | Check | Seconds |
+| --- | --- | ---: |
+| `conditioner_vision.functions.704x704` (grid 44×44, 1,936 patches, 484 tokens) | byte-identical to `Qwen3VLVisionModel.forward` | 41.6 |
+| `video_encoder_first_tiled.tails.704x704` (16 tiles) | byte-identical to `encode_vae_condition` | 30.2 |
+
+- `export-h3-profile.py --stage overlay` now also adds vision-tower canvases. A new canvas must bind the base tower's own weights and share its constants, an existing canvas is never replaced, and the base's lineage chain is kept.
+- The overlay sits on `profile-0.0.5` and adds exactly those two keys. Its whole-profile identity is `h3.profile/2:30e0c142…`; 0.0.5's is unchanged at `2a2d5198…`.
+
+**Canvas-scoped identity.** `H3Profile.contentSHA256` fingerprints the whole manifest, so any added canvas changed every bundled entry's key and orphaned all of them. `H3Profile.scopedContentSHA256(canvases:)` is the same fingerprint with the canvas-keyed maps (`conditioner_vision.functions` and `grids`, `video_encoder_first`, `video_encoder_first_tiled.tails`) cut down to the given canvases; every other key is exactly as before.
+
+- **Sound for memory:** a render at canvas X opens only X's graphs. The vision kernel opens the request's tower graph and drops the previous one (`NativeH3VisionKernel`, H3ProfileStages.swift). The keyframe kernels open the tile graph and the request canvas's tail on demand (`NativeH3KeyframeKernels`, `H3ProfileKeyframeEncoder`). Opening a profile parses the manifest only, and nothing on the render path reads another canvas's files.
+- **Entries:** an entry with `identity_scope: canvases` is keyed `h3.profile/3:<scoped>:<recipe>` over its own canvases and records the whole-profile identity it was measured on as `measured_execution_identity`. It matches a profile only through that profile's scoped identity for those canvases (`H3ProfileEngine.scopedResourceIdentity`), and covers only the canvases it lists, never one that fits inside them. Unscoped entries keep their whole-profile key and fit-inside coverage.
+- **Bundled:** the twelve 0.0.5 entries are re-keyed, with their numbers unchanged: `9f66fe91…` for 960×544 and 544×960 (Turbo8 and Turbo4) and `f42400cf…` for 1280×704 and 704×1280. Both stacks give the same scoped identities. The 0.0.3 entry stays unscoped.
+- **Lost coverage:** a canvas merely inside a scoped entry's canvases. 960×544 at 125–141 frames no longer falls under the 1280×704×141 entries, and 288×288 (diagnostic) no longer falls under 960×544's. No square is covered without its own measurement.
+- **Tests:** an added canvas leaves existing scopes unchanged while the whole fingerprint changes. A shared graph or setting changes every scope; a listed canvas's own graph changes its scope only; locations and lineage play no part. A scoped entry covers only its own canvases and matches only through its scope.
+- `qualify-h3-memory.py` writes scoped entries (via `aether-probe h3-profile-identity PROFILE RECIPE --canvases=…`). Its `--tasks` limits a gate to some of T2VA, FL2VA and FL2VA first+last; its entries then claim those tasks only.
+
+**Qualification (M5 Max, 2026-11-04, the 704² overlay `30e0c142…`, seed 1043, the gate prompt; the keyframes are the crane frame centre-cropped to a square and a push-in of it).**
+
+- **Tower** ([record](evidence/h3-presentation-gate-0.0.7-704x704-2026-11-04.json)): passes. The keyframe, 541 ids, tags, M-RoPE positions and bf16 pixels [1,936, 1,536] are exact. Native vs fp32, with upstream's bf16 vs fp32 and the ratio (bar 1.05×): merger 0.0317 / 0.0459 (0.69×); DeepStack 0.0099 / 0.0109 (0.90×), 0.0188 / 0.0253 (0.74×), 0.0287 / 0.0402 (0.71×). Tower Metal peak 1.59 GiB.
+- **Trajectory, FL2VA 704² × 22, step 0** ([record](evidence/h3-profile-trajectory-fl2va-0.0.7-704x704-2026-11-04.json)): passes (bar 2%). Every boundary hash replays; scheduler updates byte-identical; packing 0.0014%, block 0 0.76%, block 49 1.57%, video heads 0.17%, audio heads 0.18%, condition rows 0.022%.
+- **Memory** (Metal peak per render in GiB, with render time; worst case is admission's for the entry):
+
+| Gate | T2VA | FL2VA | FL2VA first+last | Worst case, T2VA / FL2VA entry | Bar |
+| --- | --- | --- | --- | --- | --- |
+| [Turbo8 704² × 124](evidence/h3-memory-gate-0.0.7-704x704-124-2026-11-04.json) | 10.71 (465 s) | 11.62 (577 s) | 12.06 (636 s) | 12.11 / 12.95 | 18 GiB |
+| [Turbo8 704² × 243](evidence/h3-memory-gate-0.0.7-704x704-243-2026-11-04.json) | 18.17 (1,214 s) | 19.79 (991 s) | 20.27 (1,045 s) | 19.81 / 22.25 | 24 GiB |
+| [Turbo4 704² × 124](evidence/h3-memory-gate-0.0.7-turbo4-704x704-124-2026-11-04.json) | not measured | 11.62 (214 s) | 12.06 (226 s) | — / 12.94 | 18 GiB |
+| [Turbo4 704² × 243](evidence/h3-memory-gate-0.0.7-turbo4-704x704-243-2026-11-04.json) | not measured | 21.62 (511 s) | 20.27 (522 s) | — / 23.54 | 24 GiB |
+
+  - **Turbo4 704² × 243 has only 0.46 GiB of headroom** under its 24 GiB bar (worst case 23.54 GiB): its FL2VA render peaked higher than Turbo8's at the same length (21.62 vs 19.79 GiB of Metal). It passes, but a re-measure that adds memory would fail it.
+  - Turbo4 has no T2VA square entry: its only host (Atelier) never animates without a picture, so T2VA 704² is refused there (unmeasured).
+- **Spot check** ([record](evidence/h3-memory-spot-check-0.0.7-960x544-124-2026-11-04.json)): 960×544 × 124 (Turbo8) on the 704² overlay against the re-keyed gate-A entries: every stage peak within its reservation (recorded peak + 256 MiB). FL2VA encoding 2.27 / 2.70, keyframe 2.05 / 2.31, denoising 12.50 / 16.37, video decode 10.72 / 10.79, audio decode 1.91 / 2.23 GiB; T2VA denoising 11.96 / 16.37, video decode 7.77 / 10.09 GiB.
+- **Quality** ([record](evidence/h3-quality-fl2va-first-last-0.0.7-704x704-2026-11-04.json)): FL2VA first+last 704² × 124, Turbo8, 398 s. The first frame is 35.52 dB from the first keyframe and the last 35.50 dB from the last keyframe (11.82 dB from the first: the clip moves to the end picture); the media audit passes.
+- **Bundled:** six scoped entries for `h3.profile/3:74680c14…`: Turbo8 T2VA and FL2VA at 124 (18 GiB) and 243 (24 GiB), and Turbo4 FL2VA at 124 (18 GiB) and 243 (24 GiB).
 
 ## Last-frame and first+last keyframes (2026-10-29)
 

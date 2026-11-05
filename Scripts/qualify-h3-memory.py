@@ -37,6 +37,31 @@ MARGIN = 256 << 20
 STAGES = ["encoding", "encodingKeyframe", "denoising", "decodingVideo", "decodingAudio"]
 
 
+TASKS = ("t2va", "fl2va", "fl2va-firstlast")
+
+
+def planned_renders(tasks, canvases, last_keyframes):
+    """The (task, canvas) renders a gate runs, in order. Refuses an unknown task, fl2va-firstlast without fl2va (a first+last
+    render alone can't stand for the FL2VA entry, which also covers first-only requests), and a selection that leaves no
+    render at all (for example fl2va-firstlast on canvases given no --last-keyframes)."""
+    names = [t for t in tasks.split(",") if t]
+    if not names or not set(names) <= set(TASKS):
+        raise ValueError(f"--tasks must name t2va, fl2va or fl2va-firstlast: {tasks!r}")
+    if "fl2va-firstlast" in names and "fl2va" not in names:
+        raise ValueError("--tasks names fl2va-firstlast without fl2va: a first+last render alone doesn't measure the FL2VA entry; add fl2va")
+    planned = [(t, c) for c in canvases for t in ("t2va", "fl2va") + (("fl2va-firstlast",) if c in last_keyframes else ()) if t in names]
+    if not planned:
+        raise ValueError(f"--tasks {tasks!r} leaves no render to run on {','.join(canvases)} (fl2va-firstlast needs --last-keyframes)")
+    return planned
+
+
+def claimed_tasks(ran, canvases):
+    """The entry tasks the renders that ran measure: a task only when its own plain render ran on every canvas the entry
+    lists (t2va-CANVAS, fl2va-CANVAS); a first+last render adds to the FL2VA entry's peaks but never claims it alone."""
+    ran = set(ran)
+    return sorted(t for t in ("fl2va", "t2va") if all((t, c) in ran for c in canvases))
+
+
 def sha(path):
     h = hashlib.sha256()
     with Path(path).open("rb") as f:
@@ -180,6 +205,9 @@ def main():
                     help="last frames, one per canvas, named by their exact size: each adds a first+last FL2VA render (fl2va-firstlast), "
                          "whose two-frame keyframe-encoder peak the FL2VA entry must cover")
     ap.add_argument("--canvases", default="960x544,544x960")
+    ap.add_argument("--tasks", default="t2va,fl2va,fl2va-firstlast",
+                    help="renders to run, of t2va, fl2va and fl2va-firstlast (the last only for canvases given --last-keyframes); "
+                         "entries are written for the tasks measured only")
     ap.add_argument("--frames", type=int, default=120)
     ap.add_argument("--seed", type=int, default=1043)
     ap.add_argument("--recipe", default="turbo8")
@@ -237,12 +265,16 @@ def main():
     stray = sorted(set(last_keyframes) - set(args.canvases.split(",")))
     if stray:
         ap.error(f"--last-keyframes names canvases outside --canvases: {stray}")
+    try:
+        planned = planned_renders(args.tasks, args.canvases.split(","), last_keyframes)
+    except ValueError as error:
+        ap.error(str(error))
 
     runs, records = [], {}
     released = None    # when this gate last released the GPU lock
     for canvas in args.canvases.split(","):
         width, height = canvas.split("x")
-        for task in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()):
+        for task in [t for t, c in planned if c == canvas]:
             if task != "t2va" and canvas not in keyframes:
                 ap.error(f"no first frame for {canvas}")
             stem = f"{task}-{canvas}"
@@ -393,8 +425,20 @@ def main():
     # The entries cite the record this run writes (docs/evidence/RECORD); without --record they are not bundleable.
     evidence = f"docs/evidence/{args.record}" if args.record else "unrecorded"
 
+    # 0.0.7: entries are keyed by the profile's identity scoped to the measured canvases (H3Profile.scopedContentSHA256),
+    # so a profile that only adds other canvases keeps them; the whole-profile identity is kept as provenance.
+    scoped = None
+    if identity:
+        out = subprocess.run([str(probe), "h3-profile-identity", str(args.profile), args.recipe, f"--canvases={args.canvases}"],
+                             capture_output=True, text=True, check=True).stdout
+        fields = json.loads(out)
+        if fields["resource_identity"] != identity:
+            raise RuntimeError(f"the renders were measured on {identity}, the profile is {fields['resource_identity']}")
+        scoped = fields["scoped_resource_identity"]
+
     def measured_entry(stage_bytes, operation_bytes, tasks=None):
-        e = dict(execution_identity=identity, device_architecture=architecture, canvases=args.canvases.split(","),
+        e = dict(execution_identity=scoped, identity_scope="canvases", measured_execution_identity=identity,
+                 device_architecture=architecture, canvases=args.canvases.split(","),
                  maximum_frames=maximum_frames, stage_peak_bytes={k: stage_bytes[k] for k in STAGES if k in stage_bytes},
                  operation_bytes=operation_bytes, evidence=evidence)
         if tasks:
@@ -402,14 +446,19 @@ def main():
         if bar != BAR:
             e["memory_bar_bytes"] = bar
         return e
-    entry = measured_entry(stage_peaks, operation)
+    # A gate claims only the tasks whose own plain render ran on every canvas (the combined record, as the per-task
+    # entries below); a first+last render never claims FL2VA alone.
+    measured_tasks = claimed_tasks([(t, c) for t, c, _ in runs], args.canvases.split(","))
+    if not measured_tasks:
+        raise SystemExit("no task has its own render on every canvas; nothing to claim")
+    entry = measured_entry(stage_peaks, operation, None if measured_tasks == ["fl2va", "t2va"] else measured_tasks)
     # One entry per task, so an FL2VA entry can be re-measured and replaced without touching T2VA's. Carried peaks
     # apply to the combined entry only.
     per_task = {}
     # A first+last render belongs to the FL2VA entry (its name starts "fl2va-"), so that entry covers the two-frame
     # keyframe-encoder peak the bundled entry holds (docs/evidence/h3-last-frame-memory-2026-10-29.json); without
     # --last-keyframes a rerun would fall back to the one-frame peak.
-    for task in sorted({t.split("-")[0] for t, _, _ in runs}):
+    for task in measured_tasks:
         peaks, carried_bytes = {}, 0
         for name, render in renders.items():
             if name.startswith(task + "-"):

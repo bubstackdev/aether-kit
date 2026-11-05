@@ -1,0 +1,413 @@
+{
+  "schema": 1,
+  "gate": "h3-memory",
+  "completedAt": "2026-11-05T00:21:39.470913+00:00",
+  "passed": true,
+  "failures": [],
+  "hostNote": null,
+  "spikeCapture": null,
+  "carriedRecords": [],
+  "carriedStagePeaks": [],
+  "memoryBarBytes": 25769803776,
+  "minimumPhysicalMemoryBytes": 68719476736,
+  "memoryBar": "Metal allocation peak over a complete render must not exceed 24 GiB, for every task and canvas; 18 GiB up to 960x544's pixels and 124 frames, 24 GiB beyond (with at least 64 GiB of physical memory)",
+  "profileAdapter": {
+    "alpha": 8.0,
+    "execution": "dynamic_lora",
+    "rank": 128,
+    "repository": "lightx2v/Minimax-h3-Turbo",
+    "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+    "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f"
+  },
+  "profileLineage": {
+    "base_bundle": "<kit-cache>/h3/profile-0.0.5/bundle.json",
+    "base_bundle_sha256": "99bf41169aa9584b9d87f3486b8191493fb6cfe369a0b5845a053bcc830c2e2f",
+    "added": [
+      "video_encoder_first_tiled.tails.704x704",
+      "conditioner_vision.functions.704x704"
+    ],
+    "change": "added entries only; every other entry is the base bundle's",
+    "base_lineage": {
+      "base_bundle": "<kit-cache>/h3/profile-large-canvas/bundle.json",
+      "base_bundle_sha256": "02a5be420ba948664742f1fcc4d8f535698f91be5c211b7d6579b12c2e60fe82",
+      "change": "added conditioner_vision (the Qwen3-VL vision tower per canvas, weights in place); every other entry is the base bundle's",
+      "base_lineage": {
+        "base_bundle": "<kit-cache>/h3/profile-c49d8dbf/bundle.json",
+        "base_bundle_sha256": "5af39db57a6ffc513d9c71f43d6875a44bd44b4ca53e3d29cf9e76cc205992ce",
+        "added": [
+          "video_encoder_first_tiled.tails.1280x704",
+          "video_encoder_first_tiled.tails.1344x768",
+          "video_encoder_first_tiled.tails.704x1280",
+          "video_encoder_first_tiled.tails.768x1344",
+          "audio_decoder.fixed.235",
+          "audio_decoder.fixed.405"
+        ],
+        "change": "added entries only; every other entry is the base bundle's"
+      }
+    }
+  },
+  "marginBytes": 268435456,
+  "admissionWorstCaseBytes": 25277993208,
+  "renders": {
+    "fl2va-704x704": {
+      "metalPeakBytes": 23216963584,
+      "metalPeakGiB": 21.622,
+      "footprintPeakGiB": 23.042,
+      "carriedStateBytes": 201326592,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 2211512320,
+          "footprintPeakBytes": 2436925984,
+          "residentPeakBytes": 2436925984,
+          "metalPeakGiB": 2.06,
+          "footprintPeakGiB": 2.27,
+          "residentPeakGiB": 2.27
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2204647424,
+          "footprintPeakBytes": 1758119616,
+          "residentPeakBytes": 2204647424,
+          "metalPeakGiB": 2.053,
+          "footprintPeakGiB": 1.637,
+          "residentPeakGiB": 2.053
+        },
+        "denoising": {
+          "metalPeakBytes": 23216963584,
+          "footprintPeakBytes": 24741122296,
+          "residentPeakBytes": 24741122296,
+          "metalPeakGiB": 21.622,
+          "footprintPeakGiB": 23.042,
+          "residentPeakGiB": 23.042
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 13429833728,
+          "footprintPeakBytes": 18082548616,
+          "residentPeakBytes": 18082548616,
+          "metalPeakGiB": 12.508,
+          "footprintPeakGiB": 16.841,
+          "residentPeakGiB": 16.841
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1658896384,
+          "footprintPeakBytes": 2948975616,
+          "residentPeakBytes": 2948975616,
+          "metalPeakGiB": 1.545,
+          "footprintPeakGiB": 2.746,
+          "residentPeakGiB": 2.746
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "118db9dcc067f84f496458273aac5f5f86e80133c3251f20465a93268d41d1a0"
+    },
+    "fl2va-firstlast-704x704": {
+      "metalPeakBytes": 21767356416,
+      "metalPeakGiB": 20.272,
+      "footprintPeakGiB": 21.38,
+      "carriedStateBytes": 268435456,
+      "stages": {
+        "encoding": {
+          "metalPeakBytes": 2322350080,
+          "footprintPeakBytes": 2608106016,
+          "residentPeakBytes": 2608106016,
+          "metalPeakGiB": 2.163,
+          "footprintPeakGiB": 2.429,
+          "residentPeakGiB": 2.429
+        },
+        "encodingKeyframe": {
+          "metalPeakBytes": 2211659776,
+          "footprintPeakBytes": 2360937544,
+          "residentPeakBytes": 2360937544,
+          "metalPeakGiB": 2.06,
+          "footprintPeakGiB": 2.199,
+          "residentPeakGiB": 2.199
+        },
+        "denoising": {
+          "metalPeakBytes": 21767356416,
+          "footprintPeakBytes": 22956446040,
+          "residentPeakBytes": 22956446040,
+          "metalPeakGiB": 20.272,
+          "footprintPeakGiB": 21.38,
+          "residentPeakGiB": 21.38
+        },
+        "decodingVideo": {
+          "metalPeakBytes": 10277814272,
+          "footprintPeakBytes": 15426407232,
+          "residentPeakBytes": 15426407232,
+          "metalPeakGiB": 9.572,
+          "footprintPeakGiB": 14.367,
+          "residentPeakGiB": 14.367
+        },
+        "decodingAudio": {
+          "metalPeakBytes": 1679867904,
+          "footprintPeakBytes": 2962754464,
+          "residentPeakBytes": 2962754464,
+          "metalPeakGiB": 1.564,
+          "footprintPeakGiB": 2.759,
+          "residentPeakGiB": 2.759
+        }
+      },
+      "withinBar": true,
+      "timelineSHA256": "0eec185653ceb96789a9bc458e0326c31c4f5a88a7aa61ccf48f1c2fd2c62cbf"
+    }
+  },
+  "measuredResources": {
+    "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo4",
+    "identity_scope": "canvases",
+    "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo4",
+    "device_architecture": "h17c",
+    "canvases": [
+      "704x704"
+    ],
+    "maximum_frames": 243,
+    "stage_peak_bytes": {
+      "encoding": 2608106016,
+      "encodingKeyframe": 2360937544,
+      "denoising": 24741122296,
+      "decodingVideo": 18082548616,
+      "decodingAudio": 2962754464
+    },
+    "operation_bytes": 268435456,
+    "evidence": "docs/evidence/h3-memory-gate-0.0.7-turbo4-704x704-243-2026-11-04.json",
+    "tasks": [
+      "fl2va"
+    ],
+    "memory_bar_bytes": 25769803776
+  },
+  "measuredEntriesByTask": {
+    "fl2va": {
+      "entry": {
+        "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo4",
+        "identity_scope": "canvases",
+        "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo4",
+        "device_architecture": "h17c",
+        "canvases": [
+          "704x704"
+        ],
+        "maximum_frames": 243,
+        "stage_peak_bytes": {
+          "encoding": 2608106016,
+          "encodingKeyframe": 2360937544,
+          "denoising": 24741122296,
+          "decodingVideo": 18082548616,
+          "decodingAudio": 2962754464
+        },
+        "operation_bytes": 268435456,
+        "evidence": "docs/evidence/h3-memory-gate-0.0.7-turbo4-704x704-243-2026-11-04.json",
+        "tasks": [
+          "fl2va"
+        ],
+        "memory_bar_bytes": 25769803776
+      },
+      "admissionWorstCaseBytes": 25277993208
+    }
+  },
+  "controllers": {
+    "dump-fl2va-704x704": {
+      "schema": 1,
+      "stage": "dump-fl2va-704x704",
+      "command": [
+        "<repo>/.build/release/aether-probe",
+        "h3-profile-dump",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/prompt.txt",
+        "704",
+        "704",
+        "240",
+        "1043",
+        "turbo4",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/dump-fl2va-704x704",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/crane-704x704.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "242051d25647f7040ca0c3229951006116a6dbd19691c018e301d11a05824a8d",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "waitedSeconds": 0.0,
+      "startedAt": "2026-11-05T00:02:53.881632+00:00",
+      "joined": true,
+      "exitCode": 0,
+      "elapsedSeconds": 2.251,
+      "endedAt": "2026-11-05T00:02:56.132541+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-fl2va-704x704": {
+      "schema": 1,
+      "stage": "render-fl2va-704x704",
+      "command": [
+        "<kit-cache>/with-gpu-lock.sh",
+        "h3-memory-gate: fl2va-704x704",
+        "<repo>/.build/release/aether-probe",
+        "h3-memory-render",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/dump-fl2va-704x704",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/render-fl2va-704x704"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "242051d25647f7040ca0c3229951006116a6dbd19691c018e301d11a05824a8d",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "minimumMemoryLevel": 40,
+      "memoryLevelBeforeWait": 78,
+      "memoryLevelAtStart": 78,
+      "waitedSeconds": 0.0,
+      "startedAt": "2026-11-05T00:02:56.148865+00:00",
+      "joined": true,
+      "exitCode": 0,
+      "elapsedSeconds": 510.698,
+      "endedAt": "2026-11-05T00:11:26.851141+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "dump-fl2va-firstlast-704x704": {
+      "schema": 1,
+      "stage": "dump-fl2va-firstlast-704x704",
+      "command": [
+        "<repo>/.build/release/aether-probe",
+        "h3-profile-dump",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/prompt.txt",
+        "704",
+        "704",
+        "240",
+        "1043",
+        "turbo4",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/dump-fl2va-firstlast-704x704",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/crane-704x704.png",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/crane-pushin-704x704.png"
+      ],
+      "budgetSeconds": 600,
+      "pinsDigest": "242051d25647f7040ca0c3229951006116a6dbd19691c018e301d11a05824a8d",
+      "gpuLock": false,
+      "passed": true,
+      "timedOut": false,
+      "waitedSeconds": 0.0,
+      "startedAt": "2026-11-05T00:11:26.870499+00:00",
+      "joined": true,
+      "exitCode": 0,
+      "elapsedSeconds": 2.683,
+      "endedAt": "2026-11-05T00:11:29.553931+00:00",
+      "sourcePinsUnchanged": true
+    },
+    "render-fl2va-firstlast-704x704": {
+      "schema": 1,
+      "stage": "render-fl2va-firstlast-704x704",
+      "command": [
+        "<kit-cache>/with-gpu-lock.sh",
+        "h3-memory-gate: fl2va-firstlast-704x704",
+        "<repo>/.build/release/aether-probe",
+        "h3-memory-render",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/bundle.json",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/dump-fl2va-firstlast-704x704",
+        "<hf-cache>/aether-kit/minimax-h3/profile-square-704/gates/memory-turbo4-704x704-243/render-fl2va-firstlast-704x704"
+      ],
+      "budgetSeconds": 7200,
+      "pinsDigest": "242051d25647f7040ca0c3229951006116a6dbd19691c018e301d11a05824a8d",
+      "gpuLock": true,
+      "passed": true,
+      "timedOut": false,
+      "minimumMemoryLevel": 40,
+      "memoryLevelBeforeWait": 78,
+      "memoryLevelAtStart": 78,
+      "waitedSeconds": 87.3,
+      "startedAt": "2026-11-05T00:12:56.875519+00:00",
+      "joined": true,
+      "exitCode": 0,
+      "elapsedSeconds": 522.347,
+      "endedAt": "2026-11-05T00:21:39.230782+00:00",
+      "sourcePinsUnchanged": true
+    }
+  },
+  "pinsDigest": "242051d25647f7040ca0c3229951006116a6dbd19691c018e301d11a05824a8d",
+  "pinsUnchanged": true,
+  "filesSHA256": {
+    "<repo>/.build/release/aether-probe": "c4bf81a8450831cb10452a64fbc2ec0ac225e25239365ebda9ea5c429f0c5dc1",
+    "<repo>/Package.swift": "dd7a1ee5ddfeae26eeb5c6dda02aba70c503afa9abed3472eb9adfc8e1f71931",
+    "<hf-cache>/aether-kit/minimax-h3/profile-square-704/bundle.json": "9fadf81f9a3186a2910618e6158d8fe0b8aafe6a6e5b2ebb72e418b00d6ca094",
+    "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/prompt.txt": "50489143e821f13239499d744b4f3d8c43f2e5e1eb80aa1d9ec2d31a333147d7",
+    "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/crane-704x704.png": "39511a27c40f019cfb9996d3d1ab23c7be1087a05107dae42b7d9ea87f92850f",
+    "<hf-cache>/aether-kit/minimax-h3/profile-square-704/inputs/crane-pushin-704x704.png": "305b1503cc3f1611fd144fc88c0b7003e111c51617ac5b940595078a13d875a8",
+    "<repo>/Sources/AetherKit/AetherError.swift": "63f582962478d87fd7ee756270d7b1bd5af17d3dc0f97c06e7552b03f266721b",
+    "<repo>/Sources/AetherKit/AetherKit.docc/AetherKit.md": "fe015050f7eb754bd1860fd2d822e0acfdc0c4a741331887fb1a89a48c8c10fd",
+    "<repo>/Sources/AetherKit/FairInferenceQueue.swift": "475d9cb7ccf83b2f0a127fd33e25d822f1717985e24da0037e4e31d449d91d44",
+    "<repo>/Sources/AetherKit/FloatTensor.swift": "2d1e05c7a554a57703eecfc25634a0234532ebf1c9afeb28ff4f206fa35b47a3",
+    "<repo>/Sources/AetherKit/GPUAdmission.swift": "5c1e9aab70cf835d6f9f2eda25b9fa6bf363110d14a14ce42b51a5f771d8c75f",
+    "<repo>/Sources/AetherKit/GeneratedAudio.swift": "f16a705941aad4f0b6c8579b114df566d38cd7516a0385700c8acfc32fb2cb36",
+    "<repo>/Sources/AetherKit/GeneratedImage.swift": "f1dba080eeb07a647368bd4b73ba59bae88e9020ec2850735ec84fa9e005fc64",
+    "<repo>/Sources/AetherKit/LanguageModelManifest.swift": "3c21e468652c028e72f93aea20af23f18a50085b2cde350e0c2378661ea2810b",
+    "<repo>/Sources/AetherKit/ModelLifecycle.swift": "ff7795d71b07ba0c2500c4ef8520d5310af77539f7789999bda3e49bd20fe04d",
+    "<repo>/Sources/AetherKit/ResourceCoordinator.swift": "2acbe69f718a6ad4f1c412ce837305a81a9e5832b2ad13c2bfe0df509c90e9bb",
+    "<repo>/Sources/AetherKit/SeededGaussianNoise.swift": "2f49c10edfa40a4f589d8c97fd8a7f6a3c545585db0c85d73d7b2b85dc92a981",
+    "<repo>/Sources/AetherKit/SharedGPULease.swift": "9a7757d0487c7d8b7b96a165d42e9bb109afc68a8262174b826a217d3b36f699",
+    "<repo>/Sources/AetherKit/TestBuildFloor.swift": "e5c9af1b16eada30ffd9c9f5b0a211afb97e6eba79c11ef75c7c784b8df986f9",
+    "<repo>/Sources/AetherKit/UnfairLock.swift": "6d2d142f593816114b318572fbd19db787278d6a7abaa9acc1d501047ea65546",
+    "<repo>/Sources/AetherKit/VerifiedFileHashes.swift": "d9c7c8b29e17c488422296eda3a9ccd7387c7ba61ca0dd31b62e7ab621b81375",
+    "<repo>/Sources/AetherCoreAI/CoreAIBackend.swift": "2a6737cc18b622ac6540c0f828dec1d3ca6983f973ac8cc02c5134153370ac2f",
+    "<repo>/Sources/AetherCoreAI/ModelDescription.swift": "d6a2f6a58a3430969abfa5b96b0dc5221f61164ba660f0c415efd3d788719f64",
+    "<repo>/Sources/AetherCoreAI/ModelSession.swift": "a2fb3e9a5296baebb22b894066f92a63f14eda4fe1b1719c5a316b565d2f789f",
+    "<repo>/Sources/AetherCoreAI/SerialComputeStream.swift": "685ab6efc3d683e0da64c40a32b9f9c89a73d175f62130f5506ccdec7e13eaae",
+    "<repo>/Sources/AetherCoreAI/StagedModel.swift": "203ee72cb73f5a85445e006bf6dd4253f94b4f5ec211b3f0200f914999a438e0",
+    "<repo>/Sources/AetherH3/AetherH3.docc/AetherH3.md": "d077f744e331af40467a3302dfa98a0359ec806f6253c6cd88ac63e2cce9a697",
+    "<repo>/Sources/AetherH3/H3BlockProbePlan.swift": "a4607b5a9c054e315d499c5e177cf2b3bac14307f7103628c8d7502e3b417fce",
+    "<repo>/Sources/AetherH3/H3Bundle.swift": "b92e08e085aa357cea34c03a2ebe293288b00447e894ec10c7a31cb460e4ae25",
+    "<repo>/Sources/AetherH3/H3ChainProbePlan.swift": "e149199d52924693c18a1cf3435e0e2e37ee4d417373399fe23cbb41eeacc1b3",
+    "<repo>/Sources/AetherH3/H3DenoisingPlan.swift": "01c19a2584467d38c6e45af97828ff062652bce30779311172ebe3ef8509e4bf",
+    "<repo>/Sources/AetherH3/H3ExportHeader.swift": "bdbf9c257cbda8e28328e05da403e384167c83e1691e2e759f2a4d218a88e285",
+    "<repo>/Sources/AetherH3/H3Geometry.swift": "cf41651e1ce6a6b18184bdc95d32706187706d69582c00f1c8a3e243e8c7dd21",
+    "<repo>/Sources/AetherH3/H3Layout.swift": "8d24d4f3b142b373cb32e3dc2217d9608d374983bbcb429cb4cb42fb435a9d7a",
+    "<repo>/Sources/AetherH3/H3LimitExceeded.swift": "a7c98307fd2c53a177531961d5160d8724ac21b75b6da686cbbbee059bdfc9cd",
+    "<repo>/Sources/AetherH3/H3MeasuredResources.swift": "380c702f41ebd474725a856dc8e7cfd3085a85124f3c23a236672dd35b5c31b3",
+    "<repo>/Sources/AetherH3/H3Noise.swift": "59de85511e009352276d2b1d7b1551f6e602f3ccdf066d7141b5452da279f205",
+    "<repo>/Sources/AetherH3/H3PhaseProbePlan.swift": "f0e9fb6888b527da5e027f04e4a68cb653b52b2ebfb9d37b03fa26d13eae4dba",
+    "<repo>/Sources/AetherH3/H3Presentation.swift": "6f8275131b87e58701afda35e90ce0c03356569aa72dabb32e55b0f1c2a160c9",
+    "<repo>/Sources/AetherH3/H3Profile.swift": "7e657ef871e5a0a7f21f54162e9c1dce4cc7dbce1df3db669f90abfaa3ac678b",
+    "<repo>/Sources/AetherH3/H3ReferenceComparison.swift": "c0bb8d1b8d54d260f2d015b1d7abb49a8499ccdc924b4f8f99e4a887ff2ddb51",
+    "<repo>/Sources/AetherH3/H3ResourceAdmission.swift": "61c37d13d5449f37520bb3a992fc54215ebce4c0bffe7451d79e118219165c57",
+    "<repo>/Sources/AetherH3/H3Schedule.swift": "a8dfee22d82a51f25a169dc59e76eb1c62db087e4022c731bc23194080cef63a",
+    "<repo>/Sources/AetherH3/H3TensorComparison.swift": "2aa88598d6c6164afb3e95544a57c98518de44a799c790e251ae6a87226d9c83",
+    "<repo>/Sources/AetherH3/H3TensorData.swift": "71dc6c565a8d030b1efca7de35f9cce8837b7c69ca7d42a50a0d7edcd081d24e",
+    "<repo>/Sources/AetherH3/H3VideoSession.swift": "be9466c6b64fb404f2eb9acb0953594418f433b7c20ce3f0b13ceed2649b3e40",
+    "<repo>/Sources/AetherH3/H3VideoStitching.swift": "2177f0265cc3312f32758b92b68351751accc1b98001bff7250b0ed0c061d58e",
+    "<repo>/Sources/AetherH3/Resources/turbo8-schedule.json": "228517a240fc6dc417c3e26a8f01a91f64c3f16a37c5c4bd43de7e5327e198f7",
+    "<repo>/Sources/AetherH3CoreAI/AetherH3CoreAI.docc/AetherH3CoreAI.md": "ee23296a89e993f7f9b36038e4472cfac03979db7dec2241ec65a96567997ff3",
+    "<repo>/Sources/AetherH3CoreAI/H3BlockSession.swift": "d7591bf9510392de8a6ced542df7ca597e016188c7dbcb8441c1c56da974eed7",
+    "<repo>/Sources/AetherH3CoreAI/H3ChainSession.swift": "55e76791c1f0ee1d6a4c605c730200d795ebe440ec4b610ba3b18eedaf132781",
+    "<repo>/Sources/AetherH3CoreAI/H3ChainState.swift": "fe9b36fccafcc080b6d0e8e09412f8a335be05b041af166d0fdd6a51178c613e",
+    "<repo>/Sources/AetherH3CoreAI/H3DenoisingLoop.swift": "729a988c9428e5a5f1183fe334082675379e56dc2a9651b8a36c559f45ef95c0",
+    "<repo>/Sources/AetherH3CoreAI/H3DenoisingSession.swift": "3146f63a3086ed689b545044e97c9e5783e4fd4ee8cff6da0fdda23d134c339d",
+    "<repo>/Sources/AetherH3CoreAI/H3MeasuredAdmission.swift": "0b6aa22481943672bf32cbad8dbacfacd1abcbafd53ed915fe3914dd9e29719c",
+    "<repo>/Sources/AetherH3CoreAI/H3PhaseSession.swift": "41d9f7e5e793bab439725323bbd5789a42f425538864b4eb2c1e65b719c6d24b",
+    "<repo>/Sources/AetherH3CoreAI/H3ProfileStages.swift": "0de52dffdd8d788a7cfb725a2650d473524c0e89400669ebd2da41eddb9ff68d",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3BlockBackend.swift": "3fd8dd54ba87315d7541ae7b4892961d1702c7a3ba663b01dc537b19c76553f3",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3ChainBackend.swift": "6c5b83a288f4d4731353a8c6d30add816c10ebb100ee7f7a8c6601ffefae3b41",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3DenoisingBackend.swift": "6691ebb0404bff0044b36122dee6bfb06502bf74ea9a33f2fbb2bcee19fcaf01",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3Function.swift": "ddaadb9d98b5a8ee3c228cec227466fbb9371d461364bd0d6eacf4b4b1cfb0c2",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3Graph.swift": "b9dafc81d221f795d4726ccb4ee66c13f7e25df810cc2fd38bb87259c8deb34c",
+    "<repo>/Sources/AetherH3CoreAI/NativeH3PhaseBackend.swift": "4d25bbe1b50f2e667798dae82241d36fc41c530012c123e5916c34b9224346e3",
+    "<repo>/Sources/AetherProbe/AetherProbe.swift": "2384a651001bfbf06713c1ec3bdfa0e2b4600fda1078ad3c8badea1cff31f21b",
+    "<repo>/Sources/AetherProbe/CatalogEntryCommand.swift": "f17dafaa9ffd1c15d2c97d5069f5b00048f9558856c3bdf78f1e0fef65138290",
+    "<repo>/Sources/AetherProbe/Flux2Benchmark.swift": "f12b564d2aa2ff2f1dde7b5ffa54c4b40428b65c1915ddf83f17acb57378d2e4",
+    "<repo>/Sources/AetherProbe/Flux2BenchmarkCommand.swift": "09ae8a50dc0cde9a12a544ae31d7e85de5b2bca34aca370365e1bc8ef5ca566b",
+    "<repo>/Sources/AetherProbe/H3ChainCommand.swift": "3db8588fd57869884befda0f157f28d1978895c3af5dabe058c4888e4ebb816b",
+    "<repo>/Sources/AetherProbe/H3DenoisingCommand.swift": "3166f488a74e3eece65c5fafc78b74e81cc6f9ef13614f2a5dc3c2adc6383f3f",
+    "<repo>/Sources/AetherProbe/H3DenoisingLifecycleTrace.swift": "9b9985b1dcf0fbb7a6794855b709f4a48175d99135f1fa054ecafad0c8d30521",
+    "<repo>/Sources/AetherProbe/H3LifecycleCommand.swift": "161412adcee2c9d3f6c188bdb1e54d724f06b8a0d632dc9273c9294b59c2460a",
+    "<repo>/Sources/AetherProbe/H3MemoryDiagnosis.swift": "ef52a20cbc0560fcabe000868d5476477e108417e52379e712808749963cf9aa",
+    "<repo>/Sources/AetherProbe/H3PhaseCommand.swift": "b0ee01fb31ce59cd9d01c64148343dc549f8cd139d8f3864dec84e5b0574c517",
+    "<repo>/Sources/AetherProbe/H3PresentationCommand.swift": "b9016b2e1b2ae236eec2f02532f3266c02b0fd7639ac46d5b85f07ee2032bd2d",
+    "<repo>/Sources/AetherProbe/H3ProfileCommand.swift": "b1438ee9da3ccbc0553daa19cc3457fdfb7bd4cb835b5835cddd798a26671ac1",
+    "<repo>/Sources/AetherProbe/H3QualificationCommand.swift": "035e45197edb11c0f7b4a6ff7e73a5ac06fda511c57bcaedef3074380c1cc1c1",
+    "<repo>/Sources/AetherProbe/H3SessionLifecycleCommand.swift": "0a2dbadf024bfb81141c2f38a77f2e359fac0ab6834907959147b11d67ccb01d",
+    "<repo>/Sources/AetherProbe/KreaBatchCommand.swift": "4363993edbe80b36e5f49eb37db07c656c29cdf50bccccfa87d1494a98278aff",
+    "<repo>/Sources/AetherProbe/KreaBenchmark.swift": "ee91dc7738cee7ee3f9e203928622759dac68863d345d9d97bf567074cc42210",
+    "<repo>/Sources/AetherProbe/KreaBenchmarkCommand.swift": "d8c5ea24613eb128d11c9821b316476e46752ab57c4b9731a501ad21ceca18d9",
+    "<repo>/Sources/AetherProbe/KreaCommands.swift": "d7aab590605e0571ad89b31134ddae5be1de95d7a98e9c84b63d94cc016c0185",
+    "<repo>/Sources/AetherProbe/LifecycleCommand.swift": "35c388699a67ae16bdbf651e0b3009856ec395ae056e278409aaf66f81ebdc59",
+    "<repo>/Sources/AetherProbe/PrepareModelCommand.swift": "b60ff41d895e684dacdf5bfa8bf6dbb4d62c1e170da050e3b477f4bdd4245046",
+    "<repo>/Sources/AetherProbe/ProbeGPULease.swift": "fcc021c846ccb1bfd784fc8208e694970b266bf2dd77c769b58c5d546ee5c0a5",
+    "<repo>/Sources/AetherProbe/ReadinessCommand.swift": "754a59e4ee6daf9a646d59c91ba127a589e8fb61e5542c747152a2c03cbc3a1a"
+  },
+  "scriptSHA256": "8d61a2ba1b5f3761cd59044f1e9425cb23a4c80ac3b25b9f02fb10a4df8510d3",
+  "keyframeCoverage": "FL2VA entries cover first-only, last-only and first+last requests. A last-only request has a first-only request's rows and one keyframe encode, so the first-only render covers it; the first+last render, run for each canvas given --last-keyframes, covers the two-keyframe presentation and encode.",
+  "scope": "Complete H3VideoSession renders (conditioner, first-frame encoder for FL2VA, eight Turbo steps, video and audio decode) at the requested canvases and length; per-stage peaks attribute residual memory from the previous stage to the next stage."
+}
