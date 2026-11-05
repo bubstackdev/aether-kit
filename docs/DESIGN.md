@@ -186,13 +186,21 @@ actor DecoderEngine {
   - The output is `logits [1,S,V]`.
   - This matches today's zoo exports. The M0 spike confirmed it on qwen3-0.6b: `input_ids`/`position_ids` int32
     `[1×?]`, `keyCache`/`valueCache` fp16 `[28×1×8×?×128]` (sequence on axis 3), and `logits` fp16 `[1×?×V]`.
-    Positions carry the whole range `0..<position+S`. Hybrid bundles are still to be checked.
+    Positions carry the whole range `0..<position+S`.
+  - On the hybrid qwen3.5-0.8b bundle (decode-only), `input_ids` is static `[1×1]`. KV covers only the 6 attention
+    layers, and two **static recurrent states** (`convState`, `recState`) cover the 18 linear-attention layers. The
+    `states.kv` / `states.recurrent` roles must come from the manifest, because shape heuristics misread `recState`
+    as a KV cache.
 - **KV capacity:** a dynamic sequence axis grows geometrically up to `maxContext`, and a static axis is fixed.
   Rewinding attention-only models is O(1), because the position counter just moves back and stale slots are
   overwritten. Hybrid and SSM models can't rewind partially, so they rewind by `restore(snapshot)`. The Generator takes
   a snapshot at the end of each prompt, which replaces the fork's `checkpointAfter`.
-- **Prefill:** a whole batch when the graph allows it. Otherwise the prompt is fed in chunks of `prefillChunk`, or one
-  token at a time when `staticSequence == 1`. These come from the manifest, not from the bundle name or an env var.
+- **Prefill is always chunked, with at most `prefillChunk` tokens per call (default 512).** This is a correctness limit.
+  In M0, a single 896+-token batch on qwen3-0.6b produced logits off by 7–16 from both chunked and token-by-token
+  feeding, and at 2048 tokens it changed the greedy output. Batches of ≤ 768 tokens matched. Chunking is also faster
+  (3.8k against 2.7k tok/s at 3072 tokens). Graphs with `staticSequence == 1` feed one token at a time. All of these
+  values come from the manifest, never from the bundle name or an env var. The parity gate checks chunked prefill
+  against token-by-token feeding at about 3k tokens for every model.
 - **Sampling** runs on the CPU over `Logits` in v1: greedy, temperature, top-k, top-p and repetition penalty, all with a
   seeded RNG. A GPU sampler is an optimization behind the same interface.
 
@@ -334,8 +342,12 @@ ready to promote when:
 - **Performance without the fork's pipelined engine.** The fork's `CoreAIPipelinedEngine` (2.6k lines) uses
   `ComputeStream` encode and GPU sampling. Our sequential loop may be noticeably slower. M0 measures the gap, and a
   follow-up spike measures `encode(to:)`.
-- **The hybrid/SSM recurrent-state contract** (Qwen3.5, LFM2.5, Granite 4): confirm the state names and shapes and the
-  snapshot cost.
+- **The hybrid/SSM recurrent-state contract.** Confirmed on Qwen3.5: snapshot/restore is bit-exact, and all 35 MB of
+  state copies in 4 ms. Still to check: LFM2.5 and Granite 4. The open cost is **prefill on decode-only hybrid
+  bundles**: 164 tok/s, because they take one token per call. Supporting the zoo's chunked "prefill" function, or
+  exporting a dynamic-S prefill graph, is the M2 performance item.
+- **No independent token-exact reference yet.** M0 criteria 2 and 6 (parity and speed against the fork's
+  `llm-runner`) are still open.
 - **The per-architecture AOT `.aimodelc`** selection and `AIModelCache` specialization behaviour on iPhone.
 - **iOS memory:** whether the measured-footprint residency policy holds for models of 2 GB and up.
 - **Nonescapable `MutableViews` lifetimes** across `await`: the single audited escape helper must be proven sound
