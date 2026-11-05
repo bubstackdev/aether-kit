@@ -1215,8 +1215,19 @@ private func finalStackScope(_ recipe: String) -> ([String]) throws -> String {
     let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c",
                                                        coordinator: budget, physicalMemoryBytes: 64 << 30)
     #expect(mac.executionIdentity == identity)
-    // Without the profile's scopes no scoped entry matches.
-    #expect(throws: AetherError.self) { _ = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget) }
+    // Without the profile's scopes, a lookup says scoped entries need them rather than calling the profile unmeasured.
+    let scopedOnly = AetherError.invalidRequest("measured H3 entries on h17c are canvas-scoped: pass scopedIdentity "
+                                                + "(H3ProfileEngine.scopedResourceIdentity) to find the ones for \(identity)")
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundledAdmission(executionIdentity: identity, deviceArchitecture: "h17c", coordinator: budget) }
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundledEntries(executionIdentity: identity, deviceArchitecture: "h17c") }
+    #expect(throws: scopedOnly) { _ = try H3MeasuredResources.bundled(executionIdentity: identity, deviceArchitecture: "h17c") }
+    // With them, the single-entry lookup finds the scoped entries too (several here, so it points at bundledAdmission).
+    #expect(throws: AetherError.invalidRequest("8 measured H3 entries for \(identity); use bundledAdmission")) {
+        _ = try H3MeasuredResources.bundled(executionIdentity: identity, scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c")
+    }
+    // An unscoped identity keeps its own lookup with no scope (the 0.0.3 entry).
+    #expect(try H3MeasuredResources.bundled(executionIdentity: "h3.profile/2:0707647b14538914a8ed282f41346c5c0906e1f6c8277029eff9c7847da80f62:turbo8",
+                                            deviceArchitecture: "h17c", physicalMemoryBytes: 8 << 30).canvases == ["960x544", "544x960"])
     let keyframe = try H3Keyframe(width: 960, height: 544, rgb: [UInt8](repeating: 0, count: 960 * 544 * 3))
     func both(_ frames: Int) throws -> H3VideoRequest {
         try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 960, height: 544, requestedFrames: frames, diagnostic: true), seed: 1,

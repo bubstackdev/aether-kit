@@ -218,13 +218,7 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     public static func entries(_ entries: [H3MeasuredResources], executionIdentity: String,
                                scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
                                physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> [H3MeasuredResources] {
-        let recorded = try entries.filter { entry in
-            guard entry.deviceArchitecture == deviceArchitecture else { return false }
-            switch entry.identityScope {
-            case nil: return entry.executionIdentity == executionIdentity
-            case .canvases: return try scopedIdentity.map { try $0(entry.canvases) == entry.executionIdentity } ?? false
-            }
-        }
+        let recorded = try matching(entries, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture)
         guard !recorded.isEmpty else { throw AetherError.unsupported("no measured H3 memory for \(executionIdentity) on \(deviceArchitecture)") }
         let allowed = recorded.filter { physicalMemoryBytes >= $0.minimumPhysicalMemoryBytes }
         guard !allowed.isEmpty else {
@@ -244,21 +238,43 @@ public struct H3MeasuredResources: Sendable, Codable, Equatable {
     /// The one entry of `entries` recorded for this identity and device, if this device's physical memory allows it.
     /// Throws when none is recorded, when several are (counted before the memory filter, so the answer does not depend
     /// on the device), or when the one recorded needs more physical memory.
-    public static func entry(_ entries: [H3MeasuredResources], executionIdentity: String, deviceArchitecture: String,
-                             physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
-        let recorded = entries.filter { $0.executionIdentity == executionIdentity && $0.deviceArchitecture == deviceArchitecture }
+    public static func entry(_ entries: [H3MeasuredResources], executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil,
+                             deviceArchitecture: String, physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
+        let recorded = try matching(entries, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture)
         guard recorded.count <= 1 else {
             throw AetherError.invalidRequest("\(recorded.count) measured H3 entries for \(executionIdentity); use bundledAdmission")
         }
-        return try Self.entries(recorded, executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture,
+        return try Self.entries(recorded, executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture,
                                 physicalMemoryBytes: physicalMemoryBytes)[0]
+    }
+
+    /// The entries of `entries` recorded for this profile and device: an unscoped one by `executionIdentity`, a scoped one
+    /// by the profile's scope for its own canvases (`scopedIdentity`). Without `scopedIdentity`, when nothing unscoped
+    /// matches but the device has scoped entries, it throws rather than report the profile as unmeasured: a scoped entry
+    /// can only be found through the profile's scope (`H3ProfileEngine.scopedResourceIdentity`).
+    static func matching(_ entries: [H3MeasuredResources], executionIdentity: String, scopedIdentity: (([String]) throws -> String)?,
+                         deviceArchitecture: String) throws -> [H3MeasuredResources] {
+        let recorded = try entries.filter { entry in
+            guard entry.deviceArchitecture == deviceArchitecture else { return false }
+            switch entry.identityScope {
+            case nil: return entry.executionIdentity == executionIdentity
+            case .canvases: return try scopedIdentity.map { try $0(entry.canvases) == entry.executionIdentity } ?? false
+            }
+        }
+        if recorded.isEmpty, scopedIdentity == nil,
+           entries.contains(where: { $0.deviceArchitecture == deviceArchitecture && $0.identityScope == .canvases }) {
+            throw AetherError.invalidRequest("measured H3 entries on \(deviceArchitecture) are canvas-scoped: pass scopedIdentity "
+                                             + "(H3ProfileEngine.scopedResourceIdentity) to find the ones for \(executionIdentity)")
+        }
+        return recorded
     }
 
     /// The one bundled entry this device may use for this identity (see `entry(_:executionIdentity:deviceArchitecture:physicalMemoryBytes:)`);
     /// an identity with several entries is admitted through `bundledAdmission`.
-    public static func bundled(executionIdentity: String, deviceArchitecture: String,
+    public static func bundled(executionIdentity: String, scopedIdentity: (([String]) throws -> String)? = nil, deviceArchitecture: String,
                                physicalMemoryBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) throws -> H3MeasuredResources {
-        try entry(bundled(), executionIdentity: executionIdentity, deviceArchitecture: deviceArchitecture, physicalMemoryBytes: physicalMemoryBytes)
+        try entry(bundled(), executionIdentity: executionIdentity, scopedIdentity: scopedIdentity, deviceArchitecture: deviceArchitecture,
+                  physicalMemoryBytes: physicalMemoryBytes)
     }
 
     /// The admission over every bundled entry for this identity and device. Entries this device's physical memory does
