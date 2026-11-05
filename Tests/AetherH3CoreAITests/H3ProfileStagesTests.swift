@@ -627,8 +627,10 @@ func h3MeasuredAdmissionForTheExportedProfile() throws {
     let environment = ProcessInfo.processInfo.environment
     let profile = try H3Profile(url: URL(fileURLWithPath: environment["AETHER_H3_PROFILE"]!))
     let pinned = Dictionary(uniqueKeysWithValues: (environment["AETHER_H3_PROFILE_ENTRIES"] ?? "").split(separator: ",").compactMap {
-        let pair = $0.split(separator: "=")
-        return pair.count == 2 ? (String(pair[0]), Int(pair[1])) : nil
+        (item: Substring) -> (String, Int)? in
+        let pair = item.split(separator: "=")
+        guard pair.count == 2, let count = Int(pair[1]) else { return nil }
+        return (String(pair[0]), count)
     })
     for recipe in ["turbo8", "turbo4"] {
         let identity = H3ProfileEngine.resourceIdentity(profile: profile, recipe: recipe)
