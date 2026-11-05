@@ -2,7 +2,9 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
-## 0.0.7 — unreleased
+## 0.0.7 — 2026-11-04
+
+Seventh experimental developer preview: H3's 704×704 square canvas and canvas-scoped measured identity, for Atelier. The frozen API is unchanged. See the [release notes](docs/release-notes/0.0.7.md).
 
 ### Added
 

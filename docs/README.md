@@ -114,3 +114,7 @@ pinned conversion tooling and independent full-trajectory qualification.
 (`H3LimitExceeded`, [guide](h3-integration.md#fl2va-conditioner-presentation-005)), so apps tell a size or length
 that fits no prompt from a prompt that pushes a clip over without parsing messages. The 0.0.5 list is
 [still open](release-notes/0.0.6.md#still-open-from-the-005-list).
+
+## 0.0.7 release (2026-11-04)
+
+[Release notes](release-notes/0.0.7.md) and the [changelog](../CHANGELOG.md). H3's [704×704 square canvas](h3-integration.md#square-canvas-704704-and-canvas-scoped-identity-007), with measured entries keyed by a canvas-scoped identity so added canvases keep existing entries. The 0.0.5 list is [still open](release-notes/0.0.7.md#still-open-from-the-005-list).
