@@ -180,6 +180,9 @@ def main():
                     help="last frames, one per canvas, named by their exact size: each adds a first+last FL2VA render (fl2va-firstlast), "
                          "whose two-frame keyframe-encoder peak the FL2VA entry must cover")
     ap.add_argument("--canvases", default="960x544,544x960")
+    ap.add_argument("--tasks", default="t2va,fl2va,fl2va-firstlast",
+                    help="renders to run, of t2va, fl2va and fl2va-firstlast (the last only for canvases given --last-keyframes); "
+                         "entries are written for the tasks measured only")
     ap.add_argument("--frames", type=int, default=120)
     ap.add_argument("--seed", type=int, default=1043)
     ap.add_argument("--recipe", default="turbo8")
@@ -198,6 +201,8 @@ def main():
                     help="earlier gate records whose per-stage peaks the measured entry must also cover (each is cited in the record)")
     ap.add_argument("--record", help="also write the gate record to docs/evidence/RECORD (a new file name); the measured entry cites it")
     args = ap.parse_args()
+    if not args.tasks or not set(args.tasks.split(",")) <= {"t2va", "fl2va", "fl2va-firstlast"}:
+        ap.error(f"--tasks must name t2va, fl2va or fl2va-firstlast: {args.tasks}")
     root = Path(__file__).resolve().parent.parent
     # Each gate is held to one bar, chosen by its region: an extended entry needs a larger canvas or a longer clip.
     pixels = max(int(w) * int(h) for w, h in (c.split("x") for c in args.canvases.split(",")))
@@ -242,7 +247,7 @@ def main():
     released = None    # when this gate last released the GPU lock
     for canvas in args.canvases.split(","):
         width, height = canvas.split("x")
-        for task in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()):
+        for task in [t for t in ("t2va", "fl2va") + (("fl2va-firstlast",) if canvas in last_keyframes else ()) if t in args.tasks.split(",")]:
             if task != "t2va" and canvas not in keyframes:
                 ap.error(f"no first frame for {canvas}")
             stem = f"{task}-{canvas}"
@@ -414,7 +419,9 @@ def main():
         if bar != BAR:
             e["memory_bar_bytes"] = bar
         return e
-    entry = measured_entry(stage_peaks, operation)
+    # A gate that ran only some tasks claims only those (the combined record, as the per-task entries below).
+    measured_tasks = sorted({t.split("-")[0] for t, _, _ in runs})
+    entry = measured_entry(stage_peaks, operation, None if measured_tasks == ["fl2va", "t2va"] else measured_tasks)
     # One entry per task, so an FL2VA entry can be re-measured and replaced without touching T2VA's. Carried peaks
     # apply to the combined entry only.
     per_task = {}
