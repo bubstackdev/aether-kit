@@ -296,6 +296,139 @@
         "fl2va"
       ],
       "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2209745224,
+        "denoising": 12536843432,
+        "decodingVideo": 7616448672,
+        "decodingAudio": 1084506112
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-704x704-124-2026-11-04.json",
+      "tasks": [
+        "t2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2588740056,
+        "encodingKeyframe": 2208841728,
+        "denoising": 13434146368,
+        "decodingVideo": 10678241560,
+        "decodingAudio": 2052884784
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-704x704-124-2026-11-04.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2213022000,
+        "denoising": 20800459072,
+        "decodingVideo": 16064662120,
+        "decodingAudio": 1679736832
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-704x704-243-2026-11-04.json",
+      "tasks": [
+        "t2va"
+      ],
+      "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2607237616,
+        "encodingKeyframe": 2211659776,
+        "denoising": 23350481408,
+        "decodingVideo": 19208883128,
+        "decodingAudio": 2996341832
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-704x704-243-2026-11-04.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2587871704,
+        "encodingKeyframe": 2211659776,
+        "denoising": 13425446464,
+        "decodingVideo": 11979148072,
+        "decodingAudio": 2017773800
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-turbo4-704x704-124-2026-11-04.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "704x704"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2608106016,
+        "encodingKeyframe": 2360937544,
+        "denoising": 24741122296,
+        "decodingVideo": 18082548616,
+        "decodingAudio": 2962754464
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-memory-gate-0.0.7-turbo4-704x704-243-2026-11-04.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
     }
   ]
 }

@@ -1,0 +1,155 @@
+{
+  "audit": {
+    "schema": 1,
+    "render": "<hf-kit-cache>/minimax-h3/profile-square-704/gates/quality-704x704",
+    "profile_sha256": "9fadf81f9a3186a2910618e6158d8fe0b8aafe6a6e5b2ebb72e418b00d6ca094",
+    "geometry": {
+      "width": 704,
+      "height": 704,
+      "requestedFrames": 124,
+      "frames": 124,
+      "fps": 24,
+      "durationSeconds": 5.166666666666667
+    },
+    "checks": [
+      {
+        "name": "frameShape",
+        "passed": true,
+        "value": [
+          124,
+          704,
+          704,
+          3
+        ],
+        "bar": [
+          124,
+          704,
+          704,
+          3
+        ]
+      },
+      {
+        "name": "noConstantFrame",
+        "passed": true,
+        "value": 0,
+        "bar": 0
+      },
+      {
+        "name": "noBlackFrame",
+        "passed": true,
+        "value": 0,
+        "bar": 0
+      },
+      {
+        "name": "noWhiteFrame",
+        "passed": true,
+        "value": 0,
+        "bar": 0
+      },
+      {
+        "name": "frozenTransitionsAtMost10Percent",
+        "passed": true,
+        "value": 0,
+        "bar": "<= 12.3"
+      },
+      {
+        "name": "pcmShape",
+        "passed": true,
+        "value": [
+          2,
+          165600
+        ],
+        "bar": [
+          2,
+          165600
+        ]
+      },
+      {
+        "name": "pcmFinite",
+        "passed": true,
+        "value": 0,
+        "bar": 0
+      },
+      {
+        "name": "durationMatchesVideo",
+        "passed": true,
+        "value": 0.00833,
+        "bar": "|d| <= 0.025"
+      },
+      {
+        "name": "clippingAtMost0.1Percent",
+        "passed": true,
+        "value": 0.0,
+        "bar": 0.001
+      },
+      {
+        "name": "dcOffsetBelow0.01",
+        "passed": true,
+        "value": [
+          9e-05,
+          1e-05
+        ],
+        "bar": 0.01
+      },
+      {
+        "name": "notSilent",
+        "passed": true,
+        "value": 0.0969,
+        "bar": "< 1.0"
+      }
+    ],
+    "stats": {
+      "frames": {
+        "meanRange": [
+          120.19,
+          127.4
+        ],
+        "spreadRange": [
+          58.4,
+          74.38
+        ],
+        "saturatedShare": 0.02228,
+        "temporalDifference": {
+          "min": 1.47,
+          "median": 3.918,
+          "max": 9.119
+        },
+        "lumaJumpsAbove25": 0
+      },
+      "audio": {
+        "sampleRate": 32000,
+        "channels": 2,
+        "samples": 165600,
+        "seconds": 5.175,
+        "peakDBFS": [
+          -13.92,
+          -18.14
+        ],
+        "rmsDBFS": [
+          -42.66,
+          -44.91
+        ],
+        "silentWindowShare": 0.0969,
+        "channelCorrelation": 0.6428
+      }
+    },
+    "passed": true
+  },
+  "keyframePSNR": {
+    "frames": [
+      124,
+      704,
+      704,
+      3
+    ],
+    "first_vs_first_keyframe_db": 35.52,
+    "last_vs_last_keyframe_db": 35.5,
+    "last_vs_first_keyframe_db": 11.82,
+    "files": [
+      "first-frame.png",
+      "first-keyframe.png",
+      "last-frame.png",
+      "last-keyframe.png"
+    ]
+  }
+}

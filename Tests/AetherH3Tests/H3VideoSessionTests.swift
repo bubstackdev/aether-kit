@@ -1064,6 +1064,40 @@ private struct RefusingConditioner: H3PromptConditioner {
     }
 }
 
+/// 0.0.7: the 704x704 overlay (`h3.profile/2:30e0c142…`) keeps every 0.0.5 entry through its scopes and adds the square:
+/// Turbo8 T2VA and FL2VA at 5 s on 18 GiB and 10 s on 24 GiB; Turbo4 FL2VA only, 5 s on 18 GiB and 10 s on 24 GiB.
+@Test func h3BundledSquareCanvasAdmitsFiveAndTenSecondSquares() throws {
+    let identity = "h3.profile/2:30e0c1428337af6a11184133ce455235e9931a05726d97da0afa3c4a828fdcff:turbo8"
+    let square = "h3.profile/3:74680c14bca6330a90d948e7792bef9be51937f12474dac301e2d3eaeb5fcbb6"
+    func scope(_ recipe: String) -> ([String]) throws -> String {
+        { canvases in canvases == ["704x704"] ? square + ":" + recipe : try finalStackScope(recipe)(canvases) }
+    }
+    let budget = try ResourceCoordinator(capacityBytes: 64 << 30)
+    let keyframe = try H3Keyframe(width: 704, height: 704, rgb: [UInt8](repeating: 0, count: 704 * 704 * 3))
+    func clip(_ frames: Int, keyframes: Int) throws -> H3VideoRequest {
+        try H3VideoRequest(prompt: "p", geometry: try H3Geometry(width: 704, height: 704, requestedFrames: frames, diagnostic: true), seed: 1,
+                           firstFrame: keyframes > 0 ? keyframe : nil, lastFrame: keyframes > 1 ? keyframe : nil, audio: true)
+    }
+    for (recipe, tasks) in [("turbo8", [0, 1, 2]), ("turbo4", [1, 2])] {
+        let mac = try H3MeasuredResources.bundledAdmission(executionIdentity: identity.replacingOccurrences(of: ":turbo8", with: ":" + recipe),
+                                                           scopedIdentity: scope(recipe), deviceArchitecture: "h17c", coordinator: budget,
+                                                           physicalMemoryBytes: 64 << 30)
+        for keyframes in tasks {
+            let five = try mac.envelope(for: try clip(124, keyframes: keyframes)), ten = try mac.envelope(for: try clip(243, keyframes: keyframes))
+            #expect(five.memoryBarBytes == H3MeasuredResources.memoryBarBytes && five.canvases == ["704x704"], "\(recipe) \(keyframes)")
+            #expect(ten.memoryBarBytes == H3MeasuredResources.extendedMemoryBarBytes && ten.canvases == ["704x704"], "\(recipe) \(keyframes)")
+        }
+        if recipe == "turbo4" { #expect(!mac.admits(try clip(124, keyframes: 0))) }
+        // The 0.0.5 entries still apply on the overlay, through their scopes.
+        #expect(mac.admits(try request(960, 544, 124, first: true, audio: true)))
+    }
+    // The 0.0.5 stack itself has no square (its 704x704 scope is another identity).
+    let finalStack = try H3MeasuredResources.bundledAdmission(executionIdentity: "h3.profile/2:2a2d519878566dd6141eec49e90689a08b666aad75f1395c369460b62a772719:turbo8",
+                                                              scopedIdentity: finalStackScope("turbo8"), deviceArchitecture: "h17c", coordinator: budget,
+                                                              physicalMemoryBytes: 64 << 30)
+    #expect(!finalStack.admits(try clip(124, keyframes: 1)))
+}
+
 /// 0.0.7: a manifest's canvas-scoped fingerprint. Adding (or changing) another canvas leaves an existing scope
 /// unchanged while the whole-profile fingerprint changes; changing a shared graph changes every scope; locations and
 /// lineage play no part, as in `contentSHA256`.
@@ -1167,8 +1201,8 @@ private let finalStackScopes = ["960x544,544x960": "h3.profile/3:9f66fe91548f8aa
                                 "1280x704,704x1280": "h3.profile/3:f42400cf848686e78e344fed15b195fe5cfd84b6d0dd9da514c405f6f622d55a"]
 private func finalStackScope(_ recipe: String) -> ([String]) throws -> String {
     { canvases in
-        guard let scoped = finalStackScopes[canvases.joined(separator: ",")] else { throw AetherError.unsupported("no scope for \(canvases)") }
-        return scoped + ":" + recipe
+        // A real profile has a scope for any canvases; the 0.0.5 stack's for others matches no bundled entry.
+        (finalStackScopes[canvases.joined(separator: ",")] ?? "h3.profile/3:not-measured-on-0.0.5:" + canvases.joined(separator: ",")) + ":" + recipe
     }
 }
 
