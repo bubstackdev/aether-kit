@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""Aether-Kit catalog generator.
+
+`catalog/catalog.json` is the source of truth for which models ship. This script keeps it and the compiled-in Swift
+catalog (`Sources/AetherCore/Catalog/Catalog+Generated.swift`) in step.
+
+Commands:
+  refresh [--id ID ...]  Re-list every variant's files from the Hugging Face API at the pinned revision and record
+                         path, size and SHA-256. LFS files take the hash from the tree listing's `lfs.oid`; small
+                         non-LFS files (whose `oid` is a git blob SHA-1) are downloaded once and hashed here.
+                         Network access is needed; the result is written back to catalog.json.
+  emit                   Write the Swift source from catalog.json (offline, deterministic). This is the default.
+  check                  Exit 1 if the Swift source is stale or an entry is incomplete. CI runs this.
+
+Standard library only. Run it as `scripts/gen-catalog <command>` from anywhere.
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import urllib.parse
+import urllib.request
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CATALOG = os.path.join(ROOT, "catalog", "catalog.json")
+SWIFT_OUT = os.path.join(ROOT, "Sources", "AetherCore", "Catalog", "Catalog+Generated.swift")
+HF = "https://huggingface.co"
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def load_catalog():
+    with open(CATALOG, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_catalog(catalog):
+    with open(CATALOG, "w", encoding="utf-8") as f:
+        json.dump(catalog, f, indent=2, sort_keys=True, ensure_ascii=False)
+        f.write("\n")
+
+
+def http_get(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "aether-kit-gen-catalog/1"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        return resp.read()
+
+
+def tree(repo, revision, subtree):
+    path = urllib.parse.quote(subtree)
+    url = f"{HF}/api/models/{repo}/tree/{revision}/{path}?recursive=true"
+    return json.loads(http_get(url))
+
+
+def sha256_of_remote(repo, revision, path):
+    url = f"{HF}/{repo}/resolve/{revision}/{urllib.parse.quote(path)}"
+    h = hashlib.sha256()
+    req = urllib.request.Request(url, headers={"User-Agent": "aether-kit-gen-catalog/1"})
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        while True:
+            chunk = resp.read(1 << 20)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def refresh(catalog, only):
+    for entry in catalog["entries"]:
+        if only and entry["id"] not in only:
+            continue
+        for key, variant in sorted(entry["variants"].items()):
+            subtree = variant["subtree"].strip("/")
+            listing = tree(entry["repo"], entry["revision"], subtree)
+            files = []
+            for item in listing:
+                if item.get("type") != "file":
+                    continue
+                full = item["path"]
+                rel = full[len(subtree) + 1:] if subtree else full
+                size = int(item.get("size", 0))
+                lfs = item.get("lfs")
+                if lfs and SHA256.match(lfs.get("oid", "")):
+                    digest = lfs["oid"]
+                    size = int(lfs.get("size", size))
+                else:
+                    print(f"  hashing non-LFS {entry['id']}:{rel} ({size} bytes)", file=sys.stderr)
+                    digest = sha256_of_remote(entry["repo"], entry["revision"], full)
+                files.append({"path": rel, "size": size, "sha256": digest})
+            files.sort(key=lambda f: f["path"])
+            variant["files"] = files
+            variant["bytes"] = sum(f["size"] for f in files)
+            print(f"{entry['id']} [{key}] {len(files)} files, {variant['bytes']} bytes", file=sys.stderr)
+
+
+def validate(catalog):
+    problems = []
+    if catalog.get("schema") != 1:
+        problems.append("catalog schema must be 1")
+    seen = set()
+    for entry in catalog["entries"]:
+        eid = entry.get("id", "?")
+        if eid in seen:
+            problems.append(f"{eid}: duplicate id")
+        seen.add(eid)
+        for field in ("id", "task", "driver", "repo", "revision", "license", "variants"):
+            if not entry.get(field):
+                problems.append(f"{eid}: missing {field}")
+        if not re.match(r"^[0-9a-f]{40}$", entry.get("revision", "")):
+            problems.append(f"{eid}: revision must be a full 40-hex commit SHA")
+        if not re.match(r"^[a-z0-9][a-z0-9.-]*@[0-9]+$", entry.get("driver", "")):
+            problems.append(f"{eid}: driver must look like name@version")
+        for key, variant in entry.get("variants", {}).items():
+            files = variant.get("files", [])
+            if not files:
+                problems.append(f"{eid}[{key}]: no files (run `refresh`)")
+            for f in files:
+                if not SHA256.match(f.get("sha256", "")):
+                    problems.append(f"{eid}[{key}] {f.get('path')}: missing sha256")
+            if variant.get("bytes") != sum(f.get("size", 0) for f in files):
+                problems.append(f"{eid}[{key}]: bytes does not equal the sum of file sizes")
+    return problems
+
+
+def swift_string(s):
+    return json.dumps(s, ensure_ascii=False)
+
+
+def emit_swift(catalog):
+    out = []
+    w = out.append
+    w("// GENERATED by scripts/gen-catalog from catalog/catalog.json. Do not edit by hand.")
+    w("// Regenerate with `scripts/gen-catalog emit`; CI runs `scripts/gen-catalog check`.")
+    w("")
+    w("extension Catalog {")
+    w("    /// The catalog compiled into this build: pins and per-file SHA-256 that were tested together.")
+    w("    public static let builtin = Catalog(entries: [")
+    for entry in catalog["entries"]:
+        w("        CatalogEntry(")
+        w(f"            id: {swift_string(entry['id'])},")
+        w(f"            task: {swift_string(entry['task'])},")
+        w(f"            driver: DriverID(validated: {swift_string(entry['driver'])}),")
+        w(f"            repo: {swift_string(entry['repo'])},")
+        w(f"            revision: {swift_string(entry['revision'])},")
+        w(f"            license: {swift_string(entry['license'])},")
+        w("            variants: [")
+        for key in sorted(entry["variants"]):
+            v = entry["variants"][key]
+            w(f"                {swift_string(key)}: CatalogVariant(")
+            w(f"                    subtree: {swift_string(v['subtree'])},")
+            w(f"                    bytes: {v['bytes']},")
+            w("                    files: [")
+            for f in v["files"]:
+                w(f"                        CatalogFile(path: {swift_string(f['path'])}, size: {f['size']}, "
+                  f"sha256: {swift_string(f['sha256'])}),")
+            w("                    ],")
+            archs = v.get("architectures")
+            if archs is None:
+                w("                    architectures: nil")
+            else:
+                w(f"                    architectures: [{', '.join(swift_string(a) for a in archs)}]")
+            w("                ),")
+        w("            ]")
+        w("        ),")
+    w("    ])")
+    w("}")
+    return "\n".join(out) + "\n"
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("command", nargs="?", default="emit", choices=["refresh", "emit", "check"])
+    parser.add_argument("--id", action="append", default=[], help="refresh only these catalog ids")
+    args = parser.parse_args()
+
+    catalog = load_catalog()
+    if args.command == "refresh":
+        refresh(catalog, set(args.id))
+        save_catalog(catalog)
+        args.command = "emit"
+
+    problems = validate(catalog)
+    swift = emit_swift(catalog)
+    if args.command == "check":
+        try:
+            with open(SWIFT_OUT, encoding="utf-8") as f:
+                current = f.read()
+        except FileNotFoundError:
+            current = ""
+        if current != swift:
+            problems.append(f"{os.path.relpath(SWIFT_OUT, ROOT)} is stale; run `scripts/gen-catalog emit`")
+        for p in problems:
+            print(f"error: {p}", file=sys.stderr)
+        sys.exit(1 if problems else 0)
+
+    if problems:
+        for p in problems:
+            print(f"error: {p}", file=sys.stderr)
+        sys.exit(1)
+    os.makedirs(os.path.dirname(SWIFT_OUT), exist_ok=True)
+    with open(SWIFT_OUT, "w", encoding="utf-8") as f:
+        f.write(swift)
+    print(f"wrote {os.path.relpath(SWIFT_OUT, ROOT)}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

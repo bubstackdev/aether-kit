@@ -1,0 +1,14 @@
+{
+  "function": "main",
+  "inputs": [
+    { "name": "input_ids", "kind": "ndArray", "scalarType": "int32", "shape": [1, -1] },
+    { "name": "position_ids", "kind": "ndArray", "scalarType": "int32", "shape": [1, -1] }
+  ],
+  "states": [
+    { "name": "keyCache", "kind": "ndArray", "scalarType": "float16", "shape": [28, 1, 8, -1, 128] },
+    { "name": "valueCache", "kind": "ndArray", "scalarType": "float16", "shape": [28, 1, 8, -1, 128] }
+  ],
+  "outputs": [
+    { "name": "logits", "kind": "ndArray", "scalarType": "float16", "shape": [1, -1, 151936] }
+  ]
+}

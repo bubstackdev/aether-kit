@@ -1,0 +1,59 @@
+{
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "file" : "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : "logits"
+      },
+      "specialization" : {
+        "computeUnit" : "gpu",
+        "expectFrequentReshapes" : true
+      },
+      "states" : {
+        "kv" : [
+          "keyCache",
+          "valueCache"
+        ],
+        "recurrent" : [
+          "convState",
+          "recState"
+        ],
+        "sequenceAxis" : 3
+      }
+    }
+  },
+  "id" : "qwen3.5-0.8b",
+  "precision" : {
+    "activations" : "fp16"
+  },
+  "provenance" : {
+    "source" : "Qwen/Qwen3.5-0.8B",
+    "synthesizedBy" : "zoo-bundle-adapter@1",
+    "zooRepo" : "mlboydaisuke/qwen3.5-0.8B-CoreAI",
+    "zooRevision" : "1b8c0203c0f317027db508e97372c589afaace7b"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "chatTemplate" : "tokenizer/chat_template.jinja",
+    "dir" : "tokenizer",
+    "stop" : [
+      "<|im_end|>"
+    ],
+    "thinking" : {
+      "close" : "</think>",
+      "open" : "<think>"
+    },
+    "toolDialect" : "hermes"
+  }
+}
