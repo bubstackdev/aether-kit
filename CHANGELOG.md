@@ -2,6 +2,16 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
+## 0.0.7 — unreleased
+
+### Added
+
+- **H3 square canvas 704×704** ([guide](docs/h3-integration.md#square-canvas-704704-and-canvas-scoped-identity-007)): an overlay on the 0.0.5 stack adds the 704×704 vision-tower graph and first-frame encoder tail, each byte-identical to upstream on CPU. Qualified natively: the tower is at 0.69–0.90× upstream's own bf16 spread (bar 1.05×), the FL2VA trajectory at 704² × 22 passes (block 49 1.57%), and a first+last render keeps 35.5 dB to each keyframe. Six bundled entries: Turbo8 T2VA and FL2VA at 124 frames (18 GiB, worst case 12.95 GiB) and 243 (24 GiB, 22.25 GiB); Turbo4 FL2VA at 124 (12.94 GiB) and 243 (23.54 GiB, 0.46 GiB of headroom). Turbo4 has no T2VA square entry. `export-h3-profile.py --stage overlay` now adds vision-tower canvases; `qualify-h3-memory.py --tasks` limits a gate to some tasks.
+
+### Changed
+
+- **Canvas-scoped measured identity:** measured entries can be keyed by `H3Profile.scopedContentSHA256(canvases:)`, the profile fingerprint with its canvas-keyed graphs cut down to the entry's canvases (`identity_scope: canvases`, `h3.profile/3:…`, the measured whole-profile identity kept as provenance). A profile that only adds canvases keeps every entry; a scoped entry covers only the canvases it lists. The twelve 0.0.5 entries are re-keyed with their numbers unchanged, and a 960×544 spot check on the 704² overlay is within them. `H3MeasuredResources.entries`/`bundledEntries`/`bundledAdmission` take a `scopedIdentity` closure, and `H3ProfileEngine.measuredAdmission` passes the profile's. **Coverage change:** 960×544 at 125–141 frames is no longer under the 1280×704 × 141 entries, and 288×288 no longer under 960×544's.
+
 ## 0.0.6 — 2026-11-03
 
 Sixth experimental developer preview: typed H3 limit refusals for Atelier. The frozen API is unchanged. See the [release notes](docs/release-notes/0.0.6.md).
