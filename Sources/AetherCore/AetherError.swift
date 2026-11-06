@@ -27,6 +27,13 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
     case tensor(name: String, reason: TensorFailure)
     /// The underlying runtime (Core AI or the file system) failed.
     case runtime(underlying: any Error)
+    /// `resource` is held by someone else: an installed bundle a reader lease keeps open, or an install another
+    /// process is running. Retry once the holder lets go.
+    case inUse(resource: String)
+    /// Whose turn it is to use a shared resource (the GPU) was not settled in this caller's favour.
+    case admission(AdmissionFailure)
+    /// The system reports critical memory pressure, so no new model load starts.
+    case memoryPressure
 
     public enum DownloadFailure: Sendable, Hashable, CustomStringConvertible {
         /// The server answered with an unexpected HTTP status.
@@ -41,6 +48,47 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             case .http(let status): "HTTP \(status)"
             case .transport(let message): message
             case .unexpectedContent(let message): message
+            }
+        }
+    }
+
+    /// Why an admission (in-process `GPUAdmission`, its `FairInferenceQueue`, or the cross-process `SharedGPULease`)
+    /// refused. `holder` is the process a lease names, when it names one.
+    public enum AdmissionFailure: Sendable, Hashable, CustomStringConvertible {
+        /// The cross-process GPU lease is held by another live process (or by this one).
+        case leaseHeld(holder: Int32?)
+        /// A waiting acquisition of the GPU lease reached its timeout while the lease was still held.
+        case leaseTimedOut(holder: Int32?)
+        /// The lease directory could not be created for a reason other than an existing lease.
+        case leaseUnavailable(path: String, errno: Int32)
+        /// Fail-fast admission found every slot in use, or work already queued ahead.
+        case busy
+        /// A queued admission reached its timeout before a slot was free.
+        case timedOut
+        /// The queue's limits are not valid (a limit below 1, or more running slots than outstanding ones).
+        case invalidLimits
+        /// A ticket id is already queued or running.
+        case duplicateID
+        /// The global outstanding limit (queued plus running) refused the request.
+        case globalLimit
+        /// The owner's outstanding limit refused the request.
+        case ownerLimit
+        /// A release named a ticket that is not running.
+        case notRunning
+
+        public var description: String {
+            func holder(_ pid: Int32?) -> String { pid.map { "process \($0)" } ?? "an unidentified holder (no pid file)" }
+            switch self {
+            case .leaseHeld(let pid): return "the shared GPU lease is held by \(holder(pid))"
+            case .leaseTimedOut(let pid): return "timed out waiting for the shared GPU lease held by \(holder(pid))"
+            case .leaseUnavailable(let path, let code): return "cannot create the GPU lease at \(path) (errno \(code))"
+            case .busy: return "the GPU is in use by other work in this process"
+            case .timedOut: return "timed out waiting for the GPU"
+            case .invalidLimits: return "invalid admission limits"
+            case .duplicateID: return "duplicate admission ticket"
+            case .globalLimit: return "the global admission limit is reached"
+            case .ownerLimit: return "the owner's admission limit is reached"
+            case .notRunning: return "the admission ticket is not running"
             }
         }
     }
@@ -92,6 +140,12 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             "Tensor '\(name)': \(reason)"
         case .runtime(let underlying):
             "Runtime failure: \(underlying)"
+        case .inUse(let resource):
+            "'\(resource)' is in use"
+        case .admission(let reason):
+            "Admission refused: \(reason)"
+        case .memoryPressure:
+            "Memory pressure is critical: no new model load starts"
         }
     }
 }

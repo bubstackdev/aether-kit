@@ -85,4 +85,12 @@ struct InstallReceipt: Codable, Sendable {
     static func url(in root: URL) -> URL {
         root.appending(path: Manifest.directory).appending(path: fileName)
     }
+
+    /// The receipt of the install at `root`, if it is complete.
+    static func read(at root: URL) -> InstallReceipt? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let data = try? Data(contentsOf: url(in: root)) else { return nil }
+        return try? decoder.decode(InstallReceipt.self, from: data)
+    }
 }

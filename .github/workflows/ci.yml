@@ -1,30 +1,46 @@
 name: CI
 
+# Weight-free checks on GitHub's hosted macOS 27 / Xcode 27.2 image. PR code never runs on a developer machine.
+# Real-model gates (AETHER_GATES=1) need downloaded models and a GPU; run them locally with `AETHER_GATES=1 scripts/ci.sh`.
+
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   hermetic:
-    # Core AI needs the macOS 27 SDK (Xcode 27). Use a self-hosted Apple-silicon Mac with Xcode 27 until hosted
-    # runners ship it; scripts/ci.sh fails fast with a clear message on an older SDK.
-    runs-on: [self-hosted, macOS, ARM64]
+    name: Hermetic (toolchain, catalog, build, tests)
+    runs-on: xcode-27
     timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v4
-      - name: Hermetic CI (toolchain, catalog, build, tests)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: scripts/ci.sh
         run: scripts/ci.sh
 
-  gates:
-    # Real-graph parity gates: on demand only (needs downloaded models and a free GPU).
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: [self-hosted, macOS, ARM64]
-    timeout-minutes: 60
+  required:
+    # The ruleset on main requires this check by name.
+    name: CI passed
+    if: ${{ always() }}
+    needs: [hermetic]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Hermetic CI + gates
+      - name: Require every CI job to succeed
         env:
-          AETHER_GATES: "1"
-          AETHER_LAB_MODELS: ${{ vars.AETHER_LAB_MODELS }}
-        run: scripts/ci.sh
+          HERMETIC: ${{ needs.hermetic.result }}
+        run: |
+          echo "Hermetic: $HERMETIC"
+          [[ "$HERMETIC" == success ]]

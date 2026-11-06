@@ -1,0 +1,35 @@
+Aether-Kit
+Licensed under the Apache License, Version 2.0; see LICENSE.
+
+This file lists what Aether-Kit inherits from other work. Each entry names the
+files that carry it.
+
+AetherKit 0.0.x (https://github.com/bubstackdev/aether-kit, tag 0.0.7,
+commit a013c45ec60d2292694a8e5f58ce31b228fd04df), Apache License 2.0, copyright
+its contributors. These parts are re-expressed on Aether-Kit's contracts
+(actor or lock ownership, AetherError, the 27 floor), not copied wholesale.
+Their tests come over as specs, adapted to Aether-Kit's API:
+
+- The cross-process GPU lease, in-process GPU admission and the fair queue
+  (Sources/AetherHost/GPU/; tests in Tests/AetherHostTests/SharedGPULeaseTests,
+  GPUAdmissionTests, FairInferenceQueueTests, with Tests/AetherGPULeaseHelper).
+  The lease protocol (mkdir lease directory, pid file, rename-aside release,
+  .reclaim flock and stale reclaim) is the one Atelier's SharedGPULock and the
+  lab's with-gpu-lock.sh / gpu.sh use, kept wire-compatible. Atelier sources are
+  copyright their respective contributors. FairInferenceQueue's design and its
+  scheduling tests come from an earlier transport-independent admission draft
+  for a host consumer.
+- The model lifecycle policy (idle unload, memory-pressure release once per
+  notice, the critical load gate and critical easing) and the memory-pressure
+  monitor (Sources/AetherHost/Lifecycle/, Sources/AetherHost/ModelHost.swift;
+  tests in Tests/AetherHostTests/ModelHostLifecycleTests).
+- The model store's reader leases, per-installation advisory locks, abandoned
+  stage recovery, free-space check, Hugging Face token scoping, redirect header
+  policy, Range/Content-Range rules and the 416 restart, from LocalAssetStore,
+  URLSessionTransport and ModelPreparation (Sources/AetherCore/Store/StoreLock,
+  StoreLayout, and parts of Installer, ModelStore and HTTPTransport; tests in
+  Tests/AetherCoreTests/StoreGapsTests).
+- The background URLSession transport: task records, resume data, foreground
+  redirect resolution and joining a running task after relaunch
+  (Sources/AetherCore/Store/BackgroundTransport.swift; tests in
+  Tests/AetherCoreTests/BackgroundTransportTests).

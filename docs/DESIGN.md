@@ -144,6 +144,17 @@ are pinned by a golden manifest per catalog entry.
   - Bundles are marked excluded from backup.
   - Offline fallback: a complete cached sibling revision is returned, but only when the caller opts in with
     `.allowStaleRevision`, and the result reports that it is stale.
+- **Store safety** (ported from 0.0.x; its tests are the spec):
+  - **Reader leases:** `remove` throws `inUse(resource:)` while a lease or a running install holds the location.
+  - **A per-installation cross-process lock** in `.locks/`: a second process waits and then finds the bundle installed.
+  - **Recovery of abandoned stages:** once, before the first install or remove, and public as
+    `recoverAbandonedStages()`. Removal and replacement first rename into `.trash/`.
+  - **A free-space check** for the missing bytes, which throws `capacity`.
+  - **Headers:** the Hugging Face token goes to `huggingface.co` only, and app headers go only to the same host
+    across redirects. An HTTPS→HTTP redirect is refused, and a 416 restarts the file once.
+  - **Transports:** `HTTPTransport` gains a `download(_:progress:)` requirement, with a default built on `get`.
+    `BackgroundTransport` (iOS background `URLSession`, resume data, joining after relaunch) is the second
+    conformer, with one instance per session identifier and no global registry.
 - **`Device`**: architecture name (`AIModel.deviceArchitectureName`, injected so tests can fake it), available memory,
   and free disk space.
 - **`Manifest`**: the Codable schema, its validation, and the zoo adapter.
@@ -335,6 +346,18 @@ installs and loads the model. A missing driver produces `AetherError.unsupported
   - Eviction is LRU with pins (a model in use is pinned).
   - The budget is `os_proc_available_memory()` on iOS and a configurable fraction of RAM on macOS.
   - Idle models are dropped under memory pressure.
+- **Lifecycle** (ported from 0.0.x, validated on an iPhone under real pressure). The entry point is
+  `withModel(_:policy:load:_:)`, keyed by `ModelRef`; it goes through the Registry once M6 wires it in.
+  - **Idle unload** after 60 s on iOS and 5 min on the Mac, with one release per pressure notice.
+  - **A load gate under critical pressure** that throws `memoryPressure`.
+  - **Easing** once 2× the recovered memory is free, or after 60 s, because iOS never sends "normal" after a
+    critical notice.
+  - **Unloads requested during a request** wait until it ends.
+  - Pressure arrives through a `MemoryPressureMonitor` actor (`.system` or `.manual`).
+- **GPU lease** (ported; wire-compatible with Atelier's `SharedGPULock`): `SharedGPULease`, `GPUAdmission` and
+  `FairInferenceQueue`. These are `Sendable` classes over `Mutex`, not actors, because a grant must release
+  synchronously and safely in `deinit`. The signal handling uses one static `Mutex`, which is forced because signal
+  dispositions are process-wide. Real-model gates and the generative pipelines hold a `GPUAdmission`.
 - **Capability and prefetch:**
   - `capability(for:)` returns `.ready`, `.needsDownload(bytes)`, `.insufficientStorage`, `.unsupportedDevice` or
     `.unsupportedDriver`.
@@ -349,7 +372,8 @@ installs and loads the model. A missing driver produces `AetherError.unsupported
   (the `ModelHost` request queue). There are no per-type mutex variants.
 - **Streaming and work:** every stream is an `AsyncThrowingStream`, with cancellation that propagates through
   `onTermination`. Prewarm is `async`, so no semaphores block on tasks.
-- **Errors:** one error domain, `AetherError`, with structured cases (`unsupported(driver:)`,
+- **Errors:** one error domain, `AetherError`, with structured cases (`unsupported(driver:)`, `inUse(resource:)`,
+  `admission(AdmissionFailure)`, `memoryPressure`,
   `manifestMismatch(field:expected:found:)`, `download(…)`, `integrity(file:)`, `capacity(…)`, `runtime(underlying:)`).
   Family-specific detail goes in an associated payload, not in a separate public enum per family.
 - **Debug data:** hashes, per-stage timings and gate artifacts go behind `@_spi(Diagnostics)`.

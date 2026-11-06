@@ -56,6 +56,18 @@ let package = Package(
             swiftSettings: common
         ),
         .testTarget(
+            name: "AetherHostTests",
+            dependencies: ["AetherHost"],
+            swiftSettings: common
+        ),
+        // Test-only child process for the cross-process GPU lease cases; not a product and never shipped.
+        .executableTarget(
+            name: "AetherGPULeaseHelper",
+            dependencies: ["AetherHost"],
+            path: "Tests/AetherGPULeaseHelper",
+            swiftSettings: common
+        ),
+        .testTarget(
             name: "AetherRuntimeTests",
             dependencies: ["AetherRuntime", "AetherCore"],
             // Reads AetherCoreTests/Fixtures by path: the zoo fixtures have one home.
