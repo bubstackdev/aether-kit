@@ -17,6 +17,9 @@ public import Foundation
 ///   cancelled.
 /// - **The load gate.** While pressure is critical, a load throws ``AetherError/memoryPressure``. A model that is
 ///   already loaded keeps serving.
+/// - **Cancellation.** A caller cancelled while a load is in flight stops waiting at once (`CancellationError`). The
+///   load carries on for the callers still waiting; when none remain it is cancelled and detached, and whatever it
+///   returns is dropped, so the model doesn't stay resident for nobody. The next request starts a fresh load.
 ///
 /// Releasing drops the host's reference to the model; the model's owner (an engine actor) frees its native resources
 /// when the last reference goes. Isolation makes "release only if idle" exact: the host decides it, so a release can
@@ -37,8 +40,8 @@ public actor ModelHost {
     private struct Resident {
         var policy: ModelLifecyclePolicy
         var model: (any Sendable)?
-        var loading: Task<any Sendable, any Error>?
-        /// Requests holding the model (and the load in flight, which pins on behalf of its callers).
+        var loading: Flight?
+        /// Requests holding the model, and the callers waiting on the load in flight (one pin each).
         var pins = 0
         var state = ModelLifecycleState.unloaded(nil)
         /// Why the model last unloaded, kept across failed or refused loads.
@@ -50,6 +53,13 @@ public actor ModelHost {
         var timerGeneration = 0
         var unloadRequested = false
         var subscribers: [UUID: AsyncStream<ModelLifecycleState>.Continuation] = [:]
+    }
+
+    /// A load in flight and the callers waiting for it.
+    private struct Flight {
+        let id = UUID()
+        var task: Task<Void, Never>?
+        var waiters: [UUID: CheckedContinuation<any Sendable, any Error>] = [:]
     }
 
     public init(policy: ModelLifecyclePolicy = .platformDefault, monitor: MemoryPressureMonitor = .system,
@@ -140,6 +150,9 @@ public actor ModelHost {
         return true
     }
 
+    /// Requests holding `ref` and callers waiting on its load (tests).
+    func pinCount(_ ref: ModelRef) -> Int { residents[ref]?.pins ?? 0 }
+
     // MARK: - Internals
 
     private func acquire<Model: Sendable>(
@@ -157,18 +170,11 @@ public actor ModelHost {
                 transition(ref, to: .running, idleTimer: false)
                 return typed
             }
-            if let loading = resident.loading {
-                // Join the load in flight; its initiator installs the model and reports the state.
+            if let flight = resident.loading {
+                // Join the load in flight; ``finishLoad(_:flight:_:)`` installs the model and reports the state.
                 resident.pins += 1
                 residents[ref] = resident
-                let joined: any Sendable
-                do {
-                    joined = try await loading.value
-                } catch {
-                    residents[ref]?.pins -= 1
-                    settleFailedLoad(ref)
-                    throw error
-                }
+                let joined = try await awaitLoad(ref, flight: flight.id)
                 do {
                     return try cast(joined, ref)
                 } catch {
@@ -186,25 +192,20 @@ public actor ModelHost {
                 transition(ref, to: .unloaded(again.lastReason), idleTimer: false)
                 throw AetherError.memoryPressure
             }
-            let task = Task<any Sendable, any Error> { try await Self.runLoad(load) }
+            var flight = Flight()
+            let id = flight.id
+            // Unstructured: the load outlives a caller that stops waiting, for the callers still waiting.
+            flight.task = Task {
+                let result: Result<any Sendable, any Error>
+                do { result = .success(try await Self.runLoad(load)) } catch { result = .failure(error) }
+                finishLoad(ref, flight: id, result)
+            }
             resident = again
-            resident.loading = task
+            resident.loading = flight
             resident.pins += 1
             residents[ref] = resident
             transition(ref, to: .loading, idleTimer: false)
-            let model: any Sendable
-            do {
-                model = try await task.value
-            } catch {
-                residents[ref]?.loading = nil
-                residents[ref]?.pins -= 1
-                settleFailedLoad(ref)
-                throw error
-            }
-            residents[ref]?.loading = nil
-            residents[ref]?.model = model
-            residents[ref]?.lastUsed = clock.now()
-            transition(ref, to: .running, idleTimer: false)
+            let model = try await awaitLoad(ref, flight: id)
             do {
                 return try cast(model, ref)
             } catch {
@@ -212,6 +213,65 @@ public actor ModelHost {
                 relinquish(ref)
                 throw error
             }
+        }
+    }
+
+    /// Waits for load `flight` of `ref`, holding the pin the caller took. Cancelling the caller ends the wait at once
+    /// and gives the pin back (``abandon(_:flight:waiter:)``); the load isn't awaited directly, since waiting on an
+    /// unstructured task's value ignores the waiter's cancellation.
+    private func awaitLoad(_ ref: ModelRef, flight: UUID) async throws -> any Sendable {
+        let waiter = UUID()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<any Sendable, any Error>) in
+                guard residents[ref]?.loading?.id == flight else {
+                    // The flight ended between the caller's pin and here. It can't (nothing suspends in between); if
+                    // it did, give the pin back rather than leave it held.
+                    relinquish(ref)
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+                residents[ref]?.loading?.waiters[waiter] = continuation
+                if Task.isCancelled { abandon(ref, flight: flight, waiter: waiter) }
+            }
+        } onCancel: {
+            Task { await self.abandon(ref, flight: flight, waiter: waiter) }
+        }
+    }
+
+    /// A waiter was cancelled: it stops waiting and unpins. With no waiter left, the load is cancelled and detached;
+    /// the model is left unloaded, and the next request starts a fresh load.
+    private func abandon(_ ref: ModelRef, flight: UUID, waiter: UUID) {
+        guard var resident = residents[ref], var loading = resident.loading, loading.id == flight,
+              let continuation = loading.waiters.removeValue(forKey: waiter) else { return }
+        resident.pins = max(0, resident.pins - 1)
+        if loading.waiters.isEmpty {
+            loading.task?.cancel()
+            resident.loading = nil
+        } else {
+            resident.loading = loading
+        }
+        residents[ref] = resident
+        continuation.resume(throwing: CancellationError())
+        settleFailedLoad(ref)
+    }
+
+    /// Load `flight` ended. If callers still wait, a model is installed (pinned once per waiter) or the failure is
+    /// theirs; a detached load's result is dropped.
+    private func finishLoad(_ ref: ModelRef, flight: UUID, _ result: Result<any Sendable, any Error>) {
+        guard var resident = residents[ref], let loading = resident.loading, loading.id == flight else { return }
+        resident.loading = nil
+        switch result {
+        case .success(let model):
+            resident.model = model
+            resident.lastUsed = clock.now()
+            residents[ref] = resident
+            transition(ref, to: .running, idleTimer: false)
+            for continuation in loading.waiters.values { continuation.resume(returning: model) }
+        case .failure(let error):
+            resident.pins = max(0, resident.pins - loading.waiters.count)
+            residents[ref] = resident
+            settleFailedLoad(ref)
+            for continuation in loading.waiters.values { continuation.resume(throwing: error) }
         }
     }
 

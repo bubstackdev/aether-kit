@@ -207,13 +207,20 @@ def fp16_representable(x: np.ndarray) -> np.ndarray:
     return x.astype(np.float16).astype(np.float32)
 
 
-def image_tensor(path: Path, size: int = SIZE) -> np.ndarray:
-    """The reference cases' preprocessing: Pillow RGB, stretched to size x size with Pillow BICUBIC, x / 255, NCHW
-    float32, fp16-representable. (The gate feeds this tensor directly; the host's own resize is gated separately.)"""
+def decoded_rgb(path: Path):
+    """The source as the references decode it: Pillow `convert("RGB")` (no colour management, no EXIF transpose)."""
     from PIL import Image
 
     with Image.open(path) as im:
-        rgb = im.convert("RGB").resize((size, size), Image.Resampling.BICUBIC)
+        return im.convert("RGB")
+
+
+def image_tensor(path: Path, size: int = SIZE) -> np.ndarray:
+    """The reference cases' preprocessing: Pillow RGB, stretched to size x size with Pillow BICUBIC, x / 255, NCHW
+    float32, fp16-representable. (The bundle's `pillowBicubic` filter reproduces it; the gate checks so bit for bit.)"""
+    from PIL import Image
+
+    rgb = decoded_rgb(path).resize((size, size), Image.Resampling.BICUBIC)
     x = np.asarray(rgb, dtype=np.float32).transpose(2, 0, 1)[None] / np.float32(255)
     return fp16_representable(np.ascontiguousarray(x))
 

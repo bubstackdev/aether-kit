@@ -30,17 +30,32 @@ jobs:
       - name: scripts/ci.sh
         run: scripts/ci.sh
 
+  ios:
+    name: iOS compile check (generic device, no signing)
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: scripts/ci-ios.sh
+        run: scripts/ci-ios.sh
+
   required:
     # The ruleset on main requires this check by name.
     name: CI passed
     if: ${{ always() }}
-    needs: [hermetic]
+    needs: [hermetic, ios]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every CI job to succeed
         env:
           HERMETIC: ${{ needs.hermetic.result }}
+          IOS: ${{ needs.ios.result }}
         run: |
           echo "Hermetic: $HERMETIC"
-          [[ "$HERMETIC" == success ]]
+          echo "iOS: $IOS"
+          [[ "$HERMETIC" == success && "$IOS" == success ]]

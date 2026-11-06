@@ -82,8 +82,8 @@ public struct CatalogVariant: Sendable, Hashable, Codable {
         self.architectures = architectures
     }
 
-    /// Sum of every asset's file sizes.
-    public var bytes: Int64 { assets.values.reduce(0) { $0 + $1.bytes } }
+    /// Sum of every asset's file sizes, saturating at `Int64.max` (``ModelRef/validateForStore()`` refuses such sizes).
+    public var bytes: Int64 { saturatingSum(assets.values.map(\.bytes)) }
 }
 
 public struct CatalogAsset: Sendable, Hashable, Codable {
@@ -102,7 +102,8 @@ public struct CatalogAsset: Sendable, Hashable, Codable {
         self.files = files
     }
 
-    public var bytes: Int64 { files.reduce(0) { $0 + $1.size } }
+    /// Sum of the file sizes, saturating at `Int64.max` (``ModelRef/validateForStore()`` refuses such sizes).
+    public var bytes: Int64 { saturatingSum(files.map(\.size)) }
 }
 
 public struct CatalogFile: Sendable, Hashable, Codable {
@@ -117,4 +118,23 @@ public struct CatalogFile: Sendable, Hashable, Codable {
         self.size = size
         self.sha256 = sha256
     }
+}
+
+/// `values` summed, clamped to `Int64.min...Int64.max` instead of trapping on overflow.
+func saturatingSum(_ values: some Sequence<Int64>) -> Int64 {
+    values.reduce(0) { total, value in
+        let (sum, overflow) = total.addingReportingOverflow(value)
+        return overflow ? (value < 0 ? .min : .max) : sum
+    }
+}
+
+/// The sum of `values`, or nil if it overflows `Int64`.
+func checkedSum(_ values: some Sequence<Int64>) -> Int64? {
+    var total: Int64 = 0
+    for value in values {
+        let (sum, overflow) = total.addingReportingOverflow(value)
+        if overflow { return nil }
+        total = sum
+    }
+    return total
 }

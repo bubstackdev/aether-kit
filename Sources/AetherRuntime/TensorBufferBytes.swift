@@ -29,6 +29,9 @@ extension TensorBuffer {
             throw .tensor(name: name, reason: .shapeMismatch(expected: shape, found: source.shape))
         }
         if source.isSameStorage(as: self) { return }
+        // Two buffers of one arena: nested `withMutableBytes` would overlap two mutable accesses to its host storage
+        // (an exclusivity trap); the arena takes both at once.
+        if source.arena === arena { return try arena.copyBytes(from: source, to: self) }
         try source.arena.withMutableBytes(source) { from throws(AetherError) in
             try arena.withMutableBytes(self) { to throws(AetherError) in to.copyMemory(from: UnsafeRawBufferPointer(from)) }
         }

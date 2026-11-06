@@ -29770,6 +29770,127 @@
       "usr": "s:13AetherRuntime10ImageInputV5alphaAC11AlphaPolicyOvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime10ImageInputV13maximumPixelsSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime10ImageInputV13maximumPixelsSivg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime10ImageInputV13maximumPixelsSivs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime10ImageInputV13maximumPixelsSivs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime10ImageInputV13maximumPixelsSivp",
+      "moduleName": "AetherRuntime",
+      "name": "maximumPixels",
+      "printedName": "maximumPixels",
+      "usr": "s:13AetherRuntime10ImageInputV13maximumPixelsSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime10ImageInputV20defaultMaximumPixelsSivgZ",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:13AetherRuntime10ImageInputV20defaultMaximumPixelsSivgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime10ImageInputV20defaultMaximumPixelsSivpZ",
+      "moduleName": "AetherRuntime",
+      "name": "defaultMaximumPixels",
+      "printedName": "defaultMaximumPixels",
+      "static": true,
+      "usr": "s:13AetherRuntime10ImageInputV20defaultMaximumPixelsSivpZ"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -29789,16 +29910,23 @@
         "name": "AlphaPolicy",
         "printedName": "AetherRuntime.ImageInput.AlphaPolicy",
         "usr": "s:13AetherRuntime10ImageInputV11AlphaPolicyO"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s13AetherRuntime10ImageInputV_5alphaACSo10CGImageRefa_AC11AlphaPolicyOtcfc",
+      "mangledName": "$s13AetherRuntime10ImageInputV_5alpha13maximumPixelsACSo10CGImageRefa_AC11AlphaPolicyOSitcfc",
       "moduleName": "AetherRuntime",
       "name": "init",
-      "printedName": "init(_:alpha:)",
-      "usr": "s:13AetherRuntime10ImageInputV_5alphaACSo10CGImageRefa_AC11AlphaPolicyOtcfc"
+      "printedName": "init(_:alpha:maximumPixels:)",
+      "usr": "s:13AetherRuntime10ImageInputV_5alpha13maximumPixelsACSo10CGImageRefa_AC11AlphaPolicyOSitcfc"
      },
      {
       "children": [
@@ -29820,16 +29948,23 @@
         "name": "AlphaPolicy",
         "printedName": "AetherRuntime.ImageInput.AlphaPolicy",
         "usr": "s:13AetherRuntime10ImageInputV11AlphaPolicyO"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s13AetherRuntime10ImageInputV10contentsOf5alphaAC10Foundation3URLV_AC11AlphaPolicyOtcfc",
+      "mangledName": "$s13AetherRuntime10ImageInputV10contentsOf5alpha13maximumPixelsAC10Foundation3URLV_AC11AlphaPolicyOSitcfc",
       "moduleName": "AetherRuntime",
       "name": "init",
-      "printedName": "init(contentsOf:alpha:)",
-      "usr": "s:13AetherRuntime10ImageInputV10contentsOf5alphaAC10Foundation3URLV_AC11AlphaPolicyOtcfc"
+      "printedName": "init(contentsOf:alpha:maximumPixels:)",
+      "usr": "s:13AetherRuntime10ImageInputV10contentsOf5alpha13maximumPixelsAC10Foundation3URLV_AC11AlphaPolicyOSitcfc"
      }
     ],
     "conformances": [
