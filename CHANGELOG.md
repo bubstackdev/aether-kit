@@ -45,6 +45,20 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Gate `ObjectDetectorDenseGateTests`: the host NMS reproduces the reference's detections exactly from its preds; on
     the GPU, the same detections on all six cases (IoU ≥ 0.99999, scores within 2e-6; bar IoU 0.95, 0.01).
   - Catalog: `yolox-s` (macOS), `aether-models/aether-kit-yolox-s`, Apache-2.0.
+- **DETR detection and instance masks (M4f):** `detector-detr@1` (`DriverContract.detectorDetr`, `DriverID.detectorDetr`),
+  for RF-DETR nano and seg-nano from our Forge export (`Forge/rfdetr/`):
+  - `ObjectDetector` runs it too (its head is picked by the manifest's driver and `postprocess` kind), loaded through
+    `Registry.vision` (`DetrDetectorDriver` → `ObjectDetectorModel.detector()`).
+  - The `detrSigmoid` postprocess: sigmoid scores, the best `maxDetections` labelled (query, class) pairs strictly
+    above the threshold (ties by flat index), no NMS, exactly upstream RF-DETR's `PostProcess`; boxes through the
+    geometry; with `masks`, each detection's query plane resampled bilinearly to the source and thresholded, only over
+    the region that can exceed it.
+  - `DetectionMask` is compact: the source's size, the foreground's `bounds` and one bit per pixel; `foreground`,
+    `alpha()`, a subscript, `area` and `intersectionOverUnion(_:)`.
+  - Gate `ObjectDetectorDetrGateTests` (both variants): the head reproduces upstream's detections from the reference's
+    raw outputs; on the GPU, the same detections on all six cases per variant (IoU ≥ 0.99999, scores within 4.4e-6, mask IoU 1.0; bar IoU 0.95, 0.01, mask 0.95).
+  - Catalog: `rf-detr-nano` and `rf-detr-seg-nano` (macOS), `aether-models/aether-kit-rf-detr-nano` and
+    `-seg-nano`, Apache-2.0.
 - **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`,
   `DriverID.textEmbedder`), for EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`):
   - `TextEmbedder` (actor on `StatelessPipeline`), loaded through `Registry.embeddings` (`TextEmbedderDriver` →
@@ -65,6 +79,8 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
 ### Changed
 
+- `postprocess` `detrSigmoid` has a typed `selection` (`topKPairs`, the default; the RF-DETR export's `x-selection`
+  note before), and its `masks` block must be present exactly when the graph binds `masks`.
 - `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.
 
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),

@@ -3058,17 +3058,63 @@
         "accessorKind": "get",
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "Bounds",
+          "printedName": "AetherVision.DetectionMask.Bounds",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision13DetectionMaskV6boundsAC6BoundsVvg",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherVision13DetectionMaskV6boundsAC6BoundsVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bounds",
+        "printedName": "AetherVision.DetectionMask.Bounds",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherVision13DetectionMaskV6boundsAC6BoundsVvp",
+      "moduleName": "AetherVision",
+      "name": "bounds",
+      "printedName": "bounds",
+      "usr": "s:12AetherVision13DetectionMaskV6boundsAC6BoundsVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
-            "name": "Bool",
-            "printedName": "Swift.Bool",
-            "usr": "s:Sb"
+            "name": "UInt8",
+            "printedName": "Swift.UInt8",
+            "usr": "s:s5UInt8V"
            }
           ],
           "kind": "TypeNominal",
           "name": "Array",
-          "printedName": "[Swift.Bool]",
+          "printedName": "[Swift.UInt8]",
           "usr": "s:Sa"
          }
         ],
@@ -3078,11 +3124,11 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s12AetherVision13DetectionMaskV10foregroundSaySbGvg",
+        "mangledName": "$s12AetherVision13DetectionMaskV4bitsSays5UInt8VGvg",
         "moduleName": "AetherVision",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:12AetherVision13DetectionMaskV10foregroundSaySbGvg"
+        "usr": "s:12AetherVision13DetectionMaskV4bitsSays5UInt8VGvg"
        }
       ],
       "children": [
@@ -3090,14 +3136,14 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "Bool",
-          "printedName": "Swift.Bool",
-          "usr": "s:Sb"
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
          }
         ],
         "kind": "TypeNominal",
         "name": "Array",
-        "printedName": "[Swift.Bool]",
+        "printedName": "[Swift.UInt8]",
         "usr": "s:Sa"
        }
       ],
@@ -3108,11 +3154,391 @@
       "hasStorage": true,
       "isLet": true,
       "kind": "Var",
-      "mangledName": "$s12AetherVision13DetectionMaskV10foregroundSaySbGvp",
+      "mangledName": "$s12AetherVision13DetectionMaskV4bitsSays5UInt8VGvp",
       "moduleName": "AetherVision",
-      "name": "foreground",
-      "printedName": "foreground",
-      "usr": "s:12AetherVision13DetectionMaskV10foregroundSaySbGvp"
+      "name": "bits",
+      "printedName": "bits",
+      "usr": "s:12AetherVision13DetectionMaskV4bitsSays5UInt8VGvp"
+     },
+     {
+      "children": [
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV1xSivg",
+          "moduleName": "AetherVision",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV1xSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV1xSivp",
+        "moduleName": "AetherVision",
+        "name": "x",
+        "printedName": "x",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV1xSivp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV1ySivg",
+          "moduleName": "AetherVision",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV1ySivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV1ySivp",
+        "moduleName": "AetherVision",
+        "name": "y",
+        "printedName": "y",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV1ySivp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV5widthSivg",
+          "moduleName": "AetherVision",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV5widthSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV5widthSivp",
+        "moduleName": "AetherVision",
+        "name": "width",
+        "printedName": "width",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV5widthSivp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV6heightSivg",
+          "moduleName": "AetherVision",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV6heightSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV6heightSivp",
+        "moduleName": "AetherVision",
+        "name": "height",
+        "printedName": "height",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV6heightSivp"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bounds",
+          "printedName": "AetherVision.DetectionMask.Bounds",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Constructor",
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV1x1y5width6heightAESi_S3itcfc",
+        "moduleName": "AetherVision",
+        "name": "init",
+        "printedName": "init(x:y:width:height:)",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV1x1y5width6heightAESi_S3itcfc"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Bounds",
+          "printedName": "AetherVision.DetectionMask.Bounds",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Bounds",
+          "printedName": "AetherVision.DetectionMask.Bounds",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
+         }
+        ],
+        "declAttributes": [
+         "Implements"
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV23__derived_struct_equalsySbAE_AEtFZ",
+        "moduleName": "AetherVision",
+        "name": "__derived_struct_equals",
+        "printedName": "__derived_struct_equals(_:_:)",
+        "static": true,
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV23__derived_struct_equalsySbAE_AEtFZ"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Hasher",
+          "paramValueOwnership": "InOut",
+          "printedName": "Swift.Hasher",
+          "usr": "s:s6HasherV"
+         }
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV4hash4intoys6HasherVz_tF",
+        "moduleName": "AetherVision",
+        "name": "hash",
+        "printedName": "hash(into:)",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV4hash4intoys6HasherVz_tF"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV9hashValueSivg",
+          "moduleName": "AetherVision",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherVision13DetectionMaskV6BoundsV9hashValueSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Var",
+        "implicit": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV9hashValueSivp",
+        "moduleName": "AetherVision",
+        "name": "hashValue",
+        "printedName": "hashValue",
+        "usr": "s:12AetherVision13DetectionMaskV6BoundsV9hashValueSivp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSQ",
+        "name": "Equatable",
+        "printedName": "Equatable",
+        "usr": "s:SQ"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSH",
+        "name": "Hashable",
+        "printedName": "Hashable",
+        "usr": "s:SH"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Struct",
+      "kind": "TypeDecl",
+      "mangledName": "$s12AetherVision13DetectionMaskV6BoundsV",
+      "moduleName": "AetherVision",
+      "name": "Bounds",
+      "printedName": "Bounds",
+      "usr": "s:12AetherVision13DetectionMaskV6BoundsV"
      },
      {
       "children": [
@@ -3157,6 +3583,244 @@
       "name": "init",
       "printedName": "init(width:height:foreground:)",
       "usr": "s:12AetherVision13DetectionMaskV5width6height10foregroundACSi_SiSaySbGtcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision13DetectionMaskV1x1ySbSi_Sitcig",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherVision13DetectionMaskV1x1ySbSi_Sitcig"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Subscript",
+      "kind": "Subscript",
+      "mangledName": "$s12AetherVision13DetectionMaskV1x1ySbSi_Sitcip",
+      "moduleName": "AetherVision",
+      "name": "subscript",
+      "printedName": "subscript(x:y:)",
+      "usr": "s:12AetherVision13DetectionMaskV1x1ySbSi_Sitcip"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision13DetectionMaskV7isEmptySbvg",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherVision13DetectionMaskV7isEmptySbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s12AetherVision13DetectionMaskV7isEmptySbvp",
+      "moduleName": "AetherVision",
+      "name": "isEmpty",
+      "printedName": "isEmpty",
+      "usr": "s:12AetherVision13DetectionMaskV7isEmptySbvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision13DetectionMaskV4areaSivg",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherVision13DetectionMaskV4areaSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s12AetherVision13DetectionMaskV4areaSivp",
+      "moduleName": "AetherVision",
+      "name": "area",
+      "printedName": "area",
+      "usr": "s:12AetherVision13DetectionMaskV4areaSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Bool]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision13DetectionMaskV10foregroundSaySbGvg",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherVision13DetectionMaskV10foregroundSaySbGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Bool]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s12AetherVision13DetectionMaskV10foregroundSaySbGvp",
+      "moduleName": "AetherVision",
+      "name": "foreground",
+      "printedName": "foreground",
+      "usr": "s:12AetherVision13DetectionMaskV10foregroundSaySbGvp"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s12AetherVision13DetectionMaskV5alphaSays5UInt8VGyF",
+      "moduleName": "AetherVision",
+      "name": "alpha",
+      "printedName": "alpha()",
+      "usr": "s:12AetherVision13DetectionMaskV5alphaSays5UInt8VGyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Double",
+        "printedName": "Swift.Double",
+        "usr": "s:Sd"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "DetectionMask",
+        "printedName": "AetherVision.DetectionMask",
+        "usr": "s:12AetherVision13DetectionMaskV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s12AetherVision13DetectionMaskV21intersectionOverUnionySdACF",
+      "moduleName": "AetherVision",
+      "name": "intersectionOverUnion",
+      "printedName": "intersectionOverUnion(_:)",
+      "usr": "s:12AetherVision13DetectionMaskV21intersectionOverUnionySdACF"
      },
      {
       "children": [
@@ -4152,6 +4816,172 @@
     "name": "DetectionLabels",
     "printedName": "DetectionLabels",
     "usr": "s:12AetherVision15DetectionLabelsV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherVision18DetrDetectorDriverO2id0A4Core0E2IDVvgZ",
+        "moduleName": "AetherVision",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:12AetherVision18DetrDetectorDriverO2id0A4Core0E2IDVvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherVision18DetrDetectorDriverO2id0A4Core0E2IDVvpZ",
+      "moduleName": "AetherVision",
+      "name": "id",
+      "printedName": "id",
+      "static": true,
+      "usr": "s:12AetherVision18DetrDetectorDriverO2id0A4Core0E2IDVvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ObjectDetectorModel",
+        "printedName": "AetherVision.ObjectDetectorModel",
+        "usr": "s:12AetherVision19ObjectDetectorModelV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LoadOptions",
+        "printedName": "AetherRuntime.LoadOptions",
+        "usr": "s:13AetherRuntime11LoadOptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s12AetherVision18DetrDetectorDriverO4load_7optionsAA06ObjectD5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
+      "moduleName": "AetherVision",
+      "name": "load",
+      "printedName": "load(_:options:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:12AetherVision18DetrDetectorDriverO4load_7optionsAA06ObjectD5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ObjectDetectorModel",
+        "printedName": "AetherVision.ObjectDetectorModel",
+        "usr": "s:12AetherVision19ObjectDetectorModelV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s12AetherVision18DetrDetectorDriverO6Loadeda",
+      "moduleName": "AetherVision",
+      "name": "Loaded",
+      "printedName": "Loaded",
+      "usr": "s:12AetherVision18DetrDetectorDriverO6Loadeda"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ObjectDetectorModel",
+          "printedName": "AetherVision.ObjectDetectorModel",
+          "usr": "s:12AetherVision19ObjectDetectorModelV"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Loaded",
+        "printedName": "Loaded"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime11ModelDriverP",
+      "name": "ModelDriver",
+      "printedName": "ModelDriver",
+      "usr": "s:13AetherRuntime11ModelDriverP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s12AetherVision18DetrDetectorDriverO",
+    "moduleName": "AetherVision",
+    "name": "DetrDetectorDriver",
+    "printedName": "DetrDetectorDriver",
+    "usr": "s:12AetherVision18DetrDetectorDriverO"
    },
    {
     "children": [
