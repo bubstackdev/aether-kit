@@ -316,7 +316,9 @@ kind's sit in its own sub-object. Interpreters arrive with each driver; decoding
 | `superRes` | `image-to-image-tiled@1` | `sr: {range: [low, high], colorMatch: host\|none [none]}` |
 
 `letterboxPixels` means pixels of the graph's input, letterboxed or not; the driver maps boxes back to the source
-through the prepared image's geometry. DA3 is `largerIsFarther` (its exp head, checked on real frames).
+through the prepared image's geometry. DA3 is `largerIsFarther` (its exp head, checked on real frames). `depth`'s
+`resizeBack` resamples the map (and confidence) to the source through the geometry, bilinear at pixel centres and
+clamped to the content rectangle (M4b, `DepthEstimator`).
 
 Required for every vision/embedding driver, because none of these values is in the bundles. Thresholds are
 defaults, and the app can override them.

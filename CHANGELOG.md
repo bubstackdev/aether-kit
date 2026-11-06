@@ -22,9 +22,22 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     FIFO turns and cancellation between graph calls (`GraphResidency.run`).
   - `AetherError.invalidInput` for an image that doesn't decode or lay out.
   - `GraphResidency.validating(_:manifest:contract:)` replaces the image and speech drivers' own copies.
+- **Depth (M4b):** AetherVision's first driver, `depth-estimator@1` (`DriverContract.depthEstimator`,
+  `DriverID.depthEstimator`), for Depth Anything 3 small from our Forge export (`Forge/depth/`):
+  - `DepthEstimator` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`DepthEstimatorDriver` →
+    `DepthEstimatorModel.estimator()`); `estimate(_: ImageInput)` or, for real time, `prepare(_:)` then
+    `estimate(_: PreparedImage)`, with a `DepthRequest` (`resizeBack` override, `GPUJob`).
+  - `DepthMap`: row-major values, optional confidence, the manifest's polarity, the `ImageGeometry`; `range` and a
+    subscript.
+  - The `depth` postprocess: `resizeBack` resamples to the source image bilinearly through the geometry, never reading
+    letterbox padding.
+  - Gate `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02).
+  - Catalog: `depth-anything-3-small` (macOS), `aether-models/aether-kit-depth-anything-3-small`, Apache-2.0.
 
 ### Changed
 
+- `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
+  `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
 - `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
   `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
 
