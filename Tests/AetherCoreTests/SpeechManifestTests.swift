@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import AetherCore
 
-/// MANIFEST.md §5.9 (`kokoro@1`, proposed until G5). The fixture is the Kokoro exporter's own output
+/// MANIFEST.md §5.9 (`kokoro@1`). The fixture is the Kokoro exporter's own output
 /// (`Forge/kokoro/export_kokoro.py --sample-manifest`), so a change to what it emits shows up here.
 @Suite("Speech manifest")
 struct SpeechManifestTests {
@@ -14,7 +14,7 @@ struct SpeechManifestTests {
         #expect(manifest.license == "Apache-2.0")
         let durations = try #require(manifest.graphs["durations"])
         let decoder = try #require(manifest.graphs["decoder"])
-        #expect(durations.compute == .cpu && durations.expectFrequentReshapes == true)
+        #expect(durations.compute == .gpu && durations.expectFrequentReshapes == true)   // the CPU traps in Swift (export_kokoro.COMPUTE)
         #expect(decoder.compute == .gpu && decoder.expectFrequentReshapes == false)
         #expect(manifest.graphs.values.allSatisfy { $0.residency == nil })   // both stay resident
         // One table per voice: float32 [510, 256], each file listed in the asset so the store installs it.
@@ -29,26 +29,61 @@ struct SpeechManifestTests {
         #expect(try Manifest.decode(manifest.encoded()) == manifest)
     }
 
-    /// The driver-owned block, read as JSON until `kokoro@1` types it (G5 step 2).
+    /// The typed `kokoro` block.
     @Test func theKokoroBlockNamesItsVoicesAndRules() throws {
-        let json = try JSONSerialization.jsonObject(with: Self.fixture()) as! [String: Any]
-        let block = try #require(json["kokoro"] as? [String: Any])
-        #expect(block["sampleRate"] as? Int == 24000 && block["samplesPerFrame"] as? Int == 600)
-        let phonemes = try #require(block["phonemes"] as? [String: Any])
-        let vocabulary = try #require(phonemes["vocabulary"] as? [String: Int])
-        #expect(vocabulary.count == 114 && vocabulary.keys.allSatisfy { $0.unicodeScalars.count == 1 })
-        #expect(!vocabulary.values.contains(0))   // 0 is the boundary token only
-        #expect(phonemes["maxPhonemes"] as? Int == 510 && phonemes["unknown"] as? String == "refuse")
-        let frames = try #require(block["frames"] as? [String: Any])
-        #expect(frames["buckets"] as? [Int] == [64, 128, 256, 512, 1024, 2048, 4096])
-        #expect(frames["cap"] as? [String: Int] == ["macos": 1024, "ios": 512])
-        let tables = try #require(json["tables"] as? [String: Any])
-        let voices = try #require(block["voices"] as? [String: [String: String]])
-        #expect(voices.count == tables.count)
-        for (id, voice) in voices {
-            #expect(voice["table"] == "voice.\(id)" && tables[voice["table"]!] != nil)
-            #expect(["female", "male"].contains(voice["gender"] ?? ""))
+        let manifest = try Manifest.decode(Self.fixture())
+        let kokoro = try #require(manifest.kokoro)
+        #expect(kokoro.sampleRate == 24000 && kokoro.samplesPerFrame == 600 && kokoro.harmonics == 9)
+        #expect(kokoro.phonemes.vocabulary.count == 114 && !kokoro.phonemes.vocabulary.values.contains(0))
+        #expect(kokoro.phonemes.maxPhonemes == 510 && kokoro.phonemes.unknown == .refuse && kokoro.phonemes.normalization == .none)
+        #expect(kokoro.style.dimension == 256 && kokoro.style.row == .phonemeCountMinusOne)
+        #expect(kokoro.durations.frames == .roundHalfToEven && kokoro.durations.alignment == .repeat)
+        #expect(kokoro.frames.buckets == [64, 128, 256, 512, 1024, 2048, 4096] && kokoro.frames.cap == ["macos": 1024, "ios": 512])
+        #expect(kokoro.frames.bucket(for: 98) == 128 && kokoro.frames.bucket(for: 4097) == nil)
+        #expect(kokoro.noise.kind == .splitmix64BoxMuller && kokoro.noise.order == .rowMajor)
+        #expect(kokoro.voices.count == manifest.tables?.count)
+        #expect(kokoro.voices["af_heart"] == .init(table: "voice.af_heart", language: "en-US", gender: .female))
+    }
+
+    /// A rule the driver doesn't implement, or an inconsistent block, is refused when the manifest decodes, naming its field.
+    @Test func anUnsupportedKokoroBlockIsRefused() throws {
+        func refused(_ mutate: (inout [String: Any]) -> Void) throws -> String? {
+            var json = try JSONSerialization.jsonObject(with: Self.fixture()) as! [String: Any]
+            var block = json["kokoro"] as! [String: Any]
+            mutate(&block)
+            json["kokoro"] = block
+            do {
+                _ = try Manifest.decode(try JSONSerialization.data(withJSONObject: json))
+                return nil
+            } catch let error as AetherError {
+                return error.description
+            }
         }
-        #expect(voices["af_heart"] == ["table": "voice.af_heart", "language": "en-US", "gender": "female"])
+        func edit(_ key: String, _ field: String, _ value: Any) -> (inout [String: Any]) -> Void {
+            { block in
+                var inner = block[key] as! [String: Any]
+                inner[field] = value
+                block[key] = inner
+            }
+        }
+        #expect(try refused(edit("phonemes", "normalization", "nfc")) != nil)
+        #expect(try refused(edit("phonemes", "unknown", "drop")) != nil)
+        #expect(try refused(edit("phonemes", "vocabulary", ["ab": 1]))?.contains("kokoro.phonemes.vocabulary.ab") == true)
+        #expect(try refused(edit("phonemes", "vocabulary", ["a": 1, "b": 1])) != nil)
+        #expect(try refused(edit("phonemes", "vocabulary", ["a": 0])) != nil)
+        #expect(try refused(edit("durations", "frames", "round(duration)")) != nil)
+        #expect(try refused(edit("frames", "buckets", [128, 64]))?.contains("kokoro.frames.buckets") == true)
+        #expect(try refused(edit("frames", "cap", ["macos": 9000]))?.contains("kokoro.frames.cap.macos") == true)
+        #expect(try refused(edit("style", "dimension", 128))?.contains("tables.voice.") == true)
+        #expect(try refused { block in
+            var voices = block["voices"] as! [String: Any]
+            voices["af_heart"] = ["table": "voice.nope", "language": "en-US", "gender": "female"]
+            block["voices"] = voices
+        }?.contains("kokoro.voices.af_heart.table") == true)
+        #expect(try refused { block in
+            var voices = block["voices"] as! [String: Any]
+            voices["xx"] = voices["af_heart"]
+            block["voices"] = voices
+        }?.contains("kokoro.voices.xx") == true)
     }
 }

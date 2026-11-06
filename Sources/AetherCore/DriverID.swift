@@ -65,6 +65,8 @@ extension DriverID {
     public static let flux2Klein = DriverID(validated: "flux2-klein@1")
     /// Krea 2 Turbo: a Qwen3-VL text encoder, a four-segment flow-matching transformer and a VAE (MANIFEST.md §5.5).
     public static let krea2 = DriverID(validated: "krea2@1")
+    /// Kokoro-82M speech: a durations graph and a bucketed vocoder over app-supplied phonemes (MANIFEST.md §5.9).
+    public static let kokoro = DriverID(validated: "kokoro@1")
 }
 
 private enum LowerAlnum {

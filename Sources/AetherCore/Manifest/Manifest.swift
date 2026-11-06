@@ -7,6 +7,7 @@ public import Foundation
 // - ManifestGenerative.swift  the generative drivers' typed blocks (§5.2–§5.3): schedule, latent, residency
 // - ManifestKrea2.swift   the `krea2` block of `krea2@1` (§5.6)
 // - ManifestFlux2.swift   the `flux2` block of `flux2-klein@1` (§5.7)
+// - ManifestKokoro.swift  the `kokoro` block of `kokoro@1` (§5.9)
 //
 // Rules: unknown fields and `x-` fields are ignored; a `$ref` anywhere is rejected (the adapter inlines refs);
 // optional fields are omitted when encoding; every validation error names the dotted field path.
@@ -45,6 +46,8 @@ public struct Manifest: Sendable, Hashable, Codable {
     public var krea2: Krea2?
     /// §5.7: the block `flux2-klein@1` owns.
     public var flux2: Flux2?
+    /// §5.9: the block `kokoro@1` owns.
+    public var kokoro: Kokoro?
     public var precision: [String: JSONValue]?
     public var provenance: Provenance?
     public var license: String?
@@ -56,7 +59,7 @@ public struct Manifest: Sendable, Hashable, Codable {
         decision: Decision? = nil, postprocess: Postprocess? = nil, labels: Labels? = nil,
         generation: Generation? = nil, calibration: Calibration? = nil, precision: [String: JSONValue]? = nil,
         provenance: Provenance? = nil, license: String? = nil, schedule: Schedule? = nil, latent: Latent? = nil,
-        flux2: Flux2? = nil, krea2: Krea2? = nil
+        flux2: Flux2? = nil, krea2: Krea2? = nil, kokoro: Kokoro? = nil
     ) {
         self.schema = schema
         self.id = id
@@ -78,6 +81,7 @@ public struct Manifest: Sendable, Hashable, Codable {
         self.latent = latent
         self.flux2 = flux2
         self.krea2 = krea2
+        self.kokoro = kokoro
         self.precision = precision
         self.provenance = provenance
         self.license = license
@@ -209,6 +213,7 @@ extension Manifest {
         try latent?.validate()
         try flux2?.validate(graphs: graphs)
         try krea2?.validate(graphs: graphs)
+        try kokoro?.validate(tables: tables ?? [:])
     }
 
     /// Resolves `"<asset>:<path>"` against this manifest's assets. Errors name `field`.

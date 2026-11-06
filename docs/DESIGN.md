@@ -49,6 +49,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
  ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
  ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), krea2@1 (Krea 2) (§6.5)
+ ├── AetherSpeech       speech generation: kokoro@1 (Kokoro-82M) from app-supplied phonemes (§6.7)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
@@ -66,8 +67,8 @@ Rules:
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
-Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherImage`, `AetherEmbeddings`, `AetherDecide`,
-`Aether`.
+Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherImage`, `AetherSpeech`, `AetherEmbeddings`,
+`AetherDecide`, `Aether`.
 `AetherHost`, `AetherRuntime` and `AetherCore` are reachable through any of them.
 
 ## 4. The manifest (`aether.json`)
@@ -410,6 +411,33 @@ The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x p
 - **Measured (gate, M5 Max, the 64-wide fixture block, 6 blocks × 256 rows, float16):** chained and banked calls
   are byte-identical to the unchained path, and so are calls encoded back to back with one wait; 9.2 ms against
   49.7 ms unchained.
+
+### 6.7 AetherSpeech (G5)
+
+**`kokoro@1`** (Kokoro-82M, MANIFEST.md §5.9). `KokoroSpeechSession` (an actor, `Registry.speech`) turns validated
+phonemes into 24 kHz float32 PCM (`GeneratedAudio`):
+
+- **Phonemes, not text.** `KokoroPhonemes` walks `unicodeScalars` against the bundle's vocabulary and refuses unknown
+  symbols, an empty string or more than 510 scalars; no normalization (Swift's `String ==` treats `a` + U+0303 and
+  `ã` as equal, Kokoro doesn't). Text goes through an app-supplied `SpeechPhonemizer`: no G2P ships (misaki falls back
+  to espeak-ng, GPL-3.0).
+- **The recipe:** the voice table's row `phonemeCount − 1` styles both graphs; `durations` gives per-token sums;
+  the host rounds `max(1, roundHalfToEven(sum / speed))` in float32 and repeats each token's features for its frames,
+  zero-padded to the smallest bucket (64…4096); the decoder takes the valid `frames` count and seeded harmonic noise
+  (`SeededGaussianNoise`, `[1, bucket, 600, 9]`) and the host keeps the first `600·frames` samples. Segment `i` of a
+  request uses seed `seed &+ i` and is delivered as soon as it decodes.
+- **Frames and memory:** utterances past the session's frame cap (the manifest's per platform: 1024 on macOS, 512 on
+  iOS) are refused after the durations call, before decoding. Both graphs stay resident (no `residency` phases);
+  admission plans from the measured footprint keyed by the cap's bucket (the decoder keeps every bucket it ran at),
+  else the files, and reserves from a shared `ResourceCoordinator` when one is set. `prewarm` runs every bucket up to
+  the cap once.
+- **Placement:** both graphs on the GPU (durations with the reshape hint, the bucketed decoder without). Swift's Core
+  AI runtime traps loading `durations` for the CPU on macOS 27.2 (`loadFunction`), the placement 0.0.x and Python used.
+- One request at a time, in order (queue, not fail); cancellation stops between graph calls; any failure releases the
+  graphs and the session stays usable; `unload()` waits for the running request. Runs on iOS (the iPhone run is
+  pending).
+- **Measured (gate, M5 Max, 5 cases):** frames exact; rel. L2 0.0076–0.032 against upstream on the CPU; held
+  3.0 GiB, peak 3.2 GiB with buckets up to 1024 specialized.
 
 ## 7. AetherText
 

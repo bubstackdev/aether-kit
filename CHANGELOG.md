@@ -97,11 +97,17 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
   `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded.
 
-- **Kokoro-82M Forge exporter (G5 step 1)** (`Forge/kokoro/`): float32 durations (CPU) and bucketed decoder (GPU,
-  64…4096 frames) graphs and all 54 voices; GPU gate against unmodified upstream on CPU, 25/25 at 0.0.x's bars
-  (rel. L2 ≤ 0.031). Driver `kokoro@1` proposed in MANIFEST.md §5.9; text-to-phoneme stays the app's (no GPL G2P).
+- **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
+  - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
+    refused) → durations → host rounding and alignment → the bucketed decoder with seeded harmonic noise →
+    `GeneratedAudio`; multi-segment requests, frame caps per platform, prewarm, measured admission, cancellation;
+  - text through an app-supplied `SpeechPhonemizer` (no G2P ships: misaki falls back to GPL espeak-ng);
+  - the typed `kokoro` block (MANIFEST.md §5.9, normative) and a reproducible Forge exporter (`Forge/kokoro/`, float32,
+    54 voices). The Swift gate against unmodified upstream on the CPU: frames exact, rel. L2 0.0076–0.032 (bars
+    min(0.05, 4× the fp32-vs-fp64 floor)), log-mel ≤ 0.015, repeats bit-identical.
+  - Both graphs run on the GPU: Swift's Core AI runtime traps loading the durations graph for the CPU on macOS 27.2.
 
 ### In progress before 0.1.0 is tagged
 
-MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo, FLUX.2 and Krea hosted bundles and catalog entries,
-SD-Turbo's iPhone validation, and FLUX.2's and Krea's reference images.
+MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
+validation, and FLUX.2's and Krea's reference images.

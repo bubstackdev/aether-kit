@@ -76,9 +76,9 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 
 ### 1.5 Generation
 
-The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6) and
-`flux2-klein@1` (§5.7), all normative; the `weights` table (§5.8, proposed until G4) and the speech driver `kokoro@1`
-(§5.9, proposed until G5).
+The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6),
+`flux2-klein@1` (§5.7) and the speech driver `kokoro@1` (§5.9), all normative; the `weights` table (§5.8) is
+proposed until G4.
 
 ---
 
@@ -517,11 +517,11 @@ bundle, or a block missing an input, is refused. The files are ordinary bundle a
 other; the runtime does not re-hash them. A driver running such a graph declares a shape profile for each measured
 canvas (DESIGN.md §6.6).
 
-### 5.9 `kokoro@1` (proposed until G5)
+### 5.9 `kokoro@1` (normative since G5)
 
-Status: **proposed**, 2026-11-06. The producer is `Forge/kokoro/export_kokoro.py`; its `--sample-manifest` output is the
-decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). A v1 loader treats the bundle as an uncatalogued driver
-(`unknownDriver`) until `kokoro@1` is registered (G5 step 2, `AetherSpeech`).
+Status: **normative**, 2026-11-06. The producer is `Forge/kokoro/export_kokoro.py`; its `--sample-manifest` output is the
+decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). The driver is `AetherSpeech`'s `KokoroSpeechSession`
+(`Registry.speech`); `Manifest.Kokoro` types the block below and refuses, naming the field, any rule it doesn't implement.
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
@@ -540,8 +540,10 @@ decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). A v1 loader treats 
 | `voices` | R | `{id: {table, language, gender}}`: language from the id's first letter (`a` en-US, `b` en-GB, `e` es, `f` fr, `h` hi, `i` it, `j` ja, `p` pt-BR, `z` zh), gender from the second |
 
 Each voice is a `tables` entry (`voices/<id>.f32`, float32 [510, 256], row-major little-endian). Placement: `durations`
-on the CPU with `expectFrequentReshapes` (dynamic T), `decoder` on the GPU without it (bucketed shapes; 0.0.x saw the
-hint abort on the GPU). License `Apache-2.0`; the bundle ships the license and a modification `NOTICE`.
+on the GPU with `expectFrequentReshapes` (dynamic T), `decoder` on the GPU without it (bucketed shapes; 0.0.x saw the
+hint abort there). `durations` was on the CPU (0.0.x's and Python's placement), but on macOS 27.2 Swift's Core AI runtime
+traps loading it for the CPU (`loadFunction`: "Cannot create NDArray.Storage from unresolved NDArrayDescriptor"); on the
+GPU both gates hold, frames exact. License `Apache-2.0`; the bundle ships the license and a modification `NOTICE`.
 
 **Phonemes, not text.** Upstream's G2P (`misaki`) falls back to espeak-ng (GPL-3.0) for out-of-dictionary words, which
 an Apache-2.0 SDK can't link, so the driver takes phonemes and the app supplies G2P (0.0.x's `SpeechPhonemizer`
