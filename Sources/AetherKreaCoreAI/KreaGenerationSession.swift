@@ -577,7 +577,7 @@ private actor KreaRunner {
         do {
             for asset in selection.assets {
                 try Task.checkCancellation()
-                denoisers.append(try await factory.open(asset, frequentReshapes: !selection.specialized))
+                denoisers.append(try await factory.open(asset, frequentReshapes: !selection.specialized && assets.denoiserFrequentReshapes))
             }
             try KreaContracts.segments(denoisers.map { try signature($0, named: "segment") }, tokens: selection.imageTokens, text: selection.textRows)
             selectionIdentity = selection.identity

@@ -46,6 +46,7 @@ private struct FakeModel: KreaExecutable {
 }
 
 private final class FakeFactory: KreaModelFactory, Sendable {
+    let reshapeOptions = Mutex<[(String, Bool)]>([])
     let models: [String: FakeModel]
     let log: EventLog
     let failOnce: Mutex<String?>
@@ -102,6 +103,7 @@ private final class FakeFactory: KreaModelFactory, Sendable {
     }
 
     func open(_ asset: KreaModelAsset, frequentReshapes: Bool) async throws -> any KreaExecutable {
+        reshapeOptions.withLock { $0.append((asset.url.lastPathComponent, frequentReshapes)) }
         let name = asset.url.lastPathComponent
         log.append("open:" + name)
         let fail = failOnce.withLock { value in
@@ -863,4 +865,31 @@ private func settleLifecycle(_ states: @escaping @Sendable () -> AsyncStream<Mod
     await #expect(throws: AetherError.memoryPressure) { try await generate() }
     monitor.deliver(.normal)
     await session.unload()
+}
+
+@available(macOS 27, iOS 27, *)
+@Test(arguments: [nil, false, true] as [Bool?])
+func denoiserCompilerPreferenceFollowsTheBundleAndPreservesLegacyDefaults(preference: Bool?) async throws {
+    let fixture = try BundleFixture()
+    defer { fixture.cleanup() }
+    if let preference {
+        try fixture.edit("aether.json") { json in
+            var diffusion = json["diffusion"] as! [String: Any]
+            diffusion["denoiserFrequentReshapes"] = preference
+            json["diffusion"] = diffusion
+        }
+    }
+    let assets = try KreaAssets.open(at: fixture.root)
+    let factory = try FakeFactory(log: EventLog())
+    let session = KreaGenerationSession(assets: assets, factory: factory)
+    let prompt = try KreaPrompt(tokenIDs: Array(repeating: 1, count: 35))
+    _ = try await session.generate(configuration: KreaConfiguration(width: 16, height: 16, steps: 1, seed: 18), prompt: prompt,
+        noise: FloatTensor(shape: [1, 64], values: Array(repeating: 0, count: 64)))
+    await session.unload()
+    let options = factory.reshapeOptions.withLock { $0 }
+    let denoisers = options.filter { $0.0.hasPrefix("denoiser") }
+    #expect(denoisers.count == 4)
+    #expect(denoisers.allSatisfy { $0.1 == (preference ?? true) })
+    #expect(options.contains { $0.0 == "textEncoder.aimodel" && $0.1 })
+    #expect(options.contains { $0.0 == "vaeDecoder.aimodel" && !$0.1 })
 }

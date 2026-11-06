@@ -51,6 +51,9 @@ public struct KreaAssets: Sendable {
     public var supportsReferences: Bool { vision != nil }
     /// Denoiser text rows: 512 for text-only bundles; the reference export bounds its segments for 1,116.
     public var maximumTextRows: Int { supportsReferences ? KreaReferencePrompt.maximumConditioningRows : 512 }
+    /// Denoiser compiler preference bound into the bundle manifest. Older exports retain their original hint.
+    /// Some exports require stable specialization for finite GPU results.
+    public let denoiserFrequentReshapes: Bool
     private let tokenizerFiles: [URL: String]
     private var specializations: [KreaDenoiserSelection] = []
 
@@ -130,7 +133,7 @@ public struct KreaAssets: Sendable {
         return Self(
             root: root, textEncoder: encoder, decoder: vae, denoisers: denoisers,
             tokenizerDirectory: root.appendingPathComponent("tokenizer", isDirectory: true),
-            fingerprint: fingerprint, vision: vision, referenceFingerprint: referenceFingerprint, tokenizerFiles: support
+            fingerprint: fingerprint, vision: vision, referenceFingerprint: referenceFingerprint, denoiserFrequentReshapes: manifest.diffusion.denoiserFrequentReshapes ?? true, tokenizerFiles: support
         )
     }
 
@@ -356,6 +359,7 @@ private struct Manifest: Decodable {
     struct Binding: Decodable { let dtype: String; let bind: String?; let mode: String? }
     struct Provenance: Decodable { let files: [String: String] }
     struct Diffusion: Decodable {
+        let denoiserFrequentReshapes: Bool?
         let latentChannels: Int
         let pixelsPerToken: Int
         let steps: Int
