@@ -35,6 +35,9 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
     /// recurrent state, feeding a decoder whose state ran past its position, a renderer this build does not
     /// implement yet. `reason` says which, and what to do instead.
     case unsupportedOperation(String)
+    /// The request's input can't be used: an image that doesn't decode or has no pixels, an image whose size the
+    /// model's preprocessing can't lay out. `reason` says which.
+    case invalidInput(String)
     /// `resource` is held by someone else: an installed bundle a reader lease keeps open, or an install another
     /// process is running. Retry once the holder lets go.
     case inUse(resource: String)
@@ -199,6 +202,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             "Runtime failure: \(underlying)"
         case .unsupportedOperation(let reason):
             "Unsupported operation: \(reason)"
+        case .invalidInput(let reason):
+            "Invalid input: \(reason)"
         case .inUse(let resource):
             "'\(resource)' is in use"
         case .admission(let reason):

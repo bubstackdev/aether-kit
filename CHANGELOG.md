@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
+
+### New
+
+- **Vision foundation (M4a):**
+  - `ImageInput` (AetherRuntime): a `CGImage` or an image file, decoded with ImageIO, EXIF orientation applied by
+    moving pixels, alpha dropped as Pillow's `convert("RGB")` or composited (ported from 0.0.x's `VisionRGBImage`).
+  - `ImagePreprocessor` and `PreparedImage`: the typed `preprocess.image` block (MANIFEST.md §2.5) as a transform:
+    `stretch`, `letterbox`, `centerCrop` and `fitLongSide` resizing with `vImage` or the bit-exact `pillowBicubic` and
+    `torchUint8Bicubic` filters (0.0.x's antialiased bicubic in each reference's fixed-point arithmetic), scale, mean
+    and std, RGB or BGR, `NCHW`, `NVCHW` or patch rows (Qwen-VL block-major, SigLIP 2 row-major), fp32 or fp16 host
+    values converted at bind to the graph input's type, and an `ImageGeometry` to map results back to the source.
+    Known answers from Pillow and torch (`Forge/vision/fixtures_preprocess.py`).
+  - Typed `postprocess` (`depth`, `denseNms`, `detrSigmoid`, `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`) and
+    `labels` (`{set: "coco-91"}` or `{file}`) blocks, decoded and validated (MANIFEST.md §2.8).
+  - `StatelessPipeline` (AetherHost): the stateless drivers' shared core: static graphs checked against the driver's
+    contract, residency and memory admission, `PipelineOptions`, GPU admission at the request's `GPUJob` priority,
+    FIFO turns and cancellation between graph calls (`GraphResidency.run`).
+  - `AetherError.invalidInput` for an image that doesn't decode or lay out.
+  - `GraphResidency.validating(_:manifest:contract:)` replaces the image and speech drivers' own copies.
+
+### Changed
+
+- `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
+  `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
+
 ## 0.1.0 — unreleased
 
 A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues at the `0.0.7` tag and on
