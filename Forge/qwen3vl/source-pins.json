@@ -1,0 +1,54 @@
+{
+ "repository": "Qwen/Qwen3-VL-2B-Instruct",
+ "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+ "license": "Apache-2.0",
+ "gated": false,
+ "comment": "Alibaba Qwen's Qwen3-VL 2B Instruct checkpoint (Qwen3VLForConditionalGeneration, bf16 safetensors, 4.26 GB). SHA-256 of every snapshot file the harness reads (model.safetensors equals the Hub's LFS hash at this revision), pinned 2026-11-06; the same revision the 0.0.x prototype qualified. The model card's front matter gives `license: apache-2.0`; the repository carries no LICENSE file, so the Apache-2.0 text the bundle ships is the one in Qwen's own Qwen3-VL code repository (upstreamLicense). The network code is transformers' Qwen3-VL at the version Forge/uv.lock pins.",
+ "files": {
+  "config.json": "bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b",
+  "generation_config.json": "1e241830b48b397cb0900101421df5450baddc7adf01e5fc86b5615865f3bae4",
+  "model.safetensors": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0",
+  "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+  "video_preprocessor_config.json": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+  "chat_template.json": "6f8a6a55027e3da5160105556cda5dd69f6423f1c32645f6730d32de7773d0c4",
+  "tokenizer.json": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7",
+  "tokenizer_config.json": "c2da771801886ad9ae98181793ffd3dfb7f1af30f6f7c6a4e15d7dbba52e2399",
+  "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+  "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+  "README.md": "5fc5be1ca9a3910399bd6239ee5086ab5d82a2a59c5d2b00e887a8835cc110e4"
+ },
+ "upstreamLicense": {
+  "comment": "Apache License 2.0 text from Qwen's Qwen3-VL repository (the model's code and release home), shipped as the bundle's LICENSE. That repository has no NOTICE file.",
+  "repository": "QwenLM/Qwen3-VL",
+  "commit": "96588727e44c78b25ba03ea03b8e12f7e64fd0da",
+  "files": {
+   "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  }
+ },
+ "referenceImages": {
+  "comment": "Wikimedia Commons photographs (CC0 or public domain, the set the 0.0.x prototype qualified), used only as reference-case inputs; never bundled. SHA-256 of the original files.",
+  "files": {
+   "photo-dog-portrait.jpg": {
+    "sha256": "4ba47c188c223b064a9ef242acda35f308a8402a650bfa2389cf4a556daa01fd",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Bully-dog-2314909-1920.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Bully-dog-2314909-1920.jpg",
+    "license": "CC0-1.0",
+    "size": [1200, 1412]
+   },
+   "photo-fruit-stall-wide.jpg": {
+    "sha256": "13b7a46ef1f6c3347f4879719d59883fb69aadd69532001b9a6fdd4f18576203",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Bangkok_fruit_stall.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Bangkok_fruit_stall.jpg",
+    "license": "public domain ({{PD-self}})",
+    "size": [4032, 2268]
+   },
+   "photo-fruit-market-4x3.jpg": {
+    "sha256": "b990813053ba77d05f70e5bccb556504927ed54f772ff5ce225ca3ac577c52d1",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/39/%27Byculla_Fruit_Market%27_near_Byculla_Bridge%28east%29..JPG",
+    "page": "https://commons.wikimedia.org/wiki/File:%27Byculla_Fruit_Market%27_near_Byculla_Bridge(east)..JPG",
+    "license": "CC0-1.0",
+    "size": [810, 608]
+   }
+  }
+ }
+}

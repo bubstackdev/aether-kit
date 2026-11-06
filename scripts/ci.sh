@@ -42,8 +42,9 @@ env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"
-  # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping.
-  AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
+  # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping. The run holds
+  # the machine's GPU lease (the runtime gates drive graphs directly and take none); pipeline gates inherit it.
+  scripts/gpu-lease -- env AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
 fi
 
 step "ok"

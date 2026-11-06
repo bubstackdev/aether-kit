@@ -119,6 +119,13 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   `stretch` with `NCHW`/`NVCHW` only, resized between `x · scale` and `(x − mean) / std`). Known answers in
   `Forge/vision/fixtures_preprocess.py`.
 
+### Tooling
+
+- `scripts/gpu-lease [--timeout S] [--quiet] -- <command>`: runs a command while holding the cross-process GPU lease
+  (`SharedGPULease`'s protocol, in stdlib Python), handing it to kit processes inside through `AETHER_GPU_LEASE_HOLDER`.
+  For Forge checks and other GPU work outside the kit (docs/RELEASE.md); `AETHER_GATES=1 scripts/ci.sh` runs its gate
+  step under it. Interop-tested against the Swift lease in `SharedGPULeaseTests`.
+
 ### Changed
 
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
