@@ -4,6 +4,11 @@
 #     uv sync --frozen --project Forge
 #     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant vanilla --output <bundle dir>
 #
+# Anything that runs on the GPU (exports, GPU checks, reference renders) holds the machine's GPU lease, so it never
+# overlaps the kit's gates or another agent's run: wrap it in scripts/gpu-lease (docs/RELEASE.md, "The GPU lease"):
+#
+#     scripts/gpu-lease -- uv run --project Forge python Forge/yolox/check_yolox.py --bundle <bundle> --reference <ref>
+#
 # coreai-torch brings Apple's Core AI Python export runtime (`coreai`, from coreai-core). coreai-torch, coreai-opt,
 # torch and torchvision stay on the versions the 0.0.x Forge validated. Diffusers is pinned to an exact commit (the
 # v0.42.1 tag, which carries `Krea2Pipeline` / `Krea2Transformer2DModel`); transformers is a 5.x release because the
