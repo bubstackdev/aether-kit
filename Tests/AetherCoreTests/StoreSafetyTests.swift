@@ -87,9 +87,9 @@ struct StoreSafetyTests {
         let task = URLSession(configuration: .ephemeral).dataTask(with: URL(string: "https://example.invalid/")!)
         let flow = FlowControl()
         flow.task = task
-        flow.received(FlowControl.highWater, by: task)
+        flow.received(FlowControl.highWater)
         #expect(!flow.isSuspended)
-        flow.received(1, by: task)
+        flow.received(1)
         #expect(flow.isSuspended)
         flow.consumed(FlowControl.highWater - FlowControl.lowWater)
         #expect(flow.isSuspended, "still above the low-water mark")
@@ -115,5 +115,54 @@ struct StoreSafetyTests {
             }
             await #expect(throws: (any Error).self) { try await attempt.value }
         }
+    }
+
+    /// Third review, P1-1: the suspend ran outside the lock that decided it, so a consumer could drain the buffer and
+    /// resume the task before the suspend landed, leaving it stalled with nothing buffered and the bookkeeping saying
+    /// it ran. The fake task gives the consumer a window inside `suspend()`: with the call serialized the consumer
+    /// waits it out; without, its resume lands first and the suspend wins.
+    @Test func backpressureCannotLeaveTheTaskSuspendedAfterTheConsumerDrains() {
+        let task = RacingTask()
+        let flow = FlowControl()
+        flow.task = task
+        task.duringSuspend = {
+            let drained = DispatchSemaphore(value: 0)
+            Thread.detachNewThread {
+                flow.consumed(FlowControl.highWater + 1)
+                drained.signal()
+            }
+            // Long enough for an unserialized consumer to run; a serialized one is blocked until this returns.
+            _ = drained.wait(timeout: .now() + .milliseconds(200))
+        }
+        flow.received(FlowControl.highWater + 1)
+        // Let the consumer finish if it was blocked.
+        let deadline = Date().addingTimeInterval(5)
+        while flow.bufferedBytes != 0, Date() < deadline { usleep(1_000) }
+        #expect(flow.bufferedBytes == 0)
+        #expect(!flow.isSuspended)
+        #expect(task.isSuspended == flow.isSuspended, "the task's actual state must match the bookkeeping")
+        #expect(task.log == ["suspend", "resume"])
+    }
+}
+
+/// A data task whose `suspend()` runs a hook in the middle, standing in for the scheduler interleaving the consumer.
+private final class RacingTask: FlowControlledTask, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _suspended = false
+    private var _log: [String] = []
+    var duringSuspend: (() -> Void)?
+
+    var isSuspended: Bool { lock.withLock { _suspended } }
+    var log: [String] { lock.withLock { _log } }
+
+    func suspend() {
+        let hook = duringSuspend
+        duringSuspend = nil
+        hook?()
+        lock.withLock { _suspended = true; _log.append("suspend") }
+    }
+
+    func resume() {
+        lock.withLock { _suspended = false; _log.append("resume") }
     }
 }

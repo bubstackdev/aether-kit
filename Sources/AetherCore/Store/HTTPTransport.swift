@@ -216,38 +216,49 @@ public struct URLSessionTransport: HTTPTransport {
     }
 }
 
+/// What ``FlowControl`` needs of a data task: the seam that lets tests drive the interleavings deterministically.
+protocol FlowControlledTask: AnyObject, Sendable {
+    func suspend()
+    func resume()
+}
+
+extension URLSessionDataTask: FlowControlledTask {}
+
 /// The bytes received and not yet read, and whether the data task is suspended for them.
+///
+/// Each `suspend()`/`resume()` runs under the same lock as the bookkeeping that decided it, so the task's actual state
+/// always matches `isSuspended`: a consumer that drains the buffer can't resume the task before the pending suspend
+/// lands and leave it stalled with nothing buffered. Neither call re-enters ``FlowControl`` (URLSession delivers
+/// delegate callbacks on its own queue), so holding the lock across them can't deadlock.
 final class FlowControl: Sendable {
     static let highWater = 8 << 20
     static let lowWater = 2 << 20
-    private struct State { var buffered = 0; var suspended = false; var task: URLSessionDataTask? }
+    private struct State { var buffered = 0; var suspended = false; var task: (any FlowControlledTask)? }
     private let state = Mutex(State())
 
-    var task: URLSessionDataTask? {
+    var task: (any FlowControlledTask)? {
         get { state.withLock { $0.task } }
         set { state.withLock { $0.task = newValue } }
     }
 
     /// A chunk arrived: past the high-water mark the task is suspended until the consumer catches up.
-    func received(_ count: Int, by task: URLSessionDataTask) {
-        let suspend = state.withLock { state -> Bool in
+    func received(_ count: Int) {
+        state.withLock { state in
             state.buffered += count
-            guard state.buffered > Self.highWater, !state.suspended else { return false }
+            guard state.buffered > Self.highWater, !state.suspended, let task = state.task else { return }
             state.suspended = true
-            return true
+            task.suspend()
         }
-        if suspend { task.suspend() }
     }
 
     /// The consumer read a chunk: below the low-water mark a suspended task resumes.
     func consumed(_ count: Int) {
-        let resume = state.withLock { state -> URLSessionDataTask? in
+        state.withLock { state in
             state.buffered -= count
-            guard state.suspended, state.buffered < Self.lowWater else { return nil }
+            guard state.suspended, state.buffered < Self.lowWater, let task = state.task else { return }
             state.suspended = false
-            return state.task
+            task.resume()
         }
-        resume?.resume()
     }
 
     var bufferedBytes: Int { state.withLock { $0.buffered } }
@@ -347,7 +358,7 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         body.yield(data)
-        flow.received(data.count, by: dataTask)
+        flow.received(data.count)
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
