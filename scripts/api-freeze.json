@@ -1,14 +1,16 @@
 {
-  "comment": "The public-API freeze (DESIGN.md §12): per module, the top-level declarations scripts/check-api.sh holds to the baseline in api/. \"*\" freezes the whole module; \"Outer.Inner\" freezes only Inner. The placeholder modules (AetherVision, AetherEmbeddings, AetherDecide, Aether) are left out until they have API (M4-M6). \"enforce\": false reports differences without failing; set it to true at the 0.1.0 freeze.",
+  "comment": "The public-API freeze (DESIGN.md §12): per module, the top-level declarations scripts/check-api.sh holds to the baseline in api/. \"*\" freezes the whole module; \"Outer.Inner\" freezes only Inner. The placeholder modules (AetherDecide, Aether) are left out until they have API (M4-M6). \"enforce\": false reports differences without failing; set it to true at the 0.1.0 freeze.",
   "enforce": false,
   "modules": {
     "AetherCore": ["*"],
+    "AetherEmbeddings": ["*"],
     "AetherRuntime": ["*"],
     "AetherHost": ["*"],
     "AetherText": ["*"],
     "AetherFoundationModels": ["*"],
     "AetherImage": ["*"],
     "AetherSpeech": ["*"],
-    "AetherVideo": ["*"]
+    "AetherVideo": ["*"],
+    "AetherVision": ["*"]
   }
 }

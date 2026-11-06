@@ -905,5 +905,99 @@ extension Catalog {
                 ),
             ]
         ),
+        CatalogEntry(
+            id: "depth-anything-3-small",
+            task: "depth-estimation",
+            repo: "aether-models/aether-kit-depth-anything-3-small",
+            revision: "0960071086783cd0a5c1e4d61cefb2c5ec9035d0",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "depth-estimator@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 3826, sha256: "c2a823d8331c0a3a5c30bbebd65b81bbc0d52b2aa9e464a4d24b33c90ce10bbb"),
+                                CatalogFile(path: ".gitattributes", size: 1597, sha256: "1c2142c6d2c3557350d39c195fd5d7b083783b452126614f85a0cc66ade1dee7"),
+                                CatalogFile(path: "LICENSE", size: 11355, sha256: "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870"),
+                                CatalogFile(path: "NOTICE", size: 980, sha256: "00b5ac0e586fb2b4ed1ddaf77620a57a114ea9bbca4300d5f1d272c69f1cc961"),
+                                CatalogFile(path: "README.md", size: 973, sha256: "fd23dddfcbce543301fda13952c3c314910851b1a6468d7f8dda0162a44b3938"),
+                                CatalogFile(path: "SHA256SUMS", size: 720, sha256: "360e15f30084439e3196c54599bad56382f9974292b52bce802b5eb21c7ad147"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.hash", size: 32, sha256: "5b119ab0fd6dc65b6e41695f789da1e7d476126364c6f088de0920f969dd2ea8"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.mlirb", size: 61193472, sha256: "c27b0de183e95370ddc5f03d9f4ddf74f1943f26722c8f8740755598b8f6cc58"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/metadata.json", size: 403, sha256: "7158f412da62763e82751240078e522d59573c12218c0a8e4a8a98517e2b6805"),
+                                CatalogFile(path: "export-report.json", size: 6798, sha256: "92cce43e2051933ab19ce1e4281453f9e102bdcc2083f7ede9059ffeb5a831c3"),
+                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "4a5c082f12039ae5498a48fdb6aea7ed76db737a52393d562cf9d44cd1a4abff"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "yolox-s",
+            task: "object-detection",
+            repo: "aether-models/aether-kit-yolox-s",
+            revision: "6a608906fdd11096fa15fa5487682c8457e5a24a",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "detector-dense@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 4503, sha256: "6807a596d0700e57d268b75acfe625dd7eb09beab788b650c2c13ff8b49b78c7"),
+                                CatalogFile(path: ".gitattributes", size: 1582, sha256: "bdda41b3cbfbb95257646bf74cebdc223f36ed8b38de5b3005156b0d25dbe48f"),
+                                CatalogFile(path: "LICENSE", size: 11371, sha256: "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"),
+                                CatalogFile(path: "NOTICE", size: 718, sha256: "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9"),
+                                CatalogFile(path: "README.md", size: 920, sha256: "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600"),
+                                CatalogFile(path: "SHA256SUMS", size: 675, sha256: "68be0e7296aae56426d20871860b677c2756aaa609fb634715e532eb8a730e09"),
+                                CatalogFile(path: "export-report.json", size: 4680, sha256: "a43b3ac973a9315f8d51b464026ab7994489b849123d7b88ce2c17a12068faf4"),
+                                CatalogFile(path: "forge-log.jsonl", size: 488, sha256: "050fd3f9b2f8b511070bef9b269d1889d48dafba283b61a4e1d1e8935072d763"),
+                                CatalogFile(path: "yolox_s.aimodel/main.hash", size: 32, sha256: "b943bb0759456bdc75758df161390c0fcedaa576a6b8a489dbd83e967b4795f2"),
+                                CatalogFile(path: "yolox_s.aimodel/main.mlirb", size: 35987983, sha256: "dccb08fd824ab8ed16d6ead89fe80cd6ae0c524722572fe745d3187c559003d2"),
+                                CatalogFile(path: "yolox_s.aimodel/metadata.json", size: 516, sha256: "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "embeddinggemma-300m",
+            task: "text-embedding",
+            repo: "aether-models/aether-kit-embeddinggemma-300m",
+            revision: "d50169656d89f09b76c392aaa9a5c81b585d8384",
+            license: "gemma",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "text-embedder@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 5251, sha256: "2ac7d136524442cca4de57c6792c360be5acb0317da97b6bda69e27f2a9dc683"),
+                                CatalogFile(path: ".gitattributes", size: 1655, sha256: "28446d91d6c90c5d4f669078d1aafd121c1112feaf7c1de374ef0979ed495efe"),
+                                CatalogFile(path: "GEMMA-PROHIBITED-USE-POLICY.txt", size: 4061, sha256: "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b"),
+                                CatalogFile(path: "LICENSE", size: 9144, sha256: "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d"),
+                                CatalogFile(path: "NOTICE", size: 1425, sha256: "80d6f964d375677e517d4123eb3bdd3478d184446674883b0d7917bd474aade1"),
+                                CatalogFile(path: "README.md", size: 1357, sha256: "c086f2d2625d0ec592a8a81e04914875dcf7fc6825eabcb24dcd9dd7d9d2e427"),
+                                CatalogFile(path: "SHA256SUMS", size: 1098, sha256: "c4953b6f2d989e6892a6450d5066ba4687089317bbbfc7bc1346507cffc9e5c2"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/main.hash", size: 32, sha256: "7e862ad9f99fd2f128ff23acbd5f885573a7d7a4517a0c32b53817f2e51f5624"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/main.mlirb", size: 647579874, sha256: "53f0baf671f985d1a555f273a7d6e3a18c26ed143f5537d81ab328a6c0cd045b"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/metadata.json", size: 483, sha256: "e649b534f6cb8a52d83d217e2784028b17495fd4f937874826ec2c6f318ea767"),
+                                CatalogFile(path: "export-report.json", size: 4618, sha256: "f8678460ae5b714f658c129e466072654260af0fc9cc2183a00f09c7a9e3d4aa"),
+                                CatalogFile(path: "forge-log.jsonl", size: 490, sha256: "5a8c9a61615debdb966990008523921df6799e317630afa6563c548a0592c08f"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 662, sha256: "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 33385008, sha256: "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 1155346, sha256: "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
     ])
 }

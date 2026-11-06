@@ -18,6 +18,8 @@ public enum DriverCatalog {
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
+        DriverContract.depthEstimator.driver: .depthEstimator, DriverContract.textEmbedder.driver: .textEmbedder,
+        DriverContract.detectorDense.driver: .detectorDense,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -408,4 +410,54 @@ extension DriverContract {
                  "patchRC": RoleSpec(required: true, rank: nil, scalar: nil)],
         outputs: ["imageEmbeds": RoleSpec(required: true, rank: nil, scalar: .floatingPoint),
                   "deepstack": RoleSpec(required: true, rank: nil, scalar: .floatingPoint)])
+}
+
+extension DriverContract {
+    /// `depth-estimator@1` (MANIFEST.md §1.3): one stateless `estimator` graph, in `image` (`[1, 3, H, W]`, floating
+    /// point), out `depth` (`[1, H, W]`, floating point) and an optional `confidence` of the same shape. A graph output
+    /// the manifest names in neither role is listed in `unusedOutputs`. The driver also requires `preprocess.image`
+    /// (`NCHW`) and a `depth` `postprocess` (checked when it loads); the output's H and W must be the prepared image's.
+    public static let depthEstimator = DriverContract(
+        driver: .depthEstimator,
+        graphs: [
+            "estimator": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: [
+                    "depth": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "confidence": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
+                ]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `detector-dense@1` (MANIFEST.md §1.3): one stateless `detector` graph, in `image` (`[1, 3, H, W]`, floating
+    /// point), out `preds` (`[1, A, 4 + 1 + C]`, floating point: per anchor the box, objectness and C class scores). The
+    /// driver also requires `preprocess.image` (`NCHW`), a `denseNms` `postprocess` and `labels` (checked when it loads);
+    /// C must be the label set's size for `classIndex: contiguous`.
+    public static let detectorDense = DriverContract(
+        driver: .detectorDense,
+        graphs: [
+            "detector": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: ["preds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `text-embedder@1` (MANIFEST.md §1.3): one stateless `encoder` graph, in `tokens` and `attentionMask` (`[1, S]`,
+    /// integer), out `embedding` (`[1, D]`, floating point). The driver also requires a tokenizer with `tokenizer.text`
+    /// (`padId`, `padTo` = S) and an `embedding` `postprocess` (checked when it loads).
+    public static let textEmbedder = DriverContract(
+        driver: .textEmbedder,
+        graphs: [
+            "encoder": stateless(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "attentionMask": RoleSpec(required: true, rank: 2, scalar: .integer),
+                ],
+                outputs: ["embedding": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
 }
