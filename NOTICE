@@ -26,6 +26,14 @@ OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
 tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the
 end-of-word merge rule.
 
+kokoro (https://github.com/hexgrad/kokoro, version 0.9.4), Apache License 2.0,
+copyright hexgrad. Forge/kokoro/kokoro_graphs.py re-expresses its KModel
+(the ALBERT duration predictor, prosody predictor and iSTFTNet decoder,
+including SineGen's harmonic source) as export graphs; the unmodified package
+is fetched by Forge/kokoro/fetch_upstream.py and read only as the reference.
+Kokoro-82M weights and voices are not part of this repository; the exported
+bundle carries their Apache-2.0 license and a modification NOTICE.
+
 Hugging Face Transformers (https://github.com/huggingface/transformers,
 version 4.57.3), Apache License 2.0, copyright The HuggingFace Team. Outputs
 recorded from it serve as test oracles: its logits processors' results

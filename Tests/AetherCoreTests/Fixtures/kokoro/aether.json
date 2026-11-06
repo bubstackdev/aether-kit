@@ -1,0 +1,1331 @@
+{
+  "schema": 1,
+  "id": "kokoro-82m",
+  "task": "text-to-speech",
+  "driver": "kokoro@1",
+  "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.9 (G5)",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "kokoro_82m-decoder.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "kokoro_82m-durations.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_alloy.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_aoede.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_bella.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_heart.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_jessica.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_kore.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_nicole.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_nova.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_river.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_sarah.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/af_sky.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_adam.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_echo.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_eric.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_fenrir.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_liam.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_michael.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_onyx.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_puck.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/am_santa.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bf_alice.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bf_emma.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bf_isabella.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bf_lily.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bm_daniel.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bm_fable.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bm_george.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/bm_lewis.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/ef_dora.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/em_alex.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/em_santa.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/ff_siwis.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/hf_alpha.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/hf_beta.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/hm_omega.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/hm_psi.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/if_sara.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/im_nicola.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/jf_alpha.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/jf_gongitsune.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/jf_nezumi.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/jf_tebukuro.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/jm_kumo.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/pf_dora.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/pm_alex.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/pm_santa.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zf_xiaobei.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zf_xiaoni.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zf_xiaoxiao.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zf_xiaoyi.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zm_yunjian.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zm_yunxi.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zm_yunxia.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "voices/zm_yunyang.f32",
+          "bytes": 522240,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "durations": {
+      "file": "main:kokoro_82m-durations.aimodel",
+      "function": "durations",
+      "inputs": {
+        "tokens": "input_ids",
+        "style": "style"
+      },
+      "outputs": {
+        "durations": "duration",
+        "prosody": "prosody",
+        "text": "text"
+      },
+      "compute": "cpu",
+      "expectFrequentReshapes": true
+    },
+    "decoder": {
+      "file": "main:kokoro_82m-decoder.aimodel",
+      "function": "decode",
+      "inputs": {
+        "prosody": "prosody",
+        "text": "text",
+        "style": "style",
+        "noise": "noise",
+        "frames": "frames"
+      },
+      "outputs": {
+        "audio": "audio"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    }
+  },
+  "tables": {
+    "voice.af_alloy": {
+      "asset": "main",
+      "file": "voices/af_alloy.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_aoede": {
+      "asset": "main",
+      "file": "voices/af_aoede.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_bella": {
+      "asset": "main",
+      "file": "voices/af_bella.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_heart": {
+      "asset": "main",
+      "file": "voices/af_heart.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_jessica": {
+      "asset": "main",
+      "file": "voices/af_jessica.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_kore": {
+      "asset": "main",
+      "file": "voices/af_kore.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_nicole": {
+      "asset": "main",
+      "file": "voices/af_nicole.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_nova": {
+      "asset": "main",
+      "file": "voices/af_nova.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_river": {
+      "asset": "main",
+      "file": "voices/af_river.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_sarah": {
+      "asset": "main",
+      "file": "voices/af_sarah.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.af_sky": {
+      "asset": "main",
+      "file": "voices/af_sky.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_adam": {
+      "asset": "main",
+      "file": "voices/am_adam.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_echo": {
+      "asset": "main",
+      "file": "voices/am_echo.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_eric": {
+      "asset": "main",
+      "file": "voices/am_eric.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_fenrir": {
+      "asset": "main",
+      "file": "voices/am_fenrir.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_liam": {
+      "asset": "main",
+      "file": "voices/am_liam.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_michael": {
+      "asset": "main",
+      "file": "voices/am_michael.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_onyx": {
+      "asset": "main",
+      "file": "voices/am_onyx.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_puck": {
+      "asset": "main",
+      "file": "voices/am_puck.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.am_santa": {
+      "asset": "main",
+      "file": "voices/am_santa.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bf_alice": {
+      "asset": "main",
+      "file": "voices/bf_alice.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bf_emma": {
+      "asset": "main",
+      "file": "voices/bf_emma.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bf_isabella": {
+      "asset": "main",
+      "file": "voices/bf_isabella.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bf_lily": {
+      "asset": "main",
+      "file": "voices/bf_lily.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bm_daniel": {
+      "asset": "main",
+      "file": "voices/bm_daniel.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bm_fable": {
+      "asset": "main",
+      "file": "voices/bm_fable.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bm_george": {
+      "asset": "main",
+      "file": "voices/bm_george.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.bm_lewis": {
+      "asset": "main",
+      "file": "voices/bm_lewis.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.ef_dora": {
+      "asset": "main",
+      "file": "voices/ef_dora.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.em_alex": {
+      "asset": "main",
+      "file": "voices/em_alex.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.em_santa": {
+      "asset": "main",
+      "file": "voices/em_santa.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.ff_siwis": {
+      "asset": "main",
+      "file": "voices/ff_siwis.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.hf_alpha": {
+      "asset": "main",
+      "file": "voices/hf_alpha.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.hf_beta": {
+      "asset": "main",
+      "file": "voices/hf_beta.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.hm_omega": {
+      "asset": "main",
+      "file": "voices/hm_omega.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.hm_psi": {
+      "asset": "main",
+      "file": "voices/hm_psi.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.if_sara": {
+      "asset": "main",
+      "file": "voices/if_sara.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.im_nicola": {
+      "asset": "main",
+      "file": "voices/im_nicola.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.jf_alpha": {
+      "asset": "main",
+      "file": "voices/jf_alpha.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.jf_gongitsune": {
+      "asset": "main",
+      "file": "voices/jf_gongitsune.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.jf_nezumi": {
+      "asset": "main",
+      "file": "voices/jf_nezumi.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.jf_tebukuro": {
+      "asset": "main",
+      "file": "voices/jf_tebukuro.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.jm_kumo": {
+      "asset": "main",
+      "file": "voices/jm_kumo.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.pf_dora": {
+      "asset": "main",
+      "file": "voices/pf_dora.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.pm_alex": {
+      "asset": "main",
+      "file": "voices/pm_alex.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.pm_santa": {
+      "asset": "main",
+      "file": "voices/pm_santa.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zf_xiaobei": {
+      "asset": "main",
+      "file": "voices/zf_xiaobei.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zf_xiaoni": {
+      "asset": "main",
+      "file": "voices/zf_xiaoni.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zf_xiaoxiao": {
+      "asset": "main",
+      "file": "voices/zf_xiaoxiao.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zf_xiaoyi": {
+      "asset": "main",
+      "file": "voices/zf_xiaoyi.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zm_yunjian": {
+      "asset": "main",
+      "file": "voices/zm_yunjian.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zm_yunxi": {
+      "asset": "main",
+      "file": "voices/zm_yunxi.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zm_yunxia": {
+      "asset": "main",
+      "file": "voices/zm_yunxia.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    },
+    "voice.zm_yunyang": {
+      "asset": "main",
+      "file": "voices/zm_yunyang.f32",
+      "dtype": "float32",
+      "shape": [
+        510,
+        256
+      ],
+      "layout": "rowMajor littleEndian"
+    }
+  },
+  "kokoro": {
+    "sampleRate": 24000,
+    "samplesPerFrame": 600,
+    "harmonics": 9,
+    "phonemes": {
+      "vocabulary": {
+        ";": 1,
+        ":": 2,
+        ",": 3,
+        ".": 4,
+        "!": 5,
+        "?": 6,
+        "—": 9,
+        "…": 10,
+        "\"": 11,
+        "(": 12,
+        ")": 13,
+        "“": 14,
+        "”": 15,
+        " ": 16,
+        "̃": 17,
+        "ʣ": 18,
+        "ʥ": 19,
+        "ʦ": 20,
+        "ʨ": 21,
+        "ᵝ": 22,
+        "ꭧ": 23,
+        "A": 24,
+        "I": 25,
+        "O": 31,
+        "Q": 33,
+        "S": 35,
+        "T": 36,
+        "W": 39,
+        "Y": 41,
+        "ᵊ": 42,
+        "a": 43,
+        "b": 44,
+        "c": 45,
+        "d": 46,
+        "e": 47,
+        "f": 48,
+        "h": 50,
+        "i": 51,
+        "j": 52,
+        "k": 53,
+        "l": 54,
+        "m": 55,
+        "n": 56,
+        "o": 57,
+        "p": 58,
+        "q": 59,
+        "r": 60,
+        "s": 61,
+        "t": 62,
+        "u": 63,
+        "v": 64,
+        "w": 65,
+        "x": 66,
+        "y": 67,
+        "z": 68,
+        "ɑ": 69,
+        "ɐ": 70,
+        "ɒ": 71,
+        "æ": 72,
+        "β": 75,
+        "ɔ": 76,
+        "ɕ": 77,
+        "ç": 78,
+        "ɖ": 80,
+        "ð": 81,
+        "ʤ": 82,
+        "ə": 83,
+        "ɚ": 85,
+        "ɛ": 86,
+        "ɜ": 87,
+        "ɟ": 90,
+        "ɡ": 92,
+        "ɥ": 99,
+        "ɨ": 101,
+        "ɪ": 102,
+        "ʝ": 103,
+        "ɯ": 110,
+        "ɰ": 111,
+        "ŋ": 112,
+        "ɳ": 113,
+        "ɲ": 114,
+        "ɴ": 115,
+        "ø": 116,
+        "ɸ": 118,
+        "θ": 119,
+        "œ": 120,
+        "ɹ": 123,
+        "ɾ": 125,
+        "ɻ": 126,
+        "ʁ": 128,
+        "ɽ": 129,
+        "ʂ": 130,
+        "ʃ": 131,
+        "ʈ": 132,
+        "ʧ": 133,
+        "ʊ": 135,
+        "ʋ": 136,
+        "ʌ": 138,
+        "ɣ": 139,
+        "ɤ": 140,
+        "χ": 142,
+        "ʎ": 143,
+        "ʒ": 147,
+        "ʔ": 148,
+        "ˈ": 156,
+        "ˌ": 157,
+        "ː": 158,
+        "ʰ": 162,
+        "ʲ": 164,
+        "↓": 169,
+        "→": 171,
+        "↗": 172,
+        "↘": 173,
+        "ᵻ": 177
+      },
+      "boundaryToken": 0,
+      "maxPhonemes": 510,
+      "normalization": "none",
+      "unknown": "refuse"
+    },
+    "style": {
+      "dimension": 256,
+      "row": "phonemeCount - 1",
+      "decoder": "style[0..<128]",
+      "prosody": "style[128..<256]"
+    },
+    "durations": {
+      "frames": "max(1, roundHalfToEven(duration / speed))",
+      "alignment": "repeat"
+    },
+    "frames": {
+      "buckets": [
+        64,
+        128,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "maxFrames": 4096,
+      "cap": {
+        "macos": 1024,
+        "ios": 512
+      },
+      "padding": "zeros to the bucket; `frames` is the valid count; audio past 600*frames is dropped"
+    },
+    "noise": {
+      "kind": "splitmix64BoxMuller",
+      "shape": "[1, bucketFrames, 600, 9]",
+      "order": "rowMajor",
+      "dtype": "float32"
+    },
+    "voices": {
+      "af_alloy": {
+        "table": "voice.af_alloy",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_aoede": {
+        "table": "voice.af_aoede",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_bella": {
+        "table": "voice.af_bella",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_heart": {
+        "table": "voice.af_heart",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_jessica": {
+        "table": "voice.af_jessica",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_kore": {
+        "table": "voice.af_kore",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_nicole": {
+        "table": "voice.af_nicole",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_nova": {
+        "table": "voice.af_nova",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_river": {
+        "table": "voice.af_river",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_sarah": {
+        "table": "voice.af_sarah",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "af_sky": {
+        "table": "voice.af_sky",
+        "language": "en-US",
+        "gender": "female"
+      },
+      "am_adam": {
+        "table": "voice.am_adam",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_echo": {
+        "table": "voice.am_echo",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_eric": {
+        "table": "voice.am_eric",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_fenrir": {
+        "table": "voice.am_fenrir",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_liam": {
+        "table": "voice.am_liam",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_michael": {
+        "table": "voice.am_michael",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_onyx": {
+        "table": "voice.am_onyx",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_puck": {
+        "table": "voice.am_puck",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "am_santa": {
+        "table": "voice.am_santa",
+        "language": "en-US",
+        "gender": "male"
+      },
+      "bf_alice": {
+        "table": "voice.bf_alice",
+        "language": "en-GB",
+        "gender": "female"
+      },
+      "bf_emma": {
+        "table": "voice.bf_emma",
+        "language": "en-GB",
+        "gender": "female"
+      },
+      "bf_isabella": {
+        "table": "voice.bf_isabella",
+        "language": "en-GB",
+        "gender": "female"
+      },
+      "bf_lily": {
+        "table": "voice.bf_lily",
+        "language": "en-GB",
+        "gender": "female"
+      },
+      "bm_daniel": {
+        "table": "voice.bm_daniel",
+        "language": "en-GB",
+        "gender": "male"
+      },
+      "bm_fable": {
+        "table": "voice.bm_fable",
+        "language": "en-GB",
+        "gender": "male"
+      },
+      "bm_george": {
+        "table": "voice.bm_george",
+        "language": "en-GB",
+        "gender": "male"
+      },
+      "bm_lewis": {
+        "table": "voice.bm_lewis",
+        "language": "en-GB",
+        "gender": "male"
+      },
+      "ef_dora": {
+        "table": "voice.ef_dora",
+        "language": "es",
+        "gender": "female"
+      },
+      "em_alex": {
+        "table": "voice.em_alex",
+        "language": "es",
+        "gender": "male"
+      },
+      "em_santa": {
+        "table": "voice.em_santa",
+        "language": "es",
+        "gender": "male"
+      },
+      "ff_siwis": {
+        "table": "voice.ff_siwis",
+        "language": "fr",
+        "gender": "female"
+      },
+      "hf_alpha": {
+        "table": "voice.hf_alpha",
+        "language": "hi",
+        "gender": "female"
+      },
+      "hf_beta": {
+        "table": "voice.hf_beta",
+        "language": "hi",
+        "gender": "female"
+      },
+      "hm_omega": {
+        "table": "voice.hm_omega",
+        "language": "hi",
+        "gender": "male"
+      },
+      "hm_psi": {
+        "table": "voice.hm_psi",
+        "language": "hi",
+        "gender": "male"
+      },
+      "if_sara": {
+        "table": "voice.if_sara",
+        "language": "it",
+        "gender": "female"
+      },
+      "im_nicola": {
+        "table": "voice.im_nicola",
+        "language": "it",
+        "gender": "male"
+      },
+      "jf_alpha": {
+        "table": "voice.jf_alpha",
+        "language": "ja",
+        "gender": "female"
+      },
+      "jf_gongitsune": {
+        "table": "voice.jf_gongitsune",
+        "language": "ja",
+        "gender": "female"
+      },
+      "jf_nezumi": {
+        "table": "voice.jf_nezumi",
+        "language": "ja",
+        "gender": "female"
+      },
+      "jf_tebukuro": {
+        "table": "voice.jf_tebukuro",
+        "language": "ja",
+        "gender": "female"
+      },
+      "jm_kumo": {
+        "table": "voice.jm_kumo",
+        "language": "ja",
+        "gender": "male"
+      },
+      "pf_dora": {
+        "table": "voice.pf_dora",
+        "language": "pt-BR",
+        "gender": "female"
+      },
+      "pm_alex": {
+        "table": "voice.pm_alex",
+        "language": "pt-BR",
+        "gender": "male"
+      },
+      "pm_santa": {
+        "table": "voice.pm_santa",
+        "language": "pt-BR",
+        "gender": "male"
+      },
+      "zf_xiaobei": {
+        "table": "voice.zf_xiaobei",
+        "language": "zh",
+        "gender": "female"
+      },
+      "zf_xiaoni": {
+        "table": "voice.zf_xiaoni",
+        "language": "zh",
+        "gender": "female"
+      },
+      "zf_xiaoxiao": {
+        "table": "voice.zf_xiaoxiao",
+        "language": "zh",
+        "gender": "female"
+      },
+      "zf_xiaoyi": {
+        "table": "voice.zf_xiaoyi",
+        "language": "zh",
+        "gender": "female"
+      },
+      "zm_yunjian": {
+        "table": "voice.zm_yunjian",
+        "language": "zh",
+        "gender": "male"
+      },
+      "zm_yunxi": {
+        "table": "voice.zm_yunxi",
+        "language": "zh",
+        "gender": "male"
+      },
+      "zm_yunxia": {
+        "table": "voice.zm_yunxia",
+        "language": "zh",
+        "gender": "male"
+      },
+      "zm_yunyang": {
+        "table": "voice.zm_yunyang",
+        "language": "zh",
+        "gender": "male"
+      }
+    }
+  },
+  "precision": {
+    "weights": "fp32",
+    "activations": "fp32",
+    "components": {
+      "decoder": "float16 and int8 decoders failed 0.0.x qualification; not offered"
+    }
+  },
+  "license": "Apache-2.0",
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  },
+  "provenance": {
+    "source": "hexgrad/Kokoro-82M",
+    "sourceRevision": "f3ff3571791e39611d31c381e3a41a3af07b4987",
+    "producer": "aether-kit Forge/kokoro/export_kokoro.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "upstreamCode": "kokoro 0.9.4",
+      "upstreamWheelSHA256": "a129dc6364a286bd6a92c396e9862459d3d3e45f2c15596ed5a94dcee5789efd",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}

@@ -81,6 +81,10 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
   `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded.
 
+- **Kokoro-82M Forge exporter (G5 step 1)** (`Forge/kokoro/`): float32 durations (CPU) and bucketed decoder (GPU,
+  64…4096 frames) graphs and all 54 voices; GPU gate against unmodified upstream on CPU, 25/25 at 0.0.x's bars
+  (rel. L2 ≤ 0.031). Driver `kokoro@1` proposed in MANIFEST.md §5.9; text-to-phoneme stays the app's (no GPL G2P).
+
 ### In progress before 0.1.0 is tagged
 
 Krea 2 Turbo (vanilla and realism), MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo and FLUX.2 hosted
