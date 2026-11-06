@@ -217,8 +217,8 @@ struct ManifestTests {
 
     @Test func driverCatalogKnowsEveryDriverOfTheSpec() throws {
         // The 18 of §1, plus the generative drivers of §5 as they become normative (latent-diffusion@1, G1;
-        // flux2-klein@1, G2).
-        #expect(DriverCatalog.drivers.count == 20)
+        // flux2-klein@1, G2; kokoro@1, G5).
+        #expect(DriverCatalog.drivers.count == 21)
         try DriverCatalog.requireKnown("gliner-classifier@1")
         try DriverCatalog.requireKnown(.latentDiffusion)
         try DriverCatalog.requireKnown(.flux2Klein)

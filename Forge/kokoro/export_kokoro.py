@@ -11,7 +11,7 @@ verified against `source-pins.json`. No grapheme-to-phoneme code is imported (se
 the CPU, in float32. The output directory is laid out as an installed revision root:
 
     OUTPUT/
-      .aether/aether.json               the Aether manifest (MANIFEST.md §5.9, driver `kokoro@1`, proposed)
+      .aether/aether.json               the Aether manifest (MANIFEST.md §5.9, driver `kokoro@1`)
       kokoro_82m-durations.aimodel      token ids + style -> per-token duration sums, prosody and text features
       kokoro_82m-decoder.aimodel        aligned features + style + noise + valid frame count -> 24 kHz audio
       voices/<id>.f32                   the 54 v1.0 voice packs, 510 x 256 little-endian float32
@@ -58,11 +58,12 @@ FRAME_CAP = {"macos": 1024, "ios": 512}
 LANGUAGES = {"a": "en-US", "b": "en-GB", "e": "es", "f": "fr", "h": "hi", "i": "it", "j": "ja", "p": "pt-BR", "z": "zh"}
 GENDERS = {"f": "female", "m": "male"}
 # Placement. The decoder runs on the GPU without the reshape hint (0.0.x: with it, CoreAIRuntime aborted) and specializes
-# once per bucket. The durations graph runs on the CPU, where its dynamic token axis takes the hint and no per-length
-# GPU specialization happens: it is about 30 ms per utterance there and its frames are the ones qualified. (0.0.x saw
-# it abort on the GPU, macOS 27.0.1; on macOS 27.2 `check_kokoro.py --compute durations=gpu` passes the same gate, with
-# duration sums within 1e-5 of the CPU's, so the GPU is an option once its per-length specialization is measured.)
-COMPUTE = {"durations": ("cpu", True), "decoder": ("gpu", False)}
+# once per bucket. The durations graph runs on the GPU with the hint, so its dynamic token axis doesn't specialize per
+# length. It was on the CPU (0.0.x's placement, and Python's), but on macOS 27.2 Swift's Core AI runtime traps loading
+# it for the CPU ("Cannot create NDArray.Storage from unresolved NDArrayDescriptor", in `loadFunction`, through either
+# `AIModel.specialize` or `AIModel(contentsOf:)`, with or without the hint). On the GPU it passes the same gate: frames
+# exact on every case (`check_kokoro.py --compute durations=gpu`, and the Swift gate `KokoroGateTests`).
+COMPUTE = {"durations": ("gpu", True), "decoder": ("gpu", False)}
 
 
 class Log:
@@ -116,7 +117,7 @@ def convert(module, example: tuple, dynamic, inputs: list[str], outputs: list[st
             "bytes": tree_bytes(path), "inputs": inputs, "outputs": outputs, "function": entry}
 
 
-# MARK: the manifest (MANIFEST.md §5.9 `kokoro@1`, proposed until G5)
+# MARK: the manifest (MANIFEST.md §5.9 `kokoro@1`)
 
 def voice_entry(voice: str) -> dict:
     return {"table": f"voice.{voice}", "language": LANGUAGES[voice[0]], "gender": GENDERS[voice[1]]}
@@ -131,7 +132,6 @@ def manifest(files: dict[str, dict], vocabulary: dict[str, int], voices: list[st
         "id": ID,
         "task": "text-to-speech",
         "driver": "kokoro@1",
-        "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.9 (G5)",
         "variant": {"platform": "macos"},
         "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {

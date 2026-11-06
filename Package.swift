@@ -23,6 +23,7 @@ let package = Package(
         .library(name: "AetherFoundationModels", targets: ["AetherFoundationModels"]),
         .library(name: "AetherVision", targets: ["AetherVision"]),
         .library(name: "AetherImage", targets: ["AetherImage"]),
+        .library(name: "AetherSpeech", targets: ["AetherSpeech"]),
         .library(name: "AetherEmbeddings", targets: ["AetherEmbeddings"]),
         .library(name: "AetherDecide", targets: ["AetherDecide"]),
         .library(name: "Aether", targets: ["Aether"]),
@@ -57,11 +58,13 @@ let package = Package(
         // Image generation (G1+): `latent-diffusion@1` (SD-Turbo, its own CLIP BPE) and `flux2-klein@1` (FLUX.2, whose
         // Qwen3 prompt goes through AetherText's tokenizer and chat template).
         .target(name: "AetherImage", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        // Speech (G5): `kokoro@1` (Kokoro-82M) over app-supplied phonemes.
+        .target(name: "AetherSpeech", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherDecide", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(
             name: "Aether",
-            dependencies: ["AetherText", "AetherVision", "AetherImage", "AetherEmbeddings", "AetherDecide"],
+            dependencies: ["AetherText", "AetherVision", "AetherImage", "AetherSpeech", "AetherEmbeddings", "AetherDecide"],
             swiftSettings: common
         ),
 
@@ -108,6 +111,13 @@ let package = Package(
         .testTarget(
             name: "AetherImageTests",
             dependencies: ["AetherImage", "AetherRuntime", "AetherCore", "AetherHost"],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherSpeechTests",
+            dependencies: ["AetherSpeech", "AetherRuntime", "AetherCore", "AetherHost"],
+            // The CPU known answers (tokenization, noise, rounding) recorded by 0.0.x's Forge/kokoro/make_cpu_fixtures.py.
+            resources: [.copy("Fixtures")],
             swiftSettings: common
         ),
         .testTarget(
