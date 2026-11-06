@@ -1,0 +1,30 @@
+# Aether-Kit Forge: development tooling only (exporters, CPU references, parity checks). Never a dependency of the
+# Swift package. One locked environment for everything under Forge/:
+#
+#     uv sync --frozen --project Forge
+#     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant vanilla --output <bundle dir>
+#
+# coreai-torch brings Apple's Core AI Python export runtime (`coreai`, from coreai-core). coreai-torch, coreai-opt,
+# torch and torchvision stay on the versions the 0.0.x Forge validated. Diffusers is pinned to an exact commit (the
+# v0.42.1 tag, which carries `Krea2Pipeline` / `Krea2Transformer2DModel`); transformers is a 5.x release because the
+# Krea 2 text encoder config (`rope_parameters`, Qwen3-VL) is written by transformers 5.
+[project]
+name = "aether-kit-forge"
+version = "0.0.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.22.1",
+    "diffusers @ git+https://github.com/huggingface/diffusers@2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+    "coreai-torch==0.4.2",
+    "coreai-opt==0.3.0",
+    "safetensors",
+    "numpy",
+    "pillow",
+    "huggingface_hub",
+    "accelerate",
+]
+
+[tool.uv]
+package = false

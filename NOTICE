@@ -33,3 +33,19 @@ Their tests come over as specs, adapted to Aether-Kit's API:
   redirect resolution and joining a running task after relaunch
   (Sources/AetherCore/Store/BackgroundTransport.swift; tests in
   Tests/AetherCoreTests/BackgroundTransportTests).
+- The Krea 2 Forge exporter's idioms (Forge/krea2/): the lazy safetensors
+  checkpoint reader, the split-halves rotary permutation (HALF_SPLIT) and the
+  segment/convert/report structure of Forge/flux2/export_flux2.py and
+  flux2_graphs.py; the SplitMix64 + Box-Muller seeded noise stream
+  (SeededGaussianNoise), the Krea schedule arithmetic (KreaSchedule), rotary
+  table (KreaRotary) and prompt rule (KreaPrompt), re-expressed in Python as
+  the host-side recipe the exporter's manifest and gate pin.
+
+Hugging Face Diffusers (https://github.com/huggingface/diffusers, commit
+2a1433913c7044f34fa4767dd84b28bba0bb0ecf, tag v0.42.1), Apache License 2.0,
+copyright Krea AI and The HuggingFace Team. Forge/krea2/krea2_graphs.py
+re-expresses Krea2Transformer2DModel, Krea2Pipeline's prompt and latent
+packing, and AutoencoderKLQwenImage's single-frame decode as export graphs;
+the realism adapter's key mapping is Diffusers' own Krea 2 converter, called
+at export time. Krea 2 model weights are not part of this repository; exported
+bundles carry the Krea 2 Community License and its NOTICE line separately.

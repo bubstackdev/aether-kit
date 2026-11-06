@@ -369,3 +369,67 @@ These clarify or amend §1–§3. The implementation and the per-entry goldens f
 | 11 | Structured metadata | When a zoo field changes type (nemotron `compression` is `{"scheme":"int8hu"}`), the adapter keeps it as compact JSON in `provenance.zooCompression` and never interprets it. |
 | 12 | AOT-only iOS variants | nemotron-3-nano and gemma-4 ship iOS graphs **only** as `ios-h18p` AOT. They resolve to `unsupportedDevice` on other iPhones: intended, but a behaviour change from coreai-kit. |
 | 13 | One install per revision | `<repo>/<revision>/` holds exactly one variant, because a device resolves exactly one. A reinstall replaces it atomically. |
+
+## 5. Generative drivers — proposed (G0/G3)
+
+Status: **proposed (G0/G3)**, 2026-11-05. Not normative until the G0 foundation and the G3 Krea driver land. The
+first producer is `Forge/krea2/export_krea2.py`, whose bundles validate against §2 plus the additions below. A v1
+loader treats them as an uncatalogued driver (`unknownDriver`) until `krea2@1` is registered.
+
+### 5.1 Driver catalog addition
+
+| driver | graphs | required roles / blocks | optional | bundles |
+|---|---|---|---|---|
+| `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `x-residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
+
+Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism. Segment
+carries stay float32. A future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder
+(refine) are reserved for `krea2@1` and absent from the first export.
+
+### 5.2 New top-level blocks
+
+`schedule` (generic; any flow-matching or diffusion driver):
+
+| field | req | meaning |
+|---|---|---|
+| `kind` | R | `flowMatchEuler` (Krea, FLUX.2); later `epsilonEuler` (SD-Turbo) |
+| `steps`, `maxSteps` | R, O | default and maximum step counts |
+| `trainTimesteps` | R | 1000 |
+| `sigmas` | R | `{base: "linspace(1, 1/steps, steps)", shift: {rule: exponential\|empirical\|none, mu?}, terminal: 0}`. Krea: exponential shift at fixed `mu` 1.15 (`is_distilled`), `σ' = e^μ / (e^μ + 1/σ − 1)` in float32 |
+| `timestep` | R | what the denoiser's `sigma` input receives (Krea: `σ · 1000 / 1000`, float32) |
+| `update` | R | the host update (Krea: `x + (σ[i+1] − σ[i]) · v`, float32, product rounded before the add) |
+| `guidance` | R | `{kind: none}` or `{kind: cfg, scale}`; Krea 2 Turbo is distilled, `none` |
+
+`latent` (generic image latent contract):
+
+| field | req | meaning |
+|---|---|---|
+| `channels` | R | per-token channels the denoiser sees (Krea 64 = 16 VAE channels × 2 × 2) |
+| `pixelsPerToken` | R | 16 (VAE 8× × patch 2); also the size multiple |
+| `packing` | R | `patch2x2ChannelMajor`: packed channel `c·4 + 2·dy + dx` |
+| `layout`, `decoderLayout` | R | denoiser `[rows·columns, 64]`; decoder `[rows, columns, 64]` |
+| `noise` | R | `{kind: splitmix64BoxMuller, order: packedToken, dtype: float32}`, the G0 seeded stream (0.0.x-compatible) |
+| `maxImageTokens` | O | export bound (4096) |
+
+`krea2` (owned by `krea2@1`):
+
+| field | req | meaning |
+|---|---|---|
+| `prompt` | R | `{systemPrefix, suffix, maxTokens: 546, keepTrailingTokens: 5, dropLeadingRows: 34, padding: none, positions: running}`: the rendered ids are never padded; Diffusers' padded block masks its padding as keys everywhere, so unpadded rows are exactly its real rows |
+| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major |
+| `rotary` | R | `{axes: [32,48,48], theta: 1000, positions: "(0, row, column)", layout: splitHalves, textRotated: false}`; the host builds `imageRotary [N, 2, 128]` |
+| `segments` | R | the denoiser graph roles in call order |
+| `condRows` | R | 8: six shared block-modulation rows and the final layer's (scale, shift) |
+| `contentFilter` | R | `{required: true}`. The Krea 2 Community License §4.2 requires deployments to filter output; the driver takes an explicit `ContentFilter` from the app and has no default |
+
+`tokenizer.renderer: "krea2-prompt"` names the fixed template above (no chat template); `addSpecialTokens: false`.
+
+### 5.3 Field additions to existing tables
+
+| where | field | meaning |
+|---|---|---|
+| `graphs.<role>` | `x-residency` (to become `residency`) | `perPrompt` (text encoder: load, encode, release), `perStep` (denoisers: resident through the steps), `perImage` (decoder). Measured admission (G0) uses it with the measured footprints |
+| top level | `x-status`, `x-license` | draft marker; license files, `modified: true`, revenue cap, adapter permissions |
+| `provenance` | `adapter` | `{file, sha256, format, merge, multiplier, scale}` for merged adapters (realism) |
+| `provenance.refs` | `diffusersCommit`, `forgeLockSHA256`, `exportReport` | the exporter's environment pins |
+| `license` | `LicenseRef-Krea-2-Community-License-1.0` | an SPDX `LicenseRef`; the bundle ships `LICENSE.pdf`, the text, the use policy and `NOTICE` |
