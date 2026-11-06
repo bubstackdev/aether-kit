@@ -73,6 +73,22 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
   prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
 
+- **Krea 2 Turbo, vanilla and realism (G3)** in `AetherImage`:
+  - the `krea2@1` driver (`Krea2Pipeline`): the fixed Krea prompt, unpadded → text encoder (12 tapped layers, the
+    34-row prefix dropped) → four denoiser segments chained by their carries, per step, on the host Euler update with
+    the exponential shift → VAE decoder; macOS only in 0.1.0;
+  - **`ContentFilter`**, required by the Krea 2 Community License (§4.2): `Krea2Driver.load` gives a `Krea2Model`, and a
+    pipeline is only made with the app's filter (no default). It reviews the prompt before any work and the image
+    before it is returned; a refusal is the new `AetherError.GenerationFailure.contentRefused(stage:reason:)`;
+  - the typed `krea2` manifest block (MANIFEST.md §5.5–§5.6, now normative); a merged adapter's `scale` may be a
+    number or a list;
+  - the exporter writes the installed-revision layout (`.aether/aether.json`); the two local bundles' manifests were
+    moved and regenerated in place (no re-export);
+  - the Swift gate per variant against CPU Diffusers from the seed: rendered ids exact, text row cosine 0.999999, the
+    whole pipeline SSIM 0.9989 / PSNR 49.9 dB (vanilla) and 0.988 / 39.6 dB (realism), repeats bit-identical;
+  - the denoiser segments and VAE specialize without `expectFrequentReshapes` (with it their carries are non-finite);
+  - image pipelines default to `MemoryBudget.imageGeneration`: three quarters of RAM on macOS (Krea plans about 34 GiB
+    a generation), `platformDefault` on iOS.
 - **H3 runtime prerequisites (G4 step 1)** (`AetherRuntime/Chain/`): `GraphChain` binds each call's output as the
   next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
   unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
@@ -93,5 +109,5 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 
 ### In progress before 0.1.0 is tagged
 
-Krea 2 Turbo (vanilla and realism) and MiniMax H3 on the new runtime; Kokoro's hosted bundle, catalog entry and iPhone run; the SD-Turbo and FLUX.2 hosted
-bundles and catalog entries, SD-Turbo's iPhone validation, and FLUX.2's reference images.
+MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
+validation, and FLUX.2's and Krea's reference images.

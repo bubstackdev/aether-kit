@@ -5,6 +5,7 @@ public import Foundation
 // - ManifestGraph.swift   graphs (§2.3): file, functions, bindings, outputs, states, limits, compute
 // - ManifestBlocks.swift  variant, assets, tables, tokenizer (§2.4) and the typed-but-loose driver blocks (§2.5–§2.8)
 // - ManifestGenerative.swift  the generative drivers' typed blocks (§5.2–§5.3): schedule, latent, residency
+// - ManifestKrea2.swift   the `krea2` block of `krea2@1` (§5.6)
 // - ManifestFlux2.swift   the `flux2` block of `flux2-klein@1` (§5.7)
 // - ManifestKokoro.swift  the `kokoro` block of `kokoro@1` (§5.9)
 //
@@ -41,6 +42,8 @@ public struct Manifest: Sendable, Hashable, Codable {
     public var schedule: Schedule?
     /// §5.2: the generative drivers' image-latent contract.
     public var latent: Latent?
+    /// §5.6: the block `krea2@1` owns.
+    public var krea2: Krea2?
     /// §5.7: the block `flux2-klein@1` owns.
     public var flux2: Flux2?
     /// §5.9: the block `kokoro@1` owns.
@@ -56,7 +59,7 @@ public struct Manifest: Sendable, Hashable, Codable {
         decision: Decision? = nil, postprocess: Postprocess? = nil, labels: Labels? = nil,
         generation: Generation? = nil, calibration: Calibration? = nil, precision: [String: JSONValue]? = nil,
         provenance: Provenance? = nil, license: String? = nil, schedule: Schedule? = nil, latent: Latent? = nil,
-        flux2: Flux2? = nil, kokoro: Kokoro? = nil
+        flux2: Flux2? = nil, krea2: Krea2? = nil, kokoro: Kokoro? = nil
     ) {
         self.schema = schema
         self.id = id
@@ -77,6 +80,7 @@ public struct Manifest: Sendable, Hashable, Codable {
         self.schedule = schedule
         self.latent = latent
         self.flux2 = flux2
+        self.krea2 = krea2
         self.kokoro = kokoro
         self.precision = precision
         self.provenance = provenance
@@ -208,6 +212,7 @@ extension Manifest {
         try schedule?.validate()
         try latent?.validate()
         try flux2?.validate(graphs: graphs)
+        try krea2?.validate(graphs: graphs)
         try kokoro?.validate(tables: tables ?? [:])
     }
 

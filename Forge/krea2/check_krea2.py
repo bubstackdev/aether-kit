@@ -125,7 +125,7 @@ def main() -> None:
     if args.report.exists():
         raise SystemExit("report already exists; choose a new path")
     started = time.monotonic()
-    manifest = json.loads((args.bundle / "aether.json").read_text())
+    manifest = json.loads((args.bundle / ".aether/aether.json").read_text())
     ref = json.loads((args.reference / "reference.json").read_text())
     tokens = json.loads((args.reference / "tokens.json").read_text())
     files = {role: args.bundle / g["file"].split(":", 1)[1] for role, g in manifest["graphs"].items()}
