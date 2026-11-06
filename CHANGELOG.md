@@ -97,7 +97,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
   `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
   `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
-  `aether-models/aether-kit-sd-turbo-ios`.
+  `aether-models/aether-kit-sd-turbo-ios`; `krea-2-turbo` and `krea-2-turbo-realism` (macOS) from
+  `aether-models/krea-2-turbo-aether-kit` and the gated `aether-models/krea-2-turbo-realism-aether-kit`; catalog entries
+  carry `mature` (the realism merge), and `scripts/gen-catalog` sends the Hugging Face token for gated repos.
 
 - **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
   - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols

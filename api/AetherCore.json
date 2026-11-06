@@ -4493,6 +4493,78 @@
         "accessorKind": "get",
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore12CatalogEntryV6matureSbvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore12CatalogEntryV6matureSbvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore12CatalogEntryV6matureSbvs",
+        "moduleName": "AetherCore",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherCore12CatalogEntryV6matureSbvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore12CatalogEntryV6matureSbvp",
+      "moduleName": "AetherCore",
+      "name": "mature",
+      "printedName": "mature",
+      "usr": "s:10AetherCore12CatalogEntryV6matureSbvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -4640,6 +4712,13 @@
         "usr": "s:SS"
        },
        {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
@@ -4663,11 +4742,36 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherCore12CatalogEntryV2id4task4repo8revision7license8variantsACSS_S4SSDySSAA0C7VariantVGtcfc",
+      "mangledName": "$s10AetherCore12CatalogEntryV2id4task4repo8revision7license6mature8variantsACSS_S4SSbSDySSAA0C7VariantVGtcfc",
       "moduleName": "AetherCore",
       "name": "init",
-      "printedName": "init(id:task:repo:revision:license:variants:)",
-      "usr": "s:10AetherCore12CatalogEntryV2id4task4repo8revision7license8variantsACSS_S4SSDySSAA0C7VariantVGtcfc"
+      "printedName": "init(id:task:repo:revision:license:mature:variants:)",
+      "usr": "s:10AetherCore12CatalogEntryV2id4task4repo8revision7license6mature8variantsACSS_S4SSbSDySSAA0C7VariantVGtcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "CatalogEntry",
+        "printedName": "AetherCore.CatalogEntry",
+        "usr": "s:10AetherCore12CatalogEntryV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Decoder",
+        "printedName": "any Swift.Decoder",
+        "usr": "s:s7DecoderP"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherCore12CatalogEntryV4fromACs7Decoder_p_tKcfc",
+      "moduleName": "AetherCore",
+      "name": "init",
+      "printedName": "init(from:)",
+      "throwing": true,
+      "usr": "s:10AetherCore12CatalogEntryV4fromACs7Decoder_p_tKcfc"
      },
      {
       "children": [
@@ -4810,32 +4914,6 @@
       "name": "hashValue",
       "printedName": "hashValue",
       "usr": "s:10AetherCore12CatalogEntryV9hashValueSivp"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "CatalogEntry",
-        "printedName": "AetherCore.CatalogEntry",
-        "usr": "s:10AetherCore12CatalogEntryV"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "Decoder",
-        "printedName": "any Swift.Decoder",
-        "usr": "s:s7DecoderP"
-       }
-      ],
-      "declKind": "Constructor",
-      "implicit": true,
-      "init_kind": "Designated",
-      "kind": "Constructor",
-      "mangledName": "$s10AetherCore12CatalogEntryV4fromACs7Decoder_p_tKcfc",
-      "moduleName": "AetherCore",
-      "name": "init",
-      "printedName": "init(from:)",
-      "throwing": true,
-      "usr": "s:10AetherCore12CatalogEntryV4fromACs7Decoder_p_tKcfc"
      }
     ],
     "conformances": [

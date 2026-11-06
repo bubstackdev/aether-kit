@@ -35,18 +35,36 @@ public struct CatalogEntry: Sendable, Hashable, Codable, Identifiable {
     /// Full commit SHA the files were hashed at.
     public var revision: String
     public var license: String
+    /// True for models trained for mature (adult) content, such as the Krea 2 realism merge: an app should require an
+    /// explicit opt-in before offering them. Such repos are gated on Hugging Face, so installing needs a token.
+    public var mature: Bool
     /// `platform` or `platform-arch` (`macos`, `ios`, `ios-h18p`) → what to install.
     public var variants: [String: CatalogVariant]
 
     public init(
-        id: String, task: String, repo: String, revision: String, license: String, variants: [String: CatalogVariant]
+        id: String, task: String, repo: String, revision: String, license: String, mature: Bool = false,
+        variants: [String: CatalogVariant]
     ) {
         self.id = id
         self.task = task
         self.repo = repo
         self.revision = revision
         self.license = license
+        self.mature = mature
         self.variants = variants
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, task, repo, revision, license, mature, variants }
+
+    /// `mature` is optional in JSON (absent means false).
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try c.decode(String.self, forKey: .id), task: try c.decode(String.self, forKey: .task),
+            repo: try c.decode(String.self, forKey: .repo), revision: try c.decode(String.self, forKey: .revision),
+            license: try c.decode(String.self, forKey: .license),
+            mature: try c.decodeIfPresent(Bool.self, forKey: .mature) ?? false,
+            variants: try c.decode([String: CatalogVariant].self, forKey: .variants))
     }
 }
 
