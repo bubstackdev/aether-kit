@@ -70,6 +70,7 @@ Civitai's permissions allow sharing and selling merges, without credit, but `all
   the app chooses a classifier or moderation service and owns that choice. This applies to both variants, and it's a
   requirement for the realism one.
 
+This is **the same adapter the 0.0.x prototype merged** (the owner confirmed Civitai "Krea2 v3.0", which ships this file).
 The full record is in `forge-inputs/krea2-realism/SOURCE.json`.
 
 `Forge/`, the Python export tooling with locked uv environments, comes over from 0.0.x as a top-level tooling
