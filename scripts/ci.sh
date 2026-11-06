@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The single CI entry point: the pre-push hook and .github/workflows/ci.yml both run exactly this.
 #
-#   scripts/ci.sh            hermetic checks (no network, no GPU): toolchain, catalog, build, tests
+#   scripts/ci.sh            hermetic checks (no network, no GPU): toolchain, catalog, build, public API, tests
 #   AETHER_GATES=1 scripts/ci.sh
 #                            also the real-graph gates (needs lab/models and a free GPU; Mac only)
 #
@@ -33,6 +33,9 @@ python3 -I scripts/gen-catalog check
 
 step "build (warnings are errors)"
 swift build --scratch-path "$SCRATCH" --build-tests -Xswiftc -warnings-as-errors
+
+step "public API: compare with the api/ baseline (report-only until the 0.1.0 freeze)"
+AETHER_CI_SCRATCH="$SCRATCH" scripts/check-api.sh
 
 step "hermetic tests"
 env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build

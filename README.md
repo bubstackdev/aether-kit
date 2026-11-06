@@ -62,8 +62,12 @@ iOS 17).
 ## Development
 
 ```bash
-scripts/ci.sh                    # hermetic: catalog, warnings-as-errors build, tests
+scripts/ci.sh                    # hermetic: catalog, warnings-as-errors build, public API, tests
 AETHER_GATES=1 scripts/ci.sh     # plus real-model gates (needs downloaded models and a GPU)
+scripts/check-api.sh --update    # record an intended public-API change in api/ (after a build)
 ```
+
+The public-API check compares against `api/` and only reports until 0.1.0, when `"enforce": true` in
+`scripts/api-freeze.json` makes a breaking change fail CI.
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
