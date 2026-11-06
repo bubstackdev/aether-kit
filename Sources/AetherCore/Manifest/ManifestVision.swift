@@ -258,9 +258,9 @@ extension Manifest {
         /// `depth-estimator@1`.
         public struct Depth: Sendable, Hashable, Codable {
             public enum Polarity: String, Sendable, Hashable, Codable {
-                /// Relative depth or disparity (Depth Anything).
+                /// Disparity or inverse depth: a larger value is nearer the camera (Depth Anything V1 and V2, MiDaS).
                 case largerIsNearer
-                /// Metric distance.
+                /// Depth or distance, relative or metric: a larger value is farther from the camera (Depth Anything 3).
                 case largerIsFarther
             }
 

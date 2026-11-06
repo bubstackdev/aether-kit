@@ -40,7 +40,7 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism", "depth-anything-3-small"]))
     }
 
     /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
@@ -57,6 +57,9 @@ struct CatalogTests {
         #expect(try ModelRef.resolve("sd-turbo", for: mac).asset("main")?.repo == "aether-models/aether-kit-sd-turbo")
         for device in [mac, phone] { _ = try ModelRef.resolve("kokoro-82m", for: device) }
         _ = try ModelRef.resolve("flux2-klein-4b", for: mac)
+        // Depth Anything 3 small (M4b) is macOS-only until an iOS export is qualified.
+        #expect(try ModelRef.resolve("depth-anything-3-small", for: mac).driver == .depthEstimator)
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("depth-anything-3-small", for: phone) }
         // Krea 2 (both variants) is macOS-only; the realism merge is marked mature, and only it.
         for id in ["krea-2-turbo", "krea-2-turbo-realism"] {
             _ = try ModelRef.resolve(id, for: mac)

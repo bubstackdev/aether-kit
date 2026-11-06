@@ -18,6 +18,7 @@ public enum DriverCatalog {
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
+        DriverContract.depthEstimator.driver: .depthEstimator,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -408,4 +409,22 @@ extension DriverContract {
                  "patchRC": RoleSpec(required: true, rank: nil, scalar: nil)],
         outputs: ["imageEmbeds": RoleSpec(required: true, rank: nil, scalar: .floatingPoint),
                   "deepstack": RoleSpec(required: true, rank: nil, scalar: .floatingPoint)])
+}
+
+extension DriverContract {
+    /// `depth-estimator@1` (MANIFEST.md §1.3): one stateless `estimator` graph, in `image` (`[1, 3, H, W]`, floating
+    /// point), out `depth` (`[1, H, W]`, floating point) and an optional `confidence` of the same shape. A graph output
+    /// the manifest names in neither role is listed in `unusedOutputs`. The driver also requires `preprocess.image`
+    /// (`NCHW`) and a `depth` `postprocess` (checked when it loads); the output's H and W must be the prepared image's.
+    public static let depthEstimator = DriverContract(
+        driver: .depthEstimator,
+        graphs: [
+            "estimator": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: [
+                    "depth": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "confidence": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
+                ]),
+        ],
+        requiresTokenizer: false)
 }

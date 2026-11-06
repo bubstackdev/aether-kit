@@ -70,6 +70,9 @@ extension DriverID {
     /// MiniMax H3 text to video with audio: a Qwen3-VL conditioner and a 50-block transformer, both weights-as-inputs
     /// graphs chained on the GPU, then window-tiled video and audio decoders (MANIFEST.md §5.10).
     public static let minimaxH3 = DriverID(validated: "minimax-h3@1")
+    /// Monocular depth: one static graph from an image to a depth map and an optional confidence map (MANIFEST.md
+    /// §1.3, §2.8).
+    public static let depthEstimator = DriverID(validated: "depth-estimator@1")
 }
 
 private enum LowerAlnum {
