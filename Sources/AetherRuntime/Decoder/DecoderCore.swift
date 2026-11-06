@@ -158,8 +158,12 @@ final class DecoderCore {
 
         let limits = graph.limits ?? Manifest.Limits()
         let dynamicChunk = max(1, limits.prefillChunk ?? 512)
-        padToken = Int32(limits.padTokenId ?? 0)
-        padPosition = Int32(graph.inputEncodings?["positions"]?.pad ?? -1)
+        guard let padToken = Int32(exactly: limits.padTokenId ?? 0),
+              let padPosition = Int32(exactly: graph.inputEncodings?["positions"]?.pad ?? -1) else {
+            throw AetherError.manifestInvalid(field: "limits.padTokenId", reason: "the pad token and position must fit Int32")
+        }
+        self.padToken = padToken
+        self.padPosition = padPosition
         self.arena = arena
         self.kernels = kernels
         self.racingHandoff = racingHandoff

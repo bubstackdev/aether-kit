@@ -132,6 +132,7 @@ extension Manifest {
             switch source {
             case .dir(let path), .file(let path):
                 try require(assets[path.asset] != nil, "tokenizer.source", "names asset '\(path.asset)', which is not in assets")
+                try require(isSafeRelativePath(path.path, allowDot: true), "tokenizer.source", "'\(path.path)' is not a safe relative path")
             case .hf(let repo, let revision):
                 try require(!repo.isEmpty, "tokenizer.source.hf", "must not be empty")
                 try require(revision.count == 40 && revision.allSatisfy(\.isHexDigit), "tokenizer.source.revision",
@@ -141,10 +142,12 @@ extension Manifest {
             }
             if let chatTemplate {
                 try require(assets[chatTemplate.asset] != nil, "tokenizer.chatTemplate", "unknown asset '\(chatTemplate.asset)'")
+                try require(isSafeRelativePath(chatTemplate.path), "tokenizer.chatTemplate", "'\(chatTemplate.path)' is not a safe relative path")
             }
             for (i, stop) in (stop ?? []).enumerated() {
                 if case .text(let s) = stop { try require(!s.isEmpty, "tokenizer.stop.\(i)", "must not be empty") }
-                if case .id(let id) = stop { try require(id >= 0, "tokenizer.stop.\(i)", "must be >= 0") }
+                // Token ids are Int32 at run time.
+                if case .id(let id) = stop { try require((0...Int(Int32.max)).contains(id), "tokenizer.stop.\(i)", "must be in 0...\(Int32.max)") }
             }
             if let thinking {
                 try require(!thinking.open.isEmpty, "tokenizer.thinking.open", "must not be empty")

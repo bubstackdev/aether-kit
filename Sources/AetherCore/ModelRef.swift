@@ -38,6 +38,48 @@ public struct ModelRef: Sendable, Hashable, Codable, CustomStringConvertible {
 
     public var description: String { "\(catalogID)[\(variant)] (\(repo)@\(revision.prefix(7)))" }
 
+    /// Checks that every string the store turns into a path stays a single safe component (or, for a repo, exactly
+    /// `owner/name`; for subtrees and files, relative paths without `.`/`..`), so no reference reaches outside the
+    /// store root. The store calls it before any file-system operation; a catalog reference always passes.
+    public func validateForStore() throws(AetherError) {
+        try Self.requireRepo(repo, "repo")
+        try Self.requireComponent(revision, "revision")
+        try Self.requireComponent(variant, "variant")
+        for asset in assets {
+            try Self.requireComponent(asset.name, "assets.\(asset.name).name")
+            try Self.requireRepo(asset.repo, "assets.\(asset.name).repo")
+            try Self.requireComponent(asset.revision, "assets.\(asset.name).revision")
+            guard asset.subtree.isEmpty || isSafeRelativePath(asset.subtree) else {
+                throw .invalidReference(field: "assets.\(asset.name).subtree", reason: "'\(asset.subtree)' is not a safe relative path")
+            }
+            for file in asset.files where !isSafeRelativePath(file.path) {
+                throw .invalidReference(field: "assets.\(asset.name).files", reason: "'\(file.path)' is not a safe relative path")
+            }
+        }
+    }
+
+    /// One path component: letters, digits, `.`, `_`, `-`, starting with a letter or digit (so never `.` or `..`).
+    static func isSafeComponent(_ s: String) -> Bool {
+        guard let first = s.unicodeScalars.first, s.unicodeScalars.count <= 255 else { return false }
+        let allowed = { (c: Unicode.Scalar) in
+            ("a"..."z").contains(c) || ("A"..."Z").contains(c) || ("0"..."9").contains(c) || c == "." || c == "_" || c == "-"
+        }
+        return allowed(first) && first != "." && first != "-" && s.unicodeScalars.allSatisfy(allowed)
+    }
+
+    private static func requireComponent(_ s: String, _ field: String) throws(AetherError) {
+        guard isSafeComponent(s) else {
+            throw .invalidReference(field: field, reason: "'\(s)' must be one path component of letters, digits, '.', '_' or '-'")
+        }
+    }
+
+    private static func requireRepo(_ s: String, _ field: String) throws(AetherError) {
+        let parts = s.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2, parts.allSatisfy({ isSafeComponent(String($0)) }) else {
+            throw .invalidReference(field: field, reason: "'\(s)' must be owner/name")
+        }
+    }
+
     public var bytes: Int64 { assets.reduce(0) { $0 + $1.files.reduce(0) { $0 + $1.size } } }
 
     public func asset(_ name: String) -> Asset? { assets.first { $0.name == name } }

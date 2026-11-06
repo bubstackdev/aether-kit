@@ -69,7 +69,8 @@ struct Installer: Sendable {
     func run(progress: @escaping @Sendable (InstallProgress) -> Void) async throws -> URL {
         let lock = try await StoreLock.exclusive(layout.lock(for: ref))
         defer { withExtendedLifetime(lock) {} }
-        if let receipt = InstallReceipt.read(at: destination), receipt.ref.variant == ref.variant { return destination }
+        // Only the same installation counts: catalog id, driver, variant and every asset's pins and files.
+        if let receipt = InstallReceipt.read(at: destination), receipt.ref == ref { return destination }
 
         let fm = FileManager.default
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
@@ -105,7 +106,7 @@ struct Installer: Sendable {
         try fm.createDirectory(at: receiptURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try encoder.encode(receipt).write(to: receiptURL, options: .atomic)
 
-        // A directory at `destination` without this variant's receipt is an interrupted or superseded earlier
+        // A directory at `destination` without this installation's receipt is an interrupted or superseded earlier
         // attempt: move it out of the way in one rename, so a crash never leaves half of it looking installed.
         try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
         if fm.fileExists(atPath: destination.path) { try layout.discard(destination) }
