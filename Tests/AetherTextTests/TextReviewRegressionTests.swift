@@ -146,3 +146,43 @@ struct TextSecondReviewTests {
         #expect(!log.calls.contains(cancelledPrompt.tokens.count))
     }
 }
+
+/// The owner's second code review: the chat items.
+@Suite("Owner review 2: chat")
+struct ChatOwnerReviewTests {
+    /// Finding 5: a reply in progress when the history is cleared streams to its end but does not put its turn back,
+    /// and the next turn starts from the empty history.
+    @Test(.timeLimit(.minutes(1))) func clearingTheHistoryDuringAReplyKeepsItCleared() async throws {
+        let calls = Mutex(0), cleared = Mutex(false)
+        let held: @Sendable ([Int32]) -> [Int32] = { _ in
+            // Halfway through the first reply's 200 tokens (well after its first text), hold the model until the test
+            // has cleared the history. Bounded, so a regression fails instead of hanging.
+            if calls.withLock({ $0 += 1; return $0 }) == 100 {
+                let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+                while !cleared.withLock({ $0 }), ContinuousClock.now < deadline { usleep(1_000) }
+            }
+            return Array(repeating: 12, count: 200)
+        }
+        let session = try await TextReviewRegressionTests.chat(reply: held)
+        let first = await session.respond(to: "hello")
+        var iterator = first.makeAsyncIterator()
+        while let event = try await iterator.next() {
+            if case .text = event { break }
+        }
+        await session.clearHistory()
+        cleared.withLock { $0 = true }
+        var finished = false
+        while let event = try await iterator.next() {
+            if case .finished = event { finished = true }
+        }
+        #expect(finished, "the reply in progress still streams to its end")
+        let afterClear = await session.history
+        #expect(afterClear.isEmpty, "\(afterClear)")
+
+        let next = try await FakeChat.collect(await session.respond(to: "next"))
+        let history = await session.history
+        #expect(history.map(\.content) == ["next", next.text])
+        let expected = try FakeRenderer().render([.user("next")], options: RenderOptions()).tokens.count
+        #expect(next.summary?.promptTokens == expected, "the next turn renders from the cleared history")
+    }
+}
