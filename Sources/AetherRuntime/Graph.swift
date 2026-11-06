@@ -96,6 +96,13 @@ public final class Graph: GraphBackend {
     public let options: GraphOptions
     public let signature: GraphSignature
     private let function: InferenceFunction
+    private var shapes: Set<[[Int]]> = []
+
+    /// How many distinct input shape combinations this graph has run or been encoded at. Core AI keeps a
+    /// specialization's memory for each until the model is released, even with `expectFrequentReshapes`
+    /// (lab/h3-spike §3), so a measured footprint holds only for the shapes it was measured at
+    /// (``ShapeProfile``).
+    public var distinctShapeCount: Int { shapes.count }
 
     /// Specializes the model at `url` with `options` (through the specialization cache) and loads `function`.
     public convenience init(url: URL, function name: String, options: GraphOptions) async throws(AetherError) {
@@ -161,6 +168,7 @@ public final class Graph: GraphBackend {
     /// Runs the function on `bindings`. Validates the bindings against the signature first; allocates no tensors.
     public func run(_ bindings: inout Bindings) async throws(AetherError) {
         try bindings.validate(against: signature)
+        note(bindings)
         try await bindings.arena.run(function, bindings: bindings)
     }
 
@@ -168,7 +176,12 @@ public final class Graph: GraphBackend {
     /// buffers must be Metal-backed and the arena lent by the caller until the stream drains.
     func encode(_ bindings: borrowing Bindings, to stream: ComputeStream) throws(AetherError) {
         try bindings.validate(against: signature)
+        note(bindings)
         try bindings.arena.encode(function, bindings: bindings, to: stream)
+    }
+
+    private func note(_ bindings: borrowing Bindings) {
+        shapes.insert(bindings.inputs.sorted { $0.name < $1.name }.map(\.shape))
     }
 }
 
