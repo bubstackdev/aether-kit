@@ -10,13 +10,15 @@ sha256 a6712629...) into the transformer in float32 before export. Nothing is do
 Hugging Face cache (or `--snapshot`), and every file read is verified against the pins below. Writes only `--output`:
 
     OUTPUT/
-      aether.json                       the Aether manifest (MANIFEST.md §5; driver `krea2@1` proposed until G3)
+      .aether/aether.json               the Aether manifest (MANIFEST.md §5.5–5.6; driver `krea2@1`)
       krea2_turbo[_realism]-{text,denoiser0..3,vae}.aimodel
       tokenizer/                        the checkpoint's tokenizer files, unchanged
       LICENSE.pdf, KREA-2-LICENSE.txt, KREA-2-USE-POLICY.txt, NOTICE
       SHA256SUMS                        every bundle file except itself
       export-report.json                provenance, versions, LoKr coverage, timings, peak RSS
       forge-log.jsonl                   one event per stage
+
+The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
 
 Conversion runs on the CPU; parity is the separate gate `check_krea2.py` (GPU) against `reference_krea2.py`.
 """
@@ -153,9 +155,15 @@ def transformer_shapes(checkpoint: kg.Checkpoint) -> dict[str, tuple[int, ...]]:
     return shapes
 
 
-# MARK: the manifest (MANIFEST.md §5: generic `schedule`/`latent`/`residency` normative since G0; driver `krea2@1` and
-# its `krea2` block proposed until G3)
+MANIFEST_PATH = ".aether/aether.json"
 
+
+# MARK: the manifest (MANIFEST.md §5: generic `schedule`/`latent`/`residency` since G0; driver `krea2@1` and its `krea2`
+# block, §5.5–5.6, since G3)
+
+# The denoiser segments and the VAE specialize without the reshape hint, as check_krea2.py qualified them: with
+# `expectFrequentReshapes: true` every segment's carries come back non-finite on the GPU (measured in G3, M5 Max,
+# Xcode 27.2). The text encoder is exact with the hint (row cosine 0.999999), and its length changes per prompt.
 def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], report: dict) -> dict:
     v = VARIANTS[variant]
     graph_file = lambda role: f"main:{asset_names[role]}"  # noqa: E731
@@ -173,23 +181,22 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                                                          "source": {"from": "textEncoder.text_embeds"}},
                                  "sigma": "sigma", "imageRotary": "rope_image"},
                       "outputs": {"carryImage": "image_1", "carryText": "text_1", "condition": "cond"},
-                      "compute": "gpu", "expectFrequentReshapes": True, "residency": "perStep"},
+                      "compute": "gpu", "expectFrequentReshapes": False, "residency": "perStep"},
         "vaeDecoder": {"file": graph_file("vaeDecoder"), "function": "decode",
                        "inputs": {"latents": "latents"}, "outputs": {"image": "image"},
-                       "compute": "gpu", "expectFrequentReshapes": True, "residency": "perImage"},
+                       "compute": "gpu", "expectFrequentReshapes": False, "residency": "perImage"},
     }
     for i in (1, 2, 3):
         outputs = {"velocity": "velocity"} if i == 3 else {"carryImage": f"image_{i + 1}", "carryText": f"text_{i + 1}"}
         graphs[f"denoiser{i}"] = {"file": graph_file(f"denoiser{i}"), "function": "segment",
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
-                                  "expectFrequentReshapes": True, "residency": "perStep"}
+                                  "expectFrequentReshapes": False, "residency": "perStep"}
     order = ["textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"]
     return {
         "schema": 1,
         "id": v["id"],
         "task": "text-to-image",
         "driver": "krea2@1",
-        "x-status": "draft: driver krea2@1 and its krea2 block are proposed in MANIFEST.md §5 (G3)",
         "variant": {"platform": "macos"},
         "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {role: graphs[role] for role in order},
@@ -416,16 +423,17 @@ def main() -> None:
     if sha256(args.output / "LICENSE.pdf") != sha256(args.license_dir / "KREA-2-LICENSE.pdf"):
         raise SystemExit("the snapshot's LICENSE.pdf differs from forge-inputs' KREA-2-LICENSE.pdf")
     (args.output / "NOTICE").write_text(notice(args.variant))
-    skip = {"aether.json", "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
+    skip = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": sha256(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in skip}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
     report["assetBytes"] = {role: tree_bytes(args.output / name) for role, name in asset_names.items()}
     report["stages"]["package"] = log.done("package")
     save()
-    (args.output / "aether.json").write_text(json.dumps(manifest(args.variant, files, asset_names, report), indent=2)
+    (args.output / ".aether").mkdir()
+    (args.output / MANIFEST_PATH).write_text(json.dumps(manifest(args.variant, files, asset_names, report), indent=2)
                                              + "\n")
-    report["aetherJSONSHA256"] = sha256(args.output / "aether.json")
+    report["aetherJSONSHA256"] = sha256(args.output / MANIFEST_PATH)
     save()
     sums = [f"{sha256(p)}  {p.relative_to(args.output)}" for p in tree_files(args.output)
             if p.name not in ("SHA256SUMS", "forge-log.jsonl")]
