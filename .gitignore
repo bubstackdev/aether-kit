@@ -4,3 +4,7 @@
 DerivedData/
 .DS_Store
 .build-ci/
+.build-ios/
+
+# Git worktrees for parallel branches (git worktree add .worktrees/<name> -b <branch>)
+.worktrees/

@@ -48,7 +48,8 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherText         tokenizer adapter · prompt rendering · Generator · ChatSession · constrained decoding
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
  ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
- ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), then Krea 2 (§6.5)
+ ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), krea2@1 (Krea 2) (§6.5)
+ ├── AetherSpeech       speech generation: kokoro@1 (Kokoro-82M) from app-supplied phonemes (§6.7)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
@@ -66,8 +67,8 @@ Rules:
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
-Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherImage`, `AetherEmbeddings`, `AetherDecide`,
-`Aether`.
+Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherImage`, `AetherSpeech`, `AetherEmbeddings`,
+`AetherDecide`, `Aether`.
 `AetherHost`, `AetherRuntime` and `AetherCore` are reachable through any of them.
 
 ## 4. The manifest (`aether.json`)
@@ -327,7 +328,7 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 - **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
   Diffusers' order.
 
-### 6.5 AetherImage (G1, G2)
+### 6.5 AetherImage (G1–G3)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
 `LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
@@ -360,6 +361,31 @@ FLUX.2's host recipe:
 - **Measured (gate, M5 Max, int8 512², 4 steps):** phase peaks 3.2 GiB (prompt), 5.6 GiB (steps), 1.2 GiB (image);
   about 15 s cold (loading included) and 1.4 s warm.
 
+The third is **`krea2@1`** (Krea 2 Turbo, vanilla and realism, G3). `Krea2Pipeline` has the same shape again, with
+Krea's recipe and the content filter its license requires:
+
+- **Content filter.** The Krea 2 Community License (§4.2) requires a deployment to filter output, and the deployer is
+  the app. `Krea2Driver.load` gives a `Krea2Model`, not a pipeline; a `Krea2Pipeline` is only made with the app's
+  `ContentFilter` (`model.pipeline(filter:)`, or the initializer), so there is no default and no unfiltered path. The
+  filter reviews the prompt before any work (nothing loads for a refused prompt) and the finished image before it is
+  returned (a refused image is discarded); a refusal is `generation(.contentRefused(stage:reason:))`, and a filter that
+  throws fails the generation (fail closed). What the filter does is the app's choice; a pass-through filter is the
+  app's decision, documented as such.
+- The prompt is `krea2.prompt.systemPrefix + prompt + suffix`, tokenized without added specials and never padded; a
+  longer rendering keeps its first 541 ids and its last 5. The text encoder drops the 34 prefix rows, so the
+  conditioning is exactly the real rows.
+- Four segments chained by their carries, wired from the manifest's `source.from` bindings as for FLUX.2; the host
+  builds one image rotary table (`(0, row, column)`, split halves). Carries stay float32; latents go in as fp16 and take
+  the float32 Euler update with the fixed exponential shift (μ 1.15).
+- macOS only in 0.1.0. Reference images and refine are reserved (the first export has no vision graph or VAE encoder).
+- **Specialization:** the four segments and the VAE load without `expectFrequentReshapes`. With the hint, every
+  segment's carries came back non-finite on the GPU (Xcode 27.2, M5 Max), while the exporter's Python check, which
+  passed no hint, was exact; the text encoder keeps the hint and is exact (row cosine 0.999999).
+- **Measured (gate, M5 Max, fp16 512², 8 steps; both variants alike):** phase peaks 7.2 GiB (prompt), 26.6 GiB (steps),
+  1.4 GiB (image); released per phase that plans to about 34 GiB, above `MemoryBudget.platformDefault`'s half of a
+  64 GB Mac, so image pipelines default to `MemoryBudget.imageGeneration` (three quarters of RAM on macOS, about Metal's
+  recommended working set). About 70 s cold (loading included) and 6–7 s warm.
+
 ### 6.6 Device chains, weight banks and shape profiles (G4 step 1)
 
 The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x prototype's working patterns
@@ -389,6 +415,33 @@ The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x p
   Turbo LoRA, about 750 MB of bf16 weights a block) with seeded random weights in the real shapes, 4 blocks × 4096 rows:
   the device chain's output is within 0.0051 relative L2 of the original block on the CPU after each block, and its
   bytes equal the unchained path's (a host-arena chain). The graph itself is 32 KB; one specialization per profile.
+
+### 6.7 AetherSpeech (G5)
+
+**`kokoro@1`** (Kokoro-82M, MANIFEST.md §5.9). `KokoroSpeechSession` (an actor, `Registry.speech`) turns validated
+phonemes into 24 kHz float32 PCM (`GeneratedAudio`):
+
+- **Phonemes, not text.** `KokoroPhonemes` walks `unicodeScalars` against the bundle's vocabulary and refuses unknown
+  symbols, an empty string or more than 510 scalars; no normalization (Swift's `String ==` treats `a` + U+0303 and
+  `ã` as equal, Kokoro doesn't). Text goes through an app-supplied `SpeechPhonemizer`: no G2P ships (misaki falls back
+  to espeak-ng, GPL-3.0).
+- **The recipe:** the voice table's row `phonemeCount − 1` styles both graphs; `durations` gives per-token sums;
+  the host rounds `max(1, roundHalfToEven(sum / speed))` in float32 and repeats each token's features for its frames,
+  zero-padded to the smallest bucket (64…4096); the decoder takes the valid `frames` count and seeded harmonic noise
+  (`SeededGaussianNoise`, `[1, bucket, 600, 9]`) and the host keeps the first `600·frames` samples. Segment `i` of a
+  request uses seed `seed &+ i` and is delivered as soon as it decodes.
+- **Frames and memory:** utterances past the session's frame cap (the manifest's per platform: 1024 on macOS, 512 on
+  iOS) are refused after the durations call, before decoding. Both graphs stay resident (no `residency` phases);
+  admission plans from the measured footprint keyed by the cap's bucket (the decoder keeps every bucket it ran at),
+  else the files, and reserves from a shared `ResourceCoordinator` when one is set. `prewarm` runs every bucket up to
+  the cap once.
+- **Placement:** both graphs on the GPU (durations with the reshape hint, the bucketed decoder without). Swift's Core
+  AI runtime traps loading `durations` for the CPU on macOS 27.2 (`loadFunction`), the placement 0.0.x and Python used.
+- One request at a time, in order (queue, not fail); cancellation stops between graph calls; any failure releases the
+  graphs and the session stays usable; `unload()` waits for the running request. Runs on iOS (the iPhone run is
+  pending).
+- **Measured (gate, M5 Max, 5 cases):** frames exact; rel. L2 0.0076–0.032 against upstream on the CPU; held
+  3.0 GiB, peak 3.2 GiB with buckets up to 1024 specialized.
 
 ## 7. AetherText
 

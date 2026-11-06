@@ -73,11 +73,46 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
   prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
 
+- **Krea 2 Turbo, vanilla and realism (G3)** in `AetherImage`:
+  - the `krea2@1` driver (`Krea2Pipeline`): the fixed Krea prompt, unpadded → text encoder (12 tapped layers, the
+    34-row prefix dropped) → four denoiser segments chained by their carries, per step, on the host Euler update with
+    the exponential shift → VAE decoder; macOS only in 0.1.0;
+  - **`ContentFilter`**, required by the Krea 2 Community License (§4.2): `Krea2Driver.load` gives a `Krea2Model`, and a
+    pipeline is only made with the app's filter (no default). It reviews the prompt before any work and the image
+    before it is returned; a refusal is the new `AetherError.GenerationFailure.contentRefused(stage:reason:)`;
+  - the typed `krea2` manifest block (MANIFEST.md §5.5–§5.6, now normative); a merged adapter's `scale` may be a
+    number or a list;
+  - the exporter writes the installed-revision layout (`.aether/aether.json`); the two local bundles' manifests were
+    moved and regenerated in place (no re-export);
+  - the Swift gate per variant against CPU Diffusers from the seed: rendered ids exact, text row cosine 0.999999, the
+    whole pipeline SSIM 0.9989 / PSNR 49.9 dB (vanilla) and 0.988 / 39.6 dB (realism), repeats bit-identical;
+  - the denoiser segments and VAE specialize without `expectFrequentReshapes` (with it their carries are non-finite);
+  - image pipelines default to `MemoryBudget.imageGeneration`: three quarters of RAM on macOS (Krea plans about 34 GiB
+    a generation), `platformDefault` on iOS.
 - **H3 runtime prerequisites (G4 step 1)** (`AetherRuntime/Chain/`): `GraphChain` binds each call's output as the
   next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
   unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
   enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
   MANIFEST.md §5.8 proposes the `weights` table.
+- **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
+  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
+  `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
+  `aether-models/aether-kit-sd-turbo-ios`.
+
+- **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
+  - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
+    refused) → durations → host rounding and alignment → the bucketed decoder with seeded harmonic noise →
+    `GeneratedAudio`; multi-segment requests, frame caps per platform, prewarm, measured admission, cancellation;
+  - text through an app-supplied `SpeechPhonemizer` (no G2P ships: misaki falls back to GPL espeak-ng);
+  - the typed `kokoro` block (MANIFEST.md §5.9, normative) and a reproducible Forge exporter (`Forge/kokoro/`, float32,
+    54 voices). The Swift gate against unmodified upstream on the CPU: frames exact, rel. L2 0.0076–0.032 (bars
+    min(0.05, 4× the fp32-vs-fp64 floor)), log-mel ≤ 0.015, repeats bit-identical.
+  - Both graphs run on the GPU: Swift's Core AI runtime traps loading the durations graph for the CPU on macOS 27.2.
+
+- **On-device qualification** (`docs/DEVICE.md`, `Tools/DeviceGate`): SD-Turbo and Kokoro pass their gates on a
+  physical iPhone (iPhone Duo, `h19p`, iOS 27.2). SD-Turbo's iOS bundle is mixed precision (text encoder fp32, U-Net and
+  VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
+  peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
 
 - **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
   the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
@@ -90,5 +125,5 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 
 ### In progress before 0.1.0 is tagged
 
-Krea 2 Turbo (vanilla and realism), MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo and FLUX.2 hosted
-bundles and catalog entries, SD-Turbo's iPhone validation, and FLUX.2's reference images.
+MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
+validation, and FLUX.2's and Krea's reference images.

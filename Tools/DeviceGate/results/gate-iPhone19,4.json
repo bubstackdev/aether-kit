@@ -1,0 +1,169 @@
+{
+  "architecture" : "h19p",
+  "availableAtLaunchMB" : 6135,
+  "checks" : [
+    {
+      "detail" : "RMSE 0.0029344859644533654 (bar 0.03), PSNR 56.66995918050336 dB",
+      "name" : "sd-turbo.teapot-1.rmse",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat generation is bit-identical",
+      "name" : "sd-turbo.teapot-1.repeat",
+      "passed" : true
+    },
+    {
+      "detail" : "RMSE 0.01237426450126871 (bar 0.03), PSNR 44.17021201576653 dB",
+      "name" : "sd-turbo.fox-4.rmse",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat generation is bit-identical",
+      "name" : "sd-turbo.fox-4.repeat",
+      "passed" : true
+    },
+    {
+      "detail" : "iOS frame cap 512 (manifest: 512)",
+      "name" : "kokoro.frameCap",
+      "passed" : true
+    },
+    {
+      "detail" : "token ids equal upstream's",
+      "name" : "kokoro.short-af_heart.ids",
+      "passed" : true
+    },
+    {
+      "detail" : "98 frames → bucket 128",
+      "name" : "kokoro.short-af_heart.frames",
+      "passed" : true
+    },
+    {
+      "detail" : "rel L2 0.008268953866875657 (bound 0.029168936342142803)",
+      "name" : "kokoro.short-af_heart.relL2",
+      "passed" : true
+    },
+    {
+      "detail" : "log-mel mean 0.003271277336006056 (bound 0.03)",
+      "name" : "kokoro.short-af_heart.logMel",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat synthesis is bit-identical",
+      "name" : "kokoro.short-af_heart.repeat",
+      "passed" : true
+    },
+    {
+      "detail" : "token ids equal upstream's",
+      "name" : "kokoro.sentence-am_michael.ids",
+      "passed" : true
+    },
+    {
+      "detail" : "247 frames → bucket 256",
+      "name" : "kokoro.sentence-am_michael.frames",
+      "passed" : true
+    },
+    {
+      "detail" : "rel L2 0.025761016143838755 (bound 0.05)",
+      "name" : "kokoro.sentence-am_michael.relL2",
+      "passed" : true
+    },
+    {
+      "detail" : "log-mel mean 0.010713054984974131 (bound 0.03)",
+      "name" : "kokoro.sentence-am_michael.logMel",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat synthesis is bit-identical",
+      "name" : "kokoro.sentence-am_michael.repeat",
+      "passed" : true
+    },
+    {
+      "detail" : "token ids equal upstream's",
+      "name" : "kokoro.speed-bf_emma.ids",
+      "passed" : true
+    },
+    {
+      "detail" : "180 frames → bucket 256",
+      "name" : "kokoro.speed-bf_emma.frames",
+      "passed" : true
+    },
+    {
+      "detail" : "rel L2 0.0277492625295165 (bound 0.05)",
+      "name" : "kokoro.speed-bf_emma.relL2",
+      "passed" : true
+    },
+    {
+      "detail" : "log-mel mean 0.006757670870996783 (bound 0.03)",
+      "name" : "kokoro.speed-bf_emma.logMel",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat synthesis is bit-identical",
+      "name" : "kokoro.speed-bf_emma.repeat",
+      "passed" : true
+    },
+    {
+      "detail" : "token ids equal upstream's",
+      "name" : "kokoro.long-af_bella.ids",
+      "passed" : true
+    },
+    {
+      "detail" : "913 frames refused above the 512-frame cap: the utterance needs 913 frames, above this session's 512-frame cap; split the phonemes into shorter segments or raise Options.frameCap (more memory)",
+      "name" : "kokoro.long-af_bella.cap",
+      "passed" : true
+    },
+    {
+      "detail" : "token ids equal upstream's",
+      "name" : "kokoro.medium-af_bella.ids",
+      "passed" : true
+    },
+    {
+      "detail" : "442 frames → bucket 512",
+      "name" : "kokoro.medium-af_bella.frames",
+      "passed" : true
+    },
+    {
+      "detail" : "rel L2 0.02215494180149854 (bound 0.05)",
+      "name" : "kokoro.medium-af_bella.relL2",
+      "passed" : true
+    },
+    {
+      "detail" : "log-mel mean 0.014523537264747203 (bound 0.03)",
+      "name" : "kokoro.medium-af_bella.logMel",
+      "passed" : true
+    },
+    {
+      "detail" : "a repeat synthesis is bit-identical",
+      "name" : "kokoro.medium-af_bella.repeat",
+      "passed" : true
+    }
+  ],
+  "device" : "iPhone19,4",
+  "measurements" : {
+    "kokoro.kokoro-82m[frames<=512].perStep.heldMB" : 792,
+    "kokoro.kokoro-82m[frames<=512].perStep.peakMB" : 869,
+    "kokoro.loadSeconds" : 0.0105755,
+    "kokoro.medium-af_bella.seconds" : 1.607479542,
+    "kokoro.physFootprintPeakMB" : 2354,
+    "kokoro.sentence-am_michael.seconds" : 1.178887084,
+    "kokoro.short-af_heart.seconds" : 7.455496,
+    "kokoro.speed-bf_emma.seconds" : 0.710944208,
+    "sd-turbo.availableBeforeMB" : 6134.701507568359,
+    "sd-turbo.budgetMB" : 5599,
+    "sd-turbo.fox-4.availableAfterMB" : 5394.6518630981445,
+    "sd-turbo.fox-4.firstSeconds" : 0.775955042,
+    "sd-turbo.fox-4.warmSeconds" : 0.7816445,
+    "sd-turbo.loadSeconds" : 0.071001041,
+    "sd-turbo.physFootprintPeakMB" : 776,
+    "sd-turbo.sd-turbo[512x512].perImage.heldMB" : 646,
+    "sd-turbo.sd-turbo[512x512].perImage.peakMB" : 646,
+    "sd-turbo.sd-turbo[512x512].perPrompt.heldMB" : 1276,
+    "sd-turbo.sd-turbo[512x512].perPrompt.peakMB" : 1276,
+    "sd-turbo.sd-turbo[512x512].perStep.heldMB" : 1737,
+    "sd-turbo.sd-turbo[512x512].perStep.peakMB" : 1749,
+    "sd-turbo.teapot-1.availableAfterMB" : 5397.3081130981445,
+    "sd-turbo.teapot-1.coldSeconds" : 23.165533541,
+    "sd-turbo.teapot-1.warmSeconds" : 1.222084333
+  },
+  "runID" : "run-20261106-094302-6590"
+}

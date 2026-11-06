@@ -76,8 +76,9 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 
 ### 1.5 Generation
 
-The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative) and `krea2@1` (§5.5,
-proposed until G3).
+The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6),
+`flux2-klein@1` (§5.7), the `weights` table (§5.8) and the speech driver `kokoro@1` (§5.9), all normative; the video
+driver `minimax-h3@1` (§5.10) is proposed until G4 step 2b.
 
 ---
 
@@ -380,8 +381,7 @@ These clarify or amend §1–§3. The implementation and the per-entry goldens f
 Status: §5.1–§5.3 (the generic `schedule` and `latent` blocks and per-graph `residency`) are **normative since G0**,
 2026-11-06, with `epsilonEuler` and spatial latents since G1; `latent-diffusion@1` (§5.4) is **normative since G1**;
 `flux2-klein@1` and its `flux2` block (§5.7) are **normative since G2**; `krea2@1` and its `krea2` block (§5.5–§5.6)
-stay **proposed until G3**, and a v1 loader treats them as an uncatalogued driver (`unknownDriver`) until `krea2@1` is
-registered. The producers are `Forge/krea2/export_krea2.py`, `Forge/sdturbo/export_sdturbo.py` and
+are **normative since G3**. The producers are `Forge/krea2/export_krea2.py`, `Forge/sdturbo/export_sdturbo.py` and
 `Forge/flux2/export_flux2.py`; their `--sample-manifest` output is the decoding fixture
 (`Tests/AetherCoreTests/Fixtures/krea2/`, `…/sd-turbo/`, `…/flux2/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
 the string-valued rules below are closed vocabularies, and anything else is rejected naming its field.
@@ -443,28 +443,30 @@ it. **Licensing:** SD-Turbo is under the Stability AI Community License: free fo
 commercial use under USD 1M annual revenue with registration; distributions ship `LICENSE.md` and the NOTICE line,
 and products display "Powered by Stability AI". The manifest records this in `license` and `x-license`.
 
-### 5.5 Driver catalog addition (proposed until G3)
+### 5.5 `krea2@1` (normative since G3)
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
 | `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
 
-Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism. Segment
-carries stay float32. A future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder
-(refine) are reserved for `krea2@1` and absent from the first export.
+Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism; the
+driver reads the bindings once at load and refuses a chain that runs forward or a host-fed carry. Segment carries stay
+float32; the latents the first segment and the decoder read are fp16 (rounded from the host's float32 latents). A
+future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder (refine) are reserved for
+`krea2@1` and absent from the first export. The driver is macOS-only in 0.1.0 (refused on iOS before loading).
 
-### 5.6 `krea2` (proposed until G3)
+### 5.6 `krea2` (normative since G3)
 
 `krea2` is owned by `krea2@1`.
 
 | field | req | meaning |
 |---|---|---|
 | `prompt` | R | `{systemPrefix, suffix, maxTokens: 546, keepTrailingTokens: 5, dropLeadingRows: 34, padding: none, positions: running}`: the rendered ids are never padded; Diffusers' padded block masks its padding as keys everywhere, so unpadded rows are exactly its real rows |
-| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major |
+| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major; `rows` is `"lower...upper"` with upper = `maxTokens − dropLeadingRows`, and a prompt outside the range is refused |
 | `rotary` | R | `{axes: [32,48,48], theta: 1000, positions: "(0, row, column)", layout: splitHalves, textRotated: false}`; the host builds `imageRotary [N, 2, 128]` |
 | `segments` | R | the denoiser graph roles in call order |
 | `condRows` | R | 8: six shared block-modulation rows and the final layer's (scale, shift) |
-| `contentFilter` | R | `{required: true}`. The Krea 2 Community License §4.2 requires deployments to filter output; the driver takes an explicit `ContentFilter` from the app and has no default |
+| `contentFilter` | R | `{required: true, reason?}`; `false` is rejected. The Krea 2 Community License §4.2 requires deployments to filter output: loading gives a `Krea2Model`, and a pipeline is only made with the app's `ContentFilter` (no default), which reviews the prompt before any work and the image before it is returned |
 
 `tokenizer.renderer: "krea2-prompt"` names the fixed template above (no chat template); `addSpecialTokens: false`.
 
@@ -520,7 +522,41 @@ inputs come from the table only), a `table` outside the manifest's assets, and `
 `Forge/h3/export_h3.py`: one file per block (`weights/body/block-NN.bin`, `weights/conditioner/layer-NN.bin`), each
 input's bytes contiguous in input order.
 
-### 5.9 `minimax-h3@1` (proposed until G4 step 2b)
+### 5.9 `kokoro@1` (normative since G5)
+
+Status: **normative**, 2026-11-06. The producer is `Forge/kokoro/export_kokoro.py`; its `--sample-manifest` output is the
+decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). The driver is `AetherSpeech`'s `KokoroSpeechSession`
+(`Registry.speech`); `Manifest.Kokoro` types the block below and refuses, naming the field, any rule it doesn't implement.
+
+| driver | graphs | required roles / blocks | optional | bundles |
+|---|---|---|---|---|
+| `kokoro@1` | `durations` (`durations`), `decoder` (`decode`) | durations in `tokens` (int32 [1,T], T 3…512), `style` [1,256]; out `durations` (per-token duration sums [1,T], before speed and rounding), `prosody` [1,T,640], `text` [1,512,T]. decoder in `prosody` [1,640,F_b], `text` [1,512,F_b] (aligned on the host, zero-padded to the bucket F_b), `style`, `noise` [1,F_b,600,9], `frames` (int32 [1], the valid count); out `audio` [1,600·F_b], of which the first 600·frames samples are the utterance. Blocks `tables` (one voice per entry), `kokoro`. | — | kokoro-82m (Forge export, `Forge/kokoro/`) |
+
+`kokoro` is owned by `kokoro@1`:
+
+| field | req | meaning |
+|---|---|---|
+| `sampleRate`, `samplesPerFrame`, `harmonics` | R | 24000, 600, 9 |
+| `phonemes` | R | `{vocabulary: {scalar: id}, boundaryToken: 0, maxPhonemes: 510, normalization: none, unknown: refuse}`: the input is a phoneme string in Kokoro's alphabet, read as Unicode scalars without normalization (nasal vowels are `a` + U+0303; `ç` is precomposed), wrapped in boundary tokens. Upstream silently drops unknown symbols; the driver refuses them, so a G2P mismatch shows. No grapheme-to-phoneme step is part of the bundle (see below) |
+| `style` | R | `{dimension: 256, row: "phonemeCount - 1", decoder: style[0..<128], prosody: style[128..<256]}`: a voice table's row chosen by phoneme count, as upstream does |
+| `durations` | R | `{frames: "max(1, roundHalfToEven(duration / speed))", alignment: repeat}`: per-token frames from the sums in float32 (`torch.round`), and the alignment as a gather (each token's features repeated for its frames) |
+| `frames` | R | `{buckets: [64…4096], maxFrames: 4096, cap: {macos: 1024, ios: 512}}`: the smallest bucket that fits; the decoder specializes once per bucket. Metal memory per bucket grows faster than the bucket (0.0.x), so utterances above the platform cap are refused (or split by the caller) |
+| `noise` | R | `{kind: splitmix64BoxMuller, shape: "[1, bucketFrames, 600, 9]", order: rowMajor, dtype: float32}`: the G0 stream for the request's seed, drawn for the whole bucket (prefix-stable, so the valid frames get an unpadded run's noise) |
+| `voices` | R | `{id: {table, language, gender}}`: language from the id's first letter (`a` en-US, `b` en-GB, `e` es, `f` fr, `h` hi, `i` it, `j` ja, `p` pt-BR, `z` zh), gender from the second |
+
+Each voice is a `tables` entry (`voices/<id>.f32`, float32 [510, 256], row-major little-endian). Placement: `durations`
+on the GPU with `expectFrequentReshapes` (dynamic T), `decoder` on the GPU without it (bucketed shapes; 0.0.x saw the
+hint abort there). `durations` was on the CPU (0.0.x's and Python's placement), but on macOS 27.2 Swift's Core AI runtime
+traps loading it for the CPU (`loadFunction`: "Cannot create NDArray.Storage from unresolved NDArrayDescriptor"); on the
+GPU both gates hold, frames exact. License `Apache-2.0`; the bundle ships the license and a modification `NOTICE`.
+
+**Phonemes, not text.** Upstream's G2P (`misaki`) falls back to espeak-ng (GPL-3.0) for out-of-dictionary words, which
+an Apache-2.0 SDK can't link, so the driver takes phonemes and the app supplies G2P (0.0.x's `SpeechPhonemizer`
+protocol: text → utterances of ≤ 510 scalars). The exporter's gate (`check_kokoro.py`): token ids and frames exact;
+waveform rel. L2 ≤ min(0.05, 4× the case's float32-vs-float64 upstream difference); log-mel mean ≤ 0.03 nats; repeats
+bit-identical.
+
+### 5.10 `minimax-h3@1` (proposed until G4 step 2b)
 
 MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and keyframes) to video with audio. macOS only in 0.1.0. Producer
 `Forge/h3/export_h3.py`; the `h3` block is decoded loosely until the driver lands.

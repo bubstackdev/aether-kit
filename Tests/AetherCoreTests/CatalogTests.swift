@@ -40,7 +40,24 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m"]))
+    }
+
+    /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
+    @Test func generativeEntriesResolvePerPlatform() throws {
+        let mac = Device(platform: .macOS, architecture: "h17c")
+        let phone = Device(platform: .iOS, architecture: "h18p")
+        for device in [mac, phone] {
+            let ref = try ModelRef.resolve("sd-turbo", for: device)
+            #expect(ref.asset("main")?.files.contains { $0.path == ".aether/aether.json" } == true)
+        }
+        // iOS takes the mixed-precision export (fp32 text encoder, fp16 U-Net and VAE; docs/DEVICE.md), a pinned repo.
+        let phoneTurbo = try #require(try ModelRef.resolve("sd-turbo", for: phone).asset("main"))
+        #expect(phoneTurbo.repo == "aether-models/aether-kit-sd-turbo-ios" && phoneTurbo.revision.count == 40)
+        #expect(try ModelRef.resolve("sd-turbo", for: mac).asset("main")?.repo == "aether-models/aether-kit-sd-turbo")
+        for device in [mac, phone] { _ = try ModelRef.resolve("kokoro-82m", for: device) }
+        _ = try ModelRef.resolve("flux2-klein-4b", for: mac)
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("flux2-klein-4b", for: phone) }
     }
 
     @Test func mistralTokenizerIsAPinnedForeignAsset() throws {

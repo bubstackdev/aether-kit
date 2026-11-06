@@ -53,7 +53,8 @@ NOTICE_LINE = "This Stability AI Model is licensed under the Stability AI Commun
 
 
 class TextEncoder(nn.Module):
-    """input_ids int32 [1, 77] -> text_embeds float32 [1, 77, 1024] (CLIP's last hidden state)."""
+    """input_ids int32 [1, 77] -> text_embeds float32 [1, 77, 1024] (CLIP's last hidden state). The graph's inputs and
+    outputs are float32 whatever the module's compute dtype: an fp16 export casts at its boundary."""
 
     def __init__(self, model):
         super().__init__()
@@ -71,7 +72,9 @@ class EpsilonDenoiser(nn.Module):
         self.model = model
 
     def forward(self, sample, timestep, text_embeds):
-        return self.model(sample, timestep, encoder_hidden_states=text_embeds, return_dict=False)[0].float()
+        dtype = self.model.dtype
+        return self.model(sample.to(dtype), timestep, encoder_hidden_states=text_embeds.to(dtype),
+                          return_dict=False)[0].float()
 
 
 class LatentDecoder(nn.Module):
@@ -84,27 +87,28 @@ class LatentDecoder(nn.Module):
         self.scale = float(model.config.scaling_factor)
 
     def forward(self, latents):
-        return self.decoder(self.post_quant_conv(latents / self.scale))[0].float()
+        latents = (latents / self.scale).to(self.post_quant_conv.weight.dtype)
+        return self.decoder(self.post_quant_conv(latents))[0].float()
 
 
-def load_text_encoder(root: Path):
+def load_text_encoder(root: Path, dtype: torch.dtype = torch.float32):
     from transformers import CLIPTextModel
-    return CLIPTextModel.from_pretrained(root / "text_encoder", variant="fp16", torch_dtype=torch.float32,
+    return CLIPTextModel.from_pretrained(root / "text_encoder", variant="fp16", torch_dtype=dtype,
                                          local_files_only=True, attn_implementation="eager").eval()
 
 
-def load_unet(root: Path):
+def load_unet(root: Path, dtype: torch.dtype = torch.float32):
     from diffusers import UNet2DConditionModel
     from diffusers.models.attention_processor import AttnProcessor2_0
-    unet = UNet2DConditionModel.from_pretrained(root / "unet", variant="fp16", torch_dtype=torch.float32,
+    unet = UNet2DConditionModel.from_pretrained(root / "unet", variant="fp16", torch_dtype=dtype,
                                                 local_files_only=True).eval()
     unet.set_attn_processor(AttnProcessor2_0())
     return unet
 
 
-def load_vae(root: Path):
+def load_vae(root: Path, dtype: torch.dtype = torch.float32):
     from diffusers import AutoencoderKL
-    return AutoencoderKL.from_pretrained(root / "vae", variant="fp16", torch_dtype=torch.float32,
+    return AutoencoderKL.from_pretrained(root / "vae", variant="fp16", torch_dtype=dtype,
                                          local_files_only=True).eval()
 
 

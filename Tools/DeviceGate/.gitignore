@@ -1,0 +1,5 @@
+DeviceGate.xcodeproj/
+.build-xcode/
+Sources/Info.plist
+Sources/DeviceGate.entitlements
+results/out-*/

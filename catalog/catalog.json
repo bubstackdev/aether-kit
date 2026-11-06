@@ -1300,6 +1300,1140 @@
           "driver": "decoder-lm@1"
         }
       }
+    },
+    {
+      "id": "sd-turbo",
+      "license": "LicenseRef-Stability-AI-Community-License",
+      "repo": "aether-models/aether-kit-sd-turbo",
+      "revision": "b6903c29676d2418f8bf2dc24ce8aba4c47696ef",
+      "task": "text-to-image",
+      "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "a1de1caf8c3280215048f643c311154c86030a31225b0610618e243bd3ad03f1",
+                  "size": 7297
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "a41ab01e676b3ca6c6074312ae08f8420e776fcca2c9948f8c2277001075812b",
+                  "size": 1725
+                },
+                {
+                  "path": "LICENSE.md",
+                  "sha256": "d6f6b1a4dce5c852bd6d7d9482d002baf0ccdb71e662250b73be9eec8764ee8d",
+                  "size": 11852
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "4545dab6eda9c4b0a614a23f6ee06b768ad24592fcf13cd6f5c7a4c276546adc",
+                  "size": 962
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "4b2b591226cacc49bcdb599e0561556fc64005e406899504d02a35b3ed24fc4d",
+                  "size": 1079
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "618843f1d85cabdac31776c77c30ff6fac1e85ed44e63e2eb9bb466c3f04d273",
+                  "size": 1587
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "8353c41eb998b726211695b409daa0ab3475b3325a9a23ab7b1397a76556ca08",
+                  "size": 4274
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "7d885f366f47d54fcba8d09cc3f3e76209201a9b8686bf59a6c89910ec1cb9bd",
+                  "size": 866
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/main.hash",
+                  "sha256": "a9de8f9baee0545d7c07128684f8bf0d68a759ec06eebe5e4a51f1e849a0e1bc",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/main.mlirb",
+                  "sha256": "df4150fdeddd974d82ee80cea49570aaf5f360e58bc48cafaaa21529769215be",
+                  "size": 1361703161
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/metadata.json",
+                  "sha256": "f6892d94e015da5159e074f849edadeb631f3b32dd9e67965d76bbe0c9949735",
+                  "size": 105
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/main.hash",
+                  "sha256": "576c90443b0f1e7be0e00a619c019b971dc6ffd5e8aaf69ad74b4442c56bf165",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/main.mlirb",
+                  "sha256": "f4502144aa248cb8d5426e795cb315fa3a405a762dc7de755631a6c26561c06d",
+                  "size": 1732082811
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/metadata.json",
+                  "sha256": "4bc0e424cc4551c795e600c5acb874ff95804d406ac71688fc89d7e96949ce72",
+                  "size": 105
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/main.hash",
+                  "sha256": "7602808d36dfa201be3d58f0d0ad2feaad9b05ea957192c4d307f92d42cceb41",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/main.mlirb",
+                  "sha256": "693c4205fb165113202611134fb856051bf2a38c44d1f9595f769559c365221f",
+                  "size": 99033697
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/metadata.json",
+                  "sha256": "6dc89ccde52a93a1d164319e39523460a6af1dd2b927e665f2a102d5e0f4f260",
+                  "size": 105
+                },
+                {
+                  "path": "tokenizer/merges.txt",
+                  "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+                  "size": 524619
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "c2d0fb8b86ad86b1f46134d4a5f93fd1e688c932a78efc8d149087c33a53ad06",
+                  "size": 574
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "516314ccab66918d7cb647480ac27abd3520d14e1e5825aac99f50c851c16071",
+                  "size": 855
+                },
+                {
+                  "path": "tokenizer/vocab.json",
+                  "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+                  "size": 1059962
+                }
+              ],
+              "repo": "aether-models/aether-kit-sd-turbo-ios",
+              "revision": "867115501d4301e175ac126bd4ea8437171f69f9",
+              "subtree": ""
+            }
+          },
+          "driver": "latent-diffusion@1"
+        },
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "2a306d5628533aaca6932d375fdb313d791e063a171bacf30a50abbdda20b88b",
+                  "size": 7162
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "a41ab01e676b3ca6c6074312ae08f8420e776fcca2c9948f8c2277001075812b",
+                  "size": 1725
+                },
+                {
+                  "path": "LICENSE.md",
+                  "sha256": "d6f6b1a4dce5c852bd6d7d9482d002baf0ccdb71e662250b73be9eec8764ee8d",
+                  "size": 11852
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "a3d3cd0fb1e63ae02aab33d0f8984eb1acbe0937e63cc0e5a3e636a3c07e0f3e",
+                  "size": 863
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "16d5e35097123c954499fcca9264f10b4433e9dbd8ba60f57a292b9a6dfda5f7",
+                  "size": 1028
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "4c7ed18cea91534b228557b4f320360fd0274d7d07c86e62ce071990474c121d",
+                  "size": 1587
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "78b50d617f2d1d9975a6acbe15ded58ffc63fc9f71b58f652b9274beb2f0e560",
+                  "size": 4105
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "61eaf621ce56fd43a7c5d33ef76ccf0f3379a5b289bda585319da8f83a833ba7",
+                  "size": 867
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/main.hash",
+                  "sha256": "7356f6c266704901ebb5ac2fc9ae4119f4df16450456fb3ddc9bb8a8c517dd0b",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/main.mlirb",
+                  "sha256": "a5c4a01c863baa7a0d5cf7a808b55ed4553ce50bba0797f255caf198fc993643",
+                  "size": 1361703178
+                },
+                {
+                  "path": "sd_turbo-text.aimodel/metadata.json",
+                  "sha256": "83f7b03b7643628c9097ae7198faf040c007f233dcd57cb946f330042491bc47",
+                  "size": 105
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/main.hash",
+                  "sha256": "12fefa1d00bceffb6199454d3c3e5f3c32f46d2a3234d6614fcffc2214eaaa0c",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/main.mlirb",
+                  "sha256": "0290ce6b39e855e9161cde62e37874c5d2ab45149f7bb577bcb3d57db604c967",
+                  "size": 3463901354
+                },
+                {
+                  "path": "sd_turbo-unet.aimodel/metadata.json",
+                  "sha256": "9e975cd33342ea68efbdd0830cc47cd216d0d0127d3dab43850f8c927d83e56d",
+                  "size": 105
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/main.hash",
+                  "sha256": "cc91c7210279e9e489aafd27dc889ee74dd5d3fce349cb128b34e4292e7f014a",
+                  "size": 32
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/main.mlirb",
+                  "sha256": "c5521ba566494b4a9c28c6d7c8757b50b2dd67caac0538f5a706cfded5abe25f",
+                  "size": 198013189
+                },
+                {
+                  "path": "sd_turbo-vae.aimodel/metadata.json",
+                  "sha256": "947dc59cefa8a9e12e43c587a8dd23c62d95a2bc53383a461456337cf739d916",
+                  "size": 105
+                },
+                {
+                  "path": "tokenizer/merges.txt",
+                  "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+                  "size": 524619
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "c2d0fb8b86ad86b1f46134d4a5f93fd1e688c932a78efc8d149087c33a53ad06",
+                  "size": 574
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "516314ccab66918d7cb647480ac27abd3520d14e1e5825aac99f50c851c16071",
+                  "size": 855
+                },
+                {
+                  "path": "tokenizer/vocab.json",
+                  "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+                  "size": 1059962
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "latent-diffusion@1"
+        }
+      }
+    },
+    {
+      "id": "flux2-klein-4b",
+      "license": "apache-2.0",
+      "repo": "aether-models/aether-kit-flux2-klein-4b",
+      "revision": "b6f55149a02819c8d67a10801468df61d958a8bf",
+      "task": "text-to-image",
+      "variants": {
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "9353a78d147f304af22bd5b55b8ea3313b90f2fe79bf78e84b29030e85c4f663",
+                  "size": 12339
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "ed45d10f761ec857dbf3a38495c06ccdf99bf1775298ea883b4d2b806d3e8257",
+                  "size": 2051
+                },
+                {
+                  "path": "LICENSE.md",
+                  "sha256": "ca02bc51900ab07789d1b70283329e7137f5af98f5161c23a1c81fc38a4af1fe",
+                  "size": 9584
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "350fb43b77ecfeb1d7d57687f39d9b09e7500c015b4babc0464f9c97fcfdfc4f",
+                  "size": 543
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "856820f0d068e3f69c937c0aa4c3b20c03f87b13ac52e0c1c5cbc201fb351784",
+                  "size": 780
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "10f609d46f4bb54d9ba3d7c95c0b2ea310b6c897170383d7ad5b409620d33249",
+                  "size": 2939
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "266db6f40dccbc535a3fe8134faac80ab27b108217c528108bd8daace17a65f2",
+                  "size": 6355
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser0.aimodel/main.hash",
+                  "sha256": "4a4752a9540b594b10387867b9a2e5ba66e71b2427d05bbe7d70efba53f692f4",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser0.aimodel/main.mlirb",
+                  "sha256": "54a9df5ca87651d4dd4601cf181c74866e7c4dcfeec94f943e999d096ae60032",
+                  "size": 1903859704
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser0.aimodel/metadata.json",
+                  "sha256": "d6da3358b38c8d52cefe9d7ba6a57f3653405c57c88897c5a85adf58081db519",
+                  "size": 105
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser1.aimodel/main.hash",
+                  "sha256": "da54fe1fca090c49ff383ccf002c21a7e7bdd4e2a3c5a44ab836f22d9f3c8d3c",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser1.aimodel/main.mlirb",
+                  "sha256": "19b09558c30ac08385bd4beea9da0dd5525e1eb307fdd96e8a38d3a19f4a30c0",
+                  "size": 1283962450
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser1.aimodel/metadata.json",
+                  "sha256": "e320a774309486623381e2e9bd0daac7dcb318fe2f492b9b280f861ef55725ca",
+                  "size": 105
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser2.aimodel/main.hash",
+                  "sha256": "20b3dad01245b1863f4972eb52d3b3087eb06ba9563a6021147176c5e4f7f4e2",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser2.aimodel/main.mlirb",
+                  "sha256": "4731f74eb80396a8becf03193a5ac6d6f028356ba630919f7723f602f25d3db6",
+                  "size": 1444851504
+                },
+                {
+                  "path": "flux2_klein_4b-denoiser2.aimodel/metadata.json",
+                  "sha256": "5ac2cfee82c11018f221beb10de593089102022d58fc6fd6044ce9259f6f495d",
+                  "size": 105
+                },
+                {
+                  "path": "flux2_klein_4b-text.aimodel/main.hash",
+                  "sha256": "fcf2d1ab077928595f80d87d3674a320e0de044dd0208dd45bb8dcd303386b27",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-text.aimodel/main.mlirb",
+                  "sha256": "9ab86b2e74eb04abdd275e6f52d2d908c922eff1da30bf59b433fe2785d057ae",
+                  "size": 3116453623
+                },
+                {
+                  "path": "flux2_klein_4b-text.aimodel/metadata.json",
+                  "sha256": "96ab30acf6aa96193f36c0c4e551bca3641bae3b61b7857117ecae74595fd083",
+                  "size": 105
+                },
+                {
+                  "path": "flux2_klein_4b-vae-encoder.aimodel/main.hash",
+                  "sha256": "2046ca796218626d977a1f5ebabcb9ed544b27a9c3ea50293c7fb807f30bbe65",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-vae-encoder.aimodel/main.mlirb",
+                  "sha256": "5949239587ef2f02817b8e79b901af5f0559caba6e9efd53350b7c63c21eb334",
+                  "size": 70771713
+                },
+                {
+                  "path": "flux2_klein_4b-vae-encoder.aimodel/metadata.json",
+                  "sha256": "d17c0dd8d8dbfbde3d890cc5360e6119e293198890e5ecafb300a5da47006621",
+                  "size": 105
+                },
+                {
+                  "path": "flux2_klein_4b-vae.aimodel/main.hash",
+                  "sha256": "12ddeab65234979c9ba8b040ec60079457521e665326017206c006eed883f761",
+                  "size": 32
+                },
+                {
+                  "path": "flux2_klein_4b-vae.aimodel/main.mlirb",
+                  "sha256": "3bb9c51c827d9b3e36d10e4ebbbc3969eb12e12b864c32c2a081f9c7bfff07d1",
+                  "size": 101482660
+                },
+                {
+                  "path": "flux2_klein_4b-vae.aimodel/metadata.json",
+                  "sha256": "3c3c8059345b8baa9ca62d4a04d05a23aab4ea81bed8fb057dda5dd279c4f810",
+                  "size": 105
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "1e7dd5289f9f6cd7d636b396e6793a60c1a02210f2474d536bff181b5dcbc51c",
+                  "size": 3497
+                },
+                {
+                  "path": "tokenizer/added_tokens.json",
+                  "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+                  "size": 707
+                },
+                {
+                  "path": "tokenizer/chat_template.jinja",
+                  "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+                  "size": 4168
+                },
+                {
+                  "path": "tokenizer/merges.txt",
+                  "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+                  "size": 1671853
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+                  "size": 613
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+                  "size": 11422654
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+                  "size": 5404
+                },
+                {
+                  "path": "tokenizer/vocab.json",
+                  "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+                  "size": 2776833
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "flux2-klein@1"
+        }
+      }
+    },
+    {
+      "id": "kokoro-82m",
+      "license": "apache-2.0",
+      "repo": "aether-models/aether-kit-kokoro-82m",
+      "revision": "3e22ab9e8ccf96a45678cbdad9e19878499c6087",
+      "task": "text-to-speech",
+      "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "1c59f56b4080ecc9af3c9d117be22e123c2b9826b01491c7f951b598ae9c1618",
+                  "size": 33603
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "bbe2164d6be53319a30767c2a3e0c97d40e1f3be5f6a31fc7c97b9b8e964fccb",
+                  "size": 4705
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+                  "size": 11357
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "83cbf84e9880ce41392bf4c8064f2494d1206c2cb6bf9530b8ac7a269bd9f687",
+                  "size": 483
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "35627cc8ba567c75144577a47227fe153ed59a9d29d93f60b6134a39850f7702",
+                  "size": 732
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "3cad21d397f73a24c24d865a8facfbc7a7bc6d518adbb2dc5bfdebef3925e6d0",
+                  "size": 5608
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "a42b73f570408e8b9ef4a316bffc3d48c37c7f3b31325e397c2c9ca16c38fa33",
+                  "size": 8409
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "efdc9aade8df1734bd0108d463c73a8c6a3a0a933ec2656b8ff14508c3928738",
+                  "size": 1055
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/main.hash",
+                  "sha256": "50928072b206af17ff75ed3cc0a3ed06fd3f9fd736587b6d915e59f798a82718",
+                  "size": 32
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/main.mlirb",
+                  "sha256": "4c0beffc384a3bf449e9795a6f00c9515669ea57ff36939f1144c09241925332",
+                  "size": 246992918
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/metadata.json",
+                  "sha256": "9b0d288598e8968d731ba6cd6ecf0d6d5b6877224a523d6753790d392345deb9",
+                  "size": 105
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/main.hash",
+                  "sha256": "1e56fd0f84b9acde9d478a37f4a9e0d2495615674905f7a6236ffd9c7f9e7265",
+                  "size": 32
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/main.mlirb",
+                  "sha256": "bef7de5d36b8e0956e969938febc14f9df24ca74122a642030fa488d4ca5f4d7",
+                  "size": 77953631
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/metadata.json",
+                  "sha256": "0369411b5e286acadff830ec7a63ff0d494ce6d8e7b848cd6a09f3ecf3288793",
+                  "size": 105
+                },
+                {
+                  "path": "voices/af_alloy.f32",
+                  "sha256": "c4a6b876047fd7fb472edf4ebd63cfac7c3b958a7cae7c106e8f038ca6308c45",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_aoede.f32",
+                  "sha256": "4a004c33430762e2461eedb2013fad808ef4ab3121f5300f554476caf58d8361",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_bella.f32",
+                  "sha256": "f69d836209b78eb8c66e75e3cda491e26ea838a3674257e9d4e5703cbaf55c8b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_heart.f32",
+                  "sha256": "d583ccff3cdca2f7fae535cb998ac07e9fcb90f09737b9a41fa2734ec44a8f0b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_jessica.f32",
+                  "sha256": "a240a5e3c15b43563d6e923bdca8ef5613a23471d9b77653694012435df23bd8",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_kore.f32",
+                  "sha256": "9be5221b6a941c04b561959b8ff0b06e809444dcc4ab7e75a7b23606f691819e",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_nicole.f32",
+                  "sha256": "cd2191ab31b914ed7b318416b0e4440fdf392ddad9106a060819aa600a64f59a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_nova.f32",
+                  "sha256": "18778272caa0d0eebaea251c35fd635f038434f9eee5e691d02a174bd328414f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_river.f32",
+                  "sha256": "00a2bcf82b1d86e8f19902ede58c65ccf6c0e43b44b7d74fad54e5d8933c9c30",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_sarah.f32",
+                  "sha256": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_sky.f32",
+                  "sha256": "4435255c9744f3f31659e0d714ab7689bf65d9e77ec1cce060f083912614f0b9",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_adam.f32",
+                  "sha256": "162b035ed91cfc48b6046982184c645f72edcdd1b82843347f605d7bf7b15716",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_echo.f32",
+                  "sha256": "3968b92c3c4cd1c4416dbded36c13eaa388a90d5788d02a13e4d781f5f8cf3c3",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_eric.f32",
+                  "sha256": "e8b5be17edd1e3636901ce7598baafe2dc8dd8ff707a0c23bf9e461add7e2832",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_fenrir.f32",
+                  "sha256": "c27989f741f7ee34d273a39d8a595cc0837d35f5ced9a29b7cc162614616df43",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_liam.f32",
+                  "sha256": "52403be32fd047c6a44517cb0bcd6b134f2a18baa73e70ef41651e0eab921ade",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_michael.f32",
+                  "sha256": "1d1f21dd8da39c30705cd4c75d039d265e9bc4a2a93ed09bc9e1b1225eb95ba1",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_onyx.f32",
+                  "sha256": "da5d135b424164916d75a68ffb4c2abce3d7d5ccc82dd1ee6cf447ce286145e6",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_puck.f32",
+                  "sha256": "fcf73c989033e9233e0b98713eca600c8c74dcc1614b37009d5450ff4a2274a0",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_santa.f32",
+                  "sha256": "61150cf726ab6c5ed7a99f90a304f91f5a72c00c592e89ec94e5df11c319227a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_alice.f32",
+                  "sha256": "08afa6ba24da61ea5e8efa139e5aadc938d83f0a6da5a900adaf763ac1da5573",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_emma.f32",
+                  "sha256": "669fe0647f9dd04fcab92f1439a40eeb4c8b4ab1f82e4996fe3d918ce4a63b73",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_isabella.f32",
+                  "sha256": "3754352c4aaa46d17f27654ab7518d65b62ad6163a0f55a5f4330c2da2c4e94f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_lily.f32",
+                  "sha256": "5e0ee32ebe64a467124976b14e69590746f1c4ce41a12b587a50c862edfea335",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_daniel.f32",
+                  "sha256": "6b3194bbceffb746733cbc22c8f593dd44e401a71d53895a2dca891bc595a1e8",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_fable.f32",
+                  "sha256": "f889083196807b4adb15e9204252165f503b8d33d3982e681c52443c49d798f1",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_george.f32",
+                  "sha256": "c4b235a4c1f2cd3b939fed08b899ce9385638b763f7b73a59616c4fc9bd6c9bc",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_lewis.f32",
+                  "sha256": "b8f671cef828c30e66fdf0b0756a76bba58f6bb3398cbbf27058642acbcedb97",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/ef_dora.f32",
+                  "sha256": "f66ec66bd295acb18372e37008533a9a3228483ccd294e7538d5d9294ac9a532",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/em_alex.f32",
+                  "sha256": "27809e9eafdcbcfff90a3016c697568676531de2a2c39cee29c96c7bd6b83e95",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/em_santa.f32",
+                  "sha256": "ad43b774e1ca24d05c6161297d8aeb770ac3d29bb95daf516727af5f7d543683",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/ff_siwis.f32",
+                  "sha256": "a35f5675ad08948e326ae75fd0ea16ba5d0042e4f76b5f3d1df77d0a48c54861",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hf_alpha.f32",
+                  "sha256": "040be6a4425411cc01fda5fd06693c76bfa78572632852bc8cda9c99232ffb56",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hf_beta.f32",
+                  "sha256": "cd83ae0bb9b2e4e4fb92b4973bd8d1822ca0036d3c498bf4fc89aa8e33917cc7",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hm_omega.f32",
+                  "sha256": "b02d9222d9ed00ce26b302173a862c2c93f96cc40b5c422b8d14910b9ff34137",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hm_psi.f32",
+                  "sha256": "644daf88ba8aeb7bd08950bbdcd4453bb280864e49dc4df93fabc6be32e03f37",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/if_sara.f32",
+                  "sha256": "409b69248798fcdc2542330c76953d230710f19b057e59cb82fdc3c4cf71265c",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/im_nicola.f32",
+                  "sha256": "bc578e510d52a96d6940d46f12e96d7b3df00905dbea075113226d100e6e1ab0",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_alpha.f32",
+                  "sha256": "56b479360aad9f367aeb8cef908f9201cf48b4555e488c5f4590c9dfcd978bb6",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_gongitsune.f32",
+                  "sha256": "0f1181f3772d27b7c12aaf4bcd71e31b186c4146e330d074a3dc64ee392af396",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_nezumi.f32",
+                  "sha256": "13cb71eebb0b48739d444558322aa35a8c9a489b80e1e631f14d2e6aea93026b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_tebukuro.f32",
+                  "sha256": "29c6c0561b4288d59639677bebe7533c919743d5ea68d0d2ae992644beea6696",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jm_kumo.f32",
+                  "sha256": "09e959d239724c734d65661f06f14cdabcddfd476bfaaad905a937099ae9e64f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pf_dora.f32",
+                  "sha256": "3da7b5b2d91847ebf5646f57631af6ececae3c29a89cd300f06edf9aa6cfe9ee",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pm_alex.f32",
+                  "sha256": "0175c753f59c54e7fd5a995bedef0c5ff2fb67e0043dd3dcb2ae74ec2acbeb2a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pm_santa.f32",
+                  "sha256": "8b012db3185778afe2e45a62cbad69db73021774fe68dda634bcc748a982eede",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaobei.f32",
+                  "sha256": "5dde6e1c9c4f12c8b327bc29c0cee361a23b52b952c04636858ba637ec66e640",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoni.f32",
+                  "sha256": "08892b62a39af0a615cd0581238db7e19e44c578e8fa0bfd0e586e93327d9cba",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoxiao.f32",
+                  "sha256": "03adb5d5e3ddd88b047954e974e651cb0a4b524c985057e5d872e962c7be1169",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoyi.f32",
+                  "sha256": "bc1555c5c486099196ac254bae5e0bb543c121952a3092f50b7d8724f1bc36b3",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunjian.f32",
+                  "sha256": "de48a00bdbf3649f07162269a2b6e0513604389bfac8a2e6c75cb34b323ad6fa",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunxi.f32",
+                  "sha256": "7243892fb4e560d47014090ddf010f8b8b790f3c6b029ff82b2ac06aa4e27c8b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunxia.f32",
+                  "sha256": "6b2b8fc15b3df19a368daebe5c581c7fabf433ee5b8a17ffd6b3d723cff8936d",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunyang.f32",
+                  "sha256": "261e2c89470534dbbcb8fd98b8fdc495ec94063d9bb6c8277f7be43cccba3f42",
+                  "size": 522240
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "kokoro@1"
+        },
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "1c59f56b4080ecc9af3c9d117be22e123c2b9826b01491c7f951b598ae9c1618",
+                  "size": 33603
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "bbe2164d6be53319a30767c2a3e0c97d40e1f3be5f6a31fc7c97b9b8e964fccb",
+                  "size": 4705
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+                  "size": 11357
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "83cbf84e9880ce41392bf4c8064f2494d1206c2cb6bf9530b8ac7a269bd9f687",
+                  "size": 483
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "35627cc8ba567c75144577a47227fe153ed59a9d29d93f60b6134a39850f7702",
+                  "size": 732
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "3cad21d397f73a24c24d865a8facfbc7a7bc6d518adbb2dc5bfdebef3925e6d0",
+                  "size": 5608
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "a42b73f570408e8b9ef4a316bffc3d48c37c7f3b31325e397c2c9ca16c38fa33",
+                  "size": 8409
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "efdc9aade8df1734bd0108d463c73a8c6a3a0a933ec2656b8ff14508c3928738",
+                  "size": 1055
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/main.hash",
+                  "sha256": "50928072b206af17ff75ed3cc0a3ed06fd3f9fd736587b6d915e59f798a82718",
+                  "size": 32
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/main.mlirb",
+                  "sha256": "4c0beffc384a3bf449e9795a6f00c9515669ea57ff36939f1144c09241925332",
+                  "size": 246992918
+                },
+                {
+                  "path": "kokoro_82m-decoder.aimodel/metadata.json",
+                  "sha256": "9b0d288598e8968d731ba6cd6ecf0d6d5b6877224a523d6753790d392345deb9",
+                  "size": 105
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/main.hash",
+                  "sha256": "1e56fd0f84b9acde9d478a37f4a9e0d2495615674905f7a6236ffd9c7f9e7265",
+                  "size": 32
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/main.mlirb",
+                  "sha256": "bef7de5d36b8e0956e969938febc14f9df24ca74122a642030fa488d4ca5f4d7",
+                  "size": 77953631
+                },
+                {
+                  "path": "kokoro_82m-durations.aimodel/metadata.json",
+                  "sha256": "0369411b5e286acadff830ec7a63ff0d494ce6d8e7b848cd6a09f3ecf3288793",
+                  "size": 105
+                },
+                {
+                  "path": "voices/af_alloy.f32",
+                  "sha256": "c4a6b876047fd7fb472edf4ebd63cfac7c3b958a7cae7c106e8f038ca6308c45",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_aoede.f32",
+                  "sha256": "4a004c33430762e2461eedb2013fad808ef4ab3121f5300f554476caf58d8361",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_bella.f32",
+                  "sha256": "f69d836209b78eb8c66e75e3cda491e26ea838a3674257e9d4e5703cbaf55c8b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_heart.f32",
+                  "sha256": "d583ccff3cdca2f7fae535cb998ac07e9fcb90f09737b9a41fa2734ec44a8f0b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_jessica.f32",
+                  "sha256": "a240a5e3c15b43563d6e923bdca8ef5613a23471d9b77653694012435df23bd8",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_kore.f32",
+                  "sha256": "9be5221b6a941c04b561959b8ff0b06e809444dcc4ab7e75a7b23606f691819e",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_nicole.f32",
+                  "sha256": "cd2191ab31b914ed7b318416b0e4440fdf392ddad9106a060819aa600a64f59a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_nova.f32",
+                  "sha256": "18778272caa0d0eebaea251c35fd635f038434f9eee5e691d02a174bd328414f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_river.f32",
+                  "sha256": "00a2bcf82b1d86e8f19902ede58c65ccf6c0e43b44b7d74fad54e5d8933c9c30",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_sarah.f32",
+                  "sha256": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/af_sky.f32",
+                  "sha256": "4435255c9744f3f31659e0d714ab7689bf65d9e77ec1cce060f083912614f0b9",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_adam.f32",
+                  "sha256": "162b035ed91cfc48b6046982184c645f72edcdd1b82843347f605d7bf7b15716",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_echo.f32",
+                  "sha256": "3968b92c3c4cd1c4416dbded36c13eaa388a90d5788d02a13e4d781f5f8cf3c3",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_eric.f32",
+                  "sha256": "e8b5be17edd1e3636901ce7598baafe2dc8dd8ff707a0c23bf9e461add7e2832",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_fenrir.f32",
+                  "sha256": "c27989f741f7ee34d273a39d8a595cc0837d35f5ced9a29b7cc162614616df43",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_liam.f32",
+                  "sha256": "52403be32fd047c6a44517cb0bcd6b134f2a18baa73e70ef41651e0eab921ade",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_michael.f32",
+                  "sha256": "1d1f21dd8da39c30705cd4c75d039d265e9bc4a2a93ed09bc9e1b1225eb95ba1",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_onyx.f32",
+                  "sha256": "da5d135b424164916d75a68ffb4c2abce3d7d5ccc82dd1ee6cf447ce286145e6",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_puck.f32",
+                  "sha256": "fcf73c989033e9233e0b98713eca600c8c74dcc1614b37009d5450ff4a2274a0",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/am_santa.f32",
+                  "sha256": "61150cf726ab6c5ed7a99f90a304f91f5a72c00c592e89ec94e5df11c319227a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_alice.f32",
+                  "sha256": "08afa6ba24da61ea5e8efa139e5aadc938d83f0a6da5a900adaf763ac1da5573",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_emma.f32",
+                  "sha256": "669fe0647f9dd04fcab92f1439a40eeb4c8b4ab1f82e4996fe3d918ce4a63b73",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_isabella.f32",
+                  "sha256": "3754352c4aaa46d17f27654ab7518d65b62ad6163a0f55a5f4330c2da2c4e94f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bf_lily.f32",
+                  "sha256": "5e0ee32ebe64a467124976b14e69590746f1c4ce41a12b587a50c862edfea335",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_daniel.f32",
+                  "sha256": "6b3194bbceffb746733cbc22c8f593dd44e401a71d53895a2dca891bc595a1e8",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_fable.f32",
+                  "sha256": "f889083196807b4adb15e9204252165f503b8d33d3982e681c52443c49d798f1",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_george.f32",
+                  "sha256": "c4b235a4c1f2cd3b939fed08b899ce9385638b763f7b73a59616c4fc9bd6c9bc",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/bm_lewis.f32",
+                  "sha256": "b8f671cef828c30e66fdf0b0756a76bba58f6bb3398cbbf27058642acbcedb97",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/ef_dora.f32",
+                  "sha256": "f66ec66bd295acb18372e37008533a9a3228483ccd294e7538d5d9294ac9a532",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/em_alex.f32",
+                  "sha256": "27809e9eafdcbcfff90a3016c697568676531de2a2c39cee29c96c7bd6b83e95",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/em_santa.f32",
+                  "sha256": "ad43b774e1ca24d05c6161297d8aeb770ac3d29bb95daf516727af5f7d543683",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/ff_siwis.f32",
+                  "sha256": "a35f5675ad08948e326ae75fd0ea16ba5d0042e4f76b5f3d1df77d0a48c54861",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hf_alpha.f32",
+                  "sha256": "040be6a4425411cc01fda5fd06693c76bfa78572632852bc8cda9c99232ffb56",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hf_beta.f32",
+                  "sha256": "cd83ae0bb9b2e4e4fb92b4973bd8d1822ca0036d3c498bf4fc89aa8e33917cc7",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hm_omega.f32",
+                  "sha256": "b02d9222d9ed00ce26b302173a862c2c93f96cc40b5c422b8d14910b9ff34137",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/hm_psi.f32",
+                  "sha256": "644daf88ba8aeb7bd08950bbdcd4453bb280864e49dc4df93fabc6be32e03f37",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/if_sara.f32",
+                  "sha256": "409b69248798fcdc2542330c76953d230710f19b057e59cb82fdc3c4cf71265c",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/im_nicola.f32",
+                  "sha256": "bc578e510d52a96d6940d46f12e96d7b3df00905dbea075113226d100e6e1ab0",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_alpha.f32",
+                  "sha256": "56b479360aad9f367aeb8cef908f9201cf48b4555e488c5f4590c9dfcd978bb6",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_gongitsune.f32",
+                  "sha256": "0f1181f3772d27b7c12aaf4bcd71e31b186c4146e330d074a3dc64ee392af396",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_nezumi.f32",
+                  "sha256": "13cb71eebb0b48739d444558322aa35a8c9a489b80e1e631f14d2e6aea93026b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jf_tebukuro.f32",
+                  "sha256": "29c6c0561b4288d59639677bebe7533c919743d5ea68d0d2ae992644beea6696",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/jm_kumo.f32",
+                  "sha256": "09e959d239724c734d65661f06f14cdabcddfd476bfaaad905a937099ae9e64f",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pf_dora.f32",
+                  "sha256": "3da7b5b2d91847ebf5646f57631af6ececae3c29a89cd300f06edf9aa6cfe9ee",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pm_alex.f32",
+                  "sha256": "0175c753f59c54e7fd5a995bedef0c5ff2fb67e0043dd3dcb2ae74ec2acbeb2a",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/pm_santa.f32",
+                  "sha256": "8b012db3185778afe2e45a62cbad69db73021774fe68dda634bcc748a982eede",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaobei.f32",
+                  "sha256": "5dde6e1c9c4f12c8b327bc29c0cee361a23b52b952c04636858ba637ec66e640",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoni.f32",
+                  "sha256": "08892b62a39af0a615cd0581238db7e19e44c578e8fa0bfd0e586e93327d9cba",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoxiao.f32",
+                  "sha256": "03adb5d5e3ddd88b047954e974e651cb0a4b524c985057e5d872e962c7be1169",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zf_xiaoyi.f32",
+                  "sha256": "bc1555c5c486099196ac254bae5e0bb543c121952a3092f50b7d8724f1bc36b3",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunjian.f32",
+                  "sha256": "de48a00bdbf3649f07162269a2b6e0513604389bfac8a2e6c75cb34b323ad6fa",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunxi.f32",
+                  "sha256": "7243892fb4e560d47014090ddf010f8b8b790f3c6b029ff82b2ac06aa4e27c8b",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunxia.f32",
+                  "sha256": "6b2b8fc15b3df19a368daebe5c581c7fabf433ee5b8a17ffd6b3d723cff8936d",
+                  "size": 522240
+                },
+                {
+                  "path": "voices/zm_yunyang.f32",
+                  "sha256": "261e2c89470534dbbcb8fd98b8fdc495ec94063d9bb6c8277f7be43cccba3f42",
+                  "size": 522240
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "kokoro@1"
+        }
+      }
     }
   ],
   "schema": 1

@@ -1,4 +1,4 @@
-"""Export MiniMax H3 (FL2VA + the Turbo 8-step adapter) as an Aether-Kit bundle (MANIFEST.md §5.8, §5.9 proposed).
+"""Export MiniMax H3 (FL2VA + the Turbo 8-step adapter) as an Aether-Kit bundle (MANIFEST.md §5.8, §5.10 proposed).
 
     Forge/.venv/bin/python -I Forge/h3/export_h3.py --output <dir> --stage <stage> [...]
     Forge/.venv/bin/python -I Forge/h3/export_h3.py --sample-manifest > Tests/AetherCoreTests/Fixtures/h3/minimax-h3.json
