@@ -86,6 +86,18 @@ normalization folded in. The weights are not part of this repository; the
 exported bundle (aether-models/aether-kit-clip-vit-b32) carries openai/CLIP's
 MIT LICENSE and a modification NOTICE.
 
+GLiNER2 (https://github.com/fastino-ai/GLiNER2, gliner2 2.0.0, tag v2.0.0,
+commit 3c913c7369301133d3b7699252074c4303ada50e), Apache License 2.0, by
+Fastino (maintainer Urchade Zaratiana). Forge/gliner/gliner_graphs.py wraps
+the classification path of the fastino/GLiNER2.5-Decide checkpoint
+(transformers' DebertaV2Model encoder, the [L] marker gather and gliner2's
+classifier head) as an export graph with DeBERTa's relative-position table
+precomputed, and runs gliner2's own classify_text as the reference; the
+unmodified release wheel is fetched by Forge/gliner/fetch_upstream.py and
+imported read-only. The GLiNER2.5-Decide weights (Apache-2.0, on
+microsoft/deberta-v3-large, MIT) are not part of this repository; the exported
+bundle carries their Apache-2.0 license and a modification NOTICE.
+
 kokoro (https://github.com/hexgrad/kokoro, version 0.9.4), Apache License 2.0,
 copyright hexgrad. Forge/kokoro/kokoro_graphs.py re-expresses its KModel
 (the ALBERT duration predictor, prosody predictor and iSTFTNet decoder,
