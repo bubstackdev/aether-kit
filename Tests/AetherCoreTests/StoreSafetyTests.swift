@@ -80,4 +80,21 @@ struct StoreSafetyTests {
         stop.tokenizer?.stop = [.id(Int(Int32.max))]
         try stop.validate()
     }
+
+    /// Second review, item 15: the foreground download stream buffered without bound. The data task is suspended
+    /// past the high-water mark of unread bytes and resumed below the low-water mark; nothing is dropped.
+    @Test func foregroundDownloadsApplyBackpressure() {
+        let task = URLSession(configuration: .ephemeral).dataTask(with: URL(string: "https://example.invalid/")!)
+        let flow = FlowControl()
+        flow.task = task
+        flow.received(FlowControl.highWater, by: task)
+        #expect(!flow.isSuspended)
+        flow.received(1, by: task)
+        #expect(flow.isSuspended)
+        flow.consumed(FlowControl.highWater - FlowControl.lowWater)
+        #expect(flow.isSuspended, "still above the low-water mark")
+        flow.consumed(2)
+        #expect(!flow.isSuspended && flow.bufferedBytes == FlowControl.lowWater - 1)
+        task.cancel()
+    }
 }
