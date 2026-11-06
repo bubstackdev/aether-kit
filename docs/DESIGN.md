@@ -308,8 +308,12 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
   - `GraphResidency` loads graphs on demand, measures each phase and releases graphs per a `ResidencyPlan`.
   - The plan keeps everything resident if the measured peak fits, else releases per phase, else refuses before
     loading.
-  - Each phase's footprint is its sampled `MTLDevice.currentAllocatedSize` peak and the bytes it holds at its end.
-    They go in a `FootprintLedger` keyed by model and profile, which can be seeded with qualified values.
+  - Each phase's footprint is its sampled peak and the bytes it holds at its end, read as the larger of
+    `MTLDevice.currentAllocatedSize` and `phys_footprint` (0.0.x saw the footprint miss Metal memory; the H3 spike saw
+    it include it, so neither alone is trusted). They go in a `FootprintLedger` keyed by model and profile, which can
+    be seeded with qualified values.
+  - A measurement holds only for the shapes it ran at: each distinct input shape keeps its own memory until the model
+    is released (lab/h3-spike), so a profile pins its shapes.
   - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`.
   - The pipeline reserves the plan's peak from AetherHost's shared `ResourceCoordinator` (ported from 0.0.7).
 - **Measured, G0 gate (qwen3-0.6b, M5 Max):**
@@ -408,9 +412,9 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 - **`ModelHost`** (actor, injectable; `.shared` by default) is the single place models are loaded. Every entry point,
   including direct `ChatSession(catalog:)`, goes through it.
 - **Residency:**
-  - Each loaded model is recorded with *measured* bytes, not catalog guesses. The measure is Metal's
-    `currentAllocatedSize` after the model has run, since `phys_footprint` misses Core AI's Metal memory and a load
-    alone allocates almost nothing (§6.4).
+  - Each loaded model is recorded with *measured* bytes, not catalog guesses. The measure is the larger of
+    Metal's `currentAllocatedSize` and `phys_footprint` after the model has run, since a load alone allocates almost
+    nothing and neither counter alone is reliable (§6.4).
   - Eviction is LRU with pins (a model in use is pinned).
   - The budget is `os_proc_available_memory()` on iOS and a configurable fraction of RAM on macOS.
   - Idle models are dropped under memory pressure.

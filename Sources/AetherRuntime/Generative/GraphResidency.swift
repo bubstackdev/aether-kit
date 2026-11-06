@@ -19,19 +19,34 @@ import Synchronization
 // - releasing a graph returns its memory only seconds later (about 4–5 s here; 0.0.x: 1–6 s), so the next phase
 //   can start while the previous one's memory is still allocated.
 
-/// The process's Metal allocations, read as `MTLDevice.currentAllocatedSize`. `phys_footprint` doesn't see Core AI's
-/// Metal memory (0.0.x measured 400 MiB of footprint against 8.57 GiB of Metal for a 4B model), so footprints are
-/// measured with this. Injectable so the bookkeeping is testable.
+/// The process's memory as admission sees it: the larger of `MTLDevice.currentAllocatedSize` and `phys_footprint`.
+/// Neither counter is reliable alone: 0.0.x measured 400 MiB of footprint against 8.57 GiB of Metal for a 4B model,
+/// while the H3 spike (lab/h3-spike) saw the footprint include all the Metal memory plus 85–150 MiB, and release show up
+/// in the footprint about 1 s after the Metal counter. The larger one errs towards refusing. Injectable so the
+/// bookkeeping is testable.
 public struct GPUMemoryProbe: Sendable {
     public var allocatedBytes: @Sendable () -> Int64
 
     public init(allocatedBytes: @escaping @Sendable () -> Int64) { self.allocatedBytes = allocatedBytes }
 
-    /// The default Metal device's `currentAllocatedSize` (0 without a GPU).
+    /// The larger of the default Metal device's `currentAllocatedSize` (0 without a GPU) and the process's
+    /// `phys_footprint` (0 if it can't be read).
     public static let system: GPUMemoryProbe = {
         let device = MTLCreateSystemDefaultDevice()
-        return GPUMemoryProbe { Int64(device?.currentAllocatedSize ?? 0) }
+        return GPUMemoryProbe { max(Int64(device?.currentAllocatedSize ?? 0), physFootprint()) }
     }()
+
+    /// The process's `phys_footprint` from `TASK_VM_INFO`.
+    static func physFootprint() -> Int64 {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? Int64(info.phys_footprint) : 0
+    }
 }
 
 /// What one phase costs, above the allocations present when it began.
