@@ -30,7 +30,8 @@ struct ManifestTests {
                      "thinking": { "open": "<think>", "close": "</think>", "toggle": { "templateVar": "enable_thinking" },
                                    "defaultOn": false } },
       "decision": { "promptFormat": "decider", "maxOptions": 8, "slot": { "rule": "lastToken" } },
-      "postprocess": { "kind": "denseNms", "nms": { "type": "perClass", "iou": 0.45 } },
+      "postprocess": { "kind": "denseNms", "boxFormat": "cxcywh", "boxSpace": "letterboxPixels",
+                       "nms": { "type": "perClass", "iou": 0.45 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 50 } },
       "labels": { "set": "coco-91" },
       "calibration": { "temperature": 1.03, "source": "card" },
       "provenance": { "source": "Qwen/Qwen3.5-0.8B", "zooRepo": "mlboydaisuke/qwen3.5-0.8B-CoreAI", "zooRevision": "1b8c020" } }
@@ -66,7 +67,7 @@ struct ManifestTests {
         #expect(manifest.tokenizer?.stop == [.text("<|im_end|>"), .id(248044)])
         #expect(manifest.tokenizer?.thinking?.toggle == .templateVar("enable_thinking"))
         #expect(manifest.decision?.maxOptions == 8)
-        #expect(manifest.postprocess?.kind == "denseNms" && manifest.postprocess?.parameters["nms"]?["iou"] == .double(0.45))
+        #expect(manifest.postprocess?.kind == .denseNms)
         #expect(manifest.tables?["t"]?.byteCount == 8)
         try DriverContract.decoderLM.validate(manifest)
     }
@@ -164,7 +165,7 @@ struct ManifestTests {
                 $0["tokenizer"] = t
             })
         }
-        expectField("labels") { _ = try Manifest.decode(Self.mutated { $0["labels"] = ["set": "coco-91", "table": "t"] }) }
+        expectField("labels") { _ = try Manifest.decode(Self.mutated { $0["labels"] = ["set": "coco-91", "file": "main:labels.json"] }) }
         expectField("calibration") { _ = try Manifest.decode(Self.mutated { $0["calibration"] = ["source": "x"] }) }
     }
 
