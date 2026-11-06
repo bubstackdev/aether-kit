@@ -374,6 +374,16 @@ private final class LeaseWatcher: Sendable {
     let first = try await admission.admit(owner: "a")
     let watcher = LeaseWatcher(directory)
     let admitted = Mutex<[ContinuousClock.Instant]>([])
+    let admittedWorkers = Mutex<Set<Int>>([])
+    // Never leave the lease idle: a grant ends only once the next worker runs too or some request is queued, so
+    // the release is never the last on the lease. Paced by sleeps alone, a loaded machine could start the workers
+    // late, leave a moment with nothing running or queued, and release the lease idle before the turn.
+    func releaseWhenFollowed(_ grant: GPUAdmissionGrant, by next: Int) async throws {
+        while !admittedWorkers.withLock({ $0.contains(next) }) && admission.snapshot.queued == 0 {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        grant.release()
+    }
     // Two slots and a steady stream of overlapping grants: some grant is always running, so without draining the
     // lease would never be released.
     let workers = (0..<16).map { index in
@@ -381,12 +391,13 @@ private final class LeaseWatcher: Sendable {
             try await Task.sleep(for: .milliseconds(40 * index))
             let grant = try await admission.admit(owner: "w\(index % 2)")
             admitted.withLock { $0.append(.now) }
+            admittedWorkers.withLock { _ = $0.insert(index) }
             try await Task.sleep(for: hold)
-            grant.release()
+            if index == 15 { grant.release() } else { try await releaseWhenFollowed(grant, by: index + 1) }
         }
     }
     try await Task.sleep(for: hold)
-    first.release()
+    try await releaseWhenFollowed(first, by: 0)
     for worker in workers { try await worker.value }
     let released = try #require(watcher.firstMissing)
     _ = watcher.stop()

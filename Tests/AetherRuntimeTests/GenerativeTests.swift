@@ -247,7 +247,9 @@ struct ResidencyTests {
     /// Allocations the test moves by hand.
     final class FakeGPU: Sendable {
         let allocated = Mutex<Int64>(1_000)
-        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in allocated.withLock { $0 } } }
+        /// How many times the probe has been read.
+        let reads = Mutex(0)
+        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in reads.withLock { $0 += 1 }; return allocated.withLock { $0 } } }
         func add(_ bytes: Int64) { allocated.withLock { $0 += bytes } }
     }
 
@@ -345,7 +347,14 @@ struct ResidencyTests {
                                        samplingInterval: .milliseconds(1)) { _ in Inert() }
         residency.beginPhase(.perImage)
         gpu.add(700)
-        try await Task.sleep(for: .milliseconds(100))
+        // Hold the peak until the background sampler has read the probe a few times since it was raised (nothing else
+        // reads it in this window), rather than for a fixed 100 ms that a starved sampler thread could miss on a
+        // loaded machine.
+        let raisedAt = gpu.reads.withLock { $0 }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+        while gpu.reads.withLock({ $0 }) < raisedAt + 3, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
         gpu.add(-700)
         residency.endPhase(.perImage)
         #expect(ledger.footprint(.init(model: "krea-2-turbo", profile: "", phase: .perImage)) == PhaseFootprint(peakBytes: 700, heldBytes: 0))
