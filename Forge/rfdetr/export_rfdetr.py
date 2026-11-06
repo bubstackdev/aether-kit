@@ -168,15 +168,15 @@ def manifest(variant: str, files: dict[str, dict], report: dict, platform_name: 
         },
         "preprocess": {
             "image": {
-                "resize": {"mode": "stretch", "size": [s, s], "filter": "vImage"},
+                "resize": {"mode": "stretch", "size": [s, s], "filter": "torchBilinear"},
                 "colorSpace": "sRGB", "channelOrder": "RGB",
                 "scale": 1 / 255, "mean": [0.0, 0.0, 0.0], "std": [1.0, 1.0, 1.0],
                 "layout": "NCHW", "hostDType": "float32", "orientation": "exif",
                 "x-notes": ("ImageNet normalization (mean 0.485/0.456/0.406, std 0.229/0.224/0.225) is in the graph: "
                             f"feed RGB on [0,1]. Upstream predict stretches to {s} x {s} (no aspect preservation) "
                             "with torchvision bilinear resize, antialias=False, on the float image (it matches the "
-                            "cv2.INTER_LINEAR resize the checkpoints were trained with); §2.5 has no filter value "
-                            "for that, so the fast vImage path is named."),
+                            "cv2.INTER_LINEAR resize the checkpoints were trained with); torchBilinear reproduces it "
+                            "in float32, between the 1/255 scale and the (in-graph) normalization."),
             },
         },
         "postprocess": postprocess,

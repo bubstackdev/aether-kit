@@ -19,11 +19,16 @@ import AetherHost
 ///   highest IoU, every pair IoU ≥ 0.95 and scores within 0.01; a repeat bit-identical. The boxes are compared in the
 ///   normalized source image, the reference's mapped through the same geometry; how far that is from the reference's
 ///   own `boxSourceNormalized` (upstream divides by the ratio r, the kit by the content rectangle) is reported.
-/// - **End to end:** the upstream images (`assets/dog.jpg`, `assets/demo.png` and its crops) detected from
-///   ``ImageInput``. Kit letterboxes with vImage, the reference with Pillow's bilinear, so the comparison is reported,
-///   not gated, apart from upstream's README sanity: the dog and the bicycle in `dog.jpg`. The images come from
-///   `Forge/yolox/fetch_upstream.py`'s directory (`~/.cache/aether-kit/yolox/upstream/yolox-<commit>`) or
-///   `AETHER_YOLOX_UPSTREAM`, checked by SHA-256; absent, that part is skipped with a note.
+/// - **The host's preprocessing, apart from the decode:** the RGB Pillow decoded for the reference (`decoded.png`,
+///   lossless and untagged) through the bundle's `preprocess.image` (`pillowBilinear`, YOLOX's letterbox sizes) is the
+///   reference's `input.f32` bit for bit, with its geometry, so its detections are the graph path's exactly.
+/// - **End to end, gated at the same bars:** the upstream images (`assets/dog.jpg`, `assets/demo.png` and its crops)
+///   detected from ``ImageInput`` (ImageIO's decode), against the reference detections through the same geometry, plus
+///   upstream's README sanity (the dog and the bicycle in `dog.jpg`). How far ImageIO's decode is from Pillow's (bytes)
+///   and the letterboxed tensor from the reference's is printed, so a decode difference is told apart from a resize
+///   one. The images come from `Forge/yolox/fetch_upstream.py`'s directory
+///   (`~/.cache/aether-kit/yolox/upstream/yolox-<commit>`) or `AETHER_YOLOX_UPSTREAM`, checked by SHA-256; absent, that
+///   part is skipped with a note.
 ///
 /// The bundle and references default to the Forge outputs beside this repo (`aether/forge-outputs/yolox-s`), or
 /// `AETHER_YOLOX_BUNDLE` and `AETHER_YOLOX_REFERENCE`.
@@ -120,6 +125,27 @@ struct ObjectDetectorDenseGateTests {
         return parity
     }
 
+    /// How many values differ, and by how much at most.
+    static func differences<T: BinaryFloatingPoint>(_ a: [T], _ b: [T]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0.0
+        for (x, y) in zip(a, b) where x != y {
+            count += 1
+            largest = max(largest, abs(Double(x) - Double(y)))
+        }
+        return (count, largest)
+    }
+
+    static func differences(_ a: [UInt8], _ b: [UInt8]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0
+        for i in a.indices where a[i] != b[i] {
+            count += 1
+            largest = max(largest, abs(Int(a[i]) - Int(b[i])))
+        }
+        return (count, Double(largest))
+    }
+
     static func image(_ url: URL, crop: [Int]?) throws -> ImageInput {
         guard let crop else { return ImageInput(contentsOf: url) }
         let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
@@ -185,8 +211,19 @@ struct ObjectDetectorDenseGateTests {
             #expect(mapping < 2e-3, "\(entry.name): box mapping")
             #expect(try await detector.detect(prepared) == detections, "\(entry.name): repeat bit-identical")
 
-            // (c) End to end from the upstream image.
+            // (c) Pillow's decode through the host's preprocessing: the reference tensor, bit for bit.
             guard c.source.kind == "image", let file = c.source.upstreamFile, let sha = c.source.sha256 else { continue }
+            let preprocessor = try ImagePreprocessor(manifest: model.manifest)
+            let pillowRGB = try ImageInput(contentsOf: directory.appending(path: "decoded.png")).decode(colorSpace: .deviceRGB)
+            let fromPillow = try preprocessor.prepare(pillowRGB)
+            let resizeDiff = Self.differences(fromPillow.floats(), input)
+            print("gate: yolox \(entry.name) Pillow's decode through preprocess.image: geometry \(fromPillow.geometry.content), "
+                  + "\(resizeDiff.count) values differ from input.f32 (max |Δ| \(resizeDiff.max))")
+            #expect(fromPillow.geometry == geometry, "\(entry.name): letterbox geometry")
+            #expect(resizeDiff.count == 0, "\(entry.name): \(resizeDiff.count) values differ from the reference tensor")
+            #expect(try await detector.detect(fromPillow) == detections, "\(entry.name): detections from Pillow's pixels")
+
+            // (d) End to end from the upstream image, ImageIO's decode: gated at the same bars.
             let url = upstream.appending(path: file)
             guard let data = try? Data(contentsOf: url) else {
                 print("gate: yolox \(entry.name): no image at \(url.path) (Forge/yolox/fetch_upstream.py); skipped")
@@ -194,19 +231,21 @@ struct ObjectDetectorDenseGateTests {
             }
             #expect(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() == sha, "\(file): SHA-256")
             let image = try Self.image(url, crop: c.source.crop)
+            let decodeDiff = Self.differences(try image.decode(colorSpace: .deviceRGB).rgb, pillowRGB.rgb)
+            let photoPrepared = try detector.prepare(image)
+            let tensorDiff = Self.differences(photoPrepared.floats(), input)
             let endStarted = ContinuousClock.now
             let found = try await detector.detect(image)
             let endElapsed = ContinuousClock.now - endStarted
-            let referenceBoxes = reference.map { r in
-                (label: r.cocoId, score: r.score,
-                 box: r.boxSourceNormalized.map { n in
-                     let v = n.map { min(max($0, 0), 1) }
-                     return CGRect(x: v[0], y: v[1], width: v[2] - v[0], height: v[3] - v[1])
-                 } ?? .zero)
-            }
-            let end = Self.match(found, referenceBoxes)
-            print("gate: yolox \(entry.name) end to end \(source[0])x\(source[1]): \(end) (not gated: vImage vs Pillow "
-                  + "bilinear), \(endElapsed); \(found.map { "\($0.label.name) \(String(format: "%.3f", $0.score))" })")
+            let end = Self.match(found, want)
+            print("gate: yolox \(entry.name) end to end \(source[0])x\(source[1]): \(end), \(endElapsed); ImageIO vs Pillow "
+                  + "decode \(decodeDiff.count) bytes differ (max \(Int(decodeDiff.max))), tensor \(tensorDiff.count) values "
+                  + "differ (max \(tensorDiff.max)); \(found.map { "\($0.label.name) \(String(format: "%.3f", $0.score))" })")
+            #expect(photoPrepared.geometry == geometry, "\(entry.name): end-to-end letterbox geometry")
+            #expect(end.sameClassSet, "\(entry.name) end to end: class set")
+            #expect(end.matched == reference.count && found.count == reference.count, "\(entry.name) end to end: counts")
+            #expect(end.minIoU >= Self.iouBar, "\(entry.name) end to end: IoU")
+            #expect(end.maxScoreDiff <= Self.scoreBar, "\(entry.name) end to end: scores")
             #expect(found.allSatisfy { $0.box.minX >= 0 && $0.box.maxX <= 1 && $0.box.minY >= 0 && $0.box.maxY <= 1 })
             if entry.name == "dog" {
                 #expect(Set(found.map(\.label.name)).isSuperset(of: ["dog", "bicycle"]), "dog.jpg: upstream's README sanity")

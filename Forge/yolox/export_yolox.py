@@ -185,14 +185,16 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, precision
         "preprocess": {
             "image": {
                 "resize": {"mode": "letterbox", "size": [yg.SIZE, yg.SIZE], "anchor": "topLeft",
-                           "padValue": yg.PAD, "filter": "vImage"},
+                           "padValue": yg.PAD, "filter": "pillowBilinear"},
                 "colorSpace": "deviceRGB", "channelOrder": "BGR",
                 "scale": 1.0, "mean": [0.0, 0.0, 0.0], "std": [1.0, 1.0, 1.0],
                 "layout": "NCHW", "hostDType": "float32", "orientation": "exif",
                 "x-notes": ("Upstream preproc (yolox/data/data_augment.py): r = min(640 / h, 640 / w), resize to "
                             "(int(w r), int(h r)) (cv2 INTER_LINEAR), paste top-left on a 640 x 640 canvas filled "
                             "with 114, BGR (OpenCV's decode order, no colour management), 0..255 with no scaling or "
-                            "normalization (the 0.1.1rc0 non-legacy weights). "
+                            "normalization (the 0.1.1rc0 non-legacy weights). The references (reference_yolox.py) "
+                            "resize with Pillow BILINEAR in that geometry, which pillowBilinear and the kit's letterbox "
+                            "reproduce exactly. "
                             + ("The graph input is float16; the host builds float32 and converts (0..255 integers "
                                "are exact in float16)." if precision == "float16" else "The graph input is float32.")),
             },

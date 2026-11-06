@@ -60,8 +60,20 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Catalog: `rf-detr-nano` and `rf-detr-seg-nano` (macOS), `aether-models/aether-kit-rf-detr-nano` and
     `-seg-nano`, Apache-2.0.
 
+- **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
+  `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
+  `interpolate(bilinear, antialias=False)`, as torchvision's `resize` of a float tensor runs it, bit-exact in float32;
+  `stretch` with `NCHW`/`NVCHW` only, resized between `x · scale` and `(x − mean) / std`). Known answers in
+  `Forge/vision/fixtures_preprocess.py`.
+
 ### Changed
 
+- `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
+  side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
+- The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
+  (were `vImage`), re-exported and re-pinned; their gates now gate the end-to-end detections from the photos at the
+  tensor path's bars, and check that Pillow's decoded pixels through `preprocess.image` give the reference tensor bit
+  for bit. The references record that decode (`decoded.png`).
 - `postprocess` `detrSigmoid` has a typed `selection` (`topKPairs`, the default; the RF-DETR export's `x-selection`
   note before), and its `masks` block must be present exactly when the graph binds `masks`.
 - `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.
