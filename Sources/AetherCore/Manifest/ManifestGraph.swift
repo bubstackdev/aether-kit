@@ -65,13 +65,16 @@ extension Manifest {
         /// Default: `compute == .gpu` and any input or state has a dynamic dimension.
         public var expectFrequentReshapes: Bool?
         public var warmup: Warmup?
+        /// §5.3: when a generative driver loads and releases the graph. Absent: resident for the model's lifetime.
+        public var residency: Residency?
 
         public init(
             file: GraphFile, function: String? = nil, functions: [String: String]? = nil,
             functionFamily: FunctionFamily? = nil, buckets: Buckets? = nil, inputs: [String: Binding],
             inputsByFunction: [String: [String: Binding]]? = nil, inputEncodings: [String: InputEncoding]? = nil,
             outputs: [String: OutputBinding], unusedOutputs: [String]? = nil, states: States? = nil,
-            limits: Limits? = nil, compute: ComputeUnit, expectFrequentReshapes: Bool? = nil, warmup: Warmup? = nil
+            limits: Limits? = nil, compute: ComputeUnit, expectFrequentReshapes: Bool? = nil, warmup: Warmup? = nil,
+            residency: Residency? = nil
         ) {
             self.file = file
             self.function = function
@@ -88,6 +91,7 @@ extension Manifest {
             self.compute = compute
             self.expectFrequentReshapes = expectFrequentReshapes
             self.warmup = warmup
+            self.residency = residency
         }
 
         /// Phase → function name: `function` is the `step` phase.

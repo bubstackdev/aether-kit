@@ -4,6 +4,7 @@ public import Foundation
 // - Manifest.swift        top level (§2.2), coding, structural validation
 // - ManifestGraph.swift   graphs (§2.3): file, functions, bindings, outputs, states, limits, compute
 // - ManifestBlocks.swift  variant, assets, tables, tokenizer (§2.4) and the typed-but-loose driver blocks (§2.5–§2.8)
+// - ManifestGenerative.swift  the generative drivers' typed blocks (§5.2–§5.3): schedule, latent, residency
 //
 // Rules: unknown fields and `x-` fields are ignored; a `$ref` anywhere is rejected (the adapter inlines refs);
 // optional fields are omitted when encoding; every validation error names the dotted field path.
@@ -34,6 +35,10 @@ public struct Manifest: Sendable, Hashable, Codable {
     public var labels: Labels?
     public var generation: Generation?
     public var calibration: Calibration?
+    /// §5.2: the generative drivers' denoising schedule.
+    public var schedule: Schedule?
+    /// §5.2: the generative drivers' image-latent contract.
+    public var latent: Latent?
     public var precision: [String: JSONValue]?
     public var provenance: Provenance?
     public var license: String?
@@ -44,7 +49,7 @@ public struct Manifest: Sendable, Hashable, Codable {
         tokenizer: Tokenizer? = nil, preprocess: Preprocess? = nil, image: ImageBlock? = nil,
         decision: Decision? = nil, postprocess: Postprocess? = nil, labels: Labels? = nil,
         generation: Generation? = nil, calibration: Calibration? = nil, precision: [String: JSONValue]? = nil,
-        provenance: Provenance? = nil, license: String? = nil
+        provenance: Provenance? = nil, license: String? = nil, schedule: Schedule? = nil, latent: Latent? = nil
     ) {
         self.schema = schema
         self.id = id
@@ -62,6 +67,8 @@ public struct Manifest: Sendable, Hashable, Codable {
         self.labels = labels
         self.generation = generation
         self.calibration = calibration
+        self.schedule = schedule
+        self.latent = latent
         self.precision = precision
         self.provenance = provenance
         self.license = license
@@ -189,6 +196,8 @@ extension Manifest {
         try postprocess?.validate()
         try labels?.validate()
         try calibration?.validate()
+        try schedule?.validate()
+        try latent?.validate()
     }
 
     /// Resolves `"<asset>:<path>"` against this manifest's assets. Errors name `field`.

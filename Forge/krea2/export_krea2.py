@@ -10,7 +10,7 @@ sha256 a6712629...) into the transformer in float32 before export. Nothing is do
 Hugging Face cache (or `--snapshot`), and every file read is verified against the pins below. Writes only `--output`:
 
     OUTPUT/
-      aether.json                       the Aether manifest (draft driver `krea2@1`, MANIFEST.md "proposed (G0/G3)")
+      aether.json                       the Aether manifest (MANIFEST.md §5; driver `krea2@1` proposed until G3)
       krea2_turbo[_realism]-{text,denoiser0..3,vae}.aimodel
       tokenizer/                        the checkpoint's tokenizer files, unchanged
       LICENSE.pdf, KREA-2-LICENSE.txt, KREA-2-USE-POLICY.txt, NOTICE
@@ -153,7 +153,8 @@ def transformer_shapes(checkpoint: kg.Checkpoint) -> dict[str, tuple[int, ...]]:
     return shapes
 
 
-# MARK: the manifest (MANIFEST.md, "proposed (G0/G3)": driver `krea2@1`)
+# MARK: the manifest (MANIFEST.md §5: generic `schedule`/`latent`/`residency` normative since G0; driver `krea2@1` and
+# its `krea2` block proposed until G3)
 
 def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], report: dict) -> dict:
     v = VARIANTS[variant]
@@ -166,31 +167,31 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         "textEncoder": {"file": graph_file("textEncoder"), "function": "encode",
                         "inputs": {"tokens": "input_ids", "positions": "position_ids"},
                         "outputs": {"conditioning": "text_embeds"},
-                        "compute": "gpu", "expectFrequentReshapes": True, "x-residency": "perPrompt"},
+                        "compute": "gpu", "expectFrequentReshapes": True, "residency": "perPrompt"},
         "denoiser0": {"file": graph_file("denoiser0"), "function": "segment",
                       "inputs": {"latents": "latents", "conditioning": {"name": "text_embeds",
                                                                          "source": {"from": "textEncoder.text_embeds"}},
                                  "sigma": "sigma", "imageRotary": "rope_image"},
                       "outputs": {"carryImage": "image_1", "carryText": "text_1", "condition": "cond"},
-                      "compute": "gpu", "expectFrequentReshapes": True, "x-residency": "perStep"},
+                      "compute": "gpu", "expectFrequentReshapes": True, "residency": "perStep"},
         "vaeDecoder": {"file": graph_file("vaeDecoder"), "function": "decode",
                        "inputs": {"latents": "latents"}, "outputs": {"image": "image"},
-                       "compute": "gpu", "expectFrequentReshapes": True, "x-residency": "perImage"},
+                       "compute": "gpu", "expectFrequentReshapes": True, "residency": "perImage"},
     }
     for i in (1, 2, 3):
         outputs = {"velocity": "velocity"} if i == 3 else {"carryImage": f"image_{i + 1}", "carryText": f"text_{i + 1}"}
         graphs[f"denoiser{i}"] = {"file": graph_file(f"denoiser{i}"), "function": "segment",
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
-                                  "expectFrequentReshapes": True, "x-residency": "perStep"}
+                                  "expectFrequentReshapes": True, "residency": "perStep"}
     order = ["textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"]
     return {
         "schema": 1,
         "id": v["id"],
         "task": "text-to-image",
         "driver": "krea2@1",
-        "x-status": "draft: krea2@1 and the schedule/latent/krea2 blocks are proposed in MANIFEST.md §5 (G0/G3)",
+        "x-status": "draft: driver krea2@1 and its krea2 block are proposed in MANIFEST.md §5 (G3)",
         "variant": {"platform": "macos"},
-        "assets": {"main": {"subtree": ".", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
+        "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {role: graphs[role] for role in order},
         "tokenizer": {"source": {"dir": "main:tokenizer"}, "chatTemplate": None, "renderer": "krea2-prompt",
                       "addSpecialTokens": False},
@@ -199,14 +200,14 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
             "sigmas": {"base": "linspace(1, 1/steps, steps)", "shift": {"rule": "exponential", "mu": kg.MU},
                        "terminal": 0.0},
             "timestep": "sigma * trainTimesteps / trainTimesteps",
-            "update": "x + (sigma[i+1] - sigma[i]) * velocity, float32 on the host",
-            "guidance": {"kind": "none", "scale": 0.0},
+            "update": "x + (sigma[i+1] - sigma[i]) * velocity",
+            "guidance": {"kind": "none"},
         },
         "latent": {
             "channels": kg.LATENT_CHANNELS, "pixelsPerToken": kg.PIXELS_PER_TOKEN, "packing": "patch2x2ChannelMajor",
             "layout": "tokens[rows*columns, 64]", "decoderLayout": "[rows, columns, 64]",
             "noise": {"kind": "splitmix64BoxMuller", "order": "packedToken", "dtype": "float32"},
-            "maxImageTokens": kg.MAX_IMAGE_TOKENS, "multipleOf": kg.PIXELS_PER_TOKEN,
+            "maxImageTokens": kg.MAX_IMAGE_TOKENS,
         },
         "krea2": {
             "prompt": {"systemPrefix": kg.SYSTEM_PREFIX, "suffix": kg.SUFFIX, "maxTokens": kg.MAX_TOKENS,
@@ -220,7 +221,8 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
             "contentFilter": {"required": True, "reason": "Krea 2 Community License §4.2; the app supplies the filter"},
         },
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
-                      "components": {"vaeDecoder": "fp16 weights, fp32 compute"}},
+                      "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
+                                     "vaeDecoder": "fp16 weights, fp32 compute"}},
         "license": "LicenseRef-Krea-2-Community-License-1.0",
         "x-license": {"files": ["LICENSE.pdf", "KREA-2-LICENSE.txt", "KREA-2-USE-POLICY.txt", "NOTICE"],
                       "modified": True, "commercialRevenueCapUSD": 1_000_000,
@@ -228,7 +230,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                      "(allowDifferentLicense false); NSFW-trained"} if variant == "realism" else {})},
         "provenance": {
             "source": REPO, "sourceRevision": REVISION,
-            **({"adapter": {"file": ADAPTER_FILE, "sha256": ADAPTER_SHA256, "format": "LyCORIS LoKr",
+            **({"mergedAdapter": {"file": ADAPTER_FILE, "sha256": ADAPTER_SHA256, "format": "LyCORIS LoKr",
                             "merge": "W + multiplier * scale * kron(w1, w2), float32, before export",
                             "multiplier": report["adapter"]["multiplier"], "scale": report["adapter"]["scale"]}}
                if variant == "realism" else {}),
@@ -238,6 +240,17 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                      "exportReport": "export-report.json"},
         },
     }
+
+
+def sample_manifest(variant: str) -> dict:
+    """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
+    fixtures with `--sample-manifest --variant <v> > Tests/AetherCoreTests/Fixtures/krea2/<v>.json`."""
+    v = VARIANTS[variant]
+    asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
+    files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
+    report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
+              "adapter": {"multiplier": 1.0, "scale": 1.0}}
+    return manifest(variant, files, asset_names, report)
 
 
 def notice(variant: str) -> str:
@@ -272,7 +285,9 @@ def notice(variant: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", choices=list(VARIANTS), required=True)
-    parser.add_argument("--output", type=Path, required=True, help="new bundle directory")
+    parser.add_argument("--output", type=Path, help="new bundle directory")
+    parser.add_argument("--sample-manifest", action="store_true",
+                        help="print the manifest for placeholder files and exit (the Swift decoding fixture)")
     parser.add_argument("--snapshot", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--adapter", type=Path, default=FORGE_INPUTS / ADAPTER_FILE)
     parser.add_argument("--license-dir", type=Path, default=FORGE_INPUTS, help="KREA-2-LICENSE.txt and use policy")
@@ -280,6 +295,11 @@ def main() -> None:
     parser.add_argument("--only", nargs="*", choices=ROLES, help="export a subset (probes; not a bundle)")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
+    if args.sample_manifest:
+        print(json.dumps(sample_manifest(args.variant), indent=2, ensure_ascii=False))
+        return
+    if args.output is None:
+        parser.error("--output is required")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     roles = args.only or list(ROLES)
@@ -306,7 +326,7 @@ def main() -> None:
         "scriptSHA256": {p.name: sha256(p) for p in sorted(HERE.glob("*.py"))},
         "source": {"repository": REPO, "revision": REVISION, "snapshot": str(checkpoint.root), "verified": {}},
         "precision": "fp16 weights; fp16 matmul/attention with fp32 residual, norms, modulation and edge projections; "
-                     "VAE fp16 storage with fp32 compute; no quantization",
+                     "denoiser block 0 computes in fp32; VAE fp16 storage with fp32 compute; no quantization",
         "conversion": {}, "stages": {},
     }
     report_path = args.output / "export-report.json"
