@@ -55,6 +55,27 @@ struct ResidentAdmissionTests {
         other.release()
     }
 
+    /// Third review, P1-2: when the generation measures more than it planned and the coordinator can't grow the
+    /// reservation, `finish()` kept the graphs on the smaller reservation (held 200, reserved 1, 99 free to others).
+    /// Now the graphs and the reservation are released and `finish()` says so.
+    @Test func aMeasurementTheCoordinatorCantHoldReleasesTheResidency() async throws {
+        let coordinator = try ResourceCoordinator(capacityBytes: 100)
+        let ledger = FootprintLedger()
+        let admission = ResidentAdmission(
+            manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
+            settings: .init(memory: .bytes(1 << 40), coordinator: coordinator, ledger: ledger, probe: GPUMemoryProbe { 0 }),
+            load: { _ in Inert() }, fileBytes: { _ in 0 })
+        let residency = try admission.begin(profile: "512x512")
+        #expect(residency.mode == .allResident && coordinator.snapshot.reservedBytes == 1)
+        try await Self.loadAll(residency)
+        // What the run measured: far more than the 1-byte estimate, and more than the coordinator has.
+        ledger.record(.init(model: admission.modelKey, profile: "512x512", phase: .perStep),
+                      PhaseFootprint(peakBytes: 200, heldBytes: 200))
+        #expect(admission.finish() == false)
+        #expect(admission.residentRoles.isEmpty && residency.residentRoles.isEmpty)
+        #expect(admission.residentBytes == 0 && coordinator.snapshot.reservedBytes == 0)
+    }
+
     /// Finding 2: a refusal releases the resident graphs and the reservation (before: they stayed loaded, unaccounted).
     @Test func aRefusalReleasesWhatWasResident() async throws {
         let coordinator = try ResourceCoordinator(capacityBytes: 1_000)

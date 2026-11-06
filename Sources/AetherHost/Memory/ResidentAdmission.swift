@@ -122,21 +122,38 @@ public final class ResidentAdmission {
         return fresh
     }
 
-    /// After a generation that succeeded: the reservation shrinks to what stays resident.
-    public func finish() {
-        guard let residency else { return release() }
+    /// After a generation that succeeded: the reservation is resized to what stays resident, as measured by the
+    /// generation that just ran.
+    ///
+    /// When the measurement is larger than the plan and the coordinator can't grow the reservation to it, the graphs
+    /// can't stay admitted: they are released along with the reservation, and this returns `false`. The generation's
+    /// result is still the caller's to return (the work already ran, within the peak reserved for it); only the
+    /// residency is given up, so the next generation plans and loads from scratch rather than keep graphs the
+    /// coordinator doesn't account for.
+    @discardableResult
+    public func finish() -> Bool {
+        guard let residency else {
+            release()
+            return false
+        }
         switch residency.mode {
         case .allResident:
             residentBytes = inputs(profile: residency.profile).phases.values.reduce(0) { $0 + $1.heldBytes }
         case .perPhase:
             residentBytes = 0
         }
-        if residentBytes > 0, residency.residentRoles.isEmpty == false {
-            try? reserve(residentBytes)
-        } else {
+        guard residentBytes > 0, residency.residentRoles.isEmpty == false else {
             reservation?.release()
             reservation = nil
             reservedBytes = 0
+            return true
+        }
+        do {
+            try reserve(residentBytes)
+            return true
+        } catch {
+            release()
+            return false
         }
     }
 
