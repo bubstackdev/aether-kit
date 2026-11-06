@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 # Runs the hermetic CI before every push. Enable once per clone: git config core.hooksPath .githooks
 # Skip in an emergency with: git push --no-verify
+# A push that only deletes remote refs (every local sha is zeros) pushes no code, so it skips the CI.
+set -euo pipefail
+code=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [[ "$local_sha" =~ ^0+$ ]] || code=true
+done
+[[ "$code" == true ]] || { echo "pre-push: deletions only; skipping scripts/ci.sh"; exit 0; }
 exec "$(git rev-parse --show-toplevel)/scripts/ci.sh"

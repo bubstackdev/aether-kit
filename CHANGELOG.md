@@ -54,6 +54,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
     gate runs the driver from the seed alone: RMSE 1.0e-5 (1 step) and 3.3e-5 (4 steps) against Diffusers.
   - SD-Turbo is under the Stability AI Community License (commercial use only under USD 1M revenue, with
     registration; "Powered by Stability AI" attribution). The exported bundle carries the license and NOTICE line.
+- **Public-API freeze check** (`scripts/check-api.sh`, run by `scripts/ci.sh`): `swift-api-digester` dumps of
+  AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
+  the 0.1.0 freeze sets `"enforce": true`.
 
 ### In progress before 0.1.0 is tagged
 
