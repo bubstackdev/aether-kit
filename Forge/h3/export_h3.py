@@ -329,7 +329,9 @@ def stage_conditioner(args, build: Build) -> None:
         if index:
             del layer, lifted, params
     (build.bundle / "weights/conditioner.json").write_text(json.dumps({"inputs": [s["name"] for s in specs], "blocks": blocks}, indent=1))
-    T = Dim("tokens", min=hg.TEXT_TOKENS[0], max=hg.TEXT_TOKENS[1])
+    # A DYNAMIC hint, not a named Dim: Transformers' attention adds a guard (min(128·T, 1024·T) == 128·T) that holds for
+    # every T but that a named Dim's range check can't prove; the hint accepts guards export derives.
+    T = Dim.DYNAMIC(min=hg.TEXT_TOKENS[0], max=hg.TEXT_TOKENS[1])
     example = tuple(torch.zeros(1, 49, d, dtype=torch.bfloat16) for d in (config.hidden_size, config.head_dim, config.head_dim))
     asset = hg.convert(graph, (*example, *first), (({1: T}, {1: T}, {1: T}) + (None,) * len(names),),
                        ["hidden", "cos", "sin"] + [s["name"] for s in specs], ["hidden_out"], build.bundle / "models/conditioner-layer.aimodel")

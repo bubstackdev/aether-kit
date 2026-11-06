@@ -7,7 +7,8 @@ own inputs so every comparison isolates one graph. The limit is the 0.0.x protot
   tap       conditioner: the bundle's layer graph ×50 from its weight files, the embedding row source and rotary tables,
             against the original Qwen3-VL decoder layers streamed from the checkpoint (causal mask), hidden_states[50]
   refined   prepare-text (weights from its file) on the CPU tap, against context_embedder + token refiner + Turbo LoRA
-  packed    prepare-pack on the CPU refined text and seeded latents, against the projections and the gather
+  packed    prepare-pack on the CPU refined text and seeded latents in the pipeline's own layout ([text | keyframes |
+            audio | video], channel-major audio: `build_packed_sequence`) and row timesteps (`build_row_timesteps`)
   block00   the body graph, block 0's weights from the bundle, on the CPU packed sequence with the step-0 AdaLN table
             file, against the original block (PEFT LoRA, live AdaLN from the live time embedding)
   block49   the same for block 49, on the GPU chain's block-48 output (the GPU runs all 50 blocks from their files)
@@ -159,34 +160,49 @@ def main() -> None:
         refined = model.token_refiner(model.context_embedder(tap.to(model.context_embedder.weight.dtype)))
     text_graph = Graph(bundle / "models/prepare-text.aimodel")
     record("refined", text_graph(text=tap, **Weights(bundle, "prepare-text", meta["prepare"]["textInputs"]).block(0))["refined"], refined)
-    nv, na = profile.video_rows, profile.audio_latents
-    R = T + nv + na
+    # The pipeline's own layout ([text | keyframes | audio | video], channel-major audio, the fp64 rotary grid) and row
+    # timesteps, so blocks see real step-0 contexts: the prototype found synthetic positions expose bf16 arithmetic
+    # noise at block 49 rather than a graph defect.
+    from diffusers.models.transformers.transformer_minimax_h3 import MiniMaxH3RotaryPosEmbed
+    from diffusers.modular_pipelines.minimax_h3.modular_pipeline import (MINIMAX_H3_AUDIO_CHANNELS, MINIMAX_H3_AUDIO_TAG,
+                                                                         MINIMAX_H3_TEXT_TAG, MINIMAX_H3_VIDEO_TAG)
+    from diffusers.modular_pipelines.minimax_h3.before_denoise import MiniMaxH3PrepareLayoutStep, MiniMaxH3SetTimestepsStep
+    na = profile.audio_latents
+    position_ids, token_tags, video_indices, audio_indices, text_indices, cond_video, cond_audio = \
+        MiniMaxH3PrepareLayoutStep.build_packed_sequence(
+            torch.full((T,), MINIMAX_H3_TEXT_TAG, dtype=torch.long), profile.latent_frames, profile.latent_height,
+            profile.latent_width, na, (1, 2, 2), MINIMAX_H3_AUDIO_CHANNELS, MINIMAX_H3_AUDIO_TAG, MINIMAX_H3_VIDEO_TAG)
+    nv, nar = video_indices.numel(), audio_indices.numel()
+    R = T + nv + nar
+    assert nv == profile.video_rows and cond_video == 0, (nv, cond_video)
     g = torch.Generator().manual_seed(20261106)
-    video, audio = torch.randn(1, nv, 96, generator=g), torch.randn(1, na, 32, generator=g)
-    gather = torch.arange(R, dtype=torch.int32)                 # rows in [text; video; audio] order
+    video, audio = torch.randn(1, nv, 96, generator=g), torch.randn(1, nar, 32, generator=g)
+    gather = torch.empty(R, dtype=torch.int32)
+    gather[text_indices] = torch.arange(T, dtype=torch.int32)
+    gather[video_indices] = T + torch.arange(nv, dtype=torch.int32)
+    gather[audio_indices] = T + nv + torch.arange(nar, dtype=torch.int32)
     with torch.inference_mode():
-        packed = torch.cat((refined, model.proj_in(video).to(refined.dtype), model.audio_proj_in(audio).to(refined.dtype)), dim=1)
+        packed = refined.new_zeros((1, R, refined.shape[-1]))
+        packed = packed.index_copy(1, text_indices, refined)
+        packed = packed.index_copy(1, video_indices, model.proj_in(video).to(refined.dtype))
+        packed = packed.index_copy(1, audio_indices, model.audio_proj_in(audio).to(refined.dtype))
     pack_graph = Graph(bundle / "models/prepare-pack.aimodel")
     record("packed", pack_graph(video=video, audio=audio, text=refined, gather=gather)["hidden"], packed, rows=R)
 
     # block00, block49: the body; step 0 of turbo8/t2va.
-    step = meta["tables"]["recipes"]["turbo8/t2va"]["steps"][0]
-    timesteps = torch.tensor(step["timesteps"], dtype=torch.float32)
+    recipe = meta["tables"]["recipes"]["turbo8/t2va"]
+    step = recipe["steps"][0]
+    video_t, audio_t = recipe["video"]["timesteps"][0], recipe["audio"]["timesteps"][0]
+    unique, timestep_indices = MiniMaxH3SetTimestepsStep.build_row_timesteps(
+        video_indices, audio_indices, cond_video, cond_audio, T, float(video_t), float(audio_t), 0.0, 0.0)
+    assert [float(v) for v in unique] == [float(v) for v in step["timesteps"]], (unique, step["timesteps"])
+    timesteps = unique.to(torch.float32)
     with torch.inference_mode():
         temb = model.time_embedder(model.time_proj(timesteps).to(torch.float32))
     temb_file = torch.frombuffer(bytearray((bundle / step["temb"]["file"].split(":", 1)[1]).read_bytes()), dtype=torch.float32).view(temb.shape)
     record("temb", temb_file, temb)
-    video_t, audio_t = meta["tables"]["recipes"]["turbo8/t2va"]["video"]["timesteps"][0], meta["tables"]["recipes"]["turbo8/t2va"]["audio"]["timesteps"][0]
-    index_of = {v: i for i, v in enumerate(step["timesteps"])}
-    timestep_indices = torch.tensor([index_of[video_t]] * T + [index_of[video_t]] * nv + [index_of[audio_t]] * na)
-    token_tags = torch.tensor([1] * T + [0] * nv + [2] * na)
     adaln = (timestep_indices * 3 + token_tags).to(torch.int32)
-    positions = torch.zeros(R, 3, dtype=torch.int64)
-    positions[T:T + nv, 0] = torch.arange(nv) // (profile.keyframe_rows)
-    positions[T:T + nv, 1] = (torch.arange(nv) % profile.keyframe_rows) // (profile.width // 32)
-    positions[T:T + nv, 2] = torch.arange(nv) % (profile.width // 32)
-    positions[T + nv:, 0] = torch.arange(na)
-    cos_r, sin_r = model.rope(positions)
+    cos_r, sin_r = MiniMaxH3RotaryPosEmbed()(position_ids.to(torch.float32))   # the model's rotary (built on meta with it)
     body, body_weights = Graph(bundle / "models/body.aimodel"), Weights(bundle, "body", meta["body-weights"]["inputs"])
 
     def table(b):
@@ -212,7 +228,7 @@ def main() -> None:
 
     # heads.
     heads = hg.Heads(model).eval()
-    vi, ai = torch.arange(T, T + nv, dtype=torch.int32), torch.arange(T + nv, R, dtype=torch.int32)
+    vi, ai = video_indices.to(torch.int32), audio_indices.to(torch.int32)
     with torch.inference_mode():
         ev, ea = heads(x, temb, timestep_indices.to(torch.int32), vi, ai)
     out = Graph(bundle / "models/heads.aimodel")(hidden=x, temb=temb, indices=timestep_indices.to(torch.int32), video_indices=vi, audio_indices=ai)
@@ -230,7 +246,7 @@ def main() -> None:
     with torch.inference_mode():
         record("tile", Graph(bundle / "models/video-decoder-tile256-bf16.aimodel")(rows=rows)["pixels"], decoder(rows))
     audio_vae = ex.converted_vae(type("B", (), {"work": work})(), audio=True)
-    audio_rows = torch.randn(2, na, 32, generator=g)
+    audio_rows = torch.randn(MINIMAX_H3_AUDIO_CHANNELS, na, 32, generator=g)
     with torch.inference_mode():
         record("pcm", Graph(bundle / f"models/audio-decoder-na{na}.aimodel")(rows=audio_rows)["pcm"], hg.AudioDecoder(audio_vae).eval()(audio_rows))
     vae = ex.converted_vae(type("B", (), {"work": work})())

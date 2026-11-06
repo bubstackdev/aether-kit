@@ -84,7 +84,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
   oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
   `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
-  unchained path's). The real-weight export waits on the MiniMax H3 licence's territorial terms (INTEGRATION.md).
+  unchained path's). The real-weight export (94 GB, run outside the licence's Excluded Territories per the owner)
+  passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
+  0.0067). It is not publicly hosted; the catalog entry waits for a compliant hosting route.
 
 ### In progress before 0.1.0 is tagged
 

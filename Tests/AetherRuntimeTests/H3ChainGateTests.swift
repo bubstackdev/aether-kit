@@ -12,7 +12,8 @@ extension GateTests {
     /// - the chained, banked bytes equal the unchained path's (`run()` per block through host memory);
     /// - one shape specialized for the profile.
     /// The export is `export_h3.py --random` (seeded random weights in the real shapes: the gate proves the runtime on
-    /// the real graph, not the model). Set AETHER_H3_CHAIN to its directory; default `../forge-outputs/minimax-h3-chain`.
+    /// the real graph, not the model) or a real export (AETHER_H3_CHAIN=<export dir>, after reference_chain_h3.py:
+    /// 0.0093–0.0167 over 4 real blocks from seeded inputs). Default `../forge-outputs/minimax-h3-chain`.
     @Test(.enabled(if: FileManager.default.fileExists(atPath: Self.h3Chain.appending(path: "chain-reference/spec.json").path)))
     func h3BlocksChainOnTheGPU() async throws {
         struct Spec: Decodable {
