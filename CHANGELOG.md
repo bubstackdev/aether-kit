@@ -114,6 +114,11 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
   peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
 
+- **Pre-release review fixes:** `ResidentAdmission` (AetherHost) keeps a pipeline's resident graphs reserved on a
+  shared coordinator and releases them on refusal; measured footprints are used for manifests without residency
+  (Kokoro) and after late releases; canvases need `maxImageTokens`; drivers load model values with settable options;
+  `KokoroVoice.Language` is open; `GeneratedAudio.sampleCount` (was `frameCount`).
+
 ### In progress before 0.1.0 is tagged
 
 MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone

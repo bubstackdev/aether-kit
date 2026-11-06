@@ -6415,6 +6415,1065 @@
           "children": [
            {
             "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvp",
+        "moduleName": "AetherHost",
+        "name": "memory",
+        "printedName": "memory",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory0A7Runtime12MemoryBudgetVvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ResourceCoordinator",
+              "printedName": "AetherHost.ResourceCoordinator",
+              "usr": "s:10AetherHost19ResourceCoordinatorC"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.ResourceCoordinator?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ResourceCoordinator",
+              "printedName": "AetherHost.ResourceCoordinator",
+              "usr": "s:10AetherHost19ResourceCoordinatorC"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.ResourceCoordinator?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvp",
+        "moduleName": "AetherHost",
+        "name": "coordinator",
+        "printedName": "coordinator",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV11coordinatorAA19ResourceCoordinatorCSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "FootprintLedger",
+            "printedName": "AetherRuntime.FootprintLedger",
+            "usr": "s:13AetherRuntime15FootprintLedgerC"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "FootprintLedger",
+            "printedName": "AetherRuntime.FootprintLedger",
+            "usr": "s:13AetherRuntime15FootprintLedgerC"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvp",
+        "moduleName": "AetherHost",
+        "name": "ledger",
+        "printedName": "ledger",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6ledger0A7Runtime15FootprintLedgerCvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUMemoryProbe",
+            "printedName": "AetherRuntime.GPUMemoryProbe",
+            "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "GPUMemoryProbe",
+            "printedName": "AetherRuntime.GPUMemoryProbe",
+            "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUMemoryProbe",
+          "printedName": "AetherRuntime.GPUMemoryProbe",
+          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvp",
+        "moduleName": "AetherHost",
+        "name": "probe",
+        "printedName": "probe",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV5probe0A7Runtime14GPUMemoryProbeVvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Residency",
+            "printedName": "AetherCore.Manifest.Residency",
+            "usr": "s:10AetherCore8ManifestV9ResidencyO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Residency",
+            "printedName": "AetherCore.Manifest.Residency",
+            "usr": "s:10AetherCore8ManifestV9ResidencyO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Residency",
+          "printedName": "AetherCore.Manifest.Residency",
+          "usr": "s:10AetherCore8ManifestV9ResidencyO"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvp",
+        "moduleName": "AetherHost",
+        "name": "unphasedPhase",
+        "printedName": "unphasedPhase",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13unphasedPhase0A4Core8ManifestV9ResidencyOvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivp",
+        "moduleName": "AetherHost",
+        "name": "maximumShapes",
+        "printedName": "maximumShapes",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivp"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Settings",
+          "printedName": "AetherHost.ResidentAdmission.Settings",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GPUMemoryProbe",
+          "printedName": "AetherRuntime.GPUMemoryProbe",
+          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Residency",
+          "printedName": "AetherCore.Manifest.Residency",
+          "usr": "s:10AetherCore8ManifestV9ResidencyO"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Constructor",
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapesAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAL15FootprintLedgerCAL14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSitcfc",
+        "moduleName": "AetherHost",
+        "name": "init",
+        "printedName": "init(memory:coordinator:ledger:probe:unphasedPhase:maximumShapes:)",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapesAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAL15FootprintLedgerCAL14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSitcfc"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       }
+      ],
+      "declKind": "Struct",
+      "kind": "TypeDecl",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV",
+      "moduleName": "AetherHost",
+      "name": "Settings",
+      "printedName": "Settings",
+      "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherHost",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:10AetherHost17ResidentAdmissionC8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Settings",
+          "printedName": "AetherHost.ResidentAdmission.Settings",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8settingsAC8SettingsVvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC8settingsAC8SettingsVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Settings",
+        "printedName": "AetherHost.ResidentAdmission.Settings",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8settingsAC8SettingsVvp",
+      "moduleName": "AetherHost",
+      "name": "settings",
+      "printedName": "settings",
+      "usr": "s:10AetherHost17ResidentAdmissionC8settingsAC8SettingsVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GraphResidency",
+            "printedName": "AetherRuntime.GraphResidency",
+            "usr": "s:13AetherRuntime14GraphResidencyC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherRuntime.GraphResidency?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC9residency0A7Runtime14GraphResidencyCSgvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC9residency0A7Runtime14GraphResidencyCSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GraphResidency",
+          "printedName": "AetherRuntime.GraphResidency",
+          "usr": "s:13AetherRuntime14GraphResidencyC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherRuntime.GraphResidency?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "Final",
+       "SetterAccess",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC9residency0A7Runtime14GraphResidencyCSgvp",
+      "moduleName": "AetherHost",
+      "name": "residency",
+      "printedName": "residency",
+      "usr": "s:10AetherHost17ResidentAdmissionC9residency0A7Runtime14GraphResidencyCSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC13residentBytess5Int64Vvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC13residentBytess5Int64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "Final",
+       "SetterAccess",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC13residentBytess5Int64Vvp",
+      "moduleName": "AetherHost",
+      "name": "residentBytes",
+      "printedName": "residentBytes",
+      "usr": "s:10AetherHost17ResidentAdmissionC13residentBytess5Int64Vvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ResidentAdmission",
+        "printedName": "AetherHost.ResidentAdmission",
+        "usr": "s:10AetherHost17ResidentAdmissionC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Settings",
+        "printedName": "AetherHost.ResidentAdmission.Settings",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GraphBackend",
+            "printedName": "any AetherRuntime.GraphBackend",
+            "usr": "s:13AetherRuntime12GraphBackendP"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.String) async throws(AetherCore.AetherError) -> any AetherRuntime.GraphBackend"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Loader",
+        "printedName": "AetherRuntime.GraphResidency.Loader"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(Swift.String) -> Swift.Int64"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8manifest6device8settings4load9fileBytesAC0A4Core8ManifestV_AI6DeviceVAC8SettingsV0A7Runtime12GraphBackend_pSSYaAI0A5ErrorOYKYCcs5Int64VSSctcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(manifest:device:settings:load:fileBytes:)",
+      "usr": "s:10AetherHost17ResidentAdmissionC8manifest6device8settings4load9fileBytesAC0A4Core8ManifestV_AI6DeviceVAC8SettingsV0A7Runtime12GraphBackend_pSSYaAI0A5ErrorOYKYCcs5Int64VSSctcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.String]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC13residentRolesSaySSGvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC13residentRolesSaySSGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.String]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC13residentRolesSaySSGvp",
+      "moduleName": "AetherHost",
+      "name": "residentRoles",
+      "printedName": "residentRoles",
+      "usr": "s:10AetherHost17ResidentAdmissionC13residentRolesSaySSGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Inputs",
+        "printedName": "AetherRuntime.ResidencyPlan.Inputs",
+        "usr": "s:13AetherRuntime13ResidencyPlanV6InputsV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6inputs7profile0A7Runtime13ResidencyPlanV6InputsVSS_tF",
+      "moduleName": "AetherHost",
+      "name": "inputs",
+      "printedName": "inputs(profile:)",
+      "usr": "s:10AetherHost17ResidentAdmissionC6inputs7profile0A7Runtime13ResidencyPlanV6InputsVSS_tF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6budgets5Int64VyF",
+      "moduleName": "AetherHost",
+      "name": "budget",
+      "printedName": "budget()",
+      "usr": "s:10AetherHost17ResidentAdmissionC6budgets5Int64VyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GraphResidency",
+        "printedName": "AetherRuntime.GraphResidency",
+        "usr": "s:13AetherRuntime14GraphResidencyC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC5begin7profile5shape0A7Runtime14GraphResidencyCSS_SiSgt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherHost",
+      "name": "begin",
+      "printedName": "begin(profile:shape:)",
+      "throwing": true,
+      "usr": "s:10AetherHost17ResidentAdmissionC5begin7profile5shape0A7Runtime14GraphResidencyCSS_SiSgt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6finishyyF",
+      "moduleName": "AetherHost",
+      "name": "finish",
+      "printedName": "finish()",
+      "usr": "s:10AetherHost17ResidentAdmissionC6finishyyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC7releaseyyF",
+      "moduleName": "AetherHost",
+      "name": "release",
+      "printedName": "release()",
+      "usr": "s:10AetherHost17ResidentAdmissionC7releaseyyF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost17ResidentAdmissionC",
+    "moduleName": "AetherHost",
+    "name": "ResidentAdmission",
+    "printedName": "ResidentAdmission",
+    "usr": "s:10AetherHost17ResidentAdmissionC"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
             "name": "UInt64",
             "printedName": "Swift.UInt64",
             "usr": "s:s6UInt64V"
