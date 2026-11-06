@@ -162,7 +162,7 @@ public actor MiniMaxH3Pipeline {
         let fileBytes = { [manifest, device] (role: String) in Self.fileBytes(role, bundle: bundle, manifest: manifest, device: device) }
         admission = options.admission(
             manifest: manifest, device: device, defaultMemory: .videoGeneration, load: load, fileBytes: fileBytes)
-        Self.seedQualified(options.ledger, model: admission.modelKey)
+        Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
     }
 
     /// H3 is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -612,9 +612,22 @@ extension MiniMaxH3Pipeline {
         ],
     ]
 
+    /// What the footprints above were measured on: the export (its ``Manifest/contentDigest``, the bundle in
+    /// `forge-outputs/minimax-h3`) and the Core AI architecture of the M5 Max. Another export (a requantization, another recipe) or another chip doesn't use them
+    /// as measured; it plans from its files until it has measured its own. `MiniMaxH3GateTests` checks that the gate's
+    /// export is this one.
+    public static let qualifiedExportDigest = "46dc5fb190adb038fd5715559a238f9a32afd685b2793629794c166503d66584"
+    public static let qualifiedArchitecture = "h17c"
+
     /// Seeds `ledger` under `model`, the pipeline's ledger key (``ResidentAdmission/modelKey``: the manifest id, the
-    /// weights' source revision and the device), so the seeded entries are the ones its plans read.
-    static func seedQualified(_ ledger: FootprintLedger, model: String) {
+    /// weights' source revision, the export and the device), so the seeded entries are the ones its plans read; only
+    /// for the export and the architecture they were measured on (``qualifiedExportDigest``, ``qualifiedArchitecture``).
+    static func seedQualified(
+        _ ledger: FootprintLedger, model: String, manifest: Manifest, device: Device,
+        qualifiedDigest: String = qualifiedExportDigest
+    ) {
+        guard device.platform == .macOS, device.architecture == qualifiedArchitecture,
+              manifest.contentDigest == qualifiedDigest else { return }
         for (profile, phases) in qualifiedFootprints {
             for (phase, footprint) in phases {
                 let key = FootprintLedger.Key(model: model, profile: profile, phase: phase)

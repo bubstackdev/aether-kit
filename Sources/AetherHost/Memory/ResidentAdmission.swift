@@ -46,8 +46,10 @@ public final class ResidentAdmission {
     public let manifest: Manifest
     public let settings: Settings
     let device: Device
-    /// The ledger's model key: the manifest id, the weights' source revision and the device's Core AI architecture, so
-    /// another export of the model, or the same bundle on another device, never reuses these measurements.
+    /// The ledger's model key: the manifest id, the weights' source revision, the export's identity (the first 16 hex
+    /// digits of ``Manifest/contentDigest``, so another export or quantization of the same weights has its own) and
+    /// the device's platform and Core AI architecture, so another export of the model, or the same bundle on another
+    /// device, never reuses these measurements.
     public let modelKey: String
     private let load: GraphResidency.Loader
     private let fileBytes: (String) -> Int64
@@ -68,9 +70,15 @@ public final class ResidentAdmission {
         self.manifest = manifest
         self.device = device
         self.settings = settings
-        modelKey = "\(manifest.id)@\(manifest.provenance?.sourceRevision ?? "unpinned")/\(device.platform.rawValue)-\(device.architecture)"
+        modelKey = Self.modelKey(manifest: manifest, device: device)
         self.load = load
         self.fileBytes = fileBytes
+    }
+
+    /// The ledger key for `manifest`'s graphs on `device` (``modelKey``).
+    public static func modelKey(manifest: Manifest, device: Device) -> String {
+        let export = manifest.contentDigest.prefix(16)
+        return "\(manifest.id)@\(manifest.provenance?.sourceRevision ?? "unpinned")#\(export)/\(device.platform.rawValue)-\(device.architecture)"
     }
 
     /// Roles currently loaded.

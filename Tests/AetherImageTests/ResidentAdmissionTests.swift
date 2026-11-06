@@ -131,6 +131,18 @@ struct ResidentAdmissionTests {
         #expect(mac.modelKey != phone.modelKey && mac.modelKey.hasPrefix("sd-turbo@"))
     }
 
+    /// Third review, P2-11: the key also names the export, so another export or quantization of the same weights (same
+    /// id and revision) doesn't reuse these measurements.
+    @Test func ledgerKeysNameTheExport() throws {
+        let manifest = try LatentDiffusionTests.manifest()
+        var requantized = manifest
+        requantized.precision = ["weights": .string("int8")]
+        let mac = LatentDiffusionTests.mac
+        #expect(ResidentAdmission.modelKey(manifest: manifest, device: mac) != ResidentAdmission.modelKey(manifest: requantized, device: mac))
+        #expect(ResidentAdmission.modelKey(manifest: manifest, device: mac) == ResidentAdmission.modelKey(manifest: try LatentDiffusionTests.manifest(), device: mac))
+        #expect(try Self.admission().modelKey == ResidentAdmission.modelKey(manifest: manifest, device: mac))
+    }
+
     @Test func unphasedManifestsPlanWithTheirMeasurement() throws {
         let url = LatentDiffusionTests.manifestURL.deletingLastPathComponent().deletingLastPathComponent()
             .appending(path: "kokoro/aether.json")
