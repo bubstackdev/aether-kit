@@ -23,6 +23,19 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 
 Video generation (MiniMax H3) is being ported onto this architecture before 0.1.0 is tagged.
 
+### Generative models
+
+| Catalog id | Driver | macOS | iOS | License |
+| --- | --- | --- | --- | --- |
+| `sd-turbo` | `latent-diffusion@1` | float32 | mixed precision (separate bundle) | Stability AI Community License: commercial use only under USD 1M revenue, with registration; "Powered by Stability AI" |
+| `flux2-klein-4b` | `flux2-klein@1` | ✓ | refused (`unsupportedDevice`) | Apache-2.0 |
+| `krea-2-turbo` | `krea2@1` | ✓ | refused | Krea 2 Community License: name begins with "Krea", NOTICE line, commercial use only under USD 1M revenue, **content filter required (§4.2)** |
+| `krea-2-turbo-realism` | `krea2@1` | ✓ | refused | as Krea 2, plus the merged adapter's Civitai permissions. **Mature:** trained for explicit adult content; a gated Hugging Face repo (accept its terms, then install with a token) |
+| `kokoro-82m` | `kokoro@1` | ✓ | ✓ (512-frame cap) | Apache-2.0 |
+| MiniMax H3 (in progress) | `minimax-h3@1` | ✓ | refused | MiniMax H3 license: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products; not publicly hosted |
+
+The Krea entries are added to the catalog with their hosted bundles. Check each license before you ship a model.
+
 ## Quick start
 
 ```swift
@@ -39,6 +52,47 @@ A one-call `ChatSession(catalog:)` arrives with `ModelHost` in M6. Today, a sess
 
 [`Tests/AetherTextTests/TextGateTests.swift`](Tests/AetherTextTests/TextGateTests.swift) is the complete, gate-verified
 flow.
+
+Image and speech bundles carry their manifest (`.aether/aether.json`), so they load directly once installed:
+
+```swift
+import AetherCore
+import AetherImage
+import AetherRuntime
+import AetherSpeech
+
+let device = Device.current
+let store = ModelStore(root: try ModelStore.defaultRoot())
+
+// SD-Turbo (macOS and iOS)
+let turbo = try await store.install("sd-turbo", for: device)
+let sd = try LatentDiffusionPipeline(bundle: turbo, manifest: try Manifest.load(fromBundle: turbo.url), device: device)
+let image = try await sd.generate(ImageRequest(prompt: "a lighthouse at dusk", seed: 7, steps: 4))
+let png = try image.pngData()            // or image.cgImage()
+
+// Krea 2 (macOS): a pipeline exists only with your ContentFilter. What it allows is your responsibility.
+struct MyFilter: ContentFilter {
+    func review(prompt: String) async throws -> ContentVerdict { .allow }   // call your moderation here
+    func review(image: GeneratedImage, prompt: String) async throws -> ContentVerdict { .allow }
+}
+let kreaBundle = try await store.install("krea-2-turbo", for: device)
+let krea = try await Registry.image.load(
+    kreaBundle, as: Krea2Driver.self, options: LoadOptions(device: device, cachePolicy: .default, cache: .default))
+let kreaImage = try await krea.pipeline(filter: MyFilter()).generate(ImageRequest(prompt: "a fox in a birch forest"))
+
+// Kokoro (macOS and iOS): text-to-phoneme is yours (no GPL G2P ships).
+struct MyPhonemizer: SpeechPhonemizer {
+    func phonemize(_ text: String, language: KokoroVoice.Language) async throws -> [String] { /* your G2P */ [] }
+}
+let kokoroBundle = try await store.install("kokoro-82m", for: device)
+let speech = try KokoroSpeechSession(
+    bundle: kokoroBundle, manifest: try Manifest.load(fromBundle: kokoroBundle.url), device: device)
+let segments = try await speech.synthesize(text: "Hello there.", phonemizer: MyPhonemizer(), SpeechRequest(voice: .afHeart))
+let wav = try segments[0].audio.wavData()
+```
+
+`FLUX.2` works like SD-Turbo (`Flux2KleinPipeline(bundle:manifest:device:)`, which is `async`); its requests need a
+`width` and `height`. A gated repo needs a token: `ModelStore(root:headers: ModelStore.huggingFaceAuthorization(token:))`.
 
 Models download from pinned Hugging Face revisions when installed, and are verified file by file. Core AI isn't available
 in the iOS Simulator: run on a device or a Mac.
@@ -65,6 +119,7 @@ iOS 17).
 ```bash
 scripts/ci.sh                    # hermetic: catalog, warnings-as-errors build, public API, tests
 AETHER_GATES=1 scripts/ci.sh     # plus real-model gates (needs downloaded models and a GPU)
+docs/RELEASE.md                  # the release steps and the pre-tag checklist
 scripts/check-api.sh --update    # record an intended public-API change in api/ (after a build)
 ```
 

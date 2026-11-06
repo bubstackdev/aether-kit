@@ -2,119 +2,84 @@
 
 ## 0.1.0 — unreleased
 
-A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag and on `legacy/0.0.x`.
+A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues at the `0.0.7` tag and on
+`legacy/0.0.x`.
 
 ### Breaking
 
-- **Platform floor:** macOS 27 / iOS 27 (0.0.x linked at macOS 14 / iOS 17 and reported `unsupportedOS` below 27).
-- **All products renamed or replaced:** AetherCore, AetherRuntime, AetherText, AetherFoundationModels, AetherHost
-  (and the planned AetherVision, AetherEmbeddings, AetherDecide, Aether). The 0.0.x frozen APIs (the `AetherLanguage`
-  facade, `AetherAssets` preparation and readiness, `@AetherGenerable`) are not carried over. See the README's
-  migration notes.
-- **Model bundles** are described by the `aether.json` manifest in docs/MANIFEST.md. The 0.0.x prototype manifests are
-  rejected.
-- **`from: "0.0.7"` dependencies will resolve to 0.1.0.** Pin `exact: "0.0.7"` or `.upToNextMinor(from: "0.0.7")` to
-  stay.
+- **Platform floor:** macOS 27 / iOS 27 (0.0.x linked at macOS 14 / iOS 17).
+- **Products renamed or replaced:** AetherCore, AetherRuntime, AetherText, AetherFoundationModels, AetherHost,
+  AetherImage, AetherSpeech (AetherVision, AetherEmbeddings, AetherDecide and Aether are placeholders until M4–M6).
+  The 0.0.x frozen APIs (the `AetherLanguage` facade, `AetherAssets` preparation and readiness, `@AetherGenerable`)
+  are not carried over; see the README's migration notes.
+- **Model bundles** are described by the `aether.json` manifest (docs/MANIFEST.md, schema v1). 0.0.x prototype
+  manifests are rejected (`unknownDriver`).
+- **`from: "0.0.7"` resolves to 0.1.0.** Pin `exact: "0.0.7"` or `.upToNextMinor(from: "0.0.7")` to stay on 0.0.x.
 
 ### New
 
-- **Pinned catalog and manifest:** a catalog with per-file SHA-256 and no runtime catalog fetch. Manifest schema v1,
-  with a zoo-bundle adapter driven by a reviewed override table.
-- **Owned decode engine** on Core AI (`DecoderEngine`):
-  - memory-sized KV;
-  - manifest-driven prefill (prefill phases, ≤ 512-token chunks);
-  - O(1) rewind, and snapshots for hybrid models;
-  - token-exact depth-3 pipelined greedy decode (about 500 tok/s on qwen3-0.6b, M5 Max) guarded by a load-time canary.
-- **Generator and ChatSession:** prefix reuse across turns, stop and tag parsing, a seeded sampler,
-  JSON-schema structured output, Hermes tool calls.
-- **`AetherLanguageModel`** for FoundationModels' `LanguageModelSession`, with guided generation and tools.
+- **Catalog and store** (AetherCore): a compiled-in catalog pinned to Hugging Face revisions with per-file SHA-256
+  (no runtime catalog fetch); manifest schema v1 with a zoo-bundle adapter and a reviewed override table.
+- **Runtime** (AetherRuntime):
+  - manifest-driven Core AI graphs, a tensor arena, bindings, snapshot/restore state and a driver registry;
+  - `DecoderEngine`: memory-sized KV, chunked prefill (≤ 512 tokens), O(1) rewind or hybrid snapshots, and
+    token-exact pipelined greedy decode guarded by a load-time canary;
+  - the generative foundation: seeded noise, flow-matching and epsilon schedules, `GeneratedImage` /
+    `GeneratedAudio`, and residency planning from measured phase footprints (`GraphResidency`, `FootprintLedger`,
+    `ResidencyPlan`);
+  - device chains for block-by-block models: `GraphChain` (each call's output feeds the next on the GPU),
+    `WeightBanks` (per-block weights streamed from bundle files into two banks), `ShapeProfile`, `SerialGate`.
+- **Text** (AetherText): the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured
+  output, Hermes tool calls) and `ChatSession`.
+- **FoundationModels** (AetherFoundationModels): `AetherLanguageModel` behind `LanguageModelSession`, with
+  `@Generable` guided generation and tools.
+- **Image** (AetherImage): `LatentDiffusionPipeline`, `Flux2KleinPipeline` and `Krea2Pipeline`, sharing
+  `ImagePipelineOptions` / `ImageRequest`, measured admission (macOS default budget: three quarters of RAM) and
+  cancellation between graph calls. **`ContentFilter`**: a Krea pipeline exists only with the app's filter, which
+  reviews the prompt and the output; a refusal is `AetherError.GenerationFailure.contentRefused(stage:reason:)`.
+- **Speech** (AetherSpeech): `KokoroSpeechSession` from phonemes or from text through an app-supplied
+  `SpeechPhonemizer` (no GPL G2P ships); per-platform frame caps, prewarm, multi-segment output.
+- **Forge exporters** (`Forge/`): reproducible, pinned exports for SD-Turbo, FLUX.2 [klein], Krea 2 (vanilla and
+  realism, with the adapter merged before export), Kokoro and MiniMax H3, each with a CPU reference and a GPU gate.
+- **Public-API freeze check** (`scripts/check-api.sh`, in `scripts/ci.sh`): the frozen modules are compared with
+  `api/`; report-only until the 0.1.0 freeze (docs/RELEASE.md).
+- **Device qualification** (`Tools/DeviceGate`, docs/DEVICE.md): the SD-Turbo and Kokoro gates on a physical iPhone.
+
+### Models
+
+| Catalog id | Platforms | Gate (against the upstream reference) |
+| --- | --- | --- |
+| `sd-turbo` | macOS (float32), iOS (mixed precision: fp32 text encoder, fp16 U-Net and VAE) | from the seed vs CPU Diffusers; also on an iPhone |
+| `flux2-klein-4b` | macOS | per graph vs CPU Diffusers; image from the reference's rows SSIM 0.991 |
+| `krea-2-turbo`, `krea-2-turbo-realism` | macOS | from the seed vs CPU Diffusers: SSIM 0.999 / 0.988 |
+| `kokoro-82m` | macOS, iOS (512-frame cap) | vs unmodified upstream on CPU: frames exact, rel. L2 ≤ 0.032; also on an iPhone |
+| the language models (Qwen3, Qwen3.5, Gemma 3/4, MiniCPM, LFM2.5, Granite, Nemotron, Mistral, …) | macOS, iOS | greedy output token-exact against a same-device reference |
+
+Bundles are hosted under `aether-models` on Hugging Face; each carries its license and NOTICE. The Krea realism repo
+is gated (mature). The licenses differ per model; the README's table lists their terms.
 
 ### Carried over from 0.0.x (re-implemented, validated against 0.0.x's tests and fixtures)
 
-- **Store:** staged SHA-256 installs and resume, plus reader leases, stage recovery, cross-process install locks, a
-  free-space check, token and redirect safety, and iOS background downloads.
-- **AetherHost:** the GPU lease (Atelier-compatible) and admission, plus lifecycle (idle unload, memory-pressure
-  release, iOS easing).
-- **Text:** the sampler (matching HF Transformers' recorded processors), the structured-output constraint, and the
-  text-stream behaviour, plus the tokenizer oracle cases.
-- **Generative foundation (G0):**
-  - the seeded noise stream (bit-identical to 0.0.x);
-  - the Krea and FLUX.2 flow-matching schedule arithmetic;
-  - `GeneratedImage` and `GeneratedAudio`;
-  - `ResourceCoordinator` reservations;
-  - new on top: typed `schedule`, `latent` and `residency` manifest blocks (MANIFEST.md §5), and `GraphResidency`
-    with Metal-measured phase footprints.
-- **SD-Turbo (G1),** the first generative port, in the new **`AetherImage`** product:
-  - the `latent-diffusion@1` driver (`LatentDiffusionPipeline`): CLIP text encoder → U-Net steps on the host Euler
-    epsilon update → VAE decoder, with measured residency planning, an optional shared `ResourceCoordinator` and GPU
-    admission, cancellation between graph calls, and its own CLIP BPE tokenizer;
-  - `epsilonEuler` schedules (`EpsilonEulerSchedule`, tables captured from the pinned Diffusers scheduler) and
-    spatial latents in the manifest;
-  - a reproducible Forge exporter (`Forge/sdturbo/`, float32), a CPU Diffusers reference and a GPU graph check. The
-    gate runs the driver from the seed alone: RMSE 1.0e-5 (1 step) and 3.3e-5 (4 steps) against Diffusers.
-  - SD-Turbo is under the Stability AI Community License (commercial use only under USD 1M revenue, with
-    registration; "Powered by Stability AI" attribution). The exported bundle carries the license and NOTICE line.
-- **Public-API freeze check** (`scripts/check-api.sh`, run by `scripts/ci.sh`): `swift-api-digester` dumps of
-  AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
-  the 0.1.0 freeze sets `"enforce": true`.
+- **Store:** staged SHA-256 installs and resume, reader leases, stage recovery, cross-process install locks, a
+  free-space check, token and redirect safety, iOS background downloads.
+- **Host** (AetherHost): the GPU lease (Atelier-compatible) and admission, the fair queue, model lifecycle (idle
+  unload, memory-pressure release, iOS easing) and `ResourceCoordinator` reservations.
+- **Text:** the sampler (matching Transformers' recorded processors), the structured-output constraint, the
+  text-stream rules and the tokenizer oracle cases.
+- **Generative recipes:** the seeded noise stream (bit-identical to 0.0.x), the schedule arithmetic, and the SD-Turbo,
+  FLUX.2, Krea and Kokoro host recipes.
 
-- **FLUX.2 [klein] 4B (G2)** in `AetherImage`:
-  - the `flux2-klein@1` driver (`Flux2KleinPipeline`): the bundle's Qwen3 chat template, padded to 512 rows → text
-    encoder → three denoiser segments chained by their carries, per step, on the host Euler update with the empirical
-    shift → VAE decoder; macOS only in 0.1.0 (`unsupportedDevice` on iOS before anything loads);
-  - the typed `flux2` manifest block (MANIFEST.md §5.7, now normative) and optional graph roles in driver contracts
-    (the reference-image VAE encoder);
-  - a reproducible Forge exporter (`Forge/flux2/`): int8 per-channel weights on the text encoder and denoisers, both
-    VAE graphs; its GPU gate against CPU Diffusers passes 31/31;
-  - the Swift gate against CPU Diffusers from the seed: prompt ids exact, text real-row cosine ≥ 0.99921, the image
-    from the reference's text rows SSIM 0.991 / PSNR 34.0 dB; the whole pipeline is recorded at SSIM 0.908 (0.0.x's
-    bars; padding rows condition the denoiser, so the full path moves under any precision change).
-- `ImagePipelineOptions` and `ImageRequest` are shared by the image pipelines, and take a `GPUMemoryProbe` (tests pass
-  a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
-  prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
+### Known limitations
 
-- **Krea 2 Turbo, vanilla and realism (G3)** in `AetherImage`:
-  - the `krea2@1` driver (`Krea2Pipeline`): the fixed Krea prompt, unpadded → text encoder (12 tapped layers, the
-    34-row prefix dropped) → four denoiser segments chained by their carries, per step, on the host Euler update with
-    the exponential shift → VAE decoder; macOS only in 0.1.0;
-  - **`ContentFilter`**, required by the Krea 2 Community License (§4.2): `Krea2Driver.load` gives a `Krea2Model`, and a
-    pipeline is only made with the app's filter (no default). It reviews the prompt before any work and the image
-    before it is returned; a refusal is the new `AetherError.GenerationFailure.contentRefused(stage:reason:)`;
-  - the typed `krea2` manifest block (MANIFEST.md §5.5–§5.6, now normative); a merged adapter's `scale` may be a
-    number or a list;
-  - the exporter writes the installed-revision layout (`.aether/aether.json`); the two local bundles' manifests were
-    moved and regenerated in place (no re-export);
-  - the Swift gate per variant against CPU Diffusers from the seed: rendered ids exact, text row cosine 0.999999, the
-    whole pipeline SSIM 0.9989 / PSNR 49.9 dB (vanilla) and 0.988 / 39.6 dB (realism), repeats bit-identical;
-  - the denoiser segments and VAE specialize without `expectFrequentReshapes` (with it their carries are non-finite);
-  - image pipelines default to `MemoryBudget.imageGeneration`: three quarters of RAM on macOS (Krea plans about 34 GiB
-    a generation), `platformDefault` on iOS.
-- **H3 runtime prerequisites (G4 step 1)** (`AetherRuntime/Chain/`): `GraphChain` binds each call's output as the
-  next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
-  unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
-  enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
-  MANIFEST.md §5.8 proposes the `weights` table.
-- **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
-  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
-  `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
-  `aether-models/aether-kit-sd-turbo-ios`.
+- FLUX.2 and Krea are macOS-only; reference images (FLUX.2) and reference images or refine (Krea) are not built yet.
+- Text-to-phoneme for Kokoro is the app's.
+- The image and speech pipelines don't yet take part in AetherHost's idle and memory-pressure unload policy.
+- Generative outputs are not bit-identical across devices (fp16 arithmetic differs); gates compare against the
+  reference on each device.
+- One bundle per platform where precision differs (SD-Turbo on iOS); the manifest's `variant.platform` is not
+  enforced at load.
 
-- **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
-  - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
-    refused) → durations → host rounding and alignment → the bucketed decoder with seeded harmonic noise →
-    `GeneratedAudio`; multi-segment requests, frame caps per platform, prewarm, measured admission, cancellation;
-  - text through an app-supplied `SpeechPhonemizer` (no G2P ships: misaki falls back to GPL espeak-ng);
-  - the typed `kokoro` block (MANIFEST.md §5.9, normative) and a reproducible Forge exporter (`Forge/kokoro/`, float32,
-    54 voices). The Swift gate against unmodified upstream on the CPU: frames exact, rel. L2 0.0076–0.032 (bars
-    min(0.05, 4× the fp32-vs-fp64 floor)), log-mel ≤ 0.015, repeats bit-identical.
-  - Both graphs run on the GPU: Swift's Core AI runtime traps loading the durations graph for the CPU on macOS 27.2.
+### In progress before the 0.1.0 tag
 
-- **On-device qualification** (`docs/DEVICE.md`, `Tools/DeviceGate`): SD-Turbo and Kokoro pass their gates on a
-  physical iPhone (iPhone Duo, `h19p`, iOS 27.2). SD-Turbo's iOS bundle is mixed precision (text encoder fp32, U-Net and
-  VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
-  peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
-
-### In progress before 0.1.0 is tagged
-
-MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
-validation, and FLUX.2's and Krea's reference images.
+- **MiniMax H3** (video and audio): the exporter and its oracle gate, then the `minimax-h3@1` driver. Its license
+  grants no rights in the EU, UK, South Korea or USA, so its bundle is not publicly hosted.
