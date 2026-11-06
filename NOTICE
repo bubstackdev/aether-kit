@@ -1,106 +1,59 @@
-AetherKit
+Aether-Kit
+Licensed under the Apache License, Version 2.0; see LICENSE.
 
-Krea schedule and seeded-noise algorithms and their reference fixture values are
-derived from the Apache-2.0 Aether prototype and its Aether / Atelier Swift
-references. The retained prototype identifies upstream revision
-7aff977df6e88005649b13bc63995f75eb4b217b.
+This file lists what Aether-Kit inherits from other work. Each entry names the
+files that carry it.
 
-Original Aether / Atelier sources are copyright their respective contributors.
-The accompanying LICENSE preserves the Apache License, Version 2.0.
+AetherKit 0.0.x (https://github.com/bubstackdev/aether-kit, tag 0.0.7,
+commit a013c45ec60d2292694a8e5f58ce31b228fd04df), Apache License 2.0, copyright
+its contributors. These parts are re-expressed on Aether-Kit's contracts
+(actor or lock ownership, AetherError, the 27 floor), not copied wholesale.
+Their tests come over as specs, adapted to Aether-Kit's API:
 
-Sample model bundle: AetherKit publishes a Core AI conversion
-of Qwen3-0.6B (https://huggingface.co/Qwen/Qwen3-0.6B, revision
-c1899de289a04d12100db370d81485cdf75e47ca, Copyright 2024 Alibaba Cloud, Apache
-License 2.0), at https://huggingface.co/aether-models/aether-kit-qwen3-0.6b with
-that repository's own LICENSE and NOTICE. The weights are not in this
-repository; Examples/SampleApp downloads them. Converted spike bundles are also
-published, each repository with its own LICENSE and NOTICE:
-https://huggingface.co/aether-models/aether-kit-olmo-2-1b-instruct (OLMo 2 1B
-Instruct, Apache-2.0), https://huggingface.co/aether-models/aether-kit-gpt2
-(GPT-2, OpenAI's Modified MIT License) and
-https://huggingface.co/aether-models/aether-kit-phi2 (Phi-2, MIT). Their weights
-and tokenizer assets are not included in this source repository. AetherKit
-publishes no other weights.
-
-This repository contains no model weights, tokenizer files, adapters or
-upstream Core AI Models runtime implementation. External assets retain their
-own licenses.
-
-H3 geometry, packing, row positions and scheduler conventions are derived from
-Aether prototype sources and the pinned Diffusers behavior at commit
-7ecb1e1b4fe500be7fb7381a7bb79a24d7fa3941, copyright 2026 The MiniMax and
-HuggingFace Teams, licensed under Apache-2.0. The small CPU fixtures retain
-original pipeline/oracle values, not model weights. Their source hashes and
-scope are recorded in docs/evidence/h3-cpu-readiness-2026-10-18.json.
-
-Third-party Swift packages, resolved by SwiftPM and not vendored here, are used
-only by the optional AetherKreaTokenizers, AetherH3Tokenizers and
-AetherFlux2Tokenizers products:
-
-- swift-transformers 1.1.0 (https://github.com/huggingface/swift-transformers),
-  Apache License 2.0, copyright Hugging Face.
-- swift-jinja 2.5.1 (https://github.com/huggingface/swift-jinja), Apache License
-  2.0, copyright Hugging Face.
-- swift-collections 1.7.3 (https://github.com/apple/swift-collections), Apache
-  License 2.0 with Runtime Library Exception, copyright Apple Inc. and the Swift
-  project authors.
-
-FLUX.2 [klein] schedule, rotary layout, prompt rendering, reference-image
-positions and bundle recipe are derived from the Apache-2.0 Aether prototype
-(spec 11 Part B, recipes/flux2-klein-4b*.toml) and observed behavior of the
-pinned black-forest-labs/FLUX.2-klein-4B checkpoint at revision
-e7b7dc27f91deacad38e78976d1f2b499d76a294 (Apache-2.0) through unmodified
-Diffusers 0.37.1. No weights or fixtures are distributed; local exports keep
-the checkpoint's LICENSE.md beside the assets.
-
-Kokoro speech export graphs (Forge/kokoro) reimplement forward passes of the
-kokoro 0.9.4 package (https://github.com/hexgrad/kokoro, Apache-2.0), itself
-adapted from StyleTTS 2 / iSTFTNet (https://github.com/yl4579/StyleTTS2, MIT),
-and are checked against the pinned hexgrad/Kokoro-82M checkpoint at revision
-f3ff3571791e39611d31c381e3a41a3af07b4987 (Apache-2.0). No weights, voices or
-reference audio are distributed; the model card attributes CC BY 3.0 (Koniwa)
-and CC BY 4.0 (SIWIS) training audio. AetherSpeech includes no
-grapheme-to-phoneme code and no espeak-ng (GPL-3.0); see docs/kokoro-speech.md.
-
-The Granite 4.0-H hybrid decoder in Forge/language/granite_hybrid.py and the reduced
-SSD stack in Spikes/hybrid-state-003/q1_repro.py (development tooling and a defect
-repro, not part of any product) follow the GraniteMoeHybrid architecture as
-implemented in Transformers 4.57.3 (https://github.com/huggingface/transformers),
-Apache License 2.0, copyright The HuggingFace Team and IBM: layer structure,
-multipliers and the Mamba-2 SSD maths. They are written for AetherKit, not copied.
-The checkpoint, ibm-granite/granite-4.0-h-350m at revision
-3b17b717b8f2f5d305b0a92c1491e239aeda19c8, is Apache-2.0 and is not distributed.
-
-OLMo2 language export graphs (Forge/language/olmo2_decode.py) reimplement the
-OLMo2 forward pass in Hugging Face Transformers 4.57.3
-(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/olmo2),
-licensed under Apache-2.0. The upstream modules attribute the Allen Institute
-for Artificial Intelligence and Hugging Face contributors. No OLMo2 weights
-or tokenizer assets are in this repository (the converted bundle is published as
-above); the pinned allenai/OLMo-2-0425-1B-Instruct
-checkpoint retains its Apache-2.0 terms. Tokenizer fixtures contain only small
-synthetic text examples and upstream token IDs.
-
-GPT-2 language export graphs (Forge/language/gpt2_decode.py) reimplement the
-GPT-2 forward pass in Hugging Face Transformers 4.57.3
-(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/gpt2),
-licensed under Apache-2.0. No GPT-2 weights or tokenizer assets are in this
-repository; the converted bundle is published as above. The pinned
-openai-community/gpt2 checkpoint at revision
-607a30d783dfa663caf39e06633721c8d4cfcd7e retains OpenAI's Modified MIT License
-(https://github.com/openai/gpt-2/blob/master/LICENSE).
-
-Phi language export graphs (Forge/language/phi_decode.py) reimplement the Phi
-forward pass in Hugging Face Transformers 4.57.3
-(https://github.com/huggingface/transformers/tree/v4.57.3/src/transformers/models/phi),
-Apache-2.0, copyright Microsoft and the HuggingFace Inc. team. No Phi weights
-or tokenizer assets are in this repository; the converted Phi-2 bundle is
-published as above. The microsoft/phi-2 checkpoint at revision
-9a5117d15e407c48fa40f8adbac1244abae52d6f retains its MIT terms.
-
-SD-Turbo spike (v0.0.6)
-The optional SD-Turbo port uses stabilityai/sd-turbo at revision
-b261bac6fd2cf515557d5d0707481eafa0485ec2. Model assets are not included in
-this repository and retain the Stability AI Community License. The exporter
-copies the checkpoint's LICENSE.md into the generated bundle. Forge uses the
-existing pinned Diffusers and Transformers packages for model definitions.
+- The cross-process GPU lease, in-process GPU admission and the fair queue
+  (Sources/AetherHost/GPU/; tests in Tests/AetherHostTests/SharedGPULeaseTests,
+  GPUAdmissionTests, FairInferenceQueueTests, with Tests/AetherGPULeaseHelper).
+  The lease protocol (mkdir lease directory, pid file, rename-aside release,
+  .reclaim flock and stale reclaim) is the one Atelier's SharedGPULock and the
+  lab's with-gpu-lock.sh / gpu.sh use, kept wire-compatible. Atelier sources are
+  copyright their respective contributors. FairInferenceQueue's design and its
+  scheduling tests come from an earlier transport-independent admission draft
+  for a host consumer.
+- The model lifecycle policy (idle unload, memory-pressure release once per
+  notice, the critical load gate and critical easing) and the memory-pressure
+  monitor (Sources/AetherHost/Lifecycle/, Sources/AetherHost/ModelHost.swift;
+  tests in Tests/AetherHostTests/ModelHostLifecycleTests).
+- The model store's reader leases, per-installation advisory locks, abandoned
+  stage recovery, free-space check, Hugging Face token scoping, redirect header
+  policy, Range/Content-Range rules and the 416 restart, from LocalAssetStore,
+  URLSessionTransport and ModelPreparation (Sources/AetherCore/Store/StoreLock,
+  StoreLayout, and parts of Installer, ModelStore and HTTPTransport; tests in
+  Tests/AetherCoreTests/StoreGapsTests).
+- The background URLSession transport: task records, resume data, foreground
+  redirect resolution and joining a running task after relaunch
+  (Sources/AetherCore/Store/BackgroundTransport.swift; tests in
+  Tests/AetherCoreTests/BackgroundTransportTests).
+- The language sampler (repetition penalty, token constraint, temperature,
+  top-k, top-p without a full sort, one seeded draw), its xoshiro256** RNG
+  seeded by SplitMix64 and the token-set constraint, from LanguageSampler,
+  LanguageRandomGenerator and LanguageTokenConstraint
+  (Sources/AetherRuntime/Decoder/Sampling.swift; tests and the recorded
+  Transformers and RNG fixtures in Tests/AetherRuntimeTests/SamplerTests and
+  Tests/AetherRuntimeTests/Fixtures).
+- Structured output: the generation schema builders, the JSON grammar, the
+  byte-level JSON matcher, the vocabulary trie and the JSON-schema constraint,
+  from AetherGenerationSchema, LanguageJSONGrammar, LanguageJSONMatcher and
+  LanguageJSONSchemaConstraint (Sources/AetherText/Structured/; tests in
+  Tests/AetherTextTests/JSONSchemaConstraintTests, StructuredOutputTests and
+  Tests/AetherFoundationModelsTests/OutputSchemaParityTests).
+- The token byte table and the text stream's UTF-8, grapheme, stop-string and
+  reasoning-framing rules, from LanguageTokenBytes and LanguageTextStream
+  (Sources/AetherText/TokenBytes.swift, OutputParsing.swift; tests in
+  Tests/AetherTextTests/TextStreamTests), and the chat-template oracles
+  (Tests/AetherTextTests/Fixtures/chat-oracle, recorded by 0.0.x's
+  Forge/language/reference_chat_tokens.py with Transformers 4.57.3; the
+  checkpoints' tokenizer_config.json and chat templates there are their
+  publishers' files: Qwen and huihui-ai (Apache 2.0), AllenAI OLMo 2 (Apache 2.0)).
+- The FoundationModels adapter's option, transcript and error mapping, from
+  AetherLanguageFoundationModels (Sources/AetherFoundationModels/; tests in
+  Tests/AetherFoundationModelsTests/FoundationModelsAdapterTests).

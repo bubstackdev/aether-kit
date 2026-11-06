@@ -1,0 +1,74 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "macos"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:gemma_3_4b_it_4bit_dynamic.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 131072,
+        "prefillChunk" : 512
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "all"
+        }
+      },
+      "states" : {
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "gemma-3-4b-it",
+  "license" : "gemma",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "google/gemma-3-4b-it@093f9f388b31de276ce2de164bdc2081324b9767 generation_config.json#/eos_token_id"
+    },
+    "source" : "google/gemma-3-4b-it",
+    "subtrees" : {
+      "main" : "macos"
+    },
+    "zooCompression" : "4bit",
+    "zooRepo" : "mlboydaisuke/gemma-3-4b-it-CoreAI-official",
+    "zooRevision" : "89a7c7a7a4e0c870f50f73d587f2bc8fad6acc28"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<eos>",
+      "<end_of_turn>"
+    ]
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

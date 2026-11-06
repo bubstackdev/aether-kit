@@ -1,10 +1,10 @@
-import AetherKit
+import AetherHost
 import Darwin
 import Foundation
-import os
+import Synchronization
 
-// Test-only child process for SharedGPULeaseTests; not a product and never shipped. Every mode takes a lease on the
-// private directory it is given, never the shared /tmp path.
+// Test-only child process for SharedGPULeaseTests (ported from AetherKit 0.0.7); not a product and never shipped.
+// Every mode takes a lease on the private directory it is given, never the shared /tmp path.
 //
 //   default DIR   take the lease, print "ready", block (SIGINT/SIGTERM/SIGHUP left at their defaults)
 //   handled DIR   first install an own graceful SIGTERM shutdown that releases and exits 42
@@ -14,13 +14,12 @@ import os
 //                       with inherit, accept a hand-off named by AETHER_GPU_LEASE_HOLDER
 //   wait DIR SECONDS    wait up to SECONDS: print "acquired", release, exit 0; exit 3 on timeout
 //   pair DIR      take DIR and its sibling DIR.second, release DIR, print "ready", block
-// OSAllocatedUnfairLock rather than Mutex (macOS 15): this helper builds at the package floor with every executable.
-private final class Held: Sendable { let lease = OSAllocatedUnfairLock<SharedGPULease?>(uncheckedState: nil) }
+private final class Held: Sendable { let lease = Mutex<SharedGPULease?>(nil) }
 
 private func configuration(_ path: String, inherit: Bool = false) -> SharedGPULease.Configuration {
     let handedOffBy = inherit ? ProcessInfo.processInfo.environment[SharedGPULease.holderEnvironmentKey].flatMap { Int32($0) } : nil
     return SharedGPULease.Configuration(directory: URL(fileURLWithPath: path, isDirectory: true), handedOffBy: handedOffBy,
-                                 pollInterval: .milliseconds(20))
+                                        pollInterval: .milliseconds(20))
 }
 
 private func say(_ text: String) { print(text); fflush(stdout) }
@@ -41,7 +40,7 @@ private func run() async -> Never {
             }
             lease.release()
             exit(0)
-        } catch SharedGPULeaseError.held(let holder) {
+        } catch AetherError.admission(.leaseHeld(let holder)) {
             say("held \(describe(holder))"); exit(2)
         } catch { exit(65) }
     case "wait":
@@ -51,7 +50,7 @@ private func run() async -> Never {
             say("acquired")
             lease.release()
             exit(0)
-        } catch SharedGPULeaseError.timedOut(let holder) {
+        } catch AetherError.admission(.leaseTimedOut(let holder)) {
             say("timedOut \(describe(holder))"); exit(3)
         } catch { exit(65) }
     case "default", "handled", "ignored", "late":
@@ -63,7 +62,7 @@ private func run() async -> Never {
             source.setEventHandler {
                 // Long enough that a re-raised default termination would win if the lease had also handled SIGTERM.
                 usleep(300_000)
-                held.lease.withLockUnchecked { $0?.release(); $0 = nil }
+                held.lease.withLock { $0?.release(); $0 = nil }
                 exit(42)
             }
             source.resume()
@@ -73,11 +72,11 @@ private func run() async -> Never {
         }
         do {
             let lease = try SharedGPULease.tryAcquire(configuration(path))
-            held.lease.withLockUnchecked { $0 = lease }
+            held.lease.withLock { $0 = lease }
         } catch { exit(65) }
         if mode == "late" {
             signal(SIGTERM) { _ in _exit(43) }
-            held.lease.withLockUnchecked { $0?.release(); $0 = nil }
+            held.lease.withLock { $0?.release(); $0 = nil }
         }
         say("ready")
         while true { withExtendedLifetime(shutdown) { _ = sleep(60) } }

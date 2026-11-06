@@ -1,0 +1,28 @@
+{
+  "metadata_version": "0.2",
+  "kind": "llm",
+  "name": "youtu_llm_2b_decode_absorbed_int8_msdpa",
+  "assets": {
+    "main": "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel"
+  },
+  "language": {
+    "tokenizer": "tencent/Youtu-LLM-2B",
+    "vocab_size": 128256,
+    "max_context_length": 8192,
+    "embedded_tokenizer": true,
+    "function_map": {
+      "main": [
+        "main"
+      ]
+    }
+  },
+  "source": {
+    "model_definition": "torch",
+    "hf_model_id": "tencent/Youtu-LLM-2B"
+  },
+  "compression": null,
+  "compilation": {
+    "date": "2026-07-17T13:48:24.179719+00:00",
+    "targets": []
+  }
+}

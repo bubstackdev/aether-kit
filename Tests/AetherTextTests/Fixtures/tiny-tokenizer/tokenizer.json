@@ -1,0 +1,4 @@
+{"version": "1.0", "truncation": null, "padding": null,
+ "added_tokens": [{"id": 0, "content": "<eos>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true}],
+ "normalizer": null, "pre_tokenizer": {"type": "Whitespace"}, "post_processor": null, "decoder": null,
+ "model": {"type": "BPE", "vocab": {"<eos>": 0, "h": 1, "i": 2, "hi": 3, "<unk>": 4}, "merges": ["h i"], "unk_token": "<unk>"}}

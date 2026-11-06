@@ -1,0 +1,86 @@
+{
+  "main" : {
+    "function" : "main",
+    "inputs" : [
+      {
+        "kind" : "ndArray",
+        "name" : "input_ids",
+        "scalarType" : "int32",
+        "shape" : [
+          1,
+          1
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "position_ids",
+        "scalarType" : "int32",
+        "shape" : [
+          1,
+          -1
+        ]
+      }
+    ],
+    "outputs" : [
+      {
+        "kind" : "ndArray",
+        "name" : "logits",
+        "scalarType" : "float16",
+        "shape" : [
+          1,
+          1,
+          248320
+        ]
+      }
+    ],
+    "states" : [
+      {
+        "kind" : "ndArray",
+        "name" : "keyCache",
+        "scalarType" : "float16",
+        "shape" : [
+          6,
+          1,
+          2,
+          -1,
+          256
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "valueCache",
+        "scalarType" : "float16",
+        "shape" : [
+          6,
+          1,
+          2,
+          -1,
+          256
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "convState",
+        "scalarType" : "float16",
+        "shape" : [
+          18,
+          1,
+          6144,
+          3
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "recState",
+        "scalarType" : "float16",
+        "shape" : [
+          18,
+          1,
+          16,
+          128,
+          128
+        ]
+      }
+    ]
+  }
+}
