@@ -414,6 +414,17 @@ extension Manifest {
     }
 
     public struct Provenance: Sendable, Hashable, Codable {
+        /// An adapter merged into the weights before export (MANIFEST.md §5.3), e.g. Krea 2's realism LoKr.
+        public struct MergedAdapter: Sendable, Hashable, Codable {
+            public var file: String
+            public var sha256: String
+            public var format: String
+            /// How it was merged, e.g. `W + multiplier * scale * kron(w1, w2), float32, before export`.
+            public var merge: String
+            public var multiplier: Double
+            public var scale: Double
+        }
+
         public var source: String?
         public var sourceRevision: String?
         public var base: String?
@@ -430,6 +441,7 @@ extension Manifest {
         public var zooEngineHint: String?
         public var metadataKind: String?
         public var gate: String?
+        public var mergedAdapter: MergedAdapter?
         /// Manifest field → where its value came from (an inlined `$ref`, or a pinned upstream file).
         public var refs: [String: String]?
 
@@ -438,7 +450,7 @@ extension Manifest {
             zooRepo: String? = nil, zooRevision: String? = nil, subtrees: [String: String]? = nil,
             zooCompression: String? = nil, producer: String? = nil, exportScript: String? = nil,
             zooEngineHint: String? = nil, metadataKind: String? = nil, gate: String? = nil,
-            refs: [String: String]? = nil
+            refs: [String: String]? = nil, mergedAdapter: MergedAdapter? = nil
         ) {
             self.source = source
             self.sourceRevision = sourceRevision
@@ -454,6 +466,7 @@ extension Manifest {
             self.metadataKind = metadataKind
             self.gate = gate
             self.refs = refs
+            self.mergedAdapter = mergedAdapter
         }
     }
 }

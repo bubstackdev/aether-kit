@@ -27,7 +27,7 @@ govern the integration:
 | `LanguageTokenBytes`, the template trailing-newline fix, the 24-case tokenizer oracle | **Port** | `AetherText` TokenizerAdapter | The oracle cases |
 | FoundationModels adapter (option/transcript/error mapping, guided generation) | **Port onto the Generator** | `AetherFoundationModels` (M3) | Old native facade checks, plus tools (new) |
 | Qwen3-VL preprocessing (EXIF, alpha, grid snapping, bicubic, block-major patchify) | **Port** | `AetherVision` ImagePipeline (M4) | Old CPU tests |
-| Generative foundation: output image and audio types, a manifest `schedule` block, per-graph `residency`, measured admission and memory bars, seeded Gaussian noise (SplitMix64 + Box–Muller, stream-compatible with 0.0.x) | **Build** (G0) | `AetherRuntime`/`AetherHost` + MANIFEST.md | The old noise and schedule fixtures (bit-exact) |
+| Generative foundation: output image and audio types, a manifest `schedule` block, per-graph `residency`, measured admission and memory bars, seeded Gaussian noise (SplitMix64 + Box–Muller, stream-compatible with 0.0.x) | **Built** (G0): typed `schedule`/`latent`/`residency` blocks; `FlowMatchSchedule`, `SeededGaussianNoise`, `GeneratedImage`/`GeneratedAudio` and `GraphResidency` in `AetherRuntime/Generative/`; `ResourceCoordinator` in AetherHost. Qualified-entry memory bars wait for H3's numbers (G4) | `AetherRuntime`/`AetherHost` + MANIFEST.md §5 | The old noise and schedule fixtures pass bit-exact. A gate shows phase measurement sees Core AI memory. |
 | SD-Turbo / epsilon diffusion seam | **Port** as the smallest end-to-end vehicle for G0 (G1) | `AetherImage` driver family | Its CPU-Diffusers gate |
 | FLUX.2 [klein] 4B | **Port** (G2), with its Forge exporter | `AetherImage` | Its CPU-Diffusers gate (113 checks) |
 | **Krea 2 Turbo**, vanilla and **realism** | **In scope.** First a **reproducible Forge exporter** from `krea/Krea-2-Turbo@98e0fe1` (diffusers; Krea 2 Community License). It emits two catalog entries: `krea-2-turbo`, and `krea-2-turbo-realism`, which has the realism adapter **merged into the transformer before export**, like the 0.0.x realism bundle. Then the port (G3). | `AetherImage` | Parity against CPU Diffusers on each new export. For realism, the CPU reference applies the same merged weights. The old schedule and noise fixtures also apply. The 0.0.x hash-exact gate qualified a different (prototype) bundle, so it doesn't carry over. |
@@ -104,5 +104,6 @@ merge a PR past failing checks, but nobody can force-push. So the takeover is:
 3. **Version.** `0.1.0` marks the new architecture, a semver-allowed break from 0.0.x. Before tagging: README
    migration notes, a CHANGELOG `Breaking` section, and this document. `from: "0.0.7"` users would pick up `0.1.0`
    and break, so the README says so and points them to `exact: "0.0.7"` or `legacy/0.0.x`.
-4. **Licensing:** Apache-2.0 (the same as 0.0.x). A NOTICE lists what is actually inherited. Ported code adds its
-   0.0.x NOTICE entries when it lands.
+4. **Licensing:** Apache-2.0 (the same as 0.0.x). 0.0.x is this project's own earlier code, so ports from it need no
+   attribution; NOTICE lists third-party work only (Diffusers, Transformers-recorded oracles, publishers' tokenizer
+   files).

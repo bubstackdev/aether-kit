@@ -113,6 +113,10 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
         case ownerLimit
         /// A release named a ticket that is not running.
         case notRunning
+        /// A memory reservation or capacity of zero bytes.
+        case invalidByteCount
+        /// The memory reservation was already released.
+        case reservationReleased
 
         public var description: String {
             func holder(_ pid: Int32?) -> String { pid.map { "process \($0)" } ?? "an unidentified holder (no pid file)" }
@@ -127,6 +131,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             case .globalLimit: return "the global admission limit is reached"
             case .ownerLimit: return "the owner's admission limit is reached"
             case .notRunning: return "the admission ticket is not running"
+            case .invalidByteCount: return "a memory reservation needs at least one byte"
+            case .reservationReleased: return "the memory reservation was already released"
             }
         }
     }

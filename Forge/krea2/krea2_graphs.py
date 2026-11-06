@@ -3,9 +3,8 @@
 Written against the pinned upstream sources: Diffusers `Krea2Transformer2DModel`, `AutoencoderKLQwenImage` and
 `Krea2Pipeline` (commit 2a14339, tag v0.42.1) and Transformers 5.22.1 `Qwen3VLModel`. Every graph reads the pinned
 checkpoint's safetensors directly. The graph boundaries follow the 0.0.x Krea pipeline shape (Qwen text encoder,
-four denoiser segments per step, CPU Euler, VAE decode); the code is re-expressed here, not copied. Small idioms
-(the split-halves rotary permutation, SplitMix64 + Box-Muller noise, the lazy checkpoint reader) derive from the
-Apache-2.0 AetherKit 0.0.x Forge and runtime; see NOTICE.
+four denoiser segments per step, CPU Euler, VAE decode), and small idioms (the split-halves rotary permutation,
+SplitMix64 + Box-Muller noise, the lazy checkpoint reader) come from the 0.0.x Forge and runtime.
 
 Functions (names, dtypes and dynamic axes are the bundle contract):
 

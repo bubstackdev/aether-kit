@@ -1,69 +1,8 @@
 Aether-Kit
 Licensed under the Apache License, Version 2.0; see LICENSE.
 
-This file lists what Aether-Kit inherits from other work. Each entry names the
-files that carry it.
-
-AetherKit 0.0.x (https://github.com/bubstackdev/aether-kit, tag 0.0.7,
-commit a013c45ec60d2292694a8e5f58ce31b228fd04df), Apache License 2.0, copyright
-its contributors. These parts are re-expressed on Aether-Kit's contracts
-(actor or lock ownership, AetherError, the 27 floor), not copied wholesale.
-Their tests come over as specs, adapted to Aether-Kit's API:
-
-- The cross-process GPU lease, in-process GPU admission and the fair queue
-  (Sources/AetherHost/GPU/; tests in Tests/AetherHostTests/SharedGPULeaseTests,
-  GPUAdmissionTests, FairInferenceQueueTests, with Tests/AetherGPULeaseHelper).
-  The lease protocol (mkdir lease directory, pid file, rename-aside release,
-  .reclaim flock and stale reclaim) is the one Atelier's SharedGPULock and the
-  lab's with-gpu-lock.sh / gpu.sh use, kept wire-compatible. Atelier sources are
-  copyright their respective contributors. FairInferenceQueue's design and its
-  scheduling tests come from an earlier transport-independent admission draft
-  for a host consumer.
-- The model lifecycle policy (idle unload, memory-pressure release once per
-  notice, the critical load gate and critical easing) and the memory-pressure
-  monitor (Sources/AetherHost/Lifecycle/, Sources/AetherHost/ModelHost.swift;
-  tests in Tests/AetherHostTests/ModelHostLifecycleTests).
-- The model store's reader leases, per-installation advisory locks, abandoned
-  stage recovery, free-space check, Hugging Face token scoping, redirect header
-  policy, Range/Content-Range rules and the 416 restart, from LocalAssetStore,
-  URLSessionTransport and ModelPreparation (Sources/AetherCore/Store/StoreLock,
-  StoreLayout, and parts of Installer, ModelStore and HTTPTransport; tests in
-  Tests/AetherCoreTests/StoreGapsTests).
-- The background URLSession transport: task records, resume data, foreground
-  redirect resolution and joining a running task after relaunch
-  (Sources/AetherCore/Store/BackgroundTransport.swift; tests in
-  Tests/AetherCoreTests/BackgroundTransportTests).
-- The language sampler (repetition penalty, token constraint, temperature,
-  top-k, top-p without a full sort, one seeded draw), its xoshiro256** RNG
-  seeded by SplitMix64 and the token-set constraint, from LanguageSampler,
-  LanguageRandomGenerator and LanguageTokenConstraint
-  (Sources/AetherRuntime/Decoder/Sampling.swift; tests and the recorded
-  Transformers and RNG fixtures in Tests/AetherRuntimeTests/SamplerTests and
-  Tests/AetherRuntimeTests/Fixtures).
-- Structured output: the generation schema builders, the JSON grammar, the
-  byte-level JSON matcher, the vocabulary trie and the JSON-schema constraint,
-  from AetherGenerationSchema, LanguageJSONGrammar, LanguageJSONMatcher and
-  LanguageJSONSchemaConstraint (Sources/AetherText/Structured/; tests in
-  Tests/AetherTextTests/JSONSchemaConstraintTests, StructuredOutputTests and
-  Tests/AetherFoundationModelsTests/OutputSchemaParityTests).
-- The token byte table and the text stream's UTF-8, grapheme, stop-string and
-  reasoning-framing rules, from LanguageTokenBytes and LanguageTextStream
-  (Sources/AetherText/TokenBytes.swift, OutputParsing.swift; tests in
-  Tests/AetherTextTests/TextStreamTests), and the chat-template oracles
-  (Tests/AetherTextTests/Fixtures/chat-oracle, recorded by 0.0.x's
-  Forge/language/reference_chat_tokens.py with Transformers 4.57.3; the
-  checkpoints' tokenizer_config.json and chat templates there are their
-  publishers' files: Qwen and huihui-ai (Apache 2.0), AllenAI OLMo 2 (Apache 2.0)).
-- The FoundationModels adapter's option, transcript and error mapping, from
-  AetherLanguageFoundationModels (Sources/AetherFoundationModels/; tests in
-  Tests/AetherFoundationModelsTests/FoundationModelsAdapterTests).
-- The Krea 2 Forge exporter's idioms (Forge/krea2/): the lazy safetensors
-  checkpoint reader, the split-halves rotary permutation (HALF_SPLIT) and the
-  segment/convert/report structure of Forge/flux2/export_flux2.py and
-  flux2_graphs.py; the SplitMix64 + Box-Muller seeded noise stream
-  (SeededGaussianNoise), the Krea schedule arithmetic (KreaSchedule), rotary
-  table (KreaRotary) and prompt rule (KreaPrompt), re-expressed in Python as
-  the host-side recipe the exporter's manifest and gate pin.
+This file lists the third-party work Aether-Kit contains or derives from. Each
+entry names the files that carry it.
 
 Hugging Face Diffusers (https://github.com/huggingface/diffusers, commit
 2a1433913c7044f34fa4767dd84b28bba0bb0ecf, tag v0.42.1), Apache License 2.0,
@@ -73,3 +12,22 @@ packing, and AutoencoderKLQwenImage's single-frame decode as export graphs;
 the realism adapter's key mapping is Diffusers' own Krea 2 converter, called
 at export time. Krea 2 model weights are not part of this repository; exported
 bundles carry the Krea 2 Community License and its NOTICE line separately.
+
+Hugging Face Transformers (https://github.com/huggingface/transformers,
+version 4.57.3), Apache License 2.0, copyright The HuggingFace Team. Outputs
+recorded from it serve as test oracles: its logits processors' results
+(Tests/AetherRuntimeTests/Fixtures/transformers-warpers.json) and its chat
+templates' rendered token ids
+(Tests/AetherTextTests/Fixtures/chat-oracle/chat-oracle.json,
+olmo2-chat-oracle.json).
+
+Tokenizer configuration and chat-template files, unchanged copies of their
+publishers' files, used as test inputs under
+Tests/AetherTextTests/Fixtures/chat-oracle/:
+- Qwen--Qwen3-0.6B/ and Qwen--Qwen3-VL-2B-Instruct/: Qwen (Alibaba Cloud),
+  Apache License 2.0.
+- huihui-ai--Huihui-Qwen3-4B-Instruct-2507-abliterated/ and
+  huihui-ai--Huihui-Qwen3-VL-4B-Instruct-abliterated/: huihui-ai, derived from
+  Qwen, Apache License 2.0.
+- allenai--OLMo-2-0425-1B-Instruct/: Allen Institute for AI (OLMo 2), Apache
+  License 2.0.

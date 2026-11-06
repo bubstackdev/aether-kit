@@ -154,7 +154,7 @@ public actor DecoderEngine {
         let loaded = try await Graph.load(url: url, functions: Array(Set(phases.values)).sorted(), options: graphOptions)
         // The model's own memory (MemoryBudget): its Metal allocations across the load, at least its files' size.
         let gpuDelta = Int64(max(0, (gpu?.currentAllocatedSize ?? 0) - gpuBefore))
-        let modelBytes = max(gpuDelta, Self.diskBytes(url))
+        let modelBytes = max(gpuDelta, diskBytes(url))
         var signatures: [String: GraphSignature] = [:]
         for (name, g) in loaded { signatures[name] = g.signature }
         try SignatureValidator.validate(manifest, signatures: ["decoder": signatures])
@@ -162,7 +162,7 @@ public actor DecoderEngine {
         let metal: (any MTLDevice)? = options.execution == .automatic ? gpu : nil
         let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] })
         try await self.init(backends: pair, graph: graph, device: device, options: options, metal: metal, modelBytes: modelBytes)
-        loadedModelBytes = (gpu: gpuDelta, disk: Self.diskBytes(url))
+        loadedModelBytes = (gpu: gpuDelta, disk: diskBytes(url))
     }
 
     /// An engine over any ``GraphBackend`` pair (tests drive the fake decoder through this). `graph` supplies the
@@ -222,19 +222,6 @@ public actor DecoderEngine {
         } else if core.isEncoding, options.pipelineDepth > 1 {
             decodeMode = .gpu(depth: options.pipelineDepth)
         }
-    }
-
-    /// Bytes of the regular files under `url` (an `.aimodel` package is a directory).
-    static func diskBytes(_ url: URL) -> Int64 {
-        guard let walker = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]) else {
-            return 0
-        }
-        var total: Int64 = 0
-        for case let file as URL in walker {
-            let values = try? file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-            if values?.isRegularFile == true { total += Int64(values?.fileSize ?? 0) }
-        }
-        return total
     }
 
     /// The device's current Metal allocations (diagnostics: Core AI's shape-change retention shows up here).

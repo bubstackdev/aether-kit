@@ -1,0 +1,325 @@
+{
+  "schema": 1,
+  "id": "krea-2-turbo-realism",
+  "task": "text-to-image",
+  "driver": "krea2@1",
+  "x-status": "draft: driver krea2@1 and its krea2 block are proposed in MANIFEST.md §5 (G3)",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "krea2_turbo_realism-denoiser0.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-denoiser1.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-denoiser2.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-denoiser3.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-text.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-vae.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "textEncoder": {
+      "file": "main:krea2_turbo_realism-text.aimodel",
+      "function": "encode",
+      "inputs": {
+        "tokens": "input_ids",
+        "positions": "position_ids"
+      },
+      "outputs": {
+        "conditioning": "text_embeds"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perPrompt"
+    },
+    "denoiser0": {
+      "file": "main:krea2_turbo_realism-denoiser0.aimodel",
+      "function": "segment",
+      "inputs": {
+        "latents": "latents",
+        "conditioning": {
+          "name": "text_embeds",
+          "source": {
+            "from": "textEncoder.text_embeds"
+          }
+        },
+        "sigma": "sigma",
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "carryImage": "image_1",
+        "carryText": "text_1",
+        "condition": "cond"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "denoiser1": {
+      "file": "main:krea2_turbo_realism-denoiser1.aimodel",
+      "function": "segment",
+      "inputs": {
+        "carryImage": {
+          "name": "image_1",
+          "source": {
+            "from": "denoiser0.image_1"
+          }
+        },
+        "carryText": {
+          "name": "text_1",
+          "source": {
+            "from": "denoiser0.text_1"
+          }
+        },
+        "condition": {
+          "name": "cond",
+          "source": {
+            "from": "denoiser0.cond"
+          }
+        },
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "carryImage": "image_2",
+        "carryText": "text_2"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "denoiser2": {
+      "file": "main:krea2_turbo_realism-denoiser2.aimodel",
+      "function": "segment",
+      "inputs": {
+        "carryImage": {
+          "name": "image_2",
+          "source": {
+            "from": "denoiser1.image_2"
+          }
+        },
+        "carryText": {
+          "name": "text_2",
+          "source": {
+            "from": "denoiser1.text_2"
+          }
+        },
+        "condition": {
+          "name": "cond",
+          "source": {
+            "from": "denoiser0.cond"
+          }
+        },
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "carryImage": "image_3",
+        "carryText": "text_3"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "denoiser3": {
+      "file": "main:krea2_turbo_realism-denoiser3.aimodel",
+      "function": "segment",
+      "inputs": {
+        "carryImage": {
+          "name": "image_3",
+          "source": {
+            "from": "denoiser2.image_3"
+          }
+        },
+        "carryText": {
+          "name": "text_3",
+          "source": {
+            "from": "denoiser2.text_3"
+          }
+        },
+        "condition": {
+          "name": "cond",
+          "source": {
+            "from": "denoiser0.cond"
+          }
+        },
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "velocity": "velocity"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "vaeDecoder": {
+      "file": "main:krea2_turbo_realism-vae.aimodel",
+      "function": "decode",
+      "inputs": {
+        "latents": "latents"
+      },
+      "outputs": {
+        "image": "image"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perImage"
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": null,
+    "renderer": "krea2-prompt",
+    "addSpecialTokens": false
+  },
+  "schedule": {
+    "kind": "flowMatchEuler",
+    "steps": 8,
+    "maxSteps": 50,
+    "trainTimesteps": 1000,
+    "sigmas": {
+      "base": "linspace(1, 1/steps, steps)",
+      "shift": {
+        "rule": "exponential",
+        "mu": 1.15
+      },
+      "terminal": 0.0
+    },
+    "timestep": "sigma * trainTimesteps / trainTimesteps",
+    "update": "x + (sigma[i+1] - sigma[i]) * velocity",
+    "guidance": {
+      "kind": "none"
+    }
+  },
+  "latent": {
+    "channels": 64,
+    "pixelsPerToken": 16,
+    "packing": "patch2x2ChannelMajor",
+    "layout": "tokens[rows*columns, 64]",
+    "decoderLayout": "[rows, columns, 64]",
+    "noise": {
+      "kind": "splitmix64BoxMuller",
+      "order": "packedToken",
+      "dtype": "float32"
+    },
+    "maxImageTokens": 4096
+  },
+  "krea2": {
+    "prompt": {
+      "systemPrefix": "<|im_start|>system\nDescribe the image by detailing the color, shape, size, texture, quantity, text, spatial relationships of the objects and background:<|im_end|>\n<|im_start|>user\n",
+      "suffix": "<|im_end|>\n<|im_start|>assistant\n",
+      "maxTokens": 546,
+      "keepTrailingTokens": 5,
+      "dropLeadingRows": 34,
+      "padding": "none",
+      "positions": "running"
+    },
+    "conditioning": {
+      "taps": [
+        2,
+        5,
+        8,
+        11,
+        14,
+        17,
+        20,
+        23,
+        26,
+        29,
+        32,
+        35
+      ],
+      "width": 2560,
+      "rows": "1...512"
+    },
+    "rotary": {
+      "axes": [
+        32,
+        48,
+        48
+      ],
+      "theta": 1000.0,
+      "positions": "(0, row, column)",
+      "layout": "splitHalves",
+      "textRotated": false,
+      "dtype": "float32"
+    },
+    "segments": [
+      "denoiser0",
+      "denoiser1",
+      "denoiser2",
+      "denoiser3"
+    ],
+    "condRows": 8,
+    "contentFilter": {
+      "required": true,
+      "reason": "Krea 2 Community License §4.2; the app supplies the filter"
+    }
+  },
+  "precision": {
+    "weights": "fp16",
+    "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
+    "components": {
+      "denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
+      "vaeDecoder": "fp16 weights, fp32 compute"
+    }
+  },
+  "license": "LicenseRef-Krea-2-Community-License-1.0",
+  "x-license": {
+    "files": [
+      "LICENSE.pdf",
+      "KREA-2-LICENSE.txt",
+      "KREA-2-USE-POLICY.txt",
+      "NOTICE"
+    ],
+    "modified": true,
+    "commercialRevenueCapUSD": 1000000,
+    "adapter": "Civitai 2688234 v3109006 (razzz): merges keep the same permissions (allowDifferentLicense false); NSFW-trained"
+  },
+  "provenance": {
+    "source": "krea/Krea-2-Turbo",
+    "sourceRevision": "98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7",
+    "mergedAdapter": {
+      "file": "realism_engine_krea2_v3.1.safetensors",
+      "sha256": "a6712629445a2e91a616568e82befa8c8c7518e891a0f7c9918138634b5b54a5",
+      "format": "LyCORIS LoKr",
+      "merge": "W + multiplier * scale * kron(w1, w2), float32, before export",
+      "multiplier": 1.0,
+      "scale": 1.0
+    },
+    "producer": "aether-kit Forge/krea2/export_krea2.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "diffusersCommit": "2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}
