@@ -12,6 +12,14 @@ SCRATCH=${AETHER_CI_SCRATCH:-.build-ci}
 step() { printf '\n==> %s\n' "$*"; }
 
 step "toolchain"
+# Swift Testing's macros ship with Xcode, not the Command Line Tools. If the selected developer directory is the CLT
+# and no DEVELOPER_DIR is set, use an installed Xcode instead (CI sets DEVELOPER_DIR explicitly).
+if [[ -z "${DEVELOPER_DIR:-}" && "$(xcode-select -p 2>/dev/null)" == /Library/Developer/CommandLineTools* ]]; then
+  for x in /Applications/Xcode_27.2.app /Applications/Xcode.app; do
+    if [[ -d "$x/Contents/Developer" ]]; then export DEVELOPER_DIR="$x/Contents/Developer"; break; fi
+  done
+fi
+echo "developer dir: ${DEVELOPER_DIR:-$(xcode-select -p)}"
 swift --version | head -1
 SDK=$(xcrun --sdk macosx --show-sdk-version)
 echo "macOS SDK $SDK"
@@ -31,7 +39,8 @@ env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"
-  AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --filter GateTests
+  # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping.
+  AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
 fi
 
 step "ok"

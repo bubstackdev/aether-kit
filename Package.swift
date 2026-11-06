@@ -1,8 +1,8 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-// Module layout: docs/DESIGN.md §3. Only AetherCore and AetherRuntime carry real code in M1; the task modules,
-// AetherHost and the umbrella exist so the product graph (and its dependency rules) is fixed from the start.
+// Module layout: docs/DESIGN.md §3. AetherCore, AetherRuntime and (from M2) AetherText carry real code; the other task
+// modules, AetherHost and the umbrella exist so the product graph (and its dependency rules) is fixed from the start.
 
 /// Settings every target shares. Strict concurrency comes from Swift 6 language mode (the tools-6.2 default).
 let common: [SwiftSetting] = [
@@ -26,6 +26,11 @@ let package = Package(
         .library(name: "AetherDecide", targets: ["AetherDecide"]),
         .library(name: "Aether", targets: ["Aether"]),
     ],
+    dependencies: [
+        // The only third-party dependency (DESIGN.md §3): tokenizers and Jinja chat templates, for AetherText alone.
+        // Pinned exactly: 1.4.0 is the version the lab's 33/33 HF template parity was measured with.
+        .package(url: "https://github.com/huggingface/swift-transformers", exact: "1.4.0"),
+    ],
     targets: [
         // Identity, manifests and bytes on disk. No Core AI import (§3).
         .target(name: "AetherCore", swiftSettings: common),
@@ -34,11 +39,18 @@ let package = Package(
             name: "AetherRuntime",
             dependencies: ["AetherCore"],
             swiftSettings: common + [.enableExperimentalFeature("Lifetimes")],
-            linkerSettings: [.linkedFramework("CoreAI")]
+            linkerSettings: [.linkedFramework("CoreAI"), .linkedFramework("Metal")]
         ),
         .target(name: "AetherHost", dependencies: ["AetherRuntime", "AetherCore"], swiftSettings: common),
-        // swift-transformers joins AetherText in M2, with the tokenizer adapter; M1 has no third-party dependency.
-        .target(name: "AetherText", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        .target(
+            name: "AetherText",
+            dependencies: [
+                "AetherHost", "AetherRuntime", "AetherCore",
+                .product(name: "Tokenizers", package: "swift-transformers"),
+            ],
+            swiftSettings: common
+        ),
+        // The FoundationModels `LanguageModel` bridge (M3), on the Generator. Links FoundationModels.
         .target(name: "AetherFoundationModels", dependencies: ["AetherText"], swiftSettings: common),
         .target(name: "AetherVision", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
@@ -55,6 +67,13 @@ let package = Package(
             resources: [.copy("Fixtures")],
             swiftSettings: common
         ),
+        // Test doubles shared by the test targets (the fake decoder). Not part of any product.
+        .target(
+            name: "AetherTestSupport",
+            dependencies: ["AetherRuntime", "AetherCore", "AetherText"],
+            path: "Tests/AetherTestSupport",
+            swiftSettings: common
+        ),
         .testTarget(
             name: "AetherHostTests",
             dependencies: ["AetherHost"],
@@ -69,9 +88,24 @@ let package = Package(
         ),
         .testTarget(
             name: "AetherRuntimeTests",
-            dependencies: ["AetherRuntime", "AetherCore"],
-            // Reads AetherCoreTests/Fixtures by path: the zoo fixtures have one home.
+            dependencies: ["AetherRuntime", "AetherCore", "AetherTestSupport"],
+            // Reads AetherCoreTests/Fixtures by path: the zoo fixtures have one home. References are gate inputs,
+            // read by path too.
+            exclude: ["References"],
+            // Fixtures: the sampler's recorded Transformers rows and RNG known answers (0.0.x).
+            resources: [.copy("Fixtures")],
             swiftSettings: common + [.enableExperimentalFeature("Lifetimes")]
+        ),
+        .testTarget(
+            name: "AetherFoundationModelsTests",
+            dependencies: ["AetherFoundationModels", "AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherTextTests",
+            dependencies: ["AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            resources: [.copy("Fixtures")],
+            swiftSettings: common
         ),
     ]
 )

@@ -33,6 +33,30 @@ Their tests come over as specs, adapted to Aether-Kit's API:
   redirect resolution and joining a running task after relaunch
   (Sources/AetherCore/Store/BackgroundTransport.swift; tests in
   Tests/AetherCoreTests/BackgroundTransportTests).
+- The language sampler (repetition penalty, token constraint, temperature,
+  top-k, top-p without a full sort, one seeded draw), its xoshiro256** RNG
+  seeded by SplitMix64 and the token-set constraint, from LanguageSampler,
+  LanguageRandomGenerator and LanguageTokenConstraint
+  (Sources/AetherRuntime/Decoder/Sampling.swift; tests and the recorded
+  Transformers and RNG fixtures in Tests/AetherRuntimeTests/SamplerTests and
+  Tests/AetherRuntimeTests/Fixtures).
+- Structured output: the generation schema builders, the JSON grammar, the
+  byte-level JSON matcher, the vocabulary trie and the JSON-schema constraint,
+  from AetherGenerationSchema, LanguageJSONGrammar, LanguageJSONMatcher and
+  LanguageJSONSchemaConstraint (Sources/AetherText/Structured/; tests in
+  Tests/AetherTextTests/JSONSchemaConstraintTests, StructuredOutputTests and
+  Tests/AetherFoundationModelsTests/OutputSchemaParityTests).
+- The token byte table and the text stream's UTF-8, grapheme, stop-string and
+  reasoning-framing rules, from LanguageTokenBytes and LanguageTextStream
+  (Sources/AetherText/TokenBytes.swift, OutputParsing.swift; tests in
+  Tests/AetherTextTests/TextStreamTests), and the chat-template oracles
+  (Tests/AetherTextTests/Fixtures/chat-oracle, recorded by 0.0.x's
+  Forge/language/reference_chat_tokens.py with Transformers 4.57.3; the
+  checkpoints' tokenizer_config.json and chat templates there are their
+  publishers' files: Qwen and huihui-ai (Apache 2.0), AllenAI OLMo 2 (Apache 2.0)).
+- The FoundationModels adapter's option, transcript and error mapping, from
+  AetherLanguageFoundationModels (Sources/AetherFoundationModels/; tests in
+  Tests/AetherFoundationModelsTests/FoundationModelsAdapterTests).
 - The Krea 2 Forge exporter's idioms (Forge/krea2/): the lazy safetensors
   checkpoint reader, the split-halves rotary permutation (HALF_SPLIT) and the
   segment/convert/report structure of Forge/flux2/export_flux2.py and
