@@ -48,6 +48,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherText         tokenizer adapter · prompt rendering · Generator · ChatSession · constrained decoding
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
  ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
+ ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), then FLUX.2 and Krea 2 (§6.4)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
@@ -65,7 +66,8 @@ Rules:
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
-Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherEmbeddings`, `AetherDecide`, `Aether`.
+Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherImage`, `AetherEmbeddings`, `AetherDecide`,
+`Aether`.
 `AetherHost`, `AetherRuntime` and `AetherCore` are reachable through any of them.
 
 ## 4. The manifest (`aether.json`)
@@ -322,6 +324,24 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     nothing, and file sizes badly underestimate.
   - A released graph's memory comes back about 5 s later (0.0.x: 1–6 s). So the per-phase peak counts each phase on
     top of what the phase before it held.
+- **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
+  Diffusers' order.
+
+### 6.5 AetherImage (G1)
+
+Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
+`LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
+lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
+scaled input, the table's timestep, the Euler epsilon update), then the VAE decoder.
+
+- Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
+  the plan's peak to a shared `ResourceCoordinator` (reserving it) or a `MemoryBudget`, and refuses before loading if
+  nothing fits. Graphs that stay resident are reused across generations.
+- Each graph is checked against its manifest role when it loads (`SignatureValidator`); a request for a size the export
+  doesn't have (`latent.sizes`) is refused before any work.
+- Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.
+- **Measured (gate, M5 Max, float32 512²):** phase peaks 1.25 GiB (prompt), 3.5 GiB (steps), 1.25 GiB (image); 4
+  steps take under a second warm. Per phase that is about 4.8 GiB, the figure an iPhone has to fit.
 
 ## 7. AetherText
 
