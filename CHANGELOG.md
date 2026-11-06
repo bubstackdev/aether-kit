@@ -113,6 +113,13 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
   - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
 
+### Tooling
+
+- `scripts/gpu-lease [--timeout S] [--quiet] -- <command>`: runs a command while holding the cross-process GPU lease
+  (`SharedGPULease`'s protocol, in stdlib Python), handing it to kit processes inside through `AETHER_GPU_LEASE_HOLDER`.
+  For Forge checks and other GPU work outside the kit (docs/RELEASE.md); `AETHER_GATES=1 scripts/ci.sh` runs its gate
+  step under it. Interop-tested against the Swift lease in `SharedGPULeaseTests`.
+
 ### Changed
 
 - `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
