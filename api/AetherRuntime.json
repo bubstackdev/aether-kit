@@ -4415,6 +4415,78 @@
           "declKind": "Accessor",
           "implicit": true,
           "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivp",
+        "moduleName": "AetherRuntime",
+        "name": "reservedSnapshots",
+        "printedName": "reservedSnapshots",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV17reservedSnapshotsSivp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
           "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11canaryStepsSivg",
           "moduleName": "AetherRuntime",
           "name": "Get",
@@ -5106,16 +5178,23 @@
           "name": "Cache",
           "printedName": "AetherRuntime.GraphOptions.Cache",
           "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
          }
         ],
         "declKind": "Constructor",
         "init_kind": "Designated",
         "kind": "Constructor",
-        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV8capacity15initialCapacity12memoryBudget9execution13pipelineDepth6canary0N5Steps0N5Delay0nH011cachePolicy0Q0AESiSg_AqA06MemoryJ0VAE9ExecutionOSiSbSis6UInt32VSiAA05GraphE0V05CacheR0OAY0W0Otcfc",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV8capacity15initialCapacity12memoryBudget9execution13pipelineDepth6canary0N5Steps0N5Delay0nH011cachePolicy0Q017reservedSnapshotsAESiSg_ArA06MemoryJ0VAE9ExecutionOSiSbSis6UInt32VSiAA05GraphE0V05CacheR0OAZ0Y0OSitcfc",
         "moduleName": "AetherRuntime",
         "name": "init",
-        "printedName": "init(capacity:initialCapacity:memoryBudget:execution:pipelineDepth:canary:canarySteps:canaryDelay:canaryCapacity:cachePolicy:cache:)",
-        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV8capacity15initialCapacity12memoryBudget9execution13pipelineDepth6canary0N5Steps0N5Delay0nH011cachePolicy0Q0AESiSg_AqA06MemoryJ0VAE9ExecutionOSiSbSis6UInt32VSiAA05GraphE0V05CacheR0OAY0W0Otcfc"
+        "printedName": "init(capacity:initialCapacity:memoryBudget:execution:pipelineDepth:canary:canarySteps:canaryDelay:canaryCapacity:cachePolicy:cache:reservedSnapshots:)",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV8capacity15initialCapacity12memoryBudget9execution13pipelineDepth6canary0N5Steps0N5Delay0nH011cachePolicy0Q017reservedSnapshotsAESiSg_ArA06MemoryJ0VAE9ExecutionOSiSbSis6UInt32VSiAA05GraphE0V05CacheR0OAZ0Y0OSitcfc"
        },
        {
         "children": [
@@ -9835,6 +9914,319 @@
       "usr": "s:13AetherRuntime8KVSizingV10staticAxisSiSgvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV15initialCapacitySiSgvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime8KVSizingV15initialCapacitySiSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV15initialCapacitySiSgvs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime8KVSizingV15initialCapacitySiSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8KVSizingV15initialCapacitySiSgvp",
+      "moduleName": "AetherRuntime",
+      "name": "initialCapacity",
+      "printedName": "initialCapacity",
+      "usr": "s:13AetherRuntime8KVSizingV15initialCapacitySiSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvp",
+      "moduleName": "AetherRuntime",
+      "name": "snapshotBytesPerToken",
+      "printedName": "snapshotBytesPerToken",
+      "usr": "s:13AetherRuntime8KVSizingV21snapshotBytesPerTokens5Int64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvp",
+      "moduleName": "AetherRuntime",
+      "name": "snapshotFixedBytes",
+      "printedName": "snapshotFixedBytes",
+      "usr": "s:13AetherRuntime8KVSizingV18snapshotFixedBytess5Int64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV17reservedSnapshotsSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime8KVSizingV17reservedSnapshotsSivg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8KVSizingV17reservedSnapshotsSivs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime8KVSizingV17reservedSnapshotsSivs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8KVSizingV17reservedSnapshotsSivp",
+      "moduleName": "AetherRuntime",
+      "name": "reservedSnapshots",
+      "printedName": "reservedSnapshots",
+      "usr": "s:13AetherRuntime8KVSizingV17reservedSnapshotsSivp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -9911,16 +10303,52 @@
         "name": "Optional",
         "printedName": "Swift.Int?",
         "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s13AetherRuntime8KVSizingV10maxContext11platformCap0D8Position13bytesPerToken10fixedBytes05modelM010staticAxisACSi_SiSgAKs5Int64VA2mKtcfc",
+      "mangledName": "$s13AetherRuntime8KVSizingV10maxContext11platformCap0D8Position13bytesPerToken10fixedBytes05modelM010staticAxis15initialCapacity08snapshotmjK00s5FixedM017reservedSnapshotsACSi_SiSgAOs5Int64VA2q2o2QSitcfc",
       "moduleName": "AetherRuntime",
       "name": "init",
-      "printedName": "init(maxContext:platformCap:maxPosition:bytesPerToken:fixedBytes:modelBytes:staticAxis:)",
-      "usr": "s:13AetherRuntime8KVSizingV10maxContext11platformCap0D8Position13bytesPerToken10fixedBytes05modelM010staticAxisACSi_SiSgAKs5Int64VA2mKtcfc"
+      "printedName": "init(maxContext:platformCap:maxPosition:bytesPerToken:fixedBytes:modelBytes:staticAxis:initialCapacity:snapshotBytesPerToken:snapshotFixedBytes:reservedSnapshots:)",
+      "usr": "s:13AetherRuntime8KVSizingV10maxContext11platformCap0D8Position13bytesPerToken10fixedBytes05modelM010staticAxis15initialCapacity08snapshotmjK00s5FixedM017reservedSnapshotsACSi_SiSgAOs5Int64VA2q2o2QSitcfc"
      },
      {
       "children": [
@@ -9961,6 +10389,61 @@
       "printedName": "capacity(budget:requested:)",
       "throwing": true,
       "usr": "s:13AetherRuntime8KVSizingV8capacity6budget9requestedSis5Int64V_SiSgt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime8KVSizingV9peakBytes8capacitys5Int64VSi_tF",
+      "moduleName": "AetherRuntime",
+      "name": "peakBytes",
+      "printedName": "peakBytes(capacity:)",
+      "usr": "s:13AetherRuntime8KVSizingV9peakBytes8capacitys5Int64VSi_tF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime8KVSizingV18previousAllocation5below7initialS2i_SitFZ",
+      "moduleName": "AetherRuntime",
+      "name": "previousAllocation",
+      "printedName": "previousAllocation(below:initial:)",
+      "static": true,
+      "usr": "s:13AetherRuntime8KVSizingV18previousAllocation5below7initialS2i_SitFZ"
      },
      {
       "children": [
@@ -12317,12 +12800,13 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s13AetherRuntime6LogitsV6argmaxys5Int32Vs10ArraySliceVySfGFZ",
+      "mangledName": "$s13AetherRuntime6LogitsV6argmaxys5Int32Vs10ArraySliceVySfG0A4Core0A5ErrorOYKFZ",
       "moduleName": "AetherRuntime",
       "name": "argmax",
       "printedName": "argmax(_:)",
       "static": true,
-      "usr": "s:13AetherRuntime6LogitsV6argmaxys5Int32Vs10ArraySliceVySfGFZ"
+      "throwing": true,
+      "usr": "s:13AetherRuntime6LogitsV6argmaxys5Int32Vs10ArraySliceVySfG0A4Core0A5ErrorOYKFZ"
      },
      {
       "children": [
