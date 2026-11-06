@@ -192,32 +192,25 @@ final class Graph {                               // non-Sendable; owned by one 
 - Lifetimes: Core AI's `MutableViews` are `~Escapable`. That lifetime escape stays in **one** audited helper inside
   `AetherRuntime`, the same `_lifetime(immortal)` pattern the fork uses, and nowhere else.
 - **Pipelined execution** (`InferenceFunction.encode(…, to: ComputeStream)`) is an internal optimization of
-  `DecoderEngine`; the public `Graph` API doesn't change. Measured in the lab spike on qwen3-0.6b:
-  - Depth 1 (encode plus GPU argmax, one step in flight) is token-exact at ≈385 tok/s, against ≈288 for `run()`.
-  - The fork's deeper pipeline is token-exact at ≈554–564 tok/s over 1200 tokens.
-  - The spike's own depth-3 attempt raced, because `encode` reads its inputs at encode time.
-
-  v1 ships depth 1 by default. Depth > 1 ships only with a token handoff Core AI orders, gated by a ≥1k-token
-  parity check at KV capacity 4096. Prefill goes through `encode` and reads only the logits rows it needs. Converting
-  every row to `[Float]` made `run()` prefill 8× slower.
-
-### 6.2 DecoderEngine (the owned LLM engine)
-
-There is one engine type for every causal decoder. Chat, VLM decoders, ASR-LLMs and the decision readout all use it.
-
-```swift
-actor DecoderEngine {
-    init(manifest: Manifest.Graph, url: URL, options: EngineOptions) async throws
-    var position: Int { get }                                  // tokens resident in state
-    func prefill(_ tokens: [Int32], logitsAt: LogitsSelection = .last) async throws -> Logits
-    func step(_ token: Int32) async throws -> Logits           // one decode step
-    func hidden(at positions: [Int]) async throws -> Tensor     // requires a `hidden` output role
-    func rewind(to position: Int) throws                        // KV: drop positions beyond; recurrent: requires snapshot
-    func snapshot() throws -> EngineSnapshot                    // KV position + recurrent-state copy
-    func restore(_ s: EngineSnapshot) throws
-}
-```
-
+  `DecoderEngine`; the public `Graph` API doesn't change. Design, verified in the lab spike (token-exact over 1200
+  greedy tokens at KV capacity 2048 and 4096, plus 3k→4k long context, on qwen3-0.6b and hybrid qwen3.5-0.8b):
+  - **Depth 3, greedy, GPU argmax.** Encode step N, then commit a small argmax kernel on the *same*
+    `MTLCommandQueue` that backs the `ComputeStream`. Its output is step N+1's `input_ids`.
+  - **Token slots.** Each in-flight step owns a small (64 B) shared `MTLBuffer` bound at offset 0. **Never** a view
+    into a large or page-aligned buffer. Core AI orders its GPU read after the argmax only for suballocated buffers;
+    a page-aligned token-history buffer (as at capacity ≥ 4096) raced and produced wrong tokens. Slots are allocated
+    at load, and the engine asserts none is page-aligned.
+  - **No per-step sync.** Tokens reach the host only in the argmax completion handler, which also releases a
+    depth-sized gate.
+  - **The ordering is observed behaviour, not a documented contract.** A delayed-argmax canary (about 64 steps)
+    runs at engine load and falls back to depth 1 if it fails. CI runs it at capacity ≥ 4096 for every bundle class.
+    We also want Core AI to document the guarantee or add an explicit fence on `ComputeStream`.
+  - **Depth 1** (encode + GPU argmax, one step in flight) covers CPU or non-greedy sampling, per-token inputs, and
+    anything that needs the token on the host before the next `encode`.
+  - **Measured on an M5 Max:** qwen3-0.6b `run()` ≈ 270, depth 1 ≈ 370, depth 3 ≈ 500–505 tok/s against the
+    fork's ≈ 535 (0.90–0.94×). The hybrid's depth 3 runs at ≈ 234 against the fork's ≈ 238 (parity; host `encode`
+    cost bounds it). Prefill goes through `encode` and reads only the logits rows it needs: converting every row to
+    `[Float]` made `run()` prefill 8× slower.
 - **Graph contract** (`decoder-lm@1`):
   - Inputs are `tokens [1,S]` and `positions [1,P]`. `S` is dynamic, or static per phase (`staticSequence`, such
     as step 1 and prefill 64). `tokens` may carry ids ≥ vocab when `inputEncodings.tokens.extensionIds` is declared.
@@ -387,7 +380,7 @@ ready to promote when:
 |---|---|---|
 | **M0** | `lab/engine-spike`: the owned decode loop on raw Core AI | qwen3-0.6b greedy output token-exact against a reference, two-turn rewind correct, logits readable at a chosen position, tok/s recorded (Mac) |
 | M1 | AetherCore + AetherRuntime (Graph, TensorBuffer, StateSet, Registry) | Hermetic tests green; schema v1 per MANIFEST.md with the override table; adapter goldens for the chat entries; real-graph gates (signature + greedy parity) on one attention and one hybrid model |
-| M2 | DecoderEngine + Generator + ChatSession | Parity gate on 3 chat models including one hybrid; ≥1k-token chunked-prefill parity; depth-1 pipelined decode ≥ 370 tok/s on qwen3-0.6b (Mac), token-exact |
+| M2 | DecoderEngine + Generator + ChatSession | Parity gate on 3 chat models including one hybrid; ≥1k-token chunked-prefill parity; depth-3 pipelined decode ≥ 480 tok/s on qwen3-0.6b (Mac), token-exact, with the load-time canary |
 | M3 | AetherFoundationModels | Two-turn `LanguageModelSession` recall, a tool call (Hermes), and `@Generable` guided output |
 | M4 | AetherVision + AetherEmbeddings | Detector, depth, CLIP and embedder parity gates |
 | M5 | AetherDecide (LM readout) | Matches recorded distributions on a decision fixture |
@@ -395,9 +388,11 @@ ready to promote when:
 
 ## 15. Risks and unknowns (each should become a lab question)
 
-- **Deep pipelining.** The fork reaches ≈554–564 tok/s token-exact on qwen3-0.6b. Our depth 1 reaches ≈385, and our
-  depth 3 raced (`encode` reads inputs at encode time). Next lab task: reproduce the fork's token-ordering mechanism.
-  The hybrid is limited by about 4.1 ms of host-side `encode` per step, which is a Core AI question, not an engine one.
+- **Deep pipelining relies on undocumented ordering.** It's solved in lab (§6.1), but correctness depends on
+  Core AI ordering its read of a suballocated buffer after a same-queue kernel. Mitigation: the load-time canary
+  with fallback to depth 1. There's also a remaining 6–10 % qwen3 gap to the fork, which is GPU-bound (2.65 against
+  2.40 ms per token); the next step there is a Metal System Trace of both engines. The hybrid is bounded by about
+  4.1 ms of host-side `encode` per step, which is a Core AI question.
 - **Hybrid prefill.** Decode-only hybrids take one token per call (164 tok/s). LFM3 shows that a `prefill` function
   fixes this (2.1–5.5k tok/s). Qwen3.5 has no prefill bundle that loads on macOS 27.2, so it needs a pf64 export
   sharing the decoder's four states.
