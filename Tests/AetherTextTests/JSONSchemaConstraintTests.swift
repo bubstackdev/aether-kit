@@ -105,9 +105,11 @@ struct JSONSchemaConstraintTests {
 
     @Test func theMatcherAcceptsTheCanonicalLayoutOnly() throws {
         let schema = Outfit.outputSchema
-        let good = #"{"name": "Mara \"M\" é 日本", "size": 10, "price": 99.95, "colours": ["red", "blue"], "layers": [{"item": "coat", "warm": true}], "note": null, "grade": "B"}"#
+        let good = #"{"name": "Mara \"M\" é 日本", "size": 10, "price": 99.95, "colours": ["red", "blue"], "layers": [{"item": "coat", "warm": true}], "grade": "B"}"#
         #expect(try accepts(good, schema) == (true, true))
-        #expect(try accepts(good.replacingOccurrences(of: #""note": null"#, with: #""note": "dry clean""#), schema) == (true, true))
+        #expect(try accepts(good.replacingOccurrences(of: #"], "grade""#, with: #"], "note": "dry clean", "grade""#), schema) == (true, true))
+        // An optional property is left out, not written as null.
+        #expect(try accepts(good.replacingOccurrences(of: #"], "grade""#, with: #"], "note": null, "grade""#), schema).complete == false)
         #expect(try accepts(String(good.dropLast()), schema) == (true, false), "a prefix is accepted but not complete")
         for bad in [
             good.replacingOccurrences(of: "\"size\": 10", with: "\"size\":10"),        // layout
@@ -345,6 +347,54 @@ struct JSONSchemaConstraintTests {
         #expect(refuses(##"{"$ref": "#/$defs/A", "$defs": {"A": {"$ref": "#/$defs/B"}, "B": {"$ref": "#/$defs/A"}}}"##))
         // Recursion through a structure that writes bytes first is fine.
         #expect(!refuses(##"{"$ref": "#/$defs/T", "$defs": {"T": {"type": "array", "items": {"$ref": "#/$defs/T"}}}}"##))
+    }
+
+    /// Third review, P2-5: an optional property compiled as `anyOf(type, null)`, so a schema that never allows null
+    /// accepted `{"a": null}`. Optional properties are now left out or present; null only where the schema allows it.
+    @Test func optionalPropertiesAreOmittedNotNull() throws {
+        let closed = try OutputSchema(json: Data(#"{"type": "object", "properties": {"a": {"type": "integer"}}, "required": [], "additionalProperties": false}"#.utf8))
+        #expect(try accepts(#"{"a": null}"#, closed).complete == false)
+        #expect(try accepts(#"{"a": 1}"#, closed) == (true, true))
+        #expect(try accepts("{}", closed) == (true, true))
+        // Separators follow what is written: the first member written has no comma, whichever it is.
+        let three = try OutputSchema(json: Data(#"""
+            {"type": "object", "properties": {"a": {"type": "integer"}, "b": {"type": "boolean"}, "c": {"type": "string"}},
+             "x-order": ["a", "b", "c"], "required": ["b"], "additionalProperties": false}
+            """#.utf8))
+        for good in [#"{"b": true}"#, #"{"a": 1, "b": true}"#, #"{"b": false, "c": "x"}"#, #"{"a": 2, "b": true, "c": ""}"#] {
+            #expect(try accepts(good, three) == (true, true), "\(good)")
+        }
+        for bad in ["{}", #"{"a": 1}"#, #"{, "b": true}"#, #"{"b": true "c": "x"}"#, #"{"c": "x", "b": true}"#, #"{"b": true, }"#] {
+            #expect(try accepts(bad, three).complete == false, "\(bad)")
+        }
+        // Null where the schema itself allows it.
+        let nullable = try OutputSchema(json: Data(#"""
+            {"type": "object", "properties": {"a": {"anyOf": [{"type": "integer"}, {"type": "null"}]}}, "required": ["a"], "additionalProperties": false}
+            """#.utf8))
+        #expect(try accepts(#"{"a": null}"#, nullable) == (true, true) && accepts("{}", nullable).complete == false)
+        // A Swift optional decodes from the omitted property.
+        struct Note: Decodable, Equatable { var a: Int; var b: String? }
+        #expect(try JSONDecoder().decode(Note.self, from: Data(#"{"a": 1}"#.utf8)) == Note(a: 1, b: nil))
+    }
+
+    /// Third review, P2-6: constraints the grammar didn't hold to were dropped silently: a required name with no
+    /// declared property accepted `{}`, and `const` beside `enum` ignored the enum. They are refused, or intersected.
+    @Test func constraintsTheGrammarCantHoldAreRefused() throws {
+        func refuses(_ json: String) -> Bool {
+            guard let schema = try? OutputSchema(json: Data(json.utf8)) else { return true }
+            return (try? JSONGrammar(schema: schema)) == nil
+        }
+        #expect(refuses(#"{"type": "object", "required": ["a"], "additionalProperties": false}"#))
+        #expect(refuses(#"{"type": "object", "properties": {"b": {"type": "string"}}, "required": ["a"], "additionalProperties": false}"#))
+        #expect(refuses(#"{"type": "object", "properties": {}, "required": "a", "additionalProperties": false}"#))
+        #expect(refuses(#"{"type": "string", "const": "x", "enum": ["y"]}"#))
+        let both = try OutputSchema(json: Data(#"{"type": "string", "const": "x", "enum": ["x", "y"]}"#.utf8))
+        #expect(try accepts(#""x""#, both) == (true, true) && accepts(#""y""#, both).complete == false)
+        // A constraint on a type that doesn't hold it.
+        #expect(refuses(#"{"type": "string", "minimum": 1}"#))
+        #expect(refuses(#"{"type": "integer", "items": {"type": "string"}}"#))
+        #expect(refuses(#"{"type": "object", "properties": {}, "maxItems": 1, "additionalProperties": false}"#))
+        #expect(refuses(#"{"const": "x", "minimum": 1}"#))
     }
 
     /// Review #10: an exact decimal bound stays in range at large magnitudes (`682224519.563 × 10⁹` rounds below

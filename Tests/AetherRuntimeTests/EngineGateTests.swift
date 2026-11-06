@@ -43,7 +43,7 @@ extension GateTests {
     static func concreteGreedy(_ engine: DecoderEngine, prompt: [Int32], count: Int) async throws -> (tokens: [Int32], seconds: Double) {
         try await engine.reset()
         let logits = try await engine.prefill(prompt)!
-        var out = [Logits.argmax(logits.last)]
+        var out = [try Logits.argmax(logits.last)]
         let clock = ContinuousClock()
         let start = clock.now
         try await engine.beginGreedy(first: out[0], limit: count - 1)
@@ -143,7 +143,7 @@ extension GateTests {
         let tolerance = 8 * Float(Float16(peak).ulp)
         print("GATE chunked prefill qwen3 \(prompt.count) tok: 512-chunks \(String(format: "%.3f", chunkedSeconds)) s, "
               + "token-by-token \(String(format: "%.2f", stepSeconds)) s, last row max|Δ| \(delta) (tol \(tolerance))")
-        #expect(Logits.argmax(a) == Logits.argmax(b))
+        #expect(try Logits.argmax(a) == Logits.argmax(b))
         #expect(delta <= tolerance)
         // The continuation from the chunked prefill equals the lab's exact 1024-token output.
         let (tokens, seconds) = try await Self.greedy(engine, prompt: prompt, count: lab.generated.count)
@@ -200,7 +200,7 @@ extension GateTests {
         let stepSeconds = (clock.now - t0) / .seconds(1)
         let delta = zip(chunked.last, try #require(stepwise).last).map { abs($0 - $1) }.max() ?? 0
         let tolerance = 8 * Float(Float16(chunked.last.map(abs).max() ?? 1).ulp)  // the lab's rule
-        let first = Logits.argmax(stepwise!.last)
+        let first = try Logits.argmax(stepwise!.last)
         try await engine.beginGreedy(first: first, limit: 31)
         var stepContinuation = [first]
         while let t = try await engine.nextGreedy() { stepContinuation.append(t) }
@@ -209,7 +209,7 @@ extension GateTests {
               + "S=1 \(String(format: "%.0f", Double(prompt.count) / stepSeconds)) tok/s, last row max|Δ| \(delta) (tol \(tolerance)), "
               + "continuation \(continuation == stepContinuation ? "equal" : "DIFFERS")")
         #expect(delta <= tolerance)
-        #expect(Logits.argmax(chunked.last) == first)
+        #expect(try Logits.argmax(chunked.last) == first)
         #expect(continuation == stepContinuation)
     }
 

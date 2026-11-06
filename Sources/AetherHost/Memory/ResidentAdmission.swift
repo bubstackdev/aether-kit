@@ -46,8 +46,10 @@ public final class ResidentAdmission {
     public let manifest: Manifest
     public let settings: Settings
     let device: Device
-    /// The ledger's model key: the manifest id, the weights' source revision and the device's Core AI architecture, so
-    /// another export of the model, or the same bundle on another device, never reuses these measurements.
+    /// The ledger's model key: the manifest id, the weights' source revision, the export's identity (the first 16 hex
+    /// digits of ``Manifest/contentDigest``, so another export or quantization of the same weights has its own) and
+    /// the device's platform and Core AI architecture, so another export of the model, or the same bundle on another
+    /// device, never reuses these measurements.
     public let modelKey: String
     private let load: GraphResidency.Loader
     private let fileBytes: (String) -> Int64
@@ -68,9 +70,15 @@ public final class ResidentAdmission {
         self.manifest = manifest
         self.device = device
         self.settings = settings
-        modelKey = "\(manifest.id)@\(manifest.provenance?.sourceRevision ?? "unpinned")/\(device.platform.rawValue)-\(device.architecture)"
+        modelKey = Self.modelKey(manifest: manifest, device: device)
         self.load = load
         self.fileBytes = fileBytes
+    }
+
+    /// The ledger key for `manifest`'s graphs on `device` (``modelKey``).
+    public static func modelKey(manifest: Manifest, device: Device) -> String {
+        let export = manifest.contentDigest.prefix(16)
+        return "\(manifest.id)@\(manifest.provenance?.sourceRevision ?? "unpinned")#\(export)/\(device.platform.rawValue)-\(device.architecture)"
     }
 
     /// Roles currently loaded.
@@ -122,21 +130,38 @@ public final class ResidentAdmission {
         return fresh
     }
 
-    /// After a generation that succeeded: the reservation shrinks to what stays resident.
-    public func finish() {
-        guard let residency else { return release() }
+    /// After a generation that succeeded: the reservation is resized to what stays resident, as measured by the
+    /// generation that just ran.
+    ///
+    /// When the measurement is larger than the plan and the coordinator can't grow the reservation to it, the graphs
+    /// can't stay admitted: they are released along with the reservation, and this returns `false`. The generation's
+    /// result is still the caller's to return (the work already ran, within the peak reserved for it); only the
+    /// residency is given up, so the next generation plans and loads from scratch rather than keep graphs the
+    /// coordinator doesn't account for.
+    @discardableResult
+    public func finish() -> Bool {
+        guard let residency else {
+            release()
+            return false
+        }
         switch residency.mode {
         case .allResident:
             residentBytes = inputs(profile: residency.profile).phases.values.reduce(0) { $0 + $1.heldBytes }
         case .perPhase:
             residentBytes = 0
         }
-        if residentBytes > 0, residency.residentRoles.isEmpty == false {
-            try? reserve(residentBytes)
-        } else {
+        guard residentBytes > 0, residency.residentRoles.isEmpty == false else {
             reservation?.release()
             reservation = nil
             reservedBytes = 0
+            return true
+        }
+        do {
+            try reserve(residentBytes)
+            return true
+        } catch {
+            release()
+            return false
         }
     }
 

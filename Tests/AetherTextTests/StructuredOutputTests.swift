@@ -88,7 +88,7 @@ struct StructuredOutputTests {
     }
 
     @Test func nestedTypesArraysEnumsAndGuidesDecode() async throws {
-        let json = #"{"name": "Mara", "size": 7, "price": 12.5, "colours": ["red", "blue"], "layers": [{"item": "coat", "warm": true}, {"item": "vest", "warm": false}], "note": null, "grade": "A"}"#
+        let json = #"{"name": "Mara", "size": 7, "price": 12.5, "colours": ["red", "blue"], "layers": [{"item": "coat", "warm": true}, {"item": "vest", "warm": false}], "grade": "A"}"#
         let session = try await Self.session { _ in ByteVocab.tokens(json) }
         let outfit = try await session.respond(to: "q", generating: Outfit.self)
         #expect(outfit == Outfit(name: "Mara", size: 7, price: 12.5, colours: [.red, .blue],

@@ -62,6 +62,14 @@ struct MiniMaxH3GateTests {
         bytes.withUnsafeBytes { raw in raw.bindMemory(to: UInt16.self).map { Float(bitPattern: UInt32($0) << 16) } }
     }
 
+    /// The seeded footprints (``MiniMaxH3Pipeline/qualifiedFootprints``) are scoped to the export they were measured
+    /// on; this is it. A new export fails here until it is measured and the digest updated.
+    @Test func theQualifiedFootprintsNameThisExport() throws {
+        let manifest = try Manifest.load(fromBundle: Self.export.appending(path: "bundle"))
+        print("gate: h3 export digest \(manifest.contentDigest)")
+        #expect(manifest.contentDigest == MiniMaxH3Pipeline.qualifiedExportDigest)
+    }
+
     @Test func driverMatchesTheGraphReference() async throws {
         let reference = Self.export.appending(path: "driver-reference")
         let spec = try JSONDecoder().decode(Spec.self, from: Data(contentsOf: reference.appending(path: "spec.json")))

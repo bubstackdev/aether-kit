@@ -113,7 +113,7 @@ def main() -> None:
              and sample["preprocess"]["image"]["channelOrder"] == "BGR"
              and sample["preprocess"]["image"]["resize"] == {"mode": "letterbox", "size": [yg.SIZE, yg.SIZE],
                                                              "anchor": "topLeft", "padValue": yg.PAD,
-                                                             "filter": "vImage"})
+                                                             "filter": "pillowBilinear"})
     record("manifest.roles", float(roles), 1.0, roles)
     passed = all(c["passed"] for c in checks)
     if args.report:

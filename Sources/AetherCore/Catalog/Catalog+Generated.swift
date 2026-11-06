@@ -909,7 +909,7 @@ extension Catalog {
             id: "depth-anything-3-small",
             task: "depth-estimation",
             repo: "aether-models/aether-kit-depth-anything-3-small",
-            revision: "0960071086783cd0a5c1e4d61cefb2c5ec9035d0",
+            revision: "4c1fae8201cc9ecb52845abfa9fe94fbae78ef02",
             license: "apache-2.0",
             variants: [
                 "macos": CatalogVariant(
@@ -918,17 +918,17 @@ extension Catalog {
                         "main": CatalogAsset(
                             subtree: "",
                             files: [
-                                CatalogFile(path: ".aether/aether.json", size: 3826, sha256: "c2a823d8331c0a3a5c30bbebd65b81bbc0d52b2aa9e464a4d24b33c90ce10bbb"),
+                                CatalogFile(path: ".aether/aether.json", size: 3907, sha256: "94f99cae9973ec5bdd120bf2bb008c2c7345c788364b814c1ec312957b5b2c42"),
                                 CatalogFile(path: ".gitattributes", size: 1597, sha256: "1c2142c6d2c3557350d39c195fd5d7b083783b452126614f85a0cc66ade1dee7"),
                                 CatalogFile(path: "LICENSE", size: 11355, sha256: "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870"),
                                 CatalogFile(path: "NOTICE", size: 980, sha256: "00b5ac0e586fb2b4ed1ddaf77620a57a114ea9bbca4300d5f1d272c69f1cc961"),
                                 CatalogFile(path: "README.md", size: 973, sha256: "fd23dddfcbce543301fda13952c3c314910851b1a6468d7f8dda0162a44b3938"),
-                                CatalogFile(path: "SHA256SUMS", size: 720, sha256: "360e15f30084439e3196c54599bad56382f9974292b52bce802b5eb21c7ad147"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/main.hash", size: 32, sha256: "5b119ab0fd6dc65b6e41695f789da1e7d476126364c6f088de0920f969dd2ea8"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/main.mlirb", size: 61193472, sha256: "c27b0de183e95370ddc5f03d9f4ddf74f1943f26722c8f8740755598b8f6cc58"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/metadata.json", size: 403, sha256: "7158f412da62763e82751240078e522d59573c12218c0a8e4a8a98517e2b6805"),
-                                CatalogFile(path: "export-report.json", size: 6798, sha256: "92cce43e2051933ab19ce1e4281453f9e102bdcc2083f7ede9059ffeb5a831c3"),
-                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "4a5c082f12039ae5498a48fdb6aea7ed76db737a52393d562cf9d44cd1a4abff"),
+                                CatalogFile(path: "SHA256SUMS", size: 720, sha256: "fe9ccedb5cf56f4fc8b9394c1e2038a7e7007c0771ebbeda87abb4da7bd2bcd8"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.hash", size: 32, sha256: "f8dd868a7026055f8ce57532576f5926ef45fe95ac37126732829c9bb4251090"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.mlirb", size: 61193449, sha256: "1aa7b0c9a6bc80e15e93bae9ccadc4f4921538b92fddb086a0c48f7414557a04"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/metadata.json", size: 403, sha256: "f3f408528a29bccb66baac1f79cd49c3ada3b9fee3f2d759b7f9623473bf168e"),
+                                CatalogFile(path: "export-report.json", size: 6799, sha256: "4da9e5478d5c4bb828185dff10b35e999aa1353c8bc5e81d13a59b7aaf0437d7"),
+                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "351a7e297e50f98dedcab4716d31ad2b038a9222a5cb76494b08fce016138b14"),
                             ]),
                     ],
                     architectures: nil
@@ -939,7 +939,7 @@ extension Catalog {
             id: "yolox-s",
             task: "object-detection",
             repo: "aether-models/aether-kit-yolox-s",
-            revision: "6a608906fdd11096fa15fa5487682c8457e5a24a",
+            revision: "e57fcca86be721911c0e8163f7af99529e997014",
             license: "apache-2.0",
             variants: [
                 "macos": CatalogVariant(
@@ -948,16 +948,16 @@ extension Catalog {
                         "main": CatalogAsset(
                             subtree: "",
                             files: [
-                                CatalogFile(path: ".aether/aether.json", size: 4503, sha256: "6807a596d0700e57d268b75acfe625dd7eb09beab788b650c2c13ff8b49b78c7"),
+                                CatalogFile(path: ".aether/aether.json", size: 4657, sha256: "31a97494852ea432f21a9196e45f561527e4578ecbd2ec49b8524dae46433401"),
                                 CatalogFile(path: ".gitattributes", size: 1582, sha256: "bdda41b3cbfbb95257646bf74cebdc223f36ed8b38de5b3005156b0d25dbe48f"),
                                 CatalogFile(path: "LICENSE", size: 11371, sha256: "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"),
                                 CatalogFile(path: "NOTICE", size: 718, sha256: "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9"),
                                 CatalogFile(path: "README.md", size: 920, sha256: "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600"),
-                                CatalogFile(path: "SHA256SUMS", size: 675, sha256: "68be0e7296aae56426d20871860b677c2756aaa609fb634715e532eb8a730e09"),
-                                CatalogFile(path: "export-report.json", size: 4680, sha256: "a43b3ac973a9315f8d51b464026ab7994489b849123d7b88ce2c17a12068faf4"),
-                                CatalogFile(path: "forge-log.jsonl", size: 488, sha256: "050fd3f9b2f8b511070bef9b269d1889d48dafba283b61a4e1d1e8935072d763"),
-                                CatalogFile(path: "yolox_s.aimodel/main.hash", size: 32, sha256: "b943bb0759456bdc75758df161390c0fcedaa576a6b8a489dbd83e967b4795f2"),
-                                CatalogFile(path: "yolox_s.aimodel/main.mlirb", size: 35987983, sha256: "dccb08fd824ab8ed16d6ead89fe80cd6ae0c524722572fe745d3187c559003d2"),
+                                CatalogFile(path: "SHA256SUMS", size: 675, sha256: "48bd6b75091ddd93224385a3ab01a26fc5af8ae5330aa1a50c936ef396f01d64"),
+                                CatalogFile(path: "export-report.json", size: 5045, sha256: "300851b10d2673c25cfd0015e0e166ac80e18af23f1395662e0640ebd972da93"),
+                                CatalogFile(path: "forge-log.jsonl", size: 669, sha256: "64e0cd2e7eb089346954eaf831da3a28bb05db5c296f7bd5b1373861d5978b40"),
+                                CatalogFile(path: "yolox_s.aimodel/main.hash", size: 32, sha256: "f74df33ec5c71e522e084fac92f4bec44acac169b3ac5172f7de51611aede9e6"),
+                                CatalogFile(path: "yolox_s.aimodel/main.mlirb", size: 35987987, sha256: "dfd7efb937020aec1872fa6f45e45b8679c68889fe6b62b97b48c6886933dbf0"),
                                 CatalogFile(path: "yolox_s.aimodel/metadata.json", size: 516, sha256: "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89"),
                             ]),
                     ],
@@ -969,7 +969,7 @@ extension Catalog {
             id: "rf-detr-nano",
             task: "object-detection",
             repo: "aether-models/aether-kit-rf-detr-nano",
-            revision: "7bd148c5a05f826f15be5d6745a9dda14887911d",
+            revision: "49e797b1b7089d3d53153bf31d658b142f3d3474",
             license: "apache-2.0",
             variants: [
                 "macos": CatalogVariant(
@@ -978,17 +978,17 @@ extension Catalog {
                         "main": CatalogAsset(
                             subtree: "",
                             files: [
-                                CatalogFile(path: ".aether/aether.json", size: 4396, sha256: "001e739499dd1c36891e86a0bbfad04b20a2ec902a88214c0e831fec66dde1f7"),
+                                CatalogFile(path: ".aether/aether.json", size: 4427, sha256: "dbef562f4c3f2940aadd6f4d94143a1e59a06f02756c4e1fd567f3f2a2e017b9"),
                                 CatalogFile(path: ".gitattributes", size: 1587, sha256: "c74668f43005e813f60ee1ec6eaf1a89a9b0a8f3db7cb7e939cde2a631644bf0"),
                                 CatalogFile(path: "LICENSE", size: 11345, sha256: "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca"),
                                 CatalogFile(path: "NOTICE", size: 1060, sha256: "fc1732ad01d34a68cef83572dcbb8b75d7fa22d9bc52ed52a5c3b8ca66da926c"),
                                 CatalogFile(path: "README.md", size: 955, sha256: "8bdb8c5e0c68deca9922f514923e9700aab885eb7da9533d5fc86e35591dbd2e"),
-                                CatalogFile(path: "SHA256SUMS", size: 690, sha256: "a2faadc8a900ac47e9927eddc3b0be729666068d5fc6b222594a3c69df17555b"),
-                                CatalogFile(path: "export-report.json", size: 8756, sha256: "498052cbb0092417e4f89a63b1165970d8a5d9c2f70bd9e055f6db4fe6a94734"),
-                                CatalogFile(path: "forge-log.jsonl", size: 487, sha256: "f5e412ae564959e928d5fda1ac731a297e25256fddbf58bdf7d3dedb68cbe80b"),
-                                CatalogFile(path: "rf_detr_nano.aimodel/main.hash", size: 32, sha256: "8fea7c6a3064e3968398efc74211f21766fa5d3a8dc47a242cbbcdf6b615a1df"),
-                                CatalogFile(path: "rf_detr_nano.aimodel/main.mlirb", size: 108212286, sha256: "590d37e07731bb10cf41ef32b825cf93fbe20f20be95991024efca9eebb4f2e1"),
-                                CatalogFile(path: "rf_detr_nano.aimodel/metadata.json", size: 400, sha256: "9232ba5f41466188108a1da614357900a2069ab1eae4cb3bad99587ea4f28cc4"),
+                                CatalogFile(path: "SHA256SUMS", size: 690, sha256: "10db698f7d05018ad561e40c3a2ed60f87f9de78f5afb32b4b63861c34999216"),
+                                CatalogFile(path: "export-report.json", size: 8764, sha256: "bc6db4aa8ef33802b2c5731975712817337a6089bcf68719001d360ea377d558"),
+                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "2b7c20b36b8d9f2af3ab8476f9e41a06e7a8e151dde10a1a23af3732ff5f004c"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/main.hash", size: 32, sha256: "c816e3ed431ba1f1e5186f159cc4b326d517b52ef1ceb1646528587ab22533b5"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/main.mlirb", size: 108212301, sha256: "6070fa5662d1a0f2ed01ff85493ccb897072d58a4401e1b51a1fa09bcd2cfdd3"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/metadata.json", size: 400, sha256: "6be8921aa2b75a2d66da7fcce437996f30ba28c33afa84bcca9c96984401905b"),
                             ]),
                     ],
                     architectures: nil
@@ -999,7 +999,7 @@ extension Catalog {
             id: "rf-detr-seg-nano",
             task: "instance-segmentation",
             repo: "aether-models/aether-kit-rf-detr-seg-nano",
-            revision: "6be429f7e2ec76e7b5f7afe0853cba485365f1ed",
+            revision: "b7408d29a18f9ed982295efe979f2e848d9aecf7",
             license: "apache-2.0",
             variants: [
                 "macos": CatalogVariant(
@@ -1008,17 +1008,17 @@ extension Catalog {
                         "main": CatalogAsset(
                             subtree: "",
                             files: [
-                                CatalogFile(path: ".aether/aether.json", size: 4677, sha256: "d1256f3f9845b512812571fa51915e547bacb08564c657f1d5dfcd78be65be14"),
+                                CatalogFile(path: ".aether/aether.json", size: 4708, sha256: "a6dad43e9bc23bf1053bab6b4aad78bedfc77df221310e4e4952ad193a831054"),
                                 CatalogFile(path: ".gitattributes", size: 1591, sha256: "844c175dbce6b52b7dfa174049f6cbb8090ce872033e4172abc4f671ab4f233b"),
                                 CatalogFile(path: "LICENSE", size: 11345, sha256: "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca"),
                                 CatalogFile(path: "NOTICE", size: 1051, sha256: "efb066472a1857db6e3f565359dc227ad0eeea2702c03768906b52a85297dff5"),
                                 CatalogFile(path: "README.md", size: 1003, sha256: "7c2cde156f6fbbfdd0c38e89970a6aed891fc3a69ef678b3e5b5ef5464bbba6f"),
-                                CatalogFile(path: "SHA256SUMS", size: 702, sha256: "a08f3a0c5a1f268e8a48a3e9ef9872d3e5e0a628859c2906db20a7506c9d4c74"),
-                                CatalogFile(path: "export-report.json", size: 8836, sha256: "d04d408b5b97e05274a12d2b40ba2c48caf5bee683bb92d8389305f240f2ee94"),
-                                CatalogFile(path: "forge-log.jsonl", size: 488, sha256: "a82134e8c9f74ed5f1e90d819c837316db1e9e8f910145b519056c365e73cb79"),
-                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.hash", size: 32, sha256: "88eb617912bd142e6e70c6fc30c29143d98caccb2e92bf96b290367a0b0caa26"),
-                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.mlirb", size: 122781855, sha256: "80c62055444e082969b038d53c1815d2f204100990a52fc75e8a7628cd60f889"),
-                                CatalogFile(path: "rf_detr_seg_nano.aimodel/metadata.json", size: 437, sha256: "c763b8ce3c2ae6272805f0eafce9a941303ad38466646e85c47975094f0156a5"),
+                                CatalogFile(path: "SHA256SUMS", size: 702, sha256: "ac53fac5b4a83a50ab1471f1646d6846490d85d501f997df497ad55616a9bbe5"),
+                                CatalogFile(path: "export-report.json", size: 8844, sha256: "ccd7ecfed51e6d40c7decb2331114bcda8d2ba4ab1e42bdc5d3688b90986bc77"),
+                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "dd0a5056519acd9a70c98e92c0b21fabaacdd6a94dc7ef3fa392a5217bf1914a"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.hash", size: 32, sha256: "a99d69c577a9ea095dbcafd39cce19dcbe062d8f3a52489597f157bf5b86744d"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.mlirb", size: 122781822, sha256: "5e9bd24fafe46218bbdea07cc52d87c92a8a7ed4946b6fe4e09d388e5ca90633"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/metadata.json", size: 437, sha256: "aa6c1bf60a2059938710fa4b652cb3a6252979a2cafe70a3c537d9f817668259"),
                             ]),
                     ],
                     architectures: nil

@@ -47,6 +47,7 @@ final class DecoderCore {
     let logitsType: ScalarType
     let sequenceStates: [SequenceState]
     let recurrentNames: [String]
+    /// The token limit (an explicit capacity, or what the budget fits); a static sequence axis may be larger.
     let maxCapacity: Int
     let staticCapacity: Bool
     let shape: PrefillPlan.Shape
@@ -80,7 +81,7 @@ final class DecoderCore {
     private var operation: String?
     /// Diagnostics: host seconds per greedy phase (bindings, encode, argmax commit, waiting for a token).
     var timings = DecoderEngine.GreedyTimings()
-    private var tokenIterator: AsyncStream<(Int, Int32)>.Iterator?
+    private var tokenIterator: AsyncStream<(Int, Result<Int32, AetherError>)>.Iterator?
 
     var hasRecurrentState: Bool { !recurrentNames.isEmpty }
     var isEncoding: Bool { kernels != nil }
@@ -152,8 +153,13 @@ final class DecoderCore {
         }
         sequenceStates = sequence
         recurrentNames = manifestStates.recurrent.map(\.name)
+        // The token limit and the allocation are separate: a static axis fixes the allocation, and a smaller limit
+        // (an app's explicit capacity) still caps the tokens it holds.
+        if let staticAxis, capacityLimit > staticAxis {
+            throw .capacity(what: "KV capacity (static sequence axis)", needed: Int64(capacityLimit), available: Int64(staticAxis))
+        }
         staticCapacity = staticAxis != nil
-        maxCapacity = staticAxis ?? capacityLimit
+        maxCapacity = capacityLimit
         capacity = staticAxis ?? min(max(initialCapacity, 1), capacityLimit)
 
         let limits = graph.limits ?? Manifest.Limits()
@@ -241,10 +247,9 @@ final class DecoderCore {
 
     /// Grows the sequence axis geometrically until `needed` slots fit (DESIGN.md §6.2), copying the cached prefix.
     ///
-    /// Transient headroom, not charged to the budget: during the copy both the old and the new states are live, so
-    /// the peak is old + new ≤ 1.5 × the new size (doubling), at most 1.5 × the KV at `maxCapacity`. The budget is
-    /// charged for the KV at `maxCapacity` only; the extra half of the last growth step is the margin the reserve
-    /// (MemoryBudget.reserveBytes) must cover. Snapshots are sized by the position, not the capacity (``snapshot()``).
+    /// During the copy both the old and the new states are live: the budget charges that pair at `maxCapacity`
+    /// (``KVSizing/peakBytes(capacity:)``, the previous allocation beside the last one). Snapshots are sized by the
+    /// position, not the capacity (``snapshot()``).
     func ensureCapacity(_ needed: Int) throws(AetherError) {
         guard needed > capacity else { return }
         guard !staticCapacity else {
@@ -262,9 +267,9 @@ final class DecoderCore {
         capacity = next
     }
 
-    /// Replaces the states with zeroed ones at `newCapacity` (no copy).
+    /// Replaces the states with zeroed ones at `newCapacity` (no copy). A static allocation stays as it is.
     private func reallocateStates(capacity newCapacity: Int) throws(AetherError) {
-        guard newCapacity != capacity else { return }
+        guard newCapacity != capacity, !staticCapacity else { return }
         let fresh = try Self.makeStates(step.graph, sequence: sequenceStates, recurrent: recurrentNames, capacity: newCapacity, arena: arena)
         for (_, buffer) in states.entries { try arena.release(buffer) }
         states = fresh
@@ -333,11 +338,13 @@ final class DecoderCore {
             try arena.beginRun("decoder.prefill")
             lent = true
         }
-        func settle() async {
-            guard lent, let kernels else { return }
-            await kernels.drain()
+        /// Drains and ends the loan; returns the GPU's failure, if the drain saw one.
+        func settle() async -> AetherError? {
+            guard lent, let kernels else { return nil }
+            let failure = await kernels.drain()
             arena.endRun()
             lent = false
+            return failure
         }
         do throws(AetherError) {
             if isEncoding { try lend() }
@@ -353,7 +360,7 @@ final class DecoderCore {
                 if let kernels {
                     // Chunks chain on the stream with no host sync; wait only where rows are read.
                     try (phase.graph as! Graph).encode(b, to: kernels.stream)
-                    if needsRead { await settle() }
+                    if needsRead, let failure = await settle() { throw failure }
                 } else {
                     try await phase.graph.run(&b)
                 }
@@ -370,9 +377,9 @@ final class DecoderCore {
                     if isEncoding, !isLast { try lend() }
                 }
             }
-            await settle()
+            if let failure = await settle() { throw failure }
         } catch {
-            await settle()
+            _ = await settle()
             throw error
         }
         position = start + n
@@ -467,8 +474,10 @@ final class DecoderCore {
     /// engine as it was.
     func restore(_ snapshot: DecoderEngine.Snapshot) throws(AetherError) {
         try requireIdle("restore")
-        guard snapshot.position <= maxCapacity, snapshot.capacity <= maxCapacity else {
-            throw .capacity(what: "KV capacity (tokens)", needed: Int64(snapshot.capacity), available: Int64(maxCapacity))
+        // The allocation it carries: up to the token limit, or the static axis itself.
+        let allocation = staticCapacity ? capacity : maxCapacity
+        guard snapshot.position <= maxCapacity, snapshot.capacity <= allocation else {
+            throw .capacity(what: "KV capacity (tokens)", needed: Int64(max(snapshot.position, snapshot.capacity)), available: Int64(allocation))
         }
         if snapshot.capacity == capacity {
             try states.restore(snapshot.states)  // validates every entry before copying
@@ -499,8 +508,9 @@ final class DecoderCore {
         var issued = 0
         var received = 0
         var last: Int32
-        var pending: [Int: Int32] = [:]
-        var continuation: AsyncStream<(Int, Int32)>.Continuation?
+        /// Argmax outcomes that arrived ahead of their turn, by token index.
+        var pending: [Int: Result<Int32, AetherError>] = [:]
+        var continuation: AsyncStream<(Int, Result<Int32, AetherError>)>.Continuation?
         /// Canary only: the expected token per step; a wrong one is written into each slot before its argmax runs.
         var sentinels: [Int32]?
     }
@@ -519,7 +529,7 @@ final class DecoderCore {
             }
             try slots[0].write([first])
             if racingHandoff { try history.write([first], startingAt: position) }
-            let (stream, continuation) = AsyncStream<(Int, Int32)>.makeStream()
+            let (stream, continuation) = AsyncStream<(Int, Result<Int32, AetherError>)>.makeStream()
             s.continuation = continuation
             tokenIterator = stream.makeAsyncIterator()
             try arena.beginRun("decoder.greedy")
@@ -529,7 +539,8 @@ final class DecoderCore {
 
     /// The next greedy token, or nil at the limit or when the calling task is cancelled. Holds `operation` for its
     /// whole duration, so nothing else (a second nextGreedy, endGreedy, a feed) can run at its awaits; the session is
-    /// re-read after every await all the same.
+    /// re-read after every await all the same. Throws the step's failure (a failed command buffer, an invalid logits
+    /// row) in token order; the token is not counted, and ``endGreedy()`` still ends the decode.
     func nextGreedy() async throws(AetherError) -> Int32? {
         if let operation { throw .unsupportedOperation("nextGreedy while \(operation) is in progress") }
         guard let s = session else { throw .unsupportedOperation("nextGreedy without beginGreedy") }
@@ -540,7 +551,7 @@ final class DecoderCore {
             // Host path: run the step and take the argmax of its one row. The session stays in place.
             guard !Task.isCancelled else { return nil }
             let logits = try await feedTokens([s.last], select: .last)!
-            let token = Logits.argmax(logits.last)
+            let token = try Logits.argmax(logits.last)
             guard session != nil else { throw .unsupportedOperation("the greedy decode ended during a step") }
             session!.last = token
             session!.received += 1
@@ -549,7 +560,8 @@ final class DecoderCore {
         try await refill()
         while true {
             guard let current = session else { throw .unsupportedOperation("the greedy decode ended during a step") }
-            if let t = current.pending[current.received + 1] {
+            if let outcome = current.pending[current.received + 1] {
+                let t = try outcome.get()
                 session!.pending[current.received + 1] = nil
                 session!.received += 1
                 try await refill()
@@ -560,9 +572,9 @@ final class DecoderCore {
             let next = await iterator.next(isolation: #isolation)
             timings.wait += (ContinuousClock.now - w0) / .seconds(1)
             tokenIterator = iterator
-            guard let (index, token) = next else { return nil }  // cancelled
+            guard let (index, outcome) = next else { return nil }  // cancelled
             guard session != nil else { throw .unsupportedOperation("the greedy decode ended during a step") }
-            session!.pending[index] = token
+            session!.pending[index] = outcome
         }
     }
 
@@ -575,9 +587,10 @@ final class DecoderCore {
             let at = s.start + k
             if at + 1 > capacity {
                 guard s.issued == s.received else { return }  // grow once the pipeline is empty
-                await kernels.drain()
+                let failure = await kernels.drain()
                 arena.endRun()
-                do {
+                do throws(AetherError) {
+                    if let failure { throw failure }
                     try ensureCapacity(at + 1)
                 } catch {
                     try arena.beginRun("decoder.greedy")  // endGreedy ends the loan
@@ -615,10 +628,9 @@ final class DecoderCore {
             let index = k + 1
             try kernels.commitArgmax(
                 logits: try arena.metalBuffer(of: ring), scalarType: logitsType, vocab: vocab, slot: target,
-                slotOffset: targetOffset, delay: s.delay
-            ) {
-                let token = UnsafePointer<Int32>(bitPattern: address)!.pointee
-                continuation?.yield((index, token))
+                slotOffset: targetOffset, status: index % Self.ring, delay: s.delay
+            ) { outcome in
+                continuation?.yield((index, outcome.map { UnsafePointer<Int32>(bitPattern: address)!.pointee }))
             }
             guard session != nil else { return }
             session!.issued += 1
@@ -631,7 +643,8 @@ final class DecoderCore {
     }
 
     /// Ends the decode: drains the GPU, sets the position to the tokens the caller accepted (the last one not fed),
-    /// and flags recurrent state that ran ahead. Refused while a step is in progress.
+    /// and flags recurrent state that ran ahead. Refused while a step is in progress. The decode ends either way; when
+    /// the drain saw the GPU fail, it then throws that failure.
     @discardableResult
     func endGreedy() async throws(AetherError) -> GreedyEnd {
         if let operation { throw .unsupportedOperation("endGreedy while \(operation) is in progress") }
@@ -639,7 +652,7 @@ final class DecoderCore {
         operation = "the end of a greedy decode"
         defer { operation = nil }
         if let kernels, s.depth > 0 {
-            await kernels.drain()
+            let failure = await kernels.drain()
             arena.endRun()
             s.continuation?.finish()
             tokenIterator = nil
@@ -648,6 +661,7 @@ final class DecoderCore {
             let overshoot = final.issued - final.received
             if overshoot > 0, hasRecurrentState { stateAhead = true }
             session = nil
+            if let failure { throw failure }
             return GreedyEnd(fed: final.received, overshoot: overshoot)
         }
         session = nil
@@ -671,7 +685,7 @@ final class DecoderCore {
 
         func decode(depth: Int, delay: UInt32, sentinels: [Int32]?) async throws(AetherError) -> [Int32] {
             try reset()
-            let first = Logits.argmax(try await feed(prompt, select: .last)!.last)
+            let first = try Logits.argmax(try await feed(prompt, select: .last)!.last)
             try beginGreedy(first: first, limit: steps, depth: depth, delay: delay, sentinels: sentinels)
             var out = [first]
             do {

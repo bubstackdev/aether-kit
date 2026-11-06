@@ -19,6 +19,9 @@ public actor ChatSession {
     public var configuration: Configuration
     /// User and assistant turns (the system prompt is added at render time).
     public private(set) var history: [ChatMessage] = []
+    /// Bumped by ``clearHistory()``: a turn joins the history only if the history it was rendered from is still
+    /// current.
+    private var historyGeneration = 0
 
     public init(generator: Generator, configuration: Configuration = Configuration()) {
         self.generator = generator
@@ -60,11 +63,19 @@ public actor ChatSession {
 
     public func setConfiguration(_ configuration: Configuration) { self.configuration = configuration }
 
-    public func clearHistory() { history.removeAll() }
+    /// Empties the history. A reply already in progress is not cancelled: it streams to its end, but its turn was
+    /// rendered from the old history and is not added to the new one. Turns that start after the clear (one sent
+    /// earlier and still waiting for its turn included) render from the cleared history and are kept. To stop the
+    /// reply too, cancel the task consuming it.
+    public func clearHistory() {
+        history.removeAll()
+        historyGeneration += 1
+    }
 
     /// Sends a user turn and streams the reply. Turns run one at a time in the order sent: each is rendered only
     /// when the previous one has finished, so its prompt holds the previous reply. The reply (its response text, not
-    /// its thinking) joins the history only after the reply finished; an error or a cancellation drops the turn.
+    /// its thinking) joins the history only after the reply finished; an error, a cancellation or a
+    /// ``clearHistory()`` while it runs drops the turn.
     public func respond(to text: String) -> AsyncThrowingStream<GenerationEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
         let task = Task { await self.turn(.user(text), parameters: nil, check: nil, continuation) }
@@ -173,6 +184,7 @@ public actor ChatSession {
             return
         }
         let messages = (configuration.systemPrompt.map { [ChatMessage.system($0)] } ?? []) + history + [message]
+        let generation = historyGeneration
         var reply = ""
         var summary: GenerationSummary?
         do {
@@ -191,8 +203,11 @@ public actor ChatSession {
             }
             if let summary, !abandoned, !Task.isCancelled {
                 try check?(reply, summary)
-                history.append(message)
-                history.append(.assistant(reply))
+                // A clear while the reply ran: its turn belongs to the history that was cleared.
+                if generation == historyGeneration {
+                    history.append(message)
+                    history.append(.assistant(reply))
+                }
                 continuation.finish()
             } else {
                 continuation.finish(throwing: CancellationError())

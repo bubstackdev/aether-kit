@@ -3277,6 +3277,57 @@
       "usr": "s:10AetherText9GeneratorC7profileAA13OutputProfileVvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText9GeneratorC12maxSnapshotsSivgZ",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherText9GeneratorC12maxSnapshotsSivgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText9GeneratorC12maxSnapshotsSivpZ",
+      "moduleName": "AetherText",
+      "name": "maxSnapshots",
+      "printedName": "maxSnapshots",
+      "static": true,
+      "usr": "s:10AetherText9GeneratorC12maxSnapshotsSivpZ"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",

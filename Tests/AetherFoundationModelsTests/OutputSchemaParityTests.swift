@@ -104,6 +104,11 @@ func normalizedSchema(_ data: Data) throws -> NSDictionary {
 
 func fmSchemaJSON<T: Generable>(_ type: T.Type) throws -> Data { try JSONEncoder().encode(T.generationSchema) }
 
+@Generable struct FMOptional {
+    var a: Int
+    var b: String?
+}
+
 struct OutputSchemaTests {
     @Test func schemasMatchFoundationModelsForTheSameTypes() throws {
         let pairs: [(String, Data, Data)] = [
@@ -152,6 +157,19 @@ struct OutputSchemaTests {
             let character = try FMCharacter(GeneratedContent(json: json))
             #expect((18...90).contains(character.age) && (2...4).contains(character.tags.count) && character.version == "v1", "walk \(walk)")
         }
+    }
+
+    /// Third review, P2-5: a Swift optional in a @Generable type is left out of the reply rather than written as null,
+    /// and FoundationModels decodes the omitted property as nil.
+    @Test func generableOptionalsAreOmittedAndDecodeAsNil() throws {
+        let grammar = try JSONGrammar(schema: try OutputSchema(json: try fmSchemaJSON(FMOptional.self)))
+        func complete(_ text: String) -> Bool {
+            JSONMatcher(grammar: grammar).feeding(Array(text.utf8), grammar)?.canEnd(grammar) ?? false
+        }
+        #expect(complete(#"{"a": 1}"#) && complete(#"{"a": 1, "b": "x"}"#))
+        #expect(!complete(#"{"a": 1, "b": null}"#))
+        let omitted = try FMOptional(GeneratedContent(json: #"{"a": 1}"#))
+        #expect(omitted.a == 1 && omitted.b == nil)
     }
 
 }

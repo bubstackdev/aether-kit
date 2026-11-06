@@ -67,9 +67,11 @@ enum FakeChat {
 
     static func generator(
         recurrent: Bool = false, reply: @escaping @Sendable ([Int32]) -> [Int32] = echo, profile: OutputProfile = .plain,
-        log: CallLog? = nil, renderer: FakeRenderer = FakeRenderer(), gpu: GPUAdmissionOwner = .unadmitted
+        log: CallLog? = nil, renderer: FakeRenderer = FakeRenderer(), gpu: GPUAdmissionOwner = .unadmitted,
+        rowOverride: (@Sendable ([Int32]) -> [Float]?)? = nil
     ) async throws -> Generator {
-        let config = FakeLM.Config(staticStep: recurrent, recurrent: recurrent, log: log, predict: scripted(reply))
+        var config = FakeLM.Config(staticStep: recurrent, recurrent: recurrent, log: log, predict: scripted(reply))
+        config.rowOverride = rowOverride
         let fake = FakeLM(config)
         let graph = fake.manifestGraph()
         let engine = try await DecoderEngine(
