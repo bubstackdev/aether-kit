@@ -37,18 +37,104 @@ public struct Detection: Sendable, Hashable {
     }
 }
 
-/// An instance mask: `width · height` foreground flags, row-major from the top-left, covering the whole source image
-/// (the same normalized space as ``Detection/box``).
+/// An instance mask at the source image's resolution, in the same space as ``Detection/box``, kept compact: the
+/// smallest rectangle holding its foreground, one bit per pixel.
 public struct DetectionMask: Sendable, Hashable {
+    /// The decoded, upright source image's size: the mask's full extent.
     public let width: Int
     public let height: Int
-    public let foreground: [Bool]
+    /// The foreground's bounding rectangle in source pixels; zero-sized when the mask is empty.
+    public let bounds: Bounds
+    /// `bounds.width · bounds.height` bits, row-major inside ``bounds``: pixel `i` is bit `i & 7` (least significant
+    /// first) of byte `i >> 3`.
+    public let bits: [UInt8]
 
+    public struct Bounds: Sendable, Hashable {
+        public let x: Int, y: Int, width: Int, height: Int
+
+        public init(x: Int, y: Int, width: Int, height: Int) {
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
+        }
+    }
+
+    /// A mask from `width · height` foreground flags, row-major from the top-left.
     public init(width: Int, height: Int, foreground: [Bool]) {
         precondition(foreground.count == width * height, "a mask holds width · height flags")
+        var x0 = width, x1 = -1, y0 = height, y1 = -1
+        for y in 0..<height {
+            for x in 0..<width where foreground[y * width + x] {
+                x0 = min(x0, x)
+                x1 = max(x1, x)
+                y0 = min(y0, y)
+                y1 = max(y1, y)
+            }
+        }
+        guard x1 >= 0 else {
+            self.init(width: width, height: height, bounds: Bounds(x: 0, y: 0, width: 0, height: 0), bits: [])
+            return
+        }
+        let bounds = Bounds(x: x0, y: y0, width: x1 - x0 + 1, height: y1 - y0 + 1)
+        var bits = [UInt8](repeating: 0, count: (bounds.width * bounds.height + 7) / 8)
+        for y in y0...y1 {
+            for x in x0...x1 where foreground[y * width + x] {
+                let i = (y - y0) * bounds.width + (x - x0)
+                bits[i >> 3] |= 1 << UInt8(i & 7)
+            }
+        }
+        self.init(width: width, height: height, bounds: bounds, bits: bits)
+    }
+
+    init(width: Int, height: Int, bounds: Bounds, bits: [UInt8]) {
+        precondition(bits.count == (bounds.width * bounds.height + 7) / 8)
         self.width = width
         self.height = height
-        self.foreground = foreground
+        self.bounds = bounds
+        self.bits = bits
+    }
+
+    /// Whether source pixel (x, y) is foreground; false outside the image.
+    public subscript(x x: Int, y y: Int) -> Bool {
+        let column = x - bounds.x, row = y - bounds.y
+        guard column >= 0, column < bounds.width, row >= 0, row < bounds.height else { return false }
+        let i = row * bounds.width + column
+        return bits[i >> 3] & (1 << UInt8(i & 7)) != 0
+    }
+
+    public var isEmpty: Bool { bounds.width == 0 }
+
+    /// The number of foreground pixels.
+    public var area: Int { bits.reduce(0) { $0 + $1.nonzeroBitCount } }
+
+    /// `width · height` flags, row-major from the top-left.
+    public var foreground: [Bool] {
+        var out = [Bool](repeating: false, count: width * height)
+        for row in 0..<bounds.height {
+            for column in 0..<bounds.width where self[x: bounds.x + column, y: bounds.y + row] {
+                out[(bounds.y + row) * width + bounds.x + column] = true
+            }
+        }
+        return out
+    }
+
+    /// The whole mask as 8-bit values, row-major, 255 for foreground and 0 elsewhere (an alpha or
+    /// `CGImage(maskWidth:…)` plane).
+    public func alpha() -> [UInt8] { foreground.map { $0 ? 255 : 0 } }
+
+    /// Intersection over union with a mask of the same image; 1 when both are empty.
+    public func intersectionOverUnion(_ other: DetectionMask) -> Double {
+        precondition(width == other.width && height == other.height)
+        let a = bounds, b = other.bounds
+        let x0 = max(a.x, b.x), x1 = min(a.x + a.width, b.x + b.width)
+        let y0 = max(a.y, b.y), y1 = min(a.y + a.height, b.y + b.height)
+        var intersection = 0
+        if x0 < x1 && y0 < y1 {
+            for y in y0..<y1 { for x in x0..<x1 where self[x: x, y: y] && other[x: x, y: y] { intersection += 1 } }
+        }
+        let union = area + other.area - intersection
+        return union == 0 ? 1 : Double(intersection) / Double(union)
     }
 }
 

@@ -13,7 +13,6 @@ directory is laid out as an installed revision root:
       .aether/aether.json          the Aether manifest (MANIFEST.md §1.3, §2; driver `detector-detr@1`)
       rf_detr_nano.aimodel         image [1,3,384,384] f32 on [0,1] -> dets [1,300,4], labels [1,300,91] f32
                                    (seg-nano: rf_detr_seg_nano.aimodel, 312 x 312, 100 queries, + masks [1,100,78,78])
-      labels.json                  the 91 class-logit columns' COCO names (null for unused ids)
       LICENSE, NOTICE              Apache-2.0 (upstream's LICENSE) and the modification notice
       README.md                    the Hugging Face model card
       SHA256SUMS                   every bundle file except itself and the log
@@ -135,11 +134,9 @@ def manifest(variant: str, files: dict[str, dict], report: dict, platform_name: 
     postprocess = {
         "kind": "detrSigmoid",
         "boxFormat": "cxcywh", "boxSpace": "normalized",
-        "activation": "sigmoid",
         "classIndex": "cocoId",
+        "selection": "topKPairs",
         "defaults": {"scoreThreshold": rg.SCORE_THRESHOLD, "maxDetections": q},
-        "x-selection": {"rule": "topKOverQueryClassPairs", "k": q, "order": "scoreDescendingThenFlatIndex",
-                        "keep": "score > scoreThreshold"},
         "x-notes": (f"Upstream PostProcess: sigmoid over all {q} x 91 logits, the top {q} (query, class) pairs by "
                     "score (stable: ties by ascending flat index query * 91 + class), each kept when score > "
                     "threshold; one query can yield several classes. No NMS. Boxes are cxcywh normalized to the "
@@ -148,7 +145,7 @@ def manifest(variant: str, files: dict[str, dict], report: dict, platform_name: 
                     "ten unassigned ids never score)."),
     }
     if "masks" in spec["outputs"]:
-        postprocess["masks"] = {"output": "masks", "stride": 4}
+        postprocess["masks"] = {"logitThreshold": 0.0}
         postprocess["x-notes"] += (f" masks: per-query mask logits at {s // 4} x {s // 4} over the stretched input; "
                                    "upstream gathers the selected queries' planes, upsamples bilinearly "
                                    "(align_corners false) to the output size and keeps logit > 0.")
@@ -183,8 +180,8 @@ def manifest(variant: str, files: dict[str, dict], report: dict, platform_name: 
             },
         },
         "postprocess": postprocess,
-        "labels": {"set": "coco-91", "x-file": "main:labels.json",
-                   "x-notes": "logit column i is COCO category id i; labels.json lists the names (null if unused)."},
+        "labels": {"set": "coco-91",
+                   "x-notes": "logit column i is COCO category id i (classIndex cocoId); the names are the kit's."},
         "precision": {"weights": weights_precision, "activations": weights_precision,
                       "components": {"io": "image float32; outputs float32",
                                      "normalization": "float32 (in graph)"}},
@@ -195,7 +192,9 @@ def manifest(variant: str, files: dict[str, dict], report: dict, platform_name: 
             "sourceRevision": rg.CODE_COMMIT,
             "producer": "aether-kit Forge/rfdetr/export_rfdetr.py",
             "exportScript": report["scriptSHA256"]["export_rfdetr.py"],
-            "refs": {"checkpoint": report["source"]["checkpoint"],
+            "refs": {"upstreamCode": f"{rg.CODE_REPO}@{rg.CODE_COMMIT}",
+                     "checkpoint": report["source"]["checkpoint"]["url"],
+                     "checkpointSHA256": report["source"]["checkpoint"]["sha256"],
                      "forgeLockSHA256": report["forgeLockSHA256"], "exportReport": "export-report.json"},
         },
     }
@@ -205,8 +204,7 @@ def sample_manifest(variant: str, platform_name: str, precision: str = "float32"
     spec = rg.VARIANTS[variant]
     files = {f"{spec['asset']}/{name}": {"bytes": 1, "sha256": "0" * 64} for name in ("main.hash", "main.mlirb",
                                                                                      "metadata.json")}
-    files.update({name: {"bytes": 1, "sha256": "0" * 64} for name in ("LICENSE", "NOTICE", "README.md",
-                                                                      "labels.json")})
+    files.update({name: {"bytes": 1, "sha256": "0" * 64} for name in ("LICENSE", "NOTICE", "README.md")})
     pin = rg.PINS["checkpoints"][spec["checkpoint"]]
     report = {"scriptSHA256": {"export_rfdetr.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
               "source": {"checkpoint": {"url": pin["url"], "sha256": pin["sha256"]}}}
@@ -330,7 +328,6 @@ def main() -> None:
     shutil.copyfile(args.upstream / "LICENSE", args.output / "LICENSE")
     (args.output / "NOTICE").write_text(notice(args.variant, args.precision))
     (args.output / "README.md").write_text(readme(args.variant, ["macOS"], args.precision))
-    (args.output / "labels.json").write_text(json.dumps(rg.coco_labels(args.upstream), indent=1) + "\n")
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": rg.sha256_file(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in NOT_BUNDLE}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())

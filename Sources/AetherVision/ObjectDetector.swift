@@ -39,6 +39,9 @@ public struct ObjectDetectorModel: Sendable {
 ///   dropped; then greedy NMS in descending score (ties in anchor order), per class or across classes, dropping boxes
 ///   whose IoU with a kept one exceeds `nms.iou`; then the first `maxDetections` by score. Upstream YOLOX's
 ///   `postprocess`, in Double from the graph's floats (``DenseNMS``).
+/// - **`detrSigmoid`** (`detector-detr@1`, RF-DETR): sigmoid scores, the best `maxDetections` (query, class) pairs
+///   strictly above the threshold, no NMS; with `masks`, each detection's query mask resampled to the source
+///   (``DetrHead``).
 /// - **Boxes** are mapped from the graph's input to the source through the prepared image's geometry (the letterbox's
 ///   content rectangle) and clipped to the image.
 /// - **Memory and the GPU:** the graph stays loaded until ``unload()``. Each request is admitted against the measured
@@ -58,6 +61,7 @@ public actor ObjectDetector {
     struct Configuration: Sendable {
         enum Head: Sendable {
             case dense(Manifest.Postprocess.DenseNMS, preds: String)
+            case detr(DetrHead)
         }
 
         var contract: DriverContract
@@ -76,6 +80,10 @@ public actor ObjectDetector {
                 }
                 let graph = manifest.graphs["detector"]!
                 head = .dense(dense, preds: graph.outputs["preds"]!.name)
+            case .detectorDetr:
+                contract = .detectorDetr
+                try contract.validate(manifest)
+                head = .detr(try DetrHead(manifest, labels: DetectionLabels(manifest.labels)))
             default:
                 throw .unsupported(driver: manifest.driver)
             }
@@ -90,6 +98,7 @@ public actor ObjectDetector {
         var defaults: Manifest.Postprocess.DetectionDefaults {
             switch head {
             case .dense(let dense, _): dense.defaults
+            case .detr(let detr): detr.postprocess.defaults
             }
         }
     }
@@ -174,6 +183,26 @@ public actor ObjectDetector {
                 return Detection(label: label, score: Float(kept.score),
                                  box: boxes.source(kept.box[0], kept.box[1], kept.box[2], kept.box[3]))
             }
+        case .detr(let detr):
+            let outputs = try await pipeline.perform(job: request.job) { residency in
+                let graph = try await residency.graph("detector")
+                try detr.check(graph.signature)
+                let arena = TensorArena()
+                var bindings = Bindings(arena: arena)
+                try bindings.bindInput(c.image, to: graph.makeBuffer(for: c.image, holding: prepared, in: arena))
+                var buffers: [(String, [Int], TensorBuffer)] = []
+                for name in detr.outputs {
+                    let buffer = try graph.makeBuffer(for: name, role: .output, dimensions: [], in: arena)
+                    try bindings.bindOutput(name, to: buffer)
+                    buffers.append((name, graph.signature.output(name)!.shape, buffer))
+                }
+                try await residency.run(graph, &bindings)
+                var outputs: [String: DetectorOutput] = [:]
+                for (name, shape, buffer) in buffers { outputs[name] = DetectorOutput(shape: shape, values: try buffer.readFloats()) }
+                return outputs
+            }
+            // After the GPU grant: selection, boxes and masks are host work.
+            return detr.detections(outputs, geometry: prepared.geometry, scoreThreshold: threshold, maxDetections: limit)
         }
     }
 

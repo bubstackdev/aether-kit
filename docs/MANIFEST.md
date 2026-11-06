@@ -52,7 +52,7 @@ Rules that apply to every driver:
 | driver | required roles | optional roles | bundles |
 |---|---|---|---|
 | `detector-dense@1` | graph `detector`: in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
-| `detector-detr@1` | in `image` (or `features` chained from graph `backbone`); out `boxes`, `classLogits` | out `masks`; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
+| `detector-detr@1` | graph `detector`: in `image` (or `features` chained from graph `backbone`); out `boxes` [1,Q,4], `classLogits` [1,Q,C] | out `masks` [1,Q,h,w]; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
 | `depth-estimator@1` | in `image`; out `depth` | out `confidence` | depth-anything-3-small; *base, fp32* |
 | `clip-joint@1` | in `image`, `tokens`; out `imageEmbedding`, `textEmbedding` | in `attentionMask`; `unusedOutputs` | clip-vit-b32 |
 | `image-to-image-tiled@1` | in `image`; out `image` | — | adcsr-x4 |
@@ -308,7 +308,7 @@ kind's sit in its own sub-object. Interpreters arrive with each driver; decoding
 |---|---|---|
 | `depth` | `depth-estimator@1` | `depth: {polarity: largerIsNearer\|largerIsFarther, resizeBack [false]}` |
 | `denseNms` | `detector-dense@1` | `boxFormat: cxcywh\|xyxy, boxSpace: letterboxPixels\|normalized, activation: applied\|sigmoid [applied], nms: {type: perClass\|classAgnostic, iou ∈ (0, 1]}, defaults: {scoreThreshold ∈ [0, 1], maxDetections ≥ 1}, classIndex: contiguous\|cocoId [contiguous]` |
-| `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `masks?: {logitThreshold [0]}` |
+| `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `selection: topKPairs [topKPairs]`, `masks?: {logitThreshold [0]}` (present exactly when the graph binds `masks`) |
 | `embedding` | `clip-joint@1`, `text-embedder@1` | `embedding: {normalized: inGraph\|host\|none, pooling: inGraph\|mean\|cls [inGraph], similarity: cosine\|dot}` |
 | `gliner` | `gliner-classifier@1` | `gliner?: {threshold [0.5]}` (multi-label sigmoid threshold) |
 | `yesNo` | `yes-no-classifier@1` | `probs: {positiveIndex, threshold [0.5]}` |
@@ -328,6 +328,14 @@ in anchor order), within a class (`perClass`) or across classes, dropping boxes 
 `iou` (xyxy, no +1); then the first `maxDetections` by score. `classIndex: contiguous` makes column `i` label `i` of the
 set's contiguous list (C must be its size; `coco-91`'s is the 80 used COCO ids in ascending order), `cocoId` makes
 column `i` COCO id `i` (unused ids name no label). Boxes are returned normalized in the source and clipped to it.
+
+`detrSigmoid` (M4f, `ObjectDetector`), on `boxes` `[1, Q, 4]`, `classLogits` `[1, Q, C]` and optional `masks`
+`[1, Q, h, w]`: the sigmoid of every logit; `selection: topKPairs` ranks every (query, class) pair of a labelled column
+by score descending, ties by flat index `query · C + class` ascending, keeps the first `maxDetections` and of those the
+ones strictly above `scoreThreshold` (one query can yield several classes; no NMS; upstream RF-DETR's `PostProcess`).
+Unlabelled columns (unused COCO ids under `cocoId`) are left out before ranking. A mask plane spans the graph's whole
+input; the detection's query plane is resampled bilinearly onto the source's pixels through the geometry (pixel
+centres, `align_corners=False`, clamped to the content's edge cells) and kept strictly above `masks.logitThreshold`.
 
 Required for every vision/embedding driver, because none of these values is in the bundles. Thresholds are
 defaults, and the app can override them.

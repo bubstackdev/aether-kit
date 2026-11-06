@@ -583,6 +583,8 @@ runtime pieces:
     `[Detection]` (label, score, box normalized in the source and clipped, optional mask), highest score first. The
     `denseNms` postprocess (objectness × best class, threshold, greedy NMS, top `maxDetections`) runs after the GPU
     grant; `Detection`, `DetectionRequest` and `DetectionLabels` (`coco-91` built in) are shared with the DETR driver.
+    M4f adds `detector-detr@1` (RF-DETR nano, seg-nano) as a second head of the same actor: `detrSigmoid` (sigmoid,
+    top-k over (query, class) pairs, no NMS) and, with `masks`, compact `DetectionMask`s at the source's resolution.
   - **`TextEmbedder`** (M4c, AetherEmbeddings, `text-embedder@1`, EmbeddingGemma 300M): `embed([String], role:)` →
     `[Embedding]` (AetherRuntime's, shared with CLIP). `tokenizer.text` drives tokenization: the role's prompt plus the
     text, stripped, encoded with the tokenizer's specials, truncated keeping them, right-padded to `padTo` with a mask.
