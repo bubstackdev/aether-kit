@@ -4,9 +4,10 @@ struct JSONMatcher: Hashable, Sendable {
     enum Frame: Hashable, Sendable {
         /// A value of this node, not started.
         case value(Int)
-        /// An object; `member` is the next member to write (members.count: the closing brace).
-        case object(node: Int, member: Int)
-        /// Fixed text being matched: a member's lead-in, or an object's closing brace.
+        /// An object after its `{`; `member` is the next member to write or leave out (members.count: the closing
+        /// brace), `written` whether any member has been written (so the next one is preceded by `, `).
+        case object(node: Int, member: Int, written: Bool)
+        /// Fixed text being matched: an object's opening brace, a member's lead-in, or an object's closing brace.
         case text(Text, position: Int)
         case string(StringPhase)
         /// A choice among literals, `alive` the options still matching.
@@ -16,8 +17,10 @@ struct JSONMatcher: Hashable, Sendable {
     }
 
     enum Text: Hashable, Sendable {
-        case member(node: Int, index: Int)
-        case close(node: Int)
+        case open
+        /// `"key": `, after `, ` unless it is the first member written.
+        case member(node: Int, index: Int, first: Bool)
+        case close
     }
 
     enum StringPhase: Hashable, Sendable {
@@ -84,7 +87,9 @@ struct JSONMatcher: Hashable, Sendable {
         switch top {
         case .value(let node):
             switch grammar.nodes[node] {
-            case .object: stack.append(.object(node: node, member: 0))
+            case .object:
+                stack.append(.object(node: node, member: 0, written: false))
+                stack.append(.text(.open, position: 0))
             case .string:
                 guard byte == UInt8(ascii: "\"") else { return [] }
                 stack.append(.string(.body(pending: 0)))
@@ -97,26 +102,32 @@ struct JSONMatcher: Hashable, Sendable {
             }
             return advance(stack, byte, grammar)
 
-        case .object(let node, let member):
+        case .object(let node, let member, let written):
             guard case .object(let members) = grammar.nodes[node] else { return [] }
-            if member < members.count {
-                stack.append(.object(node: node, member: member + 1))
-                stack.append(.value(members[member].value))
-                stack.append(.text(.member(node: node, index: member), position: 0))
-            } else {
-                stack.append(.text(.close(node: node), position: 0))
+            guard member < members.count else {
+                stack.append(.text(.close, position: 0))
+                return advance(stack, byte, grammar)
             }
-            return advance(stack, byte, grammar)
+            var present = stack
+            present.append(.object(node: node, member: member + 1, written: true))
+            present.append(.value(members[member].value))
+            present.append(.text(.member(node: node, index: member, first: !written), position: 0))
+            var results = advance(present, byte, grammar)
+            if members[member].optional {
+                // Left out: the next member (or the closing brace) takes this byte.
+                for result in advance(stack + [.object(node: node, member: member + 1, written: written)], byte, grammar)
+                where !results.contains(result) { results.append(result) }
+            }
+            return results
 
         case .text(let text, let position):
             let bytes: [UInt8]
             switch text {
-            case .member(let node, let index):
+            case .open: bytes = [UInt8(ascii: "{")]
+            case .member(let node, let index, let first):
                 guard case .object(let members) = grammar.nodes[node] else { return [] }
-                bytes = members[index].text
-            case .close(let node):
-                guard case .object(let members) = grammar.nodes[node] else { return [] }
-                bytes = Array((members.isEmpty ? "{}" : "}").utf8)
+                bytes = first ? members[index].key : Array(", ".utf8) + members[index].key
+            case .close: bytes = [UInt8(ascii: "}")]
             }
             guard bytes[position] == byte else { return [] }
             if position + 1 < bytes.count { stack.append(.text(text, position: position + 1)) }

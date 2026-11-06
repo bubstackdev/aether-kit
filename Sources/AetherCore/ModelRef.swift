@@ -40,7 +40,9 @@ public struct ModelRef: Sendable, Hashable, Codable, CustomStringConvertible {
 
     /// Checks that every string the store turns into a path stays a single safe component (or, for a repo, exactly
     /// `owner/name`; for subtrees and files, relative paths without `.`/`..`), so no reference reaches outside the
-    /// store root. The store calls it before any file-system operation; a catalog reference always passes.
+    /// store root; that every file's size is non-negative and its hash is a SHA-256 in lowercase hex (64 characters);
+    /// and that the sizes total within `Int64`. The store calls it before any file-system operation; a catalog
+    /// reference always passes.
     public func validateForStore() throws(AetherError) {
         try Self.requireRepo(repo, "repo")
         try Self.requireComponent(revision, "revision")
@@ -52,10 +54,27 @@ public struct ModelRef: Sendable, Hashable, Codable, CustomStringConvertible {
             guard asset.subtree.isEmpty || isSafeRelativePath(asset.subtree) else {
                 throw .invalidReference(field: "assets.\(asset.name).subtree", reason: "'\(asset.subtree)' is not a safe relative path")
             }
-            for file in asset.files where !isSafeRelativePath(file.path) {
-                throw .invalidReference(field: "assets.\(asset.name).files", reason: "'\(file.path)' is not a safe relative path")
+            for file in asset.files {
+                guard isSafeRelativePath(file.path) else {
+                    throw .invalidReference(field: "assets.\(asset.name).files", reason: "'\(file.path)' is not a safe relative path")
+                }
+                guard file.size >= 0 else {
+                    throw .invalidReference(field: "assets.\(asset.name).files", reason: "'\(file.path)' has a negative size (\(file.size))")
+                }
+                guard Self.isSHA256(file.sha256) else {
+                    throw .invalidReference(
+                        field: "assets.\(asset.name).files", reason: "'\(file.path)' has no SHA-256 (64 lowercase hex digits): '\(file.sha256)'")
+                }
             }
         }
+        guard checkedSum(assets.flatMap { $0.files.map(\.size) }) != nil else {
+            throw .invalidReference(field: "assets", reason: "the files' sizes total more than \(Int64.max) bytes")
+        }
+    }
+
+    /// A SHA-256 as the catalog writes it: 64 lowercase hex digits.
+    static func isSHA256(_ s: String) -> Bool {
+        s.utf8.count == 64 && s.utf8.allSatisfy { (UInt8(ascii: "0")...UInt8(ascii: "9")).contains($0) || (UInt8(ascii: "a")...UInt8(ascii: "f")).contains($0) }
     }
 
     /// One path component: letters, digits, `.`, `_`, `-`, starting with a letter or digit (so never `.` or `..`).
@@ -80,7 +99,8 @@ public struct ModelRef: Sendable, Hashable, Codable, CustomStringConvertible {
         }
     }
 
-    public var bytes: Int64 { assets.reduce(0) { $0 + $1.files.reduce(0) { $0 + $1.size } } }
+    /// Sum of every asset's file sizes, saturating at `Int64.max` (``validateForStore()`` refuses such sizes).
+    public var bytes: Int64 { saturatingSum(assets.map { saturatingSum($0.files.map(\.size)) }) }
 
     public func asset(_ name: String) -> Asset? { assets.first { $0.name == name } }
 

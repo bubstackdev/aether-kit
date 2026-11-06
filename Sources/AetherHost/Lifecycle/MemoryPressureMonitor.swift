@@ -109,15 +109,18 @@ public actor MemoryPressureMonitor {
     public func deliver(_ level: MemoryPressureLevel) { apply(level, ifCriticalAt: nil) }
 
     /// A level from a notice, or (with `ifCriticalAt`) an easing decided against that critical notice, which a newer
-    /// critical notice cancels.
+    /// critical notice cancels. Receiving a raised notice and changing level are separate: every warning or critical
+    /// notice counts, even one that repeats the current level (a second warning is a second notice, and a host
+    /// releases idle models again for it); a change of level without a notice (an easing, a return to normal) doesn't.
     private func apply(_ level: MemoryPressureLevel, ifCriticalAt expected: ContinuousClock.Instant?) {
         if let expected, critical?.at != expected { return }
         if level == .critical { critical = (clock.now(), availableMemory()) }
         defer { if level == .critical { scheduleExpiryCheck() } }
-        guard current.level != level else { return }
+        let isNotice = expected == nil && level >= .warning
+        guard current.level != level || isNotice else { return }
         current.level = level
         if level != .critical { critical = nil }
-        if level >= .warning { current.notice += 1 }
+        if isNotice { current.notice += 1 }
         for continuation in subscribers.values { continuation.yield(current) }
     }
 

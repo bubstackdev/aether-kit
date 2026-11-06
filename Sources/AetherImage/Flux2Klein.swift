@@ -197,14 +197,14 @@ public actor Flux2KleinPipeline {
 
     // MARK: - The generation
 
+    /// The three phases. The denoisers and the decoder run in their own functions, so their graphs are referenced
+    /// only by those functions' locals and the residency: when ``GraphResidency/endPhase(_:)`` releases them (per
+    /// phase), nothing else keeps them alive into the next phase.
     private func run(
         _ residency: GraphResidency, prompt: Prompt?, conditioning provided: [Float]?, seed: UInt64,
         schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int), size: (width: Int, height: Int)
     ) async throws -> GeneratedImage {
         let arena = TensorArena()
-        let textRows = flux2.prompt.maxTokens, tokens = grid.rows * grid.columns
-        let count = tokens * latent.channels
-        let dims = Dimensions(textRows: textRows, imageTokens: tokens)
 
         // Prompt: the conditioning rows outlive the text encoder (it may be released before the denoisers load).
         var conditioning: TensorBuffer?
@@ -218,6 +218,29 @@ public actor Flux2KleinPipeline {
 
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
         residency.beginPhase(.perStep)
+        let latents = try await denoise(
+            conditioning: conditioning, provided: provided, seed: seed, schedule: schedule, grid: grid,
+            residency: residency, arena: arena)
+        residency.endPhase(.perStep)
+        try Task.checkCancellation()
+
+        // Image: the packed tokens, raster order, are the decoder's [rows, columns, channels].
+        residency.beginPhase(.perImage)
+        let image = try await decode(latents, grid: grid, size: size, residency: residency, arena: arena)
+        residency.endPhase(.perImage)
+        // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
+        try Task.checkCancellation()
+        return image
+    }
+
+    private func denoise(
+        conditioning encoded: TensorBuffer?, provided: [Float]?, seed: UInt64, schedule: FlowMatchSchedule,
+        grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena
+    ) async throws -> [Float] {
+        var conditioning = encoded
+        let textRows = flux2.prompt.maxTokens, tokens = grid.rows * grid.columns
+        let count = tokens * latent.channels
+        let dims = Dimensions(textRows: textRows, imageTokens: tokens)
         var graphs: [any GraphBackend] = []
         for segment in wiring.segments { graphs.append(try await residency.graph(segment.role)) }
         let first = graphs[0]
@@ -276,11 +299,14 @@ public actor Flux2KleinPipeline {
             try velocity.readFloats(0..<count, into: &v)
             try schedule.advance(step: step, latents: &latents, velocity: v)
         }
-        residency.endPhase(.perStep)
-        try Task.checkCancellation()
+        return latents
+    }
 
-        // Image: the packed tokens, raster order, are the decoder's [rows, columns, channels].
-        residency.beginPhase(.perImage)
+    private func decode(
+        _ latents: [Float], grid: (rows: Int, columns: Int), size: (width: Int, height: Int), residency: GraphResidency,
+        arena: TensorArena
+    ) async throws -> GeneratedImage {
+        let count = grid.rows * grid.columns * latent.channels
         let vae = try await residency.graph(wiring.decoder.role)
         let input = try vae.makeBuffer(for: wiring.decoder.latents, role: .input, dimensions: [grid.rows, grid.columns], in: arena)
         let output = try vae.makeBuffer(for: wiring.decoder.image, role: .output, dimensions: [size.height, size.width], in: arena)
@@ -295,7 +321,6 @@ public actor Flux2KleinPipeline {
         try bindings.bindOutput(wiring.decoder.image, to: output)
         try await vae.run(&bindings)
         residency.sample()
-        residency.endPhase(.perImage)
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
     }
 
