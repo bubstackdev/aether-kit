@@ -86,13 +86,15 @@ public struct TensorBuffer {
         out.removeAll(keepingCapacity: true)
         out.reserveCapacity(range.count)
         switch scalarType {
-        case .float32:
+        // The contiguous cases come first: an unconditional `.float32` case above them made the bulk copy unreachable.
+        case .float32 where layout.isContiguous:
             try arena.withMutablePointer(self, as: Float.self) { pointer throws(AetherError) in
-                layout.forEachOffset(from: range.lowerBound, count: range.count) { _, offset in out.append(pointer[offset]) }
+                out.append(contentsOf: UnsafeBufferPointer(start: pointer + range.lowerBound, count: range.count))
             }
         case .float16 where layout.isContiguous:
-            // A logits row is ~150k values per token: convert with Accelerate, not element by element.
-            out = [Float](repeating: 0, count: range.count)
+            // A logits row is ~150k values per token: convert with Accelerate, not element by element, into `out`'s
+            // own storage (appending zeros reuses its capacity; assigning a new array did not).
+            out.append(contentsOf: repeatElement(0, count: range.count))
             try arena.withMutablePointer(self, as: Float16.self) { pointer throws(AetherError) in
                 out.withUnsafeMutableBufferPointer { dst in
                     var source = vImage_Buffer(
@@ -104,12 +106,9 @@ public struct TensorBuffer {
                     _ = vImageConvert_Planar16FtoPlanarF(&source, &destination, vImage_Flags(kvImageNoFlags))
                 }
             }
-        case .float32 where layout.isContiguous:
-            out = [Float](repeating: 0, count: range.count)
+        case .float32:
             try arena.withMutablePointer(self, as: Float.self) { pointer throws(AetherError) in
-                out.withUnsafeMutableBufferPointer { dst in
-                    dst.baseAddress!.update(from: pointer + range.lowerBound, count: range.count)
-                }
+                layout.forEachOffset(from: range.lowerBound, count: range.count) { _, offset in out.append(pointer[offset]) }
             }
         case .float16:
             try arena.withMutablePointer(self, as: Float16.self) { pointer throws(AetherError) in
