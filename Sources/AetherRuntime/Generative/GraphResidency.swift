@@ -161,10 +161,12 @@ public struct ResidencyPlan: Sendable, Hashable {
 
     /// The inputs for a manifest's graphs under `profile`: the ledger's measurements, or, for a phase not measured
     /// yet, the size of its graphs' files (`fileBytes` per role) as both its peak and its held bytes. Graphs without a
-    /// residency count towards the phase they are loaded in when measured, and by their files otherwise.
+    /// residency count towards the phase they are loaded in when measured, and by their files otherwise. A manifest
+    /// whose graphs have no residency at all is measured under `unphasedPhase` (the phase its driver opens, as Kokoro
+    /// opens `perStep`), and that measurement is what it plans with.
     public static func inputs(
         manifest: Manifest, ledger: FootprintLedger, model: String? = nil, profile: String,
-        fileBytes: (String) -> Int64
+        unphasedPhase: Manifest.Residency = .perStep, fileBytes: (String) -> Int64
     ) -> Inputs {
         var phases: [Manifest.Residency: PhaseFootprint] = [:]
         var measured = true
@@ -180,11 +182,15 @@ public struct ResidencyPlan: Sendable, Hashable {
             }
         }
         let unphased = manifest.graphs.filter { $0.value.residency == nil }.map(\.key)
+        if phases.isEmpty, !unphased.isEmpty,
+           let footprint = ledger.footprint(.init(model: model ?? manifest.id, profile: profile, phase: unphasedPhase)) {
+            return Inputs(phases: [unphasedPhase: footprint], isMeasured: true, allowsPerPhase: false)
+        }
         // Measured phases already include them (they load in some phase); otherwise their files are added.
         if !unphased.isEmpty, !measured || phases.isEmpty {
             measured = false
             let files = unphased.reduce(Int64(0)) { $0 + fileBytes($1) }
-            let into = phases.keys.min { $0.order < $1.order } ?? .perStep
+            let into = phases.keys.min { $0.order < $1.order } ?? unphasedPhase
             let base = phases[into] ?? PhaseFootprint(peakBytes: 0, heldBytes: 0)
             phases[into] = PhaseFootprint(peakBytes: base.peakBytes + files, heldBytes: base.heldBytes + files)
         }
@@ -216,13 +222,21 @@ public final class GraphResidency {
     private let samplingInterval: Duration?
     private let load: Loader
     private var loaded: [String: any GraphBackend] = [:]
-    private var open: (phase: Manifest.Residency, baseline: Int64, meter: PeakMeter)?
+    private var open: (phase: Manifest.Residency, baseline: Int64, observed: Int64, meter: PeakMeter)?
+    /// The baseline of graphs released and not yet measured past: the next phase measures from it.
+    private var releasedBaseline: Int64?
+    /// The lowest baseline any phase began at: where released memory, once returned, leaves the level.
+    public private(set) var floor: Int64?
 
-    /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests).
+    /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
+    /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
+    /// may still be returning.
     public init(
         manifest: Manifest, mode: ResidencyPlan.Mode, ledger: FootprintLedger, model: String? = nil, profile: String = "",
-        probe: GPUMemoryProbe = .system, samplingInterval: Duration? = .milliseconds(5), load: @escaping Loader
+        probe: GPUMemoryProbe = .system, samplingInterval: Duration? = .milliseconds(5), releasedBaseline: Int64? = nil,
+        load: @escaping Loader
     ) {
+        self.releasedBaseline = releasedBaseline
         self.mode = mode
         self.ledger = ledger
         self.model = model ?? manifest.id
@@ -253,18 +267,29 @@ public final class GraphResidency {
     /// Samples the Metal level into the open phase now (after a run, say).
     public func sample() { open?.meter.observe(probe.allocatedBytes()) }
 
-    /// Starts measuring `phase`. A phase still open is ended first.
+    /// Starts measuring `phase`. A phase still open is ended first. After graphs were released (per phase, or by a
+    /// profile change), the phase measures from the level before they loaded: their memory comes back seconds late,
+    /// and a baseline that still includes it would under-count this phase by up to their held bytes. That
+    /// overestimates instead, the direction admission prefers.
     public func beginPhase(_ phase: Manifest.Residency) {
         if let current = open { endPhase(current.phase) }
-        let baseline = probe.allocatedBytes()
+        let observed = probe.allocatedBytes()
+        var baseline = observed
+        if let released = releasedBaseline {
+            baseline = min(baseline, released)
+            releasedBaseline = nil
+        }
+        floor = min(floor ?? baseline, baseline)
         let meter = PeakMeter(baseline)
         if let samplingInterval { meter.start(probe: probe, every: samplingInterval) }
-        open = (phase, baseline, meter)
+        open = (phase, baseline, observed, meter)
     }
 
     /// Ends `phase`: records its footprint and, per phase, releases the graphs whose residency is `phase`.
     public func endPhase(_ phase: Manifest.Residency) {
+        var started: Int64?
         if let current = open, current.phase == phase {
+            started = current.observed
             current.meter.stop()
             let level = probe.allocatedBytes()
             current.meter.observe(level)
@@ -273,7 +298,10 @@ public final class GraphResidency {
             open = nil
         }
         if mode == .perPhase {
-            for role in residentRoles where (residency[role] ?? nil) == phase { loaded[role] = nil }
+            let released = residentRoles.filter { (residency[$0] ?? nil) == phase }
+            for role in released { loaded[role] = nil }
+            // The next phase measures from where this one started, not from a level that may still hold these graphs.
+            if !released.isEmpty, let start = started ?? floor { releasedBaseline = min(releasedBaseline ?? start, start) }
         }
     }
 

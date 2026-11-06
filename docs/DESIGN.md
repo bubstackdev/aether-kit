@@ -317,8 +317,20 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     be seeded with qualified values.
   - A measurement holds only for the shapes it ran at: each distinct input shape keeps its own memory until the model
     is released (lab/h3-spike), so a profile pins its shapes.
-  - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`.
-  - The pipeline reserves the plan's peak from AetherHost's shared `ResourceCoordinator` (ported from 0.0.7).
+  - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`. A manifest with no
+    `residency` at all (Kokoro) plans with what its driver measured under the phase it opens (`unphasedPhase`).
+  - After graphs are released (per phase, or on a profile change) the next phase measures from where the released
+    phase started: their memory comes back seconds late, and a baseline still holding it under-counts. That
+    overestimates instead.
+  - **`ResidentAdmission`** (AetherHost) is each pipeline's graphs and their admission across generations. It plans
+    against a shared `ResourceCoordinator`'s available bytes plus the pipeline's own reservation, or against the
+    `MemoryBudget`, adding back the resident graphs' bytes when the budget is what the process may still allocate
+    (that figure already excludes them). It reserves the plan's peak for the generation, then shrinks the reservation
+    to what stays resident, so another pipeline can't take memory resident graphs use; a failure, a refusal or an
+    unload releases the graphs and the reservation together.
+  - Graphs whose shape follows the request (Krea's unpadded text rows, in segments that load without the reshape hint)
+    keep one specialization per shape; past `maximumShapes` (4) distinct shapes they are released before the next
+    generation, so memory stays near what was measured.
 - **Measured, G0 gate (qwen3-0.6b, M5 Max):**
   - A graph load allocates almost nothing (+0.4 MiB for 320 MiB of files).
   - Memory arrives with the first run: +1.33 GiB peak, held while loaded, about 4× the files. So load deltas measure

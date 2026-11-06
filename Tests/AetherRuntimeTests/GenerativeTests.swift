@@ -274,7 +274,10 @@ struct ResidencyTests {
         residency.beginPhase(.perStep)
         for role in ["denoiser0", "denoiser1", "denoiser2", "denoiser3"] { _ = try await residency.graph(role) }
         residency.endPhase(.perStep)
-        #expect(ledger.footprint(key(.perStep)) == PhaseFootprint(peakBytes: 4, heldBytes: 4))
+        // Per phase, the prompt's graphs were released but their memory (the fake never frees it) still counts: the
+        // steps phase measures from where the prompt began, the overestimate admission prefers.
+        #expect(ledger.footprint(key(.perStep)) == (mode == .allResident
+            ? PhaseFootprint(peakBytes: 4, heldBytes: 4) : PhaseFootprint(peakBytes: 605, heldBytes: 605)))
 
         switch mode {
         case .allResident:
@@ -288,6 +291,28 @@ struct ResidencyTests {
         residency.beginPhase(.perImage)
         residency.releaseAll()  // an open phase is discarded unrecorded
         #expect(residency.residentRoles.isEmpty && ledger.footprint(key(.perImage)) == nil)
+    }
+
+    /// Review finding 4: a released phase's memory returns seconds late. Measured from a baseline that still held it,
+    /// the next phase came out low (here its held bytes negative) once that memory returned mid-phase.
+    @Test func aPhaseAfterAReleaseMeasuresFromBeforeTheReleasedGraphs() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let residency = GraphResidency(manifest: try Self.krea(), mode: .perPhase, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        residency.beginPhase(.perPrompt)       // 1000
+        _ = try await residency.graph("textEncoder")
+        gpu.add(600)
+        residency.endPhase(.perPrompt)         // released; its 600 not yet returned
+        residency.beginPhase(.perStep)         // the level is still 1600
+        _ = try await residency.graph("denoiser0")
+        gpu.add(200)
+        residency.sample()                     // 1800
+        gpu.add(-600)                          // the prompt's memory returns
+        residency.endPhase(.perStep)           // 1200
+        let steps = ledger.footprint(.init(model: "krea-2-turbo", profile: "p", phase: .perStep))
+        #expect(steps == PhaseFootprint(peakBytes: 800, heldBytes: 200))
+        #expect(residency.floor == 1000)
     }
 
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {

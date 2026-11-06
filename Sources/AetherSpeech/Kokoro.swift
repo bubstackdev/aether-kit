@@ -117,10 +117,8 @@ public actor KokoroSpeechSession {
     public nonisolated let options: Options
     let names: Names
     let device: Device
-    private let load: GraphResidency.Loader
     private let readTable: @Sendable (Manifest.Table) throws(AetherError) -> [Float]
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var styles: [KokoroVoice: [Float]] = [:]
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
@@ -174,9 +172,13 @@ public actor KokoroSpeechSession {
         self.frameCap = frameCap
         self.options = options
         self.device = device
-        self.load = load
         self.readTable = readTable
-        self.fileBytes = fileBytes
+        // Kokoro's graphs have no residency: both stay loaded, and the session measures them under `perStep`.
+        admission = ResidentAdmission(
+            manifest: manifest, device: device,
+            settings: .init(memory: options.memory, coordinator: options.coordinator, ledger: options.ledger,
+                            probe: options.probe, unphasedPhase: .perStep),
+            load: load, fileBytes: fileBytes)
     }
 
     /// Parses phonemes against this bundle's vocabulary.
@@ -214,9 +216,7 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let reservation = try admit()
-        defer { reservation?.release() }
-        let residency = openResidency()
+        let residency = try admission.begin(profile: profile)
         do {
             let style = try styles(request.voice, table: voice.table)
             var results: [KokoroSpeech] = []
@@ -228,10 +228,10 @@ public actor KokoroSpeechSession {
                 onSegment?(index, speech)
                 results.append(speech)
             }
+            admission.finish()
             return results
         } catch {
-            residency.releaseAll()
-            self.residency = nil
+            admission.release()
             throw error
         }
     }
@@ -261,9 +261,7 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let reservation = try admit()
-        defer { reservation?.release() }
-        let residency = openResidency()
+        let residency = try admission.begin(profile: profile)
         do {
             residency.beginPhase(.perStep)
             _ = try await residency.graph("durations")
@@ -274,10 +272,10 @@ public actor KokoroSpeechSession {
                 _ = try await decode(residency, prosody: nil, text: nil, style: style, frames: bucket, bucket: bucket, seed: 0)
             }
             residency.endPhase(.perStep)
+            admission.finish()
             return buckets
         } catch {
-            residency.releaseAll()
-            self.residency = nil
+            admission.release()
             throw error
         }
     }
@@ -286,14 +284,13 @@ public actor KokoroSpeechSession {
     /// again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         styles = [:]
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - One utterance
 
@@ -388,25 +385,8 @@ public actor KokoroSpeechSession {
 
     // MARK: - Admission, residency, voices
 
-    /// The peak a request needs: the cap bucket's measured footprint, or the graphs' files; reserved from the
-    /// coordinator if there is one. Refuses with `capacity` before anything loads.
-    private func admit() throws(AetherError) -> ResourceReservation? {
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: options.ledger, profile: profile, fileBytes: fileBytes)
-        let budget = options.coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? options.memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        return try options.coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
-    }
-
     /// Footprints are keyed by the bucket the cap allows: each bucket the decoder has run at keeps its memory.
     private var profile: String { "frames<=\(kokoro.frames.bucket(for: frameCap) ?? frameCap)" }
-
-    private func openResidency() -> GraphResidency {
-        if let residency { return residency }
-        let fresh = GraphResidency(
-            manifest: manifest, mode: .allResident, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
-    }
 
     private func styles(_ voice: KokoroVoice, table name: String) throws(AetherError) -> [Float] {
         if let cached = styles[voice] { return cached }

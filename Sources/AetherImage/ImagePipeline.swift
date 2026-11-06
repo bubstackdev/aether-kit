@@ -80,16 +80,16 @@ public struct ImageRequest: Sendable, Hashable {
 }
 
 extension ImagePipelineOptions {
-    /// Plans residency for `profile` from the ledger (or the graphs' file sizes) and reserves the plan's peak from the
-    /// coordinator, if any. Refuses with `capacity` before anything loads.
-    func admit(
-        manifest: Manifest, profile: String, device: Device, fileBytes: (String) -> Int64
-    ) throws(AetherError) -> (plan: ResidencyPlan, reservation: ResourceReservation?) {
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: ledger, profile: profile, fileBytes: fileBytes)
-        let budget = coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        let reservation = try coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
-        return (plan, reservation)
+    /// The pipeline's graphs and their admission (``ResidentAdmission``): planned from the ledger (or the graphs'
+    /// files), reserved from the coordinator, if any, for the generation and then for what stays resident.
+    func admission(
+        manifest: Manifest, device: Device, load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64,
+        maximumShapes: Int = 4
+    ) -> ResidentAdmission {
+        ResidentAdmission(
+            manifest: manifest, device: device,
+            settings: .init(memory: memory, coordinator: coordinator, ledger: ledger, probe: probe, maximumShapes: maximumShapes),
+            load: load, fileBytes: fileBytes)
     }
 }
 

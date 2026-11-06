@@ -43,8 +43,7 @@ public actor Flux2KleinPipeline {
     nonisolated let encodePrompt: PromptEncoder
     let device: Device
     private let load: GraphResidency.Loader
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
@@ -98,7 +97,7 @@ public actor Flux2KleinPipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        self.fileBytes = fileBytes
+        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
     }
 
     /// FLUX.2, Krea and H3 are qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -141,15 +140,14 @@ public actor Flux2KleinPipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let profile = "\(size.width)x\(size.height)"
-        let (plan, reservation) = try options.admit(manifest: manifest, profile: profile, device: device, fileBytes: fileBytes)
-        defer { reservation?.release() }
-        let residency = residency(for: plan.mode, profile: profile)
+        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
         do {
-            return try await run(
+            let image = try await run(
                 residency, prompt: prompt, conditioning: conditioning, seed: request.seed, schedule: table, grid: grid, size: size)
+            admission.finish()
+            return image
         } catch {
-            residency.releaseAll()
+            admission.release()
             throw error
         }
     }
@@ -167,13 +165,12 @@ public actor Flux2KleinPipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - The generation
 
@@ -300,16 +297,6 @@ public actor Flux2KleinPipeline {
         try bindings.bindOutput(wiring.text.conditioning, to: rows)
         try await text.run(&bindings)
         return rows
-    }
-
-    /// The residency for `mode`, keeping loaded graphs when the mode and profile are unchanged.
-    private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
-        if let residency, residency.mode == mode, residency.profile == profile { return residency }
-        residency?.releaseAll()
-        let fresh = GraphResidency(
-            manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
     }
 
     private func turn() async {
