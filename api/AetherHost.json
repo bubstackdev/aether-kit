@@ -10209,6 +10209,495 @@
     "name": "ModelHost",
     "printedName": "ModelHost",
     "usr": "s:10AetherHost05ModelB0C"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17StatelessPipelineC8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17StatelessPipelineC8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17StatelessPipelineC8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherHost",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:10AetherHost17StatelessPipelineC8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17StatelessPipelineC7optionsAA0D7OptionsVvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17StatelessPipelineC7optionsAA0D7OptionsVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17StatelessPipelineC7optionsAA0D7OptionsVvp",
+      "moduleName": "AetherHost",
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:10AetherHost17StatelessPipelineC7optionsAA0D7OptionsVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "StatelessPipeline",
+        "printedName": "AetherHost.StatelessPipeline",
+        "usr": "s:10AetherHost17StatelessPipelineC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "MemoryBudget",
+        "printedName": "AetherRuntime.MemoryBudget",
+        "usr": "s:13AetherRuntime12MemoryBudgetV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Convenience",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost17StatelessPipelineC6bundle8manifest6device8contract7options13defaultMemoryAC0A4Core15InstalledBundleV_AJ8ManifestVAJ6DeviceVAJ14DriverContractVAA0D7OptionsV0A7Runtime0K6BudgetVtAJ0A5ErrorOYKcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(bundle:manifest:device:contract:options:defaultMemory:)",
+      "throwing": true,
+      "usr": "s:10AetherHost17StatelessPipelineC6bundle8manifest6device8contract7options13defaultMemoryAC0A4Core15InstalledBundleV_AJ8ManifestVAJ6DeviceVAJ14DriverContractVAA0D7OptionsV0A7Runtime0K6BudgetVtAJ0A5ErrorOYKcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "StatelessPipeline",
+        "printedName": "AetherHost.StatelessPipeline",
+        "usr": "s:10AetherHost17StatelessPipelineC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "MemoryBudget",
+        "printedName": "AetherRuntime.MemoryBudget",
+        "usr": "s:13AetherRuntime12MemoryBudgetV"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GraphBackend",
+            "printedName": "any AetherRuntime.GraphBackend",
+            "usr": "s:13AetherRuntime12GraphBackendP"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.String) async throws(AetherCore.AetherError) -> any AetherRuntime.GraphBackend"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Loader",
+        "printedName": "AetherRuntime.GraphResidency.Loader"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(Swift.String) -> Swift.Int64"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory4load9fileBytesAC0A4Core8ManifestV_AK6DeviceVAK14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAT12GraphBackend_pSSYaAK0A5ErrorOYKYCcs5Int64VSSctAYYKcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(manifest:device:contract:options:defaultMemory:load:fileBytes:)",
+      "throwing": true,
+      "usr": "s:10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory4load9fileBytesAC0A4Core8ManifestV_AK6DeviceVAK14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAT12GraphBackend_pSSYaAK0A5ErrorOYKYCcs5Int64VSSctAYYKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.String]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17StatelessPipelineC13residentRolesSaySSGvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17StatelessPipelineC13residentRolesSaySSGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.String]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17StatelessPipelineC13residentRolesSaySSGvp",
+      "moduleName": "AetherHost",
+      "name": "residentRoles",
+      "printedName": "residentRoles",
+      "usr": "s:10AetherHost17StatelessPipelineC13residentRolesSaySSGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GenericTypeParam",
+        "printedName": "T"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenericTypeParam",
+          "printedName": "T"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GraphResidency",
+          "printedName": "AetherRuntime.GraphResidency",
+          "usr": "s:13AetherRuntime14GraphResidencyC"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherRuntime.GraphResidency) async throws -> T",
+        "typeAttributes": [
+         "noescape"
+        ]
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "genericSig": "<T>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17StatelessPipelineC7perform3job7profile_xAA6GPUJobCSg_SSx0A7Runtime14GraphResidencyCYaKYCXEtYaKlF",
+      "moduleName": "AetherHost",
+      "name": "perform",
+      "printedName": "perform(job:profile:_:)",
+      "throwing": true,
+      "usr": "s:10AetherHost17StatelessPipelineC7perform3job7profile_xAA6GPUJobCSg_SSx0A7Runtime14GraphResidencyCYaKYCXEtYaKlF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated",
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17StatelessPipelineC6unloadyyYaF",
+      "moduleName": "AetherHost",
+      "name": "unload",
+      "printedName": "unload()",
+      "usr": "s:10AetherHost17StatelessPipelineC6unloadyyYaF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost17StatelessPipelineC",
+    "moduleName": "AetherHost",
+    "name": "StatelessPipeline",
+    "printedName": "StatelessPipeline",
+    "usr": "s:10AetherHost17StatelessPipelineC"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GraphBackend",
+        "printedName": "any AetherRuntime.GraphBackend",
+        "usr": "s:13AetherRuntime12GraphBackendP"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Bindings",
+        "paramValueOwnership": "InOut",
+        "printedName": "AetherRuntime.Bindings",
+        "usr": "s:13AetherRuntime8BindingsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated",
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime14GraphResidencyC0A4HostE3runyyAA0C7Backend_p_AA8BindingsVztYaKF",
+      "moduleName": "AetherHost",
+      "name": "run",
+      "printedName": "run(_:_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime14GraphResidencyC0A4HostE3runyyAA0C7Backend_p_AA8BindingsVztYaKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "isExternal": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime14GraphResidencyC",
+    "moduleName": "AetherRuntime",
+    "name": "GraphResidency",
+    "printedName": "GraphResidency",
+    "usr": "s:13AetherRuntime14GraphResidencyC"
    }
   ],
   "json_format_version": 8,
