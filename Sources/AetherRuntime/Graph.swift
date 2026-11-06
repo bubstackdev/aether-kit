@@ -98,19 +98,14 @@ public final class Graph: GraphBackend {
     private let function: InferenceFunction
 
     /// Specializes the model at `url` with `options` (through the specialization cache) and loads `function`.
-    public init(url: URL, function name: String, options: GraphOptions) async throws(AetherError) {
+    public convenience init(url: URL, function name: String, options: GraphOptions) async throws(AetherError) {
+        let model = try await Self.specialize(url: url, options: options)
+        try self.init(model: model, url: url, function: name, options: options)
+    }
+
+    private init(model: AIModel, url: URL, function name: String, options: GraphOptions) throws(AetherError) {
         self.url = url
         self.options = options
-        let model: AIModel
-        do {
-            model = try await AIModel.specialize(
-                contentsOf: url, options: options.specializationOptions, cache: try options.aiCache(),
-                cachePolicy: options.aiCachePolicy)
-        } catch let error as AetherError {
-            throw error
-        } catch {
-            throw .runtime(underlying: error)
-        }
         let loaded: InferenceFunction?
         do { loaded = try model.loadFunction(named: name) } catch { throw .runtime(underlying: error) }
         guard let loaded else {
@@ -120,6 +115,29 @@ public final class Graph: GraphBackend {
         }
         function = loaded
         signature = GraphSignature(loaded.descriptor)
+    }
+
+    /// Loads several functions of one model file with one specialization (phases such as `step` and `prefill`
+    /// share the weights and the states). Keyed by function name.
+    public static func load(url: URL, functions names: [String], options: GraphOptions) async throws(AetherError) -> [String: Graph] {
+        let model = try await specialize(url: url, options: options)
+        var out: [String: Graph] = [:]
+        for name in names where out[name] == nil {
+            out[name] = try Graph(model: model, url: url, function: name, options: options)
+        }
+        return out
+    }
+
+    private static func specialize(url: URL, options: GraphOptions) async throws(AetherError) -> AIModel {
+        do {
+            return try await AIModel.specialize(
+                contentsOf: url, options: options.specializationOptions, cache: try options.aiCache(),
+                cachePolicy: options.aiCachePolicy)
+        } catch let error as AetherError {
+            throw error
+        } catch {
+            throw .runtime(underlying: error)
+        }
     }
 
     /// Allocates a buffer for `name` from the graph's own descriptor (keeping Core AI's preferred strides), with
@@ -144,6 +162,13 @@ public final class Graph: GraphBackend {
     public func run(_ bindings: inout Bindings) async throws(AetherError) {
         try bindings.validate(against: signature)
         try await bindings.arena.run(function, bindings: bindings)
+    }
+
+    /// Encodes the function on `bindings` into `stream` without waiting (the pipelined path, DESIGN.md §6.1). The
+    /// buffers must be Metal-backed and the arena lent by the caller until the stream drains.
+    func encode(_ bindings: borrowing Bindings, to stream: ComputeStream) throws(AetherError) {
+        try bindings.validate(against: signature)
+        try bindings.arena.encode(function, bindings: bindings, to: stream)
     }
 }
 

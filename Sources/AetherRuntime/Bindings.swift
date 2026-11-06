@@ -3,28 +3,77 @@
 /// Build it once per shape and reuse it; rebuild (or rebind single names) only when a dynamic dimension changes.
 /// An input or output may be bound to the leading `extent` of a larger buffer, so a buffer sized for the largest
 /// shape can serve smaller ones without reallocation; the graph then sees `[0..<extent[d]]` along each axis.
+/// An input may also start at an `origin` (`[origin[d] ..< origin[d] + extent[d]]`): the decoder feeds each prefill
+/// chunk from its own region of one token-history buffer, so encoded chunks never share bytes the host rewrites.
 public struct Bindings {
     public let arena: TensorArena
 
     struct Bound {
         var name: String
         var buffer: TensorBuffer
-        /// The leading region bound, or nil for the whole buffer.
+        /// The region bound, or nil for the whole buffer.
         var extent: [Int]?
+        /// Where the region starts (nil: at the origin). Only inputs have one.
+        var origin: [Int]? = nil
 
         var shape: [Int] { extent ?? buffer.shape }
+
+        /// Strides to hand Core AI for the region. A region whose elements are contiguous in memory (a leading-extent
+        /// view of a row-major buffer, a `[1, S]` window of the token history) gets plain row-major strides for its
+        /// own shape: the earlier AetherKit measured Core AI copying inputs whose strides are not its preferred ones
+        /// on every step (_reference/aether-kit-remote docs/language-generation.md:206-208, 295-296).
+        var regionStrides: [Int] {
+            let shape = self.shape
+            let packed = StridedLayout.rowMajorStrides(shape)
+            let contiguous = shape.indices.allSatisfy { shape[$0] == 1 || buffer.strides[$0] == packed[$0] }
+            return contiguous ? packed : buffer.strides
+        }
+
+        /// The element offset of the region's first element.
+        var elementOffset: Int {
+            guard let origin else { return 0 }
+            return zip(origin, buffer.strides).reduce(0) { $0 + $1.0 * $1.1 }
+        }
     }
 
     private(set) var inputs: [Bound] = []
     private(set) var states: [Bound] = []
     private(set) var outputs: [Bound] = []
 
+    /// Encode mode binds buffers while the arena is lent to in-flight GPU work (binding only records handles).
+    let whileLent: Bool
+
     public init(arena: TensorArena) {
         self.arena = arena
+        whileLent = false
+    }
+
+    /// Bindings that may be built while the arena is lent (the pipelined decoder, between encodes).
+    init(lentArena arena: TensorArena) {
+        self.arena = arena
+        whileLent = true
     }
 
     public mutating func bindInput(_ name: String, to buffer: TensorBuffer, extent: [Int]? = nil) throws(AetherError) {
         try Self.upsert(&inputs, Bound(name: name, buffer: try owned(buffer, extent: extent), extent: extent))
+    }
+
+    /// Binds the region `[origin[d] ..< origin[d] + extent[d]]` of `buffer` as input `name`.
+    public mutating func bindInput(_ name: String, to buffer: TensorBuffer, origin: [Int], extent: [Int]) throws(AetherError) {
+        if whileLent { try arena.checkOwned(buffer) } else { try arena.check(buffer) }
+        guard origin.count == buffer.shape.count, extent.count == buffer.shape.count,
+              zip(zip(origin, extent), buffer.shape).allSatisfy({ $0.0 >= 0 && $0.1 > 0 && $0.0 + $0.1 <= $1 })
+        else {
+            throw .tensor(name: buffer.name, reason: .outOfBounds(index: zip(origin, extent).map { $0 + $1 }.max() ?? 0,
+                                                                 count: buffer.shape.max() ?? 0))
+        }
+        try Self.upsert(&inputs, Bound(name: name, buffer: buffer, extent: extent, origin: origin))
+    }
+
+    /// The region origin bound for input `name` (zeros when bound at the start).
+    public func inputOrigin(_ name: String) -> [Int]? {
+        guard let bound = inputs.first(where: { $0.name == name }) else { return nil }
+        return bound.origin ?? [Int](repeating: 0, count: bound.buffer.shape.count)
     }
 
     /// States are always bound whole: the graph reads and updates the full state in place.
@@ -86,7 +135,7 @@ public struct Bindings {
     // MARK: -
 
     private func owned(_ buffer: TensorBuffer, extent: [Int]?) throws(AetherError) -> TensorBuffer {
-        try arena.check(buffer)
+        if whileLent { try arena.checkOwned(buffer) } else { try arena.check(buffer) }
         if let extent {
             guard extent.count == buffer.shape.count,
                   zip(extent, buffer.shape).allSatisfy({ $0 > 0 && $0 <= $1 })

@@ -1,4 +1,4 @@
-@testable import AetherRuntime
+public import AetherRuntime
 
 /// A deterministic toy causal LM behind ``GraphBackend``, with the `decoder-lm@1` graph contract
 /// (tokens `[1,S]`, positions `[1,P]`, one KV pair with the sequence on axis 1, logits `[1,S,V]`).
@@ -6,9 +6,9 @@
 /// Step semantics, for each new token `t` at position `p` (the last `S` entries of `positions`):
 /// `keys[0, p] = t`, `values[0, p] = p`, and `logits[s, v] = Σ keys[0, 0...p] + v`. The logits depend on the whole
 /// cached prefix, so stale or lost state shows up in the output.
-final class FakeDecoder: GraphBackend {
-    static let vocab = 4
-    let signature = GraphSignature(
+public final class FakeDecoder: GraphBackend {
+    public static let vocab = 4
+    public let signature = GraphSignature(
         function: "main",
         inputs: [
             TensorSpec(name: "input_ids", scalarType: .int32, shape: [1, -1]),
@@ -19,9 +19,11 @@ final class FakeDecoder: GraphBackend {
             TensorSpec(name: "values", scalarType: .float32, shape: [1, -1]),
         ],
         outputs: [TensorSpec(name: "logits", scalarType: .float32, shape: [1, -1, vocab])])
-    private(set) var runs = 0
+    public private(set) var runs = 0
 
-    func run(_ bindings: inout Bindings) async throws(AetherError) {
+    public init() {}
+
+    public func run(_ bindings: inout Bindings) async throws(AetherError) {
         try bindings.validate(against: signature)
         runs += 1
         guard let tokens = bindings.input("input_ids"), let positions = bindings.input("position_ids"),

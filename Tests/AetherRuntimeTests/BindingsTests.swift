@@ -1,5 +1,6 @@
 import Testing
 @testable import AetherRuntime
+import AetherTestSupport
 
 /// Drives the fake decoder the way the M0 spike's Decoder drives a real graph: states allocated once at capacity
 /// and shared by a prefill-chunk binding set and a single-step one; the positions input bound to a growing prefix
