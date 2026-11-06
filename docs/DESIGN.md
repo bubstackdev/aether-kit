@@ -341,6 +341,14 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     `MTLDevice.currentAllocatedSize` and `phys_footprint` (0.0.x saw the footprint miss Metal memory; the H3 spike saw
     it include it, so neither alone is trusted). They go in a `FootprintLedger` keyed by model and profile, which can
     be seeded with qualified values.
+  - All resident, a phase that runs again adds its growth to what it held (a new shape's specialization grows the same
+    graphs). That sum assumes each occurrence began with the phase's memory counted, which `phys_footprint` doesn't
+    promise: part of a resident graph's memory can drop out of it between requests and come back when the graph runs
+    (Depth Anything 3's gate: ~120 MiB a request, so 15 requests recorded 1137 / 1122 MiB for a model of about 330).
+    So a phase's held bytes, and its peak, are capped by the level above where the process stood before any graph
+    loaded, less what the other phases hold. The measurement stays process-wide: what the caller allocates during or
+    between requests can still raise it (DA3's gate now records 374 / 359 MiB; the ~30 MiB over the first request's
+    343 / 328 are the gate's own images and maps), but it no longer accumulates.
   - A measurement holds only for the shapes it ran at: each distinct input shape keeps its own memory until the model
     is released (lab/h3-spike), so a profile pins its shapes.
   - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`. A manifest with no

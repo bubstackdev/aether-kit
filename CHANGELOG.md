@@ -151,6 +151,13 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   bit-identical (the gates' RMSE, PSNR and SSIM unchanged to the last digit). Host work per step, release build
   (`AETHER_BENCH=1`, `HostStepBenchmarkTests`): SD-Turbo 512² 822 → 76 µs, FLUX.2/Krea 1024² 2.34 → 2.02 ms; both
   are small beside the graphs' step time.
+- **Resident footprints no longer accumulate a phantom** (second review, batch C): Depth Anything 3's gate recorded
+  1137 / 1122 MiB peak / held for a model of about 330 after its photo checks were added. `phys_footprint` dropped
+  ~120 MiB of the resident graph between requests and counted it again when the graph ran, and the all-resident
+  phase summed each request's growth, so every request re-added it (the resize was outside the measured phase, and
+  the baseline was taken at the right point). A phase's held bytes and peak are now capped by the level above where
+  the process stood before any graph loaded, less the other phases' held bytes; a real growth (a new shape) still
+  adds. The gate now records 374 / 359 MiB.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`

@@ -316,6 +316,8 @@ public final class GraphResidency {
     /// same graphs (a new shape's specialization, say), so its footprint is the sum of its occurrences' growth, not the
     /// largest single one.
     private var heldSoFar: [Manifest.Residency: Int64] = [:]
+    /// The lowest level a phase began at with no graph loaded: what the process held before this model's graphs.
+    private var unloadedLevel: Int64?
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
@@ -405,6 +407,7 @@ public final class GraphResidency {
             releasedBaseline = nil
         }
         floor = min(floor ?? baseline, baseline)
+        if loaded.isEmpty { unloadedLevel = min(unloadedLevel ?? baseline, baseline) }
         let meter = PeakMeter(baseline)
         if let samplingInterval { meter.start(probe: probe, every: samplingInterval) }
         open = (phase, baseline, observed, meter)
@@ -428,11 +431,22 @@ public final class GraphResidency {
             let level = probe.allocatedBytes()
             current.meter.observe(level)
             let prior = mode == .allResident ? heldSoFar[phase] ?? 0 : 0
-            let held = prior + (level - current.baseline)
+            var held = prior + (level - current.baseline)
+            var peak = prior + (current.meter.peak - current.baseline)
+            if mode == .allResident, let unloadedLevel {
+                // The sum of occurrences' growth assumes each began with the phase's resident memory counted.
+                // `phys_footprint` doesn't promise that: between requests part of it can drop out and come back when
+                // the graph next runs (Depth Anything 3's gate: ~120 MiB per request, so 15 requests read 1.1 GiB
+                // for a 330 MiB model). What the phase holds can't exceed the level above where the process stood
+                // before any graph loaded, less what the other phases hold.
+                let others = heldSoFar.filter { $0.key != phase }.values.reduce(0, +)
+                held = min(held, max(prior, level - unloadedLevel - others))
+                peak = min(peak, max(held, current.meter.peak - unloadedLevel - others))
+            }
             measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
             ledger.record(.init(model: model, profile: profile, phase: phase),
-                          PhaseFootprint(peakBytes: prior + (current.meter.peak - current.baseline), heldBytes: held))
+                          PhaseFootprint(peakBytes: peak, heldBytes: held))
             open = nil
         }
         if mode == .perPhase {

@@ -445,6 +445,33 @@ struct ResidencyTests {
         #expect(ResidencyPlan.peak(.perPhase, phases) == 110)
     }
 
+    /// Second code review, batch C item 4: DA3's gate recorded 1137 / 1122 MiB for a model that holds about 330.
+    /// `phys_footprint` dropped ~120 MiB of the resident graph between requests and counted it again when the graph ran,
+    /// so each request's growth re-added it to the sum of occurrences. Now what a phase holds is capped by the level
+    /// above where the process stood before any graph loaded.
+    @Test func aBaselineThatDropsResidentMemoryDoesNotAccumulate() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let manifest = try Self.krea()
+        let residency = GraphResidency(manifest: manifest, mode: .allResident, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        let key = FootprintLedger.Key(model: manifest.id, profile: "p", phase: .perStep)
+        try await residency.beginPhase(.perStep)  // 1000, nothing loaded
+        _ = try await residency.graph("denoiser0")
+        gpu.add(300)
+        residency.endPhase(.perStep)
+        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 300, heldBytes: 300))
+        for _ in 0..<5 {
+            gpu.add(-150)                         // between requests, part of the resident memory drops out…
+            try await residency.beginPhase(.perStep)
+            gpu.add(160)                          // …and is counted again when the graph runs (plus 10 of real growth)
+            residency.sample()
+            residency.endPhase(.perStep)
+        }
+        // Before: 300 + 5 · 160 = 1100. The 10 the last request grew is kept.
+        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 350, heldBytes: 350))
+    }
+
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {
         let gpu = FakeGPU()
         let ledger = FootprintLedger()
