@@ -25,6 +25,10 @@ dependencies = [
     "huggingface_hub",
     "accelerate",
     "peft==0.21.2",
+    # Depth Anything 3 model code (Forge/depth, imported read-only from the pinned upstream commit) needs these three.
+    "einops==0.8.2",
+    "addict==2.4.0",
+    "omegaconf==2.4.0",
 ]
 
 [tool.uv]
