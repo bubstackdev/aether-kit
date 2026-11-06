@@ -1,0 +1,27 @@
+{
+ "repository": "mistralai/Shieldstral-1.0-3B",
+ "revision": "003ec7e2b0bab5f0e6307edbaf186fa5822b76f5",
+ "license": "Apache-2.0",
+ "gated": "no (public; the card's extra_gated_description is only a privacy-policy link)",
+ "comment": "Mistral AI's Shieldstral 1.0 3B safety classifier (base model mistralai/Ministral-3-3B-Base-2512), the transformers-format checkpoint (Mistral3ForConditionalGeneration; the Mistral-format consolidated.safetensors is not read). SHA-256 of every snapshot file the harness reads (model.safetensors, tokenizer.json and tekken.json equal the Hub's LFS hashes at this revision), pinned 2026-11-06. The license is confirmed upstream: the model card's front matter gives `license: apache-2.0` and its License section says 'This model is licensed under the Apache 2.0 License', adding 'You must not use this model in a manner that infringes, misappropriates, or otherwise violates any third party's rights, including intellectual property rights.' The repository ships no LICENSE file, so the Apache-2.0 text is the Apache Software Foundation's canonical one, checked in under terms/. The network code is transformers' Ministral3Model at the version Forge/uv.lock pins; tekken.json is read only by the optional mistral-common cross-check.",
+ "files": {
+  "README.md": "b67233168fac38fa63658f70a1b59901da612cfa19cd14cc6ecaf804b9003d9d",
+  "chat_template.jinja": "df026d5384cfbb925dd35ff96b9c55ce7257ec8d47d5fa73757673bd4c98ce53",
+  "config.json": "a0b1122916b629ab9c3b54a422476e3f4bf4f2b66353a82c43c349c4fe2257ad",
+  "generation_config.json": "7e8a15f269bb1b52e54ed4f4ef5a0b73014f15275a7d2a9d2bf6f8c291c494bd",
+  "params.json": "9e5afb715882b931c491aad8a1c6127fdea8d7031cadba14763da779833cbad6",
+  "tokenizer.json": "9172cf28b79a17502736f971b560faeced38ee527540cea6882a1f40cce320c0",
+  "tokenizer_config.json": "b41ad95e3321bd29dcbc525de2b34d74f0d64e6a96add615149e448bff5c38c3",
+  "tekken.json": "ceb11e85e44d7c91d051604d636d97b05aee59a907a0dc96a3c6e557d9634e18",
+  "model.safetensors": "87753e30c8c321da478b83bbabebcd813cc9b3d0cee5c5b3d64349a8ee4172f7"
+ },
+ "terms": {
+  "comment": "The Apache License 2.0 text, from https://www.apache.org/licenses/LICENSE-2.0.txt (Last-Modified Sun, 28 Dec 2025 17:09:26 GMT), retrieved 2026-11-06 and checked in beside this file (Forge/shieldstral/terms/); the bundle's LICENSE.",
+  "files": {
+   "LICENSE-2.0.txt": {
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+   }
+  }
+ }
+}
