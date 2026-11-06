@@ -366,6 +366,20 @@ extension GraphResidency {
         }
     }
 
+    /// Wraps `loader` so each graph is checked against its manifest role and `contract` before use (MANIFEST.md §2.1.1):
+    /// its `step` function's signature against the role's names, ranks and scalar kinds.
+    public static func validating(_ loader: @escaping Loader, manifest: Manifest, contract: DriverContract) -> Loader {
+        { role throws(AetherError) in
+            let graph = try await loader(role)
+            guard let spec = manifest.graphs[role], let graphContract = contract.graph(role) else {
+                throw .manifestInvalid(field: "graphs.\(role)", reason: "not a \(contract.driver) graph")
+            }
+            try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
+                                            contract: graphContract, tables: manifest.tables ?? [:])
+            return graph
+        }
+    }
+
     /// The size on disk of graph `role`'s file for `device` (0 when it isn't installed): the stand-in for a phase
     /// not yet measured.
     public static func fileBytes(bundle: InstalledBundle, manifest: Manifest, role: String, device: Device) -> Int64 {
