@@ -484,8 +484,10 @@ runtime pieces:
   `check_h3.py` qualifies against the original modules (the step-0 head velocities moved 5.4%, 10.8% at step 1);
   without it the driver is bit-identical to that path, step 0 and step 1 alike (gate). The conditioner specializes
   per prompt length within its phase.
-- **Memory:** residency planned per profile from the ledger, seeded with the qualified profile's measured phases
-  (`qualifiedFootprints`); an unmeasured graph stands in as its file plus two banks of its largest weight block.
+- **Memory:** residency planned per profile through `ResidentAdmission`, from the ledger seeded under the pipeline's
+  key with the qualified profile's measured phases (`qualifiedFootprints`); an unmeasured graph stands in as its file
+  plus two banks of its largest weight block. Options are `PipelineOptions` (`VideoPipelineOptions`; absent memory
+  means `MemoryBudget.videoGeneration`, three quarters of RAM), and `MiniMaxH3Driver` loads a `MiniMaxH3Model`.
 - macOS only in 0.1.0 (`unsupportedDevice` on iOS before loading). FL2VA keyframes are not presented yet (the bundle
   carries the vision tower and keyframe encoder).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph

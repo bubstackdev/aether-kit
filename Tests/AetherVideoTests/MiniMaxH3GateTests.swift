@@ -1,3 +1,4 @@
+import AetherHost
 import AetherCore
 import AetherRuntime
 import Foundation
@@ -100,7 +101,7 @@ struct MiniMaxH3GateTests {
         #expect(clip.frames.count == 124 && clip.width == 960 && clip.height == 544)
         #expect(clip.frames.allSatisfy { $0.count == 960 * 544 * 3 })
         let audio = try #require(clip.audio)
-        #expect(audio.channelCount == 2 && audio.frameCount == 800 * 207 && audio.sampleRate == 32000)
+        #expect(audio.channelCount == 2 && audio.sampleCount == 800 * 207 && audio.sampleRate == 32000)
         // Not a blank clip: frames vary across the image and over time.
         let mean = { (f: [UInt8]) in Double(f.reduce(0) { $0 + Int($1) }) / Double(f.count) }
         #expect(clip.frames[0] != clip.frames[123] && Set(clip.frames[62]).count > 64)

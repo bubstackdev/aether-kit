@@ -686,9 +686,9 @@
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "MiniMaxH3Pipeline",
-        "printedName": "AetherVideo.MiniMaxH3Pipeline",
-        "usr": "s:11AetherVideo17MiniMaxH3PipelineC"
+        "name": "MiniMaxH3Model",
+        "printedName": "AetherVideo.MiniMaxH3Model",
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV"
        },
        {
         "kind": "TypeNominal",
@@ -709,21 +709,21 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s11AetherVideo15MiniMaxH3DriverO4load_7optionsAA0cdE8PipelineC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
+      "mangledName": "$s11AetherVideo15MiniMaxH3DriverO4load_7optionsAA0cdE5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
       "moduleName": "AetherVideo",
       "name": "load",
       "printedName": "load(_:options:)",
       "static": true,
       "throwing": true,
-      "usr": "s:11AetherVideo15MiniMaxH3DriverO4load_7optionsAA0cdE8PipelineC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
+      "usr": "s:11AetherVideo15MiniMaxH3DriverO4load_7optionsAA0cdE5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
      },
      {
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "MiniMaxH3Pipeline",
-        "printedName": "AetherVideo.MiniMaxH3Pipeline",
-        "usr": "s:11AetherVideo17MiniMaxH3PipelineC"
+        "name": "MiniMaxH3Model",
+        "printedName": "AetherVideo.MiniMaxH3Model",
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV"
        }
       ],
       "declKind": "TypeAlias",
@@ -743,9 +743,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "MiniMaxH3Pipeline",
-          "printedName": "AetherVideo.MiniMaxH3Pipeline",
-          "usr": "s:11AetherVideo17MiniMaxH3PipelineC"
+          "name": "MiniMaxH3Model",
+          "printedName": "AetherVideo.MiniMaxH3Model",
+          "usr": "s:11AetherVideo14MiniMaxH3ModelV"
          }
         ],
         "kind": "TypeWitness",
@@ -806,9 +806,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "CachePolicy",
-          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
          }
         ],
         "declAttributes": [
@@ -817,46 +817,19 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovg",
+        "mangledName": "$s11AetherVideo14MiniMaxH3ModelV6bundle0A4Core15InstalledBundleVvg",
         "moduleName": "AetherVideo",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "CachePolicy",
-          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovs"
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV6bundle0A4Core15InstalledBundleVvg"
        }
       ],
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "CachePolicy",
-        "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-        "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
        }
       ],
       "declAttributes": [
@@ -864,12 +837,13 @@
       ],
       "declKind": "Var",
       "hasStorage": true,
+      "isLet": true,
       "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovp",
+      "mangledName": "$s11AetherVideo14MiniMaxH3ModelV6bundle0A4Core15InstalledBundleVvp",
       "moduleName": "AetherVideo",
-      "name": "cachePolicy",
-      "printedName": "cachePolicy",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovp"
+      "name": "bundle",
+      "printedName": "bundle",
+      "usr": "s:11AetherVideo14MiniMaxH3ModelV6bundle0A4Core15InstalledBundleVvp"
      },
      {
       "accessors": [
@@ -878,9 +852,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "Cache",
-          "printedName": "AetherRuntime.GraphOptions.Cache",
-          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
          }
         ],
         "declAttributes": [
@@ -889,46 +863,19 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvg",
+        "mangledName": "$s11AetherVideo14MiniMaxH3ModelV8manifest0A4Core8ManifestVvg",
         "moduleName": "AetherVideo",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "Cache",
-          "printedName": "AetherRuntime.GraphOptions.Cache",
-          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvs"
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV8manifest0A4Core8ManifestVvg"
        }
       ],
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "Cache",
-        "printedName": "AetherRuntime.GraphOptions.Cache",
-        "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
        }
       ],
       "declAttributes": [
@@ -936,12 +883,13 @@
       ],
       "declKind": "Var",
       "hasStorage": true,
+      "isLet": true,
       "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvp",
+      "mangledName": "$s11AetherVideo14MiniMaxH3ModelV8manifest0A4Core8ManifestVvp",
       "moduleName": "AetherVideo",
-      "name": "cache",
-      "printedName": "cache",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvp"
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:11AetherVideo14MiniMaxH3ModelV8manifest0A4Core8ManifestVvp"
      },
      {
       "accessors": [
@@ -950,9 +898,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "MemoryBudget",
-          "printedName": "AetherRuntime.MemoryBudget",
-          "usr": "s:13AetherRuntime12MemoryBudgetV"
+          "name": "Device",
+          "printedName": "AetherCore.Device",
+          "usr": "s:10AetherCore6DeviceV"
          }
         ],
         "declAttributes": [
@@ -961,46 +909,19 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvg",
+        "mangledName": "$s11AetherVideo14MiniMaxH3ModelV6device0A4Core6DeviceVvg",
         "moduleName": "AetherVideo",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "MemoryBudget",
-          "printedName": "AetherRuntime.MemoryBudget",
-          "usr": "s:13AetherRuntime12MemoryBudgetV"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvs"
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV6device0A4Core6DeviceVvg"
        }
       ],
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "MemoryBudget",
-        "printedName": "AetherRuntime.MemoryBudget",
-        "usr": "s:13AetherRuntime12MemoryBudgetV"
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
        }
       ],
       "declAttributes": [
@@ -1008,12 +929,13 @@
       ],
       "declKind": "Var",
       "hasStorage": true,
+      "isLet": true,
       "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvp",
+      "mangledName": "$s11AetherVideo14MiniMaxH3ModelV6device0A4Core6DeviceVvp",
       "moduleName": "AetherVideo",
-      "name": "memory",
-      "printedName": "memory",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVvp"
+      "name": "device",
+      "printedName": "device",
+      "usr": "s:11AetherVideo14MiniMaxH3ModelV6device0A4Core6DeviceVvp"
      },
      {
       "accessors": [
@@ -1024,15 +946,14 @@
           "children": [
            {
             "kind": "TypeNominal",
-            "name": "ResourceCoordinator",
-            "printedName": "AetherHost.ResourceCoordinator",
-            "usr": "s:10AetherHost19ResourceCoordinatorC"
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
            }
           ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.ResourceCoordinator?",
-          "usr": "s:Sq"
+          "kind": "TypeNameAlias",
+          "name": "VideoPipelineOptions",
+          "printedName": "AetherVideo.VideoPipelineOptions"
          }
         ],
         "declAttributes": [
@@ -1041,11 +962,11 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg",
+        "mangledName": "$s11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvg",
         "moduleName": "AetherVideo",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg"
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvg"
        },
        {
         "accessorKind": "set",
@@ -1059,15 +980,14 @@
           "children": [
            {
             "kind": "TypeNominal",
-            "name": "ResourceCoordinator",
-            "printedName": "AetherHost.ResourceCoordinator",
-            "usr": "s:10AetherHost19ResourceCoordinatorC"
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
            }
           ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.ResourceCoordinator?",
-          "usr": "s:Sq"
+          "kind": "TypeNameAlias",
+          "name": "VideoPipelineOptions",
+          "printedName": "AetherVideo.VideoPipelineOptions"
          }
         ],
         "declAttributes": [
@@ -1076,11 +996,11 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs",
+        "mangledName": "$s11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvs",
         "moduleName": "AetherVideo",
         "name": "Set",
         "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs"
+        "usr": "s:11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvs"
        }
       ],
       "children": [
@@ -1088,353 +1008,49 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "ResourceCoordinator",
-          "printedName": "AetherHost.ResourceCoordinator",
-          "usr": "s:10AetherHost19ResourceCoordinatorC"
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
          }
         ],
-        "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.ResourceCoordinator?",
-        "usr": "s:Sq"
-       }
-      ],
-      "declAttributes": [
-       "HasInitialValue",
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp",
-      "moduleName": "AetherVideo",
-      "name": "coordinator",
-      "printedName": "coordinator",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg",
-        "moduleName": "AetherVideo",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs"
-       }
-      ],
-      "children": [
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUAdmissionOwner",
-          "printedName": "AetherHost.GPUAdmissionOwner",
-          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-         }
-        ],
-        "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.GPUAdmissionOwner?",
-        "usr": "s:Sq"
-       }
-      ],
-      "declAttributes": [
-       "HasInitialValue",
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp",
-      "moduleName": "AetherVideo",
-      "name": "gpu",
-      "printedName": "gpu",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "FootprintLedger",
-          "printedName": "AetherRuntime.FootprintLedger",
-          "usr": "s:13AetherRuntime15FootprintLedgerC"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvg",
-        "moduleName": "AetherVideo",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "FootprintLedger",
-          "printedName": "AetherRuntime.FootprintLedger",
-          "usr": "s:13AetherRuntime15FootprintLedgerC"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvs"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "FootprintLedger",
-        "printedName": "AetherRuntime.FootprintLedger",
-        "usr": "s:13AetherRuntime15FootprintLedgerC"
-       }
-      ],
-      "declAttributes": [
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvp",
-      "moduleName": "AetherVideo",
-      "name": "ledger",
-      "printedName": "ledger",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUMemoryProbe",
-          "printedName": "AetherRuntime.GPUMemoryProbe",
-          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvg",
-        "moduleName": "AetherVideo",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvg"
-       },
-       {
-        "accessorKind": "set",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "GPUMemoryProbe",
-          "printedName": "AetherRuntime.GPUMemoryProbe",
-          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvs",
-        "moduleName": "AetherVideo",
-        "name": "Set",
-        "printedName": "Set()",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvs"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "GPUMemoryProbe",
-        "printedName": "AetherRuntime.GPUMemoryProbe",
-        "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-       }
-      ],
-      "declAttributes": [
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "kind": "Var",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvp",
-      "moduleName": "AetherVideo",
-      "name": "probe",
-      "printedName": "probe",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvp"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
+        "kind": "TypeNameAlias",
         "name": "VideoPipelineOptions",
-        "printedName": "AetherVideo.VideoPipelineOptions",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "CachePolicy",
-        "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-        "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Cache",
-        "printedName": "AetherRuntime.GraphOptions.Cache",
-        "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "MemoryBudget",
-        "printedName": "AetherRuntime.MemoryBudget",
-        "usr": "s:13AetherRuntime12MemoryBudgetV"
-       },
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "ResourceCoordinator",
-          "printedName": "AetherHost.ResourceCoordinator",
-          "usr": "s:10AetherHost19ResourceCoordinatorC"
-         }
-        ],
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.ResourceCoordinator?",
-        "usr": "s:Sq"
-       },
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUAdmissionOwner",
-          "printedName": "AetherHost.GPUAdmissionOwner",
-          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-         }
-        ],
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.GPUAdmissionOwner?",
-        "usr": "s:Sq"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "FootprintLedger",
-        "printedName": "AetherRuntime.FootprintLedger",
-        "usr": "s:13AetherRuntime15FootprintLedgerC"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "GPUMemoryProbe",
-        "printedName": "AetherRuntime.GPUMemoryProbe",
-        "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+        "printedName": "AetherVideo.VideoPipelineOptions"
        }
       ],
-      "declKind": "Constructor",
-      "init_kind": "Designated",
-      "kind": "Constructor",
-      "mangledName": "$s11AetherVideo0B15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAT17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc",
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvp",
       "moduleName": "AetherVideo",
-      "name": "init",
-      "printedName": "init(cachePolicy:cache:memory:coordinator:gpu:ledger:probe:)",
-      "usr": "s:11AetherVideo0B15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAT17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc"
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:11AetherVideo14MiniMaxH3ModelV7options0A4Host15PipelineOptionsVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "MiniMaxH3Pipeline",
+        "printedName": "AetherVideo.MiniMaxH3Pipeline",
+        "usr": "s:11AetherVideo17MiniMaxH3PipelineC"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo14MiniMaxH3ModelV8pipelineAA0cdE8PipelineCyYaKF",
+      "moduleName": "AetherVideo",
+      "name": "pipeline",
+      "printedName": "pipeline()",
+      "throwing": true,
+      "usr": "s:11AetherVideo14MiniMaxH3ModelV8pipelineAA0cdE8PipelineCyYaKF"
      }
     ],
     "conformances": [
@@ -1469,11 +1085,28 @@
     ],
     "declKind": "Struct",
     "kind": "TypeDecl",
-    "mangledName": "$s11AetherVideo0B15PipelineOptionsV",
+    "mangledName": "$s11AetherVideo14MiniMaxH3ModelV",
+    "moduleName": "AetherVideo",
+    "name": "MiniMaxH3Model",
+    "printedName": "MiniMaxH3Model",
+    "usr": "s:11AetherVideo14MiniMaxH3ModelV"
+   },
+   {
+    "children": [
+     {
+      "kind": "TypeNominal",
+      "name": "PipelineOptions",
+      "printedName": "AetherHost.PipelineOptions",
+      "usr": "s:10AetherHost15PipelineOptionsV"
+     }
+    ],
+    "declKind": "TypeAlias",
+    "kind": "TypeAlias",
+    "mangledName": "$s11AetherVideo0B15PipelineOptionsa",
     "moduleName": "AetherVideo",
     "name": "VideoPipelineOptions",
     "printedName": "VideoPipelineOptions",
-    "usr": "s:11AetherVideo0B15PipelineOptionsV"
+    "usr": "s:11AetherVideo0B15PipelineOptionsa"
    },
    {
     "children": [
@@ -2816,10 +2449,17 @@
      {
       "children": [
        {
-        "kind": "TypeNominal",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "kind": "TypeNameAlias",
         "name": "VideoPipelineOptions",
-        "printedName": "AetherVideo.VideoPipelineOptions",
-        "usr": "s:11AetherVideo0B15PipelineOptionsV"
+        "printedName": "AetherVideo.VideoPipelineOptions"
        }
       ],
       "declKind": "TypeAlias",
@@ -2936,10 +2576,17 @@
          {
           "children": [
            {
-            "kind": "TypeNominal",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "PipelineOptions",
+              "printedName": "AetherHost.PipelineOptions",
+              "usr": "s:10AetherHost15PipelineOptionsV"
+             }
+            ],
+            "kind": "TypeNameAlias",
             "name": "VideoPipelineOptions",
-            "printedName": "AetherVideo.VideoPipelineOptions",
-            "usr": "s:11AetherVideo0B15PipelineOptionsV"
+            "printedName": "AetherVideo.VideoPipelineOptions"
            }
           ],
           "kind": "TypeNameAlias",
@@ -2954,21 +2601,28 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC7optionsAA0bF7OptionsVvg",
+        "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC7options0A4Host0F7OptionsVvg",
         "moduleName": "AetherVideo",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:11AetherVideo17MiniMaxH3PipelineC7optionsAA0bF7OptionsVvg"
+        "usr": "s:11AetherVideo17MiniMaxH3PipelineC7options0A4Host0F7OptionsVvg"
        }
       ],
       "children": [
        {
         "children": [
          {
-          "kind": "TypeNominal",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
           "name": "VideoPipelineOptions",
-          "printedName": "AetherVideo.VideoPipelineOptions",
-          "usr": "s:11AetherVideo0B15PipelineOptionsV"
+          "printedName": "AetherVideo.VideoPipelineOptions"
          }
         ],
         "kind": "TypeNameAlias",
@@ -2985,11 +2639,11 @@
       "hasStorage": true,
       "isLet": true,
       "kind": "Var",
-      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC7optionsAA0bF7OptionsVvp",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC7options0A4Host0F7OptionsVvp",
       "moduleName": "AetherVideo",
       "name": "options",
       "printedName": "options",
-      "usr": "s:11AetherVideo17MiniMaxH3PipelineC7optionsAA0bF7OptionsVvp"
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC7options0A4Host0F7OptionsVvp"
      },
      {
       "children": [
@@ -3020,10 +2674,17 @@
        {
         "children": [
          {
-          "kind": "TypeNominal",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
           "name": "VideoPipelineOptions",
-          "printedName": "AetherVideo.VideoPipelineOptions",
-          "usr": "s:11AetherVideo0B15PipelineOptionsV"
+          "printedName": "AetherVideo.VideoPipelineOptions"
          }
         ],
         "hasDefaultArg": true,
@@ -3035,12 +2696,12 @@
       "declKind": "Constructor",
       "init_kind": "Convenience",
       "kind": "Constructor",
-      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAA0bF7OptionsVtYaKcfc",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceV0A4Host0F7OptionsVtYaKcfc",
       "moduleName": "AetherVideo",
       "name": "init",
       "printedName": "init(bundle:manifest:device:options:)",
       "throwing": true,
-      "usr": "s:11AetherVideo17MiniMaxH3PipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAA0bF7OptionsVtYaKcfc"
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceV0A4Host0F7OptionsVtYaKcfc"
      },
      {
       "children": [
@@ -3466,6 +3127,103 @@
     "name": "Registry",
     "printedName": "Registry",
     "usr": "s:13AetherRuntime8RegistryV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         }
+        ],
+        "declKind": "Accessor",
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime12MemoryBudgetV0A5VideoE15videoGenerationACvgZ",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:13AetherRuntime12MemoryBudgetV0A5VideoE15videoGenerationACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "MemoryBudget",
+        "printedName": "AetherRuntime.MemoryBudget",
+        "usr": "s:13AetherRuntime12MemoryBudgetV"
+       }
+      ],
+      "declKind": "Var",
+      "isFromExtension": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime12MemoryBudgetV0A5VideoE15videoGenerationACvpZ",
+      "moduleName": "AetherVideo",
+      "name": "videoGeneration",
+      "printedName": "videoGeneration",
+      "static": true,
+      "usr": "s:13AetherRuntime12MemoryBudgetV0A5VideoE15videoGenerationACvpZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "isExternal": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime12MemoryBudgetV",
+    "moduleName": "AetherRuntime",
+    "name": "MemoryBudget",
+    "printedName": "MemoryBudget",
+    "usr": "s:13AetherRuntime12MemoryBudgetV"
    }
   ],
   "json_format_version": 8,
