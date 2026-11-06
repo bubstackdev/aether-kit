@@ -160,12 +160,18 @@ public actor ChatSession {
         do {
             // Cancellation ends this loop normally (the upstream iterator returns nil), so completion is the
             // `.finished` event, not the loop's end.
+            // A consumer that stops listening cancels the turn, as `onTermination` does, without waiting for that
+            // cancellation to arrive: a reply nobody reads isn't finished, nor kept in the history.
+            var abandoned = false
             for try await event in generator.generate(messages, parameters: parameters ?? configuration.parameters) {
                 if case .text(let delta) = event { reply += delta }
                 if case .finished(let s) = event { summary = s }
-                continuation.yield(event)
+                if case .terminated = continuation.yield(event) {
+                    abandoned = true
+                    break
+                }
             }
-            if let summary, !Task.isCancelled {
+            if let summary, !abandoned, !Task.isCancelled {
                 try check?(reply, summary)
                 history.append(message)
                 history.append(.assistant(reply))

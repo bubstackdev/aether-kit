@@ -7,7 +7,7 @@ public enum DriverCatalog {
         "detector-dense@1", "detector-detr@1", "depth-estimator@1", "clip-joint@1", "image-to-image-tiled@1",
         "text-embedder@1", "late-interaction-retriever@1", "gliner-classifier@1", "yes-no-classifier@1",
         "decision-lm@1", "decision-hidden-head@1", "decision-joint-head@1", "encoder-decider@1",
-        "latent-diffusion@1",
+        "latent-diffusion@1", "flux2-klein@1",
     ].map(DriverID.init(validated:)))
 
     /// Reusable graph contracts a driver embeds. Never a top-level `driver`.
@@ -16,6 +16,7 @@ public enum DriverCatalog {
     /// The role contracts implemented so far. The other drivers' contracts arrive with their milestones.
     public static let contracts: [DriverID: DriverContract] = [
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
+        DriverContract.flux2Klein.driver: .flux2Klein,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -89,13 +90,22 @@ public struct DriverContract: Sendable, Hashable {
     public var driver: DriverID
     /// Graph role → contract. Every key is required; no other graph role is accepted.
     public var graphs: [String: GraphContract]
+    /// Graph roles a bundle may add (FLUX.2's VAE encoder), each checked against its contract when present.
+    public var optionalGraphs: [String: GraphContract]
     public var requiresTokenizer: Bool
 
-    public init(driver: DriverID, graphs: [String: GraphContract], requiresTokenizer: Bool) {
+    public init(
+        driver: DriverID, graphs: [String: GraphContract], optionalGraphs: [String: GraphContract] = [:],
+        requiresTokenizer: Bool
+    ) {
         self.driver = driver
         self.graphs = graphs
+        self.optionalGraphs = optionalGraphs
         self.requiresTokenizer = requiresTokenizer
     }
+
+    /// The contract of graph `role`, required or optional.
+    public func graph(_ role: String) -> GraphContract? { graphs[role] ?? optionalGraphs[role] }
 
     /// Checks the manifest's roles against the contract. Errors name the offending field.
     public func validate(_ manifest: Manifest) throws(AetherError) {
@@ -108,10 +118,13 @@ public struct DriverContract: Sendable, Hashable {
             }
             try require(!(tokenizer.stop ?? []).isEmpty, "tokenizer.stop", "\(driver) requires at least one stop marker")
         }
-        for key in manifest.graphs.keys.sorted() where graphs[key] == nil {
+        for key in manifest.graphs.keys.sorted() where graph(key) == nil {
+            let known = (Array(graphs.keys) + Array(optionalGraphs.keys)).sorted()
             throw .manifestInvalid(
-                field: "graphs.\(key)",
-                reason: "\(driver) has no graph role '\(key)'; known: \(graphs.keys.sorted().joined(separator: ", "))")
+                field: "graphs.\(key)", reason: "\(driver) has no graph role '\(key)'; known: \(known.joined(separator: ", "))")
+        }
+        for (key, contract) in optionalGraphs.sorted(by: { $0.key < $1.key }) {
+            if let graph = manifest.graphs[key] { try contract.validate(graph, at: "graphs.\(key)", driver: driver) }
         }
         for (key, contract) in graphs.sorted(by: { $0.key < $1.key }) {
             guard let graph = manifest.graphs[key] else {
@@ -222,4 +235,56 @@ extension DriverContract {
             inputs: inputs, allowsStaticSourcedInputs: false, outputs: outputs, minimumSequenceStates: 0,
             allowsRecurrent: false, phases: ["step"], allowsFunctionFamily: false, requiresMaxContext: false)
     }
+}
+
+extension DriverContract {
+    /// `flux2-klein@1` (MANIFEST.md §5.7): FLUX.2 [klein]. `textEncoder` in `tokens`, `positions`, `tokenMask`, out
+    /// `conditioning`; three denoiser segments chained by their carries (`denoiser0` in `latents`, `conditioning`
+    /// from the text encoder, `sigma`, `textRotary`, `imageRotary`; out `carryImage`, `carryText`, `condition`;
+    /// `denoiser1` and `denoiser2` in the previous carries, `condition` and the rotary tables; `denoiser1` out the
+    /// carries, `denoiser2` out `velocity`); `vaeDecoder` in `latents`, out `image`; an optional `vaeEncoder` (reference
+    /// images) in `referencePixels`, out `referenceLatents`. The driver also requires a tokenizer with a chat template
+    /// and the `schedule`, `latent` and `flux2` blocks (checked when it loads).
+    public static let flux2Klein = DriverContract(
+        driver: .flux2Klein,
+        graphs: [
+            "textEncoder": stateless(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "positions": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "tokenMask": RoleSpec(required: true, rank: 2, scalar: .integer),
+                ],
+                outputs: ["conditioning": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+            "denoiser0": stateless(
+                inputs: [
+                    "latents": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "conditioning": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "sigma": RoleSpec(required: true, rank: 1, scalar: .floatingPoint),
+                ].merging(rotaryInputs) { a, _ in a },
+                outputs: carryOutputs.merging(["condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]) { a, _ in a }),
+            "denoiser1": stateless(inputs: segmentInputs, outputs: carryOutputs),
+            "denoiser2": stateless(
+                inputs: segmentInputs, outputs: ["velocity": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+            "vaeDecoder": stateless(
+                inputs: ["latents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
+                outputs: ["image": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        optionalGraphs: [
+            "vaeEncoder": stateless(
+                inputs: ["referencePixels": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
+                outputs: ["referenceLatents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
+
+    private static let rotaryInputs: [String: RoleSpec] = [
+        "textRotary": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+        "imageRotary": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+    ]
+    private static let carryOutputs: [String: RoleSpec] = [
+        "carryImage": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+        "carryText": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+    ]
+    private static let segmentInputs: [String: RoleSpec] = carryOutputs.merging([
+        "condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+    ]) { a, _ in a }.merging(rotaryInputs) { a, _ in a }
 }

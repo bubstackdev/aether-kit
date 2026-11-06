@@ -61,6 +61,8 @@ extension DriverID {
     public static let decoderLM = DriverID(validated: "decoder-lm@1")
     /// Text-to-image latent diffusion with a U-Net and an epsilon Euler schedule (SD-Turbo; MANIFEST.md §5).
     public static let latentDiffusion = DriverID(validated: "latent-diffusion@1")
+    /// FLUX.2 [klein]: a Qwen3 text encoder, a segmented flow-matching transformer and a VAE (MANIFEST.md §5.7).
+    public static let flux2Klein = DriverID(validated: "flux2-klein@1")
 }
 
 private enum LowerAlnum {

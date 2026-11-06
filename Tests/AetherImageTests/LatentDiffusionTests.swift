@@ -97,7 +97,7 @@ struct LatentDiffusionTests {
         let loads = Calls()
         let pipeline = try LatentDiffusionPipeline(
             manifest: try manifest(), tokenizer: try tokenizer(), device: mac,
-            options: .init(memory: .bytes(budget), coordinator: coordinator),
+            options: .init(memory: .bytes(budget), coordinator: coordinator, probe: Flux2KleinTests.still),
             load: { role throws(AetherError) in
                 loads.append(role)
                 switch role {
@@ -170,8 +170,7 @@ struct LatentDiffusionTests {
         let (shared, _) = try Self.pipeline(calls: Calls(), coordinator: coordinator)
         _ = try await shared.generate(.init(prompt: "a cat"))
         #expect(coordinator.snapshot.reservedBytes == 0)
-        // A fresh pipeline plans from its files (120): `shared` has measured its phases with the real Metal probe,
-        // and what fake graphs measure depends on whatever else the process runs.
+        // A fresh pipeline plans from its files (120); `shared` has recorded its (zero) measured phases.
         let (fresh, _) = try Self.pipeline(calls: Calls(), coordinator: coordinator)
         let held = try coordinator.reserve(bytes: 950)
         await #expect(throws: AetherError.self) { try await fresh.generate(.init(prompt: "a cat")) }

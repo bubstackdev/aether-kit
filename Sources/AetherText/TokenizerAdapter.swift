@@ -34,18 +34,20 @@ public struct TokenizerAdapter: TokenDecoding {
     /// The byte table of a byte-level BPE tokenizer (nil for SentencePiece and other decoders).
     public let tokenBytes: TokenBytes?
 
-    /// Loads the manifest's tokenizer from an installed bundle.
-    public init(bundle: InstalledBundle, manifest: Manifest) async throws {
+    /// Loads the manifest's tokenizer from an installed bundle. `forGeneration` (the default) is for a generating
+    /// driver, which needs `tokenizer.stop`; a driver that only encodes prompts (an image model's text encoder) passes
+    /// false.
+    public init(bundle: InstalledBundle, manifest: Manifest, forGeneration: Bool = true) async throws {
         guard let block = manifest.tokenizer else {
             throw AetherError.manifestInvalid(field: "tokenizer", reason: "the manifest has no tokenizer")
         }
         let (directory, asset) = try Self.directory(for: block.source, in: bundle)
         try Self.verify(directory: directory, asset: asset)
-        try await self.init(directory: directory, block: block)
+        try await self.init(directory: directory, block: block, forGeneration: forGeneration)
     }
 
     /// Loads tokenizer files already verified in `directory` (local files only).
-    init(directory: URL, block: Manifest.Tokenizer) async throws {
+    init(directory: URL, block: Manifest.Tokenizer, forGeneration: Bool = true) async throws {
         let loaded: any Tokenizer
         do {
             loaded = try await AutoTokenizer.from(modelFolder: directory)
@@ -55,7 +57,7 @@ public struct TokenizerAdapter: TokenDecoding {
         // Not byte-level (or unreadable): no table, and text streams through the detokenizer instead.
         let bytes = (try? Data(contentsOf: directory.appending(path: "tokenizer.json"), options: .mappedIfSafe))
             .flatMap { try? TokenBytes(tokenizerJSON: $0) }
-        try self.init(tokenizer: loaded, block: block, tokenBytes: bytes)
+        try self.init(tokenizer: loaded, block: block, forGeneration: forGeneration, tokenBytes: bytes)
     }
 
     /// `forGeneration`: the tokenizer serves a generating driver, so `tokenizer.stop` is required (MANIFEST §2.4).

@@ -58,9 +58,20 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
   the 0.1.0 freeze sets `"enforce": true`.
 
-- **FLUX.2 [klein] 4B Forge exporter (G2 step 1)** (`Forge/flux2/`): text encoder and denoisers in int8 per-channel
-  weights, VAE decoder and encoder; GPU gate against CPU Diffusers, 31/31 (image SSIM 0.991, PSNR 34.0 dB from the
-  reference's conditioning). Driver `flux2-klein@1` is proposed in MANIFEST.md §5.7 until the Swift driver lands.
+- **FLUX.2 [klein] 4B (G2)** in `AetherImage`:
+  - the `flux2-klein@1` driver (`Flux2KleinPipeline`): the bundle's Qwen3 chat template, padded to 512 rows → text
+    encoder → three denoiser segments chained by their carries, per step, on the host Euler update with the empirical
+    shift → VAE decoder; macOS only in 0.1.0 (`unsupportedDevice` on iOS before anything loads);
+  - the typed `flux2` manifest block (MANIFEST.md §5.7, now normative) and optional graph roles in driver contracts
+    (the reference-image VAE encoder);
+  - a reproducible Forge exporter (`Forge/flux2/`): int8 per-channel weights on the text encoder and denoisers, both
+    VAE graphs; its GPU gate against CPU Diffusers passes 31/31;
+  - the Swift gate against CPU Diffusers from the seed: prompt ids exact, text real-row cosine ≥ 0.99921, the image
+    from the reference's text rows SSIM 0.991 / PSNR 34.0 dB; the whole pipeline is recorded at SSIM 0.908 (0.0.x's
+    bars; padding rows condition the denoiser, so the full path moves under any precision change).
+- `ImagePipelineOptions` and `ImageRequest` are shared by the image pipelines, and take a `GPUMemoryProbe` (tests pass
+  a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
+  prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
 
 - **H3 runtime prerequisites (G4 step 1)** (`AetherRuntime/Chain/`): `GraphChain` binds each call's output as the
   next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
@@ -70,5 +81,5 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 
 ### In progress before 0.1.0 is tagged
 
-Krea 2 Turbo (vanilla and realism), MiniMax H3, FLUX.2 [klein] and Kokoro-82M on the new runtime; SD-Turbo's
-hosted bundle and catalog entry, and its iPhone validation.
+Krea 2 Turbo (vanilla and realism), MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo and FLUX.2 hosted
+bundles and catalog entries, SD-Turbo's iPhone validation, and FLUX.2's reference images.

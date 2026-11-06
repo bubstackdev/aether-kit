@@ -1,5 +1,5 @@
 public import AetherCore
-public import AetherHost
+import AetherHost
 public import AetherRuntime
 import Foundation
 
@@ -15,11 +15,6 @@ public enum LatentDiffusionDriver: ModelDriver {
     }
 }
 
-extension Registry {
-    /// The drivers AetherImage links: `latent-diffusion@1`.
-    public static let image = Registry([LatentDiffusionDriver.self])
-}
-
 /// One loaded latent diffusion model (DESIGN.md §6.4): prompt → text encoder → `steps` U-Net calls with the host Euler
 /// update → VAE decoder → ``GeneratedImage``.
 ///
@@ -32,49 +27,8 @@ extension Registry {
 /// - The seed draws the initial latents from Kit's ``SeededGaussianNoise`` in NCHW order (not PyTorch's generator), so
 ///   a seed gives the same image here and in the Forge reference.
 public actor LatentDiffusionPipeline {
-    public struct Options: Sendable {
-        public var cachePolicy: GraphOptions.CachePolicy
-        public var cache: GraphOptions.Cache
-        /// The budget a generation's planned peak must fit when there is no coordinator.
-        public var memory: MemoryBudget
-        /// A shared memory budget: the generation reserves its planned peak here (and fits the available bytes).
-        public var coordinator: ResourceCoordinator?
-        /// GPU admission for the generation (in-process and, if configured, the cross-process lease).
-        public var gpu: GPUAdmissionOwner?
-        /// Measured footprints, shared with other pipelines of the model (and seedable with qualified values).
-        public var ledger: FootprintLedger
-
-        public init(
-            cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default,
-            memory: MemoryBudget = .platformDefault, coordinator: ResourceCoordinator? = nil,
-            gpu: GPUAdmissionOwner? = nil, ledger: FootprintLedger = FootprintLedger()
-        ) {
-            self.cachePolicy = cachePolicy
-            self.cache = cache
-            self.memory = memory
-            self.coordinator = coordinator
-            self.gpu = gpu
-            self.ledger = ledger
-        }
-    }
-
-    public struct Request: Sendable, Hashable {
-        public var prompt: String
-        public var seed: UInt64
-        /// Absent: the manifest's default.
-        public var steps: Int?
-        /// Absent: the export's default size.
-        public var width: Int?
-        public var height: Int?
-
-        public init(prompt: String, seed: UInt64 = 0, steps: Int? = nil, width: Int? = nil, height: Int? = nil) {
-            self.prompt = prompt
-            self.seed = seed
-            self.steps = steps
-            self.width = width
-            self.height = height
-        }
-    }
+    public typealias Options = ImagePipelineOptions
+    public typealias Request = ImageRequest
 
     /// The graphs' tensor names, from the manifest.
     struct Names: Sendable {
@@ -106,7 +60,7 @@ public actor LatentDiffusionPipeline {
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         try self.init(
             manifest: manifest, tokenizer: tokenizer, device: device, options: options,
-            load: Self.validating(loader, manifest: manifest),
+            load: ImageGraphs.validating(loader, manifest: manifest, contract: .latentDiffusion),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
@@ -151,7 +105,7 @@ public actor LatentDiffusionPipeline {
         try Task.checkCancellation()
         // Validate the request before waiting for a turn or the GPU.
         let table = try EpsilonEulerSchedule(schedule, steps: request.steps)
-        guard let size = Self.size(request, latent) else {
+        guard let size = request.size(default: latent.defaultSize) else {
             throw AetherError.generation(.invalidParameters("this export has no default size; pass width and height"))
         }
         let grid = try latent.tokenGrid(width: size.width, height: size.height)
@@ -163,10 +117,7 @@ public actor LatentDiffusionPipeline {
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
         let profile = "\(size.width)x\(size.height)"
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: options.ledger, profile: profile, fileBytes: fileBytes)
-        let budget = options.coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? options.memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        let reservation = try options.coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
+        let (plan, reservation) = try options.admit(manifest: manifest, profile: profile, device: device, fileBytes: fileBytes)
         defer { reservation?.release() }
         let residency = residency(for: plan.mode, profile: profile)
         do {
@@ -266,18 +217,10 @@ public actor LatentDiffusionPipeline {
     private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
         if let residency, residency.mode == mode, residency.profile == profile { return residency }
         residency?.releaseAll()
-        let fresh = GraphResidency(manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, load: load)
+        let fresh = GraphResidency(
+            manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
         residency = fresh
         return fresh
-    }
-
-    static func size(_ request: Request, _ latent: Manifest.Latent) -> (width: Int, height: Int)? {
-        switch (request.width, request.height) {
-        case (let w?, let h?): (w, h)
-        case (let w?, nil): (w, w)
-        case (nil, let h?): (h, h)
-        case (nil, nil): latent.defaultSize
-        }
     }
 
     private func turn() async {
@@ -290,18 +233,5 @@ public actor LatentDiffusionPipeline {
 
     private func endTurn() {
         if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
-    }
-
-    /// Wraps `loader` so each graph is checked against its manifest role before use (MANIFEST.md §2.1.1).
-    static func validating(_ loader: @escaping GraphResidency.Loader, manifest: Manifest) -> GraphResidency.Loader {
-        { role throws(AetherError) in
-            let graph = try await loader(role)
-            guard let spec = manifest.graphs[role], let contract = DriverContract.latentDiffusion.graphs[role] else {
-                throw .manifestInvalid(field: "graphs.\(role)", reason: "not a \(LatentDiffusionDriver.id) graph")
-            }
-            try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
-                                            contract: contract, tables: manifest.tables ?? [:])
-            return graph
-        }
     }
 }

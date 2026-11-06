@@ -8,11 +8,13 @@ Nothing is downloaded: the snapshot must be in the Hugging Face cache (or `--sna
 verified against the pins below. Writes only `--output`:
 
     OUTPUT/
-      aether.json                       the Aether manifest (MANIFEST.md §5; driver `flux2-klein@1` proposed until G2)
+      .aether/aether.json               the Aether manifest (MANIFEST.md §5.7; driver `flux2-klein@1`)
       flux2_klein_4b-{text,denoiser0..2,vae,vae-encoder}.aimodel
       tokenizer/                        the checkpoint's tokenizer files, unchanged
       LICENSE.md, NOTICE                the checkpoint's Apache-2.0 text; the modification notice
       SHA256SUMS                        every bundle file except itself and the log
+
+The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
       export-report.json                provenance, versions, quantization, timings, peak RSS
       forge-log.jsonl                   one event per stage
 
@@ -173,8 +175,11 @@ def convert(module: nn.Module, example: tuple, dynamic, inputs: list[str], outpu
             "bytes": tree_bytes(path), "inputs": inputs, "outputs": outputs, "function": entry}
 
 
-# MARK: the manifest (MANIFEST.md §5: generic `schedule`/`latent`/`residency` normative since G0; driver
-# `flux2-klein@1` and its `flux2` block proposed until G2)
+MANIFEST_PATH = ".aether/aether.json"
+
+
+# MARK: the manifest (MANIFEST.md §5: generic `schedule`/`latent`/`residency` since G0; driver `flux2-klein@1` and its
+# `flux2` block, §5.7, since G2)
 
 def manifest(files: dict[str, dict], asset_names: dict[str, str], report: dict) -> dict:
     graph_file = lambda role: f"main:{asset_names[role]}"  # noqa: E731
@@ -216,7 +221,6 @@ def manifest(files: dict[str, dict], asset_names: dict[str, str], report: dict) 
         "id": ID,
         "task": "text-to-image",
         "driver": "flux2-klein@1",
-        "x-status": "draft: driver flux2-klein@1 and its flux2 block are proposed in MANIFEST.md §5 (G2)",
         "variant": {"platform": "macos"},
         "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {role: graphs[role] for role in ROLES},
@@ -415,15 +419,16 @@ def main() -> None:
         shutil.copyfile(checkpoint.root / "tokenizer" / name, args.output / "tokenizer" / name)
     shutil.copyfile(checkpoint.root / "LICENSE.md", args.output / "LICENSE.md")
     (args.output / "NOTICE").write_text(notice())
-    skip = {"aether.json", "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
+    skip = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": sha256(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in skip}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
     report["assetBytes"] = {role: tree_bytes(args.output / name) for role, name in asset_names.items()}
     report["stages"]["package"] = log.done("package")
     save()
-    (args.output / "aether.json").write_text(json.dumps(manifest(files, asset_names, report), indent=2) + "\n")
-    report["aetherJSONSHA256"] = sha256(args.output / "aether.json")
+    (args.output / ".aether").mkdir()
+    (args.output / MANIFEST_PATH).write_text(json.dumps(manifest(files, asset_names, report), indent=2) + "\n")
+    report["aetherJSONSHA256"] = sha256(args.output / MANIFEST_PATH)
     save()
     sums = [f"{sha256(p)}  {p.relative_to(args.output)}" for p in tree_files(args.output)
             if p.name not in ("SHA256SUMS", "forge-log.jsonl")]

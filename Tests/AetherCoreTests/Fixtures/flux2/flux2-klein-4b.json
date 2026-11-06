@@ -3,7 +3,6 @@
   "id": "flux2-klein-4b",
   "task": "text-to-image",
   "driver": "flux2-klein@1",
-  "x-status": "draft: driver flux2-klein@1 and its flux2 block are proposed in MANIFEST.md §5 (G2)",
   "variant": {
     "platform": "macos"
   },

@@ -48,7 +48,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherText         tokenizer adapter · prompt rendering · Generator · ChatSession · constrained decoding
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
  ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
- ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), then FLUX.2 and Krea 2 (§6.4)
+ ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), then Krea 2 (§6.5)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
@@ -327,7 +327,7 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 - **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
   Diffusers' order.
 
-### 6.5 AetherImage (G1)
+### 6.5 AetherImage (G1, G2)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
 `LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
@@ -342,6 +342,23 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
 - Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.
 - **Measured (gate, M5 Max, float32 512²):** phase peaks 1.25 GiB (prompt), 3.5 GiB (steps), 1.25 GiB (image); 4
   steps take under a second warm. Per phase that is about 4.8 GiB, the figure an iPhone has to fit.
+
+The second is **`flux2-klein@1`** (FLUX.2 [klein] 4B, G2). `Flux2KleinPipeline` has the same shape (the options,
+request, admission prologue and load-time contract check are shared: `ImagePipelineOptions`, `ImageRequest`), with
+FLUX.2's host recipe:
+
+- The prompt is the bundle's Qwen3 chat template (thinking off) through AetherText's `TokenizerAdapter`, right-padded
+  to 512 ids with a mask; every row, padding included, conditions the denoiser.
+- The transformer is three segments chained by their carries. The driver wires them from the manifest's
+  `source.from` bindings, checked once at load, and binds the same arena buffers across calls: the text rows, the
+  rotary tables (built on the host per `flux2.rotary`), the carries and the shared condition.
+- Packed latents start from the seeded stream in packed-token order, go in as fp16, and take the float32 Euler update on
+  the host with the empirical shift's μ for the generated token count. The packed tokens, in raster order, are the
+  decoder's `[rows, columns, 128]`.
+- macOS only in 0.1.0: on iOS the pipeline refuses (`unsupportedDevice`) before anything loads. Reference images are
+  deferred.
+- **Measured (gate, M5 Max, int8 512², 4 steps):** phase peaks 3.2 GiB (prompt), 5.6 GiB (steps), 1.2 GiB (image);
+  about 15 s cold (loading included) and 1.4 s warm.
 
 ### 6.6 Device chains, weight banks and shape profiles (G4 step 1)
 

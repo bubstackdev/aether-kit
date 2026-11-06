@@ -6808,6 +6808,38 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText15PromptRenderersO12chatTemplate8manifest6bundleSS0A4Core8ManifestV_AG15InstalledBundleVtKFZ",
+      "moduleName": "AetherText",
+      "name": "chatTemplate",
+      "printedName": "chatTemplate(manifest:bundle:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:10AetherText15PromptRenderersO12chatTemplate8manifest6bundleSS0A4Core8ManifestV_AG15InstalledBundleVtKFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "PromptRenderer",
         "printedName": "any AetherText.PromptRenderer",
         "usr": "s:10AetherText14PromptRendererP"
@@ -10437,6 +10469,13 @@
         "name": "Manifest",
         "printedName": "AetherCore.Manifest",
         "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
        }
       ],
       "declAttributes": [
@@ -10445,12 +10484,12 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherText16TokenizerAdapterV6bundle8manifestAC0A4Core15InstalledBundleV_AF8ManifestVtYaKcfc",
+      "mangledName": "$s10AetherText16TokenizerAdapterV6bundle8manifest13forGenerationAC0A4Core15InstalledBundleV_AG8ManifestVSbtYaKcfc",
       "moduleName": "AetherText",
       "name": "init",
-      "printedName": "init(bundle:manifest:)",
+      "printedName": "init(bundle:manifest:forGeneration:)",
       "throwing": true,
-      "usr": "s:10AetherText16TokenizerAdapterV6bundle8manifestAC0A4Core15InstalledBundleV_AF8ManifestVtYaKcfc"
+      "usr": "s:10AetherText16TokenizerAdapterV6bundle8manifest13forGenerationAC0A4Core15InstalledBundleV_AG8ManifestVSbtYaKcfc"
      },
      {
       "children": [

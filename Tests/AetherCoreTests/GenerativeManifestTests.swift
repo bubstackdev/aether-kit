@@ -61,7 +61,44 @@ struct GenerativeManifestTests {
         #expect(manifest.graphs["vaeDecoder"]?.expectFrequentReshapes == false)
         #expect(manifest.tokenizer?.chatTemplate?.description == "main:tokenizer/chat_template.jinja")
         #expect(manifest.license == "Apache-2.0" && manifest.provenance?.mergedAdapter == nil)
+        let flux2 = try #require(manifest.flux2)
+        #expect(flux2.prompt == .init(maxTokens: 512, padToken: 151643))
+        #expect(flux2.conditioning == .init(taps: [9, 18, 27], width: 7680, rows: 512))
+        #expect(flux2.rotary.axes == [32, 32, 32, 32] && flux2.rotary.theta == 2000 && flux2.rotary.layout == .splitHalves)
+        #expect(flux2.segments == ["denoiser0", "denoiser1", "denoiser2"] && flux2.condRows == 17 && flux2.references != nil)
+        try DriverContract.flux2Klein.validate(manifest)
         #expect(try Manifest.decode(manifest.encoded()) == manifest)
+    }
+
+    /// The `flux2` block holds the driver to what it implements: each refusal names its field.
+    @Test func flux2BlockRefusals() throws {
+        let data = try Fixtures.data("flux2/flux2-klein-4b.json")
+        func refusal(_ change: (inout [String: Any]) -> Void) throws -> String? {
+            var object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+            var flux2 = try #require(object["flux2"] as? [String: Any])
+            change(&flux2)
+            object["flux2"] = flux2
+            do {
+                _ = try Manifest.decode(try JSONSerialization.data(withJSONObject: object))
+                return nil
+            } catch let error as AetherError {
+                if case .manifestInvalid(let field, _) = error { return field }
+                return "\(error)"
+            }
+        }
+        func edit(_ key: String, _ field: String, _ value: Any) -> (inout [String: Any]) -> Void {
+            { block in
+                var inner = block[key] as! [String: Any]
+                inner[field] = value
+                block[key] = inner
+            }
+        }
+        #expect(try refusal(edit("prompt", "maxTokens", 256)) == "flux2.conditioning.rows")
+        #expect(try refusal(edit("prompt", "padding", "left"))?.hasPrefix("flux2.prompt.padding") == true)
+        #expect(try refusal(edit("rotary", "imageIds", "(0, column, row, 0)")) == "flux2.rotary.imageIds")
+        #expect(try refusal(edit("rotary", "axes", [32, 32, 64])) == "flux2.rotary.axes")
+        #expect(try refusal { $0["segments"] = ["denoiser0", "denoiser9"] } == "flux2.segments.1")
+        #expect(try refusal { _ in } == nil)
     }
 
     @Test func absentBlocksStayAbsent() throws {
