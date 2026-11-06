@@ -62,6 +62,12 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   weights, VAE decoder and encoder; GPU gate against CPU Diffusers, 31/31 (image SSIM 0.991, PSNR 34.0 dB from the
   reference's conditioning). Driver `flux2-klein@1` is proposed in MANIFEST.md §5.7 until the Swift driver lands.
 
+- **H3 runtime prerequisites (G4 step 1)** (`AetherRuntime/Chain/`): `GraphChain` binds each call's output as the
+  next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
+  unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
+  enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
+  MANIFEST.md §5.8 proposes the `weights` table.
+
 ### In progress before 0.1.0 is tagged
 
 Krea 2 Turbo (vanilla and realism), MiniMax H3, FLUX.2 [klein] and Kokoro-82M on the new runtime; SD-Turbo's
