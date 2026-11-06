@@ -37,6 +37,13 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   release, iOS easing).
 - **Text:** the sampler (matching HF Transformers' recorded processors), the structured-output constraint, and the
   text-stream behaviour, plus the tokenizer oracle cases.
+- **Generative foundation (G0):**
+  - the seeded noise stream (bit-identical to 0.0.x);
+  - the Krea and FLUX.2 flow-matching schedule arithmetic;
+  - `GeneratedImage` and `GeneratedAudio`;
+  - `ResourceCoordinator` reservations;
+  - new on top: typed `schedule`, `latent` and `residency` manifest blocks (MANIFEST.md §5), and `GraphResidency`
+    with Metal-measured phase footprints.
 
 ### In progress before 0.1.0 is tagged
 
