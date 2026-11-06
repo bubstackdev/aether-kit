@@ -1,4 +1,5 @@
 import AetherCore
+import AetherHost
 import AetherRuntime
 import CryptoKit
 import Foundation
@@ -101,6 +102,12 @@ struct KokoroTests {
     @Test func malformedVocabulariesThrow() {
         #expect(throws: AetherError.self) { try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["": 1])) }
         #expect(throws: AetherError.self) { try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["ab": 1])) }
+    }
+
+    /// Review finding 8: the driver loads a model whose session options the app sets before making the session.
+    @Test func theDriverLoadsAModelWithSettableOptions() {
+        #expect(KokoroDriver.Loaded.self == KokoroModel.self)
+        func share(_ coordinator: ResourceCoordinator, with model: inout KokoroModel) { model.options.coordinator = coordinator }
     }
 
     @Test func voicesParseTheirLanguageAndGender() throws {

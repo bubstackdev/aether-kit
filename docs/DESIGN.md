@@ -350,6 +350,10 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
 - Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
   the plan's peak to a shared `ResourceCoordinator` (reserving it) or a `MemoryBudget`, and refuses before loading if
   nothing fits. Graphs that stay resident are reused across generations.
+- Every generative driver loads a model value, not the pipeline: `LatentDiffusionModel`, `Flux2KleinModel`,
+  `Krea2Model` (which also needs the app's filter) and `KokoroModel`. Its `options` start from the `LoadOptions` cache
+  settings, and the app sets the coordinator, GPU admission and ledger there before making the pipeline (`LoadOptions`
+  is AetherRuntime's and can't carry AetherHost's types).
 - Each graph is checked against its manifest role when it loads (`SignatureValidator`); a request for a size the export
   doesn't have (`latent.sizes`) is refused before any work.
 - Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.

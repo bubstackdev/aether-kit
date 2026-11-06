@@ -97,7 +97,7 @@ enum Gate {
         let started = ContinuousClock.now
         let pipeline = try await Registry.image.load(
             try localBundle(bundleURL), as: LatentDiffusionDriver.self,
-            options: LoadOptions(device: .current, cachePolicy: .default, cache: .default))
+            options: LoadOptions(device: .current, cachePolicy: .default, cache: .default)).pipeline()
         measure("sd-turbo.loadSeconds", seconds(ContinuousClock.now - started))
         measure("sd-turbo.budgetMB", Double(pipeline.options.memory.bytes(on: .current) >> 20))
         for (index, c) in reference.cases.enumerated() {
@@ -147,7 +147,7 @@ enum Gate {
         let index = try JSONDecoder().decode(KokoroIndex.self, from: Data(contentsOf: referenceURL.appending(path: "references.json")))
         let started = ContinuousClock.now
         let session = try await Registry.speech.load(
-            try localBundle(bundleURL), as: KokoroDriver.self, options: LoadOptions(device: .current, cachePolicy: .default, cache: .default))
+            try localBundle(bundleURL), as: KokoroDriver.self, options: LoadOptions(device: .current, cachePolicy: .default, cache: .default)).session()
         measure("kokoro.loadSeconds", seconds(ContinuousClock.now - started))
         check("kokoro.frameCap", session.frameCap == 512, "iOS frame cap \(session.frameCap) (manifest: 512)")
         for entry in index.cases {

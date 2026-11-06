@@ -4,14 +4,29 @@ public import AetherRuntime
 import Foundation
 
 /// `latent-diffusion@1` (MANIFEST.md §1, §5): text-to-image with a CLIP text encoder, an epsilon-predicting U-Net and a
-/// VAE decoder, on an `epsilonEuler` schedule (SD-Turbo). Loads a ``LatentDiffusionPipeline``.
+/// VAE decoder, on an `epsilonEuler` schedule (SD-Turbo). Loads a ``LatentDiffusionModel``: set its options (a shared
+/// coordinator, GPU admission, a ledger), then make the ``LatentDiffusionPipeline``.
 public enum LatentDiffusionDriver: ModelDriver {
     public static let id: DriverID = .latentDiffusion
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> LatentDiffusionPipeline {
-        try LatentDiffusionPipeline(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> LatentDiffusionModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try DriverContract.latentDiffusion.validate(manifest)
+        return LatentDiffusionModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened latent diffusion bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct LatentDiffusionModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: ImagePipelineOptions
+
+    public func pipeline() throws -> LatentDiffusionPipeline {
+        try LatentDiffusionPipeline(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 

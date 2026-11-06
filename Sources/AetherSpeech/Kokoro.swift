@@ -3,14 +3,29 @@ public import AetherHost
 public import AetherRuntime
 import Foundation
 
-/// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M speech from phonemes. Loads a ``KokoroSpeechSession``.
+/// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M speech from phonemes. Loads a ``KokoroModel``: set its options (a shared
+/// coordinator, GPU admission, a ledger, the frame cap), then make the ``KokoroSpeechSession``.
 public enum KokoroDriver: ModelDriver {
     public static let id: DriverID = .kokoro
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> KokoroSpeechSession {
-        try KokoroSpeechSession(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> KokoroModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try DriverContract.kokoro.validate(manifest)
+        return KokoroModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened Kokoro bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct KokoroModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: KokoroSpeechSession.Options
+
+    public func session() throws -> KokoroSpeechSession {
+        try KokoroSpeechSession(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 

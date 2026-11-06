@@ -48,7 +48,7 @@ struct LatentDiffusionGateTests {
             #expect(try tokenizer.encode(c.prompt) == c.ids, "tokenizer: \(c.prompt.debugDescription)")
         }
         let pipeline = try await Registry.image.load(
-            bundle, as: LatentDiffusionDriver.self, options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default))
+            bundle, as: LatentDiffusionDriver.self, options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default)).pipeline()
         for c in reference.cases {
             #expect(try tokenizer.encode(c.prompt) == c.ids)
             let started = ContinuousClock.now

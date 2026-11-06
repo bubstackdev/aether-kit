@@ -301,5 +301,13 @@ struct Flux2KleinTests {
         _ = try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(), encodePrompt: Self.encode,
                                    load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
         #expect(Registry.image.supports(.flux2Klein) && Registry.image.supports(.latentDiffusion))
+        // Review finding 8: every driver loads a model value whose options the app sets (a shared coordinator, GPU
+        // admission, a ledger) before making the pipeline; before, the Registry path fixed them to the defaults.
+        #expect(Flux2KleinDriver.Loaded.self == Flux2KleinModel.self)
+        #expect(LatentDiffusionDriver.Loaded.self == LatentDiffusionModel.self)
+        func share(_ coordinator: ResourceCoordinator, with model: inout Flux2KleinModel, _ other: inout LatentDiffusionModel) {
+            model.options.coordinator = coordinator
+            other.options.coordinator = coordinator
+        }
     }
 }

@@ -5,14 +5,30 @@ import Foundation
 
 /// `flux2-klein@1` (MANIFEST.md §5.7): FLUX.2 [klein] text-to-image. A Qwen3 text encoder, a flow-matching transformer
 /// split into segments chained by their carries, and a VAE decoder, on a `flowMatchEuler` schedule with the empirical
-/// shift. Loads a ``Flux2KleinPipeline``. macOS only in 0.1.0: on iOS the load is refused before anything opens.
+/// shift. Loads a ``Flux2KleinModel``: set its options, then make the ``Flux2KleinPipeline``. macOS only in 0.1.0: on
+/// iOS the load is refused before anything opens.
 public enum Flux2KleinDriver: ModelDriver {
     public static let id: DriverID = .flux2Klein
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> Flux2KleinPipeline {
-        try await Flux2KleinPipeline(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> Flux2KleinModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try Flux2KleinPipeline.requireMacOS(manifest, options.device)
+        try DriverContract.flux2Klein.validate(manifest)
+        return Flux2KleinModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened FLUX.2 [klein] bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct Flux2KleinModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: ImagePipelineOptions
+
+    public func pipeline() async throws -> Flux2KleinPipeline {
+        try await Flux2KleinPipeline(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 

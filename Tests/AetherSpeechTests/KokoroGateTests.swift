@@ -53,7 +53,7 @@ struct KokoroGateTests {
         let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: Self.referenceURL.appending(path: "references.json")))
         let session = try await Registry.speech.load(
             try Self.localBundle(Self.bundleURL), as: KokoroDriver.self,
-            options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default))
+            options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default)).session()
         #expect(session.voices.count == 54 && session.frameCap == 1024)
         for entry in index.cases {
             let directory = Self.referenceURL.appending(path: entry.name)
