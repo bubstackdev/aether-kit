@@ -2,13 +2,14 @@ public import AetherRuntime
 import Foundation
 
 /// A generation schema compiled into the JSON a constrained model may write: one canonical layout (`{"key": value,
-/// "key2": value}`, a space after each colon and comma, no other whitespace), every property in `x-order` (an optional
-/// property's value may be `null`), strings with JSON escapes and valid UTF-8, integers and numbers within their
+/// "key2": value}`, a space after each colon and comma, no other whitespace), properties in `x-order` (an optional
+/// property, one not `required`, may be left out; its value is `null` only where its own schema allows `null`), strings with JSON escapes and valid UTF-8, integers and numbers within their
 /// bounds (no exponents; numbers up to 9 integer and 9 fraction digits, integers up to 18 digits), and arrays within
 /// their counts. Anything outside the subset FoundationModels' `@Generable` emits is refused when compiling.
 struct JSONGrammar: Sendable {
     enum Node: Sendable, Hashable {
-        /// Members in order: the text before each value (`{"key": ` for the first, `, "key": ` after), then the value.
+        /// Members in order, each its key and value; an optional member may be left out. Written `{`, then each
+        /// member written as `"key": value` with `, ` before all but the first written, then `}`.
         case object(members: [Member])
         case string
         /// Exactly one of these byte strings (JSON string literals, `true`, `false`, `null`). None is a prefix of another.
@@ -21,8 +22,11 @@ struct JSONGrammar: Sendable {
     }
 
     struct Member: Sendable, Hashable {
-        let text: [UInt8]
+        /// `"key": `
+        let key: [UInt8]
         let value: Int
+        /// Not `required`: the member may be left out.
+        let optional: Bool
     }
 
     private(set) var nodes: [Node] = []
@@ -66,6 +70,18 @@ struct JSONGrammar: Sendable {
             "minimum", "maximum", "items", "minItems", "maxItems", "anyOf", "$ref", "$defs",
         ]
 
+        /// The keywords each type holds its values to; any other constraint beside a type would be accepted and then
+        /// not held to, so it is refused. (Annotations and `$defs` are allowed everywhere.)
+        static let typeKeys: [String: Set<String>] = [
+            "object": ["properties", "required", "x-order", "additionalProperties"],
+            "string": ["enum", "const"],
+            "integer": ["minimum", "maximum"],
+            "number": ["minimum", "maximum"],
+            "boolean": [],
+            "null": [],
+            "array": ["items", "minItems", "maxItems"],
+        ]
+
         mutating func add(_ node: Node) -> Int {
             nodes.append(node)
             return nodes.count - 1
@@ -107,6 +123,13 @@ struct JSONGrammar: Sendable {
                 guard case .string(let text) = constant, schema["type"].map({ $0 == .string("string") }) ?? true else {
                     throw AetherError.generation(.unsupportedSchema("const is supported on strings only"))
                 }
+                if let other = schema.keys.sorted().first(where: { !["const", "enum", "type", "title", "description", "$defs"].contains($0) }) {
+                    throw AetherError.generation(.unsupportedSchema("\"\(other)\" beside \"const\" isn't supported"))
+                }
+                // `const` and `enum` together: the value must satisfy both.
+                if schema["enum"] != nil, try !enumeration(schema["enum"]).contains(text) {
+                    throw AetherError.generation(.unsupportedSchema("const \(Self.text(text)) isn't one of the enum's values"))
+                }
                 return add(.choice([Self.literal(text)]))
             }
             guard case .string(let type)? = schema["type"] else { throw AetherError.generation(.unsupportedSchema("a schema node needs a type")) }
@@ -114,14 +137,15 @@ struct JSONGrammar: Sendable {
             if schema["enum"] != nil, type != "string" {
                 throw AetherError.generation(.unsupportedSchema("enum is supported on strings only"))
             }
+            if let accepted = Self.typeKeys[type],
+               let other = schema.keys.sorted().first(where: { !accepted.contains($0) && !["type", "title", "description", "$defs"].contains($0) }) {
+                throw AetherError.generation(.unsupportedSchema("\"\(other)\" isn't supported on the type \"\(type)\""))
+            }
             switch type {
             case "object": return try object(schema)
             case "string":
-                if case .array(let options)? = schema["enum"] {
-                    let texts = try options.map { option -> [UInt8] in
-                        guard case .string(let text) = option else { throw AetherError.generation(.unsupportedSchema("enum values must be strings")) }
-                        return Self.literal(text)
-                    }
+                if schema["enum"] != nil {
+                    let texts = try enumeration(schema["enum"]).map(Self.literal)
                     guard !texts.isEmpty else { throw AetherError.generation(.unsupportedSchema("an empty enum")) }
                     return add(.choice(Array(Set(texts)).sorted { $0.lexicographicallyPrecedes($1) }))
                 }
@@ -158,8 +182,17 @@ struct JSONGrammar: Sendable {
             var properties: [String: JSONValue] = [:]
             if case .object(let found)? = schema["properties"] { properties = found }
             var required: Set<String> = []
-            if case .array(let names)? = schema["required"] {
-                required = Set(names.compactMap { if case .string(let name) = $0 { name } else { nil } })
+            if let names = schema["required"] {
+                guard case .array(let names) = names else { throw AetherError.generation(.unsupportedSchema("required must be an array of names")) }
+                for name in names {
+                    guard case .string(let name) = name else { throw AetherError.generation(.unsupportedSchema("required must be an array of names")) }
+                    required.insert(name)
+                }
+            }
+            // No additional properties: a required name the object doesn't declare could never be written.
+            if let missing = required.subtracting(properties.keys).sorted().first {
+                throw AetherError.generation(.unsupportedSchema(
+                    "the required property \(Self.text(missing)) isn't declared, and additional properties aren't allowed"))
             }
             var order: [String]
             if case .array(let names)? = schema["x-order"] {
@@ -172,10 +205,10 @@ struct JSONGrammar: Sendable {
             }
             let index = add(.object(members: []))
             var members: [Member] = []
-            for (position, name) in order.enumerated() {
-                var value = try compile(properties[name]!)
-                if !required.contains(name) { value = add(.anyOf([value, null()])) }
-                members.append(Member(text: Array((position == 0 ? "{" : ", ").utf8) + Self.literal(name) + Array(": ".utf8), value: value))
+            for name in order {
+                // An optional property is left out, not written as `null` (unless its own schema allows null).
+                let value = try compile(properties[name]!)
+                members.append(Member(key: Self.literal(name) + Array(": ".utf8), value: value, optional: !required.contains(name)))
             }
             nodes[index] = .object(members: members)
             return index
@@ -242,6 +275,18 @@ struct JSONGrammar: Sendable {
             }
             return count
         }
+
+        /// An `enum`'s string values.
+        private func enumeration(_ value: JSONValue?) throws -> [String] {
+            guard case .array(let options)? = value else { throw AetherError.generation(.unsupportedSchema("enum must be an array")) }
+            return try options.map { option in
+                guard case .string(let text) = option else { throw AetherError.generation(.unsupportedSchema("enum values must be strings")) }
+                return text
+            }
+        }
+
+        /// A name or value as it appears in an error: its JSON literal.
+        static func text(_ value: String) -> String { String(decoding: literal(value), as: UTF8.self) }
 
         /// A JSON string literal's bytes.
         static func literal(_ text: String) -> [UInt8] {
