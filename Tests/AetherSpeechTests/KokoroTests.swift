@@ -225,6 +225,22 @@ struct KokoroTests {
         }
     }
 
+    /// Second code review, batch C item 5: a request cancelled while it waits for the session's turn leaves at once
+    /// (before: it waited for the running request, then threw).
+    @Test(.timeLimit(.minutes(1))) func aRequestCancelledWhileWaitingLeavesAtOnce() async throws {
+        let log = Log(), gate = Gate()
+        let session = try Self.session(log: log, gate: gate)
+        let phonemes = try session.phonemes("həlˈO")
+        let running = Task { try await session.synthesize(phonemes, SpeechRequest()) }
+        await gate.waitUntilEntered()
+        let queued = Task { try await session.synthesize(phonemes, SpeechRequest()) }
+        try await Task.sleep(for: .milliseconds(50))
+        queued.cancel()
+        await #expect(throws: CancellationError.self) { try await queued.value }
+        await gate.release()
+        _ = try await running.value
+    }
+
     /// Voice row r of every table is `1000·(voice index) + r`.
     static func session(
         log: Log, observed: Observed = Observed(), perToken: Float = 2, gate: Gate? = nil, device: Device = mac,

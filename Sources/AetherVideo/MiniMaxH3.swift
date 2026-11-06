@@ -116,8 +116,8 @@ public actor MiniMaxH3Pipeline {
     private let tokenize: @Sendable (String) -> [Int32]
     private let load: GraphResidency.Loader
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws {
         try Self.requireMacOS(manifest, device)
@@ -189,25 +189,24 @@ public actor MiniMaxH3Pipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: plan.profile.key)
-        do {
-            let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
-            admission.finish()
-            return video
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: plan.profile.key)
+            do {
+                let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
+                admission.finish()
+                return video
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph (waiting for a running generation).
     public func unload() async {
-        await turn()
-        admission.unload()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (tests and diagnostics).
@@ -262,14 +261,6 @@ public actor MiniMaxH3Pipeline {
             bytes += 2 * (table.blocks.map { $0.values.reduce(0) { $0 + $1.bytes } }.max() ?? 0)
         }
         return bytes
-    }
-
-    private func turn() async {
-        if busy { await withCheckedContinuation { waiters.append($0) } } else { busy = true }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 
     // MARK: - The generation

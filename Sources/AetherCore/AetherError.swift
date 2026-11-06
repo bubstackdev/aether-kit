@@ -131,6 +131,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
         case invalidByteCount
         /// The memory reservation was already released.
         case reservationReleased
+        /// A request queue already holds its `limit` waiting callers (`SerialGate`).
+        case queueFull(limit: Int)
 
         public var description: String {
             func holder(_ pid: Int32?) -> String { pid.map { "process \($0)" } ?? "an unidentified holder (no pid file)" }
@@ -147,6 +149,7 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             case .notRunning: return "the admission ticket is not running"
             case .invalidByteCount: return "a memory reservation needs at least one byte"
             case .reservationReleased: return "the memory reservation was already released"
+            case .queueFull(let limit): return "\(limit) requests are already waiting; the queue is full"
             }
         }
     }

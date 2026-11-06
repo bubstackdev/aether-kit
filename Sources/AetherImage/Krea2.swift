@@ -68,8 +68,8 @@ public actor Krea2Pipeline {
     let device: Device
     private let load: GraphResidency.Loader
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// Opens an installed bundle with the app's content filter; graphs load on the first generation.
     public init(
@@ -162,17 +162,17 @@ public actor Krea2Pipeline {
     /// Loads the text encoder for the call and releases it; nothing is measured and the filter isn't consulted.
     func conditioningRows(for prompt: String) async throws -> [Float] {
         let prompt = try Prompt(rendered: try encodePrompt(prompt), rule: krea2.prompt, rows: krea2.conditioning.rowRange ?? 1...1)
-        await turn()
-        defer { endTurn() }
-        let text = try await load(wiring.text.role)
-        return try await encode(prompt, with: text, in: TensorArena()).readFloats()
+        return try await gate.withTurn {
+            let text = try await load(wiring.text.role)
+            return try await encode(prompt, with: text, in: TensorArena()).readFloats()
+        }
     }
 
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
-        await turn()
-        admission.unload()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (for tests and diagnostics).
@@ -187,19 +187,18 @@ public actor Krea2Pipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
-        // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
-        let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
-        do {
-            let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size)
-            admission.finish()
-            return image
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
+            // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
+            let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
+            do {
+                let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size)
+                admission.finish()
+                return image
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
@@ -340,18 +339,6 @@ public actor Krea2Pipeline {
         try bindings.bindOutput(wiring.text.conditioning, to: rows)
         try await text.run(&bindings)
         return rows
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }
 

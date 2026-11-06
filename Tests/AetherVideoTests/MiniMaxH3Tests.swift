@@ -141,6 +141,37 @@ struct MiniMaxH3Tests {
             load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "no graphs in this test") })
     }
 
+    /// Second code review, batch C item 5: a generation cancelled while it waits for the pipeline's turn leaves at once
+    /// (before: it waited for the running generation, then threw).
+    @Test(.timeLimit(.minutes(1))) func aGenerationCancelledWhileWaitingLeavesAtOnce() async throws {
+        actor Latch {
+            var entered = false, open = false
+            var waiting: [CheckedContinuation<Void, Never>] = []
+            func enter() async {
+                entered = true
+                if !open { await withCheckedContinuation { waiting.append($0) } }
+            }
+            func release() { open = true; waiting.forEach { $0.resume() }; waiting = [] }
+        }
+        let latch = Latch()
+        let pipeline = try MiniMaxH3Pipeline(
+            manifest: try Self.manifest(), device: Device(platform: .macOS, architecture: "h17c"), bundle: nil,
+            options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }), tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
+            load: { role throws(AetherError) in
+                await latch.enter()
+                throw .manifestInvalid(field: role, reason: "no graphs in this test")
+            })
+        let request = VideoRequest(prompt: "a fox in snow")
+        let running = Task { try await pipeline.generate(request) }
+        while !(await latch.entered) { await Task.yield() }
+        let queued = Task { try await pipeline.generate(request) }
+        try await Task.sleep(for: .milliseconds(50))
+        queued.cancel()
+        await #expect(throws: CancellationError.self) { try await queued.value }
+        await latch.release()
+        await #expect(throws: AetherError.self) { try await running.value }
+    }
+
     @Test func refusesBeforeLoading() async throws {
         let phone = Device(platform: .iOS, architecture: "h19p")
         let error = #expect(throws: AetherError.self) { _ = try Self.pipeline(device: phone) }

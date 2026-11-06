@@ -20,8 +20,8 @@ public final class StatelessPipeline {
     public let manifest: Manifest
     public let options: PipelineOptions
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// The pipeline over an installed bundle's graphs. Nothing loads until the first request. `defaultMemory` is the
     /// budget when the options give none.
@@ -64,39 +64,26 @@ public final class StatelessPipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: profile)
-        do {
-            try await residency.beginPhase(.perStep)
-            let result = try await body(residency)
-            residency.endPhase(.perStep)
-            admission.finish()
-            return result
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: profile)
+            do {
+                try await residency.beginPhase(.perStep)
+                let result = try await body(residency)
+                residency.endPhase(.perStep)
+                admission.finish()
+                return result
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph and the reservation, waiting for a running request. The next request loads them again.
     public func unload() async {
-        await turn()
-        admission.unload()
-        endTurn()
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
         }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }
 

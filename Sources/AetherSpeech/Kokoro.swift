@@ -116,8 +116,8 @@ public actor KokoroSpeechSession {
     private let readTable: @Sendable (Manifest.Table) throws(AetherError) -> [Float]
     private let admission: ResidentAdmission
     private var styles: [KokoroVoice: [Float]] = [:]
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// Opens an installed bundle; the graphs load on the first request.
     /// `frameCap` is the longest utterance in frames; absent, the manifest's cap for the platform (at most the
@@ -213,26 +213,25 @@ public actor KokoroSpeechSession {
         // The GPU first, so a request's priority also orders it among this session's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: profile)
-        do {
-            let style = try styles(request.voice, table: voice.table)
-            var results: [KokoroSpeech] = []
-            for (index, phonemes) in segments.enumerated() {
-                try Task.checkCancellation()
-                var segment = request
-                segment.seed = request.seed &+ UInt64(index)
-                let speech = try await run(residency, phonemes, segment, style: style)
-                onSegment?(index, speech)
-                results.append(speech)
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: profile)
+            do {
+                let style = try styles(request.voice, table: voice.table)
+                var results: [KokoroSpeech] = []
+                for (index, phonemes) in segments.enumerated() {
+                    try Task.checkCancellation()
+                    var segment = request
+                    segment.seed = request.seed &+ UInt64(index)
+                    let speech = try await run(residency, phonemes, segment, style: style)
+                    onSegment?(index, speech)
+                    results.append(speech)
+                }
+                admission.finish()
+                return results
+            } catch {
+                admission.release()
+                throw error
             }
-            admission.finish()
-            return results
-        } catch {
-            admission.release()
-            throw error
         }
     }
 
@@ -258,35 +257,34 @@ public actor KokoroSpeechSession {
         }
         let grant = try await options.gpu.admit()
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: profile)
-        do {
-            try await residency.beginPhase(.perStep)
-            _ = try await residency.graph("durations")
-            let buckets = kokoro.frames.buckets.filter { $0 <= top }
-            let style = [Float](repeating: 0, count: kokoro.style.dimension)
-            for bucket in buckets {
-                try Task.checkCancellation()
-                _ = try await decode(residency, prosody: nil, text: nil, style: style, frames: bucket, bucket: bucket, seed: 0)
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: profile)
+            do {
+                try await residency.beginPhase(.perStep)
+                _ = try await residency.graph("durations")
+                let buckets = kokoro.frames.buckets.filter { $0 <= top }
+                let style = [Float](repeating: 0, count: kokoro.style.dimension)
+                for bucket in buckets {
+                    try Task.checkCancellation()
+                    _ = try await decode(residency, prosody: nil, text: nil, style: style, frames: bucket, bucket: bucket, seed: 0)
+                }
+                residency.endPhase(.perStep)
+                admission.finish()
+                return buckets
+            } catch {
+                admission.release()
+                throw error
             }
-            residency.endPhase(.perStep)
-            admission.finish()
-            return buckets
-        } catch {
-            admission.release()
-            throw error
         }
     }
 
     /// Releases both graphs and the cached voice rows (waiting for a running request). The next request loads them
     /// again.
     public func unload() async {
-        await turn()
-        admission.unload()
-        styles = [:]
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+            styles = [:]
+        }
     }
 
     /// Roles currently loaded (for tests and diagnostics).
@@ -420,17 +418,5 @@ public actor KokoroSpeechSession {
     /// Wraps `loader` so each graph is checked against its manifest role and the `kokoro@1` contract before use.
     static func validating(_ loader: @escaping GraphResidency.Loader, manifest: Manifest) -> GraphResidency.Loader {
         GraphResidency.validating(loader, manifest: manifest, contract: .kokoro)
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }

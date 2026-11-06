@@ -61,8 +61,8 @@ public actor LatentDiffusionPipeline {
     let device: Device
     public nonisolated let options: Options
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// Opens an installed bundle; graphs load on the first generation.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) throws(AetherError) {
@@ -127,25 +127,24 @@ public actor LatentDiffusionPipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
-        do {
-            let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
-            admission.finish()
-            return image
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
+            do {
+                let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
+                admission.finish()
+                return image
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
-        await turn()
-        admission.unload()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (for tests and diagnostics).
@@ -253,17 +252,5 @@ public actor LatentDiffusionPipeline {
         try await vae.run(&bindings)
         residency.sample()
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }

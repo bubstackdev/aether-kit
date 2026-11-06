@@ -472,6 +472,18 @@ The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x p
   `FootprintLedger` entries. `Graph.distinctShapeCount` counts the shapes a graph has specialized.
 - **`SerialGate`:** the runtime's one busy policy is to queue, not fail; a chain's runs take turns through a gate that
   chains sharing graphs share. No per-call byte cap: admission owns the limit, from the measured entry.
+  - It is the kit's one request-serialization primitive (second review, batch C): `Generator`, `ChatSession`, the
+    SD-Turbo, FLUX.2, Krea and H3 pipelines, `KokoroSpeechSession`, `StatelessPipeline` (every vision and embedding
+    driver) and `GraphChain` take their turns through one, where each had its own busy flag and continuation array.
+  - Semantics, the same everywhere: FIFO; a caller cancelled while it waits leaves the queue at once with
+    `CancellationError` (before, most sites kept it queued until its turn came, then checked), and one already
+    cancelled on arrival, or as the turn reaches it, passes the turn on and never runs; the holder's turn is released
+    when its body returns or throws, cancellation included; an optional bound refuses one more waiter with
+    `admission(.queueFull(limit:))`. Every site keeps its unbounded wait. `unload()` uses
+    `withTurnIgnoringCancellation`, so it always waits for the running request and then runs.
+  - GPU priority ordering stays separate (`GPUAdmission`, `PriorityInferenceQueue`): a pipeline takes the GPU first,
+    at the request's priority, then its own turn, so priority also orders one pipeline's requests. `ModelHost`'s
+    waiters are callers joining one load (keyed, already cancellable), not a turn queue, and stay as they are.
 - **Measured (gate, M5 Max, the 64-wide fixture block, 6 blocks × 256 rows, float16):** chained and banked calls
   are byte-identical to the unchained path, and so are calls encoded back to back with one wait; 9.2 ms against
   49.7 ms unchained.

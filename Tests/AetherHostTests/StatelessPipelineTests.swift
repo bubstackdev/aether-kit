@@ -190,6 +190,23 @@ struct StatelessPipelineTests {
         #expect(log.entries == ["load estimator", "run", "load estimator", "run"])
     }
 
+    /// Second code review, batch C item 5: a request cancelled while it waits for the pipeline's turn leaves at once
+    /// (before: it waited for the running request, then threw). Nothing of it loads or runs.
+    @Test(.timeLimit(.minutes(1))) func aRequestCancelledWhileWaitingLeavesAtOnce() async throws {
+        let log = Log(), gate = Gate()
+        let depth = try Depth(log: log, gate: gate)
+        let prepared = try Self.image(depth.preprocessor)
+        let running = Task { try await depth.estimate(prepared) }
+        await gate.waitUntilEntered()
+        let queued = Task { try await depth.estimate(prepared) }
+        try await Task.sleep(for: .milliseconds(50))
+        queued.cancel()
+        await #expect(throws: CancellationError.self) { try await queued.value }
+        await gate.release()
+        #expect(try await running.value.count == 8)
+        #expect(log.entries == ["load estimator", "run"])
+    }
+
     @Test func requestsTakeTheGPUInPriorityOrder() async throws {
         let admission = try GPUAdmission()
         let log = Log()

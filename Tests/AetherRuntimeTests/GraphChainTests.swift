@@ -96,18 +96,34 @@ struct GraphChainTests {
         let gate = SerialGate()
         var order: [Int] = []
         let first = Task { @MainActor in
-            await gate.withTurn {
+            try await gate.withTurn {
                 order.append(1)
                 for _ in 0..<5 { await Task.yield() }
                 order.append(2)
             }
         }
         await Task.yield()
-        let second = Task { @MainActor in await gate.withTurn { order.append(3) } }
-        await first.value
-        await second.value
+        let second = Task { @MainActor in try await gate.withTurn { order.append(3) } }
+        try await first.value
+        try await second.value
         #expect(order == [1, 2, 3])
         #expect(!gate.isBusy && gate.waiting == 0)
+    }
+
+    /// Second code review, batch C item 5: a run cancelled while it waits for the chain's turn leaves the queue at once
+    /// (before: it took its turn when it came, then checked).
+    @Test @MainActor func aRunCancelledWhileWaitingLeavesAtOnce() async throws {
+        let gate = SerialGate()
+        var release: CheckedContinuation<Void, Never>?
+        let first = Task { @MainActor in try await gate.withTurn { await withCheckedContinuation { release = $0 } } }
+        while release == nil { await Task.yield() }
+        let second = Task { @MainActor in try await gate.withTurn { Issue.record("a cancelled run ran") } }
+        while gate.waiting == 0 { await Task.yield() }
+        second.cancel()
+        await #expect(throws: CancellationError.self) { try await second.value }
+        #expect(gate.waiting == 0 && gate.isBusy)
+        release?.resume()
+        try await first.value
     }
 
     // MARK: Weight banks

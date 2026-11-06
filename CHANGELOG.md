@@ -158,6 +158,14 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   the baseline was taken at the right point). A phase's held bytes and peak are now capped by the level above where
   the process stood before any graph loaded, less the other phases' held bytes; a real growth (a new shape) still
   adds. The gate now records 374 / 359 MiB.
+- **One serialization primitive** (second review, batch C): `SerialGate` (AetherRuntime) is now `Sendable`,
+  cancellation-aware and optionally bounded, and `Generator`, `ChatSession`, the SD-Turbo, FLUX.2, Krea and H3
+  pipelines, `KokoroSpeechSession`, `StatelessPipeline` and `GraphChain` use it instead of their own busy flags and
+  continuation arrays. Cancellation is now uniform: a request cancelled while it waits for its turn leaves the queue
+  at once (it used to wait for the running request, then throw or end); the holder's turn is released however its
+  body exits. `withTurn(_:)` throws (cancellation, or `AetherError.AdmissionFailure.queueFull(limit:)` past
+  `SerialGate(limit:)`); `withTurnIgnoringCancellation(_:)` is what `unload()` uses. GPU priority stays in
+  `GPUAdmission`: pipelines take the GPU first, then their own turn.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
