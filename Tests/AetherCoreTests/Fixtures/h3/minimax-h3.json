@@ -1,0 +1,766 @@
+{
+  "schema": 1,
+  "id": "minimax-h3",
+  "task": "text-to-video-audio",
+  "driver": "minimax-h3@1",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": ".aether/placeholder",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "conditionerLayer": {
+      "file": "main:models/conditioner-layer.aimodel",
+      "function": "main",
+      "inputs": {
+        "hidden": "hidden",
+        "cos": "cos",
+        "sin": "sin"
+      },
+      "outputs": {
+        "hidden": "hidden_out"
+      },
+      "weights": {
+        "table": "main:weights/conditioner.json",
+        "inputs": [
+          "w0",
+          "w1",
+          "w2",
+          "w3",
+          "w4",
+          "w5",
+          "w6",
+          "w7",
+          "w8",
+          "w9",
+          "w10"
+        ],
+        "blocks": 50
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": true
+    },
+    "prepareText": {
+      "file": "main:models/prepare-text.aimodel",
+      "function": "main",
+      "inputs": {
+        "text": "text"
+      },
+      "outputs": {
+        "refined": "refined"
+      },
+      "weights": {
+        "table": "main:weights/prepare-text.json",
+        "inputs": [
+          "w0",
+          "w1",
+          "w2",
+          "w3",
+          "w4",
+          "w5",
+          "w6",
+          "w7",
+          "w8",
+          "w9",
+          "w10",
+          "w11",
+          "w12",
+          "w13",
+          "w14",
+          "w15",
+          "w16",
+          "w17",
+          "w18",
+          "w19"
+        ],
+        "blocks": 1
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": true
+    },
+    "preparePack": {
+      "file": "main:models/prepare-pack.aimodel",
+      "function": "main",
+      "inputs": {
+        "video": "video",
+        "audio": "audio",
+        "text": {
+          "name": "refined",
+          "source": {
+            "from": "prepareText.refined"
+          }
+        },
+        "gather": "gather"
+      },
+      "outputs": {
+        "hidden": "hidden"
+      },
+      "residency": "perStep",
+      "compute": "gpu",
+      "expectFrequentReshapes": true
+    },
+    "body": {
+      "file": "main:models/body.aimodel",
+      "function": "main",
+      "inputs": {
+        "hidden": {
+          "name": "hidden",
+          "source": {
+            "from": "preparePack.hidden"
+          }
+        },
+        "table": "table",
+        "tags": "tags",
+        "cos": "cos",
+        "sin": "sin"
+      },
+      "outputs": {
+        "hidden": "hidden_out"
+      },
+      "weights": {
+        "table": "main:weights/body.json",
+        "inputs": [
+          "w0",
+          "w1",
+          "w2",
+          "w3",
+          "w4",
+          "w5",
+          "w6",
+          "w7",
+          "w8",
+          "w9",
+          "w10",
+          "w11",
+          "w12",
+          "w13",
+          "w14",
+          "w15",
+          "w16",
+          "w17",
+          "w18",
+          "w19",
+          "w20",
+          "w21"
+        ],
+        "blocks": 50
+      },
+      "residency": "perStep",
+      "compute": "gpu",
+      "expectFrequentReshapes": true
+    },
+    "heads": {
+      "file": "main:models/heads.aimodel",
+      "function": "main",
+      "inputs": {
+        "hidden": {
+          "name": "hidden",
+          "source": {
+            "from": "body.hidden"
+          }
+        },
+        "temb": "temb",
+        "indices": "indices",
+        "videoIndices": "video_indices",
+        "audioIndices": "audio_indices"
+      },
+      "outputs": {
+        "video": "video",
+        "audio": "audio"
+      },
+      "residency": "perStep",
+      "compute": "gpu",
+      "expectFrequentReshapes": true
+    },
+    "videoDecoder": {
+      "file": "main:models/video-decoder-tile256-bf16.aimodel",
+      "function": "main",
+      "inputs": {
+        "rows": "rows"
+      },
+      "outputs": {
+        "pixels": "pixels"
+      },
+      "residency": "perImage",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "videoEncoderTile": {
+      "file": "main:models/video-encoder-tile256.aimodel",
+      "function": "main",
+      "inputs": {
+        "pixels": "pixels"
+      },
+      "outputs": {
+        "moments": "moments"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "videoEncoderTail544x960": {
+      "file": "main:models/video-encoder-tail-544x960.aimodel",
+      "function": "main",
+      "inputs": {
+        "tiles": "tiles"
+      },
+      "outputs": {
+        "condition": "condition"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "videoEncoderTail960x544": {
+      "file": "main:models/video-encoder-tail-960x544.aimodel",
+      "function": "main",
+      "inputs": {
+        "tiles": "tiles"
+      },
+      "outputs": {
+        "condition": "condition"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "audioDecoder207": {
+      "file": "main:models/audio-decoder-na207.aimodel",
+      "function": "main",
+      "inputs": {
+        "rows": "rows"
+      },
+      "outputs": {
+        "pcm": "pcm"
+      },
+      "residency": "perImage",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": "main:tokenizer/chat_template.jinja",
+    "renderer": "minimax-h3-prompt",
+    "addSpecialTokens": false
+  },
+  "h3": {
+    "tasks": [
+      "t2va",
+      "fl2va"
+    ],
+    "profiles": [
+      {
+        "key": "960x544x124",
+        "width": 960,
+        "height": 544,
+        "frames": 124,
+        "latentFrames": 37,
+        "videoRows": 18870,
+        "keyframeRows": 510,
+        "audioLatents": 207,
+        "audioDecoder": "audioDecoder207",
+        "keyframeEncoder": "videoEncoderTail960x544"
+      },
+      {
+        "key": "544x960x124",
+        "width": 544,
+        "height": 960,
+        "frames": 124,
+        "latentFrames": 37,
+        "videoRows": 18870,
+        "keyframeRows": 510,
+        "audioLatents": 207,
+        "audioDecoder": "audioDecoder207",
+        "keyframeEncoder": "videoEncoderTail544x960"
+      }
+    ],
+    "limits": {
+      "rows": [
+        64,
+        40960
+      ],
+      "cardinality": [
+        1,
+        3
+      ],
+      "textTokens": [
+        2,
+        4096
+      ]
+    },
+    "conditioner": {
+      "layers": 50,
+      "tap": 50,
+      "embedding": {
+        "file": "main:weights/conditioner/embedding.bin",
+        "rows": 151936,
+        "width": 5120,
+        "dtype": "bfloat16"
+      },
+      "rope": {
+        "theta": 5000000,
+        "mropeSection": [
+          24,
+          20,
+          20
+        ],
+        "headDim": 128,
+        "dtype": "bfloat16"
+      },
+      "ropeTables": {
+        "cos": "main:tables/conditioner/rope-cos.raw",
+        "sin": "main:tables/conditioner/rope-sin.raw",
+        "rows": 4096
+      }
+    },
+    "recipes": {
+      "turbo8/t2va": {
+        "video": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "audio": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "steps": [
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-0/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-0/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-1/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-1/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-2/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-2/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-3/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-3/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-4/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-4/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-5/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-5/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-6/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-6/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/t2va/step-7/temb.raw",
+            "blocks": "main:tables/turbo8/t2va/step-7/block-{block:02d}.raw"
+          }
+        ]
+      },
+      "turbo8/fl2va": {
+        "video": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "audio": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "steps": [
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-0/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-0/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-1/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-1/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-2/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-2/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-3/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-3/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-4/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-4/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-5/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-5/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-6/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-6/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo8/fl2va/step-7/temb.raw",
+            "blocks": "main:tables/turbo8/fl2va/step-7/block-{block:02d}.raw"
+          }
+        ]
+      },
+      "turbo4/t2va": {
+        "video": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "audio": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "steps": [
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/t2va/step-0/temb.raw",
+            "blocks": "main:tables/turbo4/t2va/step-0/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/t2va/step-1/temb.raw",
+            "blocks": "main:tables/turbo4/t2va/step-1/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/t2va/step-2/temb.raw",
+            "blocks": "main:tables/turbo4/t2va/step-2/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/t2va/step-3/temb.raw",
+            "blocks": "main:tables/turbo4/t2va/step-3/block-{block:02d}.raw"
+          }
+        ]
+      },
+      "turbo4/fl2va": {
+        "video": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "audio": {
+          "shift": 0.0,
+          "timesteps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sigmas": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "steps": [
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/fl2va/step-0/temb.raw",
+            "blocks": "main:tables/turbo4/fl2va/step-0/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/fl2va/step-1/temb.raw",
+            "blocks": "main:tables/turbo4/fl2va/step-1/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/fl2va/step-2/temb.raw",
+            "blocks": "main:tables/turbo4/fl2va/step-2/block-{block:02d}.raw"
+          },
+          {
+            "timesteps": [
+              0.5
+            ],
+            "temb": "main:tables/turbo4/fl2va/step-3/temb.raw",
+            "blocks": "main:tables/turbo4/fl2va/step-3/block-{block:02d}.raw"
+          }
+        ]
+      }
+    },
+    "defaultRecipe": "turbo8",
+    "adapter": {
+      "repo": "lightx2v/Minimax-h3-Turbo",
+      "revision": "3ec17a324ced54151364f24f8b5fb6bf7e26414f",
+      "sha256": "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f",
+      "execution": "dynamicLora",
+      "rank": 128,
+      "alpha": 8.0
+    },
+    "video": {
+      "tile": 256,
+      "windowLatents": 7,
+      "windowFrames": 22,
+      "windowStride": 5,
+      "precision": "bfloat16",
+      "packing": "patch2x2ChannelMajor",
+      "rowChannels": 96,
+      "noise": {
+        "kind": "splitmix64BoxMuller",
+        "order": "packedToken",
+        "dtype": "float32"
+      }
+    },
+    "keyframe": {
+      "tileSize": 256,
+      "seed": 42,
+      "pixelMean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "pixelStd": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "conditionTimestep": 0.999
+    },
+    "audio": {
+      "sampleRate": 32000,
+      "hop": 800,
+      "channels": 2,
+      "rowChannels": 32
+    },
+    "platforms": [
+      "macos"
+    ]
+  },
+  "precision": {
+    "weights": "bf16 (transformer, conditioner, refiner, Turbo LoRA unmerged)",
+    "activations": "bf16",
+    "components": {
+      "heads": "float32",
+      "videoDecoder": "bf16 weights and compute, float32 in/out",
+      "audioDecoder": "float32",
+      "videoEncoder": "float32"
+    }
+  },
+  "license": "LicenseRef-MiniMax-H3-Community-License",
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true,
+    "territory": "excludes the EU, UK, Republic of Korea and USA",
+    "commercialRevenueCapUSD": 20000000,
+    "uiAttribution": "MiniMax H3",
+    "encoder": "Qwen3-VL-32B (Apache-2.0)"
+  },
+  "provenance": {
+    "source": "MiniMaxAI/MiniMax-H3",
+    "sourceRevision": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "adapter": "lightx2v/Minimax-h3-Turbo@3ec17a324ced54151364f24f8b5fb6bf7e26414f:minimax_h3_fl2v_turbo_8step_v1.0_bf16.safetensors",
+    "producer": "aether-kit Forge/h3/export_h3.py",
+    "refs": {
+      "diffusersCommit": "2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}

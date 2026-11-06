@@ -24,6 +24,7 @@ dependencies = [
     "pillow",
     "huggingface_hub",
     "accelerate",
+    "peft==0.21.2",
 ]
 
 [tool.uv]

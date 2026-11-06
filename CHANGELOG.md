@@ -114,6 +114,15 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
   peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
 
+- **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
+  the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
+  bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
+  oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
+  `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
+  unchained path's). The real-weight export (94 GB, run outside the licence's Excluded Territories per the owner)
+  passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
+  0.0067). It is not publicly hosted; the catalog entry waits for a compliant hosting route.
+
 ### In progress before 0.1.0 is tagged
 
 MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
