@@ -422,7 +422,44 @@ extension Manifest {
             /// How it was merged, e.g. `W + multiplier * scale * kron(w1, w2), float32, before export`.
             public var merge: String
             public var multiplier: Double
-            public var scale: Double
+            /// The adapter's scale per module group: one number, or a list (ai-toolkit records `[1.0]`).
+            public var scale: [Double]
+
+            public init(file: String, sha256: String, format: String, merge: String, multiplier: Double, scale: [Double]) {
+                self.file = file
+                self.sha256 = sha256
+                self.format = format
+                self.merge = merge
+                self.multiplier = multiplier
+                self.scale = scale
+            }
+
+            enum CodingKeys: String, CodingKey { case file, sha256, format, merge, multiplier, scale }
+
+            public init(from decoder: any Decoder) throws {
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                file = try c.decode(String.self, forKey: .file)
+                sha256 = try c.decode(String.self, forKey: .sha256)
+                format = try c.decode(String.self, forKey: .format)
+                merge = try c.decode(String.self, forKey: .merge)
+                multiplier = try c.decode(Double.self, forKey: .multiplier)
+                if let one = try? c.decode(Double.self, forKey: .scale) {
+                    scale = [one]
+                } else {
+                    scale = try c.decode([Double].self, forKey: .scale)
+                }
+            }
+
+            /// A single scale encodes as a number.
+            public func encode(to encoder: any Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(file, forKey: .file)
+                try c.encode(sha256, forKey: .sha256)
+                try c.encode(format, forKey: .format)
+                try c.encode(merge, forKey: .merge)
+                try c.encode(multiplier, forKey: .multiplier)
+                if scale.count == 1 { try c.encode(scale[0], forKey: .scale) } else { try c.encode(scale, forKey: .scale) }
+            }
         }
 
         public var source: String?

@@ -59,6 +59,12 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
         case decodingFailed(String)
         /// The model's tool-call output did not parse in its dialect, or the dialect is not implemented.
         case toolCall(String)
+        /// The app's content filter refused the request's prompt (before anything ran) or the generated output
+        /// (before it was returned). `reason` is the filter's.
+        case contentRefused(stage: ContentStage, reason: String)
+
+        /// Where a content filter reviewed a generation.
+        public enum ContentStage: String, Sendable, Hashable { case prompt, output }
 
         public var description: String {
             switch self {
@@ -69,6 +75,7 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             case .constraintViolated(let why): "a token left the constraint: \(why)"
             case .decodingFailed(let why): "the structured reply did not decode: \(why)"
             case .toolCall(let why): "tool call: \(why)"
+            case .contentRefused(let stage, let reason): "the content filter refused the \(stage.rawValue): \(reason)"
             }
         }
     }
