@@ -313,6 +313,9 @@ public actor MiniMaxH3Pipeline {
         let audio = plan.audio ? try await decodeAudio(latents.audio, plan: plan, residency: residency, host: host) : nil
         residency.sample()
         residency.endPhase(.perImage)
+        // A cancellation during the last decoder call (the audio decode, or the last video tile): don't report success
+        // for a request the caller has given up on; `generate` releases the residency.
+        try Task.checkCancellation()
         return GeneratedVideo(width: g.width, height: g.height, frames: frames, audio: audio)
     }
 
