@@ -202,4 +202,103 @@ struct ChatOwnerReviewTests {
         let reply = try await FakeChat.collect(generator.generate([.user("hello")]))
         #expect(reply.summary?.stopReason == .stopToken(Vocab.stop))
     }
+
+    /// Finding 1: the Generator holds at most `maxSnapshots` engine snapshots at once (it held four: the last prompt's
+    /// two beside the two it was taking), and the engine's default reserve is that many.
+    @Test func theGeneratorHoldsAtMostMaxSnapshots() async throws {
+        #expect(DecoderEngine.Options().reservedSnapshots == Generator.maxSnapshots)
+        let inner = try await FakeChat.generator(recurrent: true, renderer: FakeRenderer(generationSuffix: [Vocab.thinkOpen, Vocab.thinkClose]))
+        let counting = await SnapshotCountingEngine(inner.engine)
+        let generator = Generator(engine: counting, decoder: FakeDecoding(), renderer: inner.renderer, stopTokens: [Vocab.stop],
+                                  profile: .plain, gpu: inner.gpu)
+        let session = ChatSession(generator: generator, configuration: .init(parameters: GenerationParameters(maxTokens: 8)))
+        var reused: [Int] = []
+        for turn in ["hello", "more", "again", "and more"] {
+            reused.append(try await FakeChat.collect(await session.respond(to: turn)).summary?.reusedTokens ?? 0)
+        }
+        #expect(reused.dropFirst().allSatisfy { $0 > 0 }, "every later turn reuses a snapshot: \(reused)")
+        #expect(counting.live.peak <= Generator.maxSnapshots, "peak \(counting.live.peak)")
+        #expect(counting.live.current <= 2)
+    }
+}
+
+/// Counts the snapshots alive (taken and not yet released) through an engine, and the most at once.
+final class SnapshotTally: Sendable {
+    private let state = Mutex((current: 0, peak: 0))
+    var current: Int { state.withLock { $0.current } }
+    var peak: Int { state.withLock { $0.peak } }
+    func taken() { state.withLock { $0.current += 1; $0.peak = max($0.peak, $0.current) } }
+    func released() { state.withLock { $0.current -= 1 } }
+}
+
+/// Wraps an engine's snapshot payloads in a token whose lifetime the tally sees. Forwards everything else, and
+/// mirrors the base's position after each call (the protocol's state properties are synchronous).
+actor SnapshotCountingEngine: LanguageEngine {
+    final class Tracked: Sendable {
+        let inner: EngineSnapshot
+        let tally: SnapshotTally
+        init(_ inner: EngineSnapshot, _ tally: SnapshotTally) {
+            self.inner = inner
+            self.tally = tally
+            tally.taken()
+        }
+        deinit { tally.released() }
+    }
+
+    let base: any LanguageEngine
+    nonisolated let live = SnapshotTally()
+    private(set) var position = 0
+    private(set) var stateRanAhead = false
+    let decodeModeDescription: String
+
+    init(_ base: any LanguageEngine) async {
+        self.base = base
+        decodeModeDescription = await base.decodeModeDescription
+        position = await base.position
+    }
+
+    nonisolated var vocab: Int { base.vocab }
+    nonisolated var maxCapacity: Int { base.maxCapacity }
+    nonisolated var hasRecurrentState: Bool { base.hasRecurrentState }
+
+    private func sync() async {
+        position = await base.position
+        stateRanAhead = await base.stateRanAhead
+    }
+
+    func prefill(_ tokens: [Int32], logits: LogitsSelection) async throws(AetherError) -> Logits? {
+        let out = try await base.prefill(tokens, logits: logits)
+        await sync()
+        return out
+    }
+    func step(_ token: Int32) async throws(AetherError) -> Logits {
+        let out = try await base.step(token)
+        await sync()
+        return out
+    }
+    func rewind(to position: Int) async throws(AetherError) {
+        try await base.rewind(to: position)
+        await sync()
+    }
+    func reset() async throws(AetherError) {
+        try await base.reset()
+        await sync()
+    }
+    func snapshot() async throws(AetherError) -> EngineSnapshot {
+        let inner = try await base.snapshot()
+        return EngineSnapshot(position: inner.position, byteCount: inner.byteCount, payload: Tracked(inner, live))
+    }
+    func restore(_ snapshot: EngineSnapshot) async throws(AetherError) {
+        guard let tracked = snapshot.payload as? Tracked else { throw .unsupportedOperation("another engine's snapshot") }
+        try await base.restore(tracked.inner)
+        await sync()
+    }
+    func beginGreedy(first: Int32, limit: Int) async throws(AetherError) { try await base.beginGreedy(first: first, limit: limit) }
+    func nextGreedy() async throws(AetherError) -> Int32? { try await base.nextGreedy() }
+    @discardableResult
+    func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int) {
+        let out = try await base.endGreedy()
+        await sync()
+        return out
+    }
 }

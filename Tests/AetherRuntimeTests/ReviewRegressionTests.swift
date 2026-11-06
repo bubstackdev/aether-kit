@@ -236,4 +236,61 @@ struct DecoderOwnerReviewTests {
             return false
         }
     }
+
+    /// Finding 1: the budget covers the generation strategy's peak, not only the live state: the KV growth's copy
+    /// (the previous allocation beside the new one) and, on recurrent models, the reserved host snapshots.
+    @Test func capacityCoversGrowthAndSnapshots() throws {
+        #expect(KVSizing.previousAllocation(below: 4096, initial: 1024) == 2048)
+        #expect(KVSizing.previousAllocation(below: 3000, initial: 1024) == 2048)
+        #expect(KVSizing.previousAllocation(below: 2049, initial: 1024) == 2048)
+        #expect(KVSizing.previousAllocation(below: 1024, initial: 1024) == 0)
+        #expect(KVSizing.previousAllocation(below: 4096, initial: 4096) == 0)
+
+        // 1000 B a slot, 100 KB fixed, a 400 KB model; snapshots of 900 B a position + 50 KB.
+        var sizing = KVSizing(maxContext: 8192, bytesPerToken: 1000, fixedBytes: 100_000, modelBytes: 400_000, initialCapacity: 8192)
+        #expect(try sizing.capacity(budget: 10_500_000) == 8192)
+        sizing.snapshotBytesPerToken = 900
+        sizing.snapshotFixedBytes = 50_000
+        sizing.reservedSnapshots = 3
+        // 10.0M left: C × (1000 + 3 × 900) + 150 KB ≤ 10.0M → C ≤ 2662 → 2560.
+        #expect(try sizing.capacity(budget: 10_500_000) == 2560)
+        #expect(sizing.peakBytes(capacity: 2560) <= 10_500_000 && sizing.peakBytes(capacity: 2662 + 1) > 10_500_000)
+        #expect(throws: AetherError.self) { try sizing.capacity(budget: 10_500_000, requested: 4096) }
+        // Growth from 1024 as well: C + 2048 slots of KV at the copy for C in (2048, 4096].
+        sizing.initialCapacity = nil
+        let derived = try sizing.capacity(budget: 10_500_000)
+        #expect(derived == 2048 && sizing.peakBytes(capacity: derived) <= 10_500_000)
+        // A static axis is the allocation, whatever the capacity: its snapshots hold it whole.
+        var fixed = KVSizing(maxContext: 8192, bytesPerToken: 1000, fixedBytes: 0, staticAxis: 1024,
+                             snapshotBytesPerToken: 1000, reservedSnapshots: 2)
+        #expect(fixed.peakBytes(capacity: 16) == 3 * 1024 * 1000)
+        fixed.reservedSnapshots = 0
+        #expect(fixed.peakBytes(capacity: 16) == 1024 * 1000)
+    }
+
+    /// Finding 1, from the graph: the engine supplies one snapshot's cost and reserves `reservedSnapshots` of them on
+    /// recurrent models only; a prefill phase's own logits buffer is charged as well.
+    @Test func engineSizingChargesSnapshotsAndThePrefillLogits() async throws {
+        // Fake: keys and values float32 (8 B a position), rec one float32, a 64-row head.
+        let (hybrid, _, _) = try await T.engine(FakeLM.Config(staticStep: true, recurrent: true))
+        #expect(hybrid.sizing.reservedSnapshots == 3)
+        #expect(hybrid.sizing.snapshotBytesPerToken == 8 && hybrid.sizing.snapshotFixedBytes == 4 + 64 * 4)
+        // Static step S=1: 1 step row + 8 ring rows, of 64 float32, plus the recurrent float.
+        #expect(hybrid.sizing.fixedBytes == 9 * 64 * 4 + 4)
+        // A snapshot of the hybrid costs what the sizing charges for one at its position.
+        _ = try await hybrid.prefill(T.prompt(6))
+        let snapshot = try await hybrid.snapshot()
+        #expect(Int64(snapshot.byteCount) + 64 * 4 == 6 * hybrid.sizing.snapshotBytesPerToken + hybrid.sizing.snapshotFixedBytes)
+
+        let (attention, _, _) = try await T.engine()
+        #expect(attention.sizing.reservedSnapshots == 0, "attention-only models rewind")
+        var none = T.options()
+        none.reservedSnapshots = 0
+        let (unreserved, _, _) = try await T.engine(FakeLM.Config(staticStep: true, recurrent: true), options: none)
+        #expect(unreserved.sizing.reservedSnapshots == 0)
+
+        // A static 4-token prefill chunk keeps 4 rows of its own beside the step's 512 and the ring's 8.
+        let (phased, _, _) = try await T.engine(prefillChunk: 4)
+        #expect(phased.sizing.fixedBytes == Int64(512 + 8 + 4) * 64 * 4, "\(phased.sizing.fixedBytes)")
+    }
 }

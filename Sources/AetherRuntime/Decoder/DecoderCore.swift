@@ -247,10 +247,9 @@ final class DecoderCore {
 
     /// Grows the sequence axis geometrically until `needed` slots fit (DESIGN.md §6.2), copying the cached prefix.
     ///
-    /// Transient headroom, not charged to the budget: during the copy both the old and the new states are live, so
-    /// the peak is old + new ≤ 1.5 × the new size (doubling), at most 1.5 × the KV at `maxCapacity`. The budget is
-    /// charged for the KV at `maxCapacity` only; the extra half of the last growth step is the margin the reserve
-    /// (MemoryBudget.reserveBytes) must cover. Snapshots are sized by the position, not the capacity (``snapshot()``).
+    /// During the copy both the old and the new states are live: the budget charges that pair at `maxCapacity`
+    /// (``KVSizing/peakBytes(capacity:)``, the previous allocation beside the last one). Snapshots are sized by the
+    /// position, not the capacity (``snapshot()``).
     func ensureCapacity(_ needed: Int) throws(AetherError) {
         guard needed > capacity else { return }
         guard !staticCapacity else {

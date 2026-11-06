@@ -283,8 +283,13 @@ backend runs the same suite.
     `states.kv` / `states.recurrent` roles must come from the manifest, because shape heuristics misread `recState`
     as a KV cache.
 - **KV capacity is derived from memory at load.** The default capacity is `min(maxContext, kvCapacityCap[platform],
-  what fits the device memory budget after weights)`, and a dynamic axis grows geometrically up to it. An app may
-  request a capacity; asking beyond the cap throws `capacity`. A static axis is fixed. `functionFamily` graphs move
+  what fits the device memory budget after weights)`, and a dynamic axis grows geometrically up to it. What must fit
+  is the peak, not just the state at capacity (`KVSizing.peakBytes`): the last growth's copy holds the previous
+  allocation beside the new one, and on recurrent models `Options.reservedSnapshots` host snapshots at capacity
+  (default 3, `Generator.maxSnapshots`: the two it keeps plus the one it reuses while taking their replacements). The
+  engine supplies a snapshot's cost; the snapshot policy stays the client's. An app may request a capacity; asking
+  beyond the cap throws `capacity`. A static axis fixes the allocation; a smaller requested capacity still limits the
+  tokens, and a larger one throws. `functionFamily` graphs move
   between capacity buckets by copying KV into the next bucket's state.
   Rewinding attention-only models is O(1), because the position counter just moves back and stale slots are
   overwritten. Hybrid and SSM models can't rewind partially, so they rewind by `restore(snapshot)`. The Generator takes

@@ -69,8 +69,17 @@ public struct MemoryBudget: Sendable, Hashable {
 }
 
 /// KV capacity sizing (DESIGN.md §6.2): `min(maxContext, kvCapacityCap[platform], what fits the budget)`, where
-/// the budget is charged with the model's memory and the engine's owned bytes (see ``MemoryBudget``). Pure, so the
-/// rule is tested without a model.
+/// the budget is charged with the model's memory and the engine's peak owned bytes (see ``MemoryBudget``). Pure, so
+/// the rule is tested without a model.
+///
+/// The peak at a capacity `C` is what is live at once, not just the state at `C`:
+/// - the model, the fixed buffers and the sequence states at `C` (a static axis: at that axis);
+/// - growing a dynamic axis copies the cached prefix into the larger states while the old ones are live, so the
+///   previous allocation (``previousAllocation(below:initial:)``) is charged too. Restoring a snapshot of another
+///   allocation is the same pair;
+/// - ``reservedSnapshots`` host snapshots at `C`, each ``snapshotBytesPerToken`` per position plus
+///   ``snapshotFixedBytes``: what a client keeps for prefix reuse on recurrent models. The engine supplies the cost of
+///   one snapshot; how many to reserve is the client's policy (`DecoderEngine.Options.reservedSnapshots`).
 public struct KVSizing: Sendable, Hashable {
     /// `limits.maxContext`.
     public var maxContext: Int
@@ -87,10 +96,19 @@ public struct KVSizing: Sendable, Hashable {
     /// A sequence axis that is static in the graph: the allocation is that, and fixed. Capacity (the token limit)
     /// is at most that: an explicit smaller one caps the tokens, a larger one is refused.
     public var staticAxis: Int?
+    /// The first allocation of a dynamic axis (`DecoderEngine.Options.initialCapacity`); nil: min(capacity, 1024).
+    public var initialCapacity: Int?
+    /// A host snapshot's bytes per position held (the sequence states up to the position).
+    public var snapshotBytesPerToken: Int64
+    /// A host snapshot's bytes at any position (the recurrent states, and the logits row a client keeps with it).
+    public var snapshotFixedBytes: Int64
+    /// Full-capacity host snapshots the budget keeps room for, beside the live state.
+    public var reservedSnapshots: Int
 
     public init(
         maxContext: Int, platformCap: Int? = nil, maxPosition: Int? = nil, bytesPerToken: Int64, fixedBytes: Int64,
-        modelBytes: Int64 = 0, staticAxis: Int? = nil
+        modelBytes: Int64 = 0, staticAxis: Int? = nil, initialCapacity: Int? = nil, snapshotBytesPerToken: Int64 = 0,
+        snapshotFixedBytes: Int64 = 0, reservedSnapshots: Int = 0
     ) {
         self.maxContext = maxContext
         self.platformCap = platformCap
@@ -99,24 +117,32 @@ public struct KVSizing: Sendable, Hashable {
         self.fixedBytes = fixedBytes
         self.modelBytes = modelBytes
         self.staticAxis = staticAxis
+        self.initialCapacity = initialCapacity
+        self.snapshotBytesPerToken = snapshotBytesPerToken
+        self.snapshotFixedBytes = snapshotFixedBytes
+        self.reservedSnapshots = reservedSnapshots
     }
 
     /// Memory-derived capacities above this are rounded down to a multiple of it.
     static let granule = 256
 
-    /// The capacity the engine may grow to, given `budget` (``MemoryBudget/bytes(on:)``). `requested` (an app's
-    /// explicit capacity) must not exceed it.
+    /// The capacity the engine may grow to, given `budget` (``MemoryBudget/bytes(on:)``): the largest whose
+    /// ``peakBytes(capacity:)`` fits. `requested` (an app's explicit capacity) must not exceed it.
     public func capacity(budget: Int64, requested: Int? = nil) throws(AetherError) -> Int {
         var limit = maxContext
         if let platformCap { limit = min(limit, platformCap) }
         if let maxPosition { limit = min(limit, maxPosition + 1) }
         if let staticAxis { limit = min(limit, staticAxis) }
-        let available = budget - modelBytes - fixedBytes
-        let fits = bytesPerToken > 0 ? available / bytesPerToken : Int64(limit)
-        var derived = Int(min(Int64(limit), max(fits, 0)))
+        // The peak grows with the capacity, so the largest that fits is a binary search.
+        var low = 0, high = max(limit, 0)
+        while low < high {
+            let mid = high - (high - low) / 2
+            if peakBytes(capacity: mid) <= budget { low = mid } else { high = mid - 1 }
+        }
+        var derived = low
         if derived < limit, derived > Self.granule { derived -= derived % Self.granule }
         guard derived > 0 else {
-            throw .capacity(what: "KV memory (bytes)", needed: modelBytes + fixedBytes + bytesPerToken, available: budget)
+            throw .capacity(what: "KV memory (bytes)", needed: peakBytes(capacity: 1), available: budget)
         }
         if let staticAxis, derived < staticAxis {
             throw .capacity(what: "KV capacity (static sequence axis)", needed: Int64(staticAxis), available: Int64(derived))
@@ -131,6 +157,27 @@ public struct KVSizing: Sendable, Hashable {
             return requested
         }
         return derived
+    }
+
+    /// The bytes live at once at `capacity` (see the type's notes): never less for a larger capacity.
+    public func peakBytes(capacity: Int) -> Int64 {
+        let slots = Int64(staticAxis ?? capacity)
+        var bytes = modelBytes + fixedBytes + slots * bytesPerToken
+        if staticAxis == nil {
+            let previous = Self.previousAllocation(below: capacity, initial: initialCapacity ?? min(capacity, 1024))
+            bytes += Int64(previous) * bytesPerToken
+        }
+        bytes += Int64(reservedSnapshots) * (slots * snapshotBytesPerToken + snapshotFixedBytes)
+        return bytes
+    }
+
+    /// The largest allocation a dynamic axis growing from `initial` (doubling, ``grow(current:needed:limit:)``) holds
+    /// below `limit`, live beside the last growth's new one: 0 when it starts at `limit`.
+    public static func previousAllocation(below limit: Int, initial: Int) -> Int {
+        guard initial > 0, initial < limit else { return 0 }
+        var allocation = initial
+        while allocation * 2 < limit { allocation *= 2 }
+        return allocation
     }
 
     /// The next allocation when `needed` slots exceed `current`: doubling, at least `needed`, at most `limit`.

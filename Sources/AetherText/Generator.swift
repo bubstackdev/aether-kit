@@ -89,8 +89,13 @@ public actor Generator {
     /// False once the engine's live state no longer matches `mirror` (an error, or recurrent state that ran ahead).
     private var liveValid = true
     /// Hybrids: the snapshots of the last prompt, at the end of its rendered history (the prefix the next turn's
-    /// prompt shares) and at its end (with its last logits, for a regenerate).
+    /// prompt shares) and at its end (with its last logits, for a regenerate). At most ``maxSnapshots`` at once.
     private var snapshots: [(tokens: [Int32], state: EngineSnapshot, logits: Logits?)] = []
+
+    /// The most engine snapshots a Generator holds at once (hybrids only): the two of the last prompt, and while a
+    /// prompt takes their replacements, only the one it reused. What `DecoderEngine.Options.reservedSnapshots`
+    /// reserves room for by default; size another engine's memory the same way.
+    public static let maxSnapshots = 3
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
     /// The vocabulary indexed for JSON constraints, built on the first structured request (63 ms for Qwen3 in 0.0.x).
@@ -206,6 +211,9 @@ public actor Generator {
         let best = snapshots.filter { snap in
             snap.tokens.count <= prompt.count && prompt.starts(with: snap.tokens) && (snap.tokens.count < prompt.count || snap.logits != nil)
         }.max { $0.tokens.count < $1.tokens.count }
+        // Only the snapshot reused here outlives the replacement (so a failed prefill can still fall back on it): the
+        // engine's memory budget reserves `maxSnapshots`, the two retained ones plus this one.
+        snapshots = best.map { [$0] } ?? []
         if live, mirror.count >= best?.tokens.count ?? 0 {
             reused = mirror.count
         } else if let best {
