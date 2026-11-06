@@ -197,7 +197,7 @@ public struct URLSessionTransport: HTTPTransport {
         let delegate = StreamingDelegate(body: continuation, flow: flow)
         let task = session.dataTask(with: request)
         task.delegate = delegate
-        flow.task = task
+        flow.task = DataTaskControl(task)
         continuation.onTermination = { _ in task.cancel() }
         // Backpressure: the delegate suspends the task once `FlowControl.highWater` bytes wait unread, and the
         // consumer's pulls resume it below `lowWater`, so a slow disk never lets the body pile up in memory. No chunk
@@ -222,7 +222,13 @@ protocol FlowControlledTask: AnyObject, Sendable {
     func resume()
 }
 
-extension URLSessionDataTask: FlowControlledTask {}
+/// A data task as ``FlowControl`` drives it (a wrapper, so the package doesn't extend a Foundation class).
+final class DataTaskControl: FlowControlledTask {
+    let task: URLSessionDataTask
+    init(_ task: URLSessionDataTask) { self.task = task }
+    func suspend() { task.suspend() }
+    func resume() { task.resume() }
+}
 
 /// The bytes received and not yet read, and whether the data task is suspended for them.
 ///

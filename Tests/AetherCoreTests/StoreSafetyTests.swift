@@ -106,7 +106,7 @@ struct StoreSafetyTests {
     @Test func foregroundDownloadsApplyBackpressure() {
         let task = URLSession(configuration: .ephemeral).dataTask(with: URL(string: "https://example.invalid/")!)
         let flow = FlowControl()
-        flow.task = task
+        flow.task = DataTaskControl(task)
         flow.received(FlowControl.highWater)
         #expect(!flow.isSuspended)
         flow.received(1)
