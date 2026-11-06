@@ -195,6 +195,29 @@ struct ModelHostLifecycleTests {
         await monitor.deliver(.normal)
     }
 
+    /// Third review, P2-4: a second warning at the same level was dropped before it was counted (notice stayed 1), so
+    /// a model reloaded during a sustained warning was never released for the next notice.
+    @Test func aRepeatedWarningIsANewNotice() async throws {
+        let manual = MemoryPressureMonitor(source: .manual)
+        await manual.deliver(.warning)
+        #expect(await manual.reading == .init(level: .warning, notice: 1))
+        await manual.deliver(.warning)
+        #expect(await manual.reading == .init(level: .warning, notice: 2))
+        await manual.deliver(.normal)
+        #expect(await manual.reading == .init(level: .normal, notice: 2), "a return to normal isn't a raised notice")
+
+        let host = host(ModelLifecyclePolicy(idleUnloadAfter: nil)), ref = testRef()
+        try await use(host, ref)
+        await monitor.deliver(.warning)
+        try await settle(host, ref) { $0 == .unloaded(.memoryPressure) }
+        try await use(host, ref)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(await host.lifecycleState(of: ref) == .loaded)
+        await monitor.deliver(.warning)
+        try await settle(host, ref) { $0 == .unloaded(.memoryPressure) }
+        await monitor.deliver(.normal)
+    }
+
     @Test func aNoticeThatFindsTheModelUnloadedDoesNotReleaseItsNextLoad() async throws {
         let host = host(ModelLifecyclePolicy(idleUnloadAfter: nil)), ref = testRef()
         #expect(await host.lifecycleState(of: ref) == .unloaded(nil))
