@@ -81,6 +81,26 @@ struct StoreSafetyTests {
         try stop.validate()
     }
 
+    /// Third review, P2-10: a reference with a negative size or a malformed hash passed validation, and sizes whose
+    /// total overflows trapped in `bytes`.
+    @Test func fileSizesAndHashesAreValidated() throws {
+        let hash = String(repeating: "ab", count: 32)
+        func ref(_ files: [CatalogFile]) -> ModelRef {
+            ModelRef(catalogID: "test", repo: "owner/repo", revision: "rev", variant: "macos", driver: .decoderLM,
+                     assets: [.init(name: "main", repo: "owner/repo", revision: "rev", subtree: "", files: files)])
+        }
+        try ref([CatalogFile(path: "a", size: 0, sha256: hash)]).validateForStore()
+        for bad in [CatalogFile(path: "a", size: -1, sha256: hash), CatalogFile(path: "a", size: 1, sha256: ""),
+                    CatalogFile(path: "a", size: 1, sha256: hash.uppercased()), CatalogFile(path: "a", size: 1, sha256: String(hash.dropLast())),
+                    CatalogFile(path: "a", size: 1, sha256: String(hash.dropLast()) + "g")] {
+            #expect(throws: AetherError.self, "\(bad)") { try ref([bad]).validateForStore() }
+        }
+        let huge = ref([CatalogFile(path: "a", size: .max, sha256: hash), CatalogFile(path: "b", size: 1, sha256: hash)])
+        #expect(huge.bytes == .max, "saturates instead of trapping")
+        #expect(throws: AetherError.self) { try huge.validateForStore() }
+        #expect(CatalogAsset(subtree: "", files: huge.assets[0].files).bytes == .max)
+    }
+
     /// Second review, item 15: the foreground download stream buffered without bound. The data task is suspended
     /// past the high-water mark of unread bytes and resumed below the low-water mark; nothing is dropped.
     @Test func foregroundDownloadsApplyBackpressure() {
