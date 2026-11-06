@@ -77,8 +77,8 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 ### 1.5 Generation
 
 The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6),
-`flux2-klein@1` (§5.7) and the speech driver `kokoro@1` (§5.9), all normative; the `weights` table (§5.8) is
-proposed until G4.
+`flux2-klein@1` (§5.7), the `weights` table (§5.8) and the speech driver `kokoro@1` (§5.9), all normative; the video
+driver `minimax-h3@1` (§5.10) is normative since G4.
 
 ---
 
@@ -501,14 +501,14 @@ Precision is recorded in `precision` (int8 per-channel weights on the text encod
 and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
 padding rows move the image under any precision change.
 
-### 5.8 `weights`: block weights as graph inputs (proposed until G4)
+### 5.8 `weights`: block weights as graph inputs (normative since G4 step 2a)
 
 For a graph that serves many blocks with its weights lifted to runtime inputs (H3's body and conditioner layers). The
 runtime type is `WeightTable` (AetherRuntime), read by `WeightBanks`.
 
 | where | field | meaning |
 |---|---|---|
-| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …]}`: the graph inputs bound per block, and the table file |
+| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …], blocks?}`: the graph inputs bound per block, the table file, and (a cross-check) its block count |
 | table file | `inputs` | the weight inputs, in the order the exporter lifted them |
 | table file | `blocks` | per block, each input's extent `{file: "<asset>:<path>", offset, bytes}` in a bundle file |
 
@@ -516,6 +516,11 @@ Each extent holds exactly its input's bytes (the graph's own descriptor, contigu
 bundle, or a block missing an input, is refused. The files are ordinary bundle assets, verified at install like any
 other; the runtime does not re-hash them. A driver running such a graph declares a shape profile for each measured
 canvas (DESIGN.md §6.6).
+
+Decoding refuses (naming the field): an empty or repeated `inputs` entry, a weight input that a role also binds (weight
+inputs come from the table only), a `table` outside the manifest's assets, and `blocks` < 1. The first producer is
+`Forge/h3/export_h3.py`: one file per block (`weights/body/block-NN.bin`, `weights/conditioner/layer-NN.bin`), each
+input's bytes contiguous in input order.
 
 ### 5.9 `kokoro@1` (normative since G5)
 
@@ -550,3 +555,45 @@ an Apache-2.0 SDK can't link, so the driver takes phonemes and the app supplies 
 protocol: text → utterances of ≤ 510 scalars). The exporter's gate (`check_kokoro.py`): token ids and frames exact;
 waveform rel. L2 ≤ min(0.05, 4× the case's float32-vs-float64 upstream difference); log-mel mean ≤ 0.03 nats; repeats
 bit-identical.
+
+### 5.10 `minimax-h3@1` (normative since G4)
+
+MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and, reserved, keyframes) to video with audio. macOS only in 0.1.0.
+Producer `Forge/h3/export_h3.py`; the driver is `AetherVideo`'s `MiniMaxH3Pipeline` (`Registry.video`).
+`Manifest.H3` types the block below and refuses, naming the field, what the driver can't run; `keyframe`, `vision`
+and `adapter` stay loose (FL2VA isn't presented yet).
+
+| graph | inputs → outputs | weights | residency |
+|---|---|---|---|
+| `conditionerLayer` | hidden, cos, sin → hidden (one Qwen3-VL text decoder layer, causal) | `conditioner.json`, 11 inputs × 50 layers | perPrompt |
+| `prepareText` | text → refined (context embedder + token refiner + LoRA) | `prepare-text.json`, 1 block | perPrompt |
+| `preparePack` | video, audio, text (`from: prepareText.refined`), gather → hidden | — | perStep |
+| `body` | hidden (`from: preparePack.hidden`), table [6, 3k, D], tags, cos, sin → hidden | `body.json`, 22 inputs × 50 blocks (base + dynamic LoRA) | perStep |
+| `heads` | hidden (`from: body.hidden`), temb, indices, videoIndices, audioIndices → video, audio | — | perStep |
+| `videoDecoder` | rows [448, 96] → pixels [1, 3, 22, 256, 256] (bf16 window tile) | — | perImage |
+| `videoEncoderTile`, `videoEncoderTail<W>x<H>` | pixels → moments; tiles → condition (FL2VA keyframe) | — | perPrompt |
+| `audioDecoder<Na>` | rows [2, Na, 32] → pcm [2, 800·Na] (fixed latent count) | — | perImage |
+| `conditionerVision<W>x<H>` (optional) | pixels, posIndex, posWeight, patchRC → imageEmbeds, deepstack | `vision.json`, 1 block | perPrompt |
+
+The `h3` block carries `profiles` (each a canvas and frame count with its rows, keyframe rows, audio latents and the
+graphs it uses; the qualified one is 960×544×124), `limits` (rows 64…40960, cardinality 1…3, text tokens 2…4096),
+`conditioner` (layers, tap 50, the embedding row source `weights/conditioner/embedding.bin` [151936, 5120] bf16, the
+rotary tables), `recipes` (turbo8, turbo4: per task and step the timesteps, the temb file and the per-block AdaLN table
+files `tables/<recipe>/<task>/step-<i>/block-NN.raw`), `adapter`, `video` (tile, window, packing and noise), `keyframe`,
+`audio` and `platforms`. `license` is `LicenseRef-MiniMax-H3-Community-License`; the bundle ships `LICENSE` and the
+required `NOTICE`.
+
+Decoding refuses (naming the field): a profile whose key isn't `<W>x<H>x<frames>`, sides that aren't multiples of 32
+over 256 px, frames off the 17n + 5 grid, `latentFrames` or `videoRows` that don't follow from them, an `audioDecoder`
+or `keyframeEncoder` naming no graph; bad `limits`; a `tap` other than the last layer; rotary tables shorter than the
+text-token limit; a `defaultRecipe` with no `t2va` recipe; an arm without one timestep a step and `steps + 1` sigmas
+falling from 1 to 0, or timesteps other than `1 − σ` in float32; a step cardinality outside `limits.cardinality`,
+non-ascending step timesteps, a `blocks` template without `{block:02d}`; video windows other than 256 px tiles of 7
+latent frames at stride 5; audio other than stereo rows of 32.
+
+`video.noise` is `{kind: splitmix64BoxMuller, order: sourceVideoThenAudio}`: one draw of Kit's stream, the source
+`[24, T, H, W]` video tensor first (then packed `patch2x2ChannelMajor`), then the channel-major audio rows, as 0.0.x
+drew it (the first export wrote `packedToken`, which named the wrong order; corrected in the exporter and the local
+bundle's manifest at G4 step 2b). The driver's host recipe (layout `[text | audio | video]`, positions, row
+timesteps, rotary, gather) is Diffusers' `build_packed_sequence`, `build_row_timesteps` and `MiniMaxH3RotaryPosEmbed`;
+each step's modulation is padded to the recipe's largest cardinality so the body specializes once a render.

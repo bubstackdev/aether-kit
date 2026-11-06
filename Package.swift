@@ -24,6 +24,7 @@ let package = Package(
         .library(name: "AetherVision", targets: ["AetherVision"]),
         .library(name: "AetherImage", targets: ["AetherImage"]),
         .library(name: "AetherSpeech", targets: ["AetherSpeech"]),
+        .library(name: "AetherVideo", targets: ["AetherVideo"]),
         .library(name: "AetherEmbeddings", targets: ["AetherEmbeddings"]),
         .library(name: "AetherDecide", targets: ["AetherDecide"]),
         .library(name: "Aether", targets: ["Aether"]),
@@ -60,11 +61,15 @@ let package = Package(
         .target(name: "AetherImage", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         // Speech (G5): `kokoro@1` (Kokoro-82M) over app-supplied phonemes.
         .target(name: "AetherSpeech", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        // Video with audio (G4): `minimax-h3@1` (MiniMax H3), whose Qwen3-VL prompt goes through AetherText's tokenizer.
+        .target(name: "AetherVideo", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherDecide", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(
             name: "Aether",
-            dependencies: ["AetherText", "AetherVision", "AetherImage", "AetherSpeech", "AetherEmbeddings", "AetherDecide"],
+            dependencies: [
+                "AetherText", "AetherVision", "AetherImage", "AetherSpeech", "AetherVideo", "AetherEmbeddings", "AetherDecide",
+            ],
             swiftSettings: common
         ),
 
@@ -117,6 +122,13 @@ let package = Package(
             name: "AetherSpeechTests",
             dependencies: ["AetherSpeech", "AetherRuntime", "AetherCore", "AetherHost"],
             // The CPU known answers (tokenization, noise, rounding) recorded by 0.0.x's Forge/kokoro/make_cpu_fixtures.py.
+            resources: [.copy("Fixtures")],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherVideoTests",
+            dependencies: ["AetherVideo", "AetherRuntime", "AetherCore", "AetherHost"],
+            // Diffusers' own packed layout for a tiny geometry (Forge/h3/layout_fixture_h3.py).
             resources: [.copy("Fixtures")],
             swiftSettings: common
         ),

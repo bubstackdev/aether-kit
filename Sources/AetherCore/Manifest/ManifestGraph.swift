@@ -67,6 +67,8 @@ extension Manifest {
         public var warmup: Warmup?
         /// §5.3: when a generative driver loads and releases the graph. Absent: resident for the model's lifetime.
         public var residency: Residency?
+        /// §5.8: the inputs bound per block from a weight table (a graph that serves many blocks).
+        public var weights: GraphWeights?
 
         public init(
             file: GraphFile, function: String? = nil, functions: [String: String]? = nil,
@@ -74,7 +76,7 @@ extension Manifest {
             inputsByFunction: [String: [String: Binding]]? = nil, inputEncodings: [String: InputEncoding]? = nil,
             outputs: [String: OutputBinding], unusedOutputs: [String]? = nil, states: States? = nil,
             limits: Limits? = nil, compute: ComputeUnit, expectFrequentReshapes: Bool? = nil, warmup: Warmup? = nil,
-            residency: Residency? = nil
+            residency: Residency? = nil, weights: GraphWeights? = nil
         ) {
             self.file = file
             self.function = function
@@ -92,6 +94,7 @@ extension Manifest {
             self.expectFrequentReshapes = expectFrequentReshapes
             self.warmup = warmup
             self.residency = residency
+            self.weights = weights
         }
 
         /// Phase → function name: `function` is the `step` phase.
@@ -564,6 +567,7 @@ extension Manifest.Graph {
             }
         }
         try Self.validate(inputs, at: "\(prefix).inputs", manifest: manifest)
+        try weights?.validate(at: "\(prefix).weights", graph: self, manifest: manifest)
         if let byPhase = inputsByFunction {
             for (phase, bindings) in byPhase.sorted(by: { $0.key < $1.key }) {
                 try require(functions?[phase] != nil, "\(prefix).inputsByFunction.\(phase)",

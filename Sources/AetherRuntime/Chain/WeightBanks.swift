@@ -142,11 +142,22 @@ public final class WeightBanks {
                 name: buffer.name,
                 reason: .unavailable("bank \(bank) is bound by a call since the last synchronize(); the GPU may still read it"))
         }
+        try fill(block: block, bank: bank) { buffer, body throws(AetherError) in
+            try chain.arena.withLentMutableBytes(buffer, body)
+        }
+    }
+
+    /// Reads block `block`'s extents into bank `bank` through `access` (lent or idle arena access).
+    func fill(
+        block: Int, bank: Int,
+        access: (TensorBuffer, (UnsafeMutableRawBufferPointer) throws(AetherError) -> Void) throws(AetherError) -> Void
+    ) throws(AetherError) {
+        guard loaded[bank] != block else { return }
         loaded[bank] = nil
         for name in table.inputs {
             let extent = table.blocks[block][name]!
             let handle = try handle(for: urls[extent.file]!)
-            try chain.arena.withLentMutableBytes(banks[bank][name]!) { bytes throws(AetherError) in
+            try access(banks[bank][name]!) { bytes throws(AetherError) in
                 try Self.read(handle, offset: extent.offset, into: bytes, name: extent.file)
             }
         }

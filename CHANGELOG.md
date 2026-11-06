@@ -97,7 +97,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
   `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
   `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
-  `aether-models/aether-kit-sd-turbo-ios`.
+  `aether-models/aether-kit-sd-turbo-ios`; `krea-2-turbo` and `krea-2-turbo-realism` (macOS) from
+  `aether-models/krea-2-turbo-aether-kit` and the gated `aether-models/krea-2-turbo-realism-aether-kit`; catalog entries
+  carry `mature` (the realism merge), and `scripts/gen-catalog` sends the Hugging Face token for gated repos.
 
 - **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
   - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
@@ -114,6 +116,24 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
   peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
 
+- **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
+  the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
+  bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
+  oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
+  `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
+  unchained path's). The real-weight export (94 GB, run outside the licence's Excluded Territories per the owner)
+  passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
+  0.0067). It is not publicly hosted; the catalog entry waits for a compliant hosting route.
+
+- **MiniMax H3 (G4)** in the new **`AetherVideo`** product: `minimax-h3@1` (`MiniMaxH3Pipeline`), text to 24 fps video with
+  32 kHz stereo audio at the qualified 960×544×124 profile, macOS only. The conditioner and the 50-block transformer
+  chain on the GPU with their weights streamed from the bundle (`GraphChain`, `WeightBanks`); the host recipe is
+  Diffusers' layout, row timesteps and rotary, bit-identical to the graph reference for the first two steps; a clip and
+  its repeat bit-identical; phase peaks 4.2 / 9.7 / 1.4 GiB within the 18 GiB bar. The typed `h3` block (MANIFEST.md
+  §5.10 normative); `TensorBuffer.readBytes`/`writeBytes`/`copyBytes` and `WeightBanks.load(block:into:)` for bf16
+  tensors between host and Metal arenas. The exporter's manifest fixes: `video.noise.order` is `sourceVideoThenAudio`
+  (0.0.x's draw order), the pack's text input is named `text`, and no graph takes the reshape hint. FL2VA keyframes are
+  deferred; the bundle isn't publicly hosted (license).
 - **Second pre-release review fixes:** store references are validated and contained before any file operation
   (`AetherError.invalidReference`); an install is reused only for the same installation; tokenizer paths are
   contained and stop ids bounded; released bindings no longer validate; structured replies must complete their
@@ -145,5 +165,4 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
 
 ### In progress before 0.1.0 is tagged
 
-MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
-validation, and FLUX.2's and Krea's reference images.
+H3's FL2VA keyframes; FLUX.2's and Krea's reference images.
