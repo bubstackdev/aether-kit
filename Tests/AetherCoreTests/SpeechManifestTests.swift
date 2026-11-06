@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import AetherCore
 
-/// MANIFEST.md §5.8 (`kokoro@1`, proposed until G5). The fixture is the Kokoro exporter's own output
+/// MANIFEST.md §5.9 (`kokoro@1`, proposed until G5). The fixture is the Kokoro exporter's own output
 /// (`Forge/kokoro/export_kokoro.py --sample-manifest`), so a change to what it emits shows up here.
 @Suite("Speech manifest")
 struct SpeechManifestTests {

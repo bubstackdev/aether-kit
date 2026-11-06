@@ -77,7 +77,7 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 ### 1.5 Generation
 
 The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative), `krea2@1` (§5.5,
-proposed until G3) and the speech driver `kokoro@1` (§5.8, proposed until G5).
+proposed until G3) and the speech driver `kokoro@1` (§5.9, proposed until G5).
 
 ---
 
@@ -379,10 +379,11 @@ These clarify or amend §1–§3. The implementation and the per-entry goldens f
 
 Status: §5.1–§5.3 (the generic `schedule` and `latent` blocks and per-graph `residency`) are **normative since G0**,
 2026-11-06, with `epsilonEuler` and spatial latents since G1; `latent-diffusion@1` (§5.4) is **normative since G1**;
-`krea2@1` and its `krea2` block (§5.5–§5.6) stay **proposed until G3**, and a v1 loader treats them as an
-uncatalogued driver (`unknownDriver`) until `krea2@1` is registered. The first producer is
-`Forge/krea2/export_krea2.py`, then `Forge/sdturbo/export_sdturbo.py`; their `--sample-manifest` output is the decoding
-fixture (`Tests/AetherCoreTests/Fixtures/krea2/`, `…/sd-turbo/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
+`flux2-klein@1` and its `flux2` block (§5.7) are **normative since G2**; `krea2@1` and its `krea2` block (§5.5–§5.6)
+stay **proposed until G3**, and a v1 loader treats them as an uncatalogued driver (`unknownDriver`) until `krea2@1` is
+registered. The producers are `Forge/krea2/export_krea2.py`, `Forge/sdturbo/export_sdturbo.py` and
+`Forge/flux2/export_flux2.py`; their `--sample-manifest` output is the decoding fixture
+(`Tests/AetherCoreTests/Fixtures/krea2/`, `…/sd-turbo/`, `…/flux2/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
 the string-valued rules below are closed vocabularies, and anything else is rejected naming its field.
 
 ### 5.1 `schedule`
@@ -467,13 +468,22 @@ carries stay float32. A future `vision` graph and `encodeWithImages` function (r
 
 `tokenizer.renderer: "krea2-prompt"` names the fixed template above (no chat template); `addSpecialTokens: false`.
 
-### 5.7 `flux2-klein@1` (proposed until G2)
+### 5.7 `flux2-klein@1` (normative since G2)
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
-| `flux2-klein@1` | `textEncoder` (`encode`), `denoiser0`…`denoiser2` (`segment`; blocks 0–8, 8–16, 16–25 of 5 double + 20 single), `vaeDecoder` (`decode`) | textEncoder in `tokens`, `positions`, `tokenMask`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `textRotary`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–2 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `textRotary`, `imageRotary`; denoiser1 out `carryImage`, `carryText`; denoiser2 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule` (`shift.rule: empirical`), `latent` (128 channels), `flux2`. | `vaeEncoder` (`encode`: `referencePixels` → `referenceLatents`), reference images | flux2-klein-4b (Forge export, `Forge/flux2/`) |
+| `flux2-klein@1` | `textEncoder` (`encode`), `denoiser0`…`denoiser2` (`segment`; blocks 0–8, 8–16, 16–25 of 5 double + 20 single), `vaeDecoder` (`decode`) | textEncoder in `tokens`, `positions`, `tokenMask`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `textRotary`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–2 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `textRotary`, `imageRotary`; denoiser1 out `carryImage`, `carryText`; denoiser2 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule` (`shift.rule: empirical`), `latent` (128 channels), `flux2`. | `vaeEncoder` (`encode`: `referencePixels` → `referenceLatents`; an optional graph role, checked against its contract when present), reference images; `residency` per graph | flux2-klein-4b (Forge export, `Forge/flux2/`) |
 
-`flux2` is owned by `flux2-klein@1`:
+The driver wires the segments from the manifest: every input chained with `source.from` must name the text encoder's
+conditioning or an earlier segment's output, the others are host-fed (`latents`, `sigma`, the rotary tables), and only
+the last segment emits `velocity`. Latents go in as the graph's scalar type (fp16 here), the Euler update stays float32
+on the host, and the packed tokens in raster order are the decoder's `[rows, columns, 128]`. There is no default size:
+a request names width and height. **macOS only in 0.1.0** (docs/INTEGRATION.md): on iOS the driver refuses with
+`unsupportedDevice` before anything loads.
+
+`flux2` is owned by `flux2-klein@1`. It is fully typed: the closed values below are the ones the driver implements,
+and anything else is refused naming its field (`maxTokens` must equal `conditioning.rows`; `rotary.axes` has four
+entries; the id rules are exactly the text and image rules shown).
 
 | field | req | meaning |
 |---|---|---|
@@ -481,7 +491,7 @@ carries stay float32. A future `vision` graph and `encodeWithImages` function (r
 | `conditioning` | R | `{taps: [9, 18, 27], width: 7680, rows: 512, paddingRows: conditioning}`: all 512 rows, padding included, condition the denoiser |
 | `rotary` | R | `{axes: [32, 32, 32, 32], theta: 2000, textIds: (0,0,0,i), imageIds: (0,row,column,0), referenceIds: (10(k+1),row,column,0), layout: splitHalves}`; the host builds `textRotary [512, 2, 128]` and `imageRotary [N, 2, 128]` |
 | `segments`, `condRows` | R | the denoiser roles in call order; 17 modulation rows (image 6, text 6, single 3, output scale and shift) |
-| `references` | O | `{encoder: vaeEncoder, kind: packedLatents, positionStride: 10, maxImages: 2, maxSide: 512, maxTotalTokens: 4096}`: reference tokens and rotary rows are appended to every denoiser call; their velocities are discarded; μ uses generated tokens only |
+| `references` | O | `{encoder: vaeEncoder, kind: packedLatents, positionStride: 10, maxImages: 2, maxSide: 512, maxTotalTokens: 4096}`: reference tokens and rotary rows are appended to every denoiser call; their velocities are discarded; μ uses generated tokens only. **Reserved:** decoded loosely and not implemented by the driver yet |
 
 Precision is recorded in `precision` (int8 per-channel weights on the text encoder and denoisers, the 20 single-block
 `proj_out` fp16; both VAE graphs fp16 storage, fp32 compute). License `Apache-2.0`; the bundle ships the checkpoint's
@@ -489,7 +499,23 @@ Precision is recorded in `precision` (int8 per-channel weights on the text encod
 and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
 padding rows move the image under any precision change.
 
-### 5.8 `kokoro@1` (proposed until G5)
+### 5.8 `weights`: block weights as graph inputs (proposed until G4)
+
+For a graph that serves many blocks with its weights lifted to runtime inputs (H3's body and conditioner layers). The
+runtime type is `WeightTable` (AetherRuntime), read by `WeightBanks`.
+
+| where | field | meaning |
+|---|---|---|
+| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …]}`: the graph inputs bound per block, and the table file |
+| table file | `inputs` | the weight inputs, in the order the exporter lifted them |
+| table file | `blocks` | per block, each input's extent `{file: "<asset>:<path>", offset, bytes}` in a bundle file |
+
+Each extent holds exactly its input's bytes (the graph's own descriptor, contiguous); a table naming a file outside the
+bundle, or a block missing an input, is refused. The files are ordinary bundle assets, verified at install like any
+other; the runtime does not re-hash them. A driver running such a graph declares a shape profile for each measured
+canvas (DESIGN.md §6.6).
+
+### 5.9 `kokoro@1` (proposed until G5)
 
 Status: **proposed**, 2026-11-06. The producer is `Forge/kokoro/export_kokoro.py`; its `--sample-manifest` output is the
 decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). A v1 loader treats the bundle as an uncatalogued driver

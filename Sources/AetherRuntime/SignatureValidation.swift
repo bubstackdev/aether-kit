@@ -12,8 +12,8 @@ public enum SignatureValidator {
             throw .unsupported(driver: manifest.driver)
         }
         try contract.validate(manifest)
-        for (role, graphContract) in contract.graphs.sorted(by: { $0.key < $1.key }) {
-            guard let graph = manifest.graphs[role] else { continue }
+        for (role, graph) in manifest.graphs.sorted(by: { $0.key < $1.key }) {
+            guard let graphContract = contract.graph(role) else { continue }
             for (phase, function) in graph.phases.sorted(by: { $0.key < $1.key }) {
                 guard let signature = signatures[role]?[function] else {
                     throw .manifestInvalid(

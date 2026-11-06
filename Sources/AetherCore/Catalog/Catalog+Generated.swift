@@ -510,5 +510,128 @@ extension Catalog {
                 ),
             ]
         ),
+        CatalogEntry(
+            id: "sd-turbo",
+            task: "text-to-image",
+            repo: "aether-models/aether-kit-sd-turbo",
+            revision: "b6903c29676d2418f8bf2dc24ce8aba4c47696ef",
+            license: "LicenseRef-Stability-AI-Community-License",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "latent-diffusion@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 7162, sha256: "2a306d5628533aaca6932d375fdb313d791e063a171bacf30a50abbdda20b88b"),
+                                CatalogFile(path: ".gitattributes", size: 1725, sha256: "a41ab01e676b3ca6c6074312ae08f8420e776fcca2c9948f8c2277001075812b"),
+                                CatalogFile(path: "LICENSE.md", size: 11852, sha256: "d6f6b1a4dce5c852bd6d7d9482d002baf0ccdb71e662250b73be9eec8764ee8d"),
+                                CatalogFile(path: "NOTICE", size: 863, sha256: "a3d3cd0fb1e63ae02aab33d0f8984eb1acbe0937e63cc0e5a3e636a3c07e0f3e"),
+                                CatalogFile(path: "README.md", size: 1028, sha256: "16d5e35097123c954499fcca9264f10b4433e9dbd8ba60f57a292b9a6dfda5f7"),
+                                CatalogFile(path: "SHA256SUMS", size: 1587, sha256: "4c7ed18cea91534b228557b4f320360fd0274d7d07c86e62ce071990474c121d"),
+                                CatalogFile(path: "export-report.json", size: 4105, sha256: "78b50d617f2d1d9975a6acbe15ded58ffc63fc9f71b58f652b9274beb2f0e560"),
+                                CatalogFile(path: "forge-log.jsonl", size: 867, sha256: "61eaf621ce56fd43a7c5d33ef76ccf0f3379a5b289bda585319da8f83a833ba7"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/main.hash", size: 32, sha256: "7356f6c266704901ebb5ac2fc9ae4119f4df16450456fb3ddc9bb8a8c517dd0b"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/main.mlirb", size: 1361703178, sha256: "a5c4a01c863baa7a0d5cf7a808b55ed4553ce50bba0797f255caf198fc993643"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/metadata.json", size: 105, sha256: "83f7b03b7643628c9097ae7198faf040c007f233dcd57cb946f330042491bc47"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/main.hash", size: 32, sha256: "12fefa1d00bceffb6199454d3c3e5f3c32f46d2a3234d6614fcffc2214eaaa0c"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/main.mlirb", size: 3463901354, sha256: "0290ce6b39e855e9161cde62e37874c5d2ab45149f7bb577bcb3d57db604c967"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/metadata.json", size: 105, sha256: "9e975cd33342ea68efbdd0830cc47cd216d0d0127d3dab43850f8c927d83e56d"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/main.hash", size: 32, sha256: "cc91c7210279e9e489aafd27dc889ee74dd5d3fce349cb128b34e4292e7f014a"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/main.mlirb", size: 198013189, sha256: "c5521ba566494b4a9c28c6d7c8757b50b2dd67caac0538f5a706cfded5abe25f"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/metadata.json", size: 105, sha256: "947dc59cefa8a9e12e43c587a8dd23c62d95a2bc53383a461456337cf739d916"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 524619, sha256: "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 574, sha256: "c2d0fb8b86ad86b1f46134d4a5f93fd1e688c932a78efc8d149087c33a53ad06"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 855, sha256: "516314ccab66918d7cb647480ac27abd3520d14e1e5825aac99f50c851c16071"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 1059962, sha256: "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "latent-diffusion@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 7162, sha256: "2a306d5628533aaca6932d375fdb313d791e063a171bacf30a50abbdda20b88b"),
+                                CatalogFile(path: ".gitattributes", size: 1725, sha256: "a41ab01e676b3ca6c6074312ae08f8420e776fcca2c9948f8c2277001075812b"),
+                                CatalogFile(path: "LICENSE.md", size: 11852, sha256: "d6f6b1a4dce5c852bd6d7d9482d002baf0ccdb71e662250b73be9eec8764ee8d"),
+                                CatalogFile(path: "NOTICE", size: 863, sha256: "a3d3cd0fb1e63ae02aab33d0f8984eb1acbe0937e63cc0e5a3e636a3c07e0f3e"),
+                                CatalogFile(path: "README.md", size: 1028, sha256: "16d5e35097123c954499fcca9264f10b4433e9dbd8ba60f57a292b9a6dfda5f7"),
+                                CatalogFile(path: "SHA256SUMS", size: 1587, sha256: "4c7ed18cea91534b228557b4f320360fd0274d7d07c86e62ce071990474c121d"),
+                                CatalogFile(path: "export-report.json", size: 4105, sha256: "78b50d617f2d1d9975a6acbe15ded58ffc63fc9f71b58f652b9274beb2f0e560"),
+                                CatalogFile(path: "forge-log.jsonl", size: 867, sha256: "61eaf621ce56fd43a7c5d33ef76ccf0f3379a5b289bda585319da8f83a833ba7"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/main.hash", size: 32, sha256: "7356f6c266704901ebb5ac2fc9ae4119f4df16450456fb3ddc9bb8a8c517dd0b"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/main.mlirb", size: 1361703178, sha256: "a5c4a01c863baa7a0d5cf7a808b55ed4553ce50bba0797f255caf198fc993643"),
+                                CatalogFile(path: "sd_turbo-text.aimodel/metadata.json", size: 105, sha256: "83f7b03b7643628c9097ae7198faf040c007f233dcd57cb946f330042491bc47"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/main.hash", size: 32, sha256: "12fefa1d00bceffb6199454d3c3e5f3c32f46d2a3234d6614fcffc2214eaaa0c"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/main.mlirb", size: 3463901354, sha256: "0290ce6b39e855e9161cde62e37874c5d2ab45149f7bb577bcb3d57db604c967"),
+                                CatalogFile(path: "sd_turbo-unet.aimodel/metadata.json", size: 105, sha256: "9e975cd33342ea68efbdd0830cc47cd216d0d0127d3dab43850f8c927d83e56d"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/main.hash", size: 32, sha256: "cc91c7210279e9e489aafd27dc889ee74dd5d3fce349cb128b34e4292e7f014a"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/main.mlirb", size: 198013189, sha256: "c5521ba566494b4a9c28c6d7c8757b50b2dd67caac0538f5a706cfded5abe25f"),
+                                CatalogFile(path: "sd_turbo-vae.aimodel/metadata.json", size: 105, sha256: "947dc59cefa8a9e12e43c587a8dd23c62d95a2bc53383a461456337cf739d916"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 524619, sha256: "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 574, sha256: "c2d0fb8b86ad86b1f46134d4a5f93fd1e688c932a78efc8d149087c33a53ad06"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 855, sha256: "516314ccab66918d7cb647480ac27abd3520d14e1e5825aac99f50c851c16071"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 1059962, sha256: "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "flux2-klein-4b",
+            task: "text-to-image",
+            repo: "aether-models/aether-kit-flux2-klein-4b",
+            revision: "b6f55149a02819c8d67a10801468df61d958a8bf",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "flux2-klein@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 12339, sha256: "9353a78d147f304af22bd5b55b8ea3313b90f2fe79bf78e84b29030e85c4f663"),
+                                CatalogFile(path: ".gitattributes", size: 2051, sha256: "ed45d10f761ec857dbf3a38495c06ccdf99bf1775298ea883b4d2b806d3e8257"),
+                                CatalogFile(path: "LICENSE.md", size: 9584, sha256: "ca02bc51900ab07789d1b70283329e7137f5af98f5161c23a1c81fc38a4af1fe"),
+                                CatalogFile(path: "NOTICE", size: 543, sha256: "350fb43b77ecfeb1d7d57687f39d9b09e7500c015b4babc0464f9c97fcfdfc4f"),
+                                CatalogFile(path: "README.md", size: 780, sha256: "856820f0d068e3f69c937c0aa4c3b20c03f87b13ac52e0c1c5cbc201fb351784"),
+                                CatalogFile(path: "SHA256SUMS", size: 2939, sha256: "10f609d46f4bb54d9ba3d7c95c0b2ea310b6c897170383d7ad5b409620d33249"),
+                                CatalogFile(path: "export-report.json", size: 6355, sha256: "266db6f40dccbc535a3fe8134faac80ab27b108217c528108bd8daace17a65f2"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser0.aimodel/main.hash", size: 32, sha256: "4a4752a9540b594b10387867b9a2e5ba66e71b2427d05bbe7d70efba53f692f4"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser0.aimodel/main.mlirb", size: 1903859704, sha256: "54a9df5ca87651d4dd4601cf181c74866e7c4dcfeec94f943e999d096ae60032"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser0.aimodel/metadata.json", size: 105, sha256: "d6da3358b38c8d52cefe9d7ba6a57f3653405c57c88897c5a85adf58081db519"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser1.aimodel/main.hash", size: 32, sha256: "da54fe1fca090c49ff383ccf002c21a7e7bdd4e2a3c5a44ab836f22d9f3c8d3c"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser1.aimodel/main.mlirb", size: 1283962450, sha256: "19b09558c30ac08385bd4beea9da0dd5525e1eb307fdd96e8a38d3a19f4a30c0"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser1.aimodel/metadata.json", size: 105, sha256: "e320a774309486623381e2e9bd0daac7dcb318fe2f492b9b280f861ef55725ca"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser2.aimodel/main.hash", size: 32, sha256: "20b3dad01245b1863f4972eb52d3b3087eb06ba9563a6021147176c5e4f7f4e2"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser2.aimodel/main.mlirb", size: 1444851504, sha256: "4731f74eb80396a8becf03193a5ac6d6f028356ba630919f7723f602f25d3db6"),
+                                CatalogFile(path: "flux2_klein_4b-denoiser2.aimodel/metadata.json", size: 105, sha256: "5ac2cfee82c11018f221beb10de593089102022d58fc6fd6044ce9259f6f495d"),
+                                CatalogFile(path: "flux2_klein_4b-text.aimodel/main.hash", size: 32, sha256: "fcf2d1ab077928595f80d87d3674a320e0de044dd0208dd45bb8dcd303386b27"),
+                                CatalogFile(path: "flux2_klein_4b-text.aimodel/main.mlirb", size: 3116453623, sha256: "9ab86b2e74eb04abdd275e6f52d2d908c922eff1da30bf59b433fe2785d057ae"),
+                                CatalogFile(path: "flux2_klein_4b-text.aimodel/metadata.json", size: 105, sha256: "96ab30acf6aa96193f36c0c4e551bca3641bae3b61b7857117ecae74595fd083"),
+                                CatalogFile(path: "flux2_klein_4b-vae-encoder.aimodel/main.hash", size: 32, sha256: "2046ca796218626d977a1f5ebabcb9ed544b27a9c3ea50293c7fb807f30bbe65"),
+                                CatalogFile(path: "flux2_klein_4b-vae-encoder.aimodel/main.mlirb", size: 70771713, sha256: "5949239587ef2f02817b8e79b901af5f0559caba6e9efd53350b7c63c21eb334"),
+                                CatalogFile(path: "flux2_klein_4b-vae-encoder.aimodel/metadata.json", size: 105, sha256: "d17c0dd8d8dbfbde3d890cc5360e6119e293198890e5ecafb300a5da47006621"),
+                                CatalogFile(path: "flux2_klein_4b-vae.aimodel/main.hash", size: 32, sha256: "12ddeab65234979c9ba8b040ec60079457521e665326017206c006eed883f761"),
+                                CatalogFile(path: "flux2_klein_4b-vae.aimodel/main.mlirb", size: 101482660, sha256: "3bb9c51c827d9b3e36d10e4ebbbc3969eb12e12b864c32c2a081f9c7bfff07d1"),
+                                CatalogFile(path: "flux2_klein_4b-vae.aimodel/metadata.json", size: 105, sha256: "3c3c8059345b8baa9ca62d4a04d05a23aab4ea81bed8fb057dda5dd279c4f810"),
+                                CatalogFile(path: "forge-log.jsonl", size: 3497, sha256: "1e7dd5289f9f6cd7d636b396e6793a60c1a02210f2474d536bff181b5dcbc51c"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 707, sha256: "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 4168, sha256: "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 1671853, sha256: "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 613, sha256: "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 11422654, sha256: "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 5404, sha256: "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 2776833, sha256: "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
     ])
 }

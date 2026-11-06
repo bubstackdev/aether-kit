@@ -1,0 +1,45 @@
+{
+  "dim": 64,
+  "ffn": 128,
+  "rows": [
+    8,
+    1024
+  ],
+  "function": "block",
+  "inputs": [
+    "hidden",
+    "mod",
+    "w0",
+    "w1",
+    "w2"
+  ],
+  "outputs": [
+    "hidden_out"
+  ],
+  "weights": [
+    {
+      "input": "w0",
+      "param": "up.weight",
+      "shape": [
+        128,
+        64
+      ]
+    },
+    {
+      "input": "w1",
+      "param": "gate.weight",
+      "shape": [
+        128,
+        64
+      ]
+    },
+    {
+      "input": "w2",
+      "param": "down.weight",
+      "shape": [
+        64,
+        128
+      ]
+    }
+  ]
+}

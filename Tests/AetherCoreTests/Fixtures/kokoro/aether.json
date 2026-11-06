@@ -3,7 +3,7 @@
   "id": "kokoro-82m",
   "task": "text-to-speech",
   "driver": "kokoro@1",
-  "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.8 (G5)",
+  "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.9 (G5)",
   "variant": {
     "platform": "macos"
   },

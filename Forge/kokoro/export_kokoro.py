@@ -11,7 +11,7 @@ verified against `source-pins.json`. No grapheme-to-phoneme code is imported (se
 the CPU, in float32. The output directory is laid out as an installed revision root:
 
     OUTPUT/
-      .aether/aether.json               the Aether manifest (MANIFEST.md §5.8, driver `kokoro@1`, proposed)
+      .aether/aether.json               the Aether manifest (MANIFEST.md §5.9, driver `kokoro@1`, proposed)
       kokoro_82m-durations.aimodel      token ids + style -> per-token duration sums, prosody and text features
       kokoro_82m-decoder.aimodel        aligned features + style + noise + valid frame count -> 24 kHz audio
       voices/<id>.f32                   the 54 v1.0 voice packs, 510 x 256 little-endian float32
@@ -116,7 +116,7 @@ def convert(module, example: tuple, dynamic, inputs: list[str], outputs: list[st
             "bytes": tree_bytes(path), "inputs": inputs, "outputs": outputs, "function": entry}
 
 
-# MARK: the manifest (MANIFEST.md §5.8 `kokoro@1`, proposed until G5)
+# MARK: the manifest (MANIFEST.md §5.9 `kokoro@1`, proposed until G5)
 
 def voice_entry(voice: str) -> dict:
     return {"table": f"voice.{voice}", "language": LANGUAGES[voice[0]], "gender": GENDERS[voice[1]]}
@@ -131,7 +131,7 @@ def manifest(files: dict[str, dict], vocabulary: dict[str, int], voices: list[st
         "id": ID,
         "task": "text-to-speech",
         "driver": "kokoro@1",
-        "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.8 (G5)",
+        "x-status": "draft: driver kokoro@1 and its kokoro block are proposed in MANIFEST.md §5.9 (G5)",
         "variant": {"platform": "macos"},
         "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {

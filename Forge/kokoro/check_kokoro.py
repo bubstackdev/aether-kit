@@ -56,7 +56,7 @@ class Graph:
 
 
 def tokenize(vocabulary: dict, phonemes: str, maximum: int) -> list[int]:
-    """The host rule (MANIFEST.md §5.8): Unicode scalars, no normalization, unknown symbols refused."""
+    """The host rule (MANIFEST.md §5.9): Unicode scalars, no normalization, unknown symbols refused."""
     ids = []
     for ch in phonemes:
         if ch not in vocabulary:

@@ -54,8 +54,9 @@ let package = Package(
         // The FoundationModels `LanguageModel` bridge (M3), on the Generator. Links FoundationModels.
         .target(name: "AetherFoundationModels", dependencies: ["AetherText"], swiftSettings: common),
         .target(name: "AetherVision", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
-        // Image generation (G1+): `latent-diffusion@1` (SD-Turbo), with its own CLIP BPE (no swift-transformers).
-        .target(name: "AetherImage", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        // Image generation (G1+): `latent-diffusion@1` (SD-Turbo, its own CLIP BPE) and `flux2-klein@1` (FLUX.2, whose
+        // Qwen3 prompt goes through AetherText's tokenizer and chat template).
+        .target(name: "AetherImage", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherDecide", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(
