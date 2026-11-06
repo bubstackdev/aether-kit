@@ -275,7 +275,16 @@ private final class Pump: @unchecked Sendable {
 private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendable {
     private let body: AsyncThrowingStream<Data, any Error>.Continuation
     private let flow: FlowControl
-    private let response = Mutex<CheckedContinuation<HTTPResponseHead, any Error>?>(nil)
+    /// The response continuation, and the first outcome. A task cancelled before it was resumed (the caller was
+    /// already cancelled when `get` began) completes on the delegate queue without waiting for `resume()`, possibly
+    /// before ``awaitResponse(_:)`` has installed the continuation; that outcome is kept for it rather than lost, or
+    /// `get` would never return.
+    private struct ResponseState {
+        var continuation: CheckedContinuation<HTTPResponseHead, any Error>?
+        var early: Result<HTTPResponseHead, any Error>?
+        var answered = false
+    }
+    private let response = Mutex(ResponseState())
 
     init(body: AsyncThrowingStream<Data, any Error>.Continuation, flow: FlowControl) {
         self.body = body
@@ -283,14 +292,30 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
     }
 
     func awaitResponse(_ continuation: CheckedContinuation<HTTPResponseHead, any Error>) {
-        response.withLock { $0 = continuation }
+        let early = response.withLock { state -> Result<HTTPResponseHead, any Error>? in
+            if let early = state.early {
+                state.early = nil
+                return early
+            }
+            state.continuation = continuation
+            return nil
+        }
+        if let early { continuation.resume(with: early) }
     }
 
-    private func takeResponse() -> CheckedContinuation<HTTPResponseHead, any Error>? {
-        response.withLock { pending in
-            defer { pending = nil }
-            return pending
+    /// Delivers the first outcome only: to the waiting continuation, or kept until one is installed.
+    private func answer(_ outcome: Result<HTTPResponseHead, any Error>) {
+        let waiting = response.withLock { state -> CheckedContinuation<HTTPResponseHead, any Error>? in
+            guard !state.answered else { return nil }
+            state.answered = true
+            guard let continuation = state.continuation else {
+                state.early = outcome
+                return nil
+            }
+            state.continuation = nil
+            return continuation
         }
+        waiting?.resume(with: outcome)
     }
 
     func urlSession(
@@ -302,7 +327,7 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
         for (key, value) in http?.allHeaderFields ?? [:] {
             if let key = key as? String, let value = value as? String { headers[key] = value }
         }
-        takeResponse()?.resume(returning: HTTPResponseHead(status: http?.statusCode ?? 0, headers: headers))
+        answer(.success(HTTPResponseHead(status: http?.statusCode ?? 0, headers: headers)))
         completionHandler(.allow)
     }
 
@@ -312,7 +337,7 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
     ) {
         guard let redirected = RedirectPolicy.follow(from: task.originalRequest, to: request) else {
             // A redirect from HTTPS to plain HTTP: refuse it, and fail rather than hand back the 3xx as the response.
-            takeResponse()?.resume(throwing: URLError(.appTransportSecurityRequiresSecureConnection))
+            answer(.failure(URLError(.appTransportSecurityRequiresSecureConnection)))
             completionHandler(nil)
             task.cancel()
             return
@@ -327,10 +352,10 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
         if let error {
-            takeResponse()?.resume(throwing: error)
+            answer(.failure(error))
             body.finish(throwing: error)
         } else {
-            takeResponse()?.resume(throwing: URLError(.badServerResponse))
+            answer(.failure(URLError(.badServerResponse)))
             body.finish()
         }
     }
