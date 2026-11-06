@@ -148,7 +148,7 @@ Not part of v1 (earlier draft names): top-level `companions` (now `assets` + `ta
 | `unusedOutputs` | O | `[name]` | CLIP `logits_per_image`/`_text`, DA3 `depth_conf` when not surfaced, so validation does not flag them as unbound |
 | `states` | R for stateful drivers | §2.3.1 | |
 | `limits` | O | §2.3.2 | |
-| `compute` | R | `gpu\|neuralEngine\|cpu` | Written explicitly so nothing falls back to Core AI defaults. **The adapter default is `gpu` for every graph class** (measured on 11 graphs in 5 classes: the `.neuralEngine` preference gave GPU-identical output on 9, and the only graph that clearly moved, gliner, was 6× slower; CPU fails or is wrong on 6 of 11). `neuralEngine` is allowed only as a per-entry override backed by a measured win (none today, iPhone power not yet measured). |
+| `compute` | R | `gpu\|neuralEngine\|cpu` | Written explicitly so nothing falls back to Core AI defaults. **The adapter default is `gpu` for every graph class** (measured on 11 graphs in 5 classes: the `.neuralEngine` preference gave GPU-identical output on 9, and the only graph that clearly moved, gliner, was 6× slower; CPU fails or is wrong on 6 of 11). `neuralEngine` is allowed only as a per-entry override backed by a measured win (none today: on the iPhone the M4 graphs gave identical outputs and equal latency, docs/DEVICE.md). |
 | `expectFrequentReshapes` | O | bool, default = `compute == gpu` and any dynamic dimension | the M0 4 vs 274 tok/s finding. Decode-only graphs mix static tokens with dynamic KV, so the "shape kind" rule is ambiguous. |
 | `warmup` | O | `false` or `{shapes}` | gemma-4 S=1 graph rejects the default S=256 warmup (`noWarmup`) |
 

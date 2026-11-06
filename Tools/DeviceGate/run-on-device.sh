@@ -5,7 +5,8 @@
 #
 # Signing uses the App Store Connect API key ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8 (automatic
 # provisioning); the key, issuer and team come from the environment, never this repo. The result is written to
-# results/gate-<result-name>.json (default: the device's product type, e.g. iPhone19,4), not to a UDID. Bundles and
+# results/gate-<result-name>.json (default: the device's product type, e.g. iPhone19,4, plus the gates when GATES
+# is a subset: iPhone19,4-m4), not to a UDID. Bundles and
 # references come from the Forge outputs beside this repo (aether/forge-outputs) and are copied into the app's
 # Documents (not bundled); SKIP_COPY=1 reuses what's already on the device. GATES picks the gates (default all three:
 # sd-turbo, kokoro, m4). The M4 bundles are the macOS exports unchanged (JIT .aimodel packages, nothing per
@@ -89,8 +90,12 @@ xcrun devicectl device process launch --device "$DEVICE" --terminate-existing "$
 TIMEOUT=${GATE_TIMEOUT:-1800}
 echo "==> wait for Documents/gate.json from $RUN_ID (up to ${TIMEOUT}s)"
 mkdir -p results
-NAME=${2:-$(xcrun devicectl device info details --device "$DEVICE" 2>/dev/null | awk -F': ' '/productType/{print $2; exit}')}
-NAME=${NAME:-device}
+# The default name is the product type ("• Product Type: iPhone19,4"); a run of only some gates adds them
+# (gate-iPhone19,4-m4.json), so it doesn't overwrite the full run's result.
+PRODUCT=$(xcrun devicectl device info details --device "$DEVICE" 2>/dev/null | awk -F': ' '/Product Type|productType/{print $2; exit}')
+PRODUCT=${PRODUCT:-device}
+if [[ $GATES != sd-turbo,kokoro,m4 ]]; then PRODUCT="$PRODUCT-${GATES//,/+}"; fi
+NAME=${2:-$PRODUCT}
 OUT="results/gate-$NAME.json"
 pull() { xcrun devicectl device copy from --device "$DEVICE" --domain-type appDataContainer --domain-identifier "$BUNDLE_ID" \
   --source "$1" --destination "$2" >/dev/null 2>&1; }
