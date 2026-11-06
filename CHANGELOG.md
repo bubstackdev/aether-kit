@@ -45,6 +45,23 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Gate `ObjectDetectorDenseGateTests`: the host NMS reproduces the reference's detections exactly from its preds; on
     the GPU, the same detections on all six cases (IoU ≥ 0.99999, scores within 2e-6; bar IoU 0.95, 0.01).
   - Catalog: `yolox-s` (macOS), `aether-models/aether-kit-yolox-s`, Apache-2.0.
+- **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`,
+  `DriverID.textEmbedder`), for EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`):
+  - `TextEmbedder` (actor on `StatelessPipeline`), loaded through `Registry.embeddings` (`TextEmbedderDriver` →
+    `TextEmbedderModel.embedder()`); `embed(_:role:_:)` for one text or a batch (one request, one graph call per text)
+    as an `EmbeddingRole` (`.query`, `.document`), with a `TextEmbeddingRequest` (`GPUJob`); `tokenize(_:role:)` then
+    `embed(_: [TokenizedText])` splits the CPU and GPU halves.
+  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimensions`, cosine `similarity(_:)`;
+    `truncated(to:)` for Matryoshka prefixes, re-normalized.
+  - `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
+    `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's
+    special tokens, truncated keeping them (`right`), right-padded with a mask of real ids.
+  - The `embedding` postprocess: pooling in the graph; `normalized: host` L2-normalizes on the CPU.
+  - Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one truncated), cosine ≥ 0.9999999 against
+    the CPU float32 upstream reference (bar 0.999), every query's best document as the reference's.
+  - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
+  - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
+    `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
 
 ### Changed
 
@@ -52,6 +69,7 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
   `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
+- `Manifest.Tokenizer.text` is the typed `Manifest.Tokenizer.Text` (was a `JSONValue`).
 - `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
   `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
 

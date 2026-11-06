@@ -99,7 +99,8 @@ extension Manifest {
         public var stop: [StopToken]?
         public var thinking: Thinking?
         public var toolDialect: String?
-        public var text: JSONValue?
+        /// How an encoder's plain text becomes its fixed-length ids (§2.4 `tokenizer.text`).
+        public var text: Text?
         public var escapes: [Escape]?
         public var preTokenize: String?
         public var `class`: String?
@@ -109,7 +110,7 @@ extension Manifest {
             source: TokenizerSource, chatTemplate: AssetPath? = nil, chatTemplateSha256: String? = nil,
             renderer: String? = nil, turnFormat: JSONValue? = nil, addBos: AddBos? = nil,
             addSpecialTokens: Bool? = nil, stop: [StopToken]? = nil, thinking: Thinking? = nil,
-            toolDialect: String? = nil, text: JSONValue? = nil, escapes: [Escape]? = nil,
+            toolDialect: String? = nil, text: Text? = nil, escapes: [Escape]? = nil,
             preTokenize: String? = nil, class tokenizerClass: String? = nil, markerIds: JSONValue? = nil
         ) {
             self.source = source
@@ -153,6 +154,62 @@ extension Manifest {
             if let thinking {
                 try require(!thinking.open.isEmpty, "tokenizer.thinking.open", "must not be empty")
                 try require(!thinking.close.isEmpty, "tokenizer.thinking.close", "must not be empty")
+            }
+            try text?.validate()
+        }
+
+        /// `tokenizer.text` (§2.4): an encoder's plain-text rules. The text is the role's prompt followed by the input,
+        /// stripped of leading and trailing whitespace and encoded with the tokenizer's special tokens
+        /// (`addSpecialTokens`); a longer one is truncated, then padded to exactly `padTo` ids.
+        public struct Text: Sendable, Hashable, Codable {
+            public enum Side: String, Sendable, Hashable, Codable { case left, right }
+
+            public enum Truncation: String, Sendable, Hashable, Codable {
+                /// Keep the first content ids and every special token the tokenizer adds (HF `longest_first` for one
+                /// sequence).
+                case right
+                /// Cut at a word boundary.
+                case word
+                /// Truncate only a template's body (`template`).
+                case bodyOnly
+            }
+
+            public enum MaskRule: String, Sendable, Hashable, Codable {
+                /// 1 for every real id (prompt and special tokens included), 0 for padding.
+                case realTokens
+            }
+
+            /// The padding id.
+            public var padId: Int?
+            /// Default `right`.
+            public var padSide: Side?
+            /// The fixed length every text is padded to (the graph's static sequence).
+            public var padTo: Int?
+            /// Default `right`.
+            public var truncation: Truncation?
+            /// Role → prompt prepended to the text (EmbeddingGemma: `query`, `document`).
+            public var prompts: [String: String]?
+            /// Default `realTokens`.
+            public var maskRule: MaskRule?
+
+            public init(
+                padId: Int? = nil, padSide: Side? = nil, padTo: Int? = nil, truncation: Truncation? = nil,
+                prompts: [String: String]? = nil, maskRule: MaskRule? = nil
+            ) {
+                self.padId = padId
+                self.padSide = padSide
+                self.padTo = padTo
+                self.truncation = truncation
+                self.prompts = prompts
+                self.maskRule = maskRule
+            }
+
+            func validate() throws(AetherError) {
+                if let padId { try require((0...Int(Int32.max)).contains(padId), "tokenizer.text.padId", "must be in 0...\(Int32.max)") }
+                if let padTo { try require(padTo > 0, "tokenizer.text.padTo", "must be positive") }
+                for key in (prompts ?? [:]).keys.sorted() {
+                    try require(!key.isEmpty, "tokenizer.text.prompts", "a role must not be empty")
+                }
             }
         }
     }

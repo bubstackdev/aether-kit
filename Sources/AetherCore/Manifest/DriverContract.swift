@@ -18,7 +18,7 @@ public enum DriverCatalog {
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
-        DriverContract.depthEstimator.driver: .depthEstimator,
+        DriverContract.depthEstimator.driver: .depthEstimator, DriverContract.textEmbedder.driver: .textEmbedder,
         DriverContract.detectorDense.driver: .detectorDense,
     ]
 
@@ -441,6 +441,23 @@ extension DriverContract {
             "detector": stateless(
                 inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
                 outputs: ["preds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `text-embedder@1` (MANIFEST.md §1.3): one stateless `encoder` graph, in `tokens` and `attentionMask` (`[1, S]`,
+    /// integer), out `embedding` (`[1, D]`, floating point). The driver also requires a tokenizer with `tokenizer.text`
+    /// (`padId`, `padTo` = S) and an `embedding` `postprocess` (checked when it loads).
+    public static let textEmbedder = DriverContract(
+        driver: .textEmbedder,
+        graphs: [
+            "encoder": stateless(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "attentionMask": RoleSpec(required: true, rank: 2, scalar: .integer),
+                ],
+                outputs: ["embedding": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
 }

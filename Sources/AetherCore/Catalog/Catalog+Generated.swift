@@ -965,5 +965,39 @@ extension Catalog {
                 ),
             ]
         ),
+        CatalogEntry(
+            id: "embeddinggemma-300m",
+            task: "text-embedding",
+            repo: "aether-models/aether-kit-embeddinggemma-300m",
+            revision: "d50169656d89f09b76c392aaa9a5c81b585d8384",
+            license: "gemma",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "text-embedder@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 5251, sha256: "2ac7d136524442cca4de57c6792c360be5acb0317da97b6bda69e27f2a9dc683"),
+                                CatalogFile(path: ".gitattributes", size: 1655, sha256: "28446d91d6c90c5d4f669078d1aafd121c1112feaf7c1de374ef0979ed495efe"),
+                                CatalogFile(path: "GEMMA-PROHIBITED-USE-POLICY.txt", size: 4061, sha256: "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b"),
+                                CatalogFile(path: "LICENSE", size: 9144, sha256: "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d"),
+                                CatalogFile(path: "NOTICE", size: 1425, sha256: "80d6f964d375677e517d4123eb3bdd3478d184446674883b0d7917bd474aade1"),
+                                CatalogFile(path: "README.md", size: 1357, sha256: "c086f2d2625d0ec592a8a81e04914875dcf7fc6825eabcb24dcd9dd7d9d2e427"),
+                                CatalogFile(path: "SHA256SUMS", size: 1098, sha256: "c4953b6f2d989e6892a6450d5066ba4687089317bbbfc7bc1346507cffc9e5c2"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/main.hash", size: 32, sha256: "7e862ad9f99fd2f128ff23acbd5f885573a7d7a4517a0c32b53817f2e51f5624"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/main.mlirb", size: 647579874, sha256: "53f0baf671f985d1a555f273a7d6e3a18c26ed143f5537d81ab328a6c0cd045b"),
+                                CatalogFile(path: "embeddinggemma_300m.aimodel/metadata.json", size: 483, sha256: "e649b534f6cb8a52d83d217e2784028b17495fd4f937874826ec2c6f318ea767"),
+                                CatalogFile(path: "export-report.json", size: 4618, sha256: "f8678460ae5b714f658c129e466072654260af0fc9cc2183a00f09c7a9e3d4aa"),
+                                CatalogFile(path: "forge-log.jsonl", size: 490, sha256: "5a8c9a61615debdb966990008523921df6799e317630afa6563c548a0592c08f"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 662, sha256: "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 33385008, sha256: "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 1155346, sha256: "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
     ])
 }

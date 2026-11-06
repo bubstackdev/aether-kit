@@ -63,8 +63,9 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
 Rules:
 - `AetherCore` has no Core AI import. It covers identity, manifests and bytes on disk. It can be tested anywhere.
 - `AetherRuntime` is the **only** module that touches `CoreAIRuntime` types. Nothing above it sees `NDArray` or `AIModel`.
-- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exception is
-  `AetherDecide → AetherText`, because LM readout uses the Generator's prefix machinery.
+- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exceptions are on `AetherText`:
+  `AetherDecide`, because LM readout uses the Generator's prefix machinery, and the modules whose text goes through
+  its tokenizer adapter (`AetherImage`, `AetherVideo`, `AetherEmbeddings`).
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
@@ -582,6 +583,10 @@ runtime pieces:
     `[Detection]` (label, score, box normalized in the source and clipped, optional mask), highest score first. The
     `denseNms` postprocess (objectness × best class, threshold, greedy NMS, top `maxDetections`) runs after the GPU
     grant; `Detection`, `DetectionRequest` and `DetectionLabels` (`coco-91` built in) are shared with the DETR driver.
+  - **`TextEmbedder`** (M4c, AetherEmbeddings, `text-embedder@1`, EmbeddingGemma 300M): `embed([String], role:)` →
+    `[Embedding]` (AetherRuntime's, shared with CLIP). `tokenizer.text` drives tokenization: the role's prompt plus the
+    text, stripped, encoded with the tokenizer's specials, truncated keeping them, right-padded to `padTo` with a mask.
+    One GPU grant per batch, one graph call per text, cancellation between them.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 

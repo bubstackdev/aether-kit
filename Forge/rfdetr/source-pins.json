@@ -1,0 +1,118 @@
+{
+ "comment": "RF-DETR (Roboflow, Apache-2.0) nano detection and seg-nano checkpoints, the upstream model code they run with, and the reference-case photos. SHA-256 of every upstream source file the harness imports or reads, of each checkpoint (also checked against upstream's own MD5 in assets/model_weights.py) and of each photo, pinned 2026-11-06. Upstream's LICENSE, README and docs/snippets/license-rfdetr.md give the rfdetr package, Nano/Small/Medium/Large detection and every Seg size as Apache-2.0; only the rfdetr[plus] sizes (Atto, Femto, Pico, XLarge, 2XLarge) are PML 1.0, and none of them is used.",
+ "upstreamCode": {
+  "repository": "roboflow/rf-detr",
+  "commit": "639eac4555ceb89ef399ccda3fde716bbcfe34cb",
+  "tag": "1.12.0",
+  "license": "Apache-2.0",
+  "files": {
+   "LICENSE": "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca",
+   "src/rfdetr/_namespace.py": "7b5ab31bd5a8f99b2588c766a3a8c5193d79fd7326c84f3610282f33143f7280",
+   "src/rfdetr/assets/__init__.py": "b7a1e220c7ecdce2aea7b19d53d57ddcfcb2bfc12401ebe8ae4967fd87719f6d",
+   "src/rfdetr/assets/coco_classes.py": "e839cf911b26ff3b363bb23e4d07861cf5bf85a5610b2025472b71b36941703e",
+   "src/rfdetr/assets/model_weights.py": "f14728ad0db9dd3563031085f796861d4807587fc0c101d4ec33545de3e3f2d3",
+   "src/rfdetr/config.py": "5968e352e67bed9dabaaccfe0ee23caaa07569455e1eab47023d5622be9e5675",
+   "src/rfdetr/export/__init__.py": "93ebfa5a435dcdad7f7e823cf9474f4d3cd237ed8cc2671abc30379fa51a2dc6",
+   "src/rfdetr/export/_coreai/__init__.py": "ba440af965e0d4fa5d9d9eb1bbca18816cd10cfc26980ad5a566e92eee1eb2a2",
+   "src/rfdetr/export/_coreai/decompositions.py": "c4e95358954b852c6180e71ab9e10f69b2bf626ccc40206e453e1d0ed7abc798",
+   "src/rfdetr/models/__init__.py": "92205aee7e54d41f59d2839c92ac5e3f7773c50efb69914dc7f0964c050dc926",
+   "src/rfdetr/models/_assignment.py": "9ca377e75faafe67d3bcf2901a42e3c72f7715b447aecc2435d1eb357f457d43",
+   "src/rfdetr/models/_defaults.py": "57c129ab56d94f06a6f4fbf71abf5099b5f73a70970ad17ee7f2de9bf79715aa",
+   "src/rfdetr/models/_types.py": "cfd9d5a78ca68b754a722a0f012bea1735db394604ce43d0b1f322da1729ac4a",
+   "src/rfdetr/models/backbone/__init__.py": "f1df4341c4c8050139a430d0609656d40f0f3bf84d1774865dbc26dd48bd6ffa",
+   "src/rfdetr/models/backbone/backbone.py": "b8d628bc9b2633c57feeee131cf3a75f73dee91438c182078955379ec9668289",
+   "src/rfdetr/models/backbone/base.py": "7807037ad9daf9f56c179266efa22c97ad8229beee31ca1b9027cd5aabcf6d5e",
+   "src/rfdetr/models/backbone/dinov2.py": "bbbc847cbdb471be439f72ccac1bdc2298fb6f960eea1872d9ede30d42b3276b",
+   "src/rfdetr/models/backbone/dinov2_with_windowed_attn.py": "b812510fb15b16045312ee9929ad275b732ad2b72f8053edeec82399123d5db4",
+   "src/rfdetr/models/backbone/projector.py": "8279239bfdeb714875404b5a27b56a762658f066b108e74bcd8b3c3c2b8898de",
+   "src/rfdetr/models/backbone/dinov2_configs/dinov2_small.json": "e0060385eab6755663ef016108cf53d99955e93ad9f17215ca3ab00611f3db03",
+   "src/rfdetr/models/criterion.py": "fe3a1b05acc7edc4476c03954d75e2b9c91d5612da333782aecd23d0d1cea5c3",
+   "src/rfdetr/models/heads/__init__.py": "6b4f2eadb7198ec8db3592e98d1dcd556ade02682924a52b3261785f556e0b47",
+   "src/rfdetr/models/heads/keypoints.py": "8e4c31e680e867af7b47b53d2e6db56eea9b47dbc24ef021303cddf5bf5b565d",
+   "src/rfdetr/models/heads/segmentation.py": "5de847861e2bd2fab8853f442e263f4e9c0eb75c5b3fbc6a03bb25e9c7115e1e",
+   "src/rfdetr/models/lwdetr.py": "248faf15d673bc18f51f60bb55245f64eee40eb9c8adacea398aebdadad2243b",
+   "src/rfdetr/models/matcher.py": "2521d58fd5c3270f8f352c14ae299364347bd27792e18696de8bb20c637765f6",
+   "src/rfdetr/models/math.py": "3dda06e8d27ef88f0b05b616e16ac20f50ddf05ac38a87342e893d23712fe241",
+   "src/rfdetr/models/ops/__init__.py": "9122ec3719667aa883f7aab5aa109547b20b09e00c49ba22cbea865a980d4c3c",
+   "src/rfdetr/models/ops/functions/__init__.py": "73ca6c8237fcdad5b07a9a168c9dd19eed31457cce0bf15eca1ad3c17ec1933e",
+   "src/rfdetr/models/ops/functions/ms_deform_attn_func.py": "f770a9bef4c67272b3c5278840388d965d9d3cee78b525a093db67800494eed8",
+   "src/rfdetr/models/ops/modules/__init__.py": "8c77a4beb80ac08e19a779bd31f30859d14974cdf619b33e27ea6cdd0d5e30e4",
+   "src/rfdetr/models/ops/modules/ms_deform_attn.py": "9c1967ceedc57f2544c3f58d323a465befb010f2877848d4e99be3d762cd1060",
+   "src/rfdetr/models/position_encoding.py": "d93533fdd7703cd6169b023f78a1e14d8603810ec3785991212a1b7b057555c4",
+   "src/rfdetr/models/postprocess.py": "0e9a13190e559e517d84b2239ab034fa7bed5e1f6372b0a608c2a095c1b67b82",
+   "src/rfdetr/models/transformer.py": "279c0af7e999ff4ce58845c94c87bd9211356d62cb1eeaeb626fe2680fbb8f4d",
+   "src/rfdetr/models/weights.py": "162a354b54d8e73ccdac77960bea1d9db46ade68847f1eaed289f541b34e0c14",
+   "src/rfdetr/platform/__init__.py": "a973958cef01a8c495eff9b9f7cfd01d9f8076bbaf891fb37c3fad7292239efe",
+   "src/rfdetr/utilities/__init__.py": "f0b703ec61767a90e64b939849cd7defd88784ccb7dc6b2d665c15080a1006c6",
+   "src/rfdetr/utilities/box_ops.py": "6e2eff801fdbefdd8676aad3f05721888304c8b18288b01c7f78a382adc35cdd",
+   "src/rfdetr/utilities/compiler.py": "eb841601022b1225fc4a416dbae5e78954ea735ad4f1aa308f723d4f96d35639",
+   "src/rfdetr/utilities/distributed.py": "1f530319c7414f9ab4872e5d84c9bd1c80c0ca51e5a840e07434e5fab8d6995e",
+   "src/rfdetr/utilities/files.py": "5d1ba56aa75a593d113d923e8520fa0a95e9cbfe758ca52afad913f3a49884ec",
+   "src/rfdetr/utilities/io.py": "8c9ab221fc19bfc43141c22c2767a55e65adfbc3d26e0c5a96c48bd953c7db5f",
+   "src/rfdetr/utilities/keypoints.py": "5bd0771cb0f8245ebbc5fe4006fa5578de4316c0d62b06ede9e6db6787967a7f",
+   "src/rfdetr/utilities/logger.py": "ae75d6e78977dfbdaee6758eb0fccc0dfb55f62f66a018d44a4d320daf4510fe",
+   "src/rfdetr/utilities/package.py": "b36bfda82c0251dd3d2a49a3aad18cbf9ab19d4e7f51c015ebcce1fefb34589b",
+   "src/rfdetr/utilities/reproducibility.py": "50e2af19da8c386ac4b24e3003cbafa77e8bf5a6f9a0e242d5a0173f2e18ab78",
+   "src/rfdetr/utilities/state_dict.py": "84e5763cd38286373fe3447cb65de82106a36d38542c6675d8f7371c0d81fc63",
+   "src/rfdetr/utilities/tensors.py": "122f44a151db786ef4845c5d89e5cb2209624651d3638f007e3c0867f7312827"
+  }
+ },
+ "checkpoints": {
+  "nano": {
+   "file": "rf-detr-nano.pth",
+   "url": "https://repo.roboflow.com/rfdetr/nano_coco/checkpoint_best_regular.pth",
+   "md5": "fb6504cce7fbdc783f7a46991f07639f",
+   "bytes": 366287238,
+   "sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+   "license": "Apache-2.0"
+  },
+  "seg-nano": {
+   "file": "rf-detr-seg-nano.pt",
+   "url": "https://repo.roboflow.com/rfdetr/rf-detr-seg-n-ft.pth",
+   "md5": "9995497791d0ff1664a1d9ddee9cfd20",
+   "bytes": 134545398,
+   "sha256": "a44613a4ecd6b5ba61a62002c600b0b6cb7a9da2936a45317ec4b62c635fb99b",
+   "license": "Apache-2.0"
+  }
+ },
+ "referenceImages": {
+  "comment": "Wikimedia Commons originals, each marked CC0 by its author; used only as reference-case inputs, never bundled.",
+  "files": {
+   "bicycle-parade-271.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/51/Moscow_bicycle_parade_2025-05-17_%28271%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Moscow_bicycle_parade_2025-05-17_(271).jpg",
+    "author": "Retired electrician",
+    "license": "CC0-1.0",
+    "sha256": "5fe24f1fd4e150d1dbfdbe1584ddd0402690acb02af896a7e124c2f42e005f01"
+   },
+   "bicycle-parade-285.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Moscow_bicycle_parade_2025-05-17_%28285%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Moscow_bicycle_parade_2025-05-17_(285).jpg",
+    "author": "Retired electrician",
+    "license": "CC0-1.0",
+    "sha256": "e394d9eadb012abe2fc9edfe258f3e0feaa016db51e7091fe068687782cfda43"
+   },
+   "wood-green-1981.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Wood_Green%2C_North_London_1981_-_12056707936.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Wood_Green,_North_London_1981_-_12056707936.jpg",
+    "author": "beareye2010",
+    "license": "CC0-1.0",
+    "sha256": "d6de02ca6a8e5fe979c8acfa82bc1f8f2d253c8903d840b6e14c0b7c544f2ccc"
+   },
+   "black-cat-sofa.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/97/Black_cat_curled_up_on_a_sofa_in_Newcastle_upon_Tyne%2C_UK.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Black_cat_curled_up_on_a_sofa_in_Newcastle_upon_Tyne,_UK.jpg",
+    "author": "Salwa Farwaneh Dameh",
+    "license": "CC0-1.0",
+    "sha256": "4aa132fd50523f458d5dccecadcd1ab254e3c028434237a8940af51eb9ab93e7"
+   },
+   "burnside-irt.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Burnside_IRT_fr_GC_jeh.JPG",
+    "page": "https://commons.wikimedia.org/wiki/File:Burnside_IRT_fr_GC_jeh.JPG",
+    "author": "Jim.henderson",
+    "license": "CC0-1.0",
+    "sha256": "58ac3c283e5e5f210d8160a356582e8e58d7cf951377e774db3bf95a35fd2da0"
+   }
+  }
+ }
+}
