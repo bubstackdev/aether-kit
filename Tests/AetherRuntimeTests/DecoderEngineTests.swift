@@ -101,18 +101,18 @@ struct DecoderEngineTests {
         let logits = try await phased.prefill(Self.prompt(10))!
         #expect(pf.calls == [4, 4])
         #expect(main.calls == [1, 1])
-        #expect(Logits.argmax(logits.last) == Self.expectedGreedy(Self.prompt(10), count: 1)[0])
+        #expect(try Logits.argmax(logits.last) == Self.expectedGreedy(Self.prompt(10), count: 1)[0])
 
         let (padded, main2, pf2) = try await Self.engine(FakeLM.Config(staticStep: true), prefillChunk: 4, padTail: true)
         let padLogits = try await padded.prefill(Self.prompt(10))!
         #expect(pf2.calls == [4, 4, 4])
         #expect(main2.calls.isEmpty)
         #expect(await padded.position == 10)
-        #expect(Logits.argmax(padLogits.last) == Logits.argmax(logits.last))
+        #expect(try Logits.argmax(padLogits.last) == Logits.argmax(logits.last))
         // The padded rows left nothing behind: decoding continues exactly.
-        let continued = try await padded.step(Logits.argmax(padLogits.last))
-        let reference = try await phased.step(Logits.argmax(logits.last))
-        #expect(Logits.argmax(continued.last) == Logits.argmax(reference.last))
+        let continued = try await padded.step(try Logits.argmax(padLogits.last))
+        let reference = try await phased.step(try Logits.argmax(logits.last))
+        #expect(try Logits.argmax(continued.last) == Logits.argmax(reference.last))
     }
 
     @Test func everyScheduleGivesTheSameOutput() async throws {
@@ -183,7 +183,7 @@ struct DecoderEngineTests {
         }
         #expect(await last.position == 0, "a refused feed changes nothing")
         let one = try #require(try await last.prefill(Self.prompt(10), logits: .last))
-        #expect(Logits.argmax(one.last) == Self.expectedGreedy(Self.prompt(10), count: 1)[0])
+        #expect(try Logits.argmax(one.last) == Self.expectedGreedy(Self.prompt(10), count: 1)[0])
         // One token per call can return every row even on a last-row graph.
         let (decodeOnly, _, _) = try await Self.engine(FakeLM.Config(staticStep: true))
         #expect(try await decodeOnly.prefill(Self.prompt(3), logits: .all)?.rows == 3)
@@ -194,7 +194,14 @@ struct DecoderEngineTests {
     @Test func capacityIsDerivedFromMemory() throws {
         let sizing = KVSizing(maxContext: 8192, platformCap: nil, bytesPerToken: 1000, fixedBytes: 100_000, modelBytes: 400_000)
         #expect(try sizing.capacity(budget: 100_000_000) == 8192)  // maxContext bounds it
-        #expect(try sizing.capacity(budget: 2_500_000) == 1792)  // (2.5M − 0.5M) / 1000 = 2000, rounded down to 256s
+        // 2.0M left for KV: growing from 1024 to C > 1024 holds 1024 + C slots at once, so growing fits 1024 at most;
+        // upfront, with no growth copy, (2.5M − 0.5M) / 1000 = 2000 fits, rounded down to 256s. Upfront wins.
+        #expect(try sizing.capacity(budget: 2_500_000) == 1792)
+        #expect(sizing.initialAllocation(capacity: 1792, budget: 2_500_000) == 1792, "allocated upfront")
+        #expect(sizing.initialAllocation(capacity: 8192, budget: 100_000_000) == 1024, "grows when the copy fits")
+        var growing = sizing
+        growing.initialCapacity = 1024
+        #expect(try growing.capacity(budget: 2_500_000) == 1024, "an explicit initial capacity always grows")
         var capped = sizing
         capped.platformCap = 1024
         #expect(try capped.capacity(budget: 100_000_000) == 1024)
@@ -217,10 +224,12 @@ struct DecoderEngineTests {
 
     @Test func engineSizesKVFromTheBudgetAndGrowsGeometrically() async throws {
         // The fake's KV is 2 float32 states plus the int32 history and positions: 16 bytes per token. Fixed: 512 + 8
-        // logits rows of 64 float32 = 133,120 bytes. (200,000 − 133,120) / 16 = 4,180 → 4,096.
+        // logits rows of 64 float32 = 133,120 bytes. (200,000 − 133,120) / 16 = 4,180 slots → 4,096, allocated
+        // upfront: growing from 1024 would need 4,096 + 2,048 slots at the last copy.
         let (tight, _, _) = try await Self.engine(maxContext: 100_000, options: Self.options(budget: 200_000))
         #expect(tight.sizing.bytesPerToken == 16 && tight.sizing.fixedBytes == 133_120)
         #expect(tight.description.maxCapacity == 4096)
+        #expect(await tight.capacity == 4096)
         await #expect(throws: AetherError.self) {
             _ = try await Self.engine(maxContext: 100_000, options: Self.options(capacity: 5000, budget: 200_000))
         }
@@ -244,7 +253,7 @@ struct DecoderEngineTests {
         try await engine.rewind(to: 12)
         #expect(await engine.position == 12)
         let after = try await engine.prefill([7])!
-        #expect(Logits.argmax(after.last) == Self.expectedGreedy(prompt + [7], count: 1)[0])
+        #expect(try Logits.argmax(after.last) == Self.expectedGreedy(prompt + [7], count: 1)[0])
         await #expect(throws: AetherError.self) { try await engine.rewind(to: 99) }
     }
 
@@ -271,7 +280,7 @@ struct DecoderEngineTests {
     @Test func greedySessionAccountsForFedTokens() async throws {
         let (engine, _, _) = try await Self.engine()
         let logits = try await engine.prefill(Self.prompt(5))!
-        try await engine.beginGreedy(first: Logits.argmax(logits.last), limit: 10)
+        try await engine.beginGreedy(first: try Logits.argmax(logits.last), limit: 10)
         await #expect(throws: AetherError.self) { _ = try await engine.prefill([1]) }
         _ = try await engine.nextGreedy()
         _ = try await engine.nextGreedy()
@@ -282,7 +291,7 @@ struct DecoderEngineTests {
 
     // MARK: Sampling
 
-    @Test func samplerIsDeterministicPerSeed() {
+    @Test func samplerIsDeterministicPerSeed() throws {
         let logits: [Float] = (0..<50).map { Float(($0 * 37) % 50) / 10 }
         func draw(_ p: SamplingParameters, _ n: Int = 40) -> [Int32] {
             var s = Sampler(p)
@@ -295,7 +304,7 @@ struct DecoderEngineTests {
         #expect(a == draw(SamplingParameters(temperature: 0.8, topK: 20, topP: 0.9, seed: 42)))
         #expect(a != draw(SamplingParameters(temperature: 0.8, topK: 20, topP: 0.9, seed: 43)))
         #expect(Set(a).count > 1)
-        let best = Logits.argmax(logits[...])
+        let best = try Logits.argmax(logits[...])
         #expect(draw(.greedy) == Array(repeating: best, count: 40))
         #expect(draw(SamplingParameters(temperature: 1, topK: 1, seed: 7)) == Array(repeating: best, count: 40))
         #expect(draw(SamplingParameters(temperature: 1, topP: 0.0001, seed: 7)) == Array(repeating: best, count: 40))
@@ -308,6 +317,6 @@ struct DecoderEngineTests {
         var rng = SeededRandom(seed: 9)
         var rng2 = SeededRandom(seed: 9)
         #expect((0..<5).map { _ in rng.next() } == (0..<5).map { _ in rng2.next() })
-        #expect(Logits.argmax([1, 3, 3, 2]) == 1, "ties go to the lowest index")
+        #expect(try Logits.argmax([1, 3, 3, 2]) == 1, "ties go to the lowest index")
     }
 }
