@@ -63,7 +63,8 @@ let package = Package(
         .target(name: "AetherSpeech", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         // Video with audio (G4): `minimax-h3@1` (MiniMax H3), whose Qwen3-VL prompt goes through AetherText's tokenizer.
         .target(name: "AetherVideo", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
-        .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        // Embeddings (M4c+): `text-embedder@1` (EmbeddingGemma), whose text goes through AetherText's tokenizer.
+        .target(name: "AetherEmbeddings", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherDecide", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(
             name: "Aether",
@@ -116,6 +117,16 @@ let package = Package(
         .testTarget(
             name: "AetherImageTests",
             dependencies: ["AetherImage", "AetherRuntime", "AetherCore", "AetherHost"],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherVisionTests",
+            dependencies: ["AetherVision", "AetherRuntime", "AetherCore", "AetherHost"],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherEmbeddingsTests",
+            dependencies: ["AetherEmbeddings", "AetherRuntime", "AetherCore", "AetherHost"],
             swiftSettings: common
         ),
         .testTarget(

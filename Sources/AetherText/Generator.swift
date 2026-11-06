@@ -64,7 +64,8 @@ public struct GenerationSummary: Sendable, Equatable {
 }
 
 /// The single decode loop (DESIGN.md §7), shared by ChatSession, the FoundationModels executor and future
-/// multimodal front ends. It owns a ``DecoderEngine`` and keeps a token mirror of the engine's state:
+/// multimodal front ends. It owns a `LanguageEngine` (``DecoderEngine`` for `decoder-lm@1`) and keeps a token mirror of
+/// the engine's state:
 /// - attention-only models reuse the longest common prefix by `rewind` (O(1));
 /// - models with recurrent state reuse the live state when the new prompt extends it, else the snapshot taken at
 ///   the end of the previous prompt (with that prompt's last logits), else start over.
@@ -74,7 +75,9 @@ public struct GenerationSummary: Sendable, Equatable {
 /// ``gpu`` (by default ``GPUAdmission/shared``) and requests are served one at a time: in GPU priority order
 /// (`GenerationParameters.job`), in arrival order within a priority.
 public actor Generator {
-    public nonisolated let engine: DecoderEngine
+    /// The engine. Cast it (`as? DecoderEngine`) for a backend's own diagnostics; generate only through the Generator,
+    /// which keeps its token mirror in step with the engine's state.
+    public nonisolated let engine: any LanguageEngine
     /// The GPU admission every request takes before it renders or prefills.
     public nonisolated let gpu: GPUAdmissionOwner
     public nonisolated let decoder: any TokenDecoding
@@ -87,14 +90,14 @@ public actor Generator {
     private var liveValid = true
     /// Hybrids: the snapshots of the last prompt, at the end of its rendered history (the prefix the next turn's
     /// prompt shares) and at its end (with its last logits, for a regenerate).
-    private var snapshots: [(tokens: [Int32], state: DecoderEngine.Snapshot, logits: Logits?)] = []
+    private var snapshots: [(tokens: [Int32], state: EngineSnapshot, logits: Logits?)] = []
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
     /// The vocabulary indexed for JSON constraints, built on the first structured request (63 ms for Qwen3 in 0.0.x).
     private var jsonVocabulary: JSONVocabulary?
 
     public init(
-        engine: DecoderEngine, decoder: any TokenDecoding, renderer: any PromptRenderer, stopTokens: Set<Int32>,
+        engine: any LanguageEngine, decoder: any TokenDecoding, renderer: any PromptRenderer, stopTokens: Set<Int32>,
         profile: OutputProfile, gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
     ) {
         self.engine = engine
@@ -120,7 +123,7 @@ public actor Generator {
             // The history alone (no generation prompt): where the next turn's prompt will diverge from this one. Only a
             // recurrent model uses it (to snapshot there); an attention-only model reuses any common prefix.
             var boundary: Int?
-            if generator.engine.description.hasRecurrentState {
+            if generator.engine.hasRecurrentState {
                 let history = try generator.renderer.render(
                     messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
                 boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
@@ -185,13 +188,13 @@ public actor Generator {
 
     /// Brings the engine to `prompt`'s end, reusing what it can. Returns the prompt's last logits and the reused count.
     private func prepare(_ prompt: [Int32], boundary: Int?) async throws -> (Logits, Int) {
-        let recurrent = engine.description.hasRecurrentState
+        let recurrent = engine.hasRecurrentState
         if !recurrent {
             let lcp = liveValid ? Self.commonPrefix(mirror, prompt) : 0
             let keep = min(lcp, prompt.count - 1)
             try await engine.rewind(to: keep)
             mirror = Array(prompt.prefix(keep))
-            let logits = try await engine.prefill(Array(prompt[keep...]))!
+            let logits = try await engine.prefill(Array(prompt[keep...]), logits: .last)!
             mirror = prompt
             return (logits, keep)
         }
@@ -212,7 +215,7 @@ public actor Generator {
         } else {
             try await engine.reset()
         }
-        var fresh: [(tokens: [Int32], state: DecoderEngine.Snapshot, logits: Logits?)] = []
+        var fresh: [(tokens: [Int32], state: EngineSnapshot, logits: Logits?)] = []
         let logits: Logits
         if reused == prompt.count, let stored {
             logits = stored
@@ -220,9 +223,9 @@ public actor Generator {
             if let boundary, boundary > reused, boundary < prompt.count {
                 _ = try await engine.prefill(Array(prompt[reused..<boundary]), logits: .none)
                 fresh.append((Array(prompt[..<boundary]), try await engine.snapshot(), nil))
-                logits = try await engine.prefill(Array(prompt[boundary...]))!
+                logits = try await engine.prefill(Array(prompt[boundary...]), logits: .last)!
             } else {
-                logits = try await engine.prefill(Array(prompt[reused...]))!
+                logits = try await engine.prefill(Array(prompt[reused...]), logits: .last)!
             }
         }
         mirror = prompt
@@ -250,7 +253,7 @@ public actor Generator {
         let tag = profile.thinkingTag
         let open = tag.flatMap { decoder.tokenID($0.open) }, close = tag.flatMap { decoder.tokenID($0.close) }
         if jsonVocabulary == nil {
-            jsonVocabulary = JSONVocabulary(bytes: bytes, headRows: engine.description.vocab, excluded: Set([open, close].compactMap { $0 }.map(Int.init)))
+            jsonVocabulary = JSONVocabulary(bytes: bytes, headRows: engine.vocab, excluded: Set([open, close].compactMap { $0 }.map(Int.init)))
         }
         let reasoning = open.flatMap { open in close.map { JSONSchemaConstraint.Reasoning(open: open, close: $0) } }
         return try JSONSchemaConstraint(schema: schema, vocabulary: jsonVocabulary!, stopTokenIDs: stopTokens, reasoning: reasoning,
@@ -291,7 +294,7 @@ public actor Generator {
         let pipelined = parameters.sampling.isPlainGreedy && processors.isEmpty
         // Random sampling never picks the padding rows of a head wider than the tokenizer (Qwen3: 151,936 rows,
         // 151,669 tokens); greedy never does in practice.
-        let vocab = engine.description.vocab
+        let vocab = engine.vocab
         var base = TokenConstraint.unconstrained
         if !parameters.sampling.isGreedy, let count = decoder.tokenBytes?.count, count < vocab {
             base = .allowed(TokenSet(range: 0..<count, vocabularySize: vocab))
@@ -330,7 +333,7 @@ public actor Generator {
             token = try choose(logits.last, constraint)
             stop = state.accept(token)
             if pipelined {
-                mode = "\(await engine.decodeMode)"
+                mode = await engine.decodeModeDescription
                 if !stop {
                     try await engine.beginGreedy(first: token, limit: state.maxTokens - 1)
                     do {
@@ -343,7 +346,7 @@ public actor Generator {
                 }
             } else {
                 mode = processors.isEmpty ? "host logits + CPU sampler (depth 1)" : "host logits + CPU sampler + constraint (depth 1)"
-                let capacity = engine.description.maxCapacity
+                let capacity = engine.maxCapacity
                 while !stop, !Task.isCancelled {
                     guard await engine.position < capacity else { break }
                     // The constraint on the next token is computed while the step that feeds this one runs.

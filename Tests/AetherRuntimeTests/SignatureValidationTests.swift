@@ -82,11 +82,11 @@ struct SignatureValidationTests {
 
     @Test func knownButUnimplementedDriversAreUnsupported() throws {
         var manifest = try Fixtures.manifest("qwen3-0.6b")
-        manifest.driver = "detector-dense@1"
+        manifest.driver = "gliner-classifier@1"
         #expect {
             try SignatureValidator.validate(manifest, signatures: ["decoder": Fixtures.signatures("qwen3-0.6b")])
         } throws: { error in
-            if case AetherError.unsupported(let driver) = error { return driver.description == "detector-dense@1" }
+            if case AetherError.unsupported(let driver) = error { return driver.description == "gliner-classifier@1" }
             return false
         }
         manifest.driver = "image-detector@7"

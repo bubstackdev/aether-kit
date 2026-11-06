@@ -55,7 +55,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability() · StatelessPipeline
           │
-     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · DecoderEngine · Registry · ImageInput/ImagePreprocessor · AetherError
+     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · LanguageEngine/DecoderEngine · Registry · ImageInput/ImagePreprocessor · AetherError
           │
      AetherCore         ModelRef · Catalog (generated) · ModelStore (download/install/verify) · Manifest · Device
 ```
@@ -63,8 +63,9 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
 Rules:
 - `AetherCore` has no Core AI import. It covers identity, manifests and bytes on disk. It can be tested anywhere.
 - `AetherRuntime` is the **only** module that touches `CoreAIRuntime` types. Nothing above it sees `NDArray` or `AIModel`.
-- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exception is
-  `AetherDecide → AetherText`, because LM readout uses the Generator's prefix machinery.
+- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exceptions are on `AetherText`:
+  `AetherDecide`, because LM readout uses the Generator's prefix machinery, and the modules whose text goes through
+  its tokenizer adapter (`AetherImage`, `AetherVideo`, `AetherEmbeddings`).
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
@@ -230,21 +231,41 @@ final class Graph {                               // non-Sendable; owned by one 
 ### 6.2 DecoderEngine (the owned LLM engine)
 
 There is one engine type for every causal decoder. Chat, VLM decoders, ASR-LLMs and the decision readout all use it.
-The sketch below is the shape; the implemented API is `Sources/AetherRuntime/Decoder/DecoderEngine.swift` (M2).
 Every async entry point is non-reentrant: a call that arrives during another operation is refused, not interleaved.
 
+The text stack reaches it only through the **`LanguageEngine` protocol** (`Sources/AetherRuntime/LanguageEngine.swift`,
+B1 in docs/BACKENDS.md): an `Actor`-constrained protocol at the token level, with an opaque `EngineSnapshot`, so a
+second backend (an `AetherMLX` sub-package) plugs in under `Generator`, `ChatSession`, structured output, tools, the
+FoundationModels bridge and the decision readout without touching them. `DecoderEngine` is its Core AI conformer;
+Core AI specifics (`Options`, the canary, `decodeMode`, `description`, `sizing`) stay on the concrete type.
+`Generator.engine` is `any LanguageEngine`: an existential costs one witness-table call per actor hop, which the
+decode-speed gate measures against the concrete type (no regression at depth 3).
+
 ```swift
-actor DecoderEngine {
-    init(manifest: Manifest.Graph, url: URL, options: EngineOptions) async throws
+public protocol LanguageEngine: Actor {
+    nonisolated var vocab: Int { get }                         // logits row width (the head's rows)
+    nonisolated var maxCapacity: Int { get }
+    nonisolated var hasRecurrentState: Bool { get }            // snapshot/restore instead of a partial rewind
     var position: Int { get }                                  // tokens resident in state
-    func prefill(_ tokens: [Int32], logitsAt: LogitsSelection = .last) async throws -> Logits
-    func step(_ token: Int32) async throws -> Logits           // one decode step
-    func hidden(at positions: [Int]) async throws -> Tensor     // requires a `hidden` output role
-    func rewind(to position: Int) throws                        // KV: drop positions beyond; recurrent: requires snapshot
-    func snapshot() throws -> EngineSnapshot                    // KV up to position + recurrent-state copy
-    func restore(_ s: EngineSnapshot) throws                    // validates before touching state
+    var stateRanAhead: Bool { get }                            // pipelined recurrent steps ran past `position`
+    var decodeModeDescription: String { get }
+    func prefill(_ tokens: [Int32], logits: LogitsSelection) async throws(AetherError) -> Logits?
+    func step(_ token: Int32) async throws(AetherError) -> Logits
+    func rewind(to position: Int) async throws(AetherError)   // KV: drop positions beyond; recurrent: only to 0
+    func reset() async throws(AetherError)
+    func snapshot() async throws(AetherError) -> EngineSnapshot // position, byteCount, the engine's own payload
+    func restore(_ snapshot: EngineSnapshot) async throws(AetherError) // validates before touching state
+    func beginGreedy(first: Int32, limit: Int) async throws(AetherError)
+    func nextGreedy() async throws(AetherError) -> Int32?      // the pipelined greedy path
+    func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int)
 }
 ```
+
+The implemented engine is `Sources/AetherRuntime/Decoder/DecoderEngine.swift` (M2). `hidden(at:)` (for the decision
+heads) joins the protocol as an optional capability when M5 needs it. The engine-invariant checks
+(`Tests/AetherTestSupport/LanguageEngineInvariants.swift`: greedy equals stepping, chunked prefill equals
+token-by-token, two-turn reuse by rewind or snapshot equals a fresh turn) take `any LanguageEngine`, so every
+backend runs the same suite.
 
 - **Graph contract** (`decoder-lm@1`):
   - Inputs are `tokens [1,S]` and `positions [1,P]`. `S` is dynamic, or static per phase (`staticSequence`, such
@@ -344,8 +365,8 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 ### 6.5 AetherImage (G1–G3)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
-`LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
-lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
+`LatentDiffusionPipeline` is an actor that encodes the prompt (`CLIPTokenizer`, in AetherRuntime since M4d so CLIP's
+text tower shares it, because swift-transformers' BPE lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
 scaled input, the table's timestep, the Euler epsilon update), then the VAE decoder.
 
 - Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
@@ -573,6 +594,26 @@ runtime pieces:
   `detrSigmoid`, `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`, all decoded and validated since M4a) and an
   actor on `StatelessPipeline`. Graphs bind by role (`image`, `boxes`, `scores`, `depth`, `embedding`). Pad ids and
   pooling (mean or CLS) come from the manifest and tokenizer config.
+  - **`DepthEstimator`** (M4b, `depth-estimator@1`, Depth Anything 3 small): `estimate(ImageInput | PreparedImage,
+    DepthRequest)` → `DepthMap` (row-major values, optional confidence, the manifest's polarity, the geometry). With
+    `resizeBack` (manifest default, request override) both maps are resampled to the source through the geometry:
+    bilinear at pixel centres, clamped to the content rectangle, so letterbox padding is never read. The GPU grant
+    covers only the graph call; the resample runs after it.
+  - **`ObjectDetector`** (M4e, `detector-dense@1`, YOLOX-S): `detect(ImageInput | PreparedImage, DetectionRequest)` →
+    `[Detection]` (label, score, box normalized in the source and clipped, optional mask), highest score first. The
+    `denseNms` postprocess (objectness × best class, threshold, greedy NMS, top `maxDetections`) runs after the GPU
+    grant; `Detection`, `DetectionRequest` and `DetectionLabels` (`coco-91` built in) are shared with the DETR driver.
+    M4f adds `detector-detr@1` (RF-DETR nano, seg-nano) as a second head of the same actor: `detrSigmoid` (sigmoid,
+    top-k over (query, class) pairs, no NMS) and, with `masks`, compact `DetectionMask`s at the source's resolution.
+  - **`ImageTextEncoder`** (M4d, `clip-joint@1`, CLIP ViT-B/32): `embed(image:)`, `embed(texts:)` and
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`, template `"a photo of a {}."`
+    by default). Texts run in the text graph's `batch` buckets, each bucket its own resident graph, unused rows from
+    `tokenizer.text.unusedBatchRows`. `Embedding` and `LabelScore` are AetherRuntime values, shared with
+    AetherEmbeddings without either module depending on the other.
+  - **`TextEmbedder`** (M4c, AetherEmbeddings, `text-embedder@1`, EmbeddingGemma 300M): `embed([String], role:)` →
+    `[Embedding]` (AetherRuntime's, shared with CLIP). `tokenizer.text` drives tokenization: the role's prompt plus the
+    text, stripped, encoded with the tokenizer's specials, truncated keeping them, right-padded to `padTo` with a mask.
+    One GPU grant per batch, one graph call per text, cancellation between them.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 
@@ -582,7 +623,7 @@ runtime pieces:
   options. `State` is a typed enum: `.text`, `.json(JSONValue)`, `.image`, `.audio`.
 - **`Decider`** is a protocol with a `capabilities` OptionSet (`readsImages`, `readsAudio`, `maxOptions`) and
   `decide(state:questions:) async throws -> [Answer]`.
-- **`LMReadoutDecider`** (v1) runs on `DecoderEngine`:
+- **`LMReadoutDecider`** (v1) runs on a `LanguageEngine` (§6.2):
   1. Prefill the state once and snapshot.
   2. For each question, restore, prefill the question and read the answer-slot logits.
   3. Apply calibration temperature (from the catalog).

@@ -27,10 +27,64 @@ licenses and NOTICE lines separately (the Krea 2 Community License; the
 Stability AI Community License; FLUX.2 [klein]'s Apache-2.0 LICENSE.md with a
 modification NOTICE; the MiniMax H3 Community License).
 
+Depth Anything 3 (https://github.com/ByteDance-Seed/Depth-Anything-3, commit
+3d835ec1a5802d64a8b8b15f817a1ab54809bfe4), Apache License 2.0, copyright
+ByteDance Seed; it includes DINOv2 vision transformer code, Apache License 2.0,
+copyright (c) Meta Platforms, Inc. and affiliates. Forge/depth/depth_graphs.py
+wraps DepthAnything3Net's single-view depth path (the DINOv2 backbone and the
+DualDPT head, with ImageNet normalization folded in) as an export graph and
+re-expresses its 2D rotary position embedding with a static table; the
+upstream code is fetched unmodified by Forge/depth/fetch_upstream.py. The
+depth-anything/DA3-SMALL weights are not part of this repository; the
+exported bundle carries their Apache-2.0 license and a modification NOTICE.
+
+YOLOX (https://github.com/Megvii-BaseDetection/YOLOX, commit
+6ddff4824372906469a7fae2dc3206c7aa4bbaee), Apache License 2.0, copyright (c)
+2021-2022 Megvii Inc. Forge/yolox/yolox_graphs.py wraps upstream YOLOX.forward
+(eval, with its own head decode) as an export graph, and restates upstream's
+yolox.utils.postprocess (score threshold and per-class NMS) as the reference
+for Sources/AetherVision/ObjectDetector.swift's denseNms; the upstream code is
+fetched unmodified by Forge/yolox/fetch_upstream.py. The yolox_s.pth weights
+(release 0.1.1rc0) are not part of this repository; the exported bundle carries
+their Apache-2.0 license and a modification NOTICE. The COCO class names in
+Sources/AetherVision/Detection.swift are upstream's COCO_CLASSES.
+Gemma is provided under and subject to the Gemma Terms of Use found at
+ai.google.dev/gemma/terms. EmbeddingGemma (google/embeddinggemma-300m, revision
+57c266a740f537b4dc058e1b0cda161fd15afa75), by Google DeepMind:
+Forge/embeddinggemma/embeddinggemma_graphs.py re-expresses its
+sentence-transformers pipeline (mean pooling, two dense layers, L2
+normalization) around transformers' Gemma3TextModel as one export graph, and
+Sources/AetherEmbeddings/TextEmbedder.swift applies its query and document
+prompts and tokenization rules. The weights are not part of this repository;
+the exported bundle is a Model Derivative carrying the Gemma Terms of Use, the
+Gemma Prohibited Use Policy (whose restrictions must be passed on to users),
+a modification notice and this NOTICE line.
+
+RF-DETR (https://github.com/roboflow/rf-detr, 1.12.0, commit
+639eac4555ceb89ef399ccda3fde716bbcfe34cb), Apache License 2.0, copyright (c)
+2025 Roboflow; it includes code derived from LW-DETR (Baidu), Conditional DETR
+(Microsoft), DETR (Facebook), Deformable DETR (SenseTime) and DINOv2 / Hugging
+Face Transformers (copyright (c) Meta Platforms, Inc. and affiliates; The
+HuggingFace Team), each under the Apache License 2.0.
+Forge/rfdetr/rfdetr_graphs.py wraps upstream LWDETR's inference graph (the
+DINOv2 backbone, the projector and the two-stage transformer decoder, with
+ImageNet normalization folded in and grid sampling decomposed into gathers) as
+an export graph; Sources/AetherVision/DetrHead.swift restates upstream's
+rfdetr.models.postprocess.PostProcess (sigmoid, top-k over query and class
+pairs, bilinear mask upsampling). The upstream code is fetched unmodified by
+Forge/rfdetr/fetch_upstream.py. The RF-DETR nano and seg-nano COCO checkpoints
+are not part of this repository; the exported bundles carry their Apache-2.0
+license and a modification NOTICE.
+
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
-OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
-tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the
-end-of-word merge rule.
+OpenAI. Sources/AetherRuntime/Text/CLIPTokenizer.swift re-expresses its
+byte-level BPE tokenizer: the pre-tokenization pattern, the byte-to-unicode
+table and the end-of-word merge rule. Forge/clip/clip_graphs.py wraps the
+openai/clip-vit-base-patch32 checkpoint's image and text towers (transformers'
+CLIPModel) as export graphs with the input normalization and the output L2
+normalization folded in. The weights are not part of this repository; the
+exported bundle (aether-models/aether-kit-clip-vit-b32) carries openai/CLIP's
+MIT LICENSE and a modification NOTICE.
 
 kokoro (https://github.com/hexgrad/kokoro, version 0.9.4), Apache License 2.0,
 copyright hexgrad. Forge/kokoro/kokoro_graphs.py re-expresses its KModel

@@ -220,12 +220,14 @@ struct LatentDiffusionTests {
 
 @Suite("CLIP tokenizer")
 struct TokenizerTests {
-    /// A CLIP-shaped vocabulary: the specials at their real ids, single bytes, and the merges `c a`, `ca t</w>`.
-    static func tiny() throws -> CLIPTokenizer {
+    /// A CLIP-shaped vocabulary: the specials at their real ids, single bytes, and the merges `c a`, `ca t</w>`. With
+    /// `sd2`, a `tokenizer_config.json` as SD 2.x's adds `!` (id 0) and makes it the pad token; without, there are no
+    /// config files, as in a bare vocab/merges pair.
+    static func tiny(sd2: Bool = true, length: Int = 8) throws -> CLIPTokenizer {
         let directory = FileManager.default.temporaryDirectory.appending(path: "aether-clip-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        var vocab: [String: Int] = ["!": 0, "<|startoftext|>": 49406, "<|endoftext|>": 49407]
+        var vocab: [String: Int] = ["!": 0, "!</w>": 256, "<|startoftext|>": 49406, "<|endoftext|>": 49407]
         for (i, letter) in "abcdefghijklmnopqrstuvwxyz".enumerated() {
             vocab[String(letter)] = 100 + i
             vocab[String(letter) + "</w>"] = 200 + i
@@ -236,15 +238,34 @@ struct TokenizerTests {
         vocab[",</w>"] = 303
         try JSONSerialization.data(withJSONObject: vocab).write(to: directory.appending(path: "vocab.json"))
         try "#version: 0.2\nc a\nca t</w>\n".write(to: directory.appending(path: "merges.txt"), atomically: true, encoding: .utf8)
-        return try CLIPTokenizer(directory: directory, length: 8)
+        if sd2 {
+            let config: [String: Any] = [
+                "added_tokens_decoder": ["0": ["content": "!", "special": true], "49406": ["content": "<|startoftext|>"],
+                                         "49407": ["content": "<|endoftext|>"]],
+                "bos_token": "<|startoftext|>", "eos_token": "<|endoftext|>", "pad_token": "!", "unk_token": "<|endoftext|>",
+            ]
+            try JSONSerialization.data(withJSONObject: config).write(to: directory.appending(path: "tokenizer_config.json"))
+        }
+        return try CLIPTokenizer(directory: directory, length: length)
     }
 
     @Test func mergesByRankWithTheEndOfWordSuffix() throws {
         let t = try Self.tiny()
+        #expect(t.pad == 0 && t.addedTokens.contains("!"))
         #expect(try t.encode("Cat") == [49406, 301, 49407, 0, 0, 0, 0, 0])
         // "cab": c+a merge, b keeps its suffix; "!" is an added token; whitespace is dropped.
         #expect(try t.encode("cab  !\tcat") == [49406, 300, 201, 0, 301, 49407, 0, 0])
         #expect(try t.encode("") == [49406, 49407, 0, 0, 0, 0, 0, 0])
+    }
+
+    /// OpenAI CLIP's tokenizer adds only BOS and EOS: `!` is an ordinary piece (`!</w>`, 256), and the pad defaults to
+    /// EOS, as transformers' `CLIPTokenizer` does.
+    @Test func addedTokensComeFromTheTokenizerFiles() throws {
+        let t = try Self.tiny(sd2: false)
+        #expect(t.pad == 49407 && t.addedTokens == ["<|startoftext|>", "<|endoftext|>"])
+        #expect(try t.encode("cat!") == [49406, 301, 256, 49407, 49407, 49407, 49407, 49407])
+        // The text's own special-token strings are still split out.
+        #expect(try t.encode("cat<|endoftext|>") == [49406, 301, 49407, 49407, 49407, 49407, 49407, 49407])
     }
 
     @Test func truncatesToTheContextAndEndsWithEOS() throws {

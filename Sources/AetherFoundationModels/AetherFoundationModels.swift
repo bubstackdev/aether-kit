@@ -107,7 +107,7 @@ public struct AetherLanguageModelExecutor: LanguageModelExecutor {
 
         // The rendered prompt plus the output limit must fit the model's context; it is never trimmed.
         let prompt = try generator.renderer.render(messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
-        let limit = generator.engine.description.maxCapacity
+        let limit = generator.engine.maxCapacity
         let maximum = request.generationOptions.maximumResponseTokens ?? min(limit - prompt.tokens.count, Self.defaultMaximumResponseTokens)
         guard maximum > 0, prompt.tokens.count + maximum <= limit else {
             throw LanguageModelError.contextSizeExceeded(.init(
