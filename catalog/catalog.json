@@ -2877,6 +2877,80 @@
           "driver": "depth-estimator@1"
         }
       }
+    },
+    {
+      "id": "yolox-s",
+      "license": "apache-2.0",
+      "repo": "aether-models/aether-kit-yolox-s",
+      "revision": "6a608906fdd11096fa15fa5487682c8457e5a24a",
+      "task": "object-detection",
+      "variants": {
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "6807a596d0700e57d268b75acfe625dd7eb09beab788b650c2c13ff8b49b78c7",
+                  "size": 4503
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "bdda41b3cbfbb95257646bf74cebdc223f36ed8b38de5b3005156b0d25dbe48f",
+                  "size": 1582
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088",
+                  "size": 11371
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9",
+                  "size": 718
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600",
+                  "size": 920
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "68be0e7296aae56426d20871860b677c2756aaa609fb634715e532eb8a730e09",
+                  "size": 675
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "a43b3ac973a9315f8d51b464026ab7994489b849123d7b88ce2c17a12068faf4",
+                  "size": 4680
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "050fd3f9b2f8b511070bef9b269d1889d48dafba283b61a4e1d1e8935072d763",
+                  "size": 488
+                },
+                {
+                  "path": "yolox_s.aimodel/main.hash",
+                  "sha256": "b943bb0759456bdc75758df161390c0fcedaa576a6b8a489dbd83e967b4795f2",
+                  "size": 32
+                },
+                {
+                  "path": "yolox_s.aimodel/main.mlirb",
+                  "sha256": "dccb08fd824ab8ed16d6ead89fe80cd6ae0c524722572fe745d3187c559003d2",
+                  "size": 35987983
+                },
+                {
+                  "path": "yolox_s.aimodel/metadata.json",
+                  "sha256": "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89",
+                  "size": 516
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "detector-dense@1"
+        }
+      }
     }
   ],
   "schema": 1

@@ -935,5 +935,35 @@ extension Catalog {
                 ),
             ]
         ),
+        CatalogEntry(
+            id: "yolox-s",
+            task: "object-detection",
+            repo: "aether-models/aether-kit-yolox-s",
+            revision: "6a608906fdd11096fa15fa5487682c8457e5a24a",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "detector-dense@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 4503, sha256: "6807a596d0700e57d268b75acfe625dd7eb09beab788b650c2c13ff8b49b78c7"),
+                                CatalogFile(path: ".gitattributes", size: 1582, sha256: "bdda41b3cbfbb95257646bf74cebdc223f36ed8b38de5b3005156b0d25dbe48f"),
+                                CatalogFile(path: "LICENSE", size: 11371, sha256: "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"),
+                                CatalogFile(path: "NOTICE", size: 718, sha256: "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9"),
+                                CatalogFile(path: "README.md", size: 920, sha256: "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600"),
+                                CatalogFile(path: "SHA256SUMS", size: 675, sha256: "68be0e7296aae56426d20871860b677c2756aaa609fb634715e532eb8a730e09"),
+                                CatalogFile(path: "export-report.json", size: 4680, sha256: "a43b3ac973a9315f8d51b464026ab7994489b849123d7b88ce2c17a12068faf4"),
+                                CatalogFile(path: "forge-log.jsonl", size: 488, sha256: "050fd3f9b2f8b511070bef9b269d1889d48dafba283b61a4e1d1e8935072d763"),
+                                CatalogFile(path: "yolox_s.aimodel/main.hash", size: 32, sha256: "b943bb0759456bdc75758df161390c0fcedaa576a6b8a489dbd83e967b4795f2"),
+                                CatalogFile(path: "yolox_s.aimodel/main.mlirb", size: 35987983, sha256: "dccb08fd824ab8ed16d6ead89fe80cd6ae0c524722572fe745d3187c559003d2"),
+                                CatalogFile(path: "yolox_s.aimodel/metadata.json", size: 516, sha256: "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
     ])
 }

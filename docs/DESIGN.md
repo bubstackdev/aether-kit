@@ -578,6 +578,10 @@ runtime pieces:
     `resizeBack` (manifest default, request override) both maps are resampled to the source through the geometry:
     bilinear at pixel centres, clamped to the content rectangle, so letterbox padding is never read. The GPU grant
     covers only the graph call; the resample runs after it.
+  - **`ObjectDetector`** (M4e, `detector-dense@1`, YOLOX-S): `detect(ImageInput | PreparedImage, DetectionRequest)` →
+    `[Detection]` (label, score, box normalized in the source and clipped, optional mask), highest score first. The
+    `denseNms` postprocess (objectness × best class, threshold, greedy NMS, top `maxDetections`) runs after the GPU
+    grant; `Detection`, `DetectionRequest` and `DetectionLabels` (`coco-91` built in) are shared with the DETR driver.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 

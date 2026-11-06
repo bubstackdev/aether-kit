@@ -38,6 +38,17 @@ upstream code is fetched unmodified by Forge/depth/fetch_upstream.py. The
 depth-anything/DA3-SMALL weights are not part of this repository; the
 exported bundle carries their Apache-2.0 license and a modification NOTICE.
 
+YOLOX (https://github.com/Megvii-BaseDetection/YOLOX, commit
+6ddff4824372906469a7fae2dc3206c7aa4bbaee), Apache License 2.0, copyright (c)
+2021-2022 Megvii Inc. Forge/yolox/yolox_graphs.py wraps upstream YOLOX.forward
+(eval, with its own head decode) as an export graph, and restates upstream's
+yolox.utils.postprocess (score threshold and per-class NMS) as the reference
+for Sources/AetherVision/ObjectDetector.swift's denseNms; the upstream code is
+fetched unmodified by Forge/yolox/fetch_upstream.py. The yolox_s.pth weights
+(release 0.1.1rc0) are not part of this repository; the exported bundle carries
+their Apache-2.0 license and a modification NOTICE. The COCO class names in
+Sources/AetherVision/Detection.swift are upstream's COCO_CLASSES.
+
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
 OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
 tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the

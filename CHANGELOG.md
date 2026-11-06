@@ -33,8 +33,22 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     letterbox padding.
   - Gate `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02).
   - Catalog: `depth-anything-3-small` (macOS), `aether-models/aether-kit-depth-anything-3-small`, Apache-2.0.
+- **Detection (M4e):** `detector-dense@1` (`DriverContract.detectorDense`, `DriverID.detectorDense`), for YOLOX-S from
+  our Forge export (`Forge/yolox/`):
+  - The detectors' shared types: `Detection` (label, score, box normalized in the source image and clipped to it,
+    optional `DetectionMask`), `DetectionRequest` (`scoreThreshold`, `maxDetections`, `GPUJob`, over the manifest's
+    defaults) and `DetectionLabels` (contiguous or COCO-id columns; the built-in `coco-91` table).
+  - `ObjectDetector` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`DenseDetectorDriver` →
+    `ObjectDetectorModel.detector()`); `detect(_: ImageInput)` or `prepare(_:)` then `detect(_: PreparedImage)`.
+  - The `denseNms` postprocess: objectness × best class, threshold, greedy per-class or class-agnostic NMS, the top
+    `maxDetections`, exactly upstream YOLOX's `postprocess`; boxes mapped back through the letterbox geometry.
+  - Gate `ObjectDetectorDenseGateTests`: the host NMS reproduces the reference's detections exactly from its preds; on
+    the GPU, the same detections on all six cases (IoU ≥ 0.99999, scores within 2e-6; bar IoU 0.95, 0.01).
+  - Catalog: `yolox-s` (macOS), `aether-models/aether-kit-yolox-s`, Apache-2.0.
 
 ### Changed
+
+- `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.
 
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
   `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.

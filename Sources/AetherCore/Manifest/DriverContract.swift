@@ -19,6 +19,7 @@ public enum DriverCatalog {
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
         DriverContract.depthEstimator.driver: .depthEstimator,
+        DriverContract.detectorDense.driver: .detectorDense,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -425,6 +426,21 @@ extension DriverContract {
                     "depth": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
                     "confidence": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
                 ]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `detector-dense@1` (MANIFEST.md §1.3): one stateless `detector` graph, in `image` (`[1, 3, H, W]`, floating
+    /// point), out `preds` (`[1, A, 4 + 1 + C]`, floating point: per anchor the box, objectness and C class scores). The
+    /// driver also requires `preprocess.image` (`NCHW`), a `denseNms` `postprocess` and `labels` (checked when it loads);
+    /// C must be the label set's size for `classIndex: contiguous`.
+    public static let detectorDense = DriverContract(
+        driver: .detectorDense,
+        graphs: [
+            "detector": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: ["preds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
 }

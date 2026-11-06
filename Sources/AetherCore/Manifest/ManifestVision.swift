@@ -80,7 +80,7 @@ extension Manifest {
             /// `letterbox` only; default `center`.
             public var anchor: Anchor?
             /// `letterbox` only: the canvas's 8-bit value, one for every channel or one per channel (R, G, B);
-            /// default 0.
+            /// default 0. A bare number in the JSON is the one-value form (`114` is `[114]`).
             public var padValue: [Int]?
             public var filter: Filter
 
@@ -92,6 +92,20 @@ extension Manifest {
                 self.anchor = anchor
                 self.padValue = padValue
                 self.filter = filter
+            }
+
+            public init(from decoder: any Decoder) throws {
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                mode = try c.decode(Mode.self, forKey: .mode)
+                size = try c.decodeIfPresent(Size.self, forKey: .size)
+                maxSide = try c.decodeIfPresent(Int.self, forKey: .maxSide)
+                anchor = try c.decodeIfPresent(Anchor.self, forKey: .anchor)
+                if let one = try? c.decodeIfPresent(Int.self, forKey: .padValue) {
+                    padValue = [one]
+                } else {
+                    padValue = try c.decodeIfPresent([Int].self, forKey: .padValue)
+                }
+                filter = try c.decode(Filter.self, forKey: .filter)
             }
         }
 
