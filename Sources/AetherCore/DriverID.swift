@@ -73,6 +73,9 @@ extension DriverID {
     /// Monocular depth: one static graph from an image to a depth map and an optional confidence map (MANIFEST.md
     /// §1.3, §2.8).
     public static let depthEstimator = DriverID(validated: "depth-estimator@1")
+    /// DETR-style detection: one static graph from an image to query boxes and class logits, scored by a sigmoid with
+    /// no NMS, and optional per-query instance masks (RF-DETR; MANIFEST.md §1.3, §2.8).
+    public static let detectorDetr = DriverID(validated: "detector-detr@1")
 }
 
 private enum LowerAlnum {

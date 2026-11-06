@@ -18,7 +18,7 @@ public enum DriverCatalog {
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
-        DriverContract.depthEstimator.driver: .depthEstimator,
+        DriverContract.depthEstimator.driver: .depthEstimator, DriverContract.detectorDetr.driver: .detectorDetr,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -424,6 +424,26 @@ extension DriverContract {
                 outputs: [
                     "depth": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
                     "confidence": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
+                ]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `detector-detr@1` (MANIFEST.md §1.3): one stateless `detector` graph, in `image` (`[1, 3, H, W]`, floating point),
+    /// out `boxes` (`[1, Q, 4]`) and `classLogits` (`[1, Q, C]`), and optional `masks` (`[1, Q, h, w]`, logit planes over
+    /// the whole input), all floating point. The driver also requires `preprocess.image` (`NCHW`), a `detrSigmoid`
+    /// `postprocess` (with `masks` exactly when the graph binds them) and `labels` (checked when it loads); the
+    /// outputs' Q must agree.
+    public static let detectorDetr = DriverContract(
+        driver: .detectorDetr,
+        graphs: [
+            "detector": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: [
+                    "boxes": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "classLogits": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "masks": RoleSpec(required: false, rank: 4, scalar: .floatingPoint),
                 ]),
         ],
         requiresTokenizer: false)

@@ -359,9 +359,19 @@ extension Manifest {
 
         /// `detector-detr@1`: a set prediction scored by the sigmoid of each query's class logits; no NMS.
         public struct DetrSigmoid: Sendable, Hashable, Codable {
-            /// Instance masks from the optional `masks` output.
+            /// Which (query, class) scores become detections.
+            public enum Selection: String, Sendable, Hashable, Codable {
+                /// The sigmoid of every query's every class logit is one candidate; the `maxDetections` best, by score
+                /// descending then flat index `query · classes + class` ascending, are kept when their score is strictly
+                /// above `scoreThreshold`. One query can yield several classes (RF-DETR's, LW-DETR's and Deformable
+                /// DETR's `PostProcess`).
+                case topKPairs
+            }
+
+            /// Instance masks from the optional `masks` output: one logit plane per query over the graph's whole input,
+            /// resampled bilinearly to the source image (pixel centres, `align_corners=False`) and thresholded.
             public struct Masks: Sendable, Hashable, Codable {
-                /// A mask pixel is foreground above this logit; default 0.
+                /// A mask pixel is foreground strictly above this logit; default 0.
                 public var logitThreshold: Double?
 
                 public init(logitThreshold: Double? = nil) { self.logitThreshold = logitThreshold }
@@ -372,14 +382,18 @@ extension Manifest {
             public var defaults: DetectionDefaults
             /// Default `contiguous`.
             public var classIndex: ClassIndex?
+            /// Default `topKPairs`.
+            public var selection: Selection?
+            /// Present exactly when the detector graph binds a `masks` output.
             public var masks: Masks?
 
             public init(boxFormat: BoxFormat, boxSpace: BoxSpace, defaults: DetectionDefaults, classIndex: ClassIndex? = nil,
-                        masks: Masks? = nil) {
+                        selection: Selection? = nil, masks: Masks? = nil) {
                 self.boxFormat = boxFormat
                 self.boxSpace = boxSpace
                 self.defaults = defaults
                 self.classIndex = classIndex
+                self.selection = selection
                 self.masks = masks
             }
         }
