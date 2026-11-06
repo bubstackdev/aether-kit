@@ -14,9 +14,7 @@ struct GateTests {
         if let override = ProcessInfo.processInfo.environment["AETHER_LAB_MODELS"] {
             return URL(fileURLWithPath: override)
         }
-        return URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().appending(path: "lab/models")
+        return labModels(from: #filePath)
     }
 
     static let mac = Device(platform: .macOS, architecture: Device.current.architecture)
@@ -162,4 +160,17 @@ struct GateTests {
         let n = 32
         #expect(try await Self.greedy("qwen3.5-0.8b", count: n) == Array(try Self.spikeReference("qwen3.5-0.8b").generated.prefix(n)))
     }
+}
+
+/// `lab/models` beside the repo: the first found walking up from `file`, so the gates find it from a worktree under
+/// `.worktrees/` as from the main checkout (`AETHER_LAB_MODELS` overrides, at the call sites).
+func labModels(from file: String) -> URL {
+    var directory = URL(fileURLWithPath: file).deletingLastPathComponent()
+    while directory.path != "/" {
+        let candidate = directory.appending(path: "lab/models")
+        if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        directory = directory.deletingLastPathComponent()
+    }
+    return URL(fileURLWithPath: file).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "lab/models")
 }

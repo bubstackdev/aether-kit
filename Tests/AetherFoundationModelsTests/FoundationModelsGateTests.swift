@@ -13,8 +13,7 @@ import Testing
 struct FoundationModelsGateTests {
     static var models: URL {
         if let override = ProcessInfo.processInfo.environment["AETHER_LAB_MODELS"] { return URL(fileURLWithPath: override) }
-        return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().deletingLastPathComponent().appending(path: "lab/models")
+        return labModels(from: #filePath)
     }
 
     static let mac = Device(platform: .macOS, architecture: "h17c")
@@ -75,4 +74,17 @@ struct FoundationModelsGateTests {
         #expect(cities.count == 1 && cities.first?.contains("Paris") == true)
         #expect(answer.content.contains("21") || answer.content.lowercased().contains("sunny"))
     }
+}
+
+/// `lab/models` beside the repo: the first found walking up from `file`, so the gates find it from a worktree under
+/// `.worktrees/` as from the main checkout (`AETHER_LAB_MODELS` overrides, at the call sites).
+func labModels(from file: String) -> URL {
+    var directory = URL(fileURLWithPath: file).deletingLastPathComponent()
+    while directory.path != "/" {
+        let candidate = directory.appending(path: "lab/models")
+        if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        directory = directory.deletingLastPathComponent()
+    }
+    return URL(fileURLWithPath: file).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "lab/models")
 }
