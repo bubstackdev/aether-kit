@@ -44,6 +44,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   - `ResourceCoordinator` reservations;
   - new on top: typed `schedule`, `latent` and `residency` manifest blocks (MANIFEST.md §5), and `GraphResidency`
     with Metal-measured phase footprints.
+- **Public-API freeze check** (`scripts/check-api.sh`, run by `scripts/ci.sh`): `swift-api-digester` dumps of
+  AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
+  the 0.1.0 freeze sets `"enforce": true`.
 
 ### In progress before 0.1.0 is tagged
 
