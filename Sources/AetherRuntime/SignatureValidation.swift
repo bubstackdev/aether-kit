@@ -52,7 +52,8 @@ public enum SignatureValidator {
                 }
             }
         }
-        let bound = Set(inputs.values.map(\.name))
+        // A weights table (§5.8) binds its inputs per block; they need no role.
+        let bound = Set(inputs.values.map(\.name)).union(graph.weights?.inputs ?? [])
         if let unbound = signature.inputs.first(where: { !bound.contains($0.name) }) {
             throw .manifestMismatch(
                 field: inputsField, expected: "a role for every graph input", found: "graph input '\(unbound.name)' has no role")
