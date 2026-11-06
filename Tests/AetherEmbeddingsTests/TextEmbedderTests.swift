@@ -268,7 +268,7 @@ struct TextEmbedderTests {
         #expect(abs(a.similarity(b) - 1) < 1e-6 && a.similarity(c) == 0 && a.similarity(Embedding([0, 0, 0, 0])) == 0)
         #expect(abs(a.similarity(Embedding([-3, -4, 0, 0])) + 1) < 1e-6)
         let short = Embedding([0.6, 0.0, 0.8, 0]).truncated(to: 2)
-        #expect(short.dimensions == 2 && short.vector == [1, 0])
+        #expect(short.dimension == 2 && short.vector == [1, 0])
     }
 
     // MARK: - Requests

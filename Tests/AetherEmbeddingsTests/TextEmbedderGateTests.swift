@@ -88,7 +88,7 @@ struct TextEmbedderGateTests {
             let started = ContinuousClock.now
             let embedding = try await embedder.embed(c.text, role: role)
             let elapsed = ContinuousClock.now - started
-            #expect(embedding.dimensions == reference.count)
+            #expect(embedding.dimension == reference.count)
             let cosine = embedding.similarity(Embedding(reference))
             let norm = embedding.vector.reduce(0) { $0 + $1 * $1 }.squareRoot()
             let worst = zip(embedding.vector, reference).map { abs($0 - $1) }.max() ?? 0

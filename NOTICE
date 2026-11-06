@@ -77,9 +77,14 @@ are not part of this repository; the exported bundles carry their Apache-2.0
 license and a modification NOTICE.
 
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
-OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
-tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the
-end-of-word merge rule.
+OpenAI. Sources/AetherRuntime/Text/CLIPTokenizer.swift re-expresses its
+byte-level BPE tokenizer: the pre-tokenization pattern, the byte-to-unicode
+table and the end-of-word merge rule. Forge/clip/clip_graphs.py wraps the
+openai/clip-vit-base-patch32 checkpoint's image and text towers (transformers'
+CLIPModel) as export graphs with the input normalization and the output L2
+normalization folded in. The weights are not part of this repository; the
+exported bundle (aether-models/aether-kit-clip-vit-b32) carries openai/CLIP's
+MIT LICENSE and a modification NOTICE.
 
 kokoro (https://github.com/hexgrad/kokoro, version 0.9.4), Apache License 2.0,
 copyright hexgrad. Forge/kokoro/kokoro_graphs.py re-expresses its KModel
