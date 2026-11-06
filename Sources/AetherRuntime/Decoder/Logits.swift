@@ -22,14 +22,25 @@ public struct Logits: Sendable, Hashable {
     /// The last row (the next-token distribution after the last fed token).
     public var last: ArraySlice<Float> { row(rows - 1) }
 
-    /// The highest value's index; ties go to the lowest index (the GPU argmax kernel's rule too).
-    public static func argmax(_ row: ArraySlice<Float>) -> Int32 {
-        guard !row.isEmpty else { return 0 }
+    /// The highest value's index; ties go to the lowest index (the GPU argmax kernel's rule too); +∞ ranks first.
+    ///
+    /// The invalid-logit policy every decoding path shares (this host argmax, ``Sampler``, constrained sampling and
+    /// the pipelined GPU argmax): a row with a NaN anywhere, or with no value above −∞, has no token and throws
+    /// `generation(.invalidLogits)`.
+    public static func argmax(_ row: ArraySlice<Float>) throws(AetherError) -> Int32 {
+        guard !row.isEmpty else { throw .generation(.invalidLogits("an empty row")) }
         // vDSP returns the first index of the maximum: the same tie rule, much faster on a 150k-value row (a debug
-        // build's element loop cost milliseconds per token). Rows with NaNs are not ranked meaningfully either way.
+        // build's element loop cost milliseconds per token). It skips NaNs, so their check is a vDSP sum: NaN only
+        // with a NaN in the row or with both infinities, and only then does the exact scan run.
         var value: Float = 0
         var index: vDSP_Length = 0
-        row.withUnsafeBufferPointer { vDSP_maxvi($0.baseAddress!, 1, &value, &index, vDSP_Length($0.count)) }
+        var sum: Float = 0
+        row.withUnsafeBufferPointer {
+            vDSP_maxvi($0.baseAddress!, 1, &value, &index, vDSP_Length($0.count))
+            vDSP_sve($0.baseAddress!, 1, &sum, vDSP_Length($0.count))
+        }
+        if sum.isNaN, row.contains(where: \.isNaN) { throw .generation(.invalidLogits("NaN")) }
+        guard value > -.infinity else { throw .generation(.invalidLogits("no logit above -inf")) }
         return Int32(index)
     }
 }
