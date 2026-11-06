@@ -97,4 +97,23 @@ struct StoreSafetyTests {
         #expect(!flow.isSuspended && flow.bufferedBytes == FlowControl.lowWater - 1)
         task.cancel()
     }
+
+    /// A `get` from an already-cancelled task (a download cancelled while it waited to start) cancels its data task
+    /// before resuming it, and URLSession then completes the task on its delegate queue without waiting for the
+    /// resume. On a loaded machine that completion could land before the response continuation was installed and was
+    /// dropped, so `get` never returned (a cancelled install, and every later install of its ref, hung). Each attempt
+    /// must throw; the time limit turns a regression into a failure rather than a hang. The window is narrow, so a
+    /// regression shows only now and then, under load.
+    @Test(.timeLimit(.minutes(1))) func aGetFromACancelledTaskThrowsRatherThanHanging() async throws {
+        let site = StubSite()
+        site.serve("/f.bin", Data(count: 16))
+        let transport = ModelStoreTests.transport()
+        for _ in 0..<200 {
+            let attempt = Task {
+                withUnsafeCurrentTask { $0?.cancel() }
+                _ = try await transport.get(site.endpoint.appending(path: "f.bin"), headers: [:])
+            }
+            await #expect(throws: (any Error).self) { try await attempt.value }
+        }
+    }
 }

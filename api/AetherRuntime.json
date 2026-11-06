@@ -15289,6 +15289,349 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime9EmbeddingV6vectorSaySfGvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime9EmbeddingV6vectorSaySfGvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Float",
+            "printedName": "Swift.Float",
+            "usr": "s:Sf"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Float]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime9EmbeddingV6vectorSaySfGvs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime9EmbeddingV6vectorSaySfGvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime9EmbeddingV6vectorSaySfGvp",
+      "moduleName": "AetherRuntime",
+      "name": "vector",
+      "printedName": "vector",
+      "usr": "s:13AetherRuntime9EmbeddingV6vectorSaySfGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s13AetherRuntime9EmbeddingVyACSaySfGcfc",
+      "moduleName": "AetherRuntime",
+      "name": "init",
+      "printedName": "init(_:)",
+      "usr": "s:13AetherRuntime9EmbeddingVyACSaySfGcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime9EmbeddingV10dimensionsSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime9EmbeddingV10dimensionsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime9EmbeddingV10dimensionsSivp",
+      "moduleName": "AetherRuntime",
+      "name": "dimensions",
+      "printedName": "dimensions",
+      "usr": "s:13AetherRuntime9EmbeddingV10dimensionsSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Float",
+        "printedName": "Swift.Float",
+        "usr": "s:Sf"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime9EmbeddingV10similarityySfACF",
+      "moduleName": "AetherRuntime",
+      "name": "similarity",
+      "printedName": "similarity(_:)",
+      "usr": "s:13AetherRuntime9EmbeddingV10similarityySfACF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime9EmbeddingV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherRuntime",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:13AetherRuntime9EmbeddingV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime9EmbeddingV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherRuntime",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:13AetherRuntime9EmbeddingV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime9EmbeddingV9hashValueSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime9EmbeddingV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime9EmbeddingV9hashValueSivp",
+      "moduleName": "AetherRuntime",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:13AetherRuntime9EmbeddingV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime9EmbeddingV",
+    "moduleName": "AetherRuntime",
+    "name": "Embedding",
+    "printedName": "Embedding",
+    "usr": "s:13AetherRuntime9EmbeddingV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Float",
+            "printedName": "Swift.Float",
+            "usr": "s:Sf"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Float]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
         "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9timestepsSaySfGvg",
         "moduleName": "AetherRuntime",
         "name": "Get",

@@ -51,8 +51,8 @@ Rules that apply to every driver:
 
 | driver | required roles | optional roles | bundles |
 |---|---|---|---|
-| `detector-dense@1` | in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
-| `detector-detr@1` | in `image` (or `features` chained from graph `backbone`); out `boxes`, `classLogits` | out `masks`; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
+| `detector-dense@1` | graph `detector`: in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
+| `detector-detr@1` | graph `detector`: in `image` (or `features` chained from graph `backbone`); out `boxes` [1,Q,4], `classLogits` [1,Q,C] | out `masks` [1,Q,h,w]; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
 | `depth-estimator@1` | in `image`; out `depth` | out `confidence` | depth-anything-3-small; *base, fp32* |
 | `clip-joint@1` | in `image`, `tokens`; out `imageEmbedding`, `textEmbedding` | in `attentionMask`; `unusedOutputs` | clip-vit-b32 |
 | `image-to-image-tiled@1` | in `image`; out `image` | — | adcsr-x4 |
@@ -225,7 +225,7 @@ Dtype and shape are not manifest fields. bf16 (Gemma 3) and fp16 come from the d
 | `stop` | R for generation | list of strings or ids: the **source model's `generation_config.json` `eos_token_id` list** (pinned in the override table, because zoo bundles don't ship it) unioned with the tokenizer's eos. Gemma 4 is `[1 <eos>, 106 <turn|>, 50 <|tool_response>]` (measured; `<|tool_response>` is the tool-call hand-back, which coreai-kit misses). Gemma 3 `[1 <eos>, 106 <end_of_turn>]` (verified from the gated `google/gemma-3-4b-it@093f9f3` config; 12B identical). Granite `<|end_of_text|>`. |
 | `thinking` | O | `{open, close, toggle: {templateVar: "enable_thinking"} \| {emitEmpty: "<|channel>thought\n<channel|>"} \| "none", defaultOn}`. defaultOn is true for LFM3 and Nemotron, false for Qwen3.5. Nanbeige has no toggle. |
 | `toolDialect` | O | §7 already names it; values `hermes-json` (Granite `<tool_call>` JSON), `lfm3-xml` |
-| `text` | O | `{padId, padSide, padTo, truncation: right\|word\|bodyOnly, prompts: {query, document}, template: {prefix, suffix, body}, unusedBatchRows, maskRule}`. Values: embeddinggemma pad 0 right to 256 with asymmetric prompts; colmodernvbert right-pad 50283 to 32; Shieldstral flattened prefix/suffix with body-only truncation and pad 11; CLIP pad = EOT 49407 to 77, mask through first EOT, dummy rows. |
+| `text` | O | `{padId, padSide: left\|right [right], padTo: int, truncation: right\|word\|bodyOnly [right], prompts: {role: text}, template: {prefix, suffix, body}, unusedBatchRows, maskRule: realTokens [realTokens]}`, typed as `Manifest.Tokenizer.Text` (`template` and `unusedBatchRows` arrive with their drivers). An encoder's text is `prompts[role]` + the input, stripped of leading and trailing whitespace, encoded with the tokenizer's special tokens (`addSpecialTokens`); `right` truncation keeps the first content ids and every special token (HF `longest_first` on one sequence); then it is padded to exactly `padTo` (the graph's `limits.staticSequence`) with `padId`. `realTokens`: the mask is 1 for every real id, prompt and specials included, 0 for padding. Prompts are inline (the bundle's, from `config_sentence_transformers.json`). Values: embeddinggemma pad 0 right to 256, `<bos>` … `<eos>` kept on truncation, prompts `query` / `document` (M4c, `TextEmbedder`); colmodernvbert right-pad 50283 to 32; Shieldstral flattened prefix/suffix with body-only truncation and pad 11; CLIP pad = EOT 49407 to 77, mask through first EOT, dummy rows. |
 | `escapes` | O | `[{from: "<|", to: "<¦"}…]` for kev and d1-omni user-text escaping |
 | `preTokenize` | O | `icuCodePoints` (openthai Thai) |
 | `class` | O | tokenizer class override (GLiNER `XLMRobertaTokenizer` stand-in; CLIP custom lowercase BPE) |
@@ -238,7 +238,7 @@ brackets:
 
 ```
 {resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, anchor: center|topLeft [center],
-           padValue: [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
+           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
  colorSpace: deviceRGB|sRGB [deviceRGB], channelOrder: RGB|BGR [RGB], scale [1], mean [0,0,0], std [1,1,1],
  layout: NCHW|NVCHW|patches [NCHW], views [1], patchify?: {patch, temporal [1], merge [1], rowOrder: blockMajor|rowMajor,
  withinPatch: "C,T,py,px"|"py,px,C"}, hostDType: float32|float16 [float32], orientation: exif [exif]}
@@ -308,7 +308,7 @@ kind's sit in its own sub-object. Interpreters arrive with each driver; decoding
 |---|---|---|
 | `depth` | `depth-estimator@1` | `depth: {polarity: largerIsNearer\|largerIsFarther, resizeBack [false]}` |
 | `denseNms` | `detector-dense@1` | `boxFormat: cxcywh\|xyxy, boxSpace: letterboxPixels\|normalized, activation: applied\|sigmoid [applied], nms: {type: perClass\|classAgnostic, iou ∈ (0, 1]}, defaults: {scoreThreshold ∈ [0, 1], maxDetections ≥ 1}, classIndex: contiguous\|cocoId [contiguous]` |
-| `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `masks?: {logitThreshold [0]}` |
+| `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `selection: topKPairs [topKPairs]`, `masks?: {logitThreshold [0]}` (present exactly when the graph binds `masks`) |
 | `embedding` | `clip-joint@1`, `text-embedder@1` | `embedding: {normalized: inGraph\|host\|none, pooling: inGraph\|mean\|cls [inGraph], similarity: cosine\|dot}` |
 | `gliner` | `gliner-classifier@1` | `gliner?: {threshold [0.5]}` (multi-label sigmoid threshold) |
 | `yesNo` | `yes-no-classifier@1` | `probs: {positiveIndex, threshold [0.5]}` |
@@ -318,7 +318,24 @@ kind's sit in its own sub-object. Interpreters arrive with each driver; decoding
 `letterboxPixels` means pixels of the graph's input, letterboxed or not; the driver maps boxes back to the source
 through the prepared image's geometry. DA3 is `largerIsFarther` (its exp head, checked on real frames). `depth`'s
 `resizeBack` resamples the map (and confidence) to the source through the geometry, bilinear at pixel centres and
-clamped to the content rectangle (M4b, `DepthEstimator`).
+clamped to the content rectangle (M4b, `DepthEstimator`). `text-embedder@1` takes `pooling: inGraph` only (no token
+vectors leave the graph) and refuses `similarity: dot` over `normalized: none`; `host` L2-normalizes on the CPU (M4c).
+
+`denseNms` (M4e, `ObjectDetector`), on `preds` `[1, A, 4 + 1 + C]`: per anchor, score = objectness × the largest class
+score and the class its column (the first on ties), after a host sigmoid of both when `activation` is `sigmoid`
+(`applied`: the graph did it, as YOLOX's); scores below `scoreThreshold` dropped; greedy NMS in descending score (ties
+in anchor order), within a class (`perClass`) or across classes, dropping boxes whose IoU with a kept one exceeds
+`iou` (xyxy, no +1); then the first `maxDetections` by score. `classIndex: contiguous` makes column `i` label `i` of the
+set's contiguous list (C must be its size; `coco-91`'s is the 80 used COCO ids in ascending order), `cocoId` makes
+column `i` COCO id `i` (unused ids name no label). Boxes are returned normalized in the source and clipped to it.
+
+`detrSigmoid` (M4f, `ObjectDetector`), on `boxes` `[1, Q, 4]`, `classLogits` `[1, Q, C]` and optional `masks`
+`[1, Q, h, w]`: the sigmoid of every logit; `selection: topKPairs` ranks every (query, class) pair of a labelled column
+by score descending, ties by flat index `query · C + class` ascending, keeps the first `maxDetections` and of those the
+ones strictly above `scoreThreshold` (one query can yield several classes; no NMS; upstream RF-DETR's `PostProcess`).
+Unlabelled columns (unused COCO ids under `cocoId`) are left out before ranking. A mask plane spans the graph's whole
+input; the detection's query plane is resampled bilinearly onto the source's pixels through the geometry (pixel
+centres, `align_corners=False`, clamped to the content's edge cells) and kept strictly above `masks.logitThreshold`.
 
 Required for every vision/embedding driver, because none of these values is in the bundles. Thresholds are
 defaults, and the app can override them.
