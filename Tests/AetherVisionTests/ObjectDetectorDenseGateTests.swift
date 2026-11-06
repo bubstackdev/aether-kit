@@ -22,11 +22,12 @@ import AetherHost
 /// - **The host's preprocessing, apart from the decode:** the RGB Pillow decoded for the reference (`decoded.png`,
 ///   lossless and untagged) through the bundle's `preprocess.image` (`pillowBilinear`, YOLOX's letterbox sizes) is the
 ///   reference's `input.f32` bit for bit, with its geometry, so its detections are the graph path's exactly.
-/// - **End to end, gated at the same bars:** the upstream images (`assets/dog.jpg`, `assets/demo.png` and its crops)
-///   detected from ``ImageInput`` (ImageIO's decode), against the reference detections through the same geometry, plus
-///   upstream's README sanity (the dog and the bicycle in `dog.jpg`). How far ImageIO's decode is from Pillow's (bytes)
-///   and the letterboxed tensor from the reference's is printed, so a decode difference is told apart from a resize
-///   one. The images come from `Forge/yolox/fetch_upstream.py`'s directory
+/// - **End to end:** the upstream images (`assets/dog.jpg`, `assets/demo.png` and its crops) detected from
+///   ``ImageInput`` (ImageIO's decode), against the reference detections through the same geometry. Where ImageIO
+///   decodes the very bytes Pillow does (the PNG cases), gated at the same bars as the tensor path; where it does not
+///   (`dog.jpg`: the two JPEG decoders differ by up to 24 levels, enough to move scores by about 0.02), printed with
+///   the decode difference, the resize being gated by the step above. Always: upstream's README sanity (the dog and
+///   the bicycle in `dog.jpg`). The images come from `Forge/yolox/fetch_upstream.py`'s directory
 ///   (`~/.cache/aether-kit/yolox/upstream/yolox-<commit>`) or `AETHER_YOLOX_UPSTREAM`, checked by SHA-256; absent, that
 ///   part is skipped with a note.
 ///
@@ -242,10 +243,15 @@ struct ObjectDetectorDenseGateTests {
                   + "decode \(decodeDiff.count) bytes differ (max \(Int(decodeDiff.max))), tensor \(tensorDiff.count) values "
                   + "differ (max \(tensorDiff.max)); \(found.map { "\($0.label.name) \(String(format: "%.3f", $0.score))" })")
             #expect(photoPrepared.geometry == geometry, "\(entry.name): end-to-end letterbox geometry")
-            #expect(end.sameClassSet, "\(entry.name) end to end: class set")
-            #expect(end.matched == reference.count && found.count == reference.count, "\(entry.name) end to end: counts")
-            #expect(end.minIoU >= Self.iouBar, "\(entry.name) end to end: IoU")
-            #expect(end.maxScoreDiff <= Self.scoreBar, "\(entry.name) end to end: scores")
+            if decodeDiff.count == 0 {
+                #expect(tensorDiff.count == 0, "\(entry.name) end to end: the same decode must give the reference tensor")
+                #expect(end.sameClassSet, "\(entry.name) end to end: class set")
+                #expect(end.matched == reference.count && found.count == reference.count, "\(entry.name) end to end: counts")
+                #expect(end.minIoU >= Self.iouBar, "\(entry.name) end to end: IoU")
+                #expect(end.maxScoreDiff <= Self.scoreBar, "\(entry.name) end to end: scores")
+            } else {
+                print("gate: yolox \(entry.name) end to end not gated: ImageIO's decode is not Pillow's (the resize is gated above)")
+            }
             #expect(found.allSatisfy { $0.box.minX >= 0 && $0.box.maxX <= 1 && $0.box.minY >= 0 && $0.box.maxY <= 1 })
             if entry.name == "dog" {
                 #expect(Set(found.map(\.label.name)).isSuperset(of: ["dog", "bicycle"]), "dog.jpg: upstream's README sanity")

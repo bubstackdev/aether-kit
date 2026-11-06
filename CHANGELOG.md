@@ -124,9 +124,11 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
-  (were `vImage`), re-exported and re-pinned; their gates now gate the end-to-end detections from the photos at the
-  tensor path's bars, and check that Pillow's decoded pixels through `preprocess.image` give the reference tensor bit
-  for bit. The references record that decode (`decoded.png`).
+  (were `vImage`), re-exported and re-pinned (`e57fcca8`, `49e797b1`, `b7408d29`). Their gates check that Pillow's
+  decoded pixels through `preprocess.image` give the reference tensor bit for bit, and gate the end-to-end detections
+  from `ImageInput` at the tensor path's bars wherever ImageIO decodes the same bytes as Pillow (YOLOX's PNG cases:
+  IoU 1.0, scores within 2e-6); JPEG photos, which the two decoders decode differently, are printed. The references
+  record that decode (`decoded.png`).
 - `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
   Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
   `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's
