@@ -345,3 +345,14 @@ What's minimal and enough:
   models in FoundationModels): <https://macrumors.com/2026/06/09/apple-outlines-major-ai-and-developer-tool-updates>.
 - Small-model MLX decode figures are sparse; the about 550 tok/s for Qwen3-0.6B 4-bit on an M4 Max is inferred from
   a community post comparing a custom Metal backend with MLX. Treat it as a placeholder until B0 measures it.
+
+## Owner decisions (2026-11-06)
+
+- **B1 lands before 0.1.0.** 0.1.0 is cut from main after the M4 driver slices and B1.
+- **B0, the lab spike, runs after M4's exit-criterion slices.** It is the go/no-go for B2–B5.
+- **MLX bundles are Forge-converted and ours,** hosted under `aether-models`. mlx-community repos are pinned only for the spike.
+- **MLX ships as an `AetherMLX` sub-package** in this repo.
+- **macOS first;** iOS follows once the macOS gates pass and iPhone memory is measured.
+- **The first MLX-only target is Qwen3-8B at 4 bits.**
+- **VLMs (M4g–h) stay Core AI Forge exports.**
+- **Catalog ids for MLX are siblings** (`<id>-mlx`). This is the default and wasn't separately decided.
