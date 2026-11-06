@@ -10,6 +10,8 @@ pad 114 (integers, so exact in the graph's float16 input). Then the host postpro
 here: each case's input tensor is written out, and gates feed it as is. For each case:
 
     <case>/case.json         source, preprocessing recipe and letterbox geometry, shapes, SHA-256 of each file
+    <case>/decoded.png       (image cases) the RGB Pillow decoded (and cropped) before the letterbox, lossless and
+                             untagged, so a gate can feed the host's preprocessing the very same pixels
     <case>/input.f32         the graph input [1,3,640,640], little-endian float32
     <case>/preds.f32         upstream preds [1,8400,85], little-endian float32 (cx,cy,w,h letterbox px, obj, cls[80])
     <case>/detections.json   the postprocess at the driver defaults: class index, COCO id, name, score, box (cxcywh
@@ -103,6 +105,7 @@ def main() -> None:
         if "image" in case:
             crop = tuple(case["crop"]) if "crop" in case else None
             x, letterbox = yg.letterbox_tensor(args.upstream / case["image"], crop)
+            yg.decoded_rgb(args.upstream / case["image"], crop).save(out / "decoded.png", icc_profile=None)
             source = {"kind": "image", "upstreamFile": case["image"], "crop": case.get("crop"),
                       "sha256": yg.PINS["referenceImages"]["files"][case["image"]],
                       "preprocess": "Pillow convert('RGB'), crop (left, top, right, bottom) if given, r = min(640/h, "
@@ -123,8 +126,8 @@ def main() -> None:
         yg.write_f32(out / "preds.f32", preds)
         (out / "detections.json").write_text(json.dumps(dets, indent=1) + "\n")
         record = {"name": case["name"], "source": source, "shapes": SHAPES,
-                  "files": {name: yg.sha256_file(out / name) for name in ("input.f32", "preds.f32",
-                                                                          "detections.json")},
+                  "files": {name: yg.sha256_file(out / name) for name in ("input.f32", "preds.f32", "detections.json",
+                                                                          "decoded.png") if (out / name).exists()},
                   "detections": len(dets), "labels": sorted({d["label"] for d in dets}),
                   "seconds": round(time.monotonic() - started, 2)}
         (out / "case.json").write_text(json.dumps(record, indent=2) + "\n")

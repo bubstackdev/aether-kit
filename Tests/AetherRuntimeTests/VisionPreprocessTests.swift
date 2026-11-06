@@ -5,15 +5,22 @@ import Testing
 @testable import AetherRuntime
 
 /// `preprocess.image` (MANIFEST.md §2.5) against Pillow and torch, from `Fixtures/vision/preprocess.json`
-/// (`Forge/vision/fixtures_preprocess.py`): the parity filters bit for bit, the `vImage` fast filter within its pinned
-/// distance of Pillow's Lanczos, and whole preprocess blocks (geometry, normalization, channel order, layouts, host
-/// dtype) to the bit.
+/// (`Forge/vision/fixtures_preprocess.py`): the parity filters bit for bit (the 8-bit ones on their uint8 output,
+/// `torchBilinear` on its float32 output, every bit of every value), YOLOX's letterbox sizes exactly, the `vImage`
+/// fast filter within its pinned distance of Pillow's Lanczos, and whole preprocess blocks (geometry, normalization,
+/// channel order, layouts, host dtype) to the bit.
 @Suite("Vision preprocessing")
 struct VisionPreprocessTests {
     struct Fixture: Decodable {
         struct Resize: Decodable {
             var width: Int, height: Int, targetWidth: Int, targetHeight: Int
-            var input: String, pillowBicubic: String, torchUint8Bicubic: String
+            var input: String, pillowBicubic: String, torchUint8Bicubic: String, pillowBilinear: String
+        }
+        struct FloatResize: Decodable {
+            var width: Int, height: Int, targetWidth: Int, targetHeight: Int, input: String, torchBilinear: String
+        }
+        struct Letterbox: Decodable {
+            var width: Int, height: Int, canvasWidth: Int, canvasHeight: Int, resized: [Int]
         }
         struct VImage: Decodable {
             var width: Int, height: Int, targetWidth: Int, targetHeight: Int, input: String, pillowLanczos: String
@@ -24,6 +31,8 @@ struct VisionPreprocessTests {
             var canvasWidth: Int, canvasHeight: Int, shape: [Int], hostDType: String, expected: String
         }
         var resizes: [Resize]
+        var floatResizes: [FloatResize]
+        var letterboxGeometry: [Letterbox]
         var vImage: [VImage]
         var pipelines: [Pipeline]
 
@@ -39,16 +48,59 @@ struct VisionPreprocessTests {
         try RGB8Image(rgb: bytes(base64), width: width, height: height)
     }
 
-    @Test func parityBicubicsMatchPillowAndTorchBitForBit() throws {
+    @Test func eightBitParityFiltersMatchPillowAndTorchBitForBit() throws {
         let fixture = try Fixture.load()
         #expect(fixture.resizes.count >= 10)
         for r in fixture.resizes {
             let input = try Self.image(r.input, r.width, r.height)
-            let pillow = ImageResampler.bicubic(input, width: r.targetWidth, height: r.targetHeight, reference: .pillow)
-            let torch = ImageResampler.bicubic(input, width: r.targetWidth, height: r.targetHeight, reference: .torchUint8)
             let label = "\(r.width)x\(r.height) -> \(r.targetWidth)x\(r.targetHeight)"
-            #expect(pillow.rgb == (try Self.bytes(r.pillowBicubic)), "Pillow \(label)")
-            #expect(torch.rgb == (try Self.bytes(r.torchUint8Bicubic)), "torch \(label)")
+            for (filter, expected) in [(ImageResampler.Fixed.pillowBicubic, r.pillowBicubic), (.torchUint8Bicubic, r.torchUint8Bicubic),
+                                       (.pillowBilinear, r.pillowBilinear)] {
+                let out = ImageResampler.resample(input, width: r.targetWidth, height: r.targetHeight, filter)
+                #expect(out.rgb == (try Self.bytes(expected)), "\(filter) \(label)")
+            }
+        }
+    }
+
+    /// torch's float32 bilinear, every value to the bit, on both of torch's CPU kernels (output height + width up to 128
+    /// and above).
+    @Test func torchBilinearMatchesTorchsFloatResizeToTheBit() throws {
+        let fixture = try Fixture.load()
+        #expect(fixture.floatResizes.count >= 10)
+        #expect(fixture.floatResizes.contains { $0.targetWidth + $0.targetHeight <= 128 }
+                && fixture.floatResizes.contains { $0.targetWidth + $0.targetHeight > 128 })
+        for r in fixture.floatResizes {
+            let rgb = try Self.bytes(r.input), plane = r.width * r.height
+            var planes = [Float](repeating: 0, count: 3 * plane)
+            for c in 0..<3 { for i in 0..<plane { planes[c * plane + i] = Float(rgb[3 * i + c]) * Float(1.0 / 255) } }
+            let out = r.targetWidth == r.width && r.targetHeight == r.height ? planes
+                : ImageResampler.torchBilinear(planes, channels: 3, width: r.width, height: r.height,
+                                               toWidth: r.targetWidth, height: r.targetHeight)
+            let expected = try Self.bytes(r.torchBilinear)
+            let outPlane = r.targetWidth * r.targetHeight
+            var mismatched = 0
+            for i in 0..<outPlane {
+                for c in 0..<3 {
+                    let o = (3 * i + c) * 4
+                    let bits = UInt32(expected[o]) | UInt32(expected[o + 1]) << 8 | UInt32(expected[o + 2]) << 16 | UInt32(expected[o + 3]) << 24
+                    if out[c * outPlane + i].bitPattern != bits { mismatched += 1 }
+                }
+            }
+            #expect(mismatched == 0, "\(r.width)x\(r.height) -> \(r.targetWidth)x\(r.targetHeight): \(mismatched) values differ")
+        }
+    }
+
+    /// YOLOX's letterbox sizes, `int(side · min(H / h, W / w))`: the demo strip's fitting side is 639, not the canvas's 640.
+    @Test func letterboxSizesAreYOLOXs() throws {
+        let fixture = try Fixture.load()
+        #expect(fixture.letterboxGeometry.contains { $0.width == 2443 && $0.height == 424 && $0.resized == [639, 111] })
+        for l in fixture.letterboxGeometry {
+            let block = Manifest.ImagePreprocess(resize: .init(mode: .letterbox, size: .init(width: l.canvasWidth, height: l.canvasHeight),
+                                                               anchor: .topLeft, padValue: [114], filter: .pillowBilinear))
+            let (canvas, content) = try ImagePreprocessor(block).resized(try Self.gradient(l.width, l.height))
+            #expect(canvas.width == l.canvasWidth && canvas.height == l.canvasHeight)
+            #expect(content == CGRect(x: 0, y: 0, width: l.resized[0], height: l.resized[1]),
+                    "\(l.width)x\(l.height) into \(l.canvasWidth)x\(l.canvasHeight)")
         }
     }
 
@@ -75,7 +127,7 @@ struct VisionPreprocessTests {
 
     @Test func preprocessBlocksMatchTorchToTheBit() throws {
         let fixture = try Fixture.load()
-        #expect(fixture.pipelines.count >= 9)
+        #expect(fixture.pipelines.count >= 14)
         for p in fixture.pipelines {
             let preprocessor = try ImagePreprocessor(p.preprocess)
             let prepared = try preprocessor.prepare(try Self.image(p.input, p.width, p.height))
@@ -99,7 +151,7 @@ struct VisionPreprocessTests {
 
     static func gradient(_ width: Int, _ height: Int) throws -> RGB8Image {
         var rgb = [UInt8](repeating: 0, count: width * height * 3)
-        for y in 0..<height { for x in 0..<width { rgb[(y * width + x) * 3] = UInt8(y); rgb[(y * width + x) * 3 + 1] = UInt8(x) } }
+        for y in 0..<height { for x in 0..<width { rgb[(y * width + x) * 3] = UInt8(truncatingIfNeeded: y); rgb[(y * width + x) * 3 + 1] = UInt8(truncatingIfNeeded: x) } }
         return try RGB8Image(rgb: rgb, width: width, height: height)
     }
 
@@ -177,6 +229,9 @@ struct VisionPreprocessTests {
         #expect(field(.init(layout: .patches, patchify: .init(patch: 4, temporal: 2, rowOrder: .rowMajor, withinPatch: .pixelChannel)))
                 == "preprocess.image.patchify.temporal")
         #expect(field(.init(hostDType: .int32)) == "preprocess.image.hostDType")
+        #expect(field(.init(resize: .init(mode: .letterbox, size: size, filter: .torchBilinear))) == "preprocess.image.resize.filter")
+        #expect(field(.init(resize: .init(mode: .stretch, size: size, filter: .torchBilinear), layout: .patches,
+                            patchify: .init(patch: 4, rowOrder: .rowMajor, withinPatch: .pixelChannel))) == "preprocess.image.resize.filter")
     }
 
     /// The graph input's own type decides what is written: an fp32 host feeds an fp16 graph (DA3), rounded to nearest

@@ -98,7 +98,9 @@ def main() -> None:
              and detector["outputs"] == want_outputs and set(want_outputs.values()) == set(spec["outputs"])
              and sample["postprocess"]["kind"] == "detrSigmoid" and sample["labels"] == {**sample["labels"],
                                                                                          "set": "coco-91"}
-             and ("masks" in sample["postprocess"]) == ("masks" in spec["outputs"]))
+             and ("masks" in sample["postprocess"]) == ("masks" in spec["outputs"])
+             and sample["preprocess"]["image"]["resize"] == {"mode": "stretch", "size": [spec["size"], spec["size"]],
+                                                             "filter": "torchBilinear"})
     record("manifest.roles", float(roles), 1.0, roles)
     passed = all(c["passed"] for c in checks)
     if args.report:

@@ -113,6 +113,12 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
   - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
 
+- **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
+  `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
+  `interpolate(bilinear, antialias=False)`, as torchvision's `resize` of a float tensor runs it, bit-exact in float32;
+  `stretch` with `NCHW`/`NVCHW` only, resized between `x · scale` and `(x − mean) / std`). Known answers in
+  `Forge/vision/fixtures_preprocess.py`.
+
 ### Tooling
 
 - `scripts/gpu-lease [--timeout S] [--quiet] -- <command>`: runs a command while holding the cross-process GPU lease
@@ -122,6 +128,14 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
 ### Changed
 
+- `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
+  side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
+- The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
+  (were `vImage`), re-exported and re-pinned (`e57fcca8`, `49e797b1`, `b7408d29`). Their gates check that Pillow's
+  decoded pixels through `preprocess.image` give the reference tensor bit for bit, and gate the end-to-end detections
+  from `ImageInput` at the tensor path's bars wherever ImageIO decodes the same bytes as Pillow (YOLOX's PNG cases:
+  IoU 1.0, scores within 2e-6); JPEG photos, which the two decoders decode differently, are printed. The references
+  record that decode (`decoded.png`).
 - `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
   Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
   `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's

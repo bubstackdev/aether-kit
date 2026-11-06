@@ -83088,6 +83088,80 @@
                 "name": "Filter",
                 "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter",
                 "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO"
+               },
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "Filter",
+                  "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter",
+                  "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter.Type"
+               }
+              ],
+              "kind": "TypeFunc",
+              "name": "Function",
+              "printedName": "(AetherCore.Manifest.ImagePreprocess.Resize.Filter.Type) -> AetherCore.Manifest.ImagePreprocess.Resize.Filter"
+             }
+            ],
+            "declKind": "EnumElement",
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO14pillowBilinearyA2ImF",
+            "moduleName": "AetherCore",
+            "name": "pillowBilinear",
+            "printedName": "pillowBilinear",
+            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO14pillowBilinearyA2ImF"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Filter",
+                "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter",
+                "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO"
+               },
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "Filter",
+                  "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter",
+                  "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter.Type"
+               }
+              ],
+              "kind": "TypeFunc",
+              "name": "Function",
+              "printedName": "(AetherCore.Manifest.ImagePreprocess.Resize.Filter.Type) -> AetherCore.Manifest.ImagePreprocess.Resize.Filter"
+             }
+            ],
+            "declKind": "EnumElement",
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO13torchBilinearyA2ImF",
+            "moduleName": "AetherCore",
+            "name": "torchBilinear",
+            "printedName": "torchBilinear",
+            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO13torchBilinearyA2ImF"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Filter",
+                "printedName": "AetherCore.Manifest.ImagePreprocess.Resize.Filter",
+                "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV6FilterO"
                }
               ],
               "kind": "TypeNominal",

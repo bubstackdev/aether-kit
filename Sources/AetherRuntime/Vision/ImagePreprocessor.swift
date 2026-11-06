@@ -84,6 +84,9 @@ public struct ImagePreprocessor: Sendable {
     }
 
     func prepare(_ image: RGB8Image) throws(AetherError) -> PreparedImage {
+        if let resize = configuration.resize, resize.filter == .torchBilinear {
+            return try preparedInFloat(image, size: resize.size!)
+        }
         let (canvas, content) = try resized(image)
         let geometry = ImageGeometry(sourceWidth: image.width, sourceHeight: image.height, width: canvas.width,
                                      height: canvas.height, content: content)
@@ -110,9 +113,10 @@ public struct ImagePreprocessor: Sendable {
                     CGRect(x: 0, y: 0, width: size.width, height: size.height))
         case .letterbox:
             let size = resize.size!
-            // Integer arithmetic, so the fitting side is exactly the canvas's.
-            let (nw, nh) = size.width * h <= size.height * w
-                ? (size.width, max(1, h * size.width / w)) : (max(1, w * size.height / h), size.height)
+            // YOLOX's preproc: r = min(H / h, W / w) and int(side · r), in Double, so the fitting side can come out one
+            // short of the canvas (2443 · (640 / 2443) is 639.99…, so 639).
+            let r = min(Double(size.height) / Double(h), Double(size.width) / Double(w))
+            let (nw, nh) = (max(1, Int(Double(w) * r)), max(1, Int(Double(h) * r)))
             let scaled = try resample(image, nw, nh, resize.filter)
             let (ox, oy) = resize.anchor == .topLeft ? (0, 0) : ((size.width - nw) / 2, (size.height - nh) / 2)
             let pad = resize.padValue ?? [0]
@@ -164,9 +168,40 @@ public struct ImagePreprocessor: Sendable {
         if width == image.width && height == image.height { return image }
         switch filter {
         case .vImage: return try ImageResampler.vImage(image, width: width, height: height)
-        case .pillowBicubic: return ImageResampler.bicubic(image, width: width, height: height, reference: .pillow)
-        case .torchUint8Bicubic: return ImageResampler.bicubic(image, width: width, height: height, reference: .torchUint8)
+        case .pillowBicubic: return ImageResampler.resample(image, width: width, height: height, .pillowBicubic)
+        case .pillowBilinear: return ImageResampler.resample(image, width: width, height: height, .pillowBilinear)
+        case .torchUint8Bicubic: return ImageResampler.resample(image, width: width, height: height, .torchUint8Bicubic)
+        case .torchBilinear: preconditionFailure("torchBilinear resizes in Float (preparedInFloat)")
         }
+    }
+
+    /// The `torchBilinear` path, torchvision's order on a float tensor: `x · scale` (`to_dtype(…, scale=True)` is a
+    /// float32 multiply by 1/255), the float resize (a stretch), then `(x − mean) / std` and the layout.
+    private func preparedInFloat(_ image: RGB8Image, size: Manifest.ImagePreprocess.Size) throws(AetherError) -> PreparedImage {
+        let w = image.width, h = image.height, plane = w * h
+        let scale = Float(configuration.scale ?? 1)
+        var planes = [Float](repeating: 0, count: 3 * plane)
+        for c in 0..<3 { for i in 0..<plane { planes[c * plane + i] = Float(image.rgb[3 * i + c]) * scale } }
+        if size.width != w || size.height != h {
+            planes = ImageResampler.torchBilinear(planes, channels: 3, width: w, height: h, toWidth: size.width, height: size.height)
+        }
+        let outPlane = size.width * size.height
+        let mean = (configuration.mean ?? [0, 0, 0]).map(Float.init), std = (configuration.std ?? [1, 1, 1]).map(Float.init)
+        var chw = [Float](repeating: 0, count: 3 * outPlane)
+        for c in 0..<3 {
+            let s = sourceChannel(c)
+            for i in 0..<outPlane { chw[c * outPlane + i] = (planes[s * outPlane + i] - mean[s]) / std[s] }
+        }
+        var shape = [1, 3, size.height, size.width]
+        if configuration.layout == .NVCHW {
+            let views = configuration.views ?? 1
+            shape = [1, views, 3, size.height, size.width]
+            chw = Array([[Float]](repeating: chw, count: views).joined())
+        }
+        let geometry = ImageGeometry(sourceWidth: w, sourceHeight: h, width: size.width, height: size.height,
+                                     content: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        let values: PreparedImage.Values = configuration.hostDType == .float16 ? .float16(Self.halves(chw)) : .float32(chw)
+        return PreparedImage(shape: shape, values: values, geometry: geometry)
     }
 
     // MARK: - Normalize and lay out
