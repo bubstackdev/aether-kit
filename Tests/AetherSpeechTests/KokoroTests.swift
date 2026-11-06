@@ -41,8 +41,8 @@ struct KokoroTests {
 
     @Test func phonemesTokenizeLikeUpstreamAndRefuseUnknownSymbols() throws {
         let fixture = try CPUFixture.load()
-        let vocabulary = KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: fixture.vocabulary))
-        #expect(KokoroVocabulary(try Self.manifest().kokoro!.phonemes) == vocabulary, "the bundle's vocabulary is upstream's")
+        let vocabulary = try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: fixture.vocabulary))
+        #expect(try KokoroVocabulary(try Self.manifest().kokoro!.phonemes) == vocabulary, "the bundle's vocabulary is upstream's")
         for item in fixture.tokenization {
             let phonemes = try KokoroPhonemes(item.phonemes, vocabulary: vocabulary)
             #expect(phonemes.tokenIDs == item.ids)
@@ -97,12 +97,22 @@ struct KokoroTests {
         }
     }
 
+    /// Review finding 10: a hand-built vocabulary with an empty or multi-scalar key is refused, not a trap.
+    @Test func malformedVocabulariesThrow() {
+        #expect(throws: AetherError.self) { try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["": 1])) }
+        #expect(throws: AetherError.self) { try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["ab": 1])) }
+    }
+
     @Test func voicesParseTheirLanguageAndGender() throws {
         let voice = try KokoroVoice("bm_george")
         #expect(voice == .bmGeorge && voice.language == .britishEnglish && voice.gender == .male && voice.language.bcp47 == "en-GB")
-        for bad in ["", "af", "xf_heart", "ax_heart", "afheart", "af_Heart", "af_he art"] {
+        for bad in ["", "af", "Af_heart", "ax_heart", "afheart", "af_Heart", "af_he art"] {
             #expect(throws: AetherError.self) { try KokoroVoice(bad) }
         }
+        // Review finding 9: a language letter this release doesn't know (the manifest allows any a–z) still parses,
+        // so a bundle carrying such a voice loads; before, `Language` was a closed enum and the session refused it.
+        let unknown = try KokoroVoice("kf_minji")
+        #expect(unknown.language.rawValue == "k" && unknown.language.bcp47 == nil && !KokoroVoice.Language.known.contains(unknown.language))
         let encoded = try JSONEncoder().encode(KokoroVoice.afHeart)
         #expect(String(decoding: encoded, as: UTF8.self) == "\"af_heart\"")
         #expect(try JSONDecoder().decode(KokoroVoice.self, from: encoded) == .afHeart)
@@ -270,7 +280,7 @@ struct KokoroTests {
         }
         await #expect(throws: AetherError.self) { try await session.synthesize(segments: []) }
         // A voice this bundle doesn't carry, and phonemes parsed with another vocabulary.
-        let other = KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["ð": 1, "ə": 2]))
+        let other = try KokoroVocabulary(Manifest.Kokoro.Phonemes(vocabulary: ["ð": 1, "ə": 2]))
         await #expect(throws: AetherError.self) { try await session.synthesize(try KokoroPhonemes("ðə", vocabulary: other)) }
         #expect(log.entries.isEmpty)
         // Not enough memory for the graphs' files: refused before anything loads.

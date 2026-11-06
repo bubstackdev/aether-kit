@@ -82,6 +82,10 @@ struct FlowMatchScheduleTests {
         #expect(try FlowMatchSchedule(Self.krea, steps: 1).sigmas == [1, 0])
         #expect(throws: AetherError.self) { try FlowMatchSchedule(Self.krea, steps: 0) }
         #expect(throws: AetherError.self) { try FlowMatchSchedule(Self.krea, steps: 51) }
+        // Review finding 10: the direct initializer refuses bad values instead of trapping.
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 0, mu: nil) }
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: .nan) }
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: 1, trainTimesteps: 0) }
     }
 
     @Test func fluxEmpiricalShiftMatchesTheReferencePipeline() throws {

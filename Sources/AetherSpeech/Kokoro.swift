@@ -167,7 +167,7 @@ public actor KokoroSpeechSession {
             frames: decoder.inputs["frames"]!.name, audio: decoder.outputs["audio"]!.name)
         self.manifest = manifest
         self.kokoro = kokoro
-        vocabulary = KokoroVocabulary(kokoro.phonemes)
+        vocabulary = try KokoroVocabulary(kokoro.phonemes)
         self.voices = voices
         self.frameCap = frameCap
         self.options = options
