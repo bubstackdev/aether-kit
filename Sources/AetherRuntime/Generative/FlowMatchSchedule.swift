@@ -47,7 +47,9 @@ public struct FlowMatchSchedule: Sendable, Hashable {
     }
 
     /// The schedule for `steps` ≥ 1 steps, shifted at a finite `mu` (unshifted when nil). Refuses other values with
-    /// `generation(.invalidParameters)`.
+    /// `generation(.invalidParameters)`, including a `mu` whose shift `exp(μ)` isn't a normal Float (about
+    /// −87.3 < μ < 88.7): the shift is computed in Float for parity with the reference, and past that range it
+    /// overflows to infinity (every sigma NaN) or underflows to zero.
     public init(steps: Int, mu: Double?, trainTimesteps: Int = 1000) throws(AetherError) {
         guard steps >= 1, trainTimesteps >= 1, mu?.isFinite ?? true else {
             throw .generation(.invalidParameters(
@@ -56,6 +58,9 @@ public struct FlowMatchSchedule: Sendable, Hashable {
         let stop = 1.0 / Double(steps)
         let delta = steps > 1 ? (stop - 1.0) / Double(steps - 1) : 0.0
         let e = mu.map { Float(exp($0)) }
+        if let e, let mu, !e.isNormal {
+            throw .generation(.invalidParameters("a flow-match shift exp(mu) must be a normal Float; mu \(mu) gives \(e)"))
+        }
         let t = Float(trainTimesteps)
         var sigmas: [Float] = (0..<steps).map { index in
             let base = Float(index == steps - 1 && steps > 1 ? stop : Double(index) * delta + 1.0)

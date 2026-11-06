@@ -157,22 +157,32 @@ struct MiniMaxH3Tests {
     }
 
     /// The review fixes on H3: the driver loads a model with settable options, and the qualified footprints are seeded
-    /// under the pipeline's ledger key (manifest id, source revision, device), so its first plan is measured.
-    @Test func qualifiedFootprintsSeedThePipelinesKey() throws {
+    /// under the pipeline's ledger key (manifest id, source revision, export, device), so its first plan is measured.
+    /// Third review, P2-11: only for the export and the chip they were measured on; anything else plans from its files.
+    @Test func qualifiedFootprintsSeedOnlyTheQualifiedConfiguration() throws {
         #expect(MiniMaxH3Driver.Loaded.self == MiniMaxH3Model.self)
-        let ledger = FootprintLedger()
-        let device = Device(platform: .macOS, architecture: "h17c")
         let manifest = try Self.manifest()
+        let h17c = Device(platform: .macOS, architecture: MiniMaxH3Pipeline.qualifiedArchitecture)
+        func key(_ device: Device) -> String { ResidentAdmission.modelKey(manifest: manifest, device: device) }
+        func seeded(_ ledger: FootprintLedger) -> [FootprintLedger.Key] { ledger.snapshot.keys.filter { $0.profile == "960x544x124" } }
+
+        // The fixture isn't the qualified export: opening a pipeline on the qualified chip seeds nothing.
+        let ledger = FootprintLedger()
         _ = try MiniMaxH3Pipeline(
-            manifest: manifest, device: device, bundle: nil, options: .init(gpu: .unadmitted, ledger: ledger, probe: GPUMemoryProbe { 0 }),
+            manifest: manifest, device: h17c, bundle: nil, options: .init(gpu: .unadmitted, ledger: ledger, probe: GPUMemoryProbe { 0 }),
             tokenize: { _ in [] }, load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "none") })
-        let key = ResidentAdmission(
-            manifest: manifest, device: device,
-            settings: .init(memory: .videoGeneration, coordinator: nil, ledger: ledger, probe: GPUMemoryProbe { 0 }),
-            load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "none") }, fileBytes: { _ in 0 }).modelKey
-        let seeded = ledger.snapshot.keys.filter { $0.profile == "960x544x124" }
-        #expect(seeded.count == 3 && seeded.allSatisfy { $0.model == key } && key.hasSuffix("/macos-h17c"))
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: ledger, model: key, profile: "960x544x124") { _ in 0 }
-        #expect(inputs.isMeasured)
+        #expect(manifest.contentDigest != MiniMaxH3Pipeline.qualifiedExportDigest && seeded(ledger).isEmpty)
+
+        // The qualified export on the qualified chip: seeded under the pipeline's key, and planned as measured.
+        let qualified = FootprintLedger()
+        MiniMaxH3Pipeline.seedQualified(qualified, model: key(h17c), manifest: manifest, device: h17c, qualifiedDigest: manifest.contentDigest)
+        #expect(seeded(qualified).count == 3 && seeded(qualified).allSatisfy { $0.model == key(h17c) })
+        #expect(key(h17c).hasSuffix("/macos-h17c") && key(h17c).contains("#\(manifest.contentDigest.prefix(16))/"))
+        #expect(ResidencyPlan.inputs(manifest: manifest, ledger: qualified, model: key(h17c), profile: "960x544x124") { _ in 0 }.isMeasured)
+
+        // Another chip: not seeded.
+        let other = Device(platform: .macOS, architecture: "h16s"), elsewhere = FootprintLedger()
+        MiniMaxH3Pipeline.seedQualified(elsewhere, model: key(other), manifest: manifest, device: other, qualifiedDigest: manifest.contentDigest)
+        #expect(seeded(elsewhere).isEmpty)
     }
 }

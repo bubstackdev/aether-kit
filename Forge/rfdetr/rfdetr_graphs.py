@@ -277,14 +277,19 @@ def image_tensor(path: Path, size: int) -> np.ndarray:
     """The reference cases' preprocessing, upstream `predict`'s: Pillow decode, `convert("RGB")`, uint8 CHW to float32
     / 255 (torchvision `to_dtype(scale=True)`), `F.resize(..., [size, size], antialias=False)` (bilinear, stretch), NCHW.
     (The gate feeds this tensor directly; the host's own resize is gated separately.)"""
-    from PIL import Image
     import torchvision.transforms.v2.functional as F
 
-    with Image.open(path) as im:
-        rgb = im.convert("RGB")
-    t = F.to_dtype(F.to_image(rgb), torch.float32, scale=True)
+    t = F.to_dtype(F.to_image(decoded_rgb(path)), torch.float32, scale=True)
     t = F.resize(t, [size, size], antialias=False)
     return np.ascontiguousarray(t[None].numpy(), dtype=np.float32)
+
+
+def decoded_rgb(path: Path):
+    """The source as the references decode it: Pillow `convert("RGB")` (no colour management, no EXIF transpose)."""
+    from PIL import Image
+
+    with Image.open(path) as im:
+        return im.convert("RGB")
 
 
 def synthetic_tensor(seed: int, size: int) -> np.ndarray:

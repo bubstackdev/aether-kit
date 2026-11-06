@@ -86,6 +86,15 @@ struct FlowMatchScheduleTests {
         #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 0, mu: nil) }
         #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: .nan) }
         #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: 1, trainTimesteps: 0) }
+        // Third review, P3-12: exp(100) overflows Float and every sigma was NaN; exp(-200) underflows to 0 (0/0 at the
+        // first step). Refused; the edges of the representable range still give finite schedules.
+        for mu in [100.0, 89, -88, -200] {
+            #expect(throws: AetherError.self, "mu \(mu)") { try FlowMatchSchedule(steps: 4, mu: mu) }
+        }
+        for mu in [88.0, -87.0, 0] {
+            let sigmas = try FlowMatchSchedule(steps: 4, mu: mu).sigmas
+            #expect(sigmas.allSatisfy { $0.isFinite && (0...1).contains($0) } && sigmas.last == 0, "mu \(mu)")
+        }
     }
 
     @Test func fluxEmpiricalShiftMatchesTheReferencePipeline() throws {

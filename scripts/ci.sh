@@ -4,6 +4,8 @@
 #   scripts/ci.sh            hermetic checks (no network, no GPU): toolchain, catalog, build, public API, tests
 #   AETHER_GATES=1 scripts/ci.sh
 #                            also the real-graph gates (needs lab/models and a free GPU; Mac only)
+#   AETHER_CI_IOS=1 scripts/ci.sh
+#                            also the iOS compile check (scripts/ci-ios.sh; the CI workflow runs it as its own job)
 #
 # Builds in .build-ci/ so CI never fights an interactive `swift build` over .build/.
 set -euo pipefail
@@ -34,6 +36,15 @@ python3 -I scripts/gen-catalog check
 step "build (warnings are errors)"
 swift build --scratch-path "$SCRATCH" --build-tests -Xswiftc -warnings-as-errors
 
+step "release build (warnings are errors)"
+# Optimized builds diagnose differently (and some code is #if DEBUG); catch what only shows there.
+swift build --scratch-path "$SCRATCH" -c release -Xswiftc -warnings-as-errors
+
+if [[ "${AETHER_CI_IOS:-0}" == "1" ]]; then
+  step "iOS compile check"
+  scripts/ci-ios.sh
+fi
+
 step "public API: compare with the api/ baseline (report-only until the 0.1.0 freeze)"
 AETHER_CI_SCRATCH="$SCRATCH" scripts/check-api.sh
 
@@ -42,8 +53,9 @@ env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"
-  # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping.
-  AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
+  # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping. The run holds
+  # the machine's GPU lease (the runtime gates drive graphs directly and take none); pipeline gates inherit it.
+  scripts/gpu-lease -- env AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
 fi
 
 step "ok"

@@ -5,9 +5,16 @@
 
 Writes, into the directory (replacing what is there):
 - `preprocess.json`:
-  - `resizes`: seeded noise images resampled by Pillow's `Image.resize(BICUBIC)` and by torch's uint8
-    `interpolate(bicubic, antialias=True)` (which torchvision's `resize` of a uint8 tensor calls); the parity filters
-    must reproduce both bit for bit.
+  - `resizes`: seeded noise images resampled by Pillow's `Image.resize(BICUBIC)` and `Image.resize(BILINEAR)` and by
+    torch's uint8 `interpolate(bicubic, antialias=True)` (which torchvision's `resize` of a uint8 tensor calls); the
+    8-bit parity filters must reproduce each bit for bit.
+  - `floatResizes`: seeded noise images as torchvision makes them float (`to_dtype(…, scale=True)`, a float32 multiply
+    by 1/255) and resized by `resize(…, antialias=False)` (torch's float32 `upsample_bilinear2d`), stored as float32:
+    `torchBilinear` must reproduce them to the bit. torch picks its CPU kernel by the output size (height + width up to
+    128: channels-last; above: the separable generic kernel), so the cases straddle that line. Run multi-threaded, as
+    the references are (a single thread switches every 3-channel resize to the channels-last kernel).
+  - `letterboxGeometry`: the resized size YOLOX's preproc gives (`r = min(H / h, W / w)`, `int(side * r)`, at least
+    1), including the demo strip (2443 x 424 into 640: 639 x 111, one short of the canvas).
   - `vImage`: smooth images and Pillow's `LANCZOS` of them, the nearest Pillow kernel to Accelerate's `vImageScale`.
     The fast filter isn't a parity filter; the suite pins how close it stays.
   - `pipelines`: whole `preprocess.image` blocks (as a manifest carries them) with the tensor torch computes for them:
@@ -65,7 +72,25 @@ def torch_uint8(image: np.ndarray, w: int, h: int) -> np.ndarray:
 def resample(image: np.ndarray, w: int, h: int, filter: str) -> np.ndarray:
     if image.shape[1] == w and image.shape[0] == h:
         return image
-    return pillow(image, w, h) if filter == "pillowBicubic" else torch_uint8(image, w, h)
+    if filter == "pillowBicubic":
+        return pillow(image, w, h)
+    if filter == "pillowBilinear":
+        return pillow(image, w, h, Image.Resampling.BILINEAR)
+    return torch_uint8(image, w, h)
+
+
+def torch_float_bilinear(image: np.ndarray, w: int, h: int, scale: float = 1 / 255) -> torch.Tensor:
+    """torchvision's float path (RF-DETR `predict`): uint8 CHW to float32 times `scale`, then `resize(antialias=False)`."""
+    import torchvision.transforms.v2.functional as F
+
+    t = torch.from_numpy(image).permute(2, 0, 1).to(torch.float32).mul_(scale)
+    return t if t.shape[1:] == (h, w) else F.resize(t, [h, w], antialias=False)
+
+
+def letterbox_size(w: int, h: int, W: int, H: int) -> tuple[int, int]:
+    """YOLOX's preproc: r = min(H / h, W / w), each side int(side * r) (at least 1 here; upstream would give 0)."""
+    r = min(H / h, W / w)
+    return max(1, int(w * r)), max(1, int(h * r))
 
 
 def geometry(image: np.ndarray, resize: dict | None):
@@ -74,12 +99,14 @@ def geometry(image: np.ndarray, resize: dict | None):
     if resize is None:
         return image
     mode, f = resize["mode"], resize["filter"]
+    if f == "torchBilinear":
+        return image                                    # resized in float by tensor()
     if mode == "stretch":
         W, H = resize["size"]
         return resample(image, W, H, f)
     if mode == "letterbox":
         W, H = resize["size"]
-        nw, nh = (W, max(1, h * W // w)) if W * h <= H * w else (max(1, w * H // h), H)
+        nw, nh = letterbox_size(w, h, W, H)
         ox, oy = (0, 0) if resize.get("anchor") == "topLeft" else ((W - nw) // 2, (H - nh) // 2)
         pad = resize.get("padValue", [0])
         canvas = np.empty((H, W, 3), np.uint8)
@@ -103,10 +130,16 @@ def geometry(image: np.ndarray, resize: dict | None):
 
 
 def tensor(canvas: np.ndarray, block: dict) -> torch.Tensor:
-    x = torch.from_numpy(np.array(canvas)).permute(2, 0, 1).to(torch.float32)          # C, H, W in RGB
     mean = torch.tensor(block.get("mean", [0, 0, 0]), dtype=torch.float32)[:, None, None]
     std = torch.tensor(block.get("std", [1, 1, 1]), dtype=torch.float32)[:, None, None]
-    x = (x * block.get("scale", 1.0) - mean) / std
+    resize = block.get("resize")
+    if resize is not None and resize["filter"] == "torchBilinear":
+        # Float resize between the scale and the normalization (`canvas` is the source; stretch only).
+        W, H = resize["size"]
+        x = (torch_float_bilinear(canvas, W, H, block.get("scale", 1.0)) - mean) / std
+    else:
+        x = torch.from_numpy(np.array(canvas)).permute(2, 0, 1).to(torch.float32)          # C, H, W in RGB
+        x = (x * block.get("scale", 1.0) - mean) / std
     if block.get("channelOrder") == "BGR":
         x = x.flip(0)
     layout = block.get("layout", "NCHW")
@@ -170,6 +203,8 @@ def alpha_fixtures(out: Path) -> None:
 
 
 def main() -> None:
+    if torch.get_num_threads() < 2:
+        raise SystemExit("run multi-threaded, as the references are: torch picks another bilinear kernel on one thread")
     out = Path(sys.argv[1])
     if out.exists():
         shutil.rmtree(out)
@@ -181,7 +216,24 @@ def main() -> None:
                        (101, 77, 16, 16), (5, 7, 80, 60), (1, 40, 3, 7), (40, 40, 84, 84), (90, 120, 37, 61)]:
         image = noise(h, w)
         resizes.append({"width": w, "height": h, "targetWidth": W, "targetHeight": H, "input": b64(image),
-                        "pillowBicubic": b64(pillow(image, W, H)), "torchUint8Bicubic": b64(torch_uint8(image, W, H))})
+                        "pillowBicubic": b64(pillow(image, W, H)), "torchUint8Bicubic": b64(torch_uint8(image, W, H)),
+                        "pillowBilinear": b64(pillow(image, W, H, Image.Resampling.BILINEAR))})
+
+    float_resizes = []
+    # Up, down, mixed, one axis only, odd sizes, a 1-pixel side; output height + width on both sides of 128 (64 + 64 and
+    # 65 + 64 straddle it); the RF-DETR shape class (a large photo down to a square).
+    for h, w, H, W in [(37, 53, 96, 80), (120, 80, 36, 26), (17, 9, 40, 13), (64, 64, 64, 31), (64, 64, 29, 64),
+                       (91, 77, 64, 64), (91, 77, 65, 64), (50, 50, 70, 59), (5, 7, 80, 60), (1, 40, 3, 7),
+                       (90, 120, 37, 61), (110, 190, 66, 66)]:
+        image = noise(h, w)
+        float_resizes.append({"width": w, "height": h, "targetWidth": W, "targetHeight": H, "input": b64(image),
+                              "torchBilinear": b64(torch_float_bilinear(image, W, H).permute(1, 2, 0).numpy())})
+
+    letterboxes = [{"width": w, "height": h, "canvasWidth": W, "canvasHeight": H, "resized": list(letterbox_size(w, h, W, H))}
+                   for w, h, W, H in [(2443, 424, 640, 640), (610, 424, 640, 640), (640, 480, 640, 640),
+                                      (1920, 1080, 640, 640), (100, 50, 64, 64), (50, 99, 64, 64), (49, 30, 8, 8),
+                                      (30, 49, 8, 8), (49, 2, 8, 8), (77, 5, 10, 10), (424, 2443, 640, 640),
+                                      (3000, 7, 640, 640), (53, 37, 32, 24)]]
 
     vimage = []
     for h, w, H, W in [(37, 53, 90, 90), (150, 100, 64, 48), (64, 64, 32, 32), (48, 64, 96, 128), (101, 77, 40, 40)]:
@@ -213,6 +265,18 @@ def main() -> None:
         ("siglip-patches", (20, 28), {"resize": {"mode": "stretch", "size": [32, 24], "filter": "pillowBicubic"},
                                       "scale": 1 / 255, "mean": [0.5, 0.5, 0.5], "std": [0.5, 0.5, 0.5], "layout": "patches",
                                       "patchify": {"patch": 8, "rowOrder": "rowMajor", "withinPatch": "py,px,C"}}),
+        ("letterbox-yolox-bilinear", (30, 49), {"resize": {"mode": "letterbox", "size": [8, 8], "anchor": "topLeft",
+                                                           "padValue": [114], "filter": "pillowBilinear"},
+                                                "channelOrder": "BGR", "scale": 1, "layout": "NCHW"}),
+        ("letterbox-center-bilinear", (61, 40), {"resize": {"mode": "letterbox", "size": [24, 20], "padValue": [0, 50, 255],
+                                                            "filter": "pillowBilinear"}, "scale": 1 / 255}),
+        ("stretch-rfdetr-float", (45, 67), {"resize": {"mode": "stretch", "size": [32, 32], "filter": "torchBilinear"},
+                                            "scale": 1 / 255, "layout": "NCHW", "hostDType": "float32"}),
+        ("stretch-float-normalized-bgr", (50, 31), {"resize": {"mode": "stretch", "size": [70, 61], "filter": "torchBilinear"},
+                                                    "scale": 1 / 255, **clip, "channelOrder": "BGR"}),
+        ("stretch-float-nvchw-fp16", (23, 29), {"resize": {"mode": "stretch", "size": [17, 40], "filter": "torchBilinear"},
+                                                "scale": 1 / 255, "mean": [0.5, 0.5, 0.5], "std": [0.5, 0.5, 0.5],
+                                                "layout": "NVCHW", "views": 2, "hostDType": "float16"}),
         ("unresized-nchw", (9, 13), {"scale": 1 / 255, "mean": [0.1, 0.2, 0.3], "std": [0.9, 0.8, 0.7]}),
     ]
     pipelines = []
@@ -221,14 +285,17 @@ def main() -> None:
         canvas = geometry(image, block.get("resize"))
         t = tensor(canvas, block)
         dtype = block.get("hostDType", "float32")
+        float_resize = block.get("resize", {}).get("filter") == "torchBilinear"
         values = t.to(torch.float16 if dtype == "float16" else torch.float32).numpy()
         pipelines.append({"name": name, "width": w, "height": h, "input": b64(image), "preprocess": block,
-                          "canvasWidth": canvas.shape[1], "canvasHeight": canvas.shape[0],
+                          "canvasWidth": t.shape[-1] if float_resize else canvas.shape[1],
+                          "canvasHeight": t.shape[-2] if float_resize else canvas.shape[0],
                           "shape": list(t.shape), "hostDType": dtype, "expected": b64(values)})
 
     (out / "preprocess.json").write_text(json.dumps(
         {"generator": "Forge/vision/fixtures_preprocess.py", "pillow": PIL.__version__,
-         "torch": torch.__version__, "resizes": resizes, "vImage": vimage, "pipelines": pipelines}) + "\n")
+         "torch": torch.__version__, "torchThreads": torch.get_num_threads(), "resizes": resizes,
+         "floatResizes": float_resizes, "letterboxGeometry": letterboxes, "vImage": vimage, "pipelines": pipelines}) + "\n")
     alpha_fixtures(out / "alpha")
 
 

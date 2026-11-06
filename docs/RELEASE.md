@@ -31,6 +31,22 @@ AETHER_GATES=1 scripts/ci.sh
 (`Tests/AetherCoreTests/ZooAdapterTests.swift`'s `signatures.json` fixtures are re-recorded only when a zoo bundle
 changes: `AETHER_GATES=1 AETHER_RECORD_SIGNATURES=1 swift test --filter GateTests/recordSignatures`.)
 
+**The GPU lease.** Kit processes share one cross-process lease, `/tmp/atelier-gpu.lock` (`SharedGPULease`), with
+Atelier and the lab scripts. GPU work outside the kit (Forge checks and exporters, reference renders, one-off scripts)
+takes it with `scripts/gpu-lease`, which waits for the lease, runs the command, and releases when it exits:
+
+```bash
+scripts/gpu-lease -- uv run --project Forge python Forge/yolox/check_yolox.py --bundle <bundle> --reference <reference>
+AETHER_GATES=1 scripts/gpu-lease --timeout 600 -- swift test --filter KokoroGateTests
+```
+
+The command runs with `AETHER_GPU_LEASE_HOLDER` set to the wrapper's pid, so kit processes inside it inherit the lease
+instead of waiting on it, and a nested `scripts/gpu-lease` just runs its command. The wrapper reports a busy holder
+on stderr (`--quiet` hides it), passes the command's exit status through, forwards SIGINT, SIGTERM and SIGHUP to it,
+and exits 75 on `--timeout`. `AETHER_GATES=1 scripts/ci.sh` already runs its gate step under it. Don't hand-roll the
+`mkdir` protocol: the wrapper also does the stale-holder reclaim and the guarded release, interop-tested against the
+Swift implementation in `SharedGPULeaseTests`.
+
 **Device gate.** SD-Turbo (iOS bundle) and Kokoro on a physical iPhone, recorded in docs/DEVICE.md:
 
 ```bash

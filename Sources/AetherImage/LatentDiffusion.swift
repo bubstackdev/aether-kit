@@ -153,16 +153,37 @@ public actor LatentDiffusionPipeline {
 
     // MARK: - The generation
 
+    /// The three phases, each in its own function: a phase's graphs are referenced only by its function's locals and
+    /// the residency, so when ``GraphResidency/endPhase(_:)`` releases them (per phase) nothing else keeps them alive.
     private func run(
         _ residency: GraphResidency, ids: [Int32], seed: UInt64, schedule: EpsilonEulerSchedule,
         grid: (rows: Int, columns: Int), size: (width: Int, height: Int)
     ) async throws -> GeneratedImage {
         let arena = TensorArena()
-        let latentShape = [1, latent.channels, grid.rows, grid.columns]
-        let count = latentShape.reduce(1, *)
 
         // Prompt: the conditioning outlives the text encoder (it may be released before the U-Net loads).
         residency.beginPhase(.perPrompt)
+        let conditioning = try await encode(ids, residency: residency, arena: arena)
+        residency.endPhase(.perPrompt)
+        try Task.checkCancellation()
+
+        // Steps: the latents stay on the host; each step writes the scaled input and reads epsilon.
+        residency.beginPhase(.perStep)
+        let latents = try await denoise(
+            conditioning: conditioning, seed: seed, schedule: schedule, grid: grid, size: size, residency: residency, arena: arena)
+        residency.endPhase(.perStep)
+        try Task.checkCancellation()
+
+        // Image.
+        residency.beginPhase(.perImage)
+        let image = try await decode(latents, size: size, residency: residency, arena: arena)
+        residency.endPhase(.perImage)
+        // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
+        try Task.checkCancellation()
+        return image
+    }
+
+    private func encode(_ ids: [Int32], residency: GraphResidency, arena: TensorArena) async throws -> TensorBuffer {
         let text = try await residency.graph("textEncoder")
         let tokens = try text.makeBuffer(for: names.tokens, role: .input, dimensions: [], in: arena)
         let conditioning = try text.makeBuffer(for: names.textOut, role: .output, dimensions: [], in: arena)
@@ -172,11 +193,15 @@ public actor LatentDiffusionPipeline {
         try bindings.bindOutput(names.textOut, to: conditioning)
         try await text.run(&bindings)
         residency.sample()
-        residency.endPhase(.perPrompt)
-        try Task.checkCancellation()
+        return conditioning
+    }
 
-        // Steps: the latents stay on the host; each step writes the scaled input and reads epsilon.
-        residency.beginPhase(.perStep)
+    private func denoise(
+        conditioning: TensorBuffer, seed: UInt64, schedule: EpsilonEulerSchedule, grid: (rows: Int, columns: Int),
+        size: (width: Int, height: Int), residency: GraphResidency, arena: TensorArena
+    ) async throws -> [Float] {
+        let latentShape = [1, latent.channels, grid.rows, grid.columns]
+        let count = latentShape.reduce(1, *)
         let unet = try await residency.graph("denoiser")
         let sample = try unet.makeBuffer(for: names.latents, role: .input, dimensions: [], in: arena)
         let timestep = try unet.makeBuffer(for: names.timestep, role: .input, dimensions: [], in: arena)
@@ -203,11 +228,12 @@ public actor LatentDiffusionPipeline {
             try epsilon.readFloats(0..<count, into: &noise)
             try schedule.advance(step: step, latents: &latents, epsilon: noise)
         }
-        residency.endPhase(.perStep)
-        try Task.checkCancellation()
+        return latents
+    }
 
-        // Image.
-        residency.beginPhase(.perImage)
+    private func decode(
+        _ latents: [Float], size: (width: Int, height: Int), residency: GraphResidency, arena: TensorArena
+    ) async throws -> GeneratedImage {
         let vae = try await residency.graph("vaeDecoder")
         let input = try vae.makeBuffer(for: names.decoderIn, role: .input, dimensions: [], in: arena)
         let output = try vae.makeBuffer(for: names.image, role: .output, dimensions: [], in: arena)
@@ -216,12 +242,11 @@ public actor LatentDiffusionPipeline {
                 field: "graphs.vaeDecoder.outputs.image", expected: "[3, \(size.height), \(size.width)]", found: "\(output.shape)")
         }
         try input.write(latents)
-        bindings = Bindings(arena: arena)
+        var bindings = Bindings(arena: arena)
         try bindings.bindInput(names.decoderIn, to: input)
         try bindings.bindOutput(names.image, to: output)
         try await vae.run(&bindings)
         residency.sample()
-        residency.endPhase(.perImage)
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
     }
 

@@ -18,11 +18,17 @@ import AetherHost
 ///   outputs through the same head: the same class set; detections matched class by class (greedy on box IoU > 0.5),
 ///   every pair box IoU ≥ 0.95, |score difference| ≤ 0.01 and (seg-nano) mask IoU ≥ 0.95; an unmatched detection only
 ///   within 0.01 of the threshold; a repeat bit-identical.
-/// - **End to end, reported:** each image case's input rebuilt as an 8-bit image (the reference's input is torchvision's
-///   float resize, so this rounds it) and detected from `ImageInput`; and the source photos (`Forge/rfdetr/fetch_upstream.py`'s
-///   `~/.cache/aether-kit/rfdetr/images`, or `AETHER_RFDETR_IMAGES`, checked by SHA-256) detected at their own size, against
-///   the reference outputs mapped to the same source (Kit stretches with vImage, the reference with torchvision's
-///   bilinear, so these are reported, not gated).
+/// - **The host's preprocessing, apart from the decode:** the RGB Pillow decoded for the reference (`decoded.png`,
+///   lossless and untagged) through the bundle's `preprocess.image` (`torchBilinear`) is the reference's `input.f32` bit
+///   for bit, so its detections are the graph path's exactly.
+/// - **End to end:** the source photos (`Forge/rfdetr/fetch_upstream.py`'s `~/.cache/aether-kit/rfdetr/images`, or
+///   `AETHER_RFDETR_IMAGES`, checked by SHA-256) detected from ``ImageInput`` (ImageIO's decode, converted to sRGB) at
+///   their own size, against the reference outputs mapped to the same source. Gated at the same bars where ImageIO
+///   decodes the very bytes Pillow does; all five photos are JPEGs that ImageIO and Pillow's libjpeg decode differently
+///   (by 3 to 42 levels; the two embedded profiles are sRGB), which on its own moves some scores past 0.01, so for them
+///   the result is printed with the decode difference and the resize is gated by the step above.
+/// - **Reported:** each image case's input rebuilt as an 8-bit image (the reference's input is a float resize, so this
+///   rounds it) and detected from `ImageInput`.
 ///
 /// The bundles and references default to the Forge outputs beside this repo (`aether/forge-outputs/rf-detr-nano`,
 /// `rf-detr-seg-nano`), or `AETHER_RFDETR_OUTPUTS` (the directory holding both).
@@ -74,6 +80,27 @@ struct ObjectDetectorDetrGateTests {
             space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue),
             provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
         return ImageInput(image)
+    }
+
+    /// How many values differ, and by how much at most.
+    static func differences<T: BinaryFloatingPoint>(_ a: [T], _ b: [T]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0.0
+        for (x, y) in zip(a, b) where x != y {
+            count += 1
+            largest = max(largest, abs(Double(x) - Double(y)))
+        }
+        return (count, largest)
+    }
+
+    static func differences(_ a: [UInt8], _ b: [UInt8]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0
+        for i in a.indices where a[i] != b[i] {
+            count += 1
+            largest = max(largest, abs(Int(a[i]) - Int(b[i])))
+        }
+        return (count, Double(largest))
     }
 
     static func iou(_ a: CGRect, _ b: CGRect) -> Double {
@@ -194,23 +221,45 @@ struct ObjectDetectorDetrGateTests {
             print("gate: \(id) \(entry.name) 8-bit pixels end to end: \(pixels.count) detections, "
                   + Self.match(pixels, reference, threshold: threshold).summary)
 
-            // (c) The source photo at its own size: reported.
+            // (c) Pillow's decode through the host's preprocessing: the reference tensor, bit for bit (so the detections
+            // are (a)'s, the graph being deterministic).
+            let pillowRGB = try ImageInput(contentsOf: caseURL.appending(path: "decoded.png")).decode(colorSpace: .deviceRGB)
+            let fromPillow = try ImagePreprocessor(manifest: model.manifest).prepare(pillowRGB)
+            let resizeDiff = Self.differences(fromPillow.floats(), input)
+            print("gate: \(id) \(entry.name) Pillow's decode \(pillowRGB.width)x\(pillowRGB.height) through preprocess.image: "
+                  + "\(resizeDiff.count) values differ from input.f32 (max |Δ| \(resizeDiff.max))")
+            #expect(fromPillow.shape == shape && resizeDiff.count == 0, "\(entry.name): \(resizeDiff.count) values differ from the reference tensor")
+
+            // (d) The source photo at its own size, ImageIO's decode: gated at the same bars.
             let url = images.appending(path: file)
             guard let data = try? Data(contentsOf: url) else {
                 print("gate: \(id) \(entry.name): no source photo at \(url.path) (Forge/rfdetr/fetch_upstream.py); skipped")
                 continue
             }
             #expect(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() == sha, "\(file): SHA-256")
-            let photoStarted = ContinuousClock.now
             let photoInput = ImageInput(contentsOf: url)
+            let colorSpace = model.manifest.preprocess?.image?.colorSpace ?? .deviceRGB
+            let decodeDiff = Self.differences(try photoInput.decode(colorSpace: colorSpace).rgb, pillowRGB.rgb)
+            let photoPrepared = try detector.prepare(photoInput)
+            let tensorDiff = Self.differences(photoPrepared.floats(), input)
+            let photoStarted = ContinuousClock.now
             let photo = try await detector.detect(photoInput)
             let photoElapsed = ContinuousClock.now - photoStarted
-            let g = try detector.prepare(photoInput).geometry
+            let g = photoPrepared.geometry
             let mapped = decode(raw, g)
+            let end = Self.match(photo, mapped, threshold: threshold)
             #expect(photo.allSatisfy { d in d.mask.map { $0.width == g.sourceWidth && $0.height == g.sourceHeight } ?? true })
             print("gate: \(id) \(entry.name) photo \(g.sourceWidth)x\(g.sourceHeight) end to end: \(photo.count) detections "
-                  + "\(Set(photo.map(\.label.name)).sorted()), vs the reference mapped to the photo: "
-                  + "\(Self.match(photo, mapped, threshold: threshold).summary) (not gated: vImage vs torchvision bilinear); \(photoElapsed)")
+                  + "\(Set(photo.map(\.label.name)).sorted()), vs the reference mapped to the photo: \(end.summary); ImageIO "
+                  + "(\(colorSpace.rawValue)) vs Pillow decode \(decodeDiff.count) bytes differ (max \(Int(decodeDiff.max))), tensor "
+                  + "\(tensorDiff.count) values differ (max \(String(format: "%.3g", tensorDiff.max))); \(photoElapsed)")
+            if decodeDiff.count == 0 {
+                #expect(tensorDiff.count == 0, "\(entry.name) end to end: the same decode must give the reference tensor")
+                #expect(end.passes, "\(entry.name) end to end: \(end.summary) \(end.hardUnmatched)")
+            } else {
+                print("gate: \(id) \(entry.name) end to end not gated: ImageIO's decode is not Pillow's (the resize is gated above)"
+                      + (end.passes ? "; within the bars anyway" : "; outside the bars: \(end.summary) \(end.hardUnmatched)"))
+            }
         }
         for (key, footprint) in detector.options.ledger.snapshot.sorted(by: { $0.key.description < $1.key.description }) {
             print("gate: \(id) \(key): peak \(footprint.peakBytes >> 20) MiB, held \(footprint.heldBytes >> 20) MiB")
