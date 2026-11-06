@@ -33,6 +33,25 @@ struct VisionManifestTests {
         #expect(try Manifest.decode(m.encoded()) == m)
     }
 
+    /// YOLOX's Forge export writes `padValue` as a bare number, `activation` and `classIndex`, and `labels.set`.
+    @Test func theYOLOXExportersBlocksDecode() throws {
+        let m = try Manifest.decode(Self.manifest("""
+        "preprocess": { "image": { "resize": { "mode": "letterbox", "size": [640, 640], "anchor": "topLeft", "padValue": 114,
+                                               "filter": "vImage" }, "channelOrder": "BGR", "layout": "NCHW" } },
+        "postprocess": { "kind": "denseNms", "boxFormat": "cxcywh", "boxSpace": "letterboxPixels", "activation": "applied",
+                         "nms": { "type": "perClass", "iou": 0.45 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 50 },
+                         "classIndex": "contiguous", "x-notes": "n" },
+        "labels": { "set": "coco-91", "x-notes": "n" }
+        """))
+        #expect(m.preprocess?.image?.resize == .init(mode: .letterbox, size: .init(width: 640, height: 640), anchor: .topLeft,
+                                                    padValue: [114], filter: .vImage))
+        #expect(m.postprocess == .denseNms(.init(
+            boxFormat: .cxcywh, boxSpace: .letterboxPixels, activation: .applied, nms: .init(type: .perClass, iou: 0.45),
+            defaults: .init(scoreThreshold: 0.3, maxDetections: 50), classIndex: .contiguous)))
+        #expect(m.labels == .set(.coco91))
+        #expect(try Manifest.decode(m.encoded()) == m)
+    }
+
     /// CLIP's Forge export (`Forge/clip/`): `resize.shortestSide`, `embedding.dimension` and `logitScale`, and the typed
     /// `tokenizer.text`'s `maskRule: none` and `unusedBatchRows`.
     @Test func theCLIPExportersBlocksDecode() throws {
@@ -83,9 +102,9 @@ struct VisionManifestTests {
             (#"{ "kind": "denseNms", "boxFormat": "cxcywh", "boxSpace": "letterboxPixels", "nms": { "type": "perClass", "iou": 0.45 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 50 } }"#,
              .denseNms(.init(boxFormat: .cxcywh, boxSpace: .letterboxPixels, nms: .init(type: .perClass, iou: 0.45),
                              defaults: .init(scoreThreshold: 0.3, maxDetections: 50)))),
-            (#"{ "kind": "detrSigmoid", "boxFormat": "cxcywh", "boxSpace": "normalized", "classIndex": "cocoId", "defaults": { "scoreThreshold": 0.5, "maxDetections": 50 }, "masks": {} }"#,
+            (#"{ "kind": "detrSigmoid", "boxFormat": "cxcywh", "boxSpace": "normalized", "classIndex": "cocoId", "selection": "topKPairs", "defaults": { "scoreThreshold": 0.5, "maxDetections": 50 }, "masks": {} }"#,
              .detrSigmoid(.init(boxFormat: .cxcywh, boxSpace: .normalized, defaults: .init(scoreThreshold: 0.5, maxDetections: 50),
-                                classIndex: .cocoId, masks: .init()))),
+                                classIndex: .cocoId, selection: .topKPairs, masks: .init()))),
             (#"{ "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine" } }"#,
              .embedding(.init(normalized: .inGraph, similarity: .cosine))),
             (#"{ "kind": "gliner" }"#, .gliner(.init())),
@@ -111,6 +130,7 @@ struct VisionManifestTests {
         expect("postprocess.depth.polarity", #""postprocess": { "kind": "depth", "depth": { "polarity": "up" } }"#)
         expect("postprocess.nms.iou", #""postprocess": { "kind": "denseNms", "boxFormat": "xyxy", "boxSpace": "normalized", "nms": { "type": "perClass", "iou": 0 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 5 } }"#)
         expect("postprocess.defaults.maxDetections", #""postprocess": { "kind": "detrSigmoid", "boxFormat": "xyxy", "boxSpace": "normalized", "defaults": { "scoreThreshold": 0.3, "maxDetections": 0 } }"#)
+        expect("postprocess.selection", #""postprocess": { "kind": "detrSigmoid", "boxFormat": "xyxy", "boxSpace": "normalized", "selection": "perQuery", "defaults": { "scoreThreshold": 0.3, "maxDetections": 5 } }"#)
         expect("postprocess.probs.threshold", #""postprocess": { "kind": "yesNo", "probs": { "positiveIndex": 1, "threshold": 2 } }"#)
         expect("postprocess.retrieval.patchGrid", #""postprocess": { "kind": "maxSim", "retrieval": { "imageTokenSpan": [13, 77], "patchGrid": [8, 7] } }"#)
         expect("postprocess.sr.range", #""postprocess": { "kind": "superRes", "sr": { "range": [1, -1] } }"#)

@@ -31,8 +31,10 @@ public struct DepthEstimatorModel: Sendable {
 }
 
 extension Registry {
-    /// The drivers AetherVision links: `depth-estimator@1`, `clip-joint@1`.
-    public static let vision = Registry([DepthEstimatorDriver.self, ImageTextEncoderDriver.self])
+    /// The drivers AetherVision links: `depth-estimator@1`, `detector-dense@1`, `detector-detr@1`, `clip-joint@1`.
+    public static let vision = Registry([
+        DepthEstimatorDriver.self, DenseDetectorDriver.self, DetrDetectorDriver.self, ImageTextEncoderDriver.self,
+    ])
 }
 
 /// One depth request's settings.
