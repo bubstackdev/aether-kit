@@ -50,6 +50,34 @@ ID = "sd-turbo"
 NAME = "sd_turbo"
 ASSETS = {"textEncoder": f"{NAME}-text.aimodel", "denoiser": f"{NAME}-unet.aimodel", "vaeDecoder": f"{NAME}-vae.aimodel"}
 NOT_BUNDLE = {".aether/aether.json", "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
+DTYPES = {"float32": torch.float32, "float16": torch.float16}
+
+
+class Precision:
+    """The compute dtype of each graph: the text encoder (`text`), the U-Net (`unet`) and the VAE decoder (`vae`).
+    float16 keeps the checkpoint's own fp16 weights (no rounding); float32 widens them. Graph inputs and outputs stay
+    float32 either way, so the driver is the same."""
+
+    def __init__(self, text: str, unet: str, vae: str) -> None:
+        self.text, self.unet, self.vae = text, unet, vae
+
+    @property
+    def uniform(self) -> str | None:
+        return self.text if self.text == self.unet == self.vae else None
+
+    def summary(self) -> str:
+        return (f"text encoder {self.text}, U-Net {self.unet}, VAE decoder {self.vae}; "
+                "float32 graph inputs and outputs")
+
+    def manifest(self) -> dict:
+        if self.uniform == "float32":
+            return {"weights": "fp32 (widened from the fp16 checkpoint)", "activations": "fp32",
+                    "components": {"vaeDecoder": "divides by the VAE scaling factor 0.18215 itself"}}
+        word = {"float32": "fp32", "float16": "fp16"}
+        per = f"text encoder {word[self.text]}, U-Net {word[self.unet]}, VAE decoder {word[self.vae]}"
+        return {"weights": f"{per} (fp16 is the checkpoint's own; fp32 widened from it)",
+                "activations": f"{per}; float32 graph inputs and outputs",
+                "components": {"vaeDecoder": "divides by the VAE scaling factor 0.18215 itself"}}
 
 
 class Log:
@@ -112,7 +140,8 @@ def convert(module: nn.Module, example: tuple, inputs: list[str], output: str, e
 
 # MARK: the manifest (MANIFEST.md §1 `latent-diffusion@1`, §5.2 `schedule` epsilonEuler and `latent` spatial)
 
-def manifest(files: dict[str, dict], tables: dict[str, dict], size: int, report: dict) -> dict:
+def manifest(files: dict[str, dict], tables: dict[str, dict], size: int, report: dict,
+             precision: "Precision", platform: str = "macos") -> dict:
     graph = lambda role, function, inputs, outputs, residency: {  # noqa: E731
         "file": f"main:{ASSETS[role]}", "function": function, "inputs": inputs, "outputs": outputs,
         "compute": "gpu", "expectFrequentReshapes": False, "residency": residency}
@@ -122,7 +151,7 @@ def manifest(files: dict[str, dict], tables: dict[str, dict], size: int, report:
         "id": ID,
         "task": "text-to-image",
         "driver": "latent-diffusion@1",
-        "variant": {"platform": "macos"},
+        "variant": {"platform": platform},
         "assets": {"main": {"subtree": "", "files": [{"path": p, **meta} for p, meta in sorted(files.items())]}},
         "graphs": {
             "textEncoder": {**graph("textEncoder", "encode", {"tokens": "input_ids"}, {"conditioning": "text_embeds"},
@@ -149,8 +178,7 @@ def manifest(files: dict[str, dict], tables: dict[str, dict], size: int, report:
             "noise": {"kind": "splitmix64BoxMuller", "order": "nchw", "dtype": "float32"},
             "maxImageTokens": side * side, "sizes": [[size, size]],
         },
-        "precision": {"weights": "fp32 (widened from the fp16 checkpoint)", "activations": "fp32",
-                      "components": {"vaeDecoder": "divides by the VAE scaling factor 0.18215 itself"}},
+        "precision": precision.manifest(),
         "license": "LicenseRef-Stability-AI-Community-License",
         "x-license": {"files": ["LICENSE.md", "NOTICE"], "modified": True, "commercialRevenueCapUSD": 1_000_000,
                       "commercialUse": "requires registration at https://stability.ai/community-license",
@@ -165,23 +193,26 @@ def manifest(files: dict[str, dict], tables: dict[str, dict], size: int, report:
     }
 
 
-def sample_manifest() -> dict:
+def sample_manifest(precision: "Precision | None" = None, platform: str = "macos") -> dict:
     """`manifest()` for placeholder files and report values, with the real schedule tables (from the pinned Diffusers
     and scheduler config). Regenerate the Swift fixture with
     `--sample-manifest > Tests/AetherCoreTests/Fixtures/sd-turbo/aether.json`."""
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in ASSETS.values()}
     report = {"scriptSHA256": {"export_sdturbo.py": "0" * 64}, "forgeLockSHA256": "0" * 64}
-    return manifest(files, sg.schedule_tables(sg.DEFAULT_SNAPSHOT), sg.SIZE, report)
+    return manifest(files, sg.schedule_tables(sg.DEFAULT_SNAPSHOT), sg.SIZE, report,
+                    precision or Precision("float32", "float32", "float32"), platform)
 
 
-def notice(size: int) -> str:
+def notice(size: int, precision: "Precision") -> str:
+    weights = ("weights were widened to float32" if precision.uniform == "float32"
+               else f"weights were kept in fp16 where noted ({precision.summary()})")
     return "\n".join([
         "SD-Turbo (Aether-Kit Core AI export)",
         "",
         sg.NOTICE_LINE,
         "",
         f"This bundle is a modified version of the Stability AI Model {sg.REPO} at revision {sg.REVISION}: its fp16",
-        f"weights were widened to float32 and re-expressed as Core AI graphs (CLIP text encoder, U-Net, VAE decoder) at",
+        f"{weights} and re-expressed as Core AI graphs (CLIP text encoder, U-Net, VAE decoder) at",
         f"a fixed {size}x{size} geometry by Aether-Kit's Forge exporter. The architecture and weights are otherwise unchanged.",
         "",
         "This is not an official Stability AI release. Use is subject to the Stability AI Community License (LICENSE.md)",
@@ -198,9 +229,15 @@ def main() -> None:
                         help="print the manifest for placeholder files and exit (the Swift decoding fixture)")
     parser.add_argument("--snapshot", type=Path, default=sg.DEFAULT_SNAPSHOT)
     parser.add_argument("--size", type=int, default=sg.SIZE, help="fixed square size, a multiple of 64 in 64...512")
+    parser.add_argument("--precision", choices=sorted(DTYPES), default="float32",
+                        help="every graph's compute dtype (float16: the checkpoint's own fp16 weights)")
+    parser.add_argument("--text-precision", choices=sorted(DTYPES), help="the text encoder's (default: --precision)")
+    parser.add_argument("--vae-precision", choices=sorted(DTYPES), help="the VAE decoder's (default: --precision)")
+    parser.add_argument("--platform", choices=["macos", "ios"], default="macos", help="the manifest's variant.platform")
     args = parser.parse_args()
+    precision = Precision(args.text_precision or args.precision, args.precision, args.vae_precision or args.precision)
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(), indent=2, ensure_ascii=False))
+        print(json.dumps(sample_manifest(precision, args.platform), indent=2, ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")
@@ -226,7 +263,7 @@ def main() -> None:
         "forgeLockSHA256": sha256(lock), "forgePyprojectSHA256": sha256(HERE.parent / "pyproject.toml"),
         "scriptSHA256": {p.name: sha256(p) for p in sorted(HERE.glob("*.py"))},
         "source": {"repository": sg.REPO, "revision": sg.REVISION, "snapshot": str(root), "verified": {}},
-        "precision": "float32 weights (widened from the fp16 checkpoint) and activations; no quantization",
+        "precision": precision.summary(), "platform": args.platform,
         "conversion": {}, "stages": {},
     }
     report_path = args.output / "export-report.json"
@@ -250,12 +287,12 @@ def main() -> None:
 
     shape = sg.latent_shape(args.size)
     stages = [
-        ("textEncoder", lambda: sg.TextEncoder(sg.load_text_encoder(root)),
+        ("textEncoder", lambda: sg.TextEncoder(sg.load_text_encoder(root, DTYPES[precision.text])),
          lambda: (torch.zeros(1, sg.TEXT_LENGTH, dtype=torch.int32),), ["input_ids"], "text_embeds", "encode"),
-        ("denoiser", lambda: sg.EpsilonDenoiser(sg.load_unet(root)),
+        ("denoiser", lambda: sg.EpsilonDenoiser(sg.load_unet(root, DTYPES[precision.unet])),
          lambda: (torch.randn(*shape), torch.tensor([999.0]), torch.randn(1, sg.TEXT_LENGTH, sg.TEXT_WIDTH)),
          ["sample", "timestep", "text_embeds"], "epsilon", "denoise"),
-        ("vaeDecoder", lambda: sg.LatentDecoder(sg.load_vae(root)), lambda: (torch.randn(*shape),),
+        ("vaeDecoder", lambda: sg.LatentDecoder(sg.load_vae(root, DTYPES[precision.vae])), lambda: (torch.randn(*shape),),
          ["latents"], "image", "decode"),
     ]
     for role, build, example, inputs, output, entry in stages:
@@ -272,7 +309,7 @@ def main() -> None:
     for name in sg.TOKENIZER_FILES:
         shutil.copyfile(root / "tokenizer" / name, args.output / "tokenizer" / name)
     shutil.copyfile(root / "LICENSE.md", args.output / "LICENSE.md")
-    (args.output / "NOTICE").write_text(notice(args.size))
+    (args.output / "NOTICE").write_text(notice(args.size, precision))
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": sha256(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in NOT_BUNDLE}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
@@ -281,7 +318,7 @@ def main() -> None:
     save()
     (args.output / ".aether").mkdir()
     manifest_path = args.output / ".aether/aether.json"
-    manifest_path.write_text(json.dumps(manifest(files, tables, args.size, report), indent=2, ensure_ascii=False) + "\n")
+    manifest_path.write_text(json.dumps(manifest(files, tables, args.size, report, precision, args.platform), indent=2, ensure_ascii=False) + "\n")
     report["aetherJSONSHA256"] = sha256(manifest_path)
     save()
     sums = [f"{sha256(p)}  {p.relative_to(args.output)}" for p in tree_files(args.output)

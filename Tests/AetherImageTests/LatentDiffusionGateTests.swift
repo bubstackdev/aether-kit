@@ -12,7 +12,7 @@ import Testing
 /// Bars (0.0.x's, declared before its native run): tokenizer ids exact on every edge case; the whole image RMSE ≤ 0.03
 /// on the decoder's [-1, 1] scale; a repeat generation bit-identical. The bundle and reference default to the Forge
 /// outputs beside this repo (`aether/forge-outputs/sd-turbo`, `…/references/sd-turbo`), or `AETHER_SDTURBO_BUNDLE` and
-/// `AETHER_SDTURBO_REFERENCE`.
+/// `AETHER_SDTURBO_REFERENCE`. `AETHER_GATE_DUMP=<dir>` also writes each image as raw float32 (Tools/DeviceGate compares).
 @Suite("Latent diffusion gates", .serialized, .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
 struct LatentDiffusionGateTests {
     static let environment = ProcessInfo.processInfo.environment
@@ -60,6 +60,10 @@ struct LatentDiffusionGateTests {
             print("gate: sd-turbo \(c.id) (\(c.steps) steps): RMSE \(rmse), PSNR \(psnr) dB, \(seconds) s")
             #expect(rmse <= 0.03, "\(c.id): RMSE \(rmse)")
             try image.pngData().write(to: Self.referenceURL.appending(path: "\(c.id)/native.png"))
+            if let dump = Self.environment["AETHER_GATE_DUMP"] {   // raw float32, to compare with the device gate's
+                try image.planarRGB.withUnsafeBufferPointer { Data(buffer: $0) }
+                    .write(to: URL(filePath: dump).appending(path: "sd-turbo-\(c.id).f32"))
+            }
             let repeated = try await pipeline.generate(.init(prompt: c.prompt, seed: c.seed, steps: c.steps))
             #expect(repeated == image, "\(c.id): a repeat generation differs")
         }
