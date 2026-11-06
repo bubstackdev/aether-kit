@@ -10394,6 +10394,36 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime8KVSizingV17initialAllocation8capacity6budgetS2i_s5Int64VtF",
+      "moduleName": "AetherRuntime",
+      "name": "initialAllocation",
+      "printedName": "initialAllocation(capacity:budget:)",
+      "usr": "s:13AetherRuntime8KVSizingV17initialAllocation8capacity6budgetS2i_s5Int64VtF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Int64",
         "printedName": "Swift.Int64",
         "usr": "s:s5Int64V"
