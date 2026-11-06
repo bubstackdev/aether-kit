@@ -50,6 +50,7 @@ let package = Package(
             ],
             swiftSettings: common
         ),
+        // The FoundationModels `LanguageModel` bridge (M3), on the Generator. Links FoundationModels.
         .target(name: "AetherFoundationModels", dependencies: ["AetherText"], swiftSettings: common),
         .target(name: "AetherVision", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
@@ -69,7 +70,7 @@ let package = Package(
         // Test doubles shared by the test targets (the fake decoder). Not part of any product.
         .target(
             name: "AetherTestSupport",
-            dependencies: ["AetherRuntime", "AetherCore"],
+            dependencies: ["AetherRuntime", "AetherCore", "AetherText"],
             path: "Tests/AetherTestSupport",
             swiftSettings: common
         ),
@@ -91,7 +92,14 @@ let package = Package(
             // Reads AetherCoreTests/Fixtures by path: the zoo fixtures have one home. References are gate inputs,
             // read by path too.
             exclude: ["References"],
+            // Fixtures: the sampler's recorded Transformers rows and RNG known answers (0.0.x).
+            resources: [.copy("Fixtures")],
             swiftSettings: common + [.enableExperimentalFeature("Lifetimes")]
+        ),
+        .testTarget(
+            name: "AetherFoundationModelsTests",
+            dependencies: ["AetherFoundationModels", "AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            swiftSettings: common
         ),
         .testTarget(
             name: "AetherTextTests",

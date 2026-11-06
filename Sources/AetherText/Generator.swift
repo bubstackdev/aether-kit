@@ -8,18 +8,23 @@ public struct GenerationParameters: Sendable {
     public var stopSequences: [String]
     /// Thinking on or off; nil leaves the template's default.
     public var thinking: Bool?
-    /// Applied in order to every next-token row on the CPU (M3's constrained decoding plugs in here).
+    /// Token constraints, intersected, applied to every next-token row on the CPU (structured output plugs in here).
+    /// Each one's `accept` runs concurrently with the step whose logits it constrains.
     public var logitsProcessors: [any LogitsProcessor]
+    /// Tools the model may call, rendered into the template. Needs a manifest `tokenizer.toolDialect` this build
+    /// implements (`hermes-json`); otherwise the request is refused.
+    public var tools: [ToolDefinition]
 
     public init(
         maxTokens: Int = 512, sampling: SamplingParameters = .greedy, stopSequences: [String] = [], thinking: Bool? = nil,
-        logitsProcessors: [any LogitsProcessor] = []
+        logitsProcessors: [any LogitsProcessor] = [], tools: [ToolDefinition] = []
     ) {
         self.maxTokens = maxTokens
         self.sampling = sampling
         self.stopSequences = stopSequences
         self.thinking = thinking
         self.logitsProcessors = logitsProcessors
+        self.tools = tools
     }
 }
 
@@ -46,6 +51,8 @@ public struct GenerationSummary: Sendable, Equatable {
     public var reusedTokens: Int
     /// Every token chosen, including a final stop token.
     public var tokens: [Int32]
+    /// Of `tokens`, those inside a thinking block (its tags included).
+    public var thinkingTokens: Int
     public var stopReason: StopReason
     public var prefillSeconds: Double
     public var decodeSeconds: Double
@@ -75,6 +82,8 @@ public actor Generator {
     private var snapshots: [(tokens: [Int32], state: DecoderEngine.Snapshot, logits: Logits?)] = []
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// The vocabulary indexed for JSON constraints, built on the first structured request (63 ms for Qwen3 in 0.0.x).
+    private var jsonVocabulary: JSONVocabulary?
 
     public init(
         engine: DecoderEngine, decoder: any TokenDecoding, renderer: any PromptRenderer, stopTokens: Set<Int32>,
@@ -96,10 +105,12 @@ public actor Generator {
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
         stream { generator, continuation in
-            let rendered = try generator.renderer.render(messages, options: RenderOptions(thinking: parameters.thinking))
+            if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
+            let rendered = try generator.renderer.render(
+                messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
             // The history alone (no generation prompt): where the next turn's prompt will diverge from this one.
             let history = try generator.renderer.render(
-                messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false)).tokens
+                messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
             let boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
             try await generator.run(rendered, parameters, continuation, boundary: boundary)
         }
@@ -199,6 +210,42 @@ public actor Generator {
         return n
     }
 
+    // MARK: - Constraints
+
+    /// A JSON-schema constraint for this model (structured output). With `allowThinking`, the reply may open a
+    /// thinking block first and is constrained from its close tag on; a prompt that already opened one (a template
+    /// that can't switch thinking off) is handled either way. Needs a byte-level tokenizer (``TokenBytes``).
+    public func jsonConstraint(_ schema: OutputSchema, allowThinking: Bool = false) throws -> JSONSchemaConstraint {
+        guard let bytes = decoder.tokenBytes else {
+            throw AetherError.unsupportedOperation("structured output needs a byte-level tokenizer (no token byte table)")
+        }
+        let tag = profile.thinkingTag
+        let open = tag.flatMap { decoder.tokenID($0.open) }, close = tag.flatMap { decoder.tokenID($0.close) }
+        if jsonVocabulary == nil {
+            jsonVocabulary = JSONVocabulary(bytes: bytes, headRows: engine.description.vocab, excluded: Set([open, close].compactMap { $0 }.map(Int.init)))
+        }
+        let reasoning = open.flatMap { open in close.map { JSONSchemaConstraint.Reasoning(open: open, close: $0) } }
+        return try JSONSchemaConstraint(schema: schema, vocabulary: jsonVocabulary!, stopTokenIDs: stopTokens, reasoning: reasoning,
+                                        allowThinking: allowThinking)
+    }
+
+    /// Whether structured output can run here (a byte-level tokenizer).
+    public nonisolated var supportsStructuredOutput: Bool { decoder.tokenBytes != nil }
+
+    /// The first constraint, from every processor (run beside the prefill).
+    nonisolated static func begin(_ processors: [any LogitsProcessor], _ prompt: [Int32], base: TokenConstraint) async throws -> TokenConstraint {
+        var constraint = base
+        for processor in processors { constraint = constraint.intersection(try await processor.begin(prompt: prompt)) }
+        return constraint
+    }
+
+    /// The constraint after `token`, from every processor (run beside the step that feeds `token`).
+    nonisolated static func accept(_ processors: [any LogitsProcessor], _ token: Int32, base: TokenConstraint) async throws -> TokenConstraint {
+        var constraint = base
+        for processor in processors { constraint = constraint.intersection(try await processor.accept(token)) }
+        return constraint
+    }
+
     // MARK: - The loop
 
     private func run(
@@ -207,13 +254,26 @@ public actor Generator {
     ) async throws {
         let prompt = rendered.tokens
         guard !prompt.isEmpty else { throw AetherError.unsupportedOperation("an empty prompt") }
+        try parameters.sampling.validate()
         let clock = ContinuousClock()
         let t0 = clock.now
         let position = await engine.position
         liveValid = liveValid && mirror.count == position
+        let processors = parameters.logitsProcessors
+        let pipelined = parameters.sampling.isPlainGreedy && processors.isEmpty
+        // Random sampling never picks the padding rows of a head wider than the tokenizer (Qwen3: 151,936 rows,
+        // 151,669 tokens); greedy never does in practice.
+        let vocab = engine.description.vocab
+        var base = TokenConstraint.unconstrained
+        if !parameters.sampling.isGreedy, let count = decoder.tokenBytes?.count, count < vocab {
+            base = .allowed(TokenSet(range: 0..<count, vocabularySize: vocab))
+        }
         let (logits, reused): (Logits, Int)
+        var constraint = base
         do {
+            async let first = Self.begin(processors, prompt, base: base)
             (logits, reused) = try await prepare(prompt, boundary: boundary)
+            constraint = try await first
         } catch {
             liveValid = false
             mirror = []
@@ -221,26 +281,27 @@ public actor Generator {
         }
         let t1 = clock.now
 
+        let tags = Set(profile.tags.flatMap { [$0.open, $0.close] })
         var state = LoopState(
-            decoder: decoder, parser: TagParser(profile: profile, startsInThinking: rendered.startsInThinking),
+            text: TokenText(decoder: decoder, keepSpecial: tags),
+            parser: TagParser(profile: profile, startsInThinking: rendered.startsInThinking,
+                              valueOnly: processors.contains { $0.isStructuredOutput }),
             stopper: StopMatcher(parameters.stopSequences), stopTokens: stopTokens, maxTokens: max(1, parameters.maxTokens),
             continuation: continuation)
-        var sampler = Sampler(parameters.sampling)
-        let processors = parameters.logitsProcessors
-        func choose(_ row: ArraySlice<Float>) -> Int32 {
-            if parameters.sampling.isPlainGreedy && processors.isEmpty { return Logits.argmax(row) }
+        var sampler = Sampler(parameters.sampling, prompt: prompt)
+        func choose(_ row: ArraySlice<Float>, _ constraint: TokenConstraint) throws -> Int32 {
+            if pipelined { return Logits.argmax(row) }
             var values = Array(row)
-            Sampler.applyRepetitionPenalty(parameters.sampling.repetitionPenalty, seen: prompt + state.chosen, to: &values)
-            let context = LogitsContext(prompt: prompt, generated: state.chosen)
-            for processor in processors { processor.process(&values, context: context) }
-            return sampler.sample(values)
+            return try sampler.sample(&values, constraint: constraint)
         }
 
-        var token = choose(logits.last)
-        var stop = state.accept(token)
+        var token: Int32
+        var stop: Bool
         var mode = "host"
         do {
-            if parameters.sampling.isPlainGreedy && processors.isEmpty {
+            token = try choose(logits.last, constraint)
+            stop = state.accept(token)
+            if pipelined {
                 mode = "\(await engine.decodeMode)"
                 if !stop {
                     try await engine.beginGreedy(first: token, limit: state.maxTokens - 1)
@@ -253,16 +314,22 @@ public actor Generator {
                     try await engine.endGreedy()
                 }
             } else {
-                mode = "host logits + CPU sampler (depth 1)"
+                mode = processors.isEmpty ? "host logits + CPU sampler (depth 1)" : "host logits + CPU sampler + constraint (depth 1)"
                 let capacity = engine.description.maxCapacity
                 while !stop, !Task.isCancelled {
                     guard await engine.position < capacity else { break }
-                    token = choose(try await engine.step(token).last)
+                    // The constraint on the next token is computed while the step that feeds this one runs.
+                    let fed = token
+                    async let next = Self.accept(processors, fed, base: base)
+                    let row = try await engine.step(fed)
+                    constraint = try await next
+                    token = try choose(row.last, constraint)
                     stop = state.accept(token)
                 }
             }
         } catch {
             liveValid = false
+            mirror = prompt + state.chosen.dropLast()
             throw error
         }
         let t2 = clock.now
@@ -274,21 +341,21 @@ public actor Generator {
         if Task.isCancelled { throw CancellationError() }
         state.finish()
         continuation.yield(.finished(GenerationSummary(
-            promptTokens: prompt.count, reusedTokens: reused, tokens: state.chosen,
+            promptTokens: prompt.count, reusedTokens: reused, tokens: state.chosen, thinkingTokens: state.thinkingTokens,
             stopReason: state.reason ?? .capacity, prefillSeconds: (t1 - t0) / .seconds(1),
             decodeSeconds: (t2 - t1) / .seconds(1), decodeMode: mode)))
     }
 
-    /// Per-request output state: stop checks, detokenizer, stop sequences, tag parser.
+    /// Per-request output state: stop checks, token text, tag parser, stop sequences on the response text.
     struct LoopState {
-        let decoder: any TokenDecoding
+        var text: TokenText
         var parser: TagParser
         var stopper: StopMatcher
         let stopTokens: Set<Int32>
         let maxTokens: Int
         let continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation
-        var detokenizer = IncrementalDetokenizer()
         var chosen: [Int32] = []
+        var thinkingTokens = 0
         var reason: GenerationSummary.StopReason?
 
         /// Takes one chosen token; true when generation must stop.
@@ -298,9 +365,10 @@ public actor Generator {
                 reason = .stopToken(token)
                 return true
             }
-            let (text, hit) = stopper.feed(detokenizer.append(token, decoder))
-            send(parser.feed(text))
-            if let hit {
+            let wasThinking = parser.inThinking
+            let segments = parser.feed(text.append(token))
+            if wasThinking || parser.inThinking { thinkingTokens += 1 }
+            if let hit = route(segments) {
                 reason = .stopSequence(hit)
                 return true
             }
@@ -312,23 +380,40 @@ public actor Generator {
         }
 
         mutating func finish() {
-            if case .stopSequence? = reason {
-                send(parser.finish())
+            // After a stop sequence nothing more is emitted.
+            if case .stopSequence? = reason { return }
+            // The held last character can still complete a stop sequence.
+            if let hit = route(parser.feed(text.finish())) ?? route(parser.finish()) {
+                reason = .stopSequence(hit)
                 return
             }
-            let (tail, _) = stopper.feed(detokenizer.finish(decoder))
-            send(parser.feed(tail + stopper.finish()))
-            send(parser.finish())
+            let rest = stopper.finish()
+            if !rest.isEmpty { continuation.yield(.text(rest)) }
         }
 
-        private func send(_ segments: [TagParser.Segment]) {
+        /// Emits segments in order; returns the stop sequence if one completed in the response text.
+        private mutating func route(_ segments: [TagParser.Segment]) -> String? {
             for segment in segments {
                 switch segment {
-                case .text(let s): continuation.yield(.text(s))
-                case .thinking(let s): continuation.yield(.thinking(s))
-                case .toolCall(let s): continuation.yield(.toolCall(s))
+                case .text(let s):
+                    let (ready, hit) = stopper.feed(s)
+                    if !ready.isEmpty { continuation.yield(.text(ready)) }
+                    if let hit { return hit }
+                case .thinking(let s):
+                    flushText()
+                    continuation.yield(.thinking(s))
+                case .toolCall(let s):
+                    flushText()
+                    continuation.yield(.toolCall(s))
                 }
             }
+            return nil
+        }
+
+        /// Text can't continue across a tag: held text that could start a stop sequence is released.
+        private mutating func flushText() {
+            let held = stopper.finish()
+            if !held.isEmpty { continuation.yield(.text(held)) }
         }
     }
 }

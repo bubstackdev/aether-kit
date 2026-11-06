@@ -103,7 +103,13 @@ struct GeneratorTests {
     @Test func samplingIsSeededAndProcessorsApply() async throws {
         struct Ban: LogitsProcessor {
             let token: Int32
-            func process(_ logits: inout [Float], context: LogitsContext) { logits[Int(token)] = -.infinity }
+            var all: TokenSet {
+                var set = TokenSet(range: 0..<64, vocabularySize: 64)
+                set.remove(Int(token))
+                return set
+            }
+            func begin(prompt: [Int32]) -> TokenConstraint { .allowed(all) }
+            func accept(_ token: Int32) -> TokenConstraint { .allowed(all) }
         }
         let g = try await FakeChat.generator()
         let prompt = try FakeRenderer().render([.user("hello")], options: RenderOptions())

@@ -222,6 +222,26 @@ final class Graph {                               // non-Sendable; owned by one 
     fork's ≈ 535 (0.90–0.94×). The hybrid's depth 3 runs at ≈ 234 against the fork's ≈ 238 (parity; host `encode`
     cost bounds it). Prefill goes through `encode` and reads only the logits rows it needs: converting every row to
     `[Float]` made `run()` prefill 8× slower.
+
+### 6.2 DecoderEngine (the owned LLM engine)
+
+There is one engine type for every causal decoder. Chat, VLM decoders, ASR-LLMs and the decision readout all use it.
+The sketch below is the shape; the implemented API is `Sources/AetherRuntime/Decoder/DecoderEngine.swift` (M2).
+Every async entry point is non-reentrant: a call that arrives during another operation is refused, not interleaved.
+
+```swift
+actor DecoderEngine {
+    init(manifest: Manifest.Graph, url: URL, options: EngineOptions) async throws
+    var position: Int { get }                                  // tokens resident in state
+    func prefill(_ tokens: [Int32], logitsAt: LogitsSelection = .last) async throws -> Logits
+    func step(_ token: Int32) async throws -> Logits           // one decode step
+    func hidden(at positions: [Int]) async throws -> Tensor     // requires a `hidden` output role
+    func rewind(to position: Int) throws                        // KV: drop positions beyond; recurrent: requires snapshot
+    func snapshot() throws -> EngineSnapshot                    // KV up to position + recurrent-state copy
+    func restore(_ s: EngineSnapshot) throws                    // validates before touching state
+}
+```
+
 - **Graph contract** (`decoder-lm@1`):
   - Inputs are `tokens [1,S]` and `positions [1,P]`. `S` is dynamic, or static per phase (`staticSequence`, such
     as step 1 and prefill 64). `tokens` may carry ids ≥ vocab when `inputEncodings.tokens.extensionIds` is declared.
@@ -294,6 +314,25 @@ installs and loads the model. A missing driver produces `AetherError.unsupported
     whenever the engine exposes logits, and with the owned engine it always does.
   - It emits `AsyncThrowingStream<GenerationEvent>`. Batching events for UI cadence is **not** its job; that is a
     helper in the UI layer.
+- **Ported from 0.0.x and validated against its fixtures (port-language):**
+  - **Sampling:** repetition penalty → constraint → temperature / top-k / top-p (no full-vocab sort) → one seeded
+    draw. `SeededRandom` is xoshiro256** seeded by SplitMix64; it matches 0.0.x's draws and the 18 rows recorded from
+    HF Transformers. A plain `SplitMix64` remains separate for the generative noise stream (G0).
+  - **Structured output** is a `JSONSchemaConstraint` behind the `LogitsProcessor` hook
+    (`begin(prompt:)` / `accept(_:)` return a `TokenConstraint`). It walks a byte trie of the vocabulary, so it needs
+    a byte-level tokenizer; FoundationModels' guided generation is advertised only then.
+    - **Thinking delimiters are matched by token id.** Inside a structured value, tag text is plain value text.
+    - Whether the reply starts inside thinking is decided from the prompt.
+    - Unenforceable schemas (`enum` or `const` on non-strings, empty `anyOf`, cycles that consume no byte) are
+      refused at compile time.
+    - The schema instruction goes at the end of the current user turn, so prefix reuse survives when structured
+      and plain turns alternate.
+  - **Text stream:** stop strings apply to response text only (not thinking or tool calls), with grapheme-safe
+    hold-back. Reasoning framing drops the newlines around the tags. Special tokens contribute no text, except the
+    manifest's tags.
+  - **Tools:** a `ToolDialect` per manifest `toolDialect`; only `hermes-json` is implemented. A body may hold
+    several calls. Arguments are kept byte for byte, so the next turn renders exactly what the model wrote. A body
+    that doesn't parse is surfaced as text.
 - **`ChatSession`** (actor) holds the history, configuration and a Generator, and nothing more.
 - **AetherFoundationModels:**
   - `AetherLanguageModel: LanguageModel` and its executor sit on the same Generator.

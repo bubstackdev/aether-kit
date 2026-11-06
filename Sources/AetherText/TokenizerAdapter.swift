@@ -6,6 +6,18 @@ import Tokenizers
 /// Turns token ids back into text. The Generator needs only this (tests drive it with a fake).
 public protocol TokenDecoding: Sendable {
     func decode(_ ids: [Int32]) -> String
+    /// Each token's raw bytes, for byte-level tokenizers: text streams from them, and constrained decoding walks them.
+    var tokenBytes: TokenBytes? { get }
+    /// The id of `text` if it is exactly one token of the vocabulary.
+    func tokenID(_ text: String) -> Int32?
+    /// Whether `id` is a special token (no text when decoding with special tokens skipped).
+    func isSpecial(_ id: Int32) -> Bool
+}
+
+extension TokenDecoding {
+    public var tokenBytes: TokenBytes? { nil }
+    public func tokenID(_ text: String) -> Int32? { nil }
+    public func isSpecial(_ id: Int32) -> Bool { tokenBytes?.isSpecial(Int(id)) ?? false }
 }
 
 /// The one tokenizer adapter (DESIGN.md §7), over swift-transformers. Three rules from measurement:
@@ -19,6 +31,8 @@ public struct TokenizerAdapter: TokenDecoding {
     public let stopTokenIDs: Set<Int32>
     public let addBos: Manifest.AddBos
     public let addSpecialTokens: Bool
+    /// The byte table of a byte-level BPE tokenizer (nil for SentencePiece and other decoders).
+    public let tokenBytes: TokenBytes?
 
     /// Loads the manifest's tokenizer from an installed bundle.
     public init(bundle: InstalledBundle, manifest: Manifest) async throws {
@@ -38,12 +52,16 @@ public struct TokenizerAdapter: TokenDecoding {
         } catch {
             throw AetherError.runtime(underlying: error)
         }
-        try self.init(tokenizer: loaded, block: block)
+        // Not byte-level (or unreadable): no table, and text streams through the detokenizer instead.
+        let bytes = (try? Data(contentsOf: directory.appending(path: "tokenizer.json"), options: .mappedIfSafe))
+            .flatMap { try? TokenBytes(tokenizerJSON: $0) }
+        try self.init(tokenizer: loaded, block: block, tokenBytes: bytes)
     }
 
     /// `forGeneration`: the tokenizer serves a generating driver, so `tokenizer.stop` is required (MANIFEST §2.4).
-    init(tokenizer: any Tokenizer, block: Manifest.Tokenizer, forGeneration: Bool = true) throws {
+    init(tokenizer: any Tokenizer, block: Manifest.Tokenizer, forGeneration: Bool = true, tokenBytes: TokenBytes? = nil) throws {
         self.tokenizer = tokenizer
+        self.tokenBytes = tokenBytes
         addBos = block.addBos ?? .template
         switch addBos {
         case .template, .never:
@@ -80,8 +98,17 @@ public struct TokenizerAdapter: TokenDecoding {
 
     public func tokenID(_ text: String) -> Int32? { Self.singleToken(text, tokenizer) }
 
+    /// Every token's text, special tokens included (prompts, tag checks, diagnostics). Reply text skips specials:
+    /// see ``isSpecial(_:)``.
     public func decode(_ ids: [Int32]) -> String {
         tokenizer.decode(tokens: ids.map(Int.init), skipSpecialTokens: false)
+    }
+
+    public func isSpecial(_ id: Int32) -> Bool {
+        if let tokenBytes { return tokenBytes.isSpecial(Int(id)) }
+        // No byte table: a token is special when skipping specials removes its text.
+        let text = tokenizer.decode(tokens: [Int(id)], skipSpecialTokens: false)
+        return !text.isEmpty && tokenizer.decode(tokens: [Int(id)], skipSpecialTokens: true).isEmpty
     }
 
     /// Plain-text encoding. Chat prompts go through the template instead; this follows `addSpecialTokens`.
@@ -89,15 +116,18 @@ public struct TokenizerAdapter: TokenDecoding {
         tokenizer.encode(text: text, addSpecialTokens: addSpecialTokens ?? self.addSpecialTokens).map(Int32.init)
     }
 
-    /// Renders `messages` with `template` (the template owns BOS) and tokenizes the result.
+    /// Renders `messages` with `template` (the template owns BOS) and tokenizes the result. `tools` become the
+    /// template's `tools` (OpenAI function form); an assistant turn's tool calls its `tool_calls`.
     public func applyChatTemplate(
-        _ messages: [ChatMessage], template: String, context: [String: any Sendable] = [:], addGenerationPrompt: Bool = true
+        _ messages: [ChatMessage], template: String, context: [String: any Sendable] = [:], addGenerationPrompt: Bool = true,
+        tools: [ToolDefinition] = [], toolArgumentsAsText: Bool = true
     ) throws -> [Int32] {
-        let rendered: [[String: any Sendable]] = messages.map { ["role": $0.role.rawValue, "content": $0.content] }
+        let rendered = messages.map { $0.templateMessage(argumentsAsText: toolArgumentsAsText) }
         do {
             return try tokenizer.applyChatTemplate(
                 messages: rendered, chatTemplate: .literal(template), addGenerationPrompt: addGenerationPrompt,
-                truncation: false, maxLength: nil, tools: nil, additionalContext: context.isEmpty ? nil : context
+                truncation: false, maxLength: nil, tools: tools.isEmpty ? nil : tools.map(\.templateSpec),
+                additionalContext: context.isEmpty ? nil : context
             ).map(Int32.init)
         } catch {
             throw AetherError.runtime(underlying: error)

@@ -38,6 +38,40 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
     case admission(AdmissionFailure)
     /// The system reports critical memory pressure, so no new model load starts.
     case memoryPressure
+    /// A generation request failed for a reason of its own (its sampling, its constraint, its structured output or
+    /// its tool calls), not of the model or the runtime.
+    case generation(GenerationFailure)
+
+    /// Why a generation request failed (``AetherError/generation(_:)``).
+    public enum GenerationFailure: Sendable, Hashable, CustomStringConvertible {
+        /// The sampling parameters have no defined meaning (a top-p outside (0, 1], a penalty ≤ 0, …).
+        case invalidParameters(String)
+        /// A logits row the sampler cannot rank: NaN, or no finite value.
+        case invalidLogits(String)
+        /// The token constraint left no token to choose (or does not fit the model's vocabulary).
+        case constraintExhausted(String)
+        /// A structured-output schema uses something the JSON-schema constraint does not support (a `pattern`, an
+        /// unknown keyword). Such a request is refused before it generates, never run unconstrained.
+        case unsupportedSchema(String)
+        /// A token left the constraint's grammar (a processor was fed a token it did not allow).
+        case constraintViolated(String)
+        /// A structured reply did not decode into the requested type (for example it reached `maxTokens` first).
+        case decodingFailed(String)
+        /// The model's tool-call output did not parse in its dialect, or the dialect is not implemented.
+        case toolCall(String)
+
+        public var description: String {
+            switch self {
+            case .invalidParameters(let why): "invalid sampling parameters: \(why)"
+            case .invalidLogits(let why): "invalid logits: \(why)"
+            case .constraintExhausted(let why): "the constraint allows no token: \(why)"
+            case .unsupportedSchema(let why): "unsupported schema: \(why)"
+            case .constraintViolated(let why): "a token left the constraint: \(why)"
+            case .decodingFailed(let why): "the structured reply did not decode: \(why)"
+            case .toolCall(let why): "tool call: \(why)"
+            }
+        }
+    }
 
     public enum DownloadFailure: Sendable, Hashable, CustomStringConvertible {
         /// The server answered with an unexpected HTTP status.
@@ -152,6 +186,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             "Admission refused: \(reason)"
         case .memoryPressure:
             "Memory pressure is critical: no new model load starts"
+        case .generation(let failure):
+            "Generation failed: \(failure)"
         }
     }
 }

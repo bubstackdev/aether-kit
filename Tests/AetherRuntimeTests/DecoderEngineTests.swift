@@ -243,7 +243,10 @@ struct DecoderEngineTests {
         let logits: [Float] = (0..<50).map { Float(($0 * 37) % 50) / 10 }
         func draw(_ p: SamplingParameters, _ n: Int = 40) -> [Int32] {
             var s = Sampler(p)
-            return (0..<n).map { _ in s.sample(logits) }
+            return (0..<n).map { _ in
+                var row = logits
+                return try! s.sample(&row)
+            }
         }
         let a = draw(SamplingParameters(temperature: 0.8, topK: 20, topP: 0.9, seed: 42))
         #expect(a == draw(SamplingParameters(temperature: 0.8, topK: 20, topP: 0.9, seed: 42)))
@@ -257,7 +260,7 @@ struct DecoderEngineTests {
         #expect(Set(draw(SamplingParameters(temperature: 2, topK: 5, seed: 1), 200)).isSubset(of: top5))
 
         var penalized: [Float] = [2, -2, 1]
-        Sampler.applyRepetitionPenalty(2, seen: [0, 1, 0], to: &penalized)
+        try! Sampler(SamplingParameters(repetitionPenalty: 2), prompt: [0, 1, 0]).narrow(&penalized, constraint: .unconstrained)
         #expect(penalized == [1, -4, 1])
         var rng = SeededRandom(seed: 9)
         var rng2 = SeededRandom(seed: 9)

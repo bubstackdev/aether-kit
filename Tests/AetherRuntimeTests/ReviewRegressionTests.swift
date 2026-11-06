@@ -109,11 +109,14 @@ struct ReviewRegressionTests {
     }
 
     /// #12: a +inf logit is a forced token, not a NaN distribution.
-    @Test func positiveInfinityIsForced() {
+    @Test func positiveInfinityIsForced() throws {
         var logits = [Float](repeating: 0, count: 10)
         logits[3] = .infinity
         logits[7] = .infinity
         var s = Sampler(SamplingParameters(temperature: 0.7, topK: 5, topP: 0.9, seed: 1))
-        for _ in 0..<20 { #expect(s.sample(logits) == 3) }
+        for _ in 0..<20 {
+            var row = logits
+            #expect(try s.sample(&row) == 3)
+        }
     }
 }
