@@ -1,0 +1,220 @@
+{
+  "assets": {
+    "main": {
+      "files": [
+        {
+          "bytes": 1064,
+          "path": "LICENSE",
+          "sha256": "987e63b32f6c89ff5160e429458a872ff048e6860b590a3912e938f9da8f14db"
+        },
+        {
+          "bytes": 1129,
+          "path": "NOTICE",
+          "sha256": "65fb3e46dcdcc7b630ef96ece0da2fb177e7a5d348c57091fe345c0d2d5def18"
+        },
+        {
+          "bytes": 1300,
+          "path": "README.md",
+          "sha256": "ae045dc8fc978ef9a972b3442286128da3cc00f67e997254c8e77824cde83fca"
+        },
+        {
+          "bytes": 32,
+          "path": "clip_vit_b32_image.aimodel/main.hash",
+          "sha256": "d1c0b0f0323349a4bd9c48460bc7681a560c8ebb14bc00aa800f165a645f9f79"
+        },
+        {
+          "bytes": 175768383,
+          "path": "clip_vit_b32_image.aimodel/main.mlirb",
+          "sha256": "d1e96135d26898b55cad462a2da4e75ea41149b4f79ca608cb01a648d24ea4e8"
+        },
+        {
+          "bytes": 350,
+          "path": "clip_vit_b32_image.aimodel/metadata.json",
+          "sha256": "be18860a32f3c74e9faec571fe89a8cc705b123ee5b52a3f4a43d8e2a878459d"
+        },
+        {
+          "bytes": 32,
+          "path": "clip_vit_b32_text.aimodel/main.hash",
+          "sha256": "5107534982347924da3ed4aded6564ac8c17be238e8b37021520bc2a650ed8f9"
+        },
+        {
+          "bytes": 127030587,
+          "path": "clip_vit_b32_text.aimodel/main.mlirb",
+          "sha256": "69a0127b96cac208d3ef71fdf0b6e832997621008abd2ab64cc1d8b87b0d4e01"
+        },
+        {
+          "bytes": 367,
+          "path": "clip_vit_b32_text.aimodel/metadata.json",
+          "sha256": "6a4f126ad607f3aea64335f49a3f1cd8f126d9c6c0775ecd2c77691c4c2e7511"
+        },
+        {
+          "bytes": 524657,
+          "path": "tokenizer/merges.txt",
+          "sha256": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85"
+        },
+        {
+          "bytes": 389,
+          "path": "tokenizer/special_tokens_map.json",
+          "sha256": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf"
+        },
+        {
+          "bytes": 2224041,
+          "path": "tokenizer/tokenizer.json",
+          "sha256": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842"
+        },
+        {
+          "bytes": 592,
+          "path": "tokenizer/tokenizer_config.json",
+          "sha256": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad"
+        },
+        {
+          "bytes": 862328,
+          "path": "tokenizer/vocab.json",
+          "sha256": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"
+        }
+      ],
+      "subtree": ""
+    }
+  },
+  "driver": "clip-joint@1",
+  "graphs": {
+    "imageEncoder": {
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:clip_vit_b32_image.aimodel",
+      "function": "main",
+      "inputs": {
+        "image": "image"
+      },
+      "outputs": {
+        "imageEmbedding": "image_embedding"
+      }
+    },
+    "textEncoder": {
+      "buckets": {
+        "axis": "batch",
+        "entries": [
+          {
+            "function": "batch1",
+            "value": 1
+          },
+          {
+            "function": "batch8",
+            "value": 8
+          }
+        ],
+        "rule": "smallestFitting"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:clip_vit_b32_text.aimodel",
+      "function": "batch1",
+      "inputs": {
+        "tokens": "tokens"
+      },
+      "limits": {
+        "staticSequence": 77
+      },
+      "outputs": {
+        "textEmbedding": "text_embedding"
+      }
+    }
+  },
+  "id": "clip-vit-b32",
+  "license": "MIT",
+  "postprocess": {
+    "embedding": {
+      "dimension": 512,
+      "logitScale": 100.00000762939453,
+      "normalized": "inGraph",
+      "pooling": "inGraph",
+      "similarity": "cosine"
+    },
+    "kind": "embedding",
+    "x-notes": "imageEmbedding [1,512] and textEmbedding [B,512] are unit-length float32 (L2-normalized in the graph), so cosine similarity is their dot product. Zero-shot classification: softmax over labels of logitScale * cosine(image, text(label)); logitScale is upstream's logit_scale.exp(). OpenAI's prompt for ImageNet-style labels is 'a photo of a {label}.'."
+  },
+  "precision": {
+    "activations": "fp16",
+    "components": {
+      "io": "image float16, tokens int32; embeddings float32",
+      "normalization": "fp32 (input mean/std and the output L2 normalization)",
+      "towers": "fp16 (both transformers and their projections)"
+    },
+    "weights": "fp16"
+  },
+  "preprocess": {
+    "image": {
+      "channelOrder": "RGB",
+      "colorSpace": "sRGB",
+      "hostDType": "float32",
+      "layout": "NCHW",
+      "mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": "exif",
+      "resize": {
+        "filter": "pillowBicubic",
+        "mode": "centerCrop",
+        "shortestSide": 224,
+        "size": [
+          224,
+          224
+        ]
+      },
+      "scale": 0.00392156862745098,
+      "std": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "x-notes": "Upstream (openai/CLIP `_transform`: torchvision Resize(224, BICUBIC) + CenterCrop(224) on a PIL image): resize the shortest side to 224 with Pillow BICUBIC (long side int(224 * long / short)), center-crop 224 x 224 (offsets round((side - 224) / 2)), /255. transformers 5's CLIPImageProcessor floors the crop offset and resizes with torch, so it can differ by a pixel of offset on odd margins. OpenAI CLIP normalization (mean 0.48145466/0.4578275/0.40821073, std 0.26862954/0.26130258/0.27577711) is in the graph: feed RGB on [0,1]. The graph input is float16; the host builds float32 and converts."
+    }
+  },
+  "provenance": {
+    "exportScript": "d6b32fd5d8a8ccda2e608cc6b73446be620904aa9c9307ed5e4f6ffbc38155b0",
+    "producer": "aether-kit Forge/clip/export_clip.py",
+    "refs": {
+      "exportReport": "export-report.json",
+      "forgeLockSHA256": "6729c123d0399129ae8ed3db306a9a0b680da0f9b61890218c328a7ac6e1920a",
+      "license": "openai/CLIP@d05afc436d78f1c48dc0dbf8e5980a9d471f35f6:LICENSE",
+      "upstreamCode": "transformers 5.22.1 CLIPModel"
+    },
+    "source": "openai/clip-vit-base-patch32",
+    "sourceRevision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
+  },
+  "schema": 1,
+  "task": "image-text-embedding",
+  "tokenizer": {
+    "addSpecialTokens": true,
+    "chatTemplate": null,
+    "renderer": "clip-bpe",
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "text": {
+      "maskRule": "none",
+      "padId": 49407,
+      "padSide": "right",
+      "padTo": 77,
+      "truncation": "right",
+      "unusedBatchRows": [
+        49406,
+        49407
+      ]
+    },
+    "x-notes": "CLIP BPE (NFC, whitespace collapsed, lowercase; `</w>` end-of-word): BOS 49406, at most 75 pieces, EOS 49407, right-padded with 49407 to 77, as transformers' CLIPTokenizer does with padding='max_length', truncation=True. Only <|startoftext|> and <|endoftext|> are added tokens: '!' is an ordinary piece here ('hello!' -> 3306, 256), unlike SD 2.x's tokenizer, where '!' is the pad token 0. The graph takes no attention mask (causal attention makes it redundant) and pools the first EOS, so any pad id works. Rows of a bucket beyond the texts are filled with [BOS, EOS, then pad] and their outputs discarded."
+  },
+  "variant": {
+    "platform": "ios"
+  },
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true,
+    "x-notes": "OpenAI's model card scopes CLIP to research use: it calls any deployed use currently out of scope without task-specific testing, and surveillance and facial recognition always out of scope. That is guidance, not a license term."
+  }
+}
