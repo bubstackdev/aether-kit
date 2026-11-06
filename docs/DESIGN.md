@@ -47,15 +47,15 @@ from-scratch re-architecture of `john-rocky/coreai-kit`. It shares no code with 
 Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherText         tokenizer adapter · prompt rendering · Generator · ChatSession · constrained decoding
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
- ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
+ ├── AetherVision       detection · depth · CLIP · super-resolution (image input and preprocessing: AetherRuntime, §8)
  ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), krea2@1 (Krea 2) (§6.5)
  ├── AetherSpeech       speech generation: kokoro@1 (Kokoro-82M) from app-supplied phonemes (§6.7)
  ├── AetherVideo        video with audio: minimax-h3@1 (MiniMax H3), macOS (§6.8)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
- └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
+ └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability() · StatelessPipeline
           │
-     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · DecoderEngine · Registry · AetherError
+     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · DecoderEngine · Registry · ImageInput/ImagePreprocessor · AetherError
           │
      AetherCore         ModelRef · Catalog (generated) · ModelStore (download/install/verify) · Manifest · Device
 ```
@@ -546,17 +546,33 @@ runtime pieces:
 
 ## 8. AetherVision and AetherEmbeddings
 
-- **One image pipeline** (`ImagePipeline`): decode with ImageIO, apply **EXIF orientation**, convert colour space,
-  resize, normalize, then lay out.
-  - Resize modes are `stretch`, `letterbox` and `centerCrop`. The filter is either `vImage` (fast) or
-    `pillowBicubic` / `pillowBilinear` (bit-exact parity mode, needed by the zoo-ported decision towers).
-  - Every parameter comes from manifest `preprocess`.
-  - Inputs are `CGImage`, `CVPixelBuffer` or a URL. The real-time path is a `PreparedInput` type split into
-    `prepare` (CPU) and `run` (GPU) stages, as a type rather than a naming convention.
-- **`Pipeline<Input, Output>`** has three stages: `preprocess`, `Graph.run` and `postprocess`. The graph binds by role
-  (e.g. `image`, `boxes`, `scores`, `depth`, `embedding`).
-  - Detector, depth, CLIP, super-resolution, embedder and reranker are each a driver plus a postprocess function.
-  - Pad ids and pooling (mean or CLS) come from the manifest and tokenizer config.
+- **Image input and preprocessing** (M4a), in AetherRuntime (`Vision/`), one layer below the task modules, because
+  AetherVision, AetherEmbeddings (page retrieval) and AetherDecide (vision towers) all take images and never depend on
+  each other (§3), as with `GeneratedImage` (§6.4):
+  - **`ImageInput`** is the value an app passes: `init(_ cgImage:)` or `init(contentsOf: url)` (`CVPixelBuffer` comes
+    with the live-camera slice), with an alpha policy (`dropAlpha`, Pillow's `convert("RGB")`, the default; or
+    `composite` over a colour). Nothing decodes until it is prepared.
+  - **`ImagePreprocessor`** is the manifest-driven transform, configured by the typed `preprocess.image`
+    (MANIFEST.md §2.5): ImageIO decode with **EXIF orientation** (pixels moved, never resampled) in `deviceRGB` (stored
+    values, as Pillow) or `sRGB`; resize (`stretch`, `letterbox` with anchor and pad, `centerCrop`, `fitLongSide`) with
+    `vImage` (fast, Accelerate's kernel) or a parity filter (`pillowBicubic`, `torchUint8Bicubic`: bit-exact, in each
+    reference's fixed-point arithmetic); `(x · scale − mean) / std` in Float in RGB or BGR; layout `NCHW`, `NVCHW` or
+    `patches` (block-major or row-major, `C,T,py,px` or `py,px,C`); host dtype fp32 or fp16.
+  - **`PreparedImage`** is its result: the tensor plus an `ImageGeometry` (where the source sits on the canvas, to map
+    boxes and maps back). `prepare` (CPU) and the graph run (GPU) are separate calls, by type rather than naming
+    convention, so a real-time caller prepares the next frame while the last runs. Binding converts to the graph
+    input's own dtype (an fp16 graph fed from an fp32 host) and checks its shape.
+  - Known answers from Pillow and torch (`Forge/vision/fixtures_preprocess.py`): bit-exact for the parity filters and
+    whole blocks; `vImage` within 2 levels of Pillow's Lanczos (99.6 % within 1) on smooth images.
+- **`StatelessPipeline`** (AetherHost, M4a) is what every stateless driver's actor owns: its static graphs loaded on
+  demand and checked against the driver's `DriverContract`, residency through `ResidentAdmission` (one measured
+  `perStep` phase, everything resident), `PipelineOptions` (the shared type), GPU admission per request at its
+  `GPUJob` priority before the pipeline's own FIFO turn, and cancellation between graph calls
+  (`GraphResidency.run`). A failure releases the graphs; the pipeline stays usable.
+- **Drivers** (M4b on) are each a `DriverContract`, a typed `postprocess` interpreter (§2.8: `depth`, `denseNms`,
+  `detrSigmoid`, `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`, all decoded and validated since M4a) and an
+  actor on `StatelessPipeline`. Graphs bind by role (`image`, `boxes`, `scores`, `depth`, `embedding`). Pad ids and
+  pooling (mean or CLS) come from the manifest and tokenizer config.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 
@@ -632,7 +648,7 @@ runtime pieces:
 - **Streaming and work:** every stream is an `AsyncThrowingStream`, with cancellation that propagates through
   `onTermination`. Prewarm is `async`, so no semaphores block on tasks.
 - **Errors:** one error domain, `AetherError`, with structured cases (`unsupported(driver:)`, `inUse(resource:)`,
-  `admission(AdmissionFailure)`, `memoryPressure`,
+  `admission(AdmissionFailure)`, `memoryPressure`, `invalidInput(…)` (an image that doesn't decode or lay out),
   `manifestMismatch(field:expected:found:)`, `download(…)`, `integrity(file:)`, `capacity(…)`, `runtime(underlying:)`).
   Family-specific detail goes in an associated payload, not in a separate public enum per family.
 - **Debug data:** hashes, per-stage timings and gate artifacts go behind `@_spi(Diagnostics)`.
@@ -655,7 +671,7 @@ runtime pieces:
 ready to promote when:
 
 1. its graph contract is expressible as a manifest plus a driver;
-2. it uses only Aether primitives (Graph, DecoderEngine, ImagePipeline, PyCompat), with nothing vendored;
+2. it uses only Aether primitives (Graph, DecoderEngine, ImagePreprocessor, PyCompat), with nothing vendored;
 3. it has a recorded parity reference that becomes an Aether gate.
 
 ## 14. Milestones

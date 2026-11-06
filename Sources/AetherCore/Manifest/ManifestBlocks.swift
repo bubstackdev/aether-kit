@@ -1,6 +1,7 @@
-// MANIFEST.md §2.2 (variant, assets, tables, provenance), §2.4 (tokenizer) and the driver-owned blocks
-// §2.5–§2.8. The driver blocks are typed but loose: their key fields are typed, nested parameters are JSONValue,
-// and validation is structural only, until their drivers arrive (M4/M5).
+// MANIFEST.md §2.2 (variant, assets, tables, provenance), §2.4 (tokenizer) and the driver-owned blocks §2.5–§2.7.
+// `image`, `decision` and `preprocess.audio` are typed but loose: their key fields are typed, nested parameters are
+// JSONValue, and validation is structural only, until their drivers arrive (M4 VLM slices, M5). `preprocess.image`,
+// `postprocess` and `labels` are fully typed in ManifestVision.swift.
 
 extension Manifest {
     /// `{platform: macos|ios, architectures?}`: the catalog variant this manifest describes.
@@ -301,15 +302,22 @@ extension Manifest {
         public var to: String
     }
 
-    // MARK: Driver-owned blocks (typed but loose)
+    // MARK: Driver-owned blocks
 
-    /// §2.5: `{image?, audio?}`; parameters are interpreted by the image and audio pipelines (M4).
+    /// §2.5: `{image?, audio?}`. `image` is typed (ManifestVision.swift); `audio`'s parameters are interpreted by the
+    /// audio encoder's driver (M5).
     public struct Preprocess: Sendable, Hashable, Codable {
-        public var image: [String: JSONValue]?
+        public var image: ImagePreprocess?
         public var audio: [String: JSONValue]?
+
+        public init(image: ImagePreprocess? = nil, audio: [String: JSONValue]? = nil) {
+            self.image = image
+            self.audio = audio
+        }
 
         func validate() throws(AetherError) {
             try require(image != nil || audio != nil, "preprocess", "must contain image or audio")
+            try image?.validate(at: "preprocess.image")
         }
     }
 
@@ -356,43 +364,6 @@ extension Manifest {
         func validate() throws(AetherError) {
             try require(!promptFormat.isEmpty, "decision.promptFormat", "must not be empty")
             try require(maxOptions > 0, "decision.maxOptions", "must be > 0")
-        }
-    }
-
-    /// §2.8. `kind` is required; the rest is interpreted by each postprocess (M4).
-    public struct Postprocess: Sendable, Hashable, Codable {
-        public var kind: String
-        public var parameters: [String: JSONValue]
-
-        public init(from decoder: any Decoder) throws {
-            var all = try decoder.singleValueContainer().decode([String: JSONValue].self)
-            guard let kind = all.removeValue(forKey: "kind")?.string else {
-                throw DecodingError.keyNotFound(
-                    AnyKey("kind"), .init(codingPath: decoder.codingPath, debugDescription: "postprocess.kind is required"))
-            }
-            self.kind = kind
-            parameters = all
-        }
-
-        public func encode(to encoder: any Encoder) throws {
-            var all = parameters
-            all["kind"] = .string(kind)
-            var c = encoder.singleValueContainer()
-            try c.encode(all)
-        }
-
-        func validate() throws(AetherError) {
-            try require(!kind.isEmpty, "postprocess.kind", "must not be empty")
-        }
-    }
-
-    /// `{set: "coco-91"}` or `{table}`.
-    public struct Labels: Sendable, Hashable, Codable {
-        public var set: String?
-        public var table: String?
-
-        func validate() throws(AetherError) {
-            try require((set == nil) != (table == nil), "labels", "exactly one of set, table")
         }
     }
 

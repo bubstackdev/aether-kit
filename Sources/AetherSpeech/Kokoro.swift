@@ -418,15 +418,7 @@ public actor KokoroSpeechSession {
 
     /// Wraps `loader` so each graph is checked against its manifest role and the `kokoro@1` contract before use.
     static func validating(_ loader: @escaping GraphResidency.Loader, manifest: Manifest) -> GraphResidency.Loader {
-        { role throws(AetherError) in
-            let graph = try await loader(role)
-            guard let spec = manifest.graphs[role], let contract = DriverContract.kokoro.graph(role) else {
-                throw .manifestInvalid(field: "graphs.\(role)", reason: "not a \(KokoroDriver.id) graph")
-            }
-            try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
-                                            contract: contract, tables: manifest.tables ?? [:])
-            return graph
-        }
+        GraphResidency.validating(loader, manifest: manifest, contract: .kokoro)
     }
 
     private func turn() async {

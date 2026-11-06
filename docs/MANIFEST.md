@@ -26,8 +26,8 @@ Rules that apply to every driver:
 - A **driver** is a registry key (§6.3) that owns a closed role set and its own manifest blocks.
 - A **graph kind** (`vision-tower@1`, `audio-encoder@1`) is a reusable graph contract that a driver embeds. It
   is not registered on its own and is never the top-level `driver`.
-- `ImagePipeline` (§8) is a shared primitive configured by `preprocess.image`. It is not a driver. There is no
-  `image-pipeline@1`.
+- `ImagePreprocessor` (DESIGN.md §8) is a shared primitive configured by `preprocess.image`. It is not a driver.
+  There is no `image-pipeline@1`.
 - Roles below are manifest role names. "in", "out" and "state" are graph I/O. Roles marked *static* use
   `binding: "static"` (§2.3).
 
@@ -122,7 +122,7 @@ driver `minimax-h3@1` (§5.10) is normative since G4.
 | `image` | O | §2.6 | `vlm-*`, `decision-lm@1` with images |
 | `decision` | O (R for decision drivers) | §2.7 | |
 | `postprocess` | O (R for detector, depth, SR, retriever, classifier) | §2.8 | §8 names a postprocess function but gives it no parameters |
-| `labels` | O | `{set: "coco-91"\|…}` or `{table}` | COCO-91 is hardcoded in coreai-kit and absent from every bundle. The adapter names a built-in set; our own exports ship a file. |
+| `labels` | O | `{set: "coco-91"}` or `{file: "<asset>:<path>"}` (a JSON array of names) | COCO-91 is hardcoded in coreai-kit and absent from every bundle. A manifest names a built-in set, or our own export ships a file. |
 | `generation` | O | `{noRepeatNgram?, runCap?, prompts?: {task: text}, temperature?}` | unlimited-ocr's gated recipe needs `no_repeat_ngram 35` and run cap 6; OCR task prompts |
 | `calibration` | O | `{temperature} \| {byType} \| {byTypeAndOptionCount: {"choice:2":…, "choice:3-5":…}}`, plus `source` | qwen3-0.6b and minicpm5 have catalog temperatures. Decision bundles keep them in metadata, a host-head json (kev) or only on the card (decider-0.8b 1.03). Precedence: app > catalog > manifest > driver default. This matches coreai-kit, so it reproduces the recorded distributions. |
 | `precision` | O | free-form `{weights, activations, kv?, logits?, components?}` | informational only. The bf16 KV on Gemma 3 is read from the descriptor; the driver's supported-type set must include bf16 states. |
@@ -233,16 +233,43 @@ Dtype and shape are not manifest fields. bf16 (Gemma 3) and fp16 come from the d
 
 ### 2.5 `preprocess`
 
-`image` (O):
-`{resize: {mode: stretch|letterbox|centerCrop|fitLongSide, size?, anchor: center|topLeft, padValue, filter: vImage|coreGraphicsHigh|pillowBicubic|pillowBilinear|torchUint8Bicubic},
- colorSpace: sRGB|deviceRGB, channelOrder: RGB|BGR, scale (1 | 1/255), mean, std,
- layout: NCHW|NVCHW|patches, patchify?: {patch, temporal, merge, rowOrder: blockMajor|rowMajor, withinPatch: "C,T,py,px"|"py,px,C"},
- hostDType, orientation: exif, tiling?: {tile, overlap, blend: feather, maxInputSide}, crop?: {tiles, thumbnail}}`.
+`image` (O), typed since M4a (`Manifest.ImagePreprocess`; DESIGN.md §8). Every field is optional; the defaults are in
+brackets:
+
+```
+{resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, anchor: center|topLeft [center],
+           padValue: [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
+ colorSpace: deviceRGB|sRGB [deviceRGB], channelOrder: RGB|BGR [RGB], scale [1], mean [0,0,0], std [1,1,1],
+ layout: NCHW|NVCHW|patches [NCHW], views [1], patchify?: {patch, temporal [1], merge [1], rowOrder: blockMajor|rowMajor,
+ withinPatch: "C,T,py,px"|"py,px,C"}, hostDType: float32|float16 [float32], orientation: exif [exif]}
+```
+
+- **Order:** decode (EXIF orientation applied, alpha by the app's `ImageInput` policy) in `colorSpace` (`deviceRGB` keeps
+  stored values, as Pillow decodes; `sRGB` converts), resize on 8-bit RGB, then `(x · scale − mean) / std` in float32
+  (multiply, subtract, divide), `mean` and `std` given in RGB order, then `channelOrder`, `layout` and `hostDType`
+  (rounded to nearest even).
+- **Resize:** no `resize` keeps the decoded size. `stretch` goes to `size`. `letterbox` fits inside `size` (the scaled
+  side floored) at `anchor` on an 8-bit `padValue` canvas. `centerCrop` covers `size` (scaled side floored) and cuts
+  the centre at `round((scaled − size) / 2)`, ties to even (torchvision). `fitLongSide` scales an image whose longer
+  side exceeds `maxSide` down to it (other side floored); smaller images are untouched. `size` goes with the first
+  three modes, `maxSide` only with `fitLongSide`, `anchor` and `padValue` only with `letterbox`.
+- **Filters:** `vImage` is Accelerate's `vImageScale` (fast, its own kernel, not a parity filter). `pillowBicubic` is
+  Pillow's `Image.resize(BICUBIC)` and `torchUint8Bicubic` torch's uint8 `interpolate(bicubic, antialias=True)` (what
+  torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit. A
+  filter is added when an export needs one (`pillowBilinear`, `coreGraphicsHigh`, …); until then the name is rejected.
+- **Layouts:** `NCHW` is `[1, 3, H, W]`; `NVCHW` repeats the image in `views` views, `[1, V, 3, H, W]`; `patches` is
+  `[rows, 3 · temporal · patch²]`, rows block-major (each `merge × merge` block contiguous, Qwen-VL) or row-major
+  (SigLIP 2), each row `C,T,py,px` (the frame repeated `temporal` times) or `py,px,C` (`temporal` 1). The image's sides
+  must be multiples of `patch · merge`.
+- **dtype:** binding converts `hostDType` to the graph input's own type, read from the descriptor (DA3 is fed fp16 from
+  an fp32 host), and checks the input's shape against the prepared one.
+- `x-` keys are ignored, as everywhere (§2.1.6). Later slices add `tiling` (AdcSR), `crop` tiles and smart sizing (VLM)
+  when their drivers land.
 
 Each field has a bundle that needs it: BGR, 0–255 and letterbox top-left pad 114 (yolox); `[-1,1]` (adcsr: scale
 1/255, mean 0.5, std 0.5); NVCHW (colmodernvbert, DA3 multi-view); patchify, which fails silently when wrong (qwen3-vl
 block-major C,T,py,px; lfm channel-last row-major); fp16 graph fed from fp32 host (DA3); tiling with overlap
-`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs CoreGraphics filters (decision towers).
+`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs torch filters (decision towers, VLMs).
 Postprocess-side resampling such as resize-back goes in `postprocess`.
 
 `audio` (O): `{sampleRate: 16000, nFFT: 512, hop: 160, nMels: 128, melScale: slaney, filterbank: {table}, normalize:
@@ -274,12 +301,22 @@ vocab and written as ids, so qwen3.5-2b's ` A`=357 … become explicit.
 
 ### 2.8 `postprocess`
 
-`{kind: denseNms|detrSigmoid|depth|superRes|embedding|maxSim|gliner|yesNo, boxFormat: cxcywh|xyxy, boxSpace: letterboxPixels|normalized,
- activation: applied|sigmoid|softmax, nms?: {type: perClass, iou}, defaults: {scoreThreshold, maxDetections},
- classIndex: contiguous|cocoId, masks?: {output, stride},
- depth?: {polarity: largerIsNearer, resizeBack}, sr?: {range: [-1,1], colorMatch: host|none},
- embedding?: {normalized: inGraph, pooling: inGraph|mean|cls, similarity: cosine|dot},
- retrieval?: {imageTokenSpan: [13,77], patchGrid: [8,8]}, probs?: {positiveIndex: 1, threshold: 0.5}}`.
+Typed since M4a (`Manifest.Postprocess`): `kind` picks the variant. The detectors' fields sit beside `kind`; every other
+kind's sit in its own sub-object. Interpreters arrive with each driver; decoding and validation are already closed.
+
+| `kind` | driver | fields (defaults in brackets) |
+|---|---|---|
+| `depth` | `depth-estimator@1` | `depth: {polarity: largerIsNearer\|largerIsFarther, resizeBack [false]}` |
+| `denseNms` | `detector-dense@1` | `boxFormat: cxcywh\|xyxy, boxSpace: letterboxPixels\|normalized, activation: applied\|sigmoid [applied], nms: {type: perClass\|classAgnostic, iou ∈ (0, 1]}, defaults: {scoreThreshold ∈ [0, 1], maxDetections ≥ 1}, classIndex: contiguous\|cocoId [contiguous]` |
+| `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `masks?: {logitThreshold [0]}` |
+| `embedding` | `clip-joint@1`, `text-embedder@1` | `embedding: {normalized: inGraph\|host\|none, pooling: inGraph\|mean\|cls [inGraph], similarity: cosine\|dot}` |
+| `gliner` | `gliner-classifier@1` | `gliner?: {threshold [0.5]}` (multi-label sigmoid threshold) |
+| `yesNo` | `yes-no-classifier@1` | `probs: {positiveIndex, threshold [0.5]}` |
+| `maxSim` | `late-interaction-retriever@1` | `retrieval: {imageTokenSpan: [start, end), patchGrid: [rows, columns]}`, `rows · columns = end − start` |
+| `superRes` | `image-to-image-tiled@1` | `sr: {range: [low, high], colorMatch: host\|none [none]}` |
+
+`letterboxPixels` means pixels of the graph's input, letterboxed or not; the driver maps boxes back to the source
+through the prepared image's geometry. DA3 is `largerIsFarther` (its exp head, checked on real frames).
 
 Required for every vision/embedding driver, because none of these values is in the bundles. Thresholds are
 defaults, and the app can override them.

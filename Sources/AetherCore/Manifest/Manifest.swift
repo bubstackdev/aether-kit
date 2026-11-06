@@ -3,7 +3,8 @@ public import Foundation
 // The `aether.json` schema, version 1: docs/MANIFEST.md §2 is normative. The schema types live in this folder:
 // - Manifest.swift        top level (§2.2), coding, structural validation
 // - ManifestGraph.swift   graphs (§2.3): file, functions, bindings, outputs, states, limits, compute
-// - ManifestBlocks.swift  variant, assets, tables, tokenizer (§2.4) and the typed-but-loose driver blocks (§2.5–§2.8)
+// - ManifestBlocks.swift  variant, assets, tables, tokenizer (§2.4) and the typed-but-loose driver blocks (§2.6–§2.7)
+// - ManifestVision.swift  the vision and embedding blocks (§2.5 preprocess.image, §2.8 postprocess, labels)
 // - ManifestGenerative.swift  the generative drivers' typed blocks (§5.2–§5.3): schedule, latent, residency
 // - ManifestKrea2.swift   the `krea2` block of `krea2@1` (§5.6)
 // - ManifestFlux2.swift   the `flux2` block of `flux2-klein@1` (§5.7)
@@ -211,7 +212,7 @@ extension Manifest {
         try image?.validate()
         try decision?.validate()
         try postprocess?.validate()
-        try labels?.validate()
+        if case .file(let file) = labels { try checkAssetPath(file, "labels.file") }
         try calibration?.validate()
         try schedule?.validate()
         try latent?.validate()
