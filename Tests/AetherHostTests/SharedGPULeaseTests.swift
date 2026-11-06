@@ -570,3 +570,102 @@ func defaultTerminationReleasesTheLeaseBeforeTheProcessDies(signal: Int32) throw
     #expect(process.terminationReason == .uncaughtSignal && process.terminationStatus == SIGTERM)
     #expect(try leaseSiblings(directory).isEmpty)
 }
+
+// MARK: scripts/gpu-lease, the repo wrapper for GPU work outside the kit (Forge checks), against a private directory.
+
+private func gpuLeaseScript() throws -> URL {
+    let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let url = root.appendingPathComponent("scripts/gpu-lease")
+    try #require(FileManager.default.isExecutableFile(atPath: url.path), "scripts/gpu-lease is missing or not executable")
+    return url
+}
+
+/// A command for the wrapper to run: reports ready, then runs until signalled or orphaned.
+private let leaseScriptChild = ["/bin/sh", "-c", "echo ready; while kill -0 $PPID 2>/dev/null; do sleep 0.05; done"]
+
+@Test func theLeaseScriptsLeaseIsBusyForTheKitAndReleasedOnTermination() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let script = try gpuLeaseScript(), helper = try helperURL()
+    let (wrapper, _) = try start(script, ["--directory", directory.path, "--"] + leaseScriptChild, until: "ready")
+    let holder = wrapper.processIdentifier
+    #expect(pidText(directory) == String(holder))
+    #expect { try SharedGPULease.tryAcquire(leaseConfiguration(directory)) } throws: { isHeld($0, by: holder) }
+    #expect(try runToEnd(helper, ["try", directory.path]) == (2, "held \(holder)"))
+    let waiting = Task { try await SharedGPULease.acquire(leaseConfiguration(directory), timeout: .seconds(10)) }
+    try await Task.sleep(for: .milliseconds(150))
+    // SIGTERM goes to the command; the wrapper releases once it exits, and dies of the same signal.
+    kill(holder, SIGTERM)
+    #expect(exited(wrapper))
+    #expect(wrapper.terminationReason == .uncaughtSignal && wrapper.terminationStatus == SIGTERM)
+    let lease = try await waiting.value
+    #expect(pidText(directory) == ownPID)
+    lease.release()
+    #expect(try leaseSiblings(directory).isEmpty)
+}
+
+@Test func theLeaseScriptWaitsWhileTheKitHoldsTheLease() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let script = try gpuLeaseScript()
+    let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    // Busy: the command never runs, and the wrapper times out with 75.
+    #expect(try runToEnd(script, ["--quiet", "--timeout", "0.3", "--directory", directory.path, "--", "/bin/echo", "ran"]) == (75, ""))
+    // A waiting wrapper runs its command once the kit releases, and passes its exit status through.
+    let (waiter, output) = try start(script, ["--quiet", "--directory", directory.path, "--", "/bin/sh", "-c", "echo ran; exit 3"],
+                                     until: nil)
+    try await Task.sleep(for: .milliseconds(400))
+    #expect(waiter.isRunning)
+    #expect(pidText(directory) == ownPID)
+    held.release()
+    #expect(exited(waiter) && waiter.terminationReason == .exit && waiter.terminationStatus == 3)
+    #expect(String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self) == "ran\n")
+    #expect(try leaseSiblings(directory).isEmpty)
+}
+
+@Test func aKitProcessUnderTheLeaseScriptInheritsItsLease() throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let script = try gpuLeaseScript(), helper = try helperURL()
+    let wrapped = ["--directory", directory.path, "--", "/bin/sh", "-c", "echo $AETHER_GPU_LEASE_HOLDER $PPID; \"$0\" try \"$1\" inherit",
+                   helper.path, directory.path]
+    let (status, output) = try runToEnd(script, wrapped)
+    let lines = output.split(separator: "\n").map(String.init)
+    try #require(lines.count == 2)
+    // The child's hand-off names the wrapper (the shell's parent), and the kit process inherits from it.
+    let fields = lines[0].split(separator: " ")
+    #expect(status == 0 && fields.count == 2 && fields[0] == fields[1])
+    #expect(lines[1] == "inherited \(fields[0])")
+    // Without accepting the hand-off the kit process sees the wrapper as the holder; its status passes through.
+    let (refused, held) = try runToEnd(script, ["--directory", directory.path, "--", helper.path, "try", directory.path])
+    #expect(refused == 2 && held.hasPrefix("held "))
+    // A wrapper inside a wrapper just runs its command under the outer lease.
+    let (nested, inner) = try runToEnd(script, ["--directory", directory.path, "--", script.path, "--timeout", "0", "--directory",
+                                                directory.path, "--", helper.path, "try", directory.path, "inherit"])
+    #expect(nested == 0 && inner.hasPrefix("inherited "))
+    #expect(try leaseSiblings(directory).isEmpty)
+}
+
+@Test func theLeaseScriptReclaimsOnlyALeaseNamingADeadProcess() throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let script = try gpuLeaseScript()
+    let quick = ["--quiet", "--timeout", "0", "--directory", directory.path, "--", "/bin/echo", "ran"]
+    // Pid-less and live-holder leases are never reclaimed.
+    try externalLease(directory, holder: nil)
+    #expect(try runToEnd(script, quick) == (75, ""))
+    try FileManager.default.removeItem(at: directory)
+    try externalLease(directory, holder: "1")
+    #expect(try runToEnd(script, quick) == (75, ""))
+    #expect(pidText(directory) == "1")
+    try FileManager.default.removeItem(at: directory)
+    // A dead holder's lease is reclaimed, and the wrapper's own lease is gone after its command.
+    try externalLease(directory, holder: String(try deadPID()))
+    #expect(try runToEnd(script, quick) == (0, "ran"))
+    #expect(try leaseSiblings(directory).isEmpty)
+    // And the kit reclaims a killed wrapper's lease.
+    let (wrapper, _) = try start(script, ["--directory", directory.path, "--"] + leaseScriptChild, until: "ready")
+    kill(wrapper.processIdentifier, SIGKILL)
+    #expect(exited(wrapper))
+    #expect(pidText(directory) == String(wrapper.processIdentifier))
+    let next = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    #expect(pidText(directory) == ownPID)
+    next.release()
+    #expect(try leaseSiblings(directory).isEmpty)
+}

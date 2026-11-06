@@ -132,14 +132,15 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str) -> dict:
         },
         "preprocess": {
             "image": {
-                "resize": {"mode": "stretch", "size": [dg.SIZE, dg.SIZE], "filter": "vImage"},
+                "resize": {"mode": "stretch", "size": [dg.SIZE, dg.SIZE], "filter": "pillowBicubic"},
                 "colorSpace": "sRGB", "channelOrder": "RGB",
                 "scale": 1 / 255, "mean": [0.0, 0.0, 0.0], "std": [1.0, 1.0, 1.0],
                 "layout": "NCHW", "hostDType": "float32", "orientation": "exif",
                 "x-notes": ("ImageNet normalization (mean 0.485/0.456/0.406, std 0.229/0.224/0.225) is in the graph: "
                             "feed RGB on [0,1]. The graph input is float16; the host builds float32 and converts. "
                             "Upstream resizes the long side to 504 (cv2 INTER_AREA down, INTER_CUBIC up) and rounds "
-                            "to multiples of 14; this static graph takes a 504 x 504 stretch."),
+                            "to multiples of 14; this static graph takes a 504 x 504 stretch, with Pillow's bicubic "
+                            "(the gate reference's resize, matched bit for bit)."),
             },
         },
         "postprocess": {

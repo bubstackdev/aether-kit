@@ -228,6 +228,27 @@ struct ImageInputTests {
         }
     }
 
+    /// Third review, item 13: an image past `maximumPixels` is refused before its pixels are decoded (a file by its
+    /// header); the default leaves room for a 48 MP photo.
+    @Test func imagesPastThePixelLimitAreInvalidInput() throws {
+        #expect(ImageInput.defaultMaximumPixels >= 8064 * 6048)
+        let bytes = [UInt8](repeating: 128, count: 4 * 4 * 4)
+        let url = try Self.write(bytes, width: 4, height: 4, space: Self.sRGB)
+        defer { Self.remove(url) }
+        let image = try Self.cgImage(bytes, width: 4, height: 4, space: Self.sRGB)
+        func refused(_ input: ImageInput) -> Bool {
+            do { _ = try input.decode(colorSpace: .deviceRGB); return false } catch {
+                if case .invalidInput(let reason) = error { return reason.contains("4x4") }
+                return false
+            }
+        }
+        #expect(refused(ImageInput(contentsOf: url, maximumPixels: 15)) && refused(ImageInput(image, maximumPixels: 15)))
+        #expect(try ImageInput(contentsOf: url, maximumPixels: 16).decode(colorSpace: .deviceRGB).width == 4)
+        var input = ImageInput(image)
+        input.maximumPixels = 16
+        #expect(try input.decode(colorSpace: .deviceRGB).height == 4)
+    }
+
     /// A file that isn't an image is `invalidInput`, raised when prepared; a CGImage input decodes as given.
     @Test func undecodableFilesAreInvalidInput() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("aether-image-\(UUID().uuidString)")

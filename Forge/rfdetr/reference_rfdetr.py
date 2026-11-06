@@ -9,6 +9,8 @@ upstream's `predict` does. Preprocessing is not under test here: each case's inp
 it as is. For each case:
 
     <case>/case.json          source, preprocessing recipe, shapes, SHA-256 of each file, the postprocessed detections
+    <case>/decoded.png        (image cases) the RGB Pillow decoded before the resize, lossless and untagged, so a gate
+                              can feed the host's preprocessing the very same pixels
     <case>/input.f32          the graph input [1,3,S,S], little-endian float32
     <case>/dets.f32           upstream pred_boxes [1,Q,4] (cxcywh, normalized), little-endian float32
     <case>/labels.f32         upstream pred_logits [1,Q,91], little-endian float32
@@ -93,6 +95,7 @@ def main() -> None:
         out.mkdir()
         if "image" in case:
             x = rg.image_tensor(args.images / case["image"], size)
+            rg.decoded_rgb(args.images / case["image"]).save(out / "decoded.png", icc_profile=None)
             pin = rg.PINS["referenceImages"]["files"][case["image"]]
             source = {"kind": "image", "file": case["image"], **pin,
                       "preprocess": (f"Pillow convert('RGB'), to float32 / 255, torchvision resize to {size}x{size} "
@@ -110,7 +113,8 @@ def main() -> None:
         for name, array in files.items():
             rg.write_f32(out / name, array)
         record = {"name": case["name"], "source": source, "shapes": shapes,
-                  "files": {name: rg.sha256_file(out / name) for name in files},
+                  "files": {name: rg.sha256_file(out / name) for name in [*files, "decoded.png"]
+                            if (out / name).exists()},
                   "detections": detections_record(dets, size, names),
                   "classes": sorted({names[int(c)] for c in dets["labels"]}),
                   "seconds": round(time.monotonic() - started, 2)}

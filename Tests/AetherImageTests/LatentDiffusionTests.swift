@@ -87,12 +87,40 @@ struct LatentDiffusionTests {
         }
     }
 
+    /// Wraps a fake graph to log its destruction (`~role`) and run `afterRun` after each call: the residency tests
+    /// check that graphs are actually freed at phase boundaries, not just dropped from the residency's table.
+    final class Tracked: GraphBackend {
+        let inner: any GraphBackend
+        let role: String
+        let log: Calls
+        let afterRun: @Sendable () -> Void
+        init(_ inner: any GraphBackend, role: String, log: Calls, afterRun: @escaping @Sendable () -> Void = {}) {
+            self.inner = inner
+            self.role = role
+            self.log = log
+            self.afterRun = afterRun
+        }
+        var signature: GraphSignature { inner.signature }
+        func makeBuffer(for name: String, role: TensorRole, dimensions: [Int], in arena: TensorArena) throws(AetherError) -> TensorBuffer {
+            try inner.makeBuffer(for: name, role: role, dimensions: dimensions, in: arena)
+        }
+        func run(_ bindings: inout Bindings) async throws(AetherError) {
+            try await inner.run(&bindings)
+            afterRun()
+        }
+        deinit { log.append("~\(role)") }
+    }
+
+    /// Cancels the task running the current graph call.
+    static let cancelCurrentTask: @Sendable () -> Void = { withUnsafeCurrentTask { $0?.cancel() } }
+
     /// A tokenizer over a tiny CLIP-shaped vocabulary (`TokenizerTests` builds it).
     static func tokenizer() throws -> CLIPTokenizer { try TokenizerTests.tiny() }
 
     static func pipeline(
         calls: Calls, budget: Int64 = 1 << 40, files: [String: Int64] = ["textEncoder": 10, "denoiser": 100, "vaeDecoder": 10],
-        coordinator: ResourceCoordinator? = nil, onRun: @escaping @Sendable (Int) -> Void = { _ in }
+        coordinator: ResourceCoordinator? = nil, onRun: @escaping @Sendable (Int) -> Void = { _ in },
+        wrap: @escaping @Sendable (String, any GraphBackend) -> any GraphBackend = { $1 }
     ) throws -> (LatentDiffusionPipeline, Calls) {
         let loads = Calls()
         let pipeline = try LatentDiffusionPipeline(
@@ -100,11 +128,12 @@ struct LatentDiffusionTests {
             options: .init(memory: .bytes(budget), coordinator: coordinator, gpu: .unadmitted, probe: Flux2KleinTests.still),
             load: { role throws(AetherError) in
                 loads.append(role)
-                switch role {
-                case "textEncoder": return FakeText(calls)
-                case "denoiser": return FakeUNet(calls, onRun: onRun)
-                default: return FakeVAE(calls)
+                let graph: any GraphBackend = switch role {
+                case "textEncoder": FakeText(calls)
+                case "denoiser": FakeUNet(calls, onRun: onRun)
+                default: FakeVAE(calls)
                 }
+                return wrap(role, graph)
             },
             fileBytes: { files[$0] ?? 0 })
         return (pipeline, loads)
@@ -158,6 +187,30 @@ struct LatentDiffusionTests {
         _ = try await pipeline.generate(.init(prompt: "a cat", seed: 1, steps: 2))
         #expect(await pipeline.residentRoles.isEmpty)
         #expect(loads.log == ["textEncoder", "denoiser", "vaeDecoder"])
+    }
+
+    /// Third review, P1-3: per phase, a phase's graphs are destroyed when the phase ends, before the next phase's
+    /// graphs run (before: the pipeline's locals kept every graph alive until the generation returned).
+    @Test func perPhaseDestroysEachPhasesGraphsAtItsEnd() async throws {
+        let calls = Calls()
+        let (pipeline, _) = try Self.pipeline(calls: calls, budget: 115, wrap: { role, graph in Tracked(graph, role: role, log: calls) })
+        _ = try await pipeline.generate(.init(prompt: "a cat", seed: 1, steps: 2))
+        let log = calls.log
+        #expect(log.first == "text" && log.dropFirst().first == "~textEncoder")
+        let unet = log.filter { $0.hasPrefix("unet") }
+        #expect(unet.count == 2)
+        #expect(Array(log.dropFirst(2)) == unet + ["~denoiser", "vae", "~vaeDecoder"])
+    }
+
+    /// Third review, P2-9: a cancellation that lands during the decoder's call (the last one) used to be ignored and
+    /// the image returned; now the request fails with `CancellationError` and the residency is released.
+    @Test func cancellationDuringTheLastCallIsNotASuccess() async throws {
+        let coordinator = try ResourceCoordinator(capacityBytes: 1_000)
+        let (pipeline, _) = try Self.pipeline(calls: Calls(), coordinator: coordinator, wrap: { role, graph in
+            role == "vaeDecoder" ? Tracked(graph, role: role, log: Calls(), afterRun: Self.cancelCurrentTask) : graph
+        })
+        await #expect(throws: CancellationError.self) { try await pipeline.generate(.init(prompt: "a cat", steps: 1)) }
+        #expect(await pipeline.residentRoles.isEmpty && coordinator.snapshot.reservedBytes == 0)
     }
 
     @Test func refusesBeforeLoadingWhatCannotFit() async throws {

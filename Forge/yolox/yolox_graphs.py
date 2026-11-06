@@ -281,18 +281,25 @@ def letterbox_tensor(path: Path, crop: tuple[int, int, int, int] | None = None) 
     letterbox is gated separately.)"""
     from PIL import Image
 
-    with Image.open(path) as im:
-        rgb = im.convert("RGB")
-        if crop is not None:
-            rgb = rgb.crop(crop)
-        w, h = rgb.size
-        r = min(SIZE / h, SIZE / w)
-        size = (int(w * r), int(h * r))
-        resized = rgb.resize(size, Image.Resampling.BILINEAR)
+    rgb = decoded_rgb(path, crop)
+    w, h = rgb.size
+    r = min(SIZE / h, SIZE / w)
+    size = (int(w * r), int(h * r))
+    resized = rgb.resize(size, Image.Resampling.BILINEAR)
     canvas = np.full((SIZE, SIZE, 3), PAD, dtype=np.uint8)
     canvas[: size[1], : size[0]] = np.asarray(resized)
     x = canvas[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32)
     return np.ascontiguousarray(x), {"source": [w, h], "ratio": r, "resized": list(size)}
+
+
+def decoded_rgb(path: Path, crop: tuple[int, int, int, int] | None = None):
+    """The source as the references decode it: Pillow `convert('RGB')` (no colour management), cropped (left, top,
+    right, bottom) if given."""
+    from PIL import Image
+
+    with Image.open(path) as im:
+        rgb = im.convert("RGB")
+    return rgb.crop(crop) if crop is not None else rgb
 
 
 def synthetic_tensor(seed: int) -> np.ndarray:
