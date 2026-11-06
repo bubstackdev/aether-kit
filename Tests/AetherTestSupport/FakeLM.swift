@@ -74,6 +74,8 @@ public final class FakeLM: GraphBackend {
         public var log: CallLog?
         /// Every run waits here first (a suspension point, as a real graph's run has).
         public var gate: RunGate?
+        /// Replaces the logits row for a context when it returns one (invalid-logit tests: NaN or −∞ rows).
+        public var rowOverride: (@Sendable ([Int32]) -> [Float]?)?
 
         public init(vocab: Int = 64, staticStep: Bool = false, recurrent: Bool = false, chunk: Int? = nil,
                     lastRowOnly: Bool = false, log: CallLog? = nil,
@@ -187,7 +189,8 @@ public final class FakeLM: GraphBackend {
             rec = config.recurrent ? Self.hashStep(rec, ids[i]) : 0
             var target = Int(config.predict(context)) % config.vocab
             if config.recurrent, rec != Self.hash(context) { target = (target + 1) % config.vocab }
-            let row = (0..<config.vocab).map { $0 == target ? Float(10) : -Float(abs($0 - target)) * 0.01 }
+            let row = config.rowOverride?(context)
+                ?? (0..<config.vocab).map { $0 == target ? Float(10) : -Float(abs($0 - target)) * 0.01 }
             if rowsAll { try logits?.write(row, startingAt: i * config.vocab) }
             lastRow = row
         }

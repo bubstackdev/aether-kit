@@ -540,7 +540,7 @@ final class DecoderCore {
             // Host path: run the step and take the argmax of its one row. The session stays in place.
             guard !Task.isCancelled else { return nil }
             let logits = try await feedTokens([s.last], select: .last)!
-            let token = Logits.argmax(logits.last)
+            let token = try Logits.argmax(logits.last)
             guard session != nil else { throw .unsupportedOperation("the greedy decode ended during a step") }
             session!.last = token
             session!.received += 1
@@ -671,7 +671,7 @@ final class DecoderCore {
 
         func decode(depth: Int, delay: UInt32, sentinels: [Int32]?) async throws(AetherError) -> [Int32] {
             try reset()
-            let first = Logits.argmax(try await feed(prompt, select: .last)!.last)
+            let first = try Logits.argmax(try await feed(prompt, select: .last)!.last)
             try beginGreedy(first: first, limit: steps, depth: depth, delay: delay, sentinels: sentinels)
             var out = [first]
             do {

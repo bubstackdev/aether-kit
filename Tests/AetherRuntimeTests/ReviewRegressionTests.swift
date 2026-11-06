@@ -41,7 +41,7 @@ struct ReviewRegressionTests {
         let (engine, gate) = try await Self.gated()
         gate.open()
         let prompt = T.prompt(5)
-        let first = Logits.argmax(try await engine.prefill(prompt)!.last)
+        let first = try Logits.argmax(try await engine.prefill(prompt)!.last)
         let snapshot = try await engine.snapshot()
         try await engine.beginGreedy(first: first, limit: 5)
         gate.close()
@@ -84,7 +84,7 @@ struct ReviewRegressionTests {
         await T.expectError({ try await engine.restore(foreign) }) { _ in true }
         #expect(await engine.position == 6 && engine.description.maxCapacity > 0)
         let next = try await engine.prefill([9])!
-        #expect(Logits.argmax(next.last) == T.expectedGreedy(prompt + [9], count: 1)[0])
+        #expect(try Logits.argmax(next.last) == T.expectedGreedy(prompt + [9], count: 1)[0])
     }
 
     /// #10: a padded tail would advance recurrent state on pad tokens; the combination is refused.
@@ -118,5 +118,82 @@ struct ReviewRegressionTests {
             var row = logits
             #expect(try s.sample(&row) == 3)
         }
+    }
+}
+
+/// The owner's second code review: the decoder items. Each failed before its fix.
+@Suite("Owner review 2: decoder")
+struct DecoderOwnerReviewTests {
+    typealias T = DecoderEngineTests
+
+    static func isInvalidLogits(_ error: AetherError) -> Bool {
+        if case .generation(.invalidLogits) = error { return true }
+        return false
+    }
+
+    static func expectInvalid(_ row: [Float], _ comment: Comment? = nil, sourceLocation: SourceLocation = #_sourceLocation) {
+        do {
+            let token = try Logits.argmax(row[...])
+            Issue.record("picked \(token) from \(row.prefix(4))… \(comment.map { "(\($0))" } ?? "")", sourceLocation: sourceLocation)
+        } catch {
+            #expect(Self.isInvalidLogits(error), "\(error)", sourceLocation: sourceLocation)
+        }
+    }
+
+    /// Finding 2: one invalid-logit policy. A NaN anywhere, or nothing above −inf, is `invalidLogits`, never token 0;
+    /// +inf ranks first.
+    @Test func argmaxRefusesInvalidRows() throws {
+        Self.expectInvalid([.nan, 1])
+        Self.expectInvalid([1, .nan])
+        Self.expectInvalid([.nan, .infinity])
+        Self.expectInvalid([.infinity, .nan, -.infinity])
+        Self.expectInvalid([-.infinity, -.infinity], "all -inf returned token 0")
+        Self.expectInvalid([])
+        var wide = [Float](repeating: 0.5, count: 151_936)
+        wide[151_935] = .nan
+        Self.expectInvalid(wide)
+        #expect(try Logits.argmax([-.infinity, 2, 2]) == 1)
+        #expect(try Logits.argmax([1, .infinity, .infinity]) == 1)
+        #expect(try Logits.argmax([-.infinity, .infinity, 3]) == 1, "both infinities and no NaN is valid")
+    }
+
+    /// Finding 2: the sampler applies the same policy on every path; `[NaN, +inf]` picked token 1 when sampling.
+    @Test func samplerRefusesInvalidRowsOnEveryPath() {
+        let paths: [(SamplingParameters, TokenConstraint)] = [
+            (.greedy, .unconstrained),
+            (SamplingParameters(repetitionPenalty: 1.2), .unconstrained),
+            (SamplingParameters(temperature: 0.7, seed: 1), .unconstrained),
+            (SamplingParameters(temperature: 0.7, topK: 1, seed: 1), .unconstrained),
+            (SamplingParameters(temperature: 0.7, seed: 1), .allowed(TokenSet([1], vocabularySize: 2))),
+            (.greedy, .allowed(TokenSet([0, 1], vocabularySize: 2))),
+        ]
+        for (parameters, constraint) in paths {
+            for row: [Float] in [[.nan, .infinity], [.infinity, .nan], [-.infinity, -.infinity]] {
+                var sampler = Sampler(parameters)
+                var values = row
+                do {
+                    let token = try sampler.sample(&values, constraint: constraint)
+                    Issue.record("\(parameters) \(constraint) picked \(token) from \(row)")
+                } catch {
+                    if case .generation(.invalidLogits) = error { continue }
+                    // A constraint over an all -inf row leaves no token: that is its own failure.
+                    if case .generation(.constraintExhausted) = error, row.allSatisfy({ $0 == -.infinity }) { continue }
+                    Issue.record("\(parameters) \(row): \(error)")
+                }
+            }
+        }
+    }
+
+    /// Finding 2: the host greedy decode (`run` engines) takes the same policy: an invalid row mid-decode throws.
+    @Test func hostGreedyRefusesAnInvalidRow() async throws {
+        var config = FakeLM.Config()
+        let prompt = T.prompt(6)
+        config.rowOverride = { context in context.count == prompt.count + 2 ? [Float](repeating: -.infinity, count: 64) : nil }
+        let (engine, _, _) = try await T.engine(config)
+        let first = try Logits.argmax(try await engine.prefill(prompt)!.last)
+        try await engine.beginGreedy(first: first, limit: 8)
+        _ = try await engine.nextGreedy()
+        await T.expectError({ _ = try await engine.nextGreedy() }, Self.isInvalidLogits)
+        try await engine.endGreedy()
     }
 }

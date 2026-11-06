@@ -321,7 +321,7 @@ public actor Generator {
             continuation: continuation)
         var sampler = Sampler(parameters.sampling, prompt: prompt)
         func choose(_ row: ArraySlice<Float>, _ constraint: TokenConstraint) throws -> Int32 {
-            if pipelined { return Logits.argmax(row) }
+            if pipelined { return try Logits.argmax(row) }
             var values = Array(row)
             return try sampler.sample(&values, constraint: constraint)
         }

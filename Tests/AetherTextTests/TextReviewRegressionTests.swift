@@ -185,4 +185,21 @@ struct ChatOwnerReviewTests {
         let expected = try FakeRenderer().render([.user("next")], options: RenderOptions()).tokens.count
         #expect(next.summary?.promptTokens == expected, "the next turn renders from the cleared history")
     }
+
+    /// Finding 2: plain greedy took the prompt's argmax with no check, so an all -inf row became token 0 (`<pad>`)
+    /// instead of an error. A later request still runs: the engine is left consistent.
+    @Test func plainGreedyRefusesAnInvalidFirstRow() async throws {
+        let poisoned = Mutex(true)
+        let generator = try await FakeChat.generator(rowOverride: { context in
+            poisoned.withLock { $0 } && context.last == Vocab.assistant ? [Float](repeating: -.infinity, count: 64) : nil
+        })
+        do {
+            let reply = try await FakeChat.collect(generator.generate([.user("hello")]))
+            Issue.record("an all -inf row produced \(reply.summary?.tokens ?? [])")
+        } catch AetherError.generation(.invalidLogits) {
+        }
+        poisoned.withLock { $0 = false }
+        let reply = try await FakeChat.collect(generator.generate([.user("hello")]))
+        #expect(reply.summary?.stopReason == .stopToken(Vocab.stop))
+    }
 }

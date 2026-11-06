@@ -18,7 +18,7 @@ public enum LanguageEngineInvariants {
         _ engine: any LanguageEngine, after tokens: [Int32], count: Int
     ) async throws(AetherError) -> (tokens: [Int32], seconds: Double) {
         let logits = try await engine.prefill(tokens, logits: .last)!
-        var out = [Logits.argmax(logits.last)]
+        var out = [try Logits.argmax(logits.last)]
         let clock = ContinuousClock()
         let start = clock.now
         if count > 1 {
@@ -38,10 +38,10 @@ public enum LanguageEngineInvariants {
     /// ``greedy(_:prompt:count:)``'s tokens.
     public static func stepwiseGreedy(_ engine: any LanguageEngine, prompt: [Int32], count: Int) async throws(AetherError) -> [Int32] {
         try await engine.reset()
-        var token = Logits.argmax(try await engine.prefill(prompt, logits: .last)!.last)
+        var token = try Logits.argmax(try await engine.prefill(prompt, logits: .last)!.last)
         var out = [token]
         while out.count < count {
-            token = Logits.argmax(try await engine.step(token).last)
+            token = try Logits.argmax(try await engine.step(token).last)
             out.append(token)
         }
         return out
