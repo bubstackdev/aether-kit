@@ -442,3 +442,25 @@ carries stay float32. A future `vision` graph and `encodeWithImages` function (r
 | `contentFilter` | R | `{required: true}`. The Krea 2 Community License §4.2 requires deployments to filter output; the driver takes an explicit `ContentFilter` from the app and has no default |
 
 `tokenizer.renderer: "krea2-prompt"` names the fixed template above (no chat template); `addSpecialTokens: false`.
+
+### 5.6 `flux2-klein@1` (proposed until G2)
+
+| driver | graphs | required roles / blocks | optional | bundles |
+|---|---|---|---|---|
+| `flux2-klein@1` | `textEncoder` (`encode`), `denoiser0`…`denoiser2` (`segment`; blocks 0–8, 8–16, 16–25 of 5 double + 20 single), `vaeDecoder` (`decode`) | textEncoder in `tokens`, `positions`, `tokenMask`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `textRotary`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–2 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `textRotary`, `imageRotary`; denoiser1 out `carryImage`, `carryText`; denoiser2 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule` (`shift.rule: empirical`), `latent` (128 channels), `flux2`. | `vaeEncoder` (`encode`: `referencePixels` → `referenceLatents`), reference images | flux2-klein-4b (Forge export, `Forge/flux2/`) |
+
+`flux2` is owned by `flux2-klein@1`:
+
+| field | req | meaning |
+|---|---|---|
+| `prompt` | R | `{template: chat, thinking: off, addGenerationPrompt: true, maxTokens: 512, padding: right, padToken: 151643, truncation: keepPrefix, positions: running}`: one user message through the bundle's chat template (`tokenizer.chatTemplate`, `renderer: flux2-prompt`), right-padded with `<|endoftext|>` to exactly 512 ids plus a mask |
+| `conditioning` | R | `{taps: [9, 18, 27], width: 7680, rows: 512, paddingRows: conditioning}`: all 512 rows, padding included, condition the denoiser |
+| `rotary` | R | `{axes: [32, 32, 32, 32], theta: 2000, textIds: (0,0,0,i), imageIds: (0,row,column,0), referenceIds: (10(k+1),row,column,0), layout: splitHalves}`; the host builds `textRotary [512, 2, 128]` and `imageRotary [N, 2, 128]` |
+| `segments`, `condRows` | R | the denoiser roles in call order; 17 modulation rows (image 6, text 6, single 3, output scale and shift) |
+| `references` | O | `{encoder: vaeEncoder, kind: packedLatents, positionStride: 10, maxImages: 2, maxSide: 512, maxTotalTokens: 4096}`: reference tokens and rotary rows are appended to every denoiser call; their velocities are discarded; μ uses generated tokens only |
+
+Precision is recorded in `precision` (int8 per-channel weights on the text encoder and denoisers, the 20 single-block
+`proj_out` fp16; both VAE graphs fp16 storage, fp32 compute). License `Apache-2.0`; the bundle ships the checkpoint's
+`LICENSE.md` and a modification `NOTICE`. The exporter's parity gate (`check_flux2.py`) gates the real conditioning rows
+and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
+padding rows move the image under any precision change.

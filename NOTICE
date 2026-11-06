@@ -10,8 +10,12 @@ copyright Krea AI and The HuggingFace Team. Forge/krea2/krea2_graphs.py
 re-expresses Krea2Transformer2DModel, Krea2Pipeline's prompt and latent
 packing, and AutoencoderKLQwenImage's single-frame decode as export graphs;
 the realism adapter's key mapping is Diffusers' own Krea 2 converter, called
-at export time. Krea 2 model weights are not part of this repository; exported
-bundles carry the Krea 2 Community License and its NOTICE line separately.
+at export time. Forge/flux2/flux2_graphs.py likewise re-expresses
+Flux2Transformer2DModel, Flux2KleinPipeline's prompt encoding, latent packing
+and empirical shift, and AutoencoderKLFlux2's decode and encode tails. Model
+weights are not part of this repository; exported bundles carry their own
+licenses (the Krea 2 Community License and its NOTICE line; FLUX.2 [klein]'s
+Apache-2.0 LICENSE.md and a modification NOTICE) separately.
 
 Hugging Face Transformers (https://github.com/huggingface/transformers,
 version 4.57.3), Apache License 2.0, copyright The HuggingFace Team. Outputs

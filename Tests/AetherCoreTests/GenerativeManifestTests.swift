@@ -2,8 +2,8 @@ import Foundation
 import Testing
 @testable import AetherCore
 
-/// MANIFEST.md §5.2–§5.3. The fixtures are the Krea exporter's own output (`export_krea2.py --sample-manifest`), so a
-/// change to what the exporter emits shows up here.
+/// MANIFEST.md §5.2–§5.3. The fixtures are the Krea and FLUX.2 exporters' own output (`--sample-manifest`), so a
+/// change to what an exporter emits shows up here.
 @Suite("Generative manifest blocks")
 struct GenerativeManifestTests {
     static func krea(_ variant: String) throws -> Data { try Fixtures.data("krea2/\(variant).json") }
@@ -37,6 +37,30 @@ struct GenerativeManifestTests {
         ])
         #expect((manifest.provenance?.mergedAdapter?.sha256.hasPrefix("a6712629") ?? false) == (variant == "realism"))
         // The canonical encoding round-trips.
+        #expect(try Manifest.decode(manifest.encoded()) == manifest)
+    }
+
+    /// The FLUX.2 [klein] exporter's own manifest (`export_flux2.py --sample-manifest`): empirical shift, 128-channel
+    /// latents, and the optional reference encoder resident per prompt.
+    @Test func theFlux2ExportersManifestDecodes() throws {
+        let manifest = try Manifest.decode(try Fixtures.data("flux2/flux2-klein-4b.json"))
+        #expect(manifest.driver.description == "flux2-klein@1")
+        let schedule = try #require(manifest.schedule)
+        #expect(schedule == Manifest.Schedule(
+            steps: 4, maxSteps: 50, trainTimesteps: 1000,
+            sigmas: .init(shift: .init(rule: .empirical, empirical: .init(
+                lowSteps: 10, lowSlope: 8.73809524e-05, lowIntercept: 1.89833333, highSteps: 200,
+                highSlope: 0.00016927, highIntercept: 0.45666666, tokenThreshold: 4300)))))
+        let latent = try #require(manifest.latent)
+        #expect(latent.channels == 128 && latent.pixelsPerToken == 16 && latent.maxImageTokens == 4096)
+        #expect(latent.packing == .patch2x2ChannelMajor && latent.noise == .init())
+        #expect(manifest.graphs.mapValues(\.residency) == [
+            "textEncoder": .perPrompt, "denoiser0": .perStep, "denoiser1": .perStep, "denoiser2": .perStep,
+            "vaeDecoder": .perImage, "vaeEncoder": .perPrompt,
+        ])
+        #expect(manifest.graphs["vaeDecoder"]?.expectFrequentReshapes == false)
+        #expect(manifest.tokenizer?.chatTemplate?.description == "main:tokenizer/chat_template.jinja")
+        #expect(manifest.license == "Apache-2.0" && manifest.provenance?.mergedAdapter == nil)
         #expect(try Manifest.decode(manifest.encoded()) == manifest)
     }
 
