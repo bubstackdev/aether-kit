@@ -10,25 +10,57 @@ public struct ChatMessage: Sendable, Hashable {
 
     public var role: Role
     public var content: String
+    /// An assistant turn's tool calls (rendered as the template's `tool_calls`).
+    public var toolCalls: [ToolCall]
+    /// A tool turn's tool name (`tool` role only).
+    public var toolName: String?
 
-    public init(_ role: Role, _ content: String) {
+    public init(_ role: Role, _ content: String, toolCalls: [ToolCall] = [], toolName: String? = nil) {
         self.role = role
         self.content = content
+        self.toolCalls = toolCalls
+        self.toolName = toolName
     }
 
     public static func system(_ text: String) -> ChatMessage { ChatMessage(.system, text) }
     public static func user(_ text: String) -> ChatMessage { ChatMessage(.user, text) }
-    public static func assistant(_ text: String) -> ChatMessage { ChatMessage(.assistant, text) }
+    public static func assistant(_ text: String, toolCalls: [ToolCall] = []) -> ChatMessage {
+        ChatMessage(.assistant, text, toolCalls: toolCalls)
+    }
+    /// A tool's output, handed back to the model.
+    public static func tool(_ output: String, name: String? = nil) -> ChatMessage { ChatMessage(.tool, output, toolName: name) }
+
+    /// The template's message: `role` and `content`, plus `tool_calls` (OpenAI form) and a tool turn's `name`. Tool
+    /// arguments go in as the JSON text the model wrote when the template writes a string verbatim (Qwen and Granite
+    /// test `arguments is string`), else as an object, so a template that pipes them through `tojson` doesn't
+    /// encode a string twice.
+    func templateMessage(argumentsAsText: Bool = true) -> [String: any Sendable] {
+        var message: [String: any Sendable] = ["role": role.rawValue, "content": content]
+        if !toolCalls.isEmpty {
+            message["tool_calls"] = toolCalls.map { call -> [String: any Sendable] in
+                var arguments: any Sendable = call.arguments
+                if !argumentsAsText, let object = try? JSONDecoder().decode(JSONValue.self, from: Data(call.arguments.utf8)) {
+                    arguments = object.templateValue
+                }
+                return ["id": call.id, "type": "function", "function": ["name": call.name, "arguments": arguments] as [String: any Sendable]]
+            }
+        }
+        if let toolName { message["name"] = toolName }
+        return message
+    }
 }
 
 public struct RenderOptions: Sendable, Hashable {
     /// nil leaves the template's own default (the manifest's `thinking.defaultOn` says what that is).
     public var thinking: Bool?
     public var addGenerationPrompt: Bool
+    /// Tools the model may call, rendered into the template's `tools`.
+    public var tools: [ToolDefinition]
 
-    public init(thinking: Bool? = nil, addGenerationPrompt: Bool = true) {
+    public init(thinking: Bool? = nil, addGenerationPrompt: Bool = true, tools: [ToolDefinition] = []) {
         self.thinking = thinking
         self.addGenerationPrompt = addGenerationPrompt
+        self.tools = tools
     }
 }
 
@@ -72,7 +104,8 @@ public struct JinjaChatTemplate: PromptRenderer {
         var context: [String: any Sendable] = [:]
         if case .templateVar(let name)? = thinking?.toggle, let want = options.thinking { context[name] = want }
         var ids = try tokenizer.applyChatTemplate(
-            messages, template: template, context: context, addGenerationPrompt: options.addGenerationPrompt)
+            messages, template: template, context: context, addGenerationPrompt: options.addGenerationPrompt, tools: options.tools,
+            toolArgumentsAsText: template.contains("arguments is string"))
         if let thinking, options.thinking == false, options.addGenerationPrompt {
             let tail = Self.trimmed(tokenizer.decode(Array(ids.suffix(12))))
             switch thinking.toggle {
@@ -115,6 +148,8 @@ public enum PromptRenderers {
                 let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
                 guard actual == expected else { throw AetherError.integrity(file: path.description, expected: expected, actual: actual) }
             }
+            // The source goes in verbatim: swift-jinja drops one trailing newline as Jinja's default
+            // `keep_trailing_newline=False` does (0.0.x had to strip it itself; TokenizerParityTests pins it).
             return JinjaChatTemplate(tokenizer: tokenizer, template: String(decoding: data, as: UTF8.self), thinking: block.thinking)
         case "gemma4-turns":
             // TODO(M3): Gemma 4 has no Jinja template; a turn renderer over `tokenizer.turnFormat`
