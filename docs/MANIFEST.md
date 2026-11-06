@@ -78,7 +78,7 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 
 The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6),
 `flux2-klein@1` (§5.7), the `weights` table (§5.8) and the speech driver `kokoro@1` (§5.9), all normative; the video
-driver `minimax-h3@1` (§5.10) is proposed until G4 step 2b.
+driver `minimax-h3@1` (§5.10) is normative since G4.
 
 ---
 
@@ -556,10 +556,12 @@ protocol: text → utterances of ≤ 510 scalars). The exporter's gate (`check_k
 waveform rel. L2 ≤ min(0.05, 4× the case's float32-vs-float64 upstream difference); log-mel mean ≤ 0.03 nats; repeats
 bit-identical.
 
-### 5.10 `minimax-h3@1` (proposed until G4 step 2b)
+### 5.10 `minimax-h3@1` (normative since G4)
 
-MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and keyframes) to video with audio. macOS only in 0.1.0. Producer
-`Forge/h3/export_h3.py`; the `h3` block is decoded loosely until the driver lands.
+MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and, reserved, keyframes) to video with audio. macOS only in 0.1.0.
+Producer `Forge/h3/export_h3.py`; the driver is `AetherVideo`'s `MiniMaxH3Pipeline` (`Registry.video`).
+`Manifest.H3` types the block below and refuses, naming the field, what the driver can't run; `keyframe`, `vision`
+and `adapter` stay loose (FL2VA isn't presented yet).
 
 | graph | inputs → outputs | weights | residency |
 |---|---|---|---|
@@ -580,3 +582,18 @@ rotary tables), `recipes` (turbo8, turbo4: per task and step the timesteps, the 
 files `tables/<recipe>/<task>/step-<i>/block-NN.raw`), `adapter`, `video` (tile, window, packing and noise), `keyframe`,
 `audio` and `platforms`. `license` is `LicenseRef-MiniMax-H3-Community-License`; the bundle ships `LICENSE` and the
 required `NOTICE`.
+
+Decoding refuses (naming the field): a profile whose key isn't `<W>x<H>x<frames>`, sides that aren't multiples of 32
+over 256 px, frames off the 17n + 5 grid, `latentFrames` or `videoRows` that don't follow from them, an `audioDecoder`
+or `keyframeEncoder` naming no graph; bad `limits`; a `tap` other than the last layer; rotary tables shorter than the
+text-token limit; a `defaultRecipe` with no `t2va` recipe; an arm without one timestep a step and `steps + 1` sigmas
+falling from 1 to 0, or timesteps other than `1 − σ` in float32; a step cardinality outside `limits.cardinality`,
+non-ascending step timesteps, a `blocks` template without `{block:02d}`; video windows other than 256 px tiles of 7
+latent frames at stride 5; audio other than stereo rows of 32.
+
+`video.noise` is `{kind: splitmix64BoxMuller, order: sourceVideoThenAudio}`: one draw of Kit's stream, the source
+`[24, T, H, W]` video tensor first (then packed `patch2x2ChannelMajor`), then the channel-major audio rows, as 0.0.x
+drew it (the first export wrote `packedToken`, which named the wrong order; corrected in the exporter and the local
+bundle's manifest at G4 step 2b). The driver's host recipe (layout `[text | audio | video]`, positions, row
+timesteps, rotary, gather) is Diffusers' `build_packed_sequence`, `build_row_timesteps` and `MiniMaxH3RotaryPosEmbed`;
+each step's modulation is padded to the recipe's largest cardinality so the body specializes once a render.

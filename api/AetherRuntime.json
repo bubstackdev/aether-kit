@@ -3618,6 +3618,40 @@
       "printedName": "bind(bank:into:)",
       "throwing": true,
       "usr": "s:13AetherRuntime11WeightBanksC4bind4bank4intoySi_AA8BindingsVzt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime11WeightBanksC4load5block4intoySi_Sit0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "load",
+      "printedName": "load(block:into:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime11WeightBanksC4load5block4intoySi_Sit0A4Core0A5ErrorOYKF"
      }
     ],
     "conformances": [
@@ -26506,6 +26540,117 @@
       "printedName": "copyRegion(from:)",
       "throwing": true,
       "usr": "s:13AetherRuntime12TensorBufferV10copyRegion4fromyAC_t0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV9readBytesSays5UInt8VGy0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "readBytes",
+      "printedName": "readBytes()",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV9readBytesSays5UInt8VGy0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UnsafeRawBufferPointer",
+        "printedName": "Swift.UnsafeRawBufferPointer",
+        "usr": "s:SW"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV10writeBytesyySW0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "writeBytes",
+      "printedName": "writeBytes(_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV10writeBytesyySW0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV10writeBytesyySays5UInt8VG0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "writeBytes",
+      "printedName": "writeBytes(_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV10writeBytesyySays5UInt8VG0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TensorBuffer",
+        "printedName": "AetherRuntime.TensorBuffer",
+        "usr": "s:13AetherRuntime12TensorBufferV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV9copyBytes4fromyAC_t0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "copyBytes",
+      "printedName": "copyBytes(from:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV9copyBytes4fromyAC_t0A4Core0A5ErrorOYKF"
      }
     ],
     "conformances": [

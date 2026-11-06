@@ -49,7 +49,7 @@
       },
       "residency": "perPrompt",
       "compute": "gpu",
-      "expectFrequentReshapes": true
+      "expectFrequentReshapes": false
     },
     "prepareText": {
       "file": "main:models/prepare-text.aimodel",
@@ -88,7 +88,7 @@
       },
       "residency": "perPrompt",
       "compute": "gpu",
-      "expectFrequentReshapes": true
+      "expectFrequentReshapes": false
     },
     "preparePack": {
       "file": "main:models/prepare-pack.aimodel",
@@ -97,7 +97,7 @@
         "video": "video",
         "audio": "audio",
         "text": {
-          "name": "refined",
+          "name": "text",
           "source": {
             "from": "prepareText.refined"
           }
@@ -109,7 +109,7 @@
       },
       "residency": "perStep",
       "compute": "gpu",
-      "expectFrequentReshapes": true
+      "expectFrequentReshapes": false
     },
     "body": {
       "file": "main:models/body.aimodel",
@@ -159,7 +159,7 @@
       },
       "residency": "perStep",
       "compute": "gpu",
-      "expectFrequentReshapes": true
+      "expectFrequentReshapes": false
     },
     "heads": {
       "file": "main:models/heads.aimodel",
@@ -168,7 +168,7 @@
         "hidden": {
           "name": "hidden",
           "source": {
-            "from": "body.hidden"
+            "from": "body.hidden_out"
           }
         },
         "temb": "temb",
@@ -182,7 +182,7 @@
       },
       "residency": "perStep",
       "compute": "gpu",
-      "expectFrequentReshapes": true
+      "expectFrequentReshapes": false
     },
     "videoDecoder": {
       "file": "main:models/video-decoder-tile256-bf16.aimodel",
@@ -331,52 +331,50 @@
     "recipes": {
       "turbo8/t2va": {
         "video": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.875,
+            0.75,
+            0.625,
+            0.5,
+            0.375,
+            0.25,
+            0.125,
             0.0
           ]
         },
         "audio": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.875,
+            0.75,
+            0.625,
+            0.5,
+            0.375,
+            0.25,
+            0.125,
             0.0
           ]
         },
@@ -441,52 +439,50 @@
       },
       "turbo8/fl2va": {
         "video": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.875,
+            0.75,
+            0.625,
+            0.5,
+            0.375,
+            0.25,
+            0.125,
             0.0
           ]
         },
         "audio": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.875,
+            0.75,
+            0.625,
+            0.5,
+            0.375,
+            0.25,
+            0.125,
             0.0
           ]
         },
@@ -551,36 +547,34 @@
       },
       "turbo4/t2va": {
         "video": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.25,
+            0.5,
+            0.75
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.75,
+            0.5,
+            0.25,
             0.0
           ]
         },
         "audio": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.25,
+            0.5,
+            0.75
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.75,
+            0.5,
+            0.25,
             0.0
           ]
         },
@@ -617,36 +611,34 @@
       },
       "turbo4/fl2va": {
         "video": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.25,
+            0.5,
+            0.75
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.75,
+            0.5,
+            0.25,
             0.0
           ]
         },
         "audio": {
-          "shift": 0.0,
+          "shift": 1.0,
           "timesteps": [
             0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
+            0.25,
+            0.5,
+            0.75
           ],
           "sigmas": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            1.0,
+            0.75,
+            0.5,
+            0.25,
             0.0
           ]
         },
@@ -701,7 +693,7 @@
       "rowChannels": 96,
       "noise": {
         "kind": "splitmix64BoxMuller",
-        "order": "packedToken",
+        "order": "sourceVideoThenAudio",
         "dtype": "float32"
       }
     },

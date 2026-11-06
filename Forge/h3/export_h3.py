@@ -528,9 +528,14 @@ def stage_vision(args, build: Build) -> None:
 # MARK: the manifest (MANIFEST.md §5.8 normative; driver `minimax-h3@1` and its `h3` block proposed until G4 step 2b)
 
 def manifest(meta: dict, files: dict[str, dict]) -> dict:
-    gpu = {"compute": "gpu", "expectFrequentReshapes": True}
+    # No graph takes Core AI's `expectFrequentReshapes` hint: with it the GPU's bf16 numerics drift from the path
+    # check_h3.py qualifies against the original modules (the Swift driver's step-0 head velocities moved 5.4% from it,
+    # 10.8% at step 1); without it the driver is bit-identical to that path (G4 step 2b). A profile pins the body's
+    # shapes, so each specializes once; the conditioner specializes per prompt length, within its phase.
+    gpu = {"compute": "gpu", "expectFrequentReshapes": False}
     fixed = {"compute": "gpu", "expectFrequentReshapes": False}
-    from_ = lambda ref: {"name": ref.split(".", 1)[1], "source": {"from": ref}}  # noqa: E731
+    # `name` is this graph's input tensor; `from` is `<role>.<the producing graph's output tensor>`.
+    from_ = lambda name, ref: {"name": name, "source": {"from": ref}}  # noqa: E731
 
     def weights(table: str, prefix: str, count: int, blocks: int) -> dict:
         return {"table": f"main:weights/{table}.json", "inputs": [f"w{i}" for i in range(count)], "blocks": blocks}
@@ -546,14 +551,14 @@ def manifest(meta: dict, files: dict[str, dict]) -> dict:
                         "outputs": {"refined": "refined"}, "weights": weights("prepare-text", "w", text_inputs, 1),
                         "residency": "perPrompt", **gpu},
         "preparePack": {"file": "main:models/prepare-pack.aimodel", "function": "main",
-                        "inputs": {"video": "video", "audio": "audio", "text": from_("prepareText.refined"), "gather": "gather"},
+                        "inputs": {"video": "video", "audio": "audio", "text": from_("text", "prepareText.refined"), "gather": "gather"},
                         "outputs": {"hidden": "hidden"}, "residency": "perStep", **gpu},
         "body": {"file": "main:models/body.aimodel", "function": "main",
-                 "inputs": {"hidden": from_("preparePack.hidden"), "table": "table", "tags": "tags", "cos": "cos", "sin": "sin"},
+                 "inputs": {"hidden": from_("hidden", "preparePack.hidden"), "table": "table", "tags": "tags", "cos": "cos", "sin": "sin"},
                  "outputs": {"hidden": "hidden_out"}, "weights": weights("body", "w", body_inputs, hg.BLOCKS),
                  "residency": "perStep", **gpu},
         "heads": {"file": "main:models/heads.aimodel", "function": "main",
-                  "inputs": {"hidden": from_("body.hidden"), "temb": "temb", "indices": "indices",
+                  "inputs": {"hidden": from_("hidden", "body.hidden_out"), "temb": "temb", "indices": "indices",
                              "videoIndices": "video_indices", "audioIndices": "audio_indices"},
                   "outputs": {"video": "video", "audio": "audio"}, "residency": "perStep", **gpu},
         "videoDecoder": {"file": "main:models/video-decoder-tile256-bf16.aimodel", "function": "main", "inputs": {"rows": "rows"},
@@ -591,7 +596,7 @@ def manifest(meta: dict, files: dict[str, dict]) -> dict:
         "adapter": meta["body-weights"]["adapter"],
         "video": {"tile": v["tile"], "windowLatents": v["windowLatents"], "windowFrames": v["windowFrames"],
                   "windowStride": v["windowStride"], "precision": v["precision"], "packing": "patch2x2ChannelMajor",
-                  "rowChannels": 96, "noise": {"kind": "splitmix64BoxMuller", "order": "packedToken", "dtype": "float32"}},
+                  "rowChannels": 96, "noise": {"kind": "splitmix64BoxMuller", "order": "sourceVideoThenAudio", "dtype": "float32"}},
         "keyframe": {"tileSize": meta["video-encoder"]["tileSize"], "seed": meta["video-encoder"]["seed"],
                      "pixelMean": list(hg.PIXEL_MEAN), "pixelStd": list(hg.PIXEL_STD), "conditionTimestep": hg.FL2VA_CONDITION_TIMESTEP},
         "audio": {"sampleRate": a["sampleRate"], "hop": a["hop"], "channels": a["channels"], "rowChannels": 32},
@@ -633,7 +638,10 @@ def sample_meta() -> dict:
     plans = {("turbo8", "t2va"): 9, ("turbo8", "fl2va"): 9, ("turbo4", "t2va"): 5, ("turbo4", "fl2va"): 5}
     recipes = {}
     for (name, task), points in plans.items():
-        arm = {"shift": 0.0, "timesteps": [0.0] * points, "sigmas": [0.0] * points}
+        # A well-formed grid (σ falling from 1 to 0, timesteps 1 − σ in float32), not the recipe's values.
+        import numpy as np
+        sigmas = [float(np.float32(1 - i / (points - 1))) for i in range(points)]
+        arm = {"shift": 1.0, "timesteps": [float(np.float32(1) - np.float32(s)) for s in sigmas[:-1]], "sigmas": sigmas}
         recipes[f"{name}/{task}"] = {"video": arm, "audio": arm, "steps": [
             {"timesteps": [0.5], "temb": {"file": f"main:tables/{name}/{task}/step-{i}/temb.raw"},
              "blocks": f"main:tables/{name}/{task}/step-{i}/block-{{block:02d}}.raw"} for i in range(points - 1)]}
