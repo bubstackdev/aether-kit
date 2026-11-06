@@ -6,10 +6,12 @@ import Metal
 /// phase), its KV and recurrent states, a position counter, rewind and snapshot, the prefill schedule, and greedy
 /// decoding pipelined on the GPU (§6.1).
 ///
-/// An actor: the graphs, the arena and every buffer live inside it and never leave (§11). Results are `Sendable`
-/// values (``Logits``, ``Snapshot``). One request at a time: a greedy decode in progress makes every other call fail
-/// with `unsupportedOperation` until ``endGreedy()``.
-public actor DecoderEngine {
+/// The Core AI ``LanguageEngine``. An actor: the graphs, the arena and every buffer live inside it and never leave
+/// (§11). Results are `Sendable` values (``Logits``, ``EngineSnapshot``). One request at a time: a greedy decode in
+/// progress makes every other call fail with `unsupportedOperation` until ``endGreedy()``. Beyond the protocol it
+/// exposes its Core AI specifics: ``Options`` (capacity, pipeline depth, the canary), ``canary``, ``decodeMode``,
+/// ``description`` and ``sizing``.
+public actor DecoderEngine: LanguageEngine {
     public struct Options: Sendable, Hashable {
         public enum Execution: Sendable, Hashable {
             /// `encode` on a Metal-backed arena for real graphs; `run` for other backends (test fakes).
@@ -103,12 +105,12 @@ public actor DecoderEngine {
     /// Host time per greedy phase since load (diagnostics).
     @_spi(Diagnostics) public var greedyTimings: GreedyTimings { core.timings }
 
-    /// The engine state at one position: a host copy of every state. `Sendable`.
-    public struct Snapshot: Sendable {
-        public var position: Int
-        public var capacity: Int
-        public var states: StateSnapshot
-        public var byteCount: Int { states.byteCount }
+    /// The engine state at one position: a host copy of every state, carried as an ``EngineSnapshot``'s payload.
+    struct Snapshot: Sendable {
+        var position: Int
+        var capacity: Int
+        var states: StateSnapshot
+        var byteCount: Int { states.byteCount }
     }
 
     /// Fixed facts about the loaded model.
@@ -130,8 +132,12 @@ public actor DecoderEngine {
     /// The model's measured Metal allocation delta across load and its files' size (diagnostics; zero for fakes).
     public private(set) var loadedModelBytes: (gpu: Int64, disk: Int64) = (0, 0)
     public nonisolated let description: Description
+    public nonisolated var vocab: Int { description.vocab }
+    public nonisolated var maxCapacity: Int { description.maxCapacity }
+    public nonisolated var hasRecurrentState: Bool { description.hasRecurrentState }
     public private(set) var canary: CanaryReport?
     public private(set) var decodeMode: DecodeMode
+    public var decodeModeDescription: String { decodeMode.description }
 
     /// Loads `manifest`'s decoder graph from an installed bundle. Compute and the reshape hint come from the
     /// manifest; capacity from the memory budget (``KVSizing``).
@@ -296,9 +302,19 @@ public actor DecoderEngine {
 
     public func reset() throws(AetherError) { try core.reset() }
 
-    public func snapshot() throws(AetherError) -> Snapshot { try core.snapshot() }
+    /// A host copy of the state: sequence states up to the position, recurrent states whole.
+    public func snapshot() throws(AetherError) -> EngineSnapshot {
+        let snapshot = try core.snapshot()
+        return EngineSnapshot(position: snapshot.position, byteCount: snapshot.byteCount, payload: snapshot)
+    }
 
-    public func restore(_ snapshot: Snapshot) throws(AetherError) { try core.restore(snapshot) }
+    /// Restores a snapshot of this engine's model, validated before any state is touched.
+    public func restore(_ snapshot: EngineSnapshot) throws(AetherError) {
+        guard let state = snapshot.payload as? Snapshot else {
+            throw .unsupportedOperation("restore of a snapshot another engine type took (\(type(of: snapshot.payload)))")
+        }
+        try core.restore(state)
+    }
 
     // MARK: - Greedy decoding
 

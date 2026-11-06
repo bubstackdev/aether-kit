@@ -4,6 +4,25 @@
 
 M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
+### Breaking (source)
+
+- **The `LanguageEngine` seam (B1, docs/BACKENDS.md):** the text stack takes a protocol instead of `DecoderEngine`,
+  so another backend's engine can run under it. Lands before the 0.1.0 freeze; no behaviour change.
+  - New in AetherRuntime: `LanguageEngine` (an `Actor` protocol: `vocab`, `maxCapacity`, `hasRecurrentState`,
+    `position`, `stateRanAhead`, `decodeModeDescription`, `prefill(_:logits:)`, `step`, `rewind`, `reset`, `snapshot`,
+    `restore`, `beginGreedy`/`nextGreedy`/`endGreedy`) and the opaque `EngineSnapshot` (`position`, `byteCount`, the
+    engine's payload). `DecoderEngine` conforms.
+  - `Generator.engine` is `any LanguageEngine` (was `DecoderEngine`) and `Generator.init(engine:…)` takes one.
+    Migration: `generator.engine.description.maxCapacity` → `generator.engine.maxCapacity` (likewise `vocab`,
+    `hasRecurrentState`); for Core AI specifics (`canary`, `decodeMode`, `sizing`, `description.prefillChunk`), cast
+    with `generator.engine as? DecoderEngine`, or load the `DecoderEngine` yourself and wrap it with the new
+    `ChatSession.generator(engine:bundle:manifest:gpu:)`.
+  - `DecoderEngine.snapshot()` returns an `EngineSnapshot` and `restore(_:)` takes one; `DecoderEngine.Snapshot` is no
+    longer public (its `position` and `byteCount` are on `EngineSnapshot`). A snapshot of another engine type is
+    refused with `unsupportedOperation`.
+  - `ChatSession.load`, `ChatSession.generator(bundle:…)` and `AetherLanguageModel.load` keep their
+    `DecoderEngine.Options` parameter: they load `decoder-lm@1`.
+
 ### New
 
 - **Vision foundation (M4a):**
