@@ -311,3 +311,11 @@ The [batch validation record](evidence/krea-batch-render-validation-2026-10-18.j
 The real CLI completed three eight-step 512×512 images for `a red fox in fresh snow`, using seeds `17017,17018,17017`. Conditioning and both seed-17017 pixel hashes match the independent reference. Their PNG bytes are also identical; seed 17018 produces different pixels, without a new independent reference claim for that seed. All three PNG dimensions and byte hashes were verified, and stdout JSON matches the saved report. A second invocation against the existing directory exits nonzero without modifying the report; malformed seeds fail before creating an output directory.
 
 The [native batch report](evidence/krea-batch-render-native-2026-10-18.json), [progress log](evidence/krea-batch-render-native-2026-10-18.log), [CPU test log](evidence/krea-batch-render-tests-2026-10-18.log) and [source/executable provenance](evidence/krea-batch-render-native-provenance-2026-10-18.json) are preserved. This is a CLI correctness check at one shape, without specialization; the preceding library qualification separately covers native prepared reuse at both dynamic shapes. Rendering timings have no warm-up or controlled performance protocol and are not benchmark results.
+
+A bundle can declare `diffusion.denoiserFrequentReshapes: false` when its producer qualifies stable specialization. The default remains true for existing dynamic exports. The setting is covered by the manifest fingerprint; fixed-shape registered specializations always use stable specialization. It changes compiler preparation only, with no model run or permission implied by reading the declaration.
+
+Rebuilt text-only bundles can be qualified explicitly with
+`AETHER_NATIVE_KREA_TEXT_QUALIFICATION=1 AETHER_KREA_BUNDLE=/path/to/bundle swift test --triple arm64-apple-macosx27.0 --filter rebuiltKreaTextBundleConditionsBoundaryPromptsAndCompletesGeneration`.
+This takes the shared GPU lease, verifies all assets, checks the minimum, normal and maximum prompt-row contracts,
+then runs eight steps and decoding for a neutral ceramic-mug prompt. It saves no image and creates no application
+approval evidence. Normal tests leave this native qualification disabled.
