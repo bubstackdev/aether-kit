@@ -82,6 +82,11 @@ public actor Flux2KleinPipeline {
         guard let latent = manifest.latent, latent.packing == .patch2x2ChannelMajor else {
             throw .manifestInvalid(field: "latent", reason: "\(Flux2KleinDriver.id) requires patch2x2ChannelMajor latents")
         }
+        // These exports have no fixed sizes, so the token bound is what keeps a request's canvas (and its unmeasured
+        // memory) finite.
+        guard latent.maxImageTokens != nil else {
+            throw .manifestInvalid(field: "latent.maxImageTokens", reason: "required by \(Flux2KleinDriver.id)")
+        }
         guard let flux2 = manifest.flux2 else {
             throw .manifestInvalid(field: "flux2", reason: "required by \(Flux2KleinDriver.id)")
         }

@@ -106,6 +106,11 @@ public actor Krea2Pipeline {
         guard let latent = manifest.latent, latent.packing == .patch2x2ChannelMajor else {
             throw .manifestInvalid(field: "latent", reason: "\(Krea2Driver.id) requires patch2x2ChannelMajor latents")
         }
+        // These exports have no fixed sizes, so the token bound is what keeps a request's canvas (and its unmeasured
+        // memory) finite.
+        guard latent.maxImageTokens != nil else {
+            throw .manifestInvalid(field: "latent.maxImageTokens", reason: "required by \(Krea2Driver.id)")
+        }
         guard let krea2 = manifest.krea2 else {
             throw .manifestInvalid(field: "krea2", reason: "required by \(Krea2Driver.id)")
         }

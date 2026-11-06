@@ -176,6 +176,22 @@ struct Flux2KleinTests {
         return x
     }
 
+    /// Review finding 6: with no fixed sizes, `maxImageTokens` is what bounds a canvas, so it is required; and a size
+    /// whose latent element count overflows is refused (before: a plain multiply trapped after admission).
+    @Test func theTokenBoundIsRequiredAndOverflowIsRefused() throws {
+        var unbounded = try Self.manifest()
+        unbounded.latent?.maxImageTokens = nil
+        #expect(throws: AetherError.self) {
+            _ = try Flux2KleinPipeline(
+                manifest: unbounded, device: Self.mac, options: .init(probe: Self.still), encodePrompt: Self.encode,
+                load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
+        }
+        var huge = try Self.manifest().latent!
+        huge.maxImageTokens = nil
+        let side = huge.pixelsPerToken << 31
+        #expect(throws: AetherError.self) { _ = try huge.tokenGrid(width: side, height: side) }
+    }
+
     @Test func generatesThroughTheSegmentsWithTheHostRecipe() async throws {
         let calls = Calls()
         let (pipeline, loads) = try Self.pipeline(calls: calls)

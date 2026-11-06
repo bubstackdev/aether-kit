@@ -167,11 +167,11 @@ struct Krea2Tests {
 
     static func pipeline(
         calls: Calls, filter: any ContentFilter = RecordingFilter(), device: Device = mac, budget: Int64 = 1 << 40,
-        onRun: @escaping @Sendable () -> Void = {}
+        manifest: Manifest? = nil, onRun: @escaping @Sendable () -> Void = {}
     ) throws -> (Krea2Pipeline, Calls) {
         let loads = Calls()
         let pipeline = try Krea2Pipeline(
-            manifest: try manifest(), device: device, filter: filter,
+            manifest: try manifest ?? Self.manifest(), device: device, filter: filter,
             options: .init(memory: .bytes(budget), probe: still), encodePrompt: encode,
             load: { role throws(AetherError) in
                 loads.append(role)
@@ -205,6 +205,13 @@ struct Krea2Tests {
             try schedule.advance(step: step, latents: &x, velocity: v)
         }
         return x
+    }
+
+    /// Review finding 6: Krea exports list no fixed sizes, so `maxImageTokens` is required.
+    @Test func theTokenBoundIsRequired() throws {
+        var unbounded = try Self.manifest()
+        unbounded.latent?.maxImageTokens = nil
+        #expect(throws: AetherError.self) { _ = try Self.pipeline(calls: Calls(), manifest: unbounded) }
     }
 
     @Test func generatesThroughTheSegmentsWithTheHostRecipe() async throws {
