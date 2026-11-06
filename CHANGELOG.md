@@ -123,7 +123,16 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
   0.0067). It is not publicly hosted; the catalog entry waits for a compliant hosting route.
 
+- **MiniMax H3 (G4)** in the new **`AetherVideo`** product: `minimax-h3@1` (`MiniMaxH3Pipeline`), text to 24 fps video with
+  32 kHz stereo audio at the qualified 960×544×124 profile, macOS only. The conditioner and the 50-block transformer
+  chain on the GPU with their weights streamed from the bundle (`GraphChain`, `WeightBanks`); the host recipe is
+  Diffusers' layout, row timesteps and rotary, bit-identical to the graph reference for the first two steps; a clip and
+  its repeat bit-identical; phase peaks 4.2 / 9.7 / 1.4 GiB within the 18 GiB bar. The typed `h3` block (MANIFEST.md
+  §5.10 normative); `TensorBuffer.readBytes`/`writeBytes`/`copyBytes` and `WeightBanks.load(block:into:)` for bf16
+  tensors between host and Metal arenas. The exporter's manifest fixes: `video.noise.order` is `sourceVideoThenAudio`
+  (0.0.x's draw order), the pack's text input is named `text`, and no graph takes the reshape hint. FL2VA keyframes are
+  deferred; the bundle isn't publicly hosted (license).
+
 ### In progress before 0.1.0 is tagged
 
-MiniMax H3 on the new runtime; the Krea and Kokoro hosted bundles and catalog entries, SD-Turbo's iPhone
-validation, and FLUX.2's and Krea's reference images.
+H3's FL2VA keyframes; FLUX.2's and Krea's reference images.

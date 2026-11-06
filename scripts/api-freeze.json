@@ -8,6 +8,7 @@
     "AetherText": ["*"],
     "AetherFoundationModels": ["*"],
     "AetherImage": ["*"],
-    "AetherSpeech": ["*"]
+    "AetherSpeech": ["*"],
+    "AetherVideo": ["*"]
   }
 }
