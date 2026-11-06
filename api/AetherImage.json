@@ -1,0 +1,2267 @@
+{
+ "ABIRoot": {
+  "children": [
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13CLIPTokenizerV3boss5Int32VvgZ",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherImage13CLIPTokenizerV3boss5Int32VvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int32",
+        "printedName": "Swift.Int32",
+        "usr": "s:s5Int32V"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV3boss5Int32VvpZ",
+      "moduleName": "AetherImage",
+      "name": "bos",
+      "printedName": "bos",
+      "static": true,
+      "usr": "s:11AetherImage13CLIPTokenizerV3boss5Int32VvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13CLIPTokenizerV3eoss5Int32VvgZ",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherImage13CLIPTokenizerV3eoss5Int32VvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int32",
+        "printedName": "Swift.Int32",
+        "usr": "s:s5Int32V"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV3eoss5Int32VvpZ",
+      "moduleName": "AetherImage",
+      "name": "eos",
+      "printedName": "eos",
+      "static": true,
+      "usr": "s:11AetherImage13CLIPTokenizerV3eoss5Int32VvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13CLIPTokenizerV6lengthSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13CLIPTokenizerV6lengthSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV6lengthSivp",
+      "moduleName": "AetherImage",
+      "name": "length",
+      "printedName": "length",
+      "usr": "s:11AetherImage13CLIPTokenizerV6lengthSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13CLIPTokenizerV3pads5Int32Vvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13CLIPTokenizerV3pads5Int32Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int32",
+        "printedName": "Swift.Int32",
+        "usr": "s:s5Int32V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV3pads5Int32Vvp",
+      "moduleName": "AetherImage",
+      "name": "pad",
+      "printedName": "pad",
+      "usr": "s:11AetherImage13CLIPTokenizerV3pads5Int32Vvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "CLIPTokenizer",
+        "printedName": "AetherImage.CLIPTokenizer",
+        "usr": "s:11AetherImage13CLIPTokenizerV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "URL",
+        "printedName": "Foundation.URL",
+        "usr": "s:10Foundation3URLV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int32",
+        "printedName": "Swift.Int32",
+        "usr": "s:s5Int32V"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV9directory6length3padAC10Foundation3URLV_Sis5Int32Vt0A4Core0A5ErrorOYKcfc",
+      "moduleName": "AetherImage",
+      "name": "init",
+      "printedName": "init(directory:length:pad:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13CLIPTokenizerV9directory6length3padAC10Foundation3URLV_Sis5Int32Vt0A4Core0A5ErrorOYKcfc"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Int32]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13CLIPTokenizerV6encodeySays5Int32VGSS0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherImage",
+      "name": "encode",
+      "printedName": "encode(_:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13CLIPTokenizerV6encodeySays5Int32VGSS0A4Core0A5ErrorOYKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage13CLIPTokenizerV",
+    "moduleName": "AetherImage",
+    "name": "CLIPTokenizer",
+    "printedName": "CLIPTokenizer",
+    "usr": "s:11AetherImage13CLIPTokenizerV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage21LatentDiffusionDriverO2id0A4Core0E2IDVvgZ",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherImage21LatentDiffusionDriverO2id0A4Core0E2IDVvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage21LatentDiffusionDriverO2id0A4Core0E2IDVvpZ",
+      "moduleName": "AetherImage",
+      "name": "id",
+      "printedName": "id",
+      "static": true,
+      "usr": "s:11AetherImage21LatentDiffusionDriverO2id0A4Core0E2IDVvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "LatentDiffusionPipeline",
+        "printedName": "AetherImage.LatentDiffusionPipeline",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LoadOptions",
+        "printedName": "AetherRuntime.LoadOptions",
+        "usr": "s:13AetherRuntime11LoadOptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage21LatentDiffusionDriverO4load_7optionsAA0cD8PipelineC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
+      "moduleName": "AetherImage",
+      "name": "load",
+      "printedName": "load(_:options:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:11AetherImage21LatentDiffusionDriverO4load_7optionsAA0cD8PipelineC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "LatentDiffusionPipeline",
+        "printedName": "AetherImage.LatentDiffusionPipeline",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s11AetherImage21LatentDiffusionDriverO6Loadeda",
+      "moduleName": "AetherImage",
+      "name": "Loaded",
+      "printedName": "Loaded",
+      "usr": "s:11AetherImage21LatentDiffusionDriverO6Loadeda"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "LatentDiffusionPipeline",
+          "printedName": "AetherImage.LatentDiffusionPipeline",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Loaded",
+        "printedName": "Loaded"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime11ModelDriverP",
+      "name": "ModelDriver",
+      "printedName": "ModelDriver",
+      "usr": "s:13AetherRuntime11ModelDriverP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage21LatentDiffusionDriverO",
+    "moduleName": "AetherImage",
+    "name": "LatentDiffusionDriver",
+    "printedName": "LatentDiffusionDriver",
+    "usr": "s:11AetherImage21LatentDiffusionDriverO"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "CachePolicy",
+            "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+            "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "CachePolicy",
+            "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+            "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "CachePolicy",
+          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovp",
+        "moduleName": "AetherImage",
+        "name": "cachePolicy",
+        "printedName": "cachePolicy",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0A7Runtime05GraphF0V05CacheH0Ovp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Cache",
+            "printedName": "AetherRuntime.GraphOptions.Cache",
+            "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Cache",
+            "printedName": "AetherRuntime.GraphOptions.Cache",
+            "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Cache",
+          "printedName": "AetherRuntime.GraphOptions.Cache",
+          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvp",
+        "moduleName": "AetherImage",
+        "name": "cache",
+        "printedName": "cache",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV5cache0A7Runtime05GraphF0V5CacheOvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvp",
+        "moduleName": "AetherImage",
+        "name": "memory",
+        "printedName": "memory",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6memory0A7Runtime12MemoryBudgetVvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ResourceCoordinator",
+              "printedName": "AetherHost.ResourceCoordinator",
+              "usr": "s:10AetherHost19ResourceCoordinatorC"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.ResourceCoordinator?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ResourceCoordinator",
+              "printedName": "AetherHost.ResourceCoordinator",
+              "usr": "s:10AetherHost19ResourceCoordinatorC"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.ResourceCoordinator?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp",
+        "moduleName": "AetherImage",
+        "name": "coordinator",
+        "printedName": "coordinator",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "GPUAdmissionOwner",
+              "printedName": "AetherHost.GPUAdmissionOwner",
+              "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.GPUAdmissionOwner?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "GPUAdmissionOwner",
+              "printedName": "AetherHost.GPUAdmissionOwner",
+              "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherHost.GPUAdmissionOwner?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUAdmissionOwner",
+            "printedName": "AetherHost.GPUAdmissionOwner",
+            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUAdmissionOwner?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp",
+        "moduleName": "AetherImage",
+        "name": "gpu",
+        "printedName": "gpu",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "FootprintLedger",
+            "printedName": "AetherRuntime.FootprintLedger",
+            "usr": "s:13AetherRuntime15FootprintLedgerC"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "FootprintLedger",
+            "printedName": "AetherRuntime.FootprintLedger",
+            "usr": "s:13AetherRuntime15FootprintLedgerC"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvp",
+        "moduleName": "AetherImage",
+        "name": "ledger",
+        "printedName": "ledger",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV6ledger0A7Runtime15FootprintLedgerCvp"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Options",
+          "printedName": "AetherImage.LatentDiffusionPipeline.Options",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "CachePolicy",
+          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Cache",
+          "printedName": "AetherRuntime.GraphOptions.Cache",
+          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUAdmissionOwner",
+            "printedName": "AetherHost.GPUAdmissionOwner",
+            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+           }
+          ],
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUAdmissionOwner?",
+          "usr": "s:Sq"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         }
+        ],
+        "declKind": "Constructor",
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0G06memory11coordinator3gpu6ledgerAE0A7Runtime05GraphF0V05CacheH0O_AN0O0OAL12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAU17GPUAdmissionOwnerVSgAL15FootprintLedgerCtcfc",
+        "moduleName": "AetherImage",
+        "name": "init",
+        "printedName": "init(cachePolicy:cache:memory:coordinator:gpu:ledger:)",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV11cachePolicy0G06memory11coordinator3gpu6ledgerAE0A7Runtime05GraphF0V05CacheH0O_AN0O0OAL12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAU17GPUAdmissionOwnerVSgAL15FootprintLedgerCtcfc"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Struct",
+      "kind": "TypeDecl",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7OptionsV",
+      "moduleName": "AetherImage",
+      "name": "Options",
+      "printedName": "Options",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV"
+     },
+     {
+      "children": [
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvp",
+        "moduleName": "AetherImage",
+        "name": "prompt",
+        "printedName": "prompt",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6promptSSvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "UInt64",
+            "printedName": "Swift.UInt64",
+            "usr": "s:s6UInt64V"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "UInt64",
+            "printedName": "Swift.UInt64",
+            "usr": "s:s6UInt64V"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt64",
+          "printedName": "Swift.UInt64",
+          "usr": "s:s6UInt64V"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvp",
+        "moduleName": "AetherImage",
+        "name": "seed",
+        "printedName": "seed",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV4seeds6UInt64Vvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvp",
+        "moduleName": "AetherImage",
+        "name": "steps",
+        "printedName": "steps",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5stepsSiSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvp",
+        "moduleName": "AetherImage",
+        "name": "width",
+        "printedName": "width",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV5widthSiSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvs",
+          "moduleName": "AetherImage",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvp",
+        "moduleName": "AetherImage",
+        "name": "height",
+        "printedName": "height",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6heightSiSgvp"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Request",
+          "printedName": "AetherImage.LatentDiffusionPipeline.Request",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "UInt64",
+          "printedName": "Swift.UInt64",
+          "usr": "s:s6UInt64V"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declKind": "Constructor",
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV6prompt4seed5steps5width6heightAESS_s6UInt64VSiSgA2Mtcfc",
+        "moduleName": "AetherImage",
+        "name": "init",
+        "printedName": "init(prompt:seed:steps:width:height:)",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV6prompt4seed5steps5width6heightAESS_s6UInt64VSiSgA2Mtcfc"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Request",
+          "printedName": "AetherImage.LatentDiffusionPipeline.Request",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Request",
+          "printedName": "AetherImage.LatentDiffusionPipeline.Request",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV"
+         }
+        ],
+        "declAttributes": [
+         "Implements"
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV23__derived_struct_equalsySbAE_AEtFZ",
+        "moduleName": "AetherImage",
+        "name": "__derived_struct_equals",
+        "printedName": "__derived_struct_equals(_:_:)",
+        "static": true,
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV23__derived_struct_equalsySbAE_AEtFZ"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Hasher",
+          "paramValueOwnership": "InOut",
+          "printedName": "Swift.Hasher",
+          "usr": "s:s6HasherV"
+         }
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV4hash4intoys6HasherVz_tF",
+        "moduleName": "AetherImage",
+        "name": "hash",
+        "printedName": "hash(into:)",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV4hash4intoys6HasherVz_tF"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV9hashValueSivg",
+          "moduleName": "AetherImage",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV9hashValueSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Var",
+        "implicit": true,
+        "kind": "Var",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV9hashValueSivp",
+        "moduleName": "AetherImage",
+        "name": "hashValue",
+        "printedName": "hashValue",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV9hashValueSivp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSQ",
+        "name": "Equatable",
+        "printedName": "Equatable",
+        "usr": "s:SQ"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSH",
+        "name": "Hashable",
+        "printedName": "Hashable",
+        "usr": "s:SH"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Struct",
+      "kind": "TypeDecl",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7RequestV",
+      "moduleName": "AetherImage",
+      "name": "Request",
+      "printedName": "Request",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherImage",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Schedule",
+          "printedName": "AetherCore.Manifest.Schedule",
+          "usr": "s:10AetherCore8ManifestV8ScheduleV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC8schedule0A4Core8ManifestV8ScheduleVvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC8schedule0A4Core8ManifestV8ScheduleVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Schedule",
+        "printedName": "AetherCore.Manifest.Schedule",
+        "usr": "s:10AetherCore8ManifestV8ScheduleV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC8schedule0A4Core8ManifestV8ScheduleVvp",
+      "moduleName": "AetherImage",
+      "name": "schedule",
+      "printedName": "schedule",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC8schedule0A4Core8ManifestV8ScheduleVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Latent",
+          "printedName": "AetherCore.Manifest.Latent",
+          "usr": "s:10AetherCore8ManifestV6LatentV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC6latent0A4Core8ManifestV0C0Vvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC6latent0A4Core8ManifestV0C0Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Latent",
+        "printedName": "AetherCore.Manifest.Latent",
+        "usr": "s:10AetherCore8ManifestV6LatentV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC6latent0A4Core8ManifestV0C0Vvp",
+      "moduleName": "AetherImage",
+      "name": "latent",
+      "printedName": "latent",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC6latent0A4Core8ManifestV0C0Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Options",
+          "printedName": "AetherImage.LatentDiffusionPipeline.Options",
+          "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7optionsAC7OptionsVvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7optionsAC7OptionsVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Options",
+        "printedName": "AetherImage.LatentDiffusionPipeline.Options",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC7optionsAC7OptionsVvp",
+      "moduleName": "AetherImage",
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC7optionsAC7OptionsVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "LatentDiffusionPipeline",
+        "printedName": "AetherImage.LatentDiffusionPipeline",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Options",
+        "printedName": "AetherImage.LatentDiffusionPipeline.Options",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7OptionsV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Convenience",
+      "kind": "Constructor",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAC7OptionsVtAH0A5ErrorOYKcfc",
+      "moduleName": "AetherImage",
+      "name": "init",
+      "printedName": "init(bundle:manifest:device:options:)",
+      "throwing": true,
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAC7OptionsVtAH0A5ErrorOYKcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GeneratedImage",
+        "printedName": "AetherRuntime.GeneratedImage",
+        "usr": "s:13AetherRuntime14GeneratedImageV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Request",
+        "printedName": "AetherImage.LatentDiffusionPipeline.Request",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC7RequestV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC8generatey0A7Runtime09GeneratedB0VAC7RequestVYaKF",
+      "moduleName": "AetherImage",
+      "name": "generate",
+      "printedName": "generate(_:)",
+      "throwing": true,
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC8generatey0A7Runtime09GeneratedB0VAC7RequestVYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC6unloadyyYaF",
+      "moduleName": "AetherImage",
+      "name": "unload",
+      "printedName": "unload()",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC6unloadyyYaF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.String]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC13residentRolesSaySSGvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC13residentRolesSaySSGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.String]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC13residentRolesSaySSGvp",
+      "moduleName": "AetherImage",
+      "name": "residentRoles",
+      "printedName": "residentRoles",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC13residentRolesSaySSGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UnownedSerialExecutor",
+          "printedName": "_Concurrency.UnownedSerialExecutor",
+          "usr": "s:Sce"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23LatentDiffusionPipelineC15unownedExecutorScevg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23LatentDiffusionPipelineC15unownedExecutorScevg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "UnownedSerialExecutor",
+        "printedName": "_Concurrency.UnownedSerialExecutor",
+        "usr": "s:Sce"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "Semantics"
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23LatentDiffusionPipelineC15unownedExecutorScevp",
+      "moduleName": "AetherImage",
+      "name": "unownedExecutor",
+      "printedName": "unownedExecutor",
+      "usr": "s:11AetherImage23LatentDiffusionPipelineC15unownedExecutorScevp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sScA",
+      "name": "Actor",
+      "printedName": "Actor",
+      "usr": "s:ScA"
+     }
+    ],
+    "declKind": "Class",
+    "hasMissingDesignatedInitializers": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage23LatentDiffusionPipelineC",
+    "moduleName": "AetherImage",
+    "name": "LatentDiffusionPipeline",
+    "printedName": "LatentDiffusionPipeline",
+    "usr": "s:11AetherImage23LatentDiffusionPipelineC"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Registry",
+          "printedName": "AetherRuntime.Registry",
+          "usr": "s:13AetherRuntime8RegistryV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8RegistryV0A5ImageE5imageACvgZ",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:13AetherRuntime8RegistryV0A5ImageE5imageACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Registry",
+        "printedName": "AetherRuntime.Registry",
+        "usr": "s:13AetherRuntime8RegistryV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8RegistryV0A5ImageE5imageACvpZ",
+      "moduleName": "AetherImage",
+      "name": "image",
+      "printedName": "image",
+      "static": true,
+      "usr": "s:13AetherRuntime8RegistryV0A5ImageE5imageACvpZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "isExternal": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime8RegistryV",
+    "moduleName": "AetherRuntime",
+    "name": "Registry",
+    "printedName": "Registry",
+    "usr": "s:13AetherRuntime8RegistryV"
+   }
+  ],
+  "json_format_version": 8,
+  "kind": "Root",
+  "name": "AetherImage",
+  "printedName": "AetherImage"
+ }
+}

@@ -1,0 +1,741 @@
+{
+ "ABIRoot": {
+  "children": [
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModelExecutor",
+        "printedName": "AetherFoundationModels.AetherLanguageModelExecutor",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "kind": "TypeAlias",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV8Executora",
+      "moduleName": "AetherFoundationModels",
+      "name": "Executor",
+      "printedName": "Executor",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV8Executora"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Generator",
+          "printedName": "AetherText.Generator",
+          "usr": "s:10AetherText9GeneratorC"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A13LanguageModelV9generator0A4Text9GeneratorCvg",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV9generator0A4Text9GeneratorCvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Generator",
+        "printedName": "AetherText.Generator",
+        "usr": "s:10AetherText9GeneratorC"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV9generator0A4Text9GeneratorCvp",
+      "moduleName": "AetherFoundationModels",
+      "name": "generator",
+      "printedName": "generator",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV9generator0A4Text9GeneratorCvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModel",
+        "printedName": "AetherFoundationModels.AetherLanguageModel",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Generator",
+        "printedName": "AetherText.Generator",
+        "usr": "s:10AetherText9GeneratorC"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV9generatorAC0A4Text9GeneratorC_tcfc",
+      "moduleName": "AetherFoundationModels",
+      "name": "init",
+      "printedName": "init(generator:)",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV9generatorAC0A4Text9GeneratorC_tcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModel",
+        "printedName": "AetherFoundationModels.AetherLanguageModel",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Options",
+        "printedName": "AetherRuntime.DecoderEngine.Options",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV4load6bundle8manifest6device6engineAC0A4Core15InstalledBundleV_AI8ManifestVAI6DeviceV0A7Runtime13DecoderEngineC7OptionsVtYaKFZ",
+      "moduleName": "AetherFoundationModels",
+      "name": "load",
+      "printedName": "load(bundle:manifest:device:engine:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV4load6bundle8manifest6device6engineAC0A4Core15InstalledBundleV_AI8ManifestVAI6DeviceV0A7Runtime13DecoderEngineC7OptionsVtYaKFZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A13LanguageModelV17supportsReasoningSbvg",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV17supportsReasoningSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV17supportsReasoningSbvp",
+      "moduleName": "AetherFoundationModels",
+      "name": "supportsReasoning",
+      "printedName": "supportsReasoning",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV17supportsReasoningSbvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ToolDialect",
+            "printedName": "any AetherText.ToolDialect",
+            "usr": "s:10AetherText11ToolDialectP"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "(any AetherText.ToolDialect)?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A13LanguageModelV11toolDialect0A4Text04ToolG0_pSgvg",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV11toolDialect0A4Text04ToolG0_pSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ToolDialect",
+          "printedName": "any AetherText.ToolDialect",
+          "usr": "s:10AetherText11ToolDialectP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "(any AetherText.ToolDialect)?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV11toolDialect0A4Text04ToolG0_pSgvp",
+      "moduleName": "AetherFoundationModels",
+      "name": "toolDialect",
+      "printedName": "toolDialect",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV11toolDialect0A4Text04ToolG0_pSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "LanguageModelCapabilities",
+          "printedName": "FoundationModels.LanguageModelCapabilities",
+          "usr": "s:16FoundationModels25LanguageModelCapabilitiesV"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A13LanguageModelV12capabilities0bC00dE12CapabilitiesVvg",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV12capabilities0bC00dE12CapabilitiesVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "LanguageModelCapabilities",
+        "printedName": "FoundationModels.LanguageModelCapabilities",
+        "usr": "s:16FoundationModels25LanguageModelCapabilitiesV"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV12capabilities0bC00dE12CapabilitiesVvp",
+      "moduleName": "AetherFoundationModels",
+      "name": "capabilities",
+      "printedName": "capabilities",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV12capabilities0bC00dE12CapabilitiesVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Configuration",
+          "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+          "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A13LanguageModelV21executorConfigurationAA0adE8ExecutorV0G0Vvg",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV21executorConfigurationAA0adE8ExecutorV0G0Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Configuration",
+        "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A13LanguageModelV21executorConfigurationAA0adE8ExecutorV0G0Vvp",
+      "moduleName": "AetherFoundationModels",
+      "name": "executorConfiguration",
+      "printedName": "executorConfiguration",
+      "usr": "s:22AetherFoundationModels0A13LanguageModelV21executorConfigurationAA0adE8ExecutorV0G0Vvp"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "AetherLanguageModelExecutor",
+            "printedName": "AetherFoundationModels.AetherLanguageModelExecutor",
+            "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Executor",
+          "printedName": "AetherFoundationModels.AetherLanguageModel.Executor"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Executor",
+        "printedName": "Executor"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$s16FoundationModels13LanguageModelP",
+      "name": "LanguageModel",
+      "printedName": "LanguageModel",
+      "usr": "s:16FoundationModels13LanguageModelP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s22AetherFoundationModels0A13LanguageModelV",
+    "moduleName": "AetherFoundationModels",
+    "name": "AetherLanguageModel",
+    "printedName": "AetherLanguageModel",
+    "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModel",
+        "printedName": "AetherFoundationModels.AetherLanguageModel",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "kind": "TypeAlias",
+      "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV0E0a",
+      "moduleName": "AetherFoundationModels",
+      "name": "Model",
+      "printedName": "Model",
+      "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV0E0a"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Configuration",
+          "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+          "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Configuration",
+          "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+          "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+         }
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "kind": "Function",
+        "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV2eeoiySbAE_AEtFZ",
+        "moduleName": "AetherFoundationModels",
+        "name": "==",
+        "printedName": "==(_:_:)",
+        "static": true,
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV2eeoiySbAE_AEtFZ"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Hasher",
+          "paramValueOwnership": "InOut",
+          "printedName": "Swift.Hasher",
+          "usr": "s:s6HasherV"
+         }
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "kind": "Function",
+        "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV4hash4intoys6HasherVz_tF",
+        "moduleName": "AetherFoundationModels",
+        "name": "hash",
+        "printedName": "hash(into:)",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV4hash4intoys6HasherVz_tF"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV9hashValueSivg",
+          "moduleName": "AetherFoundationModels",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV9hashValueSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Var",
+        "implicit": true,
+        "kind": "Var",
+        "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV9hashValueSivp",
+        "moduleName": "AetherFoundationModels",
+        "name": "hashValue",
+        "printedName": "hashValue",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV9hashValueSivp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSQ",
+        "name": "Equatable",
+        "printedName": "Equatable",
+        "usr": "s:SQ"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSH",
+        "name": "Hashable",
+        "printedName": "Hashable",
+        "usr": "s:SH"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Struct",
+      "kind": "TypeDecl",
+      "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV",
+      "moduleName": "AetherFoundationModels",
+      "name": "Configuration",
+      "printedName": "Configuration",
+      "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV28defaultMaximumResponseTokensSivgZ",
+        "moduleName": "AetherFoundationModels",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV28defaultMaximumResponseTokensSivgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV28defaultMaximumResponseTokensSivpZ",
+      "moduleName": "AetherFoundationModels",
+      "name": "defaultMaximumResponseTokens",
+      "printedName": "defaultMaximumResponseTokens",
+      "static": true,
+      "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV28defaultMaximumResponseTokensSivpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModelExecutor",
+        "printedName": "AetherFoundationModels.AetherLanguageModelExecutor",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Configuration",
+        "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+        "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV13configurationA2C13ConfigurationV_tKcfc",
+      "moduleName": "AetherFoundationModels",
+      "name": "init",
+      "printedName": "init(configuration:)",
+      "throwing": true,
+      "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13configurationA2C13ConfigurationV_tKcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LanguageModelExecutorGenerationRequest",
+        "printedName": "FoundationModels.LanguageModelExecutorGenerationRequest",
+        "usr": "s:16FoundationModels38LanguageModelExecutorGenerationRequestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "AetherLanguageModel",
+        "printedName": "AetherFoundationModels.AetherLanguageModel",
+        "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LanguageModelExecutorGenerationChannel",
+        "printedName": "FoundationModels.LanguageModelExecutorGenerationChannel",
+        "usr": "s:16FoundationModels38LanguageModelExecutorGenerationChannelV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV7respond2to5model13streamingIntoy0bC00deF17GenerationRequestV_AA0adE0VAH0defL7ChannelVtYaKF",
+      "moduleName": "AetherFoundationModels",
+      "name": "respond",
+      "printedName": "respond(to:model:streamingInto:)",
+      "throwing": true,
+      "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV7respond2to5model13streamingIntoy0bC00deF17GenerationRequestV_AA0adE0VAH0defL7ChannelVtYaKF"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Configuration",
+          "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Configuration",
+          "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV13ConfigurationV"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Configuration",
+        "printedName": "Configuration"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "AetherLanguageModel",
+            "printedName": "AetherFoundationModels.AetherLanguageModel",
+            "usr": "s:22AetherFoundationModels0A13LanguageModelV"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Model",
+          "printedName": "AetherFoundationModels.AetherLanguageModelExecutor.Model"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Model",
+        "printedName": "Model"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$s16FoundationModels21LanguageModelExecutorP",
+      "name": "LanguageModelExecutor",
+      "printedName": "LanguageModelExecutor",
+      "usr": "s:16FoundationModels21LanguageModelExecutorP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s22AetherFoundationModels0A21LanguageModelExecutorV",
+    "moduleName": "AetherFoundationModels",
+    "name": "AetherLanguageModelExecutor",
+    "printedName": "AetherLanguageModelExecutor",
+    "usr": "s:22AetherFoundationModels0A21LanguageModelExecutorV"
+   }
+  ],
+  "json_format_version": 8,
+  "kind": "Root",
+  "name": "AetherFoundationModels",
+  "printedName": "AetherFoundationModels"
+ }
+}

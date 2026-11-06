@@ -28,7 +28,7 @@ govern the integration:
 | FoundationModels adapter (option/transcript/error mapping, guided generation) | **Port onto the Generator** | `AetherFoundationModels` (M3) | Old native facade checks, plus tools (new) |
 | Qwen3-VL preprocessing (EXIF, alpha, grid snapping, bicubic, block-major patchify) | **Port** | `AetherVision` ImagePipeline (M4) | Old CPU tests |
 | Generative foundation: output image and audio types, a manifest `schedule` block, per-graph `residency`, measured admission and memory bars, seeded Gaussian noise (SplitMix64 + Box–Muller, stream-compatible with 0.0.x) | **Built** (G0): typed `schedule`/`latent`/`residency` blocks; `FlowMatchSchedule`, `SeededGaussianNoise`, `GeneratedImage`/`GeneratedAudio` and `GraphResidency` in `AetherRuntime/Generative/`; `ResourceCoordinator` in AetherHost. Qualified-entry memory bars wait for H3's numbers (G4) | `AetherRuntime`/`AetherHost` + MANIFEST.md §5 | The old noise and schedule fixtures pass bit-exact. A gate shows phase measurement sees Core AI memory. |
-| SD-Turbo / epsilon diffusion seam | **Port** as the smallest end-to-end vehicle for G0 (G1) | `AetherImage` driver family | Its CPU-Diffusers gate |
+| SD-Turbo / epsilon diffusion seam | **Ported** (G1): `latent-diffusion@1` in the new `AetherImage` product, `EpsilonEulerSchedule`, the CLIP tokenizer, and the Forge exporter `Forge/sdturbo/` (float32, fixed 512²). Local-only until the bundle is uploaded to `aether-models/aether-kit-sd-turbo` and pinned in the catalog. The iPhone run follows (SD-Turbo is 0.1.0's iOS-validated generative model) | `AetherImage` driver family | Its CPU-Diffusers gate: graph check (text, every U-Net step, VAE cosine 1.0 / RMSE < 1e-6) and the Swift gate from the seed (image RMSE 1.0e-5 / 3.3e-5) |
 | FLUX.2 [klein] 4B | **Port** (G2), with its Forge exporter | `AetherImage` | Its CPU-Diffusers gate (113 checks) |
 | **Krea 2 Turbo**, vanilla and **realism** | **In scope.** First a **reproducible Forge exporter** from `krea/Krea-2-Turbo@98e0fe1` (diffusers; Krea 2 Community License). It emits two catalog entries: `krea-2-turbo`, and `krea-2-turbo-realism`, which has the realism adapter **merged into the transformer before export**, like the 0.0.x realism bundle. Then the port (G3). | `AetherImage` | Parity against CPU Diffusers on each new export. For realism, the CPU reference applies the same merged weights. The old schedule and noise fixtures also apply. The 0.0.x hash-exact gate qualified a different (prototype) bundle, so it doesn't carry over. |
 | **MiniMax H3** video + audio | **In scope** (G4). First the runtime prerequisites: device-chained execution across graph calls, per-block weight rebinding, measured admission keyed by profile. Then the port with its existing exporter and CPU oracle. | `AetherVideo` + `AetherRuntime` | Its per-graph oracle gate (0.02 rel L2) and its memory gate, run once on the qualified canvas |
@@ -77,6 +77,18 @@ The full record is in `forge-inputs/krea2-realism/SOURCE.json`.
 directory outside SwiftPM. Its exporters write **this kit's** `aether.json`. The 0.0.x prototype bundles also call
 their manifest `aether.json` (`schema: 1, driver: "diffusion"`); this kit's loader rejects them as `unknownDriver`,
 and no ported pipeline reuses them.
+
+## Release decisions (2026-11-06)
+
+- **Hosting:** one Hugging Face repo per exported bundle in the `aether-models` org, pinned by revision
+  (`aether-models/aether-kit-<model>`, the 0.0.x naming). Krea repos begin with "Krea" (its license). A catalog
+  entry is added only after its bundle is uploaded and pinned; until then gates install from the local export.
+- **iOS in 0.1.0:** SD-Turbo is qualified on the iPhone. FLUX.2, Krea and H3 are macOS-only; on iOS, admission refuses
+  them with a clear error before loading.
+- **Krea `ContentFilter`:** a protocol the app implements, with no default; the driver can't be built without one.
+  The kit can't enforce what a filter does: the license (§4.2) binds the deployer, and the API docs say so.
+- **Realism:** its own **gated** repo, apart from vanilla Krea, carrying the Krea license, NOTICE, use policy and
+  the adapter's Civitai permissions; its catalog entry is marked mature.
 
 ## Lessons carried into the design (measured in 0.0.x)
 

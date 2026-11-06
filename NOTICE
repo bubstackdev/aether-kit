@@ -10,12 +10,21 @@ copyright Krea AI and The HuggingFace Team. Forge/krea2/krea2_graphs.py
 re-expresses Krea2Transformer2DModel, Krea2Pipeline's prompt and latent
 packing, and AutoencoderKLQwenImage's single-frame decode as export graphs;
 the realism adapter's key mapping is Diffusers' own Krea 2 converter, called
-at export time. Forge/flux2/flux2_graphs.py likewise re-expresses
-Flux2Transformer2DModel, Flux2KleinPipeline's prompt encoding, latent packing
-and empirical shift, and AutoencoderKLFlux2's decode and encode tails. Model
-weights are not part of this repository; exported bundles carry their own
-licenses (the Krea 2 Community License and its NOTICE line; FLUX.2 [klein]'s
-Apache-2.0 LICENSE.md and a modification NOTICE) separately.
+at export time. Forge/sdturbo/sdturbo_graphs.py wraps UNet2DConditionModel and
+AutoencoderKL's decode as export graphs, and
+Sources/AetherRuntime/Generative/EpsilonEulerSchedule.swift re-expresses
+EulerDiscreteScheduler's input scaling and epsilon step. Forge/flux2/flux2_graphs.py
+re-expresses Flux2Transformer2DModel, Flux2KleinPipeline's prompt encoding, latent
+packing and empirical shift, and AutoencoderKLFlux2's decode and encode tails.
+Model weights are not part of this repository; exported bundles carry their own
+licenses and NOTICE lines separately (the Krea 2 Community License; the
+Stability AI Community License; FLUX.2 [klein]'s Apache-2.0 LICENSE.md with a
+modification NOTICE).
+
+OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
+OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
+tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the
+end-of-word merge rule.
 
 Hugging Face Transformers (https://github.com/huggingface/transformers,
 version 4.57.3), Apache License 2.0, copyright The HuggingFace Team. Outputs

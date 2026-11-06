@@ -216,8 +216,11 @@ struct ManifestTests {
     }
 
     @Test func driverCatalogKnowsEveryDriverOfTheSpec() throws {
-        #expect(DriverCatalog.drivers.count == 18)
+        // The 18 of §1, plus the generative drivers of §5 as they become normative (latent-diffusion@1, G1).
+        #expect(DriverCatalog.drivers.count == 19)
         try DriverCatalog.requireKnown("gliner-classifier@1")
+        try DriverCatalog.requireKnown(.latentDiffusion)
+        #expect(throws: AetherError.self) { try DriverCatalog.requireKnown("krea2@1") }   // proposed until G3
         #expect(throws: AetherError.self) { try DriverCatalog.requireKnown("vision-tower@1") }
         #expect(throws: AetherError.self) { try DriverCatalog.requireKnown("decoder-static-chunks@1") }
     }

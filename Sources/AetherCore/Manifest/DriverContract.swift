@@ -7,13 +7,16 @@ public enum DriverCatalog {
         "detector-dense@1", "detector-detr@1", "depth-estimator@1", "clip-joint@1", "image-to-image-tiled@1",
         "text-embedder@1", "late-interaction-retriever@1", "gliner-classifier@1", "yes-no-classifier@1",
         "decision-lm@1", "decision-hidden-head@1", "decision-joint-head@1", "encoder-decider@1",
+        "latent-diffusion@1",
     ].map(DriverID.init(validated:)))
 
     /// Reusable graph contracts a driver embeds. Never a top-level `driver`.
     public static let graphKinds: Set<DriverID> = [DriverID(validated: "vision-tower@1"), DriverID(validated: "audio-encoder@1")]
 
     /// The role contracts implemented so far. The other drivers' contracts arrive with their milestones.
-    public static let contracts: [DriverID: DriverContract] = [DriverContract.decoderLM.driver: .decoderLM]
+    public static let contracts: [DriverID: DriverContract] = [
+        DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
+    ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
     public static func requireKnown(_ id: DriverID) throws(AetherError) {
@@ -188,4 +191,35 @@ extension DriverContract {
                 allowsFunctionFamily: false, requiresMaxContext: true),
         ],
         requiresTokenizer: true)
+}
+
+extension DriverContract {
+    /// `latent-diffusion@1` (MANIFEST.md §1.1, §5): a text-conditioned latent diffusion model with a U-Net denoiser.
+    /// `textEncoder` in `tokens`, out `conditioning`; `denoiser` in `latents`, `timestep`, `conditioning` (chained from
+    /// the text encoder), out `epsilon`; `vaeDecoder` in `latents`, out `image`. Stateless, one function each. The
+    /// driver also requires a tokenizer and the `schedule` and `latent` blocks (checked when it loads).
+    public static let latentDiffusion = DriverContract(
+        driver: .latentDiffusion,
+        graphs: [
+            "textEncoder": stateless(
+                inputs: ["tokens": RoleSpec(required: true, rank: 2, scalar: .integer)],
+                outputs: ["conditioning": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+            "denoiser": stateless(
+                inputs: [
+                    "latents": RoleSpec(required: true, rank: 4, scalar: .floatingPoint),
+                    "timestep": RoleSpec(required: true, rank: 1, scalar: .floatingPoint),
+                    "conditioning": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                ],
+                outputs: ["epsilon": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)]),
+            "vaeDecoder": stateless(
+                inputs: ["latents": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: ["image": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
+
+    private static func stateless(inputs: [String: RoleSpec], outputs: [String: RoleSpec]) -> GraphContract {
+        GraphContract(
+            inputs: inputs, allowsStaticSourcedInputs: false, outputs: outputs, minimumSequenceStates: 0,
+            allowsRecurrent: false, phases: ["step"], allowsFunctionFamily: false, requiresMaxContext: false)
+    }
 }

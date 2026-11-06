@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "AetherText", targets: ["AetherText"]),
         .library(name: "AetherFoundationModels", targets: ["AetherFoundationModels"]),
         .library(name: "AetherVision", targets: ["AetherVision"]),
+        .library(name: "AetherImage", targets: ["AetherImage"]),
         .library(name: "AetherEmbeddings", targets: ["AetherEmbeddings"]),
         .library(name: "AetherDecide", targets: ["AetherDecide"]),
         .library(name: "Aether", targets: ["Aether"]),
@@ -53,11 +54,13 @@ let package = Package(
         // The FoundationModels `LanguageModel` bridge (M3), on the Generator. Links FoundationModels.
         .target(name: "AetherFoundationModels", dependencies: ["AetherText"], swiftSettings: common),
         .target(name: "AetherVision", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
+        // Image generation (G1+): `latent-diffusion@1` (SD-Turbo), with its own CLIP BPE (no swift-transformers).
+        .target(name: "AetherImage", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherEmbeddings", dependencies: ["AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(name: "AetherDecide", dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore"], swiftSettings: common),
         .target(
             name: "Aether",
-            dependencies: ["AetherText", "AetherVision", "AetherEmbeddings", "AetherDecide"],
+            dependencies: ["AetherText", "AetherVision", "AetherImage", "AetherEmbeddings", "AetherDecide"],
             swiftSettings: common
         ),
 
@@ -99,6 +102,11 @@ let package = Package(
         .testTarget(
             name: "AetherFoundationModelsTests",
             dependencies: ["AetherFoundationModels", "AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            swiftSettings: common
+        ),
+        .testTarget(
+            name: "AetherImageTests",
+            dependencies: ["AetherImage", "AetherRuntime", "AetherCore", "AetherHost"],
             swiftSettings: common
         ),
         .testTarget(

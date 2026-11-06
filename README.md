@@ -17,10 +17,11 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `AetherText` | Tokenizer adapter (template-owned BOS, pinned sources), the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured output, Hermes tool calls) and `ChatSession`. |
 | `AetherFoundationModels` | `AetherLanguageModel`: any supported catalog model behind Apple's `LanguageModelSession`, with guided generation (`@Generable`) and tool calling. |
 | `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission, and model lifecycle: idle unload and memory-pressure release. |
+| `AetherImage` | Image generation. `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`) from a seed, with measured residency planning. SD-Turbo is under the Stability AI Community License; check its terms before shipping it. |
 | `AetherVision`, `AetherEmbeddings`, `AetherDecide`, `Aether` | Planned (milestones M4–M6). |
 
-Image, video and speech generation (Krea 2 Turbo vanilla and realism, MiniMax H3, FLUX.2 [klein], SD-Turbo,
-Kokoro-82M) are being ported onto this architecture before 0.1.0 is tagged.
+More image, video and speech generation (Krea 2 Turbo vanilla and realism, MiniMax H3, FLUX.2 [klein], Kokoro-82M)
+is being ported onto this architecture before 0.1.0 is tagged.
 
 ## Quick start
 
@@ -62,8 +63,12 @@ iOS 17).
 ## Development
 
 ```bash
-scripts/ci.sh                    # hermetic: catalog, warnings-as-errors build, tests
+scripts/ci.sh                    # hermetic: catalog, warnings-as-errors build, public API, tests
 AETHER_GATES=1 scripts/ci.sh     # plus real-model gates (needs downloaded models and a GPU)
+scripts/check-api.sh --update    # record an intended public-API change in api/ (after a build)
 ```
+
+The public-API check compares against `api/` and only reports until 0.1.0, when `"enforce": true` in
+`scripts/api-freeze.json` makes a breaking change fail CI.
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
