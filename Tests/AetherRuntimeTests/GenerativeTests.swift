@@ -65,6 +65,25 @@ struct SeededNoiseTests {
 
 @Suite("Flow-matching schedule")
 struct FlowMatchScheduleTests {
+    /// Second code review, batch C item 3: the one-pass update through a reused scratch array is bit-identical to the
+    /// two-pass one, and a failure leaves the latents unchanged.
+    @Test func onePassUpdateMatchesTheTwoPassOneBitForBit() throws {
+        let s = try FlowMatchSchedule(steps: 4, mu: 1.15)
+        var latents = try SeededGaussianNoise.generate(seed: 5, count: 4096)
+        let velocity = try SeededGaussianNoise.generate(seed: 6, count: 4096)
+        var reference = latents, scratch: [Float] = []
+        for step in 0..<s.steps {
+            try s.advance(step: step, latents: &reference, velocity: velocity)
+            try s.advance(step: step, latents: &latents, velocity: velocity, scratch: &scratch)
+            #expect(latents.map(\.bitPattern) == reference.map(\.bitPattern))
+        }
+        var poisoned = velocity
+        poisoned[17] = .infinity
+        let before = latents
+        #expect(throws: AetherError.self) { try s.advance(step: 0, latents: &latents, velocity: poisoned, scratch: &scratch) }
+        #expect(latents.map(\.bitPattern) == before.map(\.bitPattern))
+    }
+
     static let krea = Manifest.Schedule(steps: 8, maxSteps: 50, sigmas: .init(shift: .init(rule: .exponential, mu: 1.15)))
     static let klein = Manifest.Schedule(steps: 4, maxSteps: 50, sigmas: .init(shift: .init(rule: .empirical, empirical: .init(
         lowSteps: 10, lowSlope: 8.73809524e-05, lowIntercept: 1.89833333, highSteps: 200, highSlope: 0.00016927,
@@ -450,6 +469,28 @@ struct ResidencyTests {
 /// `epsilonEuler` (MANIFEST.md §5.2): 0.0.x's `EpsilonSchedule` cases, and the arithmetic against Diffusers' order.
 @Suite("Epsilon Euler schedule")
 struct EpsilonEulerScheduleTests {
+    /// Second code review, batch C item 3: the pipelines' one-pass update through a reused scratch array and the input
+    /// written as `x / inputScale` are bit-identical to the two-pass update and `modelInput`, and a failure still leaves
+    /// the latents unchanged.
+    @Test func onePassUpdateMatchesTheTwoPassOneBitForBit() throws {
+        let s = try EpsilonEulerSchedule(timesteps: [999, 499, 99], sigmas: [14.6, 3.1, 0.41, 0], initNoiseSigma: 14.7)
+        var latents = try SeededGaussianNoise.generate(seed: 3, count: 4096)
+        let epsilon = try SeededGaussianNoise.generate(seed: 4, count: 4096)
+        var reference = latents, scratch: [Float] = []
+        for step in 0..<s.steps {
+            let scale = try s.inputScale(step: step)
+            #expect(latents.map { $0 / scale } == (try s.modelInput(step: step, latents: latents)))
+            try s.advance(step: step, latents: &reference, epsilon: epsilon)
+            try s.advance(step: step, latents: &latents, epsilon: epsilon, scratch: &scratch)
+            #expect(latents.map(\.bitPattern) == reference.map(\.bitPattern))
+        }
+        var poisoned = epsilon
+        poisoned[4000] = .nan
+        let before = latents
+        #expect(throws: AetherError.self) { try s.advance(step: 0, latents: &latents, epsilon: poisoned, scratch: &scratch) }
+        #expect(latents.map(\.bitPattern) == before.map(\.bitPattern))
+    }
+
     @Test func inputScalingAndUpdateMatch0_0_x() throws {
         let s = try EpsilonEulerSchedule(timesteps: [999, 499], sigmas: [2, 1, 0], initNoiseSigma: 2)
         #expect(try s.modelInput(step: 0, latents: [6]) == [6 / Float(5).squareRoot()])

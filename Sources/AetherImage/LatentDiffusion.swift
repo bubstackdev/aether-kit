@@ -213,10 +213,15 @@ public actor LatentDiffusionPipeline {
         }
         var latents = try SeededGaussianNoise.generate(seed: seed, count: count)
         latents.withUnsafeMutableBufferPointer { schedule.scaleInitialNoise($0) }
-        var noise = [Float](repeating: 0, count: count)
+        // Host buffers reused across steps: epsilon is read into `noise`, and each update goes into `next` in one
+        // validating pass before the two swap. The scaled input is written straight into the graph's input.
+        var noise = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
         for step in 0..<schedule.steps {
             try Task.checkCancellation()
-            try sample.write(try schedule.modelInput(step: step, latents: latents))
+            let scale = try schedule.inputScale(step: step)
+            try latents.withUnsafeBufferPointer { x throws(AetherError) in
+                try sample.write(Float.self, count: count) { x[$0] / scale }
+            }
             try timestep.write([schedule.timesteps[step]])
             var bindings = Bindings(arena: arena)
             try bindings.bindInput(names.latents, to: sample)
@@ -226,7 +231,7 @@ public actor LatentDiffusionPipeline {
             try await unet.run(&bindings)
             residency.sample()
             try epsilon.readFloats(0..<count, into: &noise)
-            try schedule.advance(step: step, latents: &latents, epsilon: noise)
+            try schedule.advance(step: step, latents: &latents, epsilon: noise, scratch: &next)
         }
         return latents
     }

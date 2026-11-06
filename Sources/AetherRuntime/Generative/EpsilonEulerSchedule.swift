@@ -50,13 +50,19 @@ public struct EpsilonEulerSchedule: Sendable, Hashable {
     public func modelInput(
         step: Int, latents: UnsafeBufferPointer<Float>, into input: UnsafeMutableBufferPointer<Float>
     ) throws(AetherError) {
-        try check(step)
         guard latents.count == input.count else {
             throw .tensor(name: "latents", reason: .shapeMismatch(expected: [input.count], found: [latents.count]))
         }
-        let sigma = sigmas[step]
-        let scale = (roundedProduct(sigma, sigma) + 1).squareRoot()
+        let scale = try inputScale(step: step)
         for i in latents.indices { input[i] = latents[i] / scale }
+    }
+
+    /// The divisor of the denoiser's input for `step`, `sqrt(σ² + 1)`: the input is `latents[i] / inputScale`, which a
+    /// pipeline can write straight into the graph's input buffer.
+    public func inputScale(step: Int) throws(AetherError) -> Float {
+        try check(step)
+        let sigma = sigmas[step]
+        return (roundedProduct(sigma, sigma) + 1).squareRoot()
     }
 
     /// One Euler step in place. On any failure (a step out of range, mismatched counts, a non-finite input or result)
@@ -80,6 +86,40 @@ public struct EpsilonEulerSchedule: Sendable, Hashable {
             }
         }
         for i in latents.indices { latents[i] = next(latents[i], epsilon[i]) }
+    }
+
+    /// One Euler step from `latents` into `next`, validating as it goes (one pass). On any failure `latents` is
+    /// unchanged and `next` is partly written.
+    public func advance(
+        step: Int, latents: UnsafeBufferPointer<Float>, epsilon: UnsafeBufferPointer<Float>,
+        into next: UnsafeMutableBufferPointer<Float>
+    ) throws(AetherError) {
+        try check(step)
+        guard latents.count == epsilon.count, latents.count == next.count else {
+            throw .tensor(name: "epsilon", reason: .shapeMismatch(expected: [latents.count], found: [epsilon.count]))
+        }
+        let sigma = sigmas[step], dt = sigmas[step + 1] - sigma
+        for i in latents.indices {
+            let x = latents[i], e = epsilon[i]
+            let original = x - roundedProduct(sigma, e)
+            let value = x + roundedProduct((x - original) / sigma, dt)
+            guard x.isFinite, e.isFinite, value.isFinite else {
+                throw .tensor(name: e.isFinite ? "latents" : "epsilon", reason: .unsupported("a non-finite value at element \(i) of the Euler step"))
+            }
+            next[i] = value
+        }
+    }
+
+    /// One Euler step of `latents` through `scratch` (resized to fit and reused across steps): one pass, then the two
+    /// arrays swap. On any failure `latents` is unchanged.
+    public func advance(step: Int, latents: inout [Float], epsilon: [Float], scratch: inout [Float]) throws(AetherError) {
+        if scratch.count != latents.count { scratch = [Float](repeating: 0, count: latents.count) }
+        try latents.withUnsafeBufferPointer { x throws(AetherError) in
+            try epsilon.withUnsafeBufferPointer { e throws(AetherError) in
+                try scratch.withUnsafeMutableBufferPointer { n throws(AetherError) in try advance(step: step, latents: x, epsilon: e, into: n) }
+            }
+        }
+        swap(&latents, &scratch)
     }
 
     /// ``advance(step:latents:epsilon:)`` on arrays.

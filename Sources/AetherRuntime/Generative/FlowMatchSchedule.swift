@@ -94,6 +94,41 @@ public struct FlowMatchSchedule: Sendable, Hashable {
         for i in latents.indices { latents[i] = latents[i] + roundedProduct(delta, velocity[i]) }
     }
 
+    /// One Euler step from `latents` into `next`, validating as it goes (one pass). On any failure `latents` is
+    /// unchanged and `next` is partly written.
+    public func advance(
+        step: Int, latents: UnsafeBufferPointer<Float>, velocity: UnsafeBufferPointer<Float>,
+        into next: UnsafeMutableBufferPointer<Float>
+    ) throws(AetherError) {
+        guard timesteps.indices.contains(step) else {
+            throw .generation(.invalidParameters("step \(step) is outside 0..<\(steps)"))
+        }
+        guard latents.count == velocity.count, latents.count == next.count else {
+            throw .tensor(name: "velocity", reason: .shapeMismatch(expected: [latents.count], found: [velocity.count]))
+        }
+        let delta = sigmas[step + 1] - sigmas[step]
+        for i in latents.indices {
+            let x = latents[i], v = velocity[i]
+            let value = x + roundedProduct(delta, v)
+            guard x.isFinite, v.isFinite, value.isFinite else {
+                throw .tensor(name: v.isFinite ? "latents" : "velocity", reason: .unsupported("a non-finite value at element \(i) of the Euler step"))
+            }
+            next[i] = value
+        }
+    }
+
+    /// One Euler step of `latents` through `scratch` (resized to fit and reused across steps): one pass, then the two
+    /// arrays swap. On any failure `latents` is unchanged.
+    public func advance(step: Int, latents: inout [Float], velocity: [Float], scratch: inout [Float]) throws(AetherError) {
+        if scratch.count != latents.count { scratch = [Float](repeating: 0, count: latents.count) }
+        try latents.withUnsafeBufferPointer { x throws(AetherError) in
+            try velocity.withUnsafeBufferPointer { v throws(AetherError) in
+                try scratch.withUnsafeMutableBufferPointer { n throws(AetherError) in try advance(step: step, latents: x, velocity: v, into: n) }
+            }
+        }
+        swap(&latents, &scratch)
+    }
+
     /// ``advance(step:latents:velocity:)`` on arrays.
     public func advance(step: Int, latents: inout [Float], velocity: [Float]) throws(AetherError) {
         try velocity.withUnsafeBufferPointer { v throws(AetherError) in

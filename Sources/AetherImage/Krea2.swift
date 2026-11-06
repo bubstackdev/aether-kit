@@ -276,9 +276,13 @@ public actor Krea2Pipeline {
         }
 
         var latents = try SeededGaussianNoise.generate(seed: seed, count: count)
-        var v = [Float](repeating: 0, count: count)
+        // Host buffers reused across steps: the velocity is read into `v`, and each update goes into `next` in one
+        // validating pass before the two swap.
+        var v = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
         for step in 0..<schedule.steps {
-            try sample.write(Float16.self, count: count) { Float16(latents[$0]) }
+            try latents.withUnsafeBufferPointer { x throws(AetherError) in
+                try sample.write(Float16.self, count: count) { Float16(x[$0]) }
+            }
             try sigma.write([schedule.timesteps[step]])
             for (segment, graph) in zip(wiring.segments, graphs) {
                 try Task.checkCancellation()
@@ -289,7 +293,7 @@ public actor Krea2Pipeline {
                 residency.sample()
             }
             try velocity.readFloats(0..<count, into: &v)
-            try schedule.advance(step: step, latents: &latents, velocity: v)
+            try schedule.advance(step: step, latents: &latents, velocity: v, scratch: &next)
         }
         return latents
     }

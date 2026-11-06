@@ -143,6 +143,14 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   (`ResidencyPlan.overlap`) was released within the window (6 s). `GraphResidency.beginPhase` is `async throws`
   (cancellation ends the wait); `GraphResidency.init` takes `releases:`, and `ResidentAdmission.Settings` takes
   `releaseWindow:` and `releaseClock:`.
+- **Diffusion host steps reuse their buffers** (second review, batch C): SD-Turbo writes `x / inputScale` straight
+  into the U-Net's input (was a new scaled array per step), and SD-Turbo, FLUX.2 and Krea apply the Euler update in
+  one validating pass into a reused scratch array that swaps with the latents (was a validating pass, then an update
+  pass). New: `EpsilonEulerSchedule.inputScale(step:)`, and `advance(step:latents:epsilon:into:)` /
+  `advance(step:latents:epsilon:scratch:)` on `EpsilonEulerSchedule` (`velocity:` on `FlowMatchSchedule`). Images are
+  bit-identical (the gates' RMSE, PSNR and SSIM unchanged to the last digit). Host work per step, release build
+  (`AETHER_BENCH=1`, `HostStepBenchmarkTests`): SD-Turbo 512² 822 → 76 µs, FLUX.2/Krea 1024² 2.34 → 2.02 ms; both
+  are small beside the graphs' step time.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
