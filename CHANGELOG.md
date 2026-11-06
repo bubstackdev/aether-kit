@@ -48,7 +48,8 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one truncated), cosine ≥ 0.9999999 against
     the CPU float32 upstream reference (bar 0.999), every query's best document as the reference's.
   - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
-  - Catalog entry pending: the bundle's hosted, gated repo is not uploaded yet.
+  - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
+    `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
 
 ### Changed
 

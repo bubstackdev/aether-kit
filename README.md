@@ -35,10 +35,10 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `krea-2-turbo-realism` | `krea2@1` | ✓ | refused | as Krea 2, plus the merged adapter's Civitai permissions. **Mature:** trained for explicit adult content; a gated Hugging Face repo (accept its terms, then install with a token) |
 | `kokoro-82m` | `kokoro@1` | ✓ | ✓ (512-frame cap) | Apache-2.0 |
 | `depth-anything-3-small` | `depth-estimator@1` | ✓ | refused | Apache-2.0 |
-| none yet: EmbeddingGemma 300M, a locally exported bundle (`Forge/embeddinggemma/`) | `text-embedder@1` | ✓ | — | Gemma Terms of Use and the Gemma Prohibited Use Policy, passed on to your users. **Catalog entry pending:** the hosted repo (`aether-models/aether-kit-embeddinggemma-300m`, gated with automatic approval) is not uploaded yet |
+| `embeddinggemma-300m` | `text-embedder@1` | ✓ | refused | Gemma Terms of Use and the Gemma Prohibited Use Policy, passed on to your users. A gated Hugging Face repo with automatic approval (accept the terms, then install with a token) |
 | none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
-Every row but EmbeddingGemma (pending) and MiniMax H3 is in the built-in catalog, hosted under `aether-models` on Hugging Face. H3 has no catalog
+Every row but MiniMax H3 is in the built-in catalog, hosted under `aether-models` on Hugging Face. H3 has no catalog
 entry: export the bundle with `Forge/h3/` where its license allows, and load it from disk (below). Check each license
 before you ship a model.
 
@@ -106,8 +106,8 @@ let depth = try await Registry.vision.load(
 let map = try await depth.estimator().estimate(ImageInput(contentsOf: URL(filePath: "/path/to/photo.jpg")))   // map.values, map.confidence
 
 // EmbeddingGemma 300M (macOS): queries and documents are embedded with their own prompts, then compared by cosine.
-// Until its catalog entry lands, `gemmaBundle` is an `InstalledBundle` over your `Forge/embeddinggemma` export, made as
-// for MiniMax H3 below.
+// Its repo is gated: accept the Gemma terms on Hugging Face and give the store a token (see below).
+let gemmaBundle = try await store.install("embeddinggemma-300m", for: device)
 let embedder = try await Registry.embeddings.load(
     gemmaBundle, as: TextEmbedderDriver.self, options: LoadOptions(device: device, cachePolicy: .default, cache: .default)
 ).embedder()
