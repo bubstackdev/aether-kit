@@ -591,6 +591,55 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Generator",
+        "printedName": "AetherText.Generator",
+        "usr": "s:10AetherText9GeneratorC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LanguageEngine",
+        "printedName": "any AetherRuntime.LanguageEngine",
+        "usr": "s:13AetherRuntime14LanguageEngineP"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText11ChatSessionC9generator6engine6bundle8manifest3gpuAA9GeneratorC0A7Runtime14LanguageEngine_p_0A4Core15InstalledBundleVAM8ManifestV0A4Host17GPUAdmissionOwnerVtYaKFZ",
+      "moduleName": "AetherText",
+      "name": "generator",
+      "printedName": "generator(engine:bundle:manifest:gpu:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:10AetherText11ChatSessionC9generator6engine6bundle8manifest3gpuAA9GeneratorC0A7Runtime14LanguageEngine_p_0A4Core15InstalledBundleVAM8ManifestV0A4Host17GPUAdmissionOwnerVtYaKFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Void",
         "printedName": "()"
        },
@@ -2924,9 +2973,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "DecoderEngine",
-          "printedName": "AetherRuntime.DecoderEngine",
-          "usr": "s:13AetherRuntime13DecoderEngineC"
+          "name": "LanguageEngine",
+          "printedName": "any AetherRuntime.LanguageEngine",
+          "usr": "s:13AetherRuntime14LanguageEngineP"
          }
         ],
         "declAttributes": [
@@ -2936,19 +2985,19 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s10AetherText9GeneratorC6engine0A7Runtime13DecoderEngineCvg",
+        "mangledName": "$s10AetherText9GeneratorC6engine0A7Runtime14LanguageEngine_pvg",
         "moduleName": "AetherText",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:10AetherText9GeneratorC6engine0A7Runtime13DecoderEngineCvg"
+        "usr": "s:10AetherText9GeneratorC6engine0A7Runtime14LanguageEngine_pvg"
        }
       ],
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "DecoderEngine",
-        "printedName": "AetherRuntime.DecoderEngine",
-        "usr": "s:13AetherRuntime13DecoderEngineC"
+        "name": "LanguageEngine",
+        "printedName": "any AetherRuntime.LanguageEngine",
+        "usr": "s:13AetherRuntime14LanguageEngineP"
        }
       ],
       "declAttributes": [
@@ -2960,11 +3009,11 @@
       "hasStorage": true,
       "isLet": true,
       "kind": "Var",
-      "mangledName": "$s10AetherText9GeneratorC6engine0A7Runtime13DecoderEngineCvp",
+      "mangledName": "$s10AetherText9GeneratorC6engine0A7Runtime14LanguageEngine_pvp",
       "moduleName": "AetherText",
       "name": "engine",
       "printedName": "engine",
-      "usr": "s:10AetherText9GeneratorC6engine0A7Runtime13DecoderEngineCvp"
+      "usr": "s:10AetherText9GeneratorC6engine0A7Runtime14LanguageEngine_pvp"
      },
      {
       "accessors": [
@@ -3237,9 +3286,9 @@
        },
        {
         "kind": "TypeNominal",
-        "name": "DecoderEngine",
-        "printedName": "AetherRuntime.DecoderEngine",
-        "usr": "s:13AetherRuntime13DecoderEngineC"
+        "name": "LanguageEngine",
+        "printedName": "any AetherRuntime.LanguageEngine",
+        "usr": "s:13AetherRuntime14LanguageEngineP"
        },
        {
         "kind": "TypeNominal",
@@ -3284,11 +3333,11 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc",
+      "mangledName": "$s10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime14LanguageEngine_p_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc",
       "moduleName": "AetherText",
       "name": "init",
       "printedName": "init(engine:decoder:renderer:stopTokens:profile:gpu:)",
-      "usr": "s:10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc"
+      "usr": "s:10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime14LanguageEngine_p_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc"
      },
      {
       "accessors": [

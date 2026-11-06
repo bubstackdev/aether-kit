@@ -55,7 +55,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability() · StatelessPipeline
           │
-     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · DecoderEngine · Registry · ImageInput/ImagePreprocessor · AetherError
+     AetherRuntime      Graph · TensorBuffer · StateSet · Bindings · LanguageEngine/DecoderEngine · Registry · ImageInput/ImagePreprocessor · AetherError
           │
      AetherCore         ModelRef · Catalog (generated) · ModelStore (download/install/verify) · Manifest · Device
 ```
@@ -230,21 +230,41 @@ final class Graph {                               // non-Sendable; owned by one 
 ### 6.2 DecoderEngine (the owned LLM engine)
 
 There is one engine type for every causal decoder. Chat, VLM decoders, ASR-LLMs and the decision readout all use it.
-The sketch below is the shape; the implemented API is `Sources/AetherRuntime/Decoder/DecoderEngine.swift` (M2).
 Every async entry point is non-reentrant: a call that arrives during another operation is refused, not interleaved.
 
+The text stack reaches it only through the **`LanguageEngine` protocol** (`Sources/AetherRuntime/LanguageEngine.swift`,
+B1 in docs/BACKENDS.md): an `Actor`-constrained protocol at the token level, with an opaque `EngineSnapshot`, so a
+second backend (an `AetherMLX` sub-package) plugs in under `Generator`, `ChatSession`, structured output, tools, the
+FoundationModels bridge and the decision readout without touching them. `DecoderEngine` is its Core AI conformer;
+Core AI specifics (`Options`, the canary, `decodeMode`, `description`, `sizing`) stay on the concrete type.
+`Generator.engine` is `any LanguageEngine`: an existential costs one witness-table call per actor hop, which the
+decode-speed gate measures against the concrete type (no regression at depth 3).
+
 ```swift
-actor DecoderEngine {
-    init(manifest: Manifest.Graph, url: URL, options: EngineOptions) async throws
+public protocol LanguageEngine: Actor {
+    nonisolated var vocab: Int { get }                         // logits row width (the head's rows)
+    nonisolated var maxCapacity: Int { get }
+    nonisolated var hasRecurrentState: Bool { get }            // snapshot/restore instead of a partial rewind
     var position: Int { get }                                  // tokens resident in state
-    func prefill(_ tokens: [Int32], logitsAt: LogitsSelection = .last) async throws -> Logits
-    func step(_ token: Int32) async throws -> Logits           // one decode step
-    func hidden(at positions: [Int]) async throws -> Tensor     // requires a `hidden` output role
-    func rewind(to position: Int) throws                        // KV: drop positions beyond; recurrent: requires snapshot
-    func snapshot() throws -> EngineSnapshot                    // KV up to position + recurrent-state copy
-    func restore(_ s: EngineSnapshot) throws                    // validates before touching state
+    var stateRanAhead: Bool { get }                            // pipelined recurrent steps ran past `position`
+    var decodeModeDescription: String { get }
+    func prefill(_ tokens: [Int32], logits: LogitsSelection) async throws(AetherError) -> Logits?
+    func step(_ token: Int32) async throws(AetherError) -> Logits
+    func rewind(to position: Int) async throws(AetherError)   // KV: drop positions beyond; recurrent: only to 0
+    func reset() async throws(AetherError)
+    func snapshot() async throws(AetherError) -> EngineSnapshot // position, byteCount, the engine's own payload
+    func restore(_ snapshot: EngineSnapshot) async throws(AetherError) // validates before touching state
+    func beginGreedy(first: Int32, limit: Int) async throws(AetherError)
+    func nextGreedy() async throws(AetherError) -> Int32?      // the pipelined greedy path
+    func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int)
 }
 ```
+
+The implemented engine is `Sources/AetherRuntime/Decoder/DecoderEngine.swift` (M2). `hidden(at:)` (for the decision
+heads) joins the protocol as an optional capability when M5 needs it. The engine-invariant checks
+(`Tests/AetherTestSupport/LanguageEngineInvariants.swift`: greedy equals stepping, chunked prefill equals
+token-by-token, two-turn reuse by rewind or snapshot equals a fresh turn) take `any LanguageEngine`, so every
+backend runs the same suite.
 
 - **Graph contract** (`decoder-lm@1`):
   - Inputs are `tokens [1,S]` and `positions [1,P]`. `S` is dynamic, or static per phase (`staticSequence`, such
@@ -587,7 +607,7 @@ runtime pieces:
   options. `State` is a typed enum: `.text`, `.json(JSONValue)`, `.image`, `.audio`.
 - **`Decider`** is a protocol with a `capabilities` OptionSet (`readsImages`, `readsAudio`, `maxOptions`) and
   `decide(state:questions:) async throws -> [Answer]`.
-- **`LMReadoutDecider`** (v1) runs on `DecoderEngine`:
+- **`LMReadoutDecider`** (v1) runs on a `LanguageEngine` (§6.2):
   1. Prefill the state once and snapshot.
   2. For each question, restore, prefill the question and read the answer-slot logits.
   3. Apply calibration temperature (from the catalog).
