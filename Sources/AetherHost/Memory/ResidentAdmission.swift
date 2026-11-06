@@ -34,11 +34,17 @@ public final class ResidentAdmission {
         /// which a footprint measured at one shape doesn't include. Released graphs reload from the specialization
         /// cache.
         public var maximumShapes: Int
+        /// How long a release counts as pending, and its clock (``ReleaseLog``; tests pass a fake clock).
+        public var releaseWindow: Duration
+        public var releaseClock: ReleaseLog.Clock
 
         public init(
             memory: MemoryBudget, coordinator: ResourceCoordinator?, ledger: FootprintLedger, probe: GPUMemoryProbe,
-            unphasedPhase: Manifest.Residency = .perStep, maximumShapes: Int = 4
+            unphasedPhase: Manifest.Residency = .perStep, maximumShapes: Int = 4,
+            releaseWindow: Duration = ReleaseLog.defaultWindow, releaseClock: ReleaseLog.Clock = .continuous
         ) {
+            self.releaseWindow = releaseWindow
+            self.releaseClock = releaseClock
             self.memory = memory
             self.coordinator = coordinator
             self.ledger = ledger
@@ -60,6 +66,8 @@ public final class ResidentAdmission {
     private let fileBytes: (String) -> Int64
     private let bundle: InstalledBundle?
     private var lease: BundleReadLease?
+    /// Released graphs whose memory may still be returning, across this pipeline's residencies and generations.
+    public let releases: ReleaseLog
     public private(set) var residency: GraphResidency?
     private var reservation: ResourceReservation?
     private var reservedBytes: Int64 = 0
@@ -82,6 +90,7 @@ public final class ResidentAdmission {
         self.load = load
         self.fileBytes = fileBytes
         self.bundle = bundle
+        releases = ReleaseLog(window: settings.releaseWindow, clock: settings.releaseClock)
         lease = try bundle?.readLease()
     }
 
@@ -130,7 +139,11 @@ public final class ResidentAdmission {
             throw error
         }
         if let shape { shapes.insert(shape) }
-        if let residency, residency.mode == plan.mode, residency.profile == profile { return residency }
+        let overlap = ResidencyPlan.overlap(inputs(profile: profile).phases)
+        if let residency, residency.mode == plan.mode, residency.profile == profile {
+            residency.overlapAllowance = overlap
+            return residency
+        }
         if let old = residency {
             note(old.floor)
             old.releaseAll()
@@ -138,7 +151,8 @@ public final class ResidentAdmission {
         }
         let fresh = GraphResidency(
             manifest: manifest, mode: plan.mode, ledger: settings.ledger, model: modelKey, profile: profile, probe: settings.probe,
-            releasedBaseline: releasedFloor, load: load)
+            releasedBaseline: releasedFloor, releases: releases, load: load)
+        fresh.overlapAllowance = overlap
         releasedFloor = nil
         residency = fresh
         return fresh

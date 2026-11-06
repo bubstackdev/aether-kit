@@ -20,7 +20,7 @@ extension GateTests {
         let probe = GPUMemoryProbe.system
         let before = probe.allocatedBytes()
 
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         _ = try await residency.graph("decoder")
         let afterLoad = probe.allocatedBytes()
         try await Self.runOneStep(try await residency.graph("decoder"), manifest: manifest)

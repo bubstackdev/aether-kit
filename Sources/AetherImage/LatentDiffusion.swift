@@ -162,20 +162,20 @@ public actor LatentDiffusionPipeline {
         let arena = TensorArena()
 
         // Prompt: the conditioning outlives the text encoder (it may be released before the U-Net loads).
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         let conditioning = try await encode(ids, residency: residency, arena: arena)
         residency.endPhase(.perPrompt)
         try Task.checkCancellation()
 
         // Steps: the latents stay on the host; each step writes the scaled input and reads epsilon.
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         let latents = try await denoise(
             conditioning: conditioning, seed: seed, schedule: schedule, grid: grid, size: size, residency: residency, arena: arena)
         residency.endPhase(.perStep)
         try Task.checkCancellation()
 
         // Image.
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         let image = try await decode(latents, size: size, residency: residency, arena: arena)
         residency.endPhase(.perImage)
         // A cancellation during the decoder's call: don't report success for a request the caller has given up on.

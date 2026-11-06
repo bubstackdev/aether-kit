@@ -136,6 +136,13 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   model reads the files (H3's lazy weight reads included) without the caller leasing. `InstalledBundle` equality
   ignores the store. Source changes: `ResidentAdmission.init` and `PipelineOptions.admission` take `bundle:` and
   throw; `ResidentAdmission.unload()` and `holdsLease` are new; `StatelessPipeline.init(manifest:…)` takes `bundle:`.
+- **Per-phase overlap is enforced** (second review, batch C): the per-phase plan counts each phase on top of the one
+  before it, but short phases and back-to-back generations (SD-Turbo's sub-second phases) could overlap more of the
+  memory still returning from releases. A `ReleaseLog` (AetherRuntime; one per `ResidentAdmission`) records each
+  release's bytes and time, and a per-phase phase now waits until no more than the plan's overlap
+  (`ResidencyPlan.overlap`) was released within the window (6 s). `GraphResidency.beginPhase` is `async throws`
+  (cancellation ends the wait); `GraphResidency.init` takes `releases:`, and `ResidentAdmission.Settings` takes
+  `releaseWindow:` and `releaseClock:`.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`

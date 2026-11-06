@@ -69,7 +69,7 @@ public final class StatelessPipeline {
         try Task.checkCancellation()
         let residency = try admission.begin(profile: profile)
         do {
-            residency.beginPhase(.perStep)
+            try await residency.beginPhase(.perStep)
             let result = try await body(residency)
             residency.endPhase(.perStep)
             admission.finish()

@@ -363,6 +363,13 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     nothing, and file sizes badly underestimate.
   - A released graph's memory comes back about 5 s later (0.0.x: 1–6 s). So the per-phase peak counts each phase on
     top of what the phase before it held.
+  - That holds only if no older release is still returning: several short phases, or back-to-back generations
+    (SD-Turbo's phases are sub-second), overlap more. So per phase there is a reclamation boundary: a `ReleaseLog`
+    (one per `ResidentAdmission`, across its residencies and generations) keeps each release's bytes and time, and a
+    phase begins only once no more than the plan's overlap for it (`ResidencyPlan.overlap`) was released within the
+    last 6 s, sleeping until the oldest releases age out. The wait is by time alone, since the probe can't tell a
+    returned release from other allocations; it costs latency only in per-phase mode, when memory is short. All
+    resident never waits.
 - **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
   Diffusers' order.
 

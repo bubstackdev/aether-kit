@@ -263,7 +263,7 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         let residency = try admission.begin(profile: profile)
         do {
-            residency.beginPhase(.perStep)
+            try await residency.beginPhase(.perStep)
             _ = try await residency.graph("durations")
             let buckets = kokoro.frames.buckets.filter { $0 <= top }
             let style = [Float](repeating: 0, count: kokoro.style.dimension)
@@ -302,7 +302,7 @@ public actor KokoroSpeechSession {
         let arena = TensorArena()
         let tokens = phonemes.tokenIDs.count
 
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         let durations = try await residency.graph("durations")
         let ids = try durations.makeBuffer(for: names.tokens, role: .input, dimensions: [tokens], in: arena)
         let styleIn = try durations.makeBuffer(for: names.durationsStyle, role: .input, dimensions: [], in: arena)

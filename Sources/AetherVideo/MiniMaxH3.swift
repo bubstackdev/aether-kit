@@ -290,14 +290,14 @@ public actor MiniMaxH3Pipeline {
         let g = plan.geometry
         trace?.ids = plan.ids
         // Prompt: conditioner chain, then the refiner. The refined text outlives the phase (a host buffer).
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         let host = TensorArena()
         let refined = try await conditionAndRefine(plan, residency: residency, host: host, onProgress: onProgress, trace: trace)
         residency.sample()
         residency.endPhase(.perPrompt)
         try Task.checkCancellation()
 
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         var latents = try g.initialLatents(seed: plan.seed)
         try await denoise(plan, latents: &latents, refined: refined, residency: residency, host: host,
                           onProgress: onProgress, trace: trace)
@@ -305,7 +305,7 @@ public actor MiniMaxH3Pipeline {
         residency.endPhase(.perStep)
         try Task.checkCancellation()
 
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         if let limit = plan.stepLimit, limit < plan.recipe.steps.count {
             residency.endPhase(.perImage)
             return GeneratedVideo(width: g.width, height: g.height, frames: [], audio: nil)

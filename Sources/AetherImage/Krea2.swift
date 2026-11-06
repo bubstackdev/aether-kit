@@ -213,14 +213,14 @@ public actor Krea2Pipeline {
         let arena = TensorArena()
 
         // Prompt: the conditioning rows outlive the text encoder (it may be released before the denoisers load).
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         let conditioning = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: arena)
         residency.sample()
         residency.endPhase(.perPrompt)
         try Task.checkCancellation()
 
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         let latents = try await denoise(
             conditioning: conditioning, textRows: prompt.conditioningRows, seed: seed, schedule: schedule, grid: grid,
             residency: residency, arena: arena)
@@ -228,7 +228,7 @@ public actor Krea2Pipeline {
         try Task.checkCancellation()
 
         // Image: the packed tokens, raster order, are the decoder's [rows, columns, channels].
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         let image = try await decode(latents, grid: grid, size: size, residency: residency, arena: arena)
         residency.endPhase(.perImage)
         // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
