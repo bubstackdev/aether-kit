@@ -137,7 +137,8 @@ struct Flux2KleinTests {
     static func pipeline(
         calls: Calls, device: Device = mac, budget: Int64 = 1 << 40,
         files: [String: Int64] = ["textEncoder": 10, "denoiser0": 30, "denoiser1": 30, "denoiser2": 30, "vaeDecoder": 10],
-        coordinator: ResourceCoordinator? = nil, onRun: @escaping @Sendable () -> Void = {}
+        coordinator: ResourceCoordinator? = nil, onRun: @escaping @Sendable () -> Void = {},
+        wrap: @escaping @Sendable (String, any GraphBackend) -> any GraphBackend = { $1 }
     ) throws -> (Flux2KleinPipeline, Calls) {
         let loads = Calls()
         let pipeline = try Flux2KleinPipeline(
@@ -145,13 +146,14 @@ struct Flux2KleinTests {
             options: .init(memory: .bytes(budget), coordinator: coordinator, gpu: .unadmitted, probe: still), encodePrompt: encode,
             load: { role throws(AetherError) in
                 loads.append(role)
-                switch role {
-                case "textEncoder": return FakeText(calls)
-                case "denoiser0": return FakeSegment(0, calls, onRun: onRun)
-                case "denoiser1": return FakeSegment(1, calls)
-                case "denoiser2": return FakeSegment(2, calls)
-                default: return FakeVAE(calls)
+                let graph: any GraphBackend = switch role {
+                case "textEncoder": FakeText(calls)
+                case "denoiser0": FakeSegment(0, calls, onRun: onRun)
+                case "denoiser1": FakeSegment(1, calls)
+                case "denoiser2": FakeSegment(2, calls)
+                default: FakeVAE(calls)
                 }
+                return wrap(role, graph)
             },
             fileBytes: { files[$0] ?? 0 })
         return (pipeline, loads)
@@ -247,6 +249,37 @@ struct Flux2KleinTests {
         _ = try await pipeline.generate(.init(prompt: "a cat", steps: 1, width: 32, height: 32))
         #expect(await pipeline.residentRoles.isEmpty)
         #expect(loads.log == ["textEncoder", "denoiser0", "denoiser1", "denoiser2", "vaeDecoder"])
+    }
+
+    /// Third review, P1-3: per phase, a phase's graphs are destroyed when the phase ends, before the next phase's
+    /// graphs run (before: the pipeline's locals kept every graph alive until the generation returned).
+    @Test func perPhaseDestroysEachPhasesGraphsAtItsEnd() async throws {
+        let calls = Calls()
+        let (pipeline, _) = try Self.pipeline(calls: calls, budget: 105, wrap: { role, graph in
+            LatentDiffusionTests.Tracked(graph, role: role, log: calls)
+        })
+        _ = try await pipeline.generate(.init(prompt: "a cat", steps: 1, width: 32, height: 32))
+        let log = calls.log
+        #expect(Array(log.prefix(2)) == ["text", "~textEncoder"])
+        let vae = try #require(log.firstIndex(of: "vae"))
+        let released = log[2..<vae].filter { $0.hasPrefix("~") }
+        #expect(released.sorted() == ["denoiser0", "denoiser1", "denoiser2"].map { "~\($0)" })
+        #expect(log[2..<vae].last?.hasPrefix("~") == true, "every denoiser is destroyed before the decoder runs")
+        #expect(Array(log[vae...]) == ["vae", "~vaeDecoder"])
+    }
+
+    /// Third review, P2-9: a cancellation that lands during the decoder's call (the last one) used to be ignored and
+    /// the image returned; now the request fails with `CancellationError` and the residency is released.
+    @Test func cancellationDuringTheLastCallIsNotASuccess() async throws {
+        let (pipeline, _) = try Self.pipeline(calls: Calls(), wrap: { role, graph in
+            role == "vaeDecoder"
+                ? LatentDiffusionTests.Tracked(graph, role: role, log: Calls(), afterRun: LatentDiffusionTests.cancelCurrentTask)
+                : graph
+        })
+        await #expect(throws: CancellationError.self) {
+            try await pipeline.generate(.init(prompt: "a cat", steps: 1, width: 32, height: 32))
+        }
+        #expect(await pipeline.residentRoles.isEmpty)
     }
 
     @Test func refusalsComeBeforeAnyWork() async throws {

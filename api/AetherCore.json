@@ -35975,6 +35975,45 @@
       "usr": "s:10AetherCore8ManifestV10ProvenanceV"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declKind": "Accessor",
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore8ManifestV13contentDigestSSvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore8ManifestV13contentDigestSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Var",
+      "isFromExtension": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore8ManifestV13contentDigestSSvp",
+      "moduleName": "AetherCore",
+      "name": "contentDigest",
+      "printedName": "contentDigest",
+      "usr": "s:10AetherCore8ManifestV13contentDigestSSvp"
+     },
+     {
       "children": [
        {
         "children": [

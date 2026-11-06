@@ -8992,6 +8992,40 @@
       "usr": "s:10AetherHost17ResidentAdmissionC8manifest6device8settings4load9fileBytesAC0A4Core8ManifestV_AI6DeviceVAC8SettingsV0A7Runtime12GraphBackend_pSSYaAI0A5ErrorOYKYCcs5Int64VSSctcfc"
      },
      {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8modelKey8manifest6deviceSS0A4Core8ManifestV_AG6DeviceVtFZ",
+      "moduleName": "AetherHost",
+      "name": "modelKey",
+      "printedName": "modelKey(manifest:device:)",
+      "static": true,
+      "usr": "s:10AetherHost17ResidentAdmissionC8modelKey8manifest6deviceSS0A4Core8ManifestV_AG6DeviceVtFZ"
+     },
+     {
       "accessors": [
        {
         "accessorKind": "get",
@@ -9145,21 +9179,23 @@
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "Void",
-        "printedName": "()"
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
        }
       ],
       "declAttributes": [
-       "Final"
+       "Final",
+       "DiscardableResult"
       ],
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherHost17ResidentAdmissionC6finishyyF",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6finishSbyF",
       "moduleName": "AetherHost",
       "name": "finish",
       "printedName": "finish()",
-      "usr": "s:10AetherHost17ResidentAdmissionC6finishyyF"
+      "usr": "s:10AetherHost17ResidentAdmissionC6finishSbyF"
      },
      {
       "children": [
