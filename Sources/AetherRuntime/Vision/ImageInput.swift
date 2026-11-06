@@ -30,31 +30,62 @@ public struct ImageInput: @unchecked Sendable {
 
     let source: Source
     public var alpha: AlphaPolicy
+    /// The most pixels (width × height) this input may decode to; a larger image is refused with `invalidInput`
+    /// before any pixel is decoded. Decoding works at full resolution (several full-size buffers: the RGBA draw, the
+    /// RGB copy, the orientation), so this bounds the memory one image can take.
+    public var maximumPixels: Int
+
+    /// The default ``maximumPixels``: 64 Mi pixels, room for a 48 MP camera photo (8064 × 6048) and not much more.
+    /// Decoding one takes about 7 bytes a pixel at its peak (some 450 MB at the limit) before the model's resize.
+    ///
+    /// Images are not decoded at a reduced size (ImageIO thumbnails or subsampling) even when the model's input is far
+    /// smaller: the preprocessor's resize filters reproduce reference preprocessing (Pillow's) on the full-resolution
+    /// pixels, and ImageIO's reduced decodes resample with their own filters, and premultiply alpha, so the results
+    /// would differ from the reference.
+    public static let defaultMaximumPixels = 64 << 20
 
     /// An image already in memory. It is taken as displayed: there is no orientation to apply.
-    public init(_ cgImage: CGImage, alpha: AlphaPolicy = .dropAlpha) {
+    public init(_ cgImage: CGImage, alpha: AlphaPolicy = .dropAlpha, maximumPixels: Int = ImageInput.defaultMaximumPixels) {
         source = .image(cgImage)
         self.alpha = alpha
+        self.maximumPixels = maximumPixels
     }
 
     /// An image file in any format ImageIO reads. It is decoded at full size and its EXIF orientation applied by moving
     /// pixels, never resampled.
-    public init(contentsOf url: URL, alpha: AlphaPolicy = .dropAlpha) {
+    public init(contentsOf url: URL, alpha: AlphaPolicy = .dropAlpha, maximumPixels: Int = ImageInput.defaultMaximumPixels) {
         source = .file(url)
         self.alpha = alpha
+        self.maximumPixels = maximumPixels
+    }
+
+    /// Refuses a `width` × `height` image past ``maximumPixels``.
+    func checkPixels(width: Int, height: Int, name: String) throws(AetherError) {
+        let (pixels, overflow) = width.multipliedReportingOverflow(by: height)
+        guard !overflow, pixels <= maximumPixels else {
+            throw .invalidInput("\(name) is \(width)x\(height) pixels, more than the \(maximumPixels) this input may decode (ImageInput.maximumPixels)")
+        }
     }
 
     /// Decodes to 8-bit RGB, upright, in `colorSpace`.
     func decode(colorSpace: Manifest.ImagePreprocess.ColorSpace) throws(AetherError) -> RGB8Image {
         switch source {
         case .image(let image):
+            try checkPixels(width: image.width, height: image.height, name: "the image")
             return try RGB8Image(cgImage: image, alpha: alpha, colorSpace: colorSpace)
         case .file(let url):
-            guard let file = CGImageSourceCreateWithURL(url as CFURL, nil),
-                  let image = CGImageSourceCreateImageAtIndex(file, 0, nil) else {
+            guard let file = CGImageSourceCreateWithURL(url as CFURL, nil) else {
                 throw .invalidInput("'\(url.lastPathComponent)' is not an image ImageIO can decode")
             }
+            // The size from the file's header, before anything is decoded.
             let properties = CGImageSourceCopyPropertiesAtIndex(file, 0, nil) as? [CFString: Any]
+            if let width = properties?[kCGImagePropertyPixelWidth] as? Int, let height = properties?[kCGImagePropertyPixelHeight] as? Int {
+                try checkPixels(width: width, height: height, name: "'\(url.lastPathComponent)'")
+            }
+            guard let image = CGImageSourceCreateImageAtIndex(file, 0, nil) else {
+                throw .invalidInput("'\(url.lastPathComponent)' is not an image ImageIO can decode")
+            }
+            try checkPixels(width: image.width, height: image.height, name: "'\(url.lastPathComponent)'")
             let orientation = properties?[kCGImagePropertyOrientation] as? Int ?? 1
             let stored = try RGB8Image(cgImage: image, alpha: alpha, colorSpace: colorSpace)
             // Oriented after the full-size decode: ImageIO's oriented thumbnails are premultiplied, which would lose
