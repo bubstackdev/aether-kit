@@ -62,6 +62,21 @@ struct BindingsTests {
         }
     }
 
+    /// Second review, item 2: a buffer released after binding, whose slot an allocation of another shape and type
+    /// reused, still validated against the signature (stale shape and type: wrong storage on the encode path).
+    @Test func aReleasedBindingNoLongerValidates() throws {
+        let arena = TensorArena()
+        let buffer = try arena.allocate(name: "input", shape: [16], scalarType: .float32)
+        var bindings = Bindings(arena: arena)
+        try bindings.bindInput("input", to: buffer)
+        try arena.release(buffer)
+        let replacement = try arena.allocate(name: "replacement", shape: [1], scalarType: .int8)
+        #expect(replacement.slot == buffer.slot)
+        let signature = GraphSignature(function: "main", inputs: [.init(name: "input", scalarType: .float32, shape: [16])],
+                                       states: [], outputs: [])
+        #expect(throws: AetherError.self) { try bindings.validate(against: signature) }
+    }
+
     @Test func prefillThenStepSharesStateWithoutReallocating() async throws {
         let engine = try Engine(graph: FakeDecoder(), capacity: 16, chunkSize: 4)
         let bytes = engine.arena.byteCount

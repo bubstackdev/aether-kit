@@ -98,9 +98,15 @@ public struct Bindings {
         (inputs + states + outputs).first { $0.name == name }?.shape
     }
 
-    /// Checks the bindings against a signature: every input and state is bound, every bound name exists, and each
-    /// bound shape and scalar type fits its declaration. Outputs may be left unbound. Does not allocate on success.
+    /// Checks the bindings against a signature: every bound buffer is still the arena's (not released, its slot not
+    /// reused since it was bound), every input and state is bound, every bound name exists, and each bound shape and
+    /// scalar type fits its declaration. Outputs may be left unbound. Does not allocate on success.
     public func validate(against signature: GraphSignature) throws(AetherError) {
+        // A buffer released after binding may have had its slot reused by storage of another shape and type: running
+        // on it would read or write the wrong bytes.
+        for bound in inputs { try stillOwned(bound.buffer) }
+        for bound in states { try stillOwned(bound.buffer) }
+        for bound in outputs { try stillOwned(bound.buffer) }
         for spec in signature.inputs {
             guard let bound = inputs.first(where: { $0.name == spec.name }) else {
                 throw .tensor(name: spec.name, reason: .unbound)
@@ -133,6 +139,10 @@ public struct Bindings {
     }
 
     // MARK: -
+
+    private func stillOwned(_ buffer: TensorBuffer) throws(AetherError) {
+        if whileLent { try arena.checkOwned(buffer) } else { try arena.check(buffer) }
+    }
 
     private func owned(_ buffer: TensorBuffer, extent: [Int]?) throws(AetherError) -> TensorBuffer {
         if whileLent { try arena.checkOwned(buffer) } else { try arena.check(buffer) }
