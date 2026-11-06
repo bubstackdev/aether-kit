@@ -1,0 +1,54 @@
+{
+ "repository": "depth-anything/DA3-SMALL",
+ "revision": "e08cab65ca0ec38e7826075418411ab90cab4da3",
+ "license": "Apache-2.0",
+ "comment": "The official Depth Anything 3 small checkpoint (ByteDance Seed) and the upstream model code it runs with. SHA-256 of every snapshot file the harness reads (model.safetensors equals the Hub's LFS hash at this revision) and of every upstream source file it imports, pinned 2026-11-06. The model card and the upstream README's model table both give DA3-SMALL as Apache-2.0 (the giant and large DA3 checkpoints are CC BY-NC 4.0 and are not used).",
+ "files": {
+  "config.json": "a486e29e82b7ab4a7d4cefc1ea4526cfe2ae438a572c8ca98917cfbcde7447d2",
+  "model.safetensors": "364492e38a3a06d221ac75da7f6621ada3f2361cd24fde11ba79091e9f40efcf"
+ },
+ "upstreamCode": {
+  "repository": "ByteDance-Seed/Depth-Anything-3",
+  "commit": "3d835ec1a5802d64a8b8b15f817a1ab54809bfe4",
+  "license": "Apache-2.0",
+  "files": {
+   "LICENSE": "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870",
+   "src/depth_anything_3/cfg.py": "655a018ab35ad715454fdbca047354591287b6b86c10c91b8c0a920df0153014",
+   "src/depth_anything_3/configs/da3-small.yaml": "94f69159d682b897dd95ca6d2787148159782c2bcd3112a87e6fab037d7744ed",
+   "src/depth_anything_3/model/__init__.py": "e6fd99e59aec06a5f8a19255d11e7ecd9fa6482bdacad0e3e1a8fe2991cd64b6",
+   "src/depth_anything_3/model/cam_dec.py": "f7bc81d846b786e314c03eaaf809126505fa0c82eb5177b95eadbfad5beefd63",
+   "src/depth_anything_3/model/cam_enc.py": "3831baa5d661d9693222d209f5908279a350c7711d03c0daf50f7d1aac9b59a2",
+   "src/depth_anything_3/model/da3.py": "c7d5f88962e05c021cf7dab505840c8892e5e9d6880fb2901d20f4120ca173b3",
+   "src/depth_anything_3/model/dinov2/dinov2.py": "5d8e603113731365b3f46a3df4d159ad58f8723ec011440bf1961a4cbe101ca2",
+   "src/depth_anything_3/model/dinov2/layers/__init__.py": "321a97ffc00375d6d48569cbc851a38e7d2dc8bbdbfcffbee722c6c27783acda",
+   "src/depth_anything_3/model/dinov2/layers/attention.py": "d9db2bd66c612df689ec19aa2b60138c4185e38c8cfaaef48fc17f39a5b17c81",
+   "src/depth_anything_3/model/dinov2/layers/block.py": "88924cf5cd9fb18b17a8329e4c9910528205c302d8be40be29ad74e97ae7a3b8",
+   "src/depth_anything_3/model/dinov2/layers/drop_path.py": "80b5cc50297f3049d313c5659c1244901407bdac80cf424c5d7ed64ae79cd141",
+   "src/depth_anything_3/model/dinov2/layers/layer_scale.py": "23aba2710d7d425b5abd50c006edef9c9224360d6499171b6c1ec18ef73c0b00",
+   "src/depth_anything_3/model/dinov2/layers/mlp.py": "4f17c26120d04e4e4368b07a2396a977044b00d1dcbf1bbd1a9d3447be1aa6cf",
+   "src/depth_anything_3/model/dinov2/layers/patch_embed.py": "72f14d7b3daf3f545ba93c085b0a90f3b63efcf1a14f8d694dc77763c0607528",
+   "src/depth_anything_3/model/dinov2/layers/rope.py": "dcd09808cf03ceae7abfdcbe6805ee36990412b5308b09a86c4b51a040cff38b",
+   "src/depth_anything_3/model/dinov2/layers/swiglu_ffn.py": "f0e0bab6e9e835b81c53bd69616af43d254a91af4b119923160b7df1602b1562",
+   "src/depth_anything_3/model/dinov2/vision_transformer.py": "c28650e5db0b578745f5a41336709d54d08f952bc08cf1bd2009e2b765111221",
+   "src/depth_anything_3/model/dpt.py": "d4f70e867cb31fd26e807746b63fe21517e5385464acee0096a3021ec928576c",
+   "src/depth_anything_3/model/dualdpt.py": "6ef19b3cb46847830b615e4f8e30621708a3a63500a9fc4cbdee28962bd4bd06",
+   "src/depth_anything_3/model/reference_view_selector.py": "5e1238298a0053e76eab1f2cfd207ae8b0f30fb441c24c915320efed349301e3",
+   "src/depth_anything_3/model/utils/attention.py": "8e8a3dd3aca75ce403bc1a2f7a0b2086cc516b221fcc394b888ebc5ddc9a8a33",
+   "src/depth_anything_3/model/utils/block.py": "b0ec438942816169a5215a3678b4bff72b3783472e35942337b4a1142555c57b",
+   "src/depth_anything_3/model/utils/head_utils.py": "efed71ecd3b742d5969d1a938bbf34c9923d202dfd5232f204641c4674f0bd6b",
+   "src/depth_anything_3/model/utils/transform.py": "98d5c499f40e6e3e63cdaf0e269b8eeeb998ed125bcd63da41e2dec9ad32b8b9",
+   "src/depth_anything_3/utils/alignment.py": "7a18fe1c050e42970c7e243adb073ca695e24d197f671d74d16655760a827a88",
+   "src/depth_anything_3/utils/constants.py": "631d18da0159ef6f4a30be446b733b60cbc10f7b867ef61fabeddf89ab380612",
+   "src/depth_anything_3/utils/geometry.py": "3d67391f2eeed57ee5d07387947dea7a5d99fc0ce0a63c6890485183c851c29b",
+   "src/depth_anything_3/utils/logger.py": "03ea0032564443ae6df63aa88ab9e4e63b5933ed10463acee607d0bea5836910",
+   "src/depth_anything_3/utils/ray_utils.py": "d27adc973a03dec912d39f7b7bfa0328c3fd8eabe9f07a43b1bf04ed326f8563"
+  }
+ },
+ "referenceImages": {
+  "comment": "Upstream's own example frames (same repository and commit), used only as reference-case inputs; never bundled.",
+  "files": {
+   "assets/examples/SOH/000.png": "ea78c3b872b1e8b27de48cadf1d4a692cd42ddf5f72fcab78e2be2937935fb79",
+   "assets/examples/SOH/010.png": "c91a69d4e050e75e3760fbacda18a452b9abcf3065e6d6bd940b4a99d48f7982"
+  }
+ }
+}
