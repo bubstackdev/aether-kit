@@ -39,7 +39,7 @@ A one-call `ChatSession(catalog:)` arrives with `ModelHost` in M6. Today, a sess
 [`Tests/AetherTextTests/TextGateTests.swift`](Tests/AetherTextTests/TextGateTests.swift) is the complete, gate-verified
 flow.
 
-Models download on first use from pinned Hugging Face revisions and are verified file by file. Core AI isn't available
+Models download from pinned Hugging Face revisions when installed, and are verified file by file. Core AI isn't available
 in the iOS Simulator: run on a device or a Mac.
 
 ## Migrating from 0.0.x
