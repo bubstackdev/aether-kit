@@ -104,5 +104,6 @@ merge a PR past failing checks, but nobody can force-push. So the takeover is:
 3. **Version.** `0.1.0` marks the new architecture, a semver-allowed break from 0.0.x. Before tagging: README
    migration notes, a CHANGELOG `Breaking` section, and this document. `from: "0.0.7"` users would pick up `0.1.0`
    and break, so the README says so and points them to `exact: "0.0.7"` or `legacy/0.0.x`.
-4. **Licensing:** Apache-2.0 (the same as 0.0.x). A NOTICE lists what is actually inherited. Ported code adds its
-   0.0.x NOTICE entries when it lands.
+4. **Licensing:** Apache-2.0 (the same as 0.0.x). 0.0.x is this project's own earlier code, so ports from it need no
+   attribution; NOTICE lists third-party work only (Diffusers, Transformers-recorded oracles, publishers' tokenizer
+   files).

@@ -2,7 +2,7 @@ import Foundation
 import Darwin
 
 /// An advisory `flock` on one install location (`<repo>/<revision>`), shared by every `ModelStore` on the same root,
-/// in this process or another. Derived from AetherKit 0.0.7's `LocalAssetStore` locks.
+/// in this process or another. Ported from AetherKit 0.0.7's `LocalAssetStore` locks.
 ///
 /// - an install holds it exclusively from before its first byte until the bundle is renamed into place;
 /// - `remove` and stage recovery hold it exclusively;
