@@ -54,7 +54,9 @@ struct TextReviewRegressionTests {
 
     /// #1: a cancelled reply is not appended to the history.
     @Test func cancelledReplyIsNotAppended() async throws {
-        let long: @Sendable ([Int32]) -> [Int32] = { _ in Array(repeating: 12, count: 200) }
+        // A paced reply (about 1 ms a token), so it can't finish before the consumer below has stopped listening:
+        // with an instant fake, a slow runner could finish all 200 tokens first and keep the reply.
+        let long: @Sendable ([Int32]) -> [Int32] = { _ in usleep(1_000); return Array(repeating: 12, count: 200) }
         let session = try await Self.chat(reply: long)
         for try await event in await session.respond(to: "hello") {
             if case .text = event { break }

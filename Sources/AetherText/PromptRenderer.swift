@@ -133,24 +133,31 @@ public struct JinjaChatTemplate: PromptRenderer {
 
 /// Renderer selection by `tokenizer.renderer` (default `jinja`).
 public enum PromptRenderers {
+    /// The bundle's chat template source (`tokenizer.chatTemplate`), checked against `tokenizer.chatTemplateSha256`
+    /// when the manifest pins it.
+    public static func chatTemplate(manifest: Manifest, bundle: InstalledBundle) throws -> String {
+        guard let block = manifest.tokenizer, let path = block.chatTemplate, let url = bundle.url(of: path) else {
+            throw AetherError.manifestInvalid(field: "tokenizer.chatTemplate", reason: "the renderer needs a chat template")
+        }
+        let data: Data
+        do { data = try Data(contentsOf: url) } catch { throw AetherError.runtime(underlying: error) }
+        if let expected = block.chatTemplateSha256 {
+            let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            guard actual == expected else { throw AetherError.integrity(file: path.description, expected: expected, actual: actual) }
+        }
+        // The source goes in verbatim: swift-jinja drops one trailing newline as Jinja's default
+        // `keep_trailing_newline=False` does (0.0.x had to strip it itself; TokenizerParityTests pins it).
+        return String(decoding: data, as: UTF8.self)
+    }
+
     public static func make(manifest: Manifest, bundle: InstalledBundle, tokenizer: TokenizerAdapter) throws -> any PromptRenderer {
         guard let block = manifest.tokenizer else {
             throw AetherError.manifestInvalid(field: "tokenizer", reason: "the manifest has no tokenizer")
         }
         switch block.renderer ?? "jinja" {
         case "jinja":
-            guard let path = block.chatTemplate, let url = bundle.url(of: path) else {
-                throw AetherError.manifestInvalid(field: "tokenizer.chatTemplate", reason: "the jinja renderer needs a chat template")
-            }
-            let data: Data
-            do { data = try Data(contentsOf: url) } catch { throw AetherError.runtime(underlying: error) }
-            if let expected = block.chatTemplateSha256 {
-                let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-                guard actual == expected else { throw AetherError.integrity(file: path.description, expected: expected, actual: actual) }
-            }
-            // The source goes in verbatim: swift-jinja drops one trailing newline as Jinja's default
-            // `keep_trailing_newline=False` does (0.0.x had to strip it itself; TokenizerParityTests pins it).
-            return JinjaChatTemplate(tokenizer: tokenizer, template: String(decoding: data, as: UTF8.self), thinking: block.thinking)
+            return JinjaChatTemplate(tokenizer: tokenizer, template: try chatTemplate(manifest: manifest, bundle: bundle),
+                                     thinking: block.thinking)
         case "gemma4-turns":
             // TODO(M3): Gemma 4 has no Jinja template; a turn renderer over `tokenizer.turnFormat`
             // (`<|turn>`/`<turn|>`, role `model`) needs an HF reference to gate against first.
