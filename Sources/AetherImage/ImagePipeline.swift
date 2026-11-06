@@ -73,14 +73,6 @@ enum ImageGraphs {
     static func validating(
         _ loader: @escaping GraphResidency.Loader, manifest: Manifest, contract: DriverContract
     ) -> GraphResidency.Loader {
-        { role throws(AetherError) in
-            let graph = try await loader(role)
-            guard let spec = manifest.graphs[role], let graphContract = contract.graph(role) else {
-                throw .manifestInvalid(field: "graphs.\(role)", reason: "not a \(contract.driver) graph")
-            }
-            try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
-                                            contract: graphContract, tables: manifest.tables ?? [:])
-            return graph
-        }
+        GraphResidency.validating(loader, manifest: manifest, contract: contract)
     }
 }
