@@ -1,0 +1,42 @@
+{
+ "repository": "Megvii-BaseDetection/YOLOX",
+ "license": "Apache-2.0",
+ "comment": "The official YOLOX-S COCO checkpoint (Megvii) and the upstream model code it runs with. SHA-256 of the release checkpoint and of every upstream source file the harness imports or reads, pinned 2026-11-06. The repository's LICENSE is Apache-2.0 (Copyright (c) 2021-2022 Megvii Inc.), and the release weights are distributed from the same repository's GitHub release, which the README's model table links for YOLOX-s (40.5 mAP, 0.1.1rc0: the non-legacy weights that take BGR 0-255 without normalization).",
+ "weights": {
+  "release": "0.1.1rc0",
+  "url": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth",
+  "file": "yolox_s.pth",
+  "bytes": 72089125,
+  "sha256": "f55ded7181e1b0c13285c56e7790b8f0e8f8db590fe4edb37f0b7f345c913a30"
+ },
+ "upstreamCode": {
+  "repository": "Megvii-BaseDetection/YOLOX",
+  "commit": "6ddff4824372906469a7fae2dc3206c7aa4bbaee",
+  "license": "Apache-2.0",
+  "files": {
+   "LICENSE": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088",
+   "exps/default/yolox_s.py": "f184ccc218142ef8a65edade911f45235c3330dae7f874a8593e9e6877bb9549",
+   "yolox/data/data_augment.py": "f99b0b1568dafde0acd99f0a1e27a33644885349834d55a9dc632fe691ee352d",
+   "yolox/data/datasets/coco_classes.py": "b38193c481a73f1f674cedab9e551b15b39b1a7aaed3e09e16505362cc54ad51",
+   "yolox/exp/yolox_base.py": "09044d977cb729f42a4a123f6b37c46a8dfeab7e2cc6ba200cbfec4b883fe73c",
+   "yolox/models/__init__.py": "8e2442bf4c493db71bd6e872f384152a4fb4c76ae252cb43005380f58c7a8672",
+   "yolox/models/build.py": "b54d6d266ca7ce56878f76407d4808646ab0196299a0157efd322b6f98d8a814",
+   "yolox/models/darknet.py": "368c9db45166e863691cf7460b314d047928f90e8744c492a673b6eff9b809f3",
+   "yolox/models/losses.py": "7fa685fb4653bab69d5880c3f749edeb8a4cabfe71fadf0acc5151c2eaa75702",
+   "yolox/models/network_blocks.py": "f490240a674799f1b548ac4ca571c7f3e59d4e75efee8ebeb1e24e6e4e10d2a4",
+   "yolox/models/yolo_fpn.py": "a9284888d35dd69c5779c7697f0d97b82922ed11e632a741bdc20ce1b833d4bb",
+   "yolox/models/yolo_head.py": "0275bcdeb1b1d5dbd3172fc4897c75cb161f707843983bf582fb087676f969c2",
+   "yolox/models/yolo_pafpn.py": "8571af557f6caacda61e54813be4be2d73c4a0889e1f876ec5586057eb2eebde",
+   "yolox/models/yolox.py": "9f8eaf76d2c243627e875db9b522cf1cfddc0cdcf229400550f76102cce741e3",
+   "yolox/utils/boxes.py": "564fc1605b14ebe7414c42f7098adb70647e27f3d796df8dc4611795e78e3a86",
+   "yolox/utils/compat.py": "a8f0dec9e0566cf0a09a211bc08ce47bc7abd6dd75d239ee85d8c0c5fe3e07ce"
+  }
+ },
+ "referenceImages": {
+  "comment": "Upstream's own demo images (same repository and commit, Apache-2.0), used only as reference-case inputs; never bundled. demo.png is the README's four-panel detection collage (boxes already drawn on it), which also gives a wide letterbox; dog.jpg is the classic demo photo.",
+  "files": {
+   "assets/demo.png": "5930d019f0f4bbdbc66a702a2309d4a9c115f47366009d87dec6a80e7774c12e",
+   "assets/dog.jpg": "5a9522051c3cec2bbd2f6323fccba32e8fbf3ddcc2b3e2fd46b04c720bc6f866"
+  }
+ }
+}
