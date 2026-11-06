@@ -966,6 +966,66 @@ extension Catalog {
             ]
         ),
         CatalogEntry(
+            id: "rf-detr-nano",
+            task: "object-detection",
+            repo: "aether-models/aether-kit-rf-detr-nano",
+            revision: "7bd148c5a05f826f15be5d6745a9dda14887911d",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "detector-detr@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 4396, sha256: "001e739499dd1c36891e86a0bbfad04b20a2ec902a88214c0e831fec66dde1f7"),
+                                CatalogFile(path: ".gitattributes", size: 1587, sha256: "c74668f43005e813f60ee1ec6eaf1a89a9b0a8f3db7cb7e939cde2a631644bf0"),
+                                CatalogFile(path: "LICENSE", size: 11345, sha256: "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca"),
+                                CatalogFile(path: "NOTICE", size: 1060, sha256: "fc1732ad01d34a68cef83572dcbb8b75d7fa22d9bc52ed52a5c3b8ca66da926c"),
+                                CatalogFile(path: "README.md", size: 955, sha256: "8bdb8c5e0c68deca9922f514923e9700aab885eb7da9533d5fc86e35591dbd2e"),
+                                CatalogFile(path: "SHA256SUMS", size: 690, sha256: "a2faadc8a900ac47e9927eddc3b0be729666068d5fc6b222594a3c69df17555b"),
+                                CatalogFile(path: "export-report.json", size: 8756, sha256: "498052cbb0092417e4f89a63b1165970d8a5d9c2f70bd9e055f6db4fe6a94734"),
+                                CatalogFile(path: "forge-log.jsonl", size: 487, sha256: "f5e412ae564959e928d5fda1ac731a297e25256fddbf58bdf7d3dedb68cbe80b"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/main.hash", size: 32, sha256: "8fea7c6a3064e3968398efc74211f21766fa5d3a8dc47a242cbbcdf6b615a1df"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/main.mlirb", size: 108212286, sha256: "590d37e07731bb10cf41ef32b825cf93fbe20f20be95991024efca9eebb4f2e1"),
+                                CatalogFile(path: "rf_detr_nano.aimodel/metadata.json", size: 400, sha256: "9232ba5f41466188108a1da614357900a2069ab1eae4cb3bad99587ea4f28cc4"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "rf-detr-seg-nano",
+            task: "instance-segmentation",
+            repo: "aether-models/aether-kit-rf-detr-seg-nano",
+            revision: "6be429f7e2ec76e7b5f7afe0853cba485365f1ed",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "detector-detr@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 4677, sha256: "d1256f3f9845b512812571fa51915e547bacb08564c657f1d5dfcd78be65be14"),
+                                CatalogFile(path: ".gitattributes", size: 1591, sha256: "844c175dbce6b52b7dfa174049f6cbb8090ce872033e4172abc4f671ab4f233b"),
+                                CatalogFile(path: "LICENSE", size: 11345, sha256: "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca"),
+                                CatalogFile(path: "NOTICE", size: 1051, sha256: "efb066472a1857db6e3f565359dc227ad0eeea2702c03768906b52a85297dff5"),
+                                CatalogFile(path: "README.md", size: 1003, sha256: "7c2cde156f6fbbfdd0c38e89970a6aed891fc3a69ef678b3e5b5ef5464bbba6f"),
+                                CatalogFile(path: "SHA256SUMS", size: 702, sha256: "a08f3a0c5a1f268e8a48a3e9ef9872d3e5e0a628859c2906db20a7506c9d4c74"),
+                                CatalogFile(path: "export-report.json", size: 8836, sha256: "d04d408b5b97e05274a12d2b40ba2c48caf5bee683bb92d8389305f240f2ee94"),
+                                CatalogFile(path: "forge-log.jsonl", size: 488, sha256: "a82134e8c9f74ed5f1e90d819c837316db1e9e8f910145b519056c365e73cb79"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.hash", size: 32, sha256: "88eb617912bd142e6e70c6fc30c29143d98caccb2e92bf96b290367a0b0caa26"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/main.mlirb", size: 122781855, sha256: "80c62055444e082969b038d53c1815d2f204100990a52fc75e8a7628cd60f889"),
+                                CatalogFile(path: "rf_detr_seg_nano.aimodel/metadata.json", size: 437, sha256: "c763b8ce3c2ae6272805f0eafce9a941303ad38466646e85c47975094f0156a5"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
             id: "embeddinggemma-300m",
             task: "text-embedding",
             repo: "aether-models/aether-kit-embeddinggemma-300m",
@@ -993,6 +1053,44 @@ extension Catalog {
                                 CatalogFile(path: "tokenizer/special_tokens_map.json", size: 662, sha256: "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397"),
                                 CatalogFile(path: "tokenizer/tokenizer.json", size: 33385008, sha256: "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e"),
                                 CatalogFile(path: "tokenizer/tokenizer_config.json", size: 1155346, sha256: "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "clip-vit-b32",
+            task: "image-text-embedding",
+            repo: "aether-models/aether-kit-clip-vit-b32",
+            revision: "1efefba78d652dafd8cdc9df5fac2cd4ee1e6cf6",
+            license: "mit",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "clip-joint@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 7685, sha256: "ab851888c05356d89b9eb7ef1bfe1b017e282b02055926847ef76d360510b035"),
+                                CatalogFile(path: ".gitattributes", size: 1666, sha256: "a2bde3a0718f6a7db92e6a01ba731aaa6a899f887ad0afa3ce0d75f4c90881e5"),
+                                CatalogFile(path: "LICENSE", size: 1064, sha256: "987e63b32f6c89ff5160e429458a872ff048e6860b590a3912e938f9da8f14db"),
+                                CatalogFile(path: "NOTICE", size: 1129, sha256: "65fb3e46dcdcc7b630ef96ece0da2fb177e7a5d348c57091fe345c0d2d5def18"),
+                                CatalogFile(path: "README.md", size: 1300, sha256: "ae045dc8fc978ef9a972b3442286128da3cc00f67e997254c8e77824cde83fca"),
+                                CatalogFile(path: "SHA256SUMS", size: 1482, sha256: "233956bd6632d7de1aeaf8414e7656a3c976bc8287d9a3138fab90b662ebdabd"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/main.hash", size: 32, sha256: "d1c0b0f0323349a4bd9c48460bc7681a560c8ebb14bc00aa800f165a645f9f79"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/main.mlirb", size: 175768383, sha256: "d1e96135d26898b55cad462a2da4e75ea41149b4f79ca608cb01a648d24ea4e8"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/metadata.json", size: 350, sha256: "be18860a32f3c74e9faec571fe89a8cc705b123ee5b52a3f4a43d8e2a878459d"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/main.hash", size: 32, sha256: "5107534982347924da3ed4aded6564ac8c17be238e8b37021520bc2a650ed8f9"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/main.mlirb", size: 127030587, sha256: "69a0127b96cac208d3ef71fdf0b6e832997621008abd2ab64cc1d8b87b0d4e01"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/metadata.json", size: 367, sha256: "6a4f126ad607f3aea64335f49a3f1cd8f126d9c6c0775ecd2c77691c4c2e7511"),
+                                CatalogFile(path: "export-report.json", size: 4799, sha256: "1730e2280967bf6099f2ca4f1886362d1dec6135b74dfe08aaf55ee9ccdb1dbd"),
+                                CatalogFile(path: "forge-log.jsonl", size: 664, sha256: "eb48bef227383a335a136c1ff4aba92a8720223b7d25eec4ab46847b0c39d4d3"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 524657, sha256: "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 389, sha256: "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 2224041, sha256: "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 592, sha256: "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 862328, sha256: "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"),
                             ]),
                     ],
                     architectures: nil

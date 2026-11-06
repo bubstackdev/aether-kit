@@ -103,6 +103,18 @@ extension Manifest {
             return functions ?? [:]
         }
 
+        /// The graph as bucket `value` runs it: that entry's `function` or `file` in place of the graph's own (a
+        /// single-function graph's `step` phase). Nil when no entry has the value or the entry names an asset.
+        public func bucket(_ value: Int) -> Graph? {
+            guard function != nil, let entry = buckets?.entries.first(where: { $0.value == value }), entry.asset == nil else {
+                return nil
+            }
+            var graph = self
+            if let function = entry.function { graph.function = function }
+            if let file = entry.file { graph.file = .single(file) }
+            return graph
+        }
+
         /// The input bindings of `phase` (its own set if `inputsByFunction` lists it).
         public func inputs(forPhase phase: String) -> [String: Binding] {
             inputsByFunction?[phase] ?? inputs
@@ -188,9 +200,17 @@ extension Manifest {
             public var function: String?
             public var asset: String?
         }
+        /// What the value measures: `sequence`, `audioSeconds`, `batch` (rows of a static batch, CLIP's text tower), …
         public var axis: String
+        /// `smallestFitting`: a request runs at the smallest value that holds it.
         public var rule: String
         public var entries: [Entry]
+
+        /// The values, ascending.
+        public var values: [Int] { entries.map(\.value).sorted() }
+
+        /// The smallest value at least `count`, or nil when none is.
+        public func smallestFitting(_ count: Int) -> Int? { values.first { $0 >= count } }
     }
 
     /// An input role's binding: a graph name, plus how and from where it is bound (§2.3 "Binding").

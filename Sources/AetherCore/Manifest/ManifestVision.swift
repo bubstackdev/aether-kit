@@ -42,8 +42,9 @@ extension Manifest {
                 /// Scaled to fit inside ``Resize/size`` (aspect kept, the scaled side floored), placed at ``Resize/anchor``
                 /// on a canvas of ``Resize/padValue``.
                 case letterbox
-                /// Scaled to cover ``Resize/size`` (aspect kept, the scaled side floored), then the centre cut out, its
-                /// offset `round((scaled − size) / 2)` with ties to even (torchvision's `Resize` + `CenterCrop`).
+                /// Scaled to cover ``Resize/size`` (aspect kept, the scaled side floored), or with the shorter side to
+                /// ``Resize/shortestSide`` when set, then the centre cut out, its offset `round((scaled − size) / 2)` with
+                /// ties to even (torchvision's `Resize` + `CenterCrop`).
                 case centerCrop
                 /// Scaled down so the longer side is ``Resize/maxSide`` (aspect kept, the other side floored, at least 1);
                 /// an image already within it is left as is. The tensor's size follows the image.
@@ -77,6 +78,10 @@ extension Manifest {
             public var size: Size?
             /// The longer side's limit; required by `fitLongSide`.
             public var maxSide: Int?
+            /// `centerCrop` only: the shorter side's length before the crop (torchvision's `Resize(n)`, the longer side
+            /// floored), at least both of ``size``'s sides. Absent: the smallest scale that covers ``size``, which for a
+            /// square size is the same.
+            public var shortestSide: Int?
             /// `letterbox` only; default `center`.
             public var anchor: Anchor?
             /// `letterbox` only: the canvas's 8-bit value, one for every channel or one per channel (R, G, B);
@@ -84,11 +89,12 @@ extension Manifest {
             public var padValue: [Int]?
             public var filter: Filter
 
-            public init(mode: Mode, size: Size? = nil, maxSide: Int? = nil, anchor: Anchor? = nil, padValue: [Int]? = nil,
-                        filter: Filter) {
+            public init(mode: Mode, size: Size? = nil, maxSide: Int? = nil, shortestSide: Int? = nil, anchor: Anchor? = nil,
+                        padValue: [Int]? = nil, filter: Filter) {
                 self.mode = mode
                 self.size = size
                 self.maxSide = maxSide
+                self.shortestSide = shortestSide
                 self.anchor = anchor
                 self.padValue = padValue
                 self.filter = filter
@@ -99,6 +105,7 @@ extension Manifest {
                 mode = try c.decode(Mode.self, forKey: .mode)
                 size = try c.decodeIfPresent(Size.self, forKey: .size)
                 maxSide = try c.decodeIfPresent(Int.self, forKey: .maxSide)
+                shortestSide = try c.decodeIfPresent(Int.self, forKey: .shortestSide)
                 anchor = try c.decodeIfPresent(Anchor.self, forKey: .anchor)
                 if let one = try? c.decodeIfPresent(Int.self, forKey: .padValue) {
                     padValue = [one]
@@ -228,6 +235,11 @@ extension Manifest {
                 }
                 if resize.mode != .letterbox {
                     try require(resize.anchor == nil && resize.padValue == nil, "\(p).anchor", "only letterbox takes anchor and padValue")
+                }
+                if let side = resize.shortestSide {
+                    try require(resize.mode == .centerCrop, "\(p).shortestSide", "only centerCrop takes shortestSide")
+                    let size = resize.size!
+                    try require(side >= max(size.width, size.height), "\(p).shortestSide", "must be at least both sides of size")
                 }
                 if let pad = resize.padValue {
                     try require((pad.count == 1 || pad.count == 3) && pad.allSatisfy { (0...255).contains($0) }, "\(p).padValue",
@@ -373,9 +385,19 @@ extension Manifest {
 
         /// `detector-detr@1`: a set prediction scored by the sigmoid of each query's class logits; no NMS.
         public struct DetrSigmoid: Sendable, Hashable, Codable {
-            /// Instance masks from the optional `masks` output.
+            /// Which (query, class) scores become detections.
+            public enum Selection: String, Sendable, Hashable, Codable {
+                /// The sigmoid of every query's every class logit is one candidate; the `maxDetections` best, by score
+                /// descending then flat index `query · classes + class` ascending, are kept when their score is strictly
+                /// above `scoreThreshold`. One query can yield several classes (RF-DETR's, LW-DETR's and Deformable
+                /// DETR's `PostProcess`).
+                case topKPairs
+            }
+
+            /// Instance masks from the optional `masks` output: one logit plane per query over the graph's whole input,
+            /// resampled bilinearly to the source image (pixel centres, `align_corners=False`) and thresholded.
             public struct Masks: Sendable, Hashable, Codable {
-                /// A mask pixel is foreground above this logit; default 0.
+                /// A mask pixel is foreground strictly above this logit; default 0.
                 public var logitThreshold: Double?
 
                 public init(logitThreshold: Double? = nil) { self.logitThreshold = logitThreshold }
@@ -386,14 +408,18 @@ extension Manifest {
             public var defaults: DetectionDefaults
             /// Default `contiguous`.
             public var classIndex: ClassIndex?
+            /// Default `topKPairs`.
+            public var selection: Selection?
+            /// Present exactly when the detector graph binds a `masks` output.
             public var masks: Masks?
 
             public init(boxFormat: BoxFormat, boxSpace: BoxSpace, defaults: DetectionDefaults, classIndex: ClassIndex? = nil,
-                        masks: Masks? = nil) {
+                        selection: Selection? = nil, masks: Masks? = nil) {
                 self.boxFormat = boxFormat
                 self.boxSpace = boxSpace
                 self.defaults = defaults
                 self.classIndex = classIndex
+                self.selection = selection
                 self.masks = masks
             }
         }
@@ -426,11 +452,19 @@ extension Manifest {
             /// Default `inGraph`.
             public var pooling: Pooling?
             public var similarity: Similarity
+            /// The embedding's length, checked against the graphs' outputs when they load.
+            public var dimension: Int?
+            /// `clip-joint@1`: the zero-shot temperature, the scores being `softmax(logitScale · similarity)` over the
+            /// labels (CLIP's `logit_scale.exp()`, 100). Required by `clip-joint@1`.
+            public var logitScale: Double?
 
-            public init(normalized: Normalization, pooling: Pooling? = nil, similarity: Similarity) {
+            public init(normalized: Normalization, pooling: Pooling? = nil, similarity: Similarity, dimension: Int? = nil,
+                        logitScale: Double? = nil) {
                 self.normalized = normalized
                 self.pooling = pooling
                 self.similarity = similarity
+                self.dimension = dimension
+                self.logitScale = logitScale
             }
         }
 
@@ -550,8 +584,9 @@ extension Manifest {
             case .detrSigmoid(let v):
                 try v.defaults.validate(at: "postprocess.defaults")
                 if let t = v.masks?.logitThreshold { try require(t.isFinite, "postprocess.masks.logitThreshold", "must be finite") }
-            case .embedding:
-                break
+            case .embedding(let v):
+                if let d = v.dimension { try require(d > 0, "postprocess.embedding.dimension", "must be at least 1") }
+                if let t = v.logitScale { try require(t.isFinite && t > 0, "postprocess.embedding.logitScale", "must be finite and > 0") }
             case .gliner(let v):
                 if let t = v.threshold { try require((0...1).contains(t), "postprocess.gliner.threshold", "must be in 0...1") }
             case .yesNo(let v):

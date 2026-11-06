@@ -19,7 +19,8 @@ public enum DriverCatalog {
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
         DriverContract.depthEstimator.driver: .depthEstimator, DriverContract.textEmbedder.driver: .textEmbedder,
-        DriverContract.detectorDense.driver: .detectorDense,
+        DriverContract.detectorDense.driver: .detectorDense, DriverContract.detectorDetr.driver: .detectorDetr,
+        DriverContract.clipJoint.driver: .clipJoint,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -441,6 +442,49 @@ extension DriverContract {
             "detector": stateless(
                 inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
                 outputs: ["preds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `detector-detr@1` (MANIFEST.md §1.3): one stateless `detector` graph, in `image` (`[1, 3, H, W]`, floating point),
+    /// out `boxes` (`[1, Q, 4]`) and `classLogits` (`[1, Q, C]`), and optional `masks` (`[1, Q, h, w]`, logit planes over
+    /// the whole input), all floating point. The driver also requires `preprocess.image` (`NCHW`), a `detrSigmoid`
+    /// `postprocess` (with `masks` exactly when the graph binds them) and `labels` (checked when it loads); the
+    /// outputs' Q must agree.
+    public static let detectorDetr = DriverContract(
+        driver: .detectorDetr,
+        graphs: [
+            "detector": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: [
+                    "boxes": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "classLogits": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "masks": RoleSpec(required: false, rank: 4, scalar: .floatingPoint),
+                ]),
+        ],
+        requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `clip-joint@1` (MANIFEST.md §1.3): two stateless graphs. `imageEncoder` in `image` (`[1, 3, H, W]`, floating
+    /// point), out `imageEmbedding` (`[1, D]`); `textEncoder` in `tokens` (`[B, L]`, integer; `B` per `buckets` on axis
+    /// `batch`, `L` declared in `limits.staticSequence`) and an optional `attentionMask` of the same shape, out
+    /// `textEmbedding` (`[B, D]`). Other graph outputs (`logits_per_image`) are listed in `unusedOutputs`. The driver also
+    /// requires `preprocess.image` (`NCHW`), an `embedding` `postprocess` with `logitScale`, and a `clip-bpe` tokenizer
+    /// with a `text` block (checked when it loads).
+    public static let clipJoint = DriverContract(
+        driver: .clipJoint,
+        graphs: [
+            "imageEncoder": stateless(
+                inputs: ["image": RoleSpec(required: true, rank: 4, scalar: .floatingPoint)],
+                outputs: ["imageEmbedding": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+            "textEncoder": stateless(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "attentionMask": RoleSpec(required: false, rank: 2, scalar: .integer),
+                ],
+                outputs: ["textEmbedding": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
 }

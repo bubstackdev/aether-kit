@@ -52,15 +52,59 @@ struct VisionManifestTests {
         #expect(try Manifest.decode(m.encoded()) == m)
     }
 
+    /// CLIP's Forge export (`Forge/clip/`): `resize.shortestSide`, `embedding.dimension` and `logitScale`, and the typed
+    /// `tokenizer.text`'s `maskRule: none` and `unusedBatchRows`.
+    @Test func theCLIPExportersBlocksDecode() throws {
+        let m = try Manifest.decode(Self.manifest("""
+        "tokenizer": { "source": { "dir": "main:tokenizer" }, "renderer": "clip-bpe", "addSpecialTokens": true,
+                       "text": { "padId": 49407, "padSide": "right", "padTo": 77, "truncation": "right", "maskRule": "none",
+                                 "unusedBatchRows": [49406, 49407] } },
+        "preprocess": { "image": { "resize": { "mode": "centerCrop", "size": [224, 224], "filter": "pillowBicubic", "shortestSide": 224 },
+                                   "scale": 0.00392156862745098, "layout": "NCHW" } },
+        "postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "pooling": "inGraph", "similarity": "cosine",
+                                                             "dimension": 512, "logitScale": 100.00000762939453 } }
+        """))
+        #expect(m.preprocess?.image?.resize == .init(mode: .centerCrop, size: .init(width: 224, height: 224), shortestSide: 224,
+                                                     filter: .pillowBicubic))
+        #expect(m.postprocess == .embedding(.init(normalized: .inGraph, pooling: .inGraph, similarity: .cosine, dimension: 512,
+                                                  logitScale: 100.00000762939453)))
+        #expect(m.tokenizer?.text == .init(padId: 49407, padSide: .right, padTo: 77, truncation: .right, maskRule: .noMask,
+                                                      unusedBatchRows: [49406, 49407]))
+        #expect(try Manifest.decode(m.encoded()) == m)
+        #expect(try Manifest.decode(Self.manifest(#""tokenizer": { "source": { "dir": "main:t" } }"#)).tokenizer?.text == nil)
+    }
+
+    @Test func invalidCLIPBlocksNameTheirField() throws {
+        func expect(_ field: String, _ json: String, sourceLocation: SourceLocation = #_sourceLocation) {
+            expectField(field, sourceLocation: sourceLocation) { _ = try Manifest.decode(Self.manifest(json)) }
+        }
+        expect("preprocess.image.resize.shortestSide", #""preprocess": { "image": { "resize": { "mode": "stretch", "size": [2, 2], "shortestSide": 2, "filter": "vImage" } } }"#)
+        expect("preprocess.image.resize.shortestSide", #""preprocess": { "image": { "resize": { "mode": "centerCrop", "size": [4, 2], "shortestSide": 3, "filter": "vImage" } } }"#)
+        expect("postprocess.embedding.logitScale", #""postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine", "logitScale": 0 } }"#)
+        expect("postprocess.embedding.dimension", #""postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine", "dimension": 0 } }"#)
+        func text(_ json: String) throws -> Manifest.Tokenizer.Text? {
+            try Manifest.decode(Self.manifest(#""tokenizer": { "source": { "dir": "main:t" }, "text": "# + json + "}")).tokenizer?.text
+        }
+        expectField("tokenizer.text.maskRule") { _ = try text(#"{ "padId": 0, "maskRule": "causal" }"#) }
+        expectField("tokenizer.text.padId") { _ = try text(#"{ "padId": -1, "padTo": 4 }"#) }
+        expectField("tokenizer.text.padTo") { _ = try text(#"{ "padId": 0, "padTo": 0 }"#) }
+        expectField("tokenizer.text.unusedBatchRows") { _ = try text(#"{ "padId": 0, "padTo": 1, "unusedBatchRows": [1, 2] }"#) }
+        expectField("tokenizer.text.unusedBatchRows") { _ = try text(#"{ "padId": 0, "unusedBatchRows": [-1] }"#) }
+        // Every mask rule decodes; padId is optional here (the drivers that need it require it).
+        for rule in ["realTokens", "nonPad", "throughFirstEos", "none"] {
+            #expect(try text(#"{ "maskRule": ""# + rule + #"" }"#)?.maskRule?.rawValue == rule)
+        }
+    }
+
     @Test func everyPostprocessKindDecodesAndRoundTrips() throws {
         let cases: [(String, Manifest.Postprocess)] = [
             (#"{ "kind": "depth", "depth": { "polarity": "largerIsNearer" } }"#, .depth(.init(polarity: .largerIsNearer))),
             (#"{ "kind": "denseNms", "boxFormat": "cxcywh", "boxSpace": "letterboxPixels", "nms": { "type": "perClass", "iou": 0.45 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 50 } }"#,
              .denseNms(.init(boxFormat: .cxcywh, boxSpace: .letterboxPixels, nms: .init(type: .perClass, iou: 0.45),
                              defaults: .init(scoreThreshold: 0.3, maxDetections: 50)))),
-            (#"{ "kind": "detrSigmoid", "boxFormat": "cxcywh", "boxSpace": "normalized", "classIndex": "cocoId", "defaults": { "scoreThreshold": 0.5, "maxDetections": 50 }, "masks": {} }"#,
+            (#"{ "kind": "detrSigmoid", "boxFormat": "cxcywh", "boxSpace": "normalized", "classIndex": "cocoId", "selection": "topKPairs", "defaults": { "scoreThreshold": 0.5, "maxDetections": 50 }, "masks": {} }"#,
              .detrSigmoid(.init(boxFormat: .cxcywh, boxSpace: .normalized, defaults: .init(scoreThreshold: 0.5, maxDetections: 50),
-                                classIndex: .cocoId, masks: .init()))),
+                                classIndex: .cocoId, selection: .topKPairs, masks: .init()))),
             (#"{ "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine" } }"#,
              .embedding(.init(normalized: .inGraph, similarity: .cosine))),
             (#"{ "kind": "gliner" }"#, .gliner(.init())),
@@ -86,6 +130,7 @@ struct VisionManifestTests {
         expect("postprocess.depth.polarity", #""postprocess": { "kind": "depth", "depth": { "polarity": "up" } }"#)
         expect("postprocess.nms.iou", #""postprocess": { "kind": "denseNms", "boxFormat": "xyxy", "boxSpace": "normalized", "nms": { "type": "perClass", "iou": 0 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 5 } }"#)
         expect("postprocess.defaults.maxDetections", #""postprocess": { "kind": "detrSigmoid", "boxFormat": "xyxy", "boxSpace": "normalized", "defaults": { "scoreThreshold": 0.3, "maxDetections": 0 } }"#)
+        expect("postprocess.selection", #""postprocess": { "kind": "detrSigmoid", "boxFormat": "xyxy", "boxSpace": "normalized", "selection": "perQuery", "defaults": { "scoreThreshold": 0.3, "maxDetections": 5 } }"#)
         expect("postprocess.probs.threshold", #""postprocess": { "kind": "yesNo", "probs": { "positiveIndex": 1, "threshold": 2 } }"#)
         expect("postprocess.retrieval.patchGrid", #""postprocess": { "kind": "maxSim", "retrieval": { "imageTokenSpan": [13, 77], "patchGrid": [8, 7] } }"#)
         expect("postprocess.sr.range", #""postprocess": { "kind": "superRes", "sr": { "range": [1, -1] } }"#)

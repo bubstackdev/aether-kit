@@ -49,13 +49,9 @@ struct DecoderEngineTests {
         return out
     }
 
-    static func greedy(_ engine: DecoderEngine, _ prompt: [Int32], count: Int) async throws -> [Int32] {
-        let logits = try await engine.prefill(prompt)!
-        var out = [Logits.argmax(logits.last)]
-        try await engine.beginGreedy(first: out[0], limit: count - 1)
-        while let t = try await engine.nextGreedy() { out.append(t) }
-        try await engine.endGreedy()
-        return out
+    /// Greedy from the engine's current state (it feeds `prompt` first).
+    static func greedy(_ engine: any LanguageEngine, _ prompt: [Int32], count: Int) async throws -> [Int32] {
+        try await LanguageEngineInvariants.continueGreedy(engine, after: prompt, count: count).tokens
     }
 
     static func expectError(
@@ -130,6 +126,45 @@ struct DecoderEngineTests {
             try await Self.engine(FakeLM.Config(staticStep: true), prefillChunk: 8, padTail: true).0,
         ]
         for engine in engines { #expect(try await Self.greedy(engine, prompt, count: 12) == expected) }
+    }
+
+    // MARK: Engine invariants (LanguageEngine)
+
+    /// The protocol's invariants on every fake schedule: greedy equals stepping argmax and the reference, chunked
+    /// prefill equals token-by-token (exactly, on the fake), and a second turn reusing the first's state (rewind, or a
+    /// snapshot with recurrent state) equals the same turn from a reset state.
+    @Test func languageEngineInvariantsHoldOnEverySchedule() async throws {
+        typealias I = LanguageEngineInvariants
+        let engines: [any LanguageEngine] = [
+            try await Self.engine(prefillLimit: 5).0,
+            try await Self.engine(FakeLM.Config(staticStep: true)).0,
+            try await Self.engine(FakeLM.Config(staticStep: true), prefillChunk: 8).0,
+            try await Self.engine(FakeLM.Config(staticStep: true, recurrent: true), prefillChunk: 8).0,
+            try await Self.engine(FakeLM.Config(recurrent: true), prefillLimit: 5).0,
+            try await Self.engine(FakeLM.Config(staticStep: true), prefillChunk: 8, padTail: true).0,
+        ]
+        let prompt = Self.prompt(37)
+        let expected = Self.expectedGreedy(prompt, count: 12)
+        for engine in engines {
+            #expect(try await I.greedy(engine, prompt: prompt, count: 12).tokens == expected)
+            #expect(try await I.stepwiseGreedy(engine, prompt: prompt, count: 12) == expected)
+            let rows = try await I.prefillRows(engine, prompt: prompt)
+            #expect(rows.chunked == rows.stepwise)
+            let turns = try await I.twoTurnReuse(
+                engine, history: Self.prompt(20), first: Self.prompt(6, seed: 5), second: Self.prompt(9, seed: 11), count: 10)
+            #expect(turns.reused == turns.fresh && turns.fresh == Self.expectedGreedy(Self.prompt(20) + Self.prompt(9, seed: 11), count: 10))
+        }
+    }
+
+    /// A snapshot is restored only by an engine of its type.
+    @Test func aSnapshotOfAnotherEngineTypeIsRefused() async throws {
+        let (engine, _, _) = try await Self.engine()
+        _ = try await engine.prefill(Self.prompt(4))
+        await Self.expectError({ try await engine.restore(EngineSnapshot(position: 0, byteCount: 0, payload: 0)) }) { error in
+            if case .unsupportedOperation = error { return true }
+            return false
+        }
+        #expect(await engine.position == 4)
     }
 
     // MARK: Logits rows
@@ -220,7 +255,7 @@ struct DecoderEngineTests {
         _ = try await engine.prefill(prompt)
         let snapshot = try await engine.snapshot()
         let first = try await Self.greedy(engine, [9], count: 20)  // grows the KV past the snapshot's capacity
-        #expect(await engine.capacity > snapshot.capacity)
+        #expect(await engine.capacity > (snapshot.payload as! DecoderEngine.Snapshot).capacity)
         await Self.expectError({ try await engine.rewind(to: 3) }) { error in
             if case .unsupportedOperation = error { return true }
             return false
