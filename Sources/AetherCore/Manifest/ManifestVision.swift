@@ -7,7 +7,7 @@ extension Manifest {
     /// `preprocess.image`: how ``ImagePreprocessor`` (AetherRuntime) turns a decoded image into the graph's input.
     /// Steps, in order: decode in ``colorSpace`` (EXIF orientation applied), ``resize`` on 8-bit RGB, then
     /// `(x · scale − mean) / std` per channel in Float, in ``channelOrder``, laid out as ``layout``, stored as
-    /// ``hostDType``.
+    /// ``hostDType``. The `torchBilinear` filter resizes in Float instead, between `x · scale` and `− mean) / std`.
     public struct ImagePreprocess: Sendable, Hashable, Codable {
         /// `[width, height]` in the JSON.
         public struct Size: Sendable, Hashable, Codable {
@@ -39,8 +39,10 @@ extension Manifest {
             public enum Mode: String, Sendable, Hashable, Codable {
                 /// To ``Resize/size`` exactly; the aspect ratio is not kept.
                 case stretch
-                /// Scaled to fit inside ``Resize/size`` (aspect kept, the scaled side floored), placed at ``Resize/anchor``
-                /// on a canvas of ``Resize/padValue``.
+                /// Scaled to fit inside ``Resize/size``, placed at ``Resize/anchor`` on a canvas of ``Resize/padValue``.
+                /// The ratio is YOLOX's `r = min(height / h, width / w)` in Double and each side `int(side · r)`
+                /// (truncated, at least 1), so the fitting side can fall one short of the canvas (2443 × 424 into 640 is
+                /// 639 × 111).
                 case letterbox
                 /// Scaled to cover ``Resize/size`` (aspect kept, the scaled side floored), then the centre cut out, its
                 /// offset `round((scaled − size) / 2)` with ties to even (torchvision's `Resize` + `CenterCrop`).
@@ -70,6 +72,14 @@ extension Manifest {
                 /// as Hugging Face's fast image processors call it): the same kernel with int16 weights at torch's
                 /// precision. Bit-exact.
                 case torchUint8Bicubic
+                /// Pillow's `Image.resize(…, BILINEAR)`: the triangle filter, widened when downscaling, 22-bit
+                /// fixed-point weights. Bit-exact (YOLOX's reference letterbox).
+                case pillowBilinear
+                /// torch's float32 `interpolate(…, "bilinear", align_corners=False, antialias=False)` (torchvision's
+                /// `resize(…, antialias=False)` of a float tensor, RF-DETR's `predict`). The one float filter: it runs
+                /// after `scale` and before `mean` and `std`, so it takes the `stretch` mode and an `NCHW` or `NVCHW`
+                /// layout only. Bit-exact in float32.
+                case torchBilinear
             }
 
             public var mode: Mode
@@ -228,6 +238,10 @@ extension Manifest {
                 }
                 if resize.mode != .letterbox {
                     try require(resize.anchor == nil && resize.padValue == nil, "\(p).anchor", "only letterbox takes anchor and padValue")
+                }
+                if resize.filter == .torchBilinear {
+                    try require(resize.mode == .stretch, "\(p).filter", "torchBilinear resizes the float image: stretch only")
+                    try require(layout != .patches, "\(p).filter", "torchBilinear resizes the float image: NCHW or NVCHW only")
                 }
                 if let pad = resize.padValue {
                     try require((pad.count == 1 || pad.count == 3) && pad.allSatisfy { (0...255).contains($0) }, "\(p).padValue",
