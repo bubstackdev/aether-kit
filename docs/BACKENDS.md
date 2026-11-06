@@ -62,7 +62,16 @@ exactly this from it:
 | `rewind(to:)`, `reset()`, `snapshot()`, `restore(_:)` | prefix reuse |
 | `beginGreedy(first:limit:)`, `nextGreedy()`, `endGreedy()` | the pipelined greedy path |
 
-That's the boundary. A `LanguageEngine` protocol (an `Actor`-constrained protocol in AetherRuntime) with these
+That was the boundary before B1. **B1 landed it** as `Sources/AetherRuntime/LanguageEngine.swift`, with three
+differences from this sketch:
+- the description is three flat properties: `vocab`, `maxCapacity` and `hasRecurrentState`;
+- the decode mode is a string, `decodeModeDescription`;
+- every method is `async`, so a future engine may suspend.
+
+`EngineSnapshot` carries `position`, `byteCount` and an opaque `payload`. `ChatSession.generator(engine:bundle:manifest:gpu:)`
+wraps an engine you have already loaded. The original sketch follows.
+
+A `LanguageEngine` protocol (an `Actor`-constrained protocol in AetherRuntime) with these
 members, with `Snapshot` made opaque (`EngineSnapshot`: position plus a `Sendable` payload the engine owns), lets
 `Generator`, `ChatSession.generator(…)`, `AetherLanguageModel` and `LMReadoutDecider` take `any LanguageEngine`.
 `DecoderEngine` conforms with no behaviour change; the fake decoder keeps entering through `GraphBackend`.
@@ -253,7 +262,7 @@ Each slice is one PR. Effort is focused days.
 | # | Slice | Contents | Effort |
 |---|---|---|---|
 | **B0** | **Lab spike** (`lab/mlx-spike`, not the kit) | mlx-swift-lm on qwen3-0.6b (4-bit, 8-bit, bf16) and the hybrid qwen3.5-0.8b: decode and prefill tok/s on the M5 Max and on the test iPhone; `Memory.snapshot` against our probe; greedy token-exact against `mlx_lm` Python; a Core AI and an MLX model in one process under `GPUAdmission.shared`; metallib and binary size; the `xcodebuild` lane. **Go/no-go for B3.** | 2–3 |
-| **B1** | **`LanguageEngine` seam** (kit, no MLX) | The protocol and opaque `EngineSnapshot` in AetherRuntime; `DecoderEngine` conforms; `Generator`, `ChatSession.generator`, `AetherLanguageModel` and the engine test suite take `any LanguageEngine`; API baseline updated. No behaviour change, and all gates rerun. | 1–2 |
+| **B1** (done) | **`LanguageEngine` seam** (kit, no MLX) | The protocol and opaque `EngineSnapshot` in AetherRuntime; `DecoderEngine` conforms; `Generator`, `ChatSession.generator`, `AetherLanguageModel` and the engine test suite take `any LanguageEngine`; API baseline updated. No behaviour change, and all gates rerun. | 1–2 |
 | **B2** | **Manifest** (AetherCore only) | `mlx-lm@1` in `DriverCatalog`; weights-only contracts (`graphs` may be empty); the typed `mlx` block and validation; fixtures and decode tests. | 1–2 |
 | **B3** | **`AetherMLX` package** | `Packages/AetherMLX/Package.swift` in this repo, depending on the root package by path plus `MLXLLM`/`MLXLMCommon` only (not `MLXHuggingFace`, `MLXFoundationModels` or the downloader: we have the store, the tokenizer and the bridge). An `MLXLanguageEngine` actor, `MLXLMDriver`, KV sizing from the config, greedy on the GPU (`argMax` + `asyncEval`, depth 2) with synchronize-before-return, host logits for sampling and constraints, `MLXMemory` (limit, clamped cache, `clearCache` hooks). | 4–6 |
 | **B4** | **Gates** | §5 on qwen3-0.6b-mlx and one hybrid, in the `xcodebuild` lane: parity, chunked prefill, two-turn rewind and restore, the coexistence gate, tok/s recorded in this doc. | 2–3 |
