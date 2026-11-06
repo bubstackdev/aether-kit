@@ -42,6 +42,9 @@ public actor DecoderEngine {
         /// Diagnostics only: the argmax writes a scratch slot instead of the next step's, so every pipelined step reads
         /// a stale token, as an unordered read would. Proves the canary's detection and fallback deterministically.
         @_spi(Diagnostics) public var staleTokenHandoff = false
+        /// Diagnostics only: use `pipelineDepth` without the canary. With `canary` off (and without this), greedy
+        /// decoding uses depth 1, as documented.
+        @_spi(Diagnostics) public var uncheckedPipelineDepth = false
 
         public init(
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
@@ -213,13 +216,17 @@ public actor DecoderEngine {
             vocab: core.vocab, maxCapacity: core.maxCapacity, hasRecurrentState: core.hasRecurrentState,
             prefillChunk: core.shape.prefillChunk, schedule: core.shape, encodes: core.isEncoding)
         decodeMode = core.isEncoding ? .gpu(depth: 1) : .host
+        guard options.canarySteps > 0, options.canaryCapacity > 0 else {
+            throw .generation(.invalidParameters("the canary needs steps > 0 and capacity > 0"))
+        }
         if core.isEncoding, options.pipelineDepth > 1, options.canary {
             let report = try await core.runCanary(
                 depth: options.pipelineDepth, steps: options.canarySteps, delay: options.canaryDelay,
                 capacity: options.canaryCapacity)
             canary = report
             if report.passed { decodeMode = .gpu(depth: options.pipelineDepth) }
-        } else if core.isEncoding, options.pipelineDepth > 1 {
+        } else if core.isEncoding, options.pipelineDepth > 1, options.uncheckedPipelineDepth {
+            // Without the canary, depth one unless a diagnostic asks otherwise.
             decodeMode = .gpu(depth: options.pipelineDepth)
         }
     }

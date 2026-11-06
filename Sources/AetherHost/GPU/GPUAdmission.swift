@@ -40,7 +40,8 @@ public final class GPUAdmission: Sendable {
     private struct State: Sendable {
         var queue: FairInferenceQueue<String, Void>
         var waiters: [UUID: CheckedContinuation<Step, any Error>] = [:]
-        var cancelledBeforeQueueing: Set<UUID> = []
+        /// Requests abandoned (cancelled or timed out) before they were queued, with the error their enqueue throws.
+        var cancelledBeforeQueueing: [UUID: any Error] = [:]
         var lease: SharedGPULease?
         var leaseGrants: Set<UUID> = []
         var leaseSince: ContinuousClock.Instant?
@@ -89,7 +90,7 @@ public final class GPUAdmission: Sendable {
     public func admit(owner: String, waiting: Waiting? = nil) async throws -> GPUAdmissionGrant {
         switch waiting ?? self.waiting {
         case .failFast: return try admitImmediately(owner: owner)
-        case .queue(let timeout): return try await admitQueued(owner: owner, timeout: timeout)
+        case .queue(let timeout): return try await admitQueued(owner: owner, timeout: timeout, beforeEnqueue: nil)
         }
     }
 
@@ -173,24 +174,30 @@ public final class GPUAdmission: Sendable {
         }
     }
 
-    private func admitQueued(owner: String, timeout: Duration?) async throws -> GPUAdmissionGrant {
+    /// Queues with `timeout`. `beforeEnqueue` runs between starting the timer and queueing (tests widen the window).
+    func admitQueued(
+        owner: String, timeout: Duration?, beforeEnqueue: (@Sendable () async -> Void)?
+    ) async throws -> GPUAdmissionGrant {
         let id = UUID()
         let clock = ContinuousClock()
         let deadline = timeout.map { clock.now.advanced(by: max(.zero, $0)) }
         let timer = timeout.map { duration in
             Task { [weak self] in
                 try? await Task.sleep(for: duration)
-                if !Task.isCancelled { self?.abandon(id, with: AetherError.admission(.timedOut), beforeQueueing: false) }
+                // The timer can fire before the request is queued: leave a marker then too, or the request would queue
+                // after it timed out.
+                if !Task.isCancelled { self?.abandon(id, with: AetherError.admission(.timedOut), beforeQueueing: true) }
             }
         }
         defer {
             timer?.cancel()
-            state.withLock { _ = $0.cancelledBeforeQueueing.remove(id) }
+            state.withLock { _ = $0.cancelledBeforeQueueing.removeValue(forKey: id) }
         }
+        await beforeEnqueue?()
         let step: Step = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let refusal: (any Error)? = state.withLock { state in
-                    if state.cancelledBeforeQueueing.remove(id) != nil { return CancellationError() }
+                    if let abandoned = state.cancelledBeforeQueueing.removeValue(forKey: id) { return abandoned }
                     do { try state.queue.enqueue(id: id, owner: owner, work: ()) } catch { return error }
                     state.waiters[id] = continuation
                     return nil
@@ -228,7 +235,7 @@ public final class GPUAdmission: Sendable {
         let waiter: CheckedContinuation<Step, any Error>? = state.withLock { state in
             switch state.queue.cancel(id: id) {
             case .removedQueued: return state.waiters.removeValue(forKey: id)
-            case .notFound: if beforeQueueing { state.cancelledBeforeQueueing.insert(id) }; return nil
+            case .notFound: if beforeQueueing { state.cancelledBeforeQueueing[id] = error }; return nil
             case .drainRunning: return nil
             }
         }

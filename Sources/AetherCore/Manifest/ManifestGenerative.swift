@@ -358,7 +358,8 @@ extension Manifest {
         }
 
         /// The token grid for an image of `width` × `height` pixels: each side a positive multiple of
-        /// `pixelsPerToken`, and at most `maxImageTokens` tokens. Errors name the request, not the manifest.
+        /// `pixelsPerToken`, at most `maxImageTokens` tokens, and `tokens × channels` representable (the drivers size
+        /// their latents with it). Errors name the request, not the manifest.
         public func tokenGrid(width: Int, height: Int) throws(AetherError) -> (rows: Int, columns: Int) {
             try tokenGrid(width: width, height: height, checkingSizes: true)
         }
@@ -377,7 +378,9 @@ extension Manifest {
             }
             let rows = height / pixelsPerToken, columns = width / pixelsPerToken
             let (tokens, overflow) = rows.multipliedReportingOverflow(by: columns)
-            if overflow || maxImageTokens.map({ tokens > $0 }) == true {
+            // The latents are `tokens × channels` floats: that product must exist too.
+            let elementsOverflow = tokens.multipliedReportingOverflow(by: channels).overflow
+            if overflow || elementsOverflow || maxImageTokens.map({ tokens > $0 }) == true {
                 throw .generation(.invalidParameters(
                     "\(width)x\(height) is \(rows)x\(columns) latent tokens; this model allows at most \(maxImageTokens ?? Int.max)"))
             }

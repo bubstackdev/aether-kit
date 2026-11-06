@@ -67,6 +67,9 @@ extension DriverID {
     public static let krea2 = DriverID(validated: "krea2@1")
     /// Kokoro-82M speech: a durations graph and a bucketed vocoder over app-supplied phonemes (MANIFEST.md §5.9).
     public static let kokoro = DriverID(validated: "kokoro@1")
+    /// MiniMax H3 text to video with audio: a Qwen3-VL conditioner and a 50-block transformer, both weights-as-inputs
+    /// graphs chained on the GPU, then window-tiled video and audio decoders (MANIFEST.md §5.10).
+    public static let minimaxH3 = DriverID(validated: "minimax-h3@1")
 }
 
 private enum LowerAlnum {

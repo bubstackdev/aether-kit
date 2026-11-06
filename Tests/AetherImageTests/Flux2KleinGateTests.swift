@@ -1,3 +1,4 @@
+import AetherHost
 import AetherCore
 import AetherRuntime
 import Foundation
@@ -46,7 +47,7 @@ struct Flux2KleinGateTests {
         let bundle = try LatentDiffusionGateTests.localBundle(Self.bundleURL)
         let pipeline = try await Registry.image.load(
             bundle, as: Flux2KleinDriver.self,
-            options: LoadOptions(device: LatentDiffusionGateTests.mac, cachePolicy: .default, cache: .default))
+            options: LoadOptions(device: LatentDiffusionGateTests.mac, cachePolicy: .default, cache: .default)).pipeline()
         let expectedImage = try LatentDiffusionGateTests.readNPY(Self.referenceURL.appending(path: "image.npy"))
         let referenceRows = try LatentDiffusionGateTests.readNPY(Self.referenceURL.appending(path: "text_embeds.npy"))
         let width = pipeline.flux2.conditioning.width

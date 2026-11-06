@@ -176,6 +176,22 @@ struct Flux2KleinTests {
         return x
     }
 
+    /// Review finding 6: with no fixed sizes, `maxImageTokens` is what bounds a canvas, so it is required; and a size
+    /// whose latent element count overflows is refused (before: a plain multiply trapped after admission).
+    @Test func theTokenBoundIsRequiredAndOverflowIsRefused() throws {
+        var unbounded = try Self.manifest()
+        unbounded.latent?.maxImageTokens = nil
+        #expect(throws: AetherError.self) {
+            _ = try Flux2KleinPipeline(
+                manifest: unbounded, device: Self.mac, options: .init(probe: Self.still), encodePrompt: Self.encode,
+                load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
+        }
+        var huge = try Self.manifest().latent!
+        huge.maxImageTokens = nil
+        let side = huge.pixelsPerToken << 31
+        #expect(throws: AetherError.self) { _ = try huge.tokenGrid(width: side, height: side) }
+    }
+
     @Test func generatesThroughTheSegmentsWithTheHostRecipe() async throws {
         let calls = Calls()
         let (pipeline, loads) = try Self.pipeline(calls: calls)
@@ -285,5 +301,13 @@ struct Flux2KleinTests {
         _ = try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(), encodePrompt: Self.encode,
                                    load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
         #expect(Registry.image.supports(.flux2Klein) && Registry.image.supports(.latentDiffusion))
+        // Review finding 8: every driver loads a model value whose options the app sets (a shared coordinator, GPU
+        // admission, a ledger) before making the pipeline; before, the Registry path fixed them to the defaults.
+        #expect(Flux2KleinDriver.Loaded.self == Flux2KleinModel.self)
+        #expect(LatentDiffusionDriver.Loaded.self == LatentDiffusionModel.self)
+        func share(_ coordinator: ResourceCoordinator, with model: inout Flux2KleinModel, _ other: inout LatentDiffusionModel) {
+            model.options.coordinator = coordinator
+            other.options.coordinator = coordinator
+        }
     }
 }

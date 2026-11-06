@@ -81,15 +81,18 @@ public actor ModelStore {
     /// The revision root of `ref`'s install: `<root>/<repo>/<revision>`.
     public nonisolated func bundleURL(for ref: ModelRef) -> URL { layout.bundle(for: ref) }
 
-    /// The installed bundle for exactly `ref` (same revision and variant), if it is complete.
+    /// The installed bundle for exactly `ref` (the whole installation identity: catalog id, driver, variant and every
+    /// asset's repo, revision, subtree and files), if it is complete.
     public func installed(_ ref: ModelRef) -> InstalledBundle? {
+        guard (try? ref.validateForStore()) != nil else { return nil }
         let url = bundleURL(for: ref)
-        guard let receipt = InstallReceipt.read(at: url), receipt.ref.variant == ref.variant else { return nil }
+        guard let receipt = InstallReceipt.read(at: url), receipt.ref == ref else { return nil }
         return InstalledBundle(ref: receipt.ref, url: url, isStale: false)
     }
 
     /// The newest complete install of the same model and variant at any other revision.
     public func staleSibling(of ref: ModelRef) -> InstalledBundle? {
+        guard (try? ref.validateForStore()) != nil else { return nil }
         let repoDir = InstalledLayout.appendingComponents(root, ref.repo)
         guard let revisions = try? FileManager.default.contentsOfDirectory(atPath: repoDir.path) else { return nil }
         var best: (InstalledBundle, Date)?
@@ -109,6 +112,7 @@ public actor ModelStore {
     /// ``AetherError/inUse(resource:)`` while an install or removal of that location is running, and
     /// ``AetherError/unknownModel(id:)`` when the bundle is no longer installed.
     public nonisolated func lease(_ bundle: InstalledBundle) throws(AetherError) -> BundleReadLease {
+        try bundle.ref.validateForStore()
         guard let lock = try StoreLock.attempt(layout.lock(for: bundle.ref), exclusive: false) else {
             throw .inUse(resource: bundle.ref.description)
         }
@@ -121,6 +125,7 @@ public actor ModelStore {
     /// Deletes the install for `ref` (and any staged bytes for it). Refuses with ``AetherError/inUse(resource:)`` while
     /// a reader lease is held or an install of the same location is running, in this process or another.
     public func remove(_ ref: ModelRef) throws(AetherError) {
+        try ref.validateForStore()
         recoverIfNeeded()
         guard let lock = try StoreLock.attempt(layout.lock(for: ref), exclusive: true) else {
             throw .inUse(resource: ref.description)
@@ -163,6 +168,10 @@ public actor ModelStore {
         _ ref: ModelRef, options: InstallOptions = []
     ) -> AsyncThrowingStream<InstallEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream<InstallEvent, any Error>.makeStream()
+        do { try ref.validateForStore() } catch {
+            continuation.finish(throwing: error)
+            return stream
+        }
         recoverIfNeeded()
         if let bundle = installed(ref) {
             continuation.yield(.finished(bundle))

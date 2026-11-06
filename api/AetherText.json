@@ -7839,7 +7839,7 @@
        }
       ],
       "declKind": "Constructor",
-      "init_kind": "Designated",
+      "init_kind": "Convenience",
       "kind": "Constructor",
       "mangledName": "$s10AetherText20JSONSchemaConstraintC6schema10vocabulary12stopTokenIDs9reasoning13allowThinkingAcA12OutputSchemaV_AA14JSONVocabularyCShys5Int32VGAC9ReasoningVSgSbtKcfc",
       "moduleName": "AetherText",
@@ -8025,6 +8025,7 @@
      }
     ],
     "declKind": "Class",
+    "hasMissingDesignatedInitializers": true,
     "kind": "TypeDecl",
     "mangledName": "$s10AetherText20JSONSchemaConstraintC",
     "moduleName": "AetherText",

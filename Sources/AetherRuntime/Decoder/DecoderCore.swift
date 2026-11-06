@@ -158,8 +158,12 @@ final class DecoderCore {
 
         let limits = graph.limits ?? Manifest.Limits()
         let dynamicChunk = max(1, limits.prefillChunk ?? 512)
-        padToken = Int32(limits.padTokenId ?? 0)
-        padPosition = Int32(graph.inputEncodings?["positions"]?.pad ?? -1)
+        guard let padToken = Int32(exactly: limits.padTokenId ?? 0),
+              let padPosition = Int32(exactly: graph.inputEncodings?["positions"]?.pad ?? -1) else {
+            throw AetherError.manifestInvalid(field: "limits.padTokenId", reason: "the pad token and position must fit Int32")
+        }
+        self.padToken = padToken
+        self.padPosition = padPosition
         self.arena = arena
         self.kernels = kernels
         self.racingHandoff = racingHandoff
@@ -335,9 +339,12 @@ final class DecoderCore {
             arena.endRun()
             lent = false
         }
-        do {
+        do throws(AetherError) {
             if isEncoding { try lend() }
             for (i, call) in plan.calls.enumerated() {
+                // A long prompt is many chunks: stop between them when the caller is cancelled. The position stays at
+                // `start` (it advances only once every chunk has run), so the engine stays consistent.
+                if i > 0, Task.isCancelled { throw AetherError.runtime(underlying: CancellationError()) }
                 let phase = call.phase == .prefill ? prefillPhase! : step
                 let at = start + call.start
                 var b = try bindings(phase, at: at, fed: call.fed, tokens: nil, logits: phase.logits)

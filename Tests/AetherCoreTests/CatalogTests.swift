@@ -40,7 +40,7 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism"]))
     }
 
     /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
@@ -57,6 +57,12 @@ struct CatalogTests {
         #expect(try ModelRef.resolve("sd-turbo", for: mac).asset("main")?.repo == "aether-models/aether-kit-sd-turbo")
         for device in [mac, phone] { _ = try ModelRef.resolve("kokoro-82m", for: device) }
         _ = try ModelRef.resolve("flux2-klein-4b", for: mac)
+        // Krea 2 (both variants) is macOS-only; the realism merge is marked mature, and only it.
+        for id in ["krea-2-turbo", "krea-2-turbo-realism"] {
+            _ = try ModelRef.resolve(id, for: mac)
+            #expect(throws: AetherError.self) { _ = try ModelRef.resolve(id, for: phone) }
+        }
+        #expect(Catalog.builtin.entries.filter(\.mature).map(\.id) == ["krea-2-turbo-realism"])
         #expect(throws: AetherError.self) { _ = try ModelRef.resolve("flux2-klein-4b", for: phone) }
     }
 
@@ -141,5 +147,10 @@ struct CatalogTests {
         #expect(tables.subtree == "ios-frontend/gemma4_qat_gather_raw")
         #expect(Set(tables.files.map(\.path)) == ["embed_per_layer.i8", "embed_per_layer.scale.f32"])
         #expect(tables.repo == ref.repo && tables.revision == ref.revision)
+    }
+
+    @Test func matureIsOptionalInJSON() throws {
+        let json = #"{"id":"x","task":"t","repo":"o/r","revision":"0000000000000000000000000000000000000000","license":"mit","variants":{}}"#
+        #expect(try JSONDecoder().decode(CatalogEntry.self, from: Data(json.utf8)).mature == false)
     }
 }

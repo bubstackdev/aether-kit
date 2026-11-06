@@ -130,14 +130,26 @@ public actor JSONSchemaConstraint: LogitsProcessor {
     private let allowThinking: Bool
     private var matcher: JSONMatcher
     private var phase = Phase.value
+    /// Allowed sets by matcher state. Each is a vocabulary bitset (about 19 KB at 152k tokens), so the cache is bounded:
+    /// past `cacheLimit` states it starts over (a long or branchy value would otherwise grow it without end).
     private var cache: [JSONMatcher: TokenSet] = [:]
+    let cacheLimit: Int
     public private(set) var statistics = Statistics()
+    /// States cached now (tests and diagnostics).
+    var cachedStates: Int { cache.count }
 
     /// The constrained text is a JSON value, not prose: the Generator parses no tags in it (``LogitsProcessor``).
     public nonisolated var isStructuredOutput: Bool { true }
 
     public init(schema: OutputSchema, vocabulary: JSONVocabulary, stopTokenIDs: Set<Int32>,
                 reasoning: Reasoning? = nil, allowThinking: Bool = false) throws {
+        try self.init(schema: schema, vocabulary: vocabulary, stopTokenIDs: stopTokenIDs, reasoning: reasoning,
+                      allowThinking: allowThinking, cacheLimit: 256)
+    }
+
+    init(schema: OutputSchema, vocabulary: JSONVocabulary, stopTokenIDs: Set<Int32>,
+         reasoning: Reasoning?, allowThinking: Bool, cacheLimit: Int) throws {
+        self.cacheLimit = max(1, cacheLimit)
         grammar = try JSONGrammar(schema: schema)
         self.vocabulary = vocabulary
         stopTokens = TokenSet(stopTokenIDs.map(Int.init), vocabularySize: vocabulary.headRows)
@@ -207,6 +219,7 @@ public actor JSONSchemaConstraint: LogitsProcessor {
             return .allowed(cached)
         }
         let set = Self.allowedTokens(matcher, grammar: grammar, vocabulary: vocabulary, stopTokens: stopTokens)
+        if cache.count >= cacheLimit { cache.removeAll(keepingCapacity: true) }
         cache[matcher] = set
         return .allowed(set)
     }

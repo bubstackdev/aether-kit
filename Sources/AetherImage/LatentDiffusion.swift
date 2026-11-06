@@ -1,17 +1,32 @@
 public import AetherCore
-import AetherHost
+public import AetherHost
 public import AetherRuntime
 import Foundation
 
 /// `latent-diffusion@1` (MANIFEST.md §1, §5): text-to-image with a CLIP text encoder, an epsilon-predicting U-Net and a
-/// VAE decoder, on an `epsilonEuler` schedule (SD-Turbo). Loads a ``LatentDiffusionPipeline``.
+/// VAE decoder, on an `epsilonEuler` schedule (SD-Turbo). Loads a ``LatentDiffusionModel``: set its options (a shared
+/// coordinator, GPU admission, a ledger), then make the ``LatentDiffusionPipeline``.
 public enum LatentDiffusionDriver: ModelDriver {
     public static let id: DriverID = .latentDiffusion
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> LatentDiffusionPipeline {
-        try LatentDiffusionPipeline(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> LatentDiffusionModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try DriverContract.latentDiffusion.validate(manifest)
+        return LatentDiffusionModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened latent diffusion bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct LatentDiffusionModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: ImagePipelineOptions
+
+    public func pipeline() throws -> LatentDiffusionPipeline {
+        try LatentDiffusionPipeline(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 
@@ -44,9 +59,7 @@ public actor LatentDiffusionPipeline {
     let tokenizer: CLIPTokenizer
     let device: Device
     public nonisolated let options: Options
-    private let load: GraphResidency.Loader
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
@@ -96,8 +109,7 @@ public actor LatentDiffusionPipeline {
         self.tokenizer = tokenizer
         self.device = device
         self.options = options
-        self.load = load
-        self.fileBytes = fileBytes
+        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
     }
 
     /// Generates one image.
@@ -116,14 +128,13 @@ public actor LatentDiffusionPipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let profile = "\(size.width)x\(size.height)"
-        let (plan, reservation) = try options.admit(manifest: manifest, profile: profile, device: device, fileBytes: fileBytes)
-        defer { reservation?.release() }
-        let residency = residency(for: plan.mode, profile: profile)
+        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
         do {
-            return try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
+            let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
+            admission.finish()
+            return image
         } catch {
-            residency.releaseAll()
+            admission.release()
             throw error
         }
     }
@@ -131,13 +142,12 @@ public actor LatentDiffusionPipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - The generation
 
@@ -211,16 +221,6 @@ public actor LatentDiffusionPipeline {
         residency.sample()
         residency.endPhase(.perImage)
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
-    }
-
-    /// The residency for `mode`, keeping loaded graphs when the mode and profile are unchanged.
-    private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
-        if let residency, residency.mode == mode, residency.profile == profile { return residency }
-        residency?.releaseAll()
-        let fresh = GraphResidency(
-            manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
     }
 
     private func turn() async {

@@ -301,6 +301,17 @@ struct JSONSchemaConstraintTests {
         guard case .allowed = await constraint.begin(prompt: [open, 10, close, 10]) else { Issue.record("constrained from the start"); return }
     }
 
+    /// Second review, item 17: the per-state cache of allowed sets (a vocabulary bitset each) was unbounded.
+    @Test func theAllowedSetCacheIsBounded() async throws {
+        let constraint = try JSONSchemaConstraint(schema: Layer.outputSchema, vocabulary: JSONPieces.vocabulary,
+                                                  stopTokenIDs: [Int32(JSONPieces.stop)], reasoning: nil,
+                                                  allowThinking: false, cacheLimit: 4)
+        _ = await constraint.begin(prompt: [])
+        for byte in Array(#"{"item": "scarf", "warm": false}"#.utf8) { _ = try await constraint.accept(Int32(byte)) }
+        #expect(await constraint.cachedStates <= 4)
+        #expect(await constraint.statistics.calls > 4)
+    }
+
     /// Review #2b: with thinking allowed but not yet open, the first token is the open tag or a JSON start, so a model
     /// that answers without thinking is still constrained; one that opens a block is constrained after it.
     @Test func allowedThinkingMayOpenABlockOrStartTheValue() async throws {

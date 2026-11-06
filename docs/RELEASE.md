@@ -4,8 +4,9 @@ How a release of Aether-Kit is cut. Tagging is the owner's action.
 
 ## Pre-tag checklist (0.1.0)
 
-**Scope.** Every row of INTEGRATION.md's port table is ported and gated. That includes **MiniMax H3**, its exporter, its
-oracle gate and the `minimax-h3@1` driver; until H3 lands, 0.1.0 is not tagged.
+**Scope.** Every row of INTEGRATION.md's port table is ported and gated, including **MiniMax H3** (its exporter, its
+oracle gate and the `minimax-h3@1` driver). The CHANGELOG's "In progress" items are either done or moved to a later
+release.
 
 **Gates.** Run them on a Mac with the models and Forge outputs present, serially, with nothing else heavy running.
 
@@ -24,7 +25,8 @@ AETHER_GATES=1 scripts/ci.sh
 | `FLUX.2 [klein] gates` | `Tests/AetherImageTests/Flux2KleinGateTests.swift` | FLUX.2 vs CPU Diffusers | `forge-outputs/flux2-klein-4b` + references |
 | `Krea 2 gates` | `Tests/AetherImageTests/Krea2GateTests.swift` | Krea 2 vanilla and realism from the seed vs CPU Diffusers | `forge-outputs/krea-2-turbo*` + references (about 34 GiB a generation) |
 | `Kokoro gates` | `Tests/AetherSpeechTests/KokoroGateTests.swift` | Kokoro vs unmodified upstream on CPU | `forge-outputs/kokoro-82m` + references |
-| H3 gates | added with H3 | the per-graph oracle (0.02 rel. L2) and the memory gate at the qualified canvas | `forge-outputs/minimax-h3` |
+| `MiniMax H3 gates` | `Tests/AetherVideoTests/MiniMaxH3GateTests.swift` | the driver's first steps vs the graph reference (0.02 rel. L2), a whole clip and its repeat, each phase's peak within the 18 GiB bar | a local `forge-outputs/minimax-h3` export (or `AETHER_H3_EXPORT`); the per-graph oracle `Forge/h3/check_h3.py` runs with the export |
+|  | `Tests/AetherRuntimeTests/H3ChainGateTests.swift` | the export's block graph through `GraphChain` and `WeightBanks` vs `Forge/h3/reference_chain_h3.py`, chained bytes equal to unchained | `forge-outputs/minimax-h3-chain` (`export_h3.py --random`) or a real export (`AETHER_H3_CHAIN`) |
 
 (`Tests/AetherCoreTests/ZooAdapterTests.swift`'s `signatures.json` fixtures are re-recorded only when a zoo bundle
 changes: `AETHER_GATES=1 AETHER_RECORD_SIGNATURES=1 swift test --filter GateTests/recordSignatures`.)
@@ -41,7 +43,8 @@ ASC_KEY_ID=… ASC_ISSUER_ID=… DEVELOPMENT_TEAM=… Tools/DeviceGate/run-on-de
   then `scripts/gen-catalog check`. The CI step runs the check.
 - Each hosted bundle carries its license and NOTICE.
 - The Krea repos begin with "Krea", and the realism repo is gated and marked mature.
-- H3 is not publicly hosted: its license excludes the EU, UK, South Korea and USA.
+- H3 is not publicly hosted and has no catalog entry: its license excludes the EU, UK, South Korea and USA. The README
+  and CHANGELOG say it needs a locally exported bundle.
 
 **Licenses.** NOTICE lists only third-party work re-expressed in this repository. The per-model terms are in the
 README's model table and in each bundle.

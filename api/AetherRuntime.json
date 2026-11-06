@@ -3618,6 +3618,40 @@
       "printedName": "bind(bank:into:)",
       "throwing": true,
       "usr": "s:13AetherRuntime11WeightBanksC4bind4bank4intoySi_AA8BindingsVzt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime11WeightBanksC4load5block4intoySi_Sit0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "load",
+      "printedName": "load(block:into:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime11WeightBanksC4load5block4intoySi_Sit0A4Core0A5ErrorOYKF"
      }
     ],
     "conformances": [
@@ -4888,6 +4922,89 @@
          "Diagnostics"
         ],
         "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV17staleTokenHandoffSbvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "spi_group_names": [
+           "Diagnostics"
+          ],
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "spi_group_names": [
+           "Diagnostics"
+          ],
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "SPIAccessControl",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvp",
+        "moduleName": "AetherRuntime",
+        "name": "uncheckedPipelineDepth",
+        "printedName": "uncheckedPipelineDepth",
+        "spi_group_names": [
+         "Diagnostics"
+        ],
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvp"
        },
        {
         "children": [
@@ -16282,11 +16399,12 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s13AetherRuntime17FlowMatchScheduleV5steps2mu14trainTimestepsACSi_SdSgSitcfc",
+      "mangledName": "$s13AetherRuntime17FlowMatchScheduleV5steps2mu14trainTimestepsACSi_SdSgSit0A4Core0A5ErrorOYKcfc",
       "moduleName": "AetherRuntime",
       "name": "init",
       "printedName": "init(steps:mu:trainTimesteps:)",
-      "usr": "s:13AetherRuntime17FlowMatchScheduleV5steps2mu14trainTimestepsACSi_SdSgSitcfc"
+      "throwing": true,
+      "usr": "s:13AetherRuntime17FlowMatchScheduleV5steps2mu14trainTimestepsACSi_SdSgSit0A4Core0A5ErrorOYKcfc"
      },
      {
       "children": [
@@ -16952,11 +17070,11 @@
         ],
         "declKind": "Accessor",
         "kind": "Accessor",
-        "mangledName": "$s13AetherRuntime14GeneratedAudioV10frameCountSivg",
+        "mangledName": "$s13AetherRuntime14GeneratedAudioV11sampleCountSivg",
         "moduleName": "AetherRuntime",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:13AetherRuntime14GeneratedAudioV10frameCountSivg"
+        "usr": "s:13AetherRuntime14GeneratedAudioV11sampleCountSivg"
        }
       ],
       "children": [
@@ -16969,11 +17087,11 @@
       ],
       "declKind": "Var",
       "kind": "Var",
-      "mangledName": "$s13AetherRuntime14GeneratedAudioV10frameCountSivp",
+      "mangledName": "$s13AetherRuntime14GeneratedAudioV11sampleCountSivp",
       "moduleName": "AetherRuntime",
-      "name": "frameCount",
-      "printedName": "frameCount",
-      "usr": "s:13AetherRuntime14GeneratedAudioV10frameCountSivp"
+      "name": "sampleCount",
+      "printedName": "sampleCount",
+      "usr": "s:13AetherRuntime14GeneratedAudioV11sampleCountSivp"
      },
      {
       "accessors": [
@@ -19944,6 +20062,13 @@
         "usr": "s:SS"
        },
        {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Residency",
+        "printedName": "AetherCore.Manifest.Residency",
+        "usr": "s:10AetherCore8ManifestV9ResidencyO"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
@@ -19969,12 +20094,12 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSs5Int64VSSXEtFZ",
+      "mangledName": "$s13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile13unphasedPhase9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSAO0C0Os5Int64VSSXEtFZ",
       "moduleName": "AetherRuntime",
       "name": "inputs",
-      "printedName": "inputs(manifest:ledger:model:profile:fileBytes:)",
+      "printedName": "inputs(manifest:ledger:model:profile:unphasedPhase:fileBytes:)",
       "static": true,
-      "usr": "s:13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSs5Int64VSSXEtFZ"
+      "usr": "s:13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile13unphasedPhase9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSAO0C0Os5Int64VSSXEtFZ"
      },
      {
       "children": [
@@ -20353,6 +20478,71 @@
       "usr": "s:13AetherRuntime14GraphResidencyC7profileSSvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int64",
+            "printedName": "Swift.Int64",
+            "usr": "s:s5Int64V"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int64?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime14GraphResidencyC5floors5Int64VSgvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime14GraphResidencyC5floors5Int64VSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int64?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "Final",
+       "SetterAccess",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime14GraphResidencyC5floors5Int64VSgvp",
+      "moduleName": "AetherRuntime",
+      "name": "floor",
+      "printedName": "floor",
+      "usr": "s:13AetherRuntime14GraphResidencyC5floors5Int64VSgvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -20425,6 +20615,21 @@
        {
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int64?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -20452,11 +20657,11 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s13AetherRuntime14GraphResidencyC8manifest4mode6ledger5model7profile5probe16samplingInterval4loadAC0A4Core8ManifestV_AA0D4PlanV4ModeOAA15FootprintLedgerCSSSgSSAA14GPUMemoryProbeVs8DurationVSgAA0C7Backend_pSSYaAL0A5ErrorOYKYCctcfc",
+      "mangledName": "$s13AetherRuntime14GraphResidencyC8manifest4mode6ledger5model7profile5probe16samplingInterval16releasedBaseline4loadAC0A4Core8ManifestV_AA0D4PlanV4ModeOAA15FootprintLedgerCSSSgSSAA14GPUMemoryProbeVs8DurationVSgs5Int64VSgAA0C7Backend_pSSYaAM0A5ErrorOYKYCctcfc",
       "moduleName": "AetherRuntime",
       "name": "init",
-      "printedName": "init(manifest:mode:ledger:model:profile:probe:samplingInterval:load:)",
-      "usr": "s:13AetherRuntime14GraphResidencyC8manifest4mode6ledger5model7profile5probe16samplingInterval4loadAC0A4Core8ManifestV_AA0D4PlanV4ModeOAA15FootprintLedgerCSSSgSSAA14GPUMemoryProbeVs8DurationVSgAA0C7Backend_pSSYaAL0A5ErrorOYKYCctcfc"
+      "printedName": "init(manifest:mode:ledger:model:profile:probe:samplingInterval:releasedBaseline:load:)",
+      "usr": "s:13AetherRuntime14GraphResidencyC8manifest4mode6ledger5model7profile5probe16samplingInterval16releasedBaseline4loadAC0A4Core8ManifestV_AA0D4PlanV4ModeOAA15FootprintLedgerCSSSgSSAA14GPUMemoryProbeVs8DurationVSgs5Int64VSgAA0C7Backend_pSSYaAM0A5ErrorOYKYCctcfc"
      },
      {
       "accessors": [
@@ -26506,6 +26711,117 @@
       "printedName": "copyRegion(from:)",
       "throwing": true,
       "usr": "s:13AetherRuntime12TensorBufferV10copyRegion4fromyAC_t0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV9readBytesSays5UInt8VGy0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "readBytes",
+      "printedName": "readBytes()",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV9readBytesSays5UInt8VGy0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UnsafeRawBufferPointer",
+        "printedName": "Swift.UnsafeRawBufferPointer",
+        "usr": "s:SW"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV10writeBytesyySW0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "writeBytes",
+      "printedName": "writeBytes(_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV10writeBytesyySW0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV10writeBytesyySays5UInt8VG0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "writeBytes",
+      "printedName": "writeBytes(_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV10writeBytesyySays5UInt8VG0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TensorBuffer",
+        "printedName": "AetherRuntime.TensorBuffer",
+        "usr": "s:13AetherRuntime12TensorBufferV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime12TensorBufferV9copyBytes4fromyAC_t0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "copyBytes",
+      "printedName": "copyBytes(from:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime12TensorBufferV9copyBytes4fromyAC_t0A4Core0A5ErrorOYKF"
      }
     ],
     "conformances": [

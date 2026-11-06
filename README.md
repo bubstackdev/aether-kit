@@ -16,12 +16,12 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `AetherRuntime` | Core AI graphs with manifest-driven specialization, a tensor arena, bindings and snapshot/restore state, plus a driver registry. `DecoderEngine` runs causal LMs with memory-sized KV, the manifest's prefill schedule, O(1) rewind or hybrid snapshots, and token-exact pipelined greedy decode guarded by a load-time canary. |
 | `AetherText` | Tokenizer adapter (template-owned BOS, pinned sources), the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured output, Hermes tool calls) and `ChatSession`. |
 | `AetherFoundationModels` | `AetherLanguageModel`: any supported catalog model behind Apple's `LanguageModelSession`, with guided generation (`@Generable`) and tool calling. |
-| `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission, and model lifecycle: idle unload and memory-pressure release. |
+| `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission, `ResourceCoordinator` (an explicitly shared memory budget), the generative pipelines' `PipelineOptions`, and `ModelHost`'s model lifecycle: idle unload and memory-pressure release for models loaded through it. |
 | `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
 | `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
-| `AetherVision`, `AetherEmbeddings`, `AetherDecide`, `Aether` | Planned (milestones M4–M6). |
-
-Video generation (MiniMax H3) is being ported onto this architecture before 0.1.0 is tagged.
+| `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
+| `Aether` | The umbrella: re-exports AetherText, AetherImage, AetherSpeech, AetherVideo and the placeholders. |
+| `AetherVision`, `AetherEmbeddings`, `AetherDecide` | Planned (milestones M4–M6). |
 
 ### Generative models
 
@@ -32,9 +32,11 @@ Video generation (MiniMax H3) is being ported onto this architecture before 0.1.
 | `krea-2-turbo` | `krea2@1` | ✓ | refused | Krea 2 Community License: name begins with "Krea", NOTICE line, commercial use only under USD 1M revenue, **content filter required (§4.2)** |
 | `krea-2-turbo-realism` | `krea2@1` | ✓ | refused | as Krea 2, plus the merged adapter's Civitai permissions. **Mature:** trained for explicit adult content; a gated Hugging Face repo (accept its terms, then install with a token) |
 | `kokoro-82m` | `kokoro@1` | ✓ | ✓ (512-frame cap) | Apache-2.0 |
-| MiniMax H3 (in progress) | `minimax-h3@1` | ✓ | refused | MiniMax H3 license: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products; not publicly hosted |
+| none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
-The Krea entries are added to the catalog with their hosted bundles. Check each license before you ship a model.
+Every row but MiniMax H3 is in the built-in catalog, hosted under `aether-models` on Hugging Face. H3 has no catalog
+entry: export the bundle with `Forge/h3/` where its license allows, and load it from disk (below). Check each license
+before you ship a model.
 
 ## Quick start
 
@@ -90,6 +92,28 @@ let speech = try KokoroSpeechSession(
 let segments = try await speech.synthesize(text: "Hello there.", phonemizer: MyPhonemizer(), SpeechRequest(voice: .afHeart))
 let wav = try segments[0].audio.wavData()
 ```
+
+MiniMax H3 (macOS) has no catalog entry: its license grants no rights in the EU, UK, South Korea or USA, and its
+bundle is not hosted. Export it yourself with `Forge/h3/` where the license allows, then load it from disk:
+
+```swift
+import AetherCore
+import AetherVideo
+import Foundation
+
+let device = Device.current
+let url = URL(filePath: "/path/to/minimax-h3/bundle")      // your Forge/h3 export
+let manifest = try Manifest.load(fromBundle: url)
+let local = ModelRef(
+    catalogID: manifest.id, repo: "local/\(manifest.id)", revision: "local", variant: "macos", driver: manifest.driver,
+    assets: [.init(name: "main", repo: "local/\(manifest.id)", revision: "local", subtree: "", files: [])])
+let h3 = try await MiniMaxH3Pipeline(
+    bundle: InstalledBundle(ref: local, url: url, isStale: false), manifest: manifest, device: device)
+let clip = try await h3.generate(VideoRequest(prompt: "waves on a pebble beach at dawn", seed: 3))
+// clip.frames: 124 RGB8 frames at 24 fps; clip.audio: the 32 kHz stereo soundtrack (`wavData()`)
+```
+
+The image, speech and video pipelines are not managed by `ModelHost`: call `unload()` to release their graphs.
 
 `FLUX.2` works like SD-Turbo (`Flux2KleinPipeline(bundle:manifest:device:)`, which is `async`); its requests need a
 `width` and `height`. A gated repo needs a token: `ModelStore(root:headers: ModelStore.huggingFaceAuthorization(token:))`.

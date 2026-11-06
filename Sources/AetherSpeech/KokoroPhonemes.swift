@@ -6,12 +6,22 @@ public struct KokoroVocabulary: Sendable, Hashable {
     public let boundaryToken: Int32
     public let maximumCount: Int
 
-    /// The manifest's vocabulary (already validated when the manifest decoded: one scalar per key, distinct ids).
-    public init(_ phonemes: Manifest.Kokoro.Phonemes) {
+    /// A manifest's vocabulary: one Unicode scalar per key, ids that fit `Int32`. (A decoded manifest has been
+    /// validated already; a hand-built `Phonemes` value may not have been.)
+    public init(_ phonemes: Manifest.Kokoro.Phonemes) throws(AetherError) {
         var tokens: [Unicode.Scalar: Int32] = [:]
-        for (key, id) in phonemes.vocabulary { tokens[key.unicodeScalars.first!] = Int32(id) }
+        for (key, id) in phonemes.vocabulary {
+            let scalars = Array(key.unicodeScalars)
+            guard scalars.count == 1, let token = Int32(exactly: id) else {
+                throw .manifestInvalid(field: "kokoro.phonemes.vocabulary.\(key)", reason: "must be one Unicode scalar with an Int32 id")
+            }
+            tokens[scalars[0]] = token
+        }
+        guard let boundary = Int32(exactly: phonemes.boundaryToken) else {
+            throw .manifestInvalid(field: "kokoro.phonemes.boundaryToken", reason: "must fit Int32")
+        }
         self.tokens = tokens
-        boundaryToken = Int32(phonemes.boundaryToken)
+        boundaryToken = boundary
         maximumCount = phonemes.maxPhonemes
     }
 }

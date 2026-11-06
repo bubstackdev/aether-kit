@@ -145,6 +145,30 @@ struct GraphChainTests {
         }
     }
 
+    /// Review finding 7: a run that ends without a last `synchronize()` has still drained, so a bank may be refilled
+    /// before the next run (preloading the next generation's first block); before, it was refused as in flight.
+    @Test func aBankMayBeRefilledBetweenRuns() async throws {
+        try await withTemporaryDirectory { root in
+            var data = Data()
+            for b in 0..<2 { weights(b).withUnsafeBytes { data.append(contentsOf: $0) } }
+            try data.write(to: root.appending(path: "weights.bin"))
+            let table = try WeightTable(inputs: ["w0"], blocks: (0..<2).map { b in
+                ["w0": .init(file: "main:weights.bin", offset: Int64(b * 16), bytes: 16)]
+            })
+            let graph = FakeBlock()
+            let arena = TensorArena()
+            let chain = try GraphChain(graph: graph, link: ("hidden", "hidden_out"), dimensions: [1], arena: arena)
+            let banks = try WeightBanks(table: table, graph: graph, arena: arena) { root.appending(path: $0.path) }
+            try chain.head.write([1, 0, -1, 2] as [Float])
+            try await chain.run { chain in
+                try banks.load(block: 0, into: 0, chain: chain)
+                try await chain.call(graph) { bindings throws(AetherError) in try banks.bind(bank: 0, into: &bindings) }
+            }
+            try banks.load(block: 1, into: 0, chain: chain)
+            #expect(banks.loaded[0] == 1)
+        }
+    }
+
     @Test func weightTablesAreValidated() throws {
         let extent = WeightTable.Extent(file: "main:w.bin", bytes: 16)
         #expect(throws: AetherError.self) { _ = try WeightTable(inputs: [], blocks: [[:]]) }

@@ -13,6 +13,10 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
     case unsupportedDevice(catalogID: String, platform: String, architecture: String)
     /// The id is not in the catalog.
     case unknownModel(id: String)
+    /// A model reference can't name a place in the store: `field` (`repo`, `revision`, `variant`, an asset's pins or
+    /// paths) has a component that is empty, `.`/`..`, absolute, or outside the allowed characters. Refused before any
+    /// file-system operation.
+    case invalidReference(field: String, reason: String)
     /// A manifest (or a catalog or zoo document) is malformed. `field` is the dotted path of the offending field.
     case manifestInvalid(field: String, reason: String)
     /// The manifest and the graph disagree. `field` is the dotted manifest path; the others describe both sides.
@@ -177,6 +181,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             "'\(id)' has no variant for \(platform) (\(arch))"
         case .unknownModel(let id):
             "Unknown model '\(id)'"
+        case .invalidReference(let field, let reason):
+            "Invalid model reference \(field): \(reason)"
         case .manifestInvalid(let field, let reason):
             "Invalid manifest field '\(field)': \(reason)"
         case .manifestMismatch(let field, let expected, let found):

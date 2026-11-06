@@ -192,11 +192,18 @@ public struct URLSessionTransport: HTTPTransport {
     public func get(_ url: URL, headers: [String: String]) async throws -> (HTTPResponseHead, AsyncThrowingStream<Data, any Error>) {
         var request = URLRequest(url: url)
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
-        let (body, continuation) = AsyncThrowingStream<Data, any Error>.makeStream()
-        let delegate = StreamingDelegate(body: continuation)
+        let (raw, continuation) = AsyncThrowingStream<Data, any Error>.makeStream()
+        let flow = FlowControl()
+        let delegate = StreamingDelegate(body: continuation, flow: flow)
         let task = session.dataTask(with: request)
         task.delegate = delegate
+        flow.task = task
         continuation.onTermination = { _ in task.cancel() }
+        // Backpressure: the delegate suspends the task once `FlowControl.highWater` bytes wait unread, and the
+        // consumer's pulls resume it below `lowWater`, so a slow disk never lets the body pile up in memory. No chunk
+        // is ever dropped.
+        let pump = Pump(raw.makeAsyncIterator(), flow: flow)
+        let body = AsyncThrowingStream<Data, any Error> { try await pump.next() }
         let head = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (response: CheckedContinuation<HTTPResponseHead, any Error>) in
                 delegate.awaitResponse(response)
@@ -209,13 +216,70 @@ public struct URLSessionTransport: HTTPTransport {
     }
 }
 
+/// The bytes received and not yet read, and whether the data task is suspended for them.
+final class FlowControl: Sendable {
+    static let highWater = 8 << 20
+    static let lowWater = 2 << 20
+    private struct State { var buffered = 0; var suspended = false; var task: URLSessionDataTask? }
+    private let state = Mutex(State())
+
+    var task: URLSessionDataTask? {
+        get { state.withLock { $0.task } }
+        set { state.withLock { $0.task = newValue } }
+    }
+
+    /// A chunk arrived: past the high-water mark the task is suspended until the consumer catches up.
+    func received(_ count: Int, by task: URLSessionDataTask) {
+        let suspend = state.withLock { state -> Bool in
+            state.buffered += count
+            guard state.buffered > Self.highWater, !state.suspended else { return false }
+            state.suspended = true
+            return true
+        }
+        if suspend { task.suspend() }
+    }
+
+    /// The consumer read a chunk: below the low-water mark a suspended task resumes.
+    func consumed(_ count: Int) {
+        let resume = state.withLock { state -> URLSessionDataTask? in
+            state.buffered -= count
+            guard state.suspended, state.buffered < Self.lowWater else { return nil }
+            state.suspended = false
+            return state.task
+        }
+        resume?.resume()
+    }
+
+    var bufferedBytes: Int { state.withLock { $0.buffered } }
+    var isSuspended: Bool { state.withLock { $0.suspended } }
+}
+
+/// The consumer's side of the body: pulls one chunk at a time and reports it read. One consumer, as a stream has.
+private final class Pump: @unchecked Sendable {
+    private var iterator: AsyncThrowingStream<Data, any Error>.Iterator
+    private let flow: FlowControl
+
+    init(_ iterator: AsyncThrowingStream<Data, any Error>.Iterator, flow: FlowControl) {
+        self.iterator = iterator
+        self.flow = flow
+    }
+
+    func next() async throws -> Data? {
+        let chunk = try await iterator.next()
+        if let chunk { flow.consumed(chunk.count) }
+        return chunk
+    }
+}
+
 /// Bridges one data task's delegate callbacks into a response continuation and a body stream.
 private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendable {
     private let body: AsyncThrowingStream<Data, any Error>.Continuation
+    private let flow: FlowControl
     private let response = Mutex<CheckedContinuation<HTTPResponseHead, any Error>?>(nil)
 
-    init(body: AsyncThrowingStream<Data, any Error>.Continuation) {
+    init(body: AsyncThrowingStream<Data, any Error>.Continuation, flow: FlowControl) {
         self.body = body
+        self.flow = flow
     }
 
     func awaitResponse(_ continuation: CheckedContinuation<HTTPResponseHead, any Error>) {
@@ -258,6 +322,7 @@ private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendabl
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         body.yield(data)
+        flow.received(data.count, by: dataTask)
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
