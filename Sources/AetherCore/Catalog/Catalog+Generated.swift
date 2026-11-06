@@ -909,7 +909,7 @@ extension Catalog {
             id: "depth-anything-3-small",
             task: "depth-estimation",
             repo: "aether-models/aether-kit-depth-anything-3-small",
-            revision: "0960071086783cd0a5c1e4d61cefb2c5ec9035d0",
+            revision: "4c1fae8201cc9ecb52845abfa9fe94fbae78ef02",
             license: "apache-2.0",
             variants: [
                 "macos": CatalogVariant(
@@ -918,17 +918,17 @@ extension Catalog {
                         "main": CatalogAsset(
                             subtree: "",
                             files: [
-                                CatalogFile(path: ".aether/aether.json", size: 3826, sha256: "c2a823d8331c0a3a5c30bbebd65b81bbc0d52b2aa9e464a4d24b33c90ce10bbb"),
+                                CatalogFile(path: ".aether/aether.json", size: 3907, sha256: "94f99cae9973ec5bdd120bf2bb008c2c7345c788364b814c1ec312957b5b2c42"),
                                 CatalogFile(path: ".gitattributes", size: 1597, sha256: "1c2142c6d2c3557350d39c195fd5d7b083783b452126614f85a0cc66ade1dee7"),
                                 CatalogFile(path: "LICENSE", size: 11355, sha256: "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870"),
                                 CatalogFile(path: "NOTICE", size: 980, sha256: "00b5ac0e586fb2b4ed1ddaf77620a57a114ea9bbca4300d5f1d272c69f1cc961"),
                                 CatalogFile(path: "README.md", size: 973, sha256: "fd23dddfcbce543301fda13952c3c314910851b1a6468d7f8dda0162a44b3938"),
-                                CatalogFile(path: "SHA256SUMS", size: 720, sha256: "360e15f30084439e3196c54599bad56382f9974292b52bce802b5eb21c7ad147"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/main.hash", size: 32, sha256: "5b119ab0fd6dc65b6e41695f789da1e7d476126364c6f088de0920f969dd2ea8"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/main.mlirb", size: 61193472, sha256: "c27b0de183e95370ddc5f03d9f4ddf74f1943f26722c8f8740755598b8f6cc58"),
-                                CatalogFile(path: "depth_anything_3_small.aimodel/metadata.json", size: 403, sha256: "7158f412da62763e82751240078e522d59573c12218c0a8e4a8a98517e2b6805"),
-                                CatalogFile(path: "export-report.json", size: 6798, sha256: "92cce43e2051933ab19ce1e4281453f9e102bdcc2083f7ede9059ffeb5a831c3"),
-                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "4a5c082f12039ae5498a48fdb6aea7ed76db737a52393d562cf9d44cd1a4abff"),
+                                CatalogFile(path: "SHA256SUMS", size: 720, sha256: "fe9ccedb5cf56f4fc8b9394c1e2038a7e7007c0771ebbeda87abb4da7bd2bcd8"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.hash", size: 32, sha256: "f8dd868a7026055f8ce57532576f5926ef45fe95ac37126732829c9bb4251090"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/main.mlirb", size: 61193449, sha256: "1aa7b0c9a6bc80e15e93bae9ccadc4f4921538b92fddb086a0c48f7414557a04"),
+                                CatalogFile(path: "depth_anything_3_small.aimodel/metadata.json", size: 403, sha256: "f3f408528a29bccb66baac1f79cd49c3ada3b9fee3f2d759b7f9623473bf168e"),
+                                CatalogFile(path: "export-report.json", size: 6799, sha256: "4da9e5478d5c4bb828185dff10b35e999aa1353c8bc5e81d13a59b7aaf0437d7"),
+                                CatalogFile(path: "forge-log.jsonl", size: 489, sha256: "351a7e297e50f98dedcab4716d31ad2b038a9222a5cb76494b08fce016138b14"),
                             ]),
                     ],
                     architectures: nil

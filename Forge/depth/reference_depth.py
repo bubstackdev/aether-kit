@@ -5,10 +5,12 @@
 
 Runs the unmodified upstream `DepthAnything3Net.forward` (pinned DA3-SMALL weights) on the CPU in float32, on exactly
 the tensor the exported graph is fed: raw RGB on [0,1], [1,3,504,504], already rounded through float16 (the graph's
-input dtype), normalized as upstream's InputProcessor does. Preprocessing is not under test here: each case's input
-tensor is written out, and gates feed it as is. For each case:
+input dtype), normalized as upstream's InputProcessor does. Each case's input tensor is written out, and gates feed it
+as is; for the image cases the RGB Pillow decoded is written too, so a gate can run the host's preprocessing (the
+bundle's `pillowBicubic` stretch) on the very same pixels. For each case:
 
     <case>/case.json        source, preprocessing recipe, shapes, SHA-256 of each file, value ranges
+    <case>/decoded.png      (image cases) the RGB Pillow decoded before the resize, lossless and untagged
     <case>/input.f32        the graph input [1,3,504,504], little-endian float32 (every value fp16-representable)
     <case>/depth.f32        upstream depth [1,504,504], little-endian float32 (larger is farther)
     <case>/confidence.f32   upstream depth_conf [1,504,504], little-endian float32
@@ -79,6 +81,7 @@ def main() -> None:
         out.mkdir()
         if "image" in case:
             x = dg.image_tensor(args.upstream / case["image"])
+            dg.decoded_rgb(args.upstream / case["image"]).save(out / "decoded.png", icc_profile=None)
             source = {"kind": "image", "upstreamFile": case["image"],
                       "sha256": dg.PINS["referenceImages"]["files"][case["image"]],
                       "preprocess": "Pillow convert('RGB'), resize to 504x504 BICUBIC (stretch), /255, NCHW, "
@@ -97,7 +100,8 @@ def main() -> None:
         for name, array in files.items():
             dg.write_f32(out / name, array)
         record = {"name": case["name"], "source": source, "shapes": SHAPES,
-                  "files": {name: dg.sha256_file(out / name) for name in files},
+                  "files": {name: dg.sha256_file(out / name) for name in (*files, "decoded.png")
+                            if (out / name).exists()},
                   "depth": stats(depth), "confidence": stats(conf),
                   "seconds": round(time.monotonic() - started, 2)}
         (out / "case.json").write_text(json.dumps(record, indent=2) + "\n")
