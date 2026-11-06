@@ -1,0 +1,91 @@
+{
+ "repository": "Guaishou74851/AdcSR",
+ "revision": "4c6033e140e891da6c16fe3cdaa432836e53e4d3",
+ "license": "Apache-2.0 (code); CreativeML-OpenRAIL++-M (weights, derivatives of Stable Diffusion 2.1 base)",
+ "comment": "AdcSR (Chen, Li, Wu, Zhang, Chen, Zhang, Zhang; CVPR 2025, 'Adversarial Diffusion Compression for Real-World Image Super-Resolution'), the authors' own Hugging Face repository: the x4 network weights (net_params_200.pkl, stage 2), the channel-pruned VAE decoder it is assembled with (weight/pretrained/halfDecoder.ckpt, stage 1), and the inference code test.py runs (model.py, forward.py). SHA-256 of every file the harness reads, pinned 2026-11-06; the two checkpoints equal the Hub's LFS hashes at this revision. The repository's LICENSE (Apache-2.0) covers the code. The weights are derivatives of stabilityai/stable-diffusion-2-1-base (the U-Net is SD 2.1 base's, channel-pruned to 0.75 width by model.py's halve_channels and adversarially distilled from OSEDiff, itself a LoRA on SD 2.1 base; the decoder is a half-width VAE decoder trained to decode SD 2.1's latents; see lineage), so they carry SD 2.1 base's CreativeML Open RAIL++-M License and its use-based restrictions (Attachment A), which paragraph 5 requires every redistribution to pass on.",
+ "files": {
+  "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "README.md": "354417f9c4770dd7420441f4e4aac0c0f5611792766b6c69d1059831c8a472bd",
+  "model.py": "fb43aadfc2efbafee203985f42ba479cafebf07f07ff6b706bfb23ae980a0aff",
+  "forward.py": "b030165346c887b3b3a55aba068a899a146ea278d23da57b0d9529d79f2b3230",
+  "test.py": "f45227e2694fcc342acbc15c68559539fed76cdb475200ae3d845c1733817d93",
+  "weight/net_params_200.pkl": "87fc2d3b2a007ebd568065f77b1a90fe6c10570408a38b7d72b28e6a16946111",
+  "weight/pretrained/halfDecoder.ckpt": "60c8763a8f7e79a9956cb6e0c5dd813deb5f54ef43b3665fce880acc718e5032"
+ },
+ "upstreamCode": {
+  "repository": "Guaishou74851/AdcSR",
+  "host": "github.com",
+  "commit": "d0b2871e3de9f877e4aebb9bfaf23227b22ac25d",
+  "license": "Apache-2.0",
+  "comment": "The GitHub repository's head (2025-04-05). LICENSE, model.py, forward.py and test.py there are byte-identical to the Hugging Face revision's (same SHA-256), so the harness reads them from the Hugging Face snapshot; this records the cross-check.",
+  "files": {
+   "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+   "model.py": "fb43aadfc2efbafee203985f42ba479cafebf07f07ff6b706bfb23ae980a0aff",
+   "forward.py": "b030165346c887b3b3a55aba068a899a146ea278d23da57b0d9529d79f2b3230",
+   "test.py": "f45227e2694fcc342acbc15c68559539fed76cdb475200ae3d845c1733817d93"
+  }
+ },
+ "base": {
+  "model": "stabilityai/stable-diffusion-2-1-base",
+  "license": "CreativeML-OpenRAIL++-M",
+  "comment": "stabilityai/stable-diffusion-2-1-base is no longer on the Hub (404 since Stability AI withdrew its SD 2.x repositories). test.py reads only its U-Net architecture from it: every U-Net weight it loads is overwritten by net_params_200.pkl (a strict load), so the harness builds the U-Net from the config alone, with no SD 2.1 weights. The config comes from Manojb/stable-diffusion-2-1-base, the mirror OSEDiff's README names as its 'SD21 Base' (its unet/config.json has the same git blob as sd2-community/stable-diffusion-2-1-base's, 0fa07f924dabbf7517dc62af845cd31573bc09e3); the strict load of net_params_200.pkl checks every shape it implies. The license text (LICENSE-MODEL, CreativeML Open RAIL++-M, dated November 24, 2022) is from STHCD/stable-diffusion-2-1-base, a mirror of the original repository; inspiritcmteam/stable-diffusion-2-1-base's copy is byte-identical, and sd2-community/stable-diffusion-2's differs only in whitespace and a leading 'Copyright (c) 2022 Stability AI and contributors' line.",
+  "config": {
+   "repository": "Manojb/stable-diffusion-2-1-base",
+   "revision": "0094d483a120f3f33dafbd187ea4aa60d10de75c",
+   "files": {
+    "unet/config.json": "ce0c6d379e3b1d3e1f79338de70c80a1e36f17a6372439a8249b6fb0dfa1b608"
+   }
+  },
+  "licenseText": {
+   "repository": "STHCD/stable-diffusion-2-1-base",
+   "revision": "c3d96f8efa45b52299a2747849f6d95fb42219f6",
+   "files": {
+    "LICENSE-MODEL": "32354807e2d535b8269bb1a8bf50466472dd02a8c5c18f8b2c0a91fe5c1ef438"
+   },
+   "crossCheck": {
+    "repository": "inspiritcmteam/stable-diffusion-2-1-base",
+    "revision": "ff12fad21b5b763ecb913f5c8e9f550aff961745",
+    "sha256": "32354807e2d535b8269bb1a8bf50466472dd02a8c5c18f8b2c0a91fe5c1ef438"
+   }
+  }
+ },
+ "lineage": [
+  {"model": "stabilityai/stable-diffusion-2-1-base", "role": "the U-Net's architecture and initialization (test.py builds Net from pipe.unet; halve_channels keeps each weight's first 0.75 of channels); the latent space the decoder decodes", "license": "CreativeML-OpenRAIL++-M", "measured": "net_params_200.pkl's U-Net tensors against the same 0.75 slices of SD 2.1 base's U-Net (Manojb mirror, unet/diffusion_pytorch_model.fp16.safetensors, LFS 28ec9cf3...): median cosine 0.939 over 523 tensors (0.06 to 0.9995): trained from SD 2.1 base, not from scratch. halfDecoder.ckpt's decoder is not a slice of SD's (cosine ~0 per tensor); its encoder, quant_conv and post_quant_conv equal SD 2.1 base's VAE (cosine 1.0; that VAE's fp16 file has the same LFS hash, 3e4c0899..., as stabilityai/sd-turbo's). Only the decoder half is loaded."},
+  {"model": "cswry/OSEDiff (OSEDiff-SD21base)", "role": "distillation teacher (a LoRA on SD 2.1 base); training only, nothing of it is loaded", "license": "Apache-2.0 (code, per its repository); its weights are SD 2.1 base derivatives"},
+  {"model": "DAPE and RAM (ram_swin_large_14m)", "role": "the teacher's prompt extractor; training only, nothing of it is loaded", "license": "not traced (no part of the exported weights)"},
+  {"model": "Guaishou74851/AdcSR", "role": "the distilled x4 network (net_params_200.pkl) and the stage-1 half-width decoder (halfDecoder.ckpt)", "license": "Apache-2.0 (code); CreativeML-OpenRAIL++-M (weights, as SD 2.1 base derivatives; the repository states no weight license of its own)"}
+ ],
+ "referenceImages": {
+  "comment": "Wikimedia Commons originals, each marked CC0 by its author (the same files and hashes Forge/rfdetr pins); used only as reference-case inputs after a Pillow downscale, never bundled.",
+  "files": {
+   "black-cat-sofa.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/97/Black_cat_curled_up_on_a_sofa_in_Newcastle_upon_Tyne%2C_UK.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Black_cat_curled_up_on_a_sofa_in_Newcastle_upon_Tyne,_UK.jpg",
+    "author": "Salwa Farwaneh Dameh",
+    "license": "CC0-1.0",
+    "sha256": "4aa132fd50523f458d5dccecadcd1ab254e3c028434237a8940af51eb9ab93e7"
+   },
+   "burnside-irt.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Burnside_IRT_fr_GC_jeh.JPG",
+    "page": "https://commons.wikimedia.org/wiki/File:Burnside_IRT_fr_GC_jeh.JPG",
+    "author": "Jim.henderson",
+    "license": "CC0-1.0",
+    "sha256": "58ac3c283e5e5f210d8160a356582e8e58d7cf951377e774db3bf95a35fd2da0"
+   },
+   "wood-green-1981.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Wood_Green%2C_North_London_1981_-_12056707936.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Wood_Green,_North_London_1981_-_12056707936.jpg",
+    "author": "beareye2010",
+    "license": "CC0-1.0",
+    "sha256": "d6de02ca6a8e5fe979c8acfa82bc1f8f2d253c8903d840b6e14c0b7c544f2ccc"
+   },
+   "bicycle-parade-285.jpg": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Moscow_bicycle_parade_2025-05-17_%28285%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Moscow_bicycle_parade_2025-05-17_(285).jpg",
+    "author": "Retired electrician",
+    "license": "CC0-1.0",
+    "sha256": "e394d9eadb012abe2fc9edfe258f3e0feaa016db51e7091fe068687782cfda43"
+   }
+  }
+ }
+}
