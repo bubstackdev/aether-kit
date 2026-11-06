@@ -360,6 +360,32 @@ FLUX.2's host recipe:
 - **Measured (gate, M5 Max, int8 512², 4 steps):** phase peaks 3.2 GiB (prompt), 5.6 GiB (steps), 1.2 GiB (image);
   about 15 s cold (loading included) and 1.4 s warm.
 
+### 6.6 Device chains, weight banks and shape profiles (G4 step 1)
+
+The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x prototype's working patterns
+(`Sources/AetherRuntime/Chain/`).
+
+- **`GraphChain`:** call *i*'s output is call *i + 1*'s input with no host copy. The chain owns two slots of the
+  linked tensor and alternates them (never an output over its own input), binds the head and the other slot itself,
+  and refuses a call that rebinds them. On a Metal arena (`TensorArena.metal()`) every call is *encoded* on one
+  `ComputeStream`, which orders consecutive calls, so the chain waits once at the end or at a `synchronize()` the
+  driver places; on a host arena every call is `run()` (the unchained reference path, and the one fakes take).
+  Every exit, a cancellation or an error included, waits for the encoded work before the arena is lent back.
+- **`WeightBanks`:** one weights-as-inputs graph serves every block. Two banks of its weight inputs are refilled with
+  `pread` from the installed bundle's files (a `WeightTable`, MANIFEST.md §5.8): no Hugging Face cache, no per-open
+  re-hashing (the store verified the files at install; the driver holds the reader lease). The sync rule is
+  enforced: a bank whose buffers a call since the chain's last `synchronize()` bound can't be refilled. The order is
+  encode block *i*, load block *i + 1* into the other bank while the GPU runs, synchronize.
+- **`ShapeProfile`:** each distinct input shape keeps its own specialization's memory until the model is released,
+  so a measured footprint holds only for the shapes it was measured at. A profile names a graph role's allowed input
+  shapes; a chain with a profile refuses a call outside it before anything runs, and the profile's `identity` keys its
+  `FootprintLedger` entries. `Graph.distinctShapeCount` counts the shapes a graph has specialized.
+- **`SerialGate`:** the runtime's one busy policy is to queue, not fail; a chain's runs take turns through a gate that
+  chains sharing graphs share. No per-call byte cap: admission owns the limit, from the measured entry.
+- **Measured (gate, M5 Max, the 64-wide fixture block, 6 blocks × 256 rows, float16):** chained and banked calls
+  are byte-identical to the unchained path, and so are calls encoded back to back with one wait; 9.2 ms against
+  49.7 ms unchained.
+
 ## 7. AetherText
 
 - **`TokenizerAdapter`** wraps swift-transformers' `Tokenizer`. It reads special ids (pad, eos, stop markers) from the

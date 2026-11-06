@@ -498,3 +498,19 @@ Precision is recorded in `precision` (int8 per-channel weights on the text encod
 `LICENSE.md` and a modification `NOTICE`. The exporter's parity gate (`check_flux2.py`) gates the real conditioning rows
 and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
 padding rows move the image under any precision change.
+
+### 5.8 `weights`: block weights as graph inputs (proposed until G4)
+
+For a graph that serves many blocks with its weights lifted to runtime inputs (H3's body and conditioner layers). The
+runtime type is `WeightTable` (AetherRuntime), read by `WeightBanks`.
+
+| where | field | meaning |
+|---|---|---|
+| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …]}`: the graph inputs bound per block, and the table file |
+| table file | `inputs` | the weight inputs, in the order the exporter lifted them |
+| table file | `blocks` | per block, each input's extent `{file: "<asset>:<path>", offset, bytes}` in a bundle file |
+
+Each extent holds exactly its input's bytes (the graph's own descriptor, contiguous); a table naming a file outside the
+bundle, or a block missing an input, is refused. The files are ordinary bundle assets, verified at install like any
+other; the runtime does not re-hash them. A driver running such a graph declares a shape profile for each measured
+canvas (DESIGN.md §6.6).

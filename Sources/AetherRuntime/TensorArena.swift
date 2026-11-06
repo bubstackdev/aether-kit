@@ -42,6 +42,12 @@ public final class TensorArena {
         self.device = device
     }
 
+    /// A Metal arena on the system's default GPU (nil without one). Its buffers bind to encoded work (a
+    /// ``GraphChain``), which `Graph.run` cannot take.
+    public static func metal() -> TensorArena? {
+        MTLCreateSystemDefaultDevice().map { TensorArena(device: $0) }
+    }
+
     /// Whether buffers are Metal-backed (and so can be bound to `encode`).
     public var isMetalBacked: Bool { device != nil }
 
@@ -241,6 +247,23 @@ public final class TensorArena {
         let count = buffer.storageByteCount
         if let storage = metal[buffer.slot] {
             return try body(UnsafeMutableRawBufferPointer(start: storage.contents(), count: count))
+        }
+        return try Self.withBytes(&arrays[buffer.slot], count: count, body)
+    }
+
+    /// Raw access to a buffer's bytes while the arena may be lent to encoded work. Only ``WeightBanks`` uses it, and
+    /// only after its ``GraphChain`` has checked that no call encoded since the last synchronization binds `buffer`:
+    /// the GPU is then not reading the bytes being overwritten.
+    func withLentMutableBytes<R>(
+        _ buffer: TensorBuffer, _ body: (UnsafeMutableRawBufferPointer) throws(AetherError) -> R
+    ) throws(AetherError) -> R {
+        try checkOwned(buffer)
+        let count = buffer.storageByteCount
+        if let storage = metal[buffer.slot] {
+            return try body(UnsafeMutableRawBufferPointer(start: storage.contents(), count: count))
+        }
+        guard runningGraph == nil else {
+            throw .tensor(name: buffer.name, reason: .unavailable("host storage is lent to the running graph '\(runningGraph!)'"))
         }
         return try Self.withBytes(&arrays[buffer.slot], count: count, body)
     }
