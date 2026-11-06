@@ -82,3 +82,57 @@ struct TextReviewRegressionTests {
         #expect(second.summary?.promptTokens == expected, "turn 2's prompt holds turn 1 and its reply")
     }
 }
+
+/// The second pre-release review's AetherText items (3, 6, 7, 10).
+@Suite("AetherText second review regressions")
+struct TextSecondReviewTests {
+    /// Item 3: a value cut at `maxTokens` that still decodes (`100` cut to `1`) broke the schema's bounds and was
+    /// accepted and kept in the history.
+    @Test func aStructuredReplyMustCompleteTheSchema() async throws {
+        let schema = try OutputSchema(json: Data(#"{"type":"integer","minimum":100,"maximum":100}"#.utf8))
+        let generator = try await ByteChat.generator { _ in ByteVocab.tokens("100") }
+        let session = ChatSession(generator: generator, configuration: .init(parameters: .init(maxTokens: 1)))
+        await #expect(throws: AetherError.self) {
+            _ = try await session.respond(to: "q", generating: Int.self, schema: schema, includeSchemaInPrompt: false)
+        }
+        #expect(await session.history.isEmpty)
+        let enough = ChatSession(generator: generator, configuration: .init(parameters: .init(maxTokens: 8)))
+        #expect(try await enough.respond(to: "q", generating: Int.self, schema: schema, includeSchemaInPrompt: false) == 100)
+    }
+
+    /// Item 6: integer bounds went through Double, so 2^53 + 1 became 2^53 and the exact value was refused.
+    @Test func integerBoundsAreExact() throws {
+        let schema = try OutputSchema(json: Data(#"{"type":"integer","minimum":9007199254740993,"maximum":9007199254740993}"#.utf8))
+        let grammar = try JSONGrammar(schema: schema)
+        let matcher = JSONMatcher(grammar: grammar)
+        #expect(matcher.feeding(Array("9007199254740993".utf8), grammar)?.canEnd(grammar) == true)
+        #expect(matcher.feeding(Array("9007199254740992".utf8), grammar)?.canEnd(grammar) != true)
+    }
+
+    /// Item 7: a constraint beside `$ref` or `anyOf` was silently dropped (an `anyOf` integer with a sibling minimum
+    /// 10 accepted 1); it is refused as unsupported now.
+    @Test func constraintsBesideACombinatorAreRefused() {
+        for text in [
+            ##"{"$defs":{"Value":{"type":"integer"}},"$ref":"#/$defs/Value","minimum":10}"##,
+            #"{"anyOf":[{"type":"integer"}],"minimum":10}"#,
+        ] {
+            #expect(throws: AetherError.self) { _ = try JSONGrammar(schema: OutputSchema(json: Data(text.utf8))) }
+        }
+        // A description beside them stays fine.
+        #expect(throws: Never.self) { _ = try JSONGrammar(schema: OutputSchema(json: Data(#"{"anyOf":[{"type":"integer"}],"description":"n"}"#.utf8))) }
+    }
+
+    /// Item 10: a request cancelled before its turn still rendered and prefilled its prompt.
+    @Test func aCancelledRequestPrefillsNothing() async throws {
+        let log = CallLog()
+        let generator = try await FakeChat.generator(log: log)
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            _ = try? await FakeChat.collect(generator.generate([.user("cancelled prompt")]))
+        }
+        await task.value
+        _ = try await FakeChat.collect(generator.generate([.user("next")]))
+        let cancelledPrompt = try FakeRenderer().render([.user("cancelled prompt")], options: .init())
+        #expect(!log.calls.contains(cancelledPrompt.tokens.count))
+    }
+}

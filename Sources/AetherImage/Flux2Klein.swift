@@ -1,18 +1,35 @@
 public import AetherCore
+public import AetherHost
 public import AetherRuntime
 import AetherText
 import Foundation
 
 /// `flux2-klein@1` (MANIFEST.md §5.7): FLUX.2 [klein] text-to-image. A Qwen3 text encoder, a flow-matching transformer
 /// split into segments chained by their carries, and a VAE decoder, on a `flowMatchEuler` schedule with the empirical
-/// shift. Loads a ``Flux2KleinPipeline``. macOS only in 0.1.0: on iOS the load is refused before anything opens.
+/// shift. Loads a ``Flux2KleinModel``: set its options, then make the ``Flux2KleinPipeline``. macOS only in 0.1.0: on
+/// iOS the load is refused before anything opens.
 public enum Flux2KleinDriver: ModelDriver {
     public static let id: DriverID = .flux2Klein
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> Flux2KleinPipeline {
-        try await Flux2KleinPipeline(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> Flux2KleinModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try Flux2KleinPipeline.requireMacOS(manifest, options.device)
+        try DriverContract.flux2Klein.validate(manifest)
+        return Flux2KleinModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened FLUX.2 [klein] bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct Flux2KleinModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: ImagePipelineOptions
+
+    public func pipeline() async throws -> Flux2KleinPipeline {
+        try await Flux2KleinPipeline(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 
@@ -43,8 +60,7 @@ public actor Flux2KleinPipeline {
     nonisolated let encodePrompt: PromptEncoder
     let device: Device
     private let load: GraphResidency.Loader
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
@@ -83,6 +99,11 @@ public actor Flux2KleinPipeline {
         guard let latent = manifest.latent, latent.packing == .patch2x2ChannelMajor else {
             throw .manifestInvalid(field: "latent", reason: "\(Flux2KleinDriver.id) requires patch2x2ChannelMajor latents")
         }
+        // These exports have no fixed sizes, so the token bound is what keeps a request's canvas (and its unmeasured
+        // memory) finite.
+        guard latent.maxImageTokens != nil else {
+            throw .manifestInvalid(field: "latent.maxImageTokens", reason: "required by \(Flux2KleinDriver.id)")
+        }
         guard let flux2 = manifest.flux2 else {
             throw .manifestInvalid(field: "flux2", reason: "required by \(Flux2KleinDriver.id)")
         }
@@ -98,7 +119,7 @@ public actor Flux2KleinPipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        self.fileBytes = fileBytes
+        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
     }
 
     /// FLUX.2, Krea and H3 are qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -141,15 +162,14 @@ public actor Flux2KleinPipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let profile = "\(size.width)x\(size.height)"
-        let (plan, reservation) = try options.admit(manifest: manifest, profile: profile, device: device, fileBytes: fileBytes)
-        defer { reservation?.release() }
-        let residency = residency(for: plan.mode, profile: profile)
+        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
         do {
-            return try await run(
+            let image = try await run(
                 residency, prompt: prompt, conditioning: conditioning, seed: request.seed, schedule: table, grid: grid, size: size)
+            admission.finish()
+            return image
         } catch {
-            residency.releaseAll()
+            admission.release()
             throw error
         }
     }
@@ -167,13 +187,12 @@ public actor Flux2KleinPipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - The generation
 
@@ -300,16 +319,6 @@ public actor Flux2KleinPipeline {
         try bindings.bindOutput(wiring.text.conditioning, to: rows)
         try await text.run(&bindings)
         return rows
-    }
-
-    /// The residency for `mode`, keeping loaded graphs when the mode and profile are unchanged.
-    private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
-        if let residency, residency.mode == mode, residency.profile == profile { return residency }
-        residency?.releaseAll()
-        let fresh = GraphResidency(
-            manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
     }
 
     private func turn() async {

@@ -2,5 +2,7 @@
 @_exported public import AetherText
 @_exported public import AetherVision
 @_exported public import AetherImage
+@_exported public import AetherSpeech
+@_exported public import AetherVideo
 @_exported public import AetherEmbeddings
 @_exported public import AetherDecide

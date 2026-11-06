@@ -62,6 +62,39 @@ struct BindingsTests {
         }
     }
 
+    /// Second review, item 14: contiguous reads into a kept array reuse its storage (the fp16 path assigned a new
+    /// array every call) and take the bulk path (an unconditional `.float32` case shadowed it).
+    @Test func contiguousFloatReadsReuseTheCallersStorage() throws {
+        let arena = TensorArena()
+        for type in [ScalarType.float32, .float16] {
+            let buffer = try arena.allocate(name: "logits", shape: [4096], scalarType: type)
+            if type == .float16 { try buffer.write([Float16](repeating: 0.5, count: 4096)) } else {
+                try buffer.write([Float](repeating: 0.5, count: 4096))
+            }
+            var out: [Float] = []
+            try buffer.readFloats(0..<4096, into: &out)
+            let first = out.withUnsafeBufferPointer { $0.baseAddress }
+            try buffer.readFloats(0..<4096, into: &out)
+            #expect(out.withUnsafeBufferPointer { $0.baseAddress } == first, "\(type)")
+            #expect(out.count == 4096 && out.allSatisfy { $0 == 0.5 })
+        }
+    }
+
+    /// Second review, item 2: a buffer released after binding, whose slot an allocation of another shape and type
+    /// reused, still validated against the signature (stale shape and type: wrong storage on the encode path).
+    @Test func aReleasedBindingNoLongerValidates() throws {
+        let arena = TensorArena()
+        let buffer = try arena.allocate(name: "input", shape: [16], scalarType: .float32)
+        var bindings = Bindings(arena: arena)
+        try bindings.bindInput("input", to: buffer)
+        try arena.release(buffer)
+        let replacement = try arena.allocate(name: "replacement", shape: [1], scalarType: .int8)
+        #expect(replacement.slot == buffer.slot)
+        let signature = GraphSignature(function: "main", inputs: [.init(name: "input", scalarType: .float32, shape: [16])],
+                                       states: [], outputs: [])
+        #expect(throws: AetherError.self) { try bindings.validate(against: signature) }
+    }
+
     @Test func prefillThenStepSharesStateWithoutReallocating() async throws {
         let engine = try Engine(graph: FakeDecoder(), capacity: 16, chunkSize: 4)
         let bytes = engine.arena.byteCount

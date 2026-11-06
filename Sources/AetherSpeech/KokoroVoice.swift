@@ -4,24 +4,48 @@ public import AetherCore
 /// model's VOICES.md. Voices are style tables, not separate models: any voice reads any phonemes, but quality is best
 /// in its own language. Which voices a bundle carries is its `kokoro.voices`.
 public struct KokoroVoice: Hashable, Sendable, Codable, CustomStringConvertible {
-    public enum Language: String, Sendable, Hashable, Codable, CaseIterable {
-        case americanEnglish = "a", britishEnglish = "b", spanish = "e", french = "f", hindi = "h"
-        case italian = "i", japanese = "j", brazilianPortuguese = "p", mandarinChinese = "z"
+    /// A voice's language: its identifier's first letter. Open, so a bundle with a language this release doesn't
+    /// know still loads and its voices still speak; the known ones are constants.
+    public struct Language: RawRepresentable, Hashable, Sendable, Codable, CustomStringConvertible {
+        public let rawValue: String
 
-        /// The BCP 47 tag the manifest records.
-        public var bcp47: String {
-            switch self {
-            case .americanEnglish: "en-US"
-            case .britishEnglish: "en-GB"
-            case .spanish: "es"
-            case .french: "fr"
-            case .hindi: "hi"
-            case .italian: "it"
-            case .japanese: "ja"
-            case .brazilianPortuguese: "pt-BR"
-            case .mandarinChinese: "zh"
+        /// Any lowercase letter `a`–`z`, as the manifest allows.
+        public init?(rawValue: String) {
+            let scalars = Array(rawValue.unicodeScalars)
+            guard scalars.count == 1, ("a"..."z").contains(scalars[0]) else { return nil }
+            self.rawValue = rawValue
+        }
+
+        fileprivate init(known: String) { rawValue = known }
+
+        public static let americanEnglish = Language(known: "a"), britishEnglish = Language(known: "b")
+        public static let spanish = Language(known: "e"), french = Language(known: "f"), hindi = Language(known: "h")
+        public static let italian = Language(known: "i"), japanese = Language(known: "j")
+        public static let brazilianPortuguese = Language(known: "p"), mandarinChinese = Language(known: "z")
+
+        /// The languages Kokoro-82M v1.0 publishes.
+        public static let known: [Language] = [
+            .americanEnglish, .britishEnglish, .spanish, .french, .hindi, .italian, .japanese, .brazilianPortuguese,
+            .mandarinChinese,
+        ]
+
+        /// The BCP 47 tag for a known language (the manifest records each voice's own); nil otherwise.
+        public var bcp47: String? {
+            switch rawValue {
+            case "a": "en-US"
+            case "b": "en-GB"
+            case "e": "es"
+            case "f": "fr"
+            case "h": "hi"
+            case "i": "it"
+            case "j": "ja"
+            case "p": "pt-BR"
+            case "z": "zh"
+            default: nil
             }
         }
+
+        public var description: String { rawValue }
     }
 
     public enum Gender: String, Sendable, Hashable, Codable { case female = "f", male = "m" }
@@ -61,7 +85,7 @@ public struct KokoroVoice: Hashable, Sendable, Codable, CustomStringConvertible 
     private init(known identifier: String) {
         let scalars = Array(identifier.unicodeScalars)
         self.identifier = identifier
-        language = Language(rawValue: String(scalars[0]))!
+        language = Language(known: String(scalars[0]))
         gender = Gender(rawValue: String(scalars[1]))!
     }
 

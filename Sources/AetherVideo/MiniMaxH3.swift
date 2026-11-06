@@ -9,11 +9,26 @@ import Foundation
 public enum MiniMaxH3Driver: ModelDriver {
     public static let id: DriverID = .minimaxH3
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> MiniMaxH3Pipeline {
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> MiniMaxH3Model {
         let manifest = try Manifest.load(fromBundle: bundle.url)
-        return try await MiniMaxH3Pipeline(
+        try MiniMaxH3Pipeline.requireMacOS(manifest, options.device)
+        try DriverContract.minimaxH3.validate(manifest)
+        return MiniMaxH3Model(
             bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened H3 bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings: set the
+/// coordinator, GPU admission and ledger there, then make the ``MiniMaxH3Pipeline``.
+public struct MiniMaxH3Model: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: VideoPipelineOptions
+
+    public func pipeline() async throws -> MiniMaxH3Pipeline {
+        try await MiniMaxH3Pipeline(bundle: bundle, manifest: manifest, device: device, options: options)
     }
 }
 
@@ -22,32 +37,15 @@ extension Registry {
     public static let video = Registry([MiniMaxH3Driver.self])
 }
 
-/// How the video pipeline loads its graphs and shares memory and the GPU (as `AetherImage`'s pipelines).
-public struct VideoPipelineOptions: Sendable {
-    public var cachePolicy: GraphOptions.CachePolicy
-    public var cache: GraphOptions.Cache
-    /// The budget a generation's planned peak must fit when there is no coordinator (default: three quarters of RAM).
-    public var memory: MemoryBudget
-    /// A shared memory budget: the generation reserves its planned peak here.
-    public var coordinator: ResourceCoordinator?
-    public var gpu: GPUAdmissionOwner?
-    /// Measured footprints, seeded with the qualified profiles' (``MiniMaxH3Pipeline/qualifiedFootprints``).
-    public var ledger: FootprintLedger
-    public var probe: GPUMemoryProbe
+/// How the video pipeline loads its graphs and shares memory and the GPU: AetherHost's ``PipelineOptions``, whose absent
+/// `memory` means ``MemoryBudget/videoGeneration`` here. Its ledger is seeded with the qualified profiles' footprints
+/// (``MiniMaxH3Pipeline/qualifiedFootprints``).
+public typealias VideoPipelineOptions = PipelineOptions
 
-    public init(
-        cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default,
-        memory: MemoryBudget = MemoryBudget(.fractionOfRAM(0.75)), coordinator: ResourceCoordinator? = nil,
-        gpu: GPUAdmissionOwner? = nil, ledger: FootprintLedger = FootprintLedger(), probe: GPUMemoryProbe = .system
-    ) {
-        self.cachePolicy = cachePolicy
-        self.cache = cache
-        self.memory = memory
-        self.coordinator = coordinator
-        self.gpu = gpu
-        self.ledger = ledger
-        self.probe = probe
-    }
+extension MemoryBudget {
+    /// The video pipeline's default budget: three quarters of RAM (macOS; H3 is macOS-only in 0.1.0), about Metal's
+    /// recommended working set, as for image generation.
+    public static var videoGeneration: MemoryBudget { MemoryBudget(.fractionOfRAM(0.75)) }
 }
 
 /// One text-to-video-and-audio generation.
@@ -111,7 +109,7 @@ public actor MiniMaxH3Pipeline {
     let bundle: InstalledBundle?
     private let tokenize: @Sendable (String) -> [Int32]
     private let load: GraphResidency.Loader
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
@@ -155,7 +153,10 @@ public actor MiniMaxH3Pipeline {
         self.options = options
         self.tokenize = tokenize
         self.load = load
-        Self.seedQualified(options.ledger, model: manifest.id)
+        let fileBytes = { [manifest, device] (role: String) in Self.fileBytes(role, bundle: bundle, manifest: manifest, device: device) }
+        admission = options.admission(
+            manifest: manifest, device: device, defaultMemory: .videoGeneration, load: load, fileBytes: fileBytes)
+        Self.seedQualified(options.ledger, model: admission.modelKey)
     }
 
     /// H3 is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -183,13 +184,13 @@ public actor MiniMaxH3Pipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let admission = try admit(plan.profile.key)
-        defer { admission.reservation?.release() }
-        let residency = residency(for: admission.mode, profile: plan.profile.key)
+        let residency = try admission.begin(profile: plan.profile.key)
         do {
-            return try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
+            let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
+            admission.finish()
+            return video
         } catch {
-            residency.releaseAll()
+            admission.release()
             throw error
         }
     }
@@ -197,13 +198,12 @@ public actor MiniMaxH3Pipeline {
     /// Releases every graph (waiting for a running generation).
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         endTurn()
     }
 
     /// Roles currently loaded (tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - Planning
 
@@ -245,16 +245,8 @@ public actor MiniMaxH3Pipeline {
                     seed: request.seed, audio: request.audio, stepLimit: nil)
     }
 
-    private func admit(_ profile: String) throws(AetherError) -> (mode: ResidencyPlan.Mode, reservation: ResourceReservation?) {
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: options.ledger, profile: profile, fileBytes: fileBytes)
-        let budget = options.coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? options.memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        let reservation = try options.coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
-        return (plan.mode, reservation)
-    }
-
     /// An unmeasured graph's stand-in: its file, plus two banks of its largest weight block (they dwarf the graph).
-    private nonisolated func fileBytes(_ role: String) -> Int64 {
+    static func fileBytes(_ role: String, bundle: InstalledBundle?, manifest: Manifest, device: Device) -> Int64 {
         guard let bundle else { return 0 }
         var bytes = GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device)
         if let weights = manifest.graphs[role]?.weights, let url = bundle.url(of: weights.table),
@@ -262,14 +254,6 @@ public actor MiniMaxH3Pipeline {
             bytes += 2 * (table.blocks.map { $0.values.reduce(0) { $0 + $1.bytes } }.max() ?? 0)
         }
         return bytes
-    }
-
-    private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
-        if let residency, residency.mode == mode, residency.profile == profile { return residency }
-        residency?.releaseAll()
-        let fresh = GraphResidency(manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
     }
 
     private func turn() async {
@@ -613,11 +597,13 @@ extension MiniMaxH3Pipeline {
     public static let qualifiedFootprints: [String: [Manifest.Residency: PhaseFootprint]] = [
         "960x544x124": [
             .perPrompt: PhaseFootprint(peakBytes: 4261 << 20, heldBytes: 2395 << 20),
-            .perStep: PhaseFootprint(peakBytes: 9893 << 20, heldBytes: 8387 << 20),
+            .perStep: PhaseFootprint(peakBytes: 9893 << 20, heldBytes: 8614 << 20),
             .perImage: PhaseFootprint(peakBytes: 1445 << 20, heldBytes: 1151 << 20),
         ],
     ]
 
+    /// Seeds `ledger` under `model`, the pipeline's ledger key (``ResidentAdmission/modelKey``: the manifest id, the
+    /// weights' source revision and the device), so the seeded entries are the ones its plans read.
     static func seedQualified(_ ledger: FootprintLedger, model: String) {
         for (profile, phases) in qualifiedFootprints {
             for (phase, footprint) in phases {

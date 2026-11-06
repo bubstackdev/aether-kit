@@ -43,12 +43,16 @@ public struct FlowMatchSchedule: Sendable, Hashable {
         case .none:
             mu = nil
         }
-        self.init(steps: steps, mu: mu, trainTimesteps: schedule.trainTimesteps)
+        try self.init(steps: steps, mu: mu, trainTimesteps: schedule.trainTimesteps)
     }
 
-    /// The schedule for `steps` ≥ 1 steps, shifted at `mu` (unshifted when nil).
-    public init(steps: Int, mu: Double?, trainTimesteps: Int = 1000) {
-        precondition(steps >= 1 && trainTimesteps >= 1)
+    /// The schedule for `steps` ≥ 1 steps, shifted at a finite `mu` (unshifted when nil). Refuses other values with
+    /// `generation(.invalidParameters)`.
+    public init(steps: Int, mu: Double?, trainTimesteps: Int = 1000) throws(AetherError) {
+        guard steps >= 1, trainTimesteps >= 1, mu?.isFinite ?? true else {
+            throw .generation(.invalidParameters(
+                "a flow-match schedule needs steps >= 1, trainTimesteps >= 1 and a finite mu, not \(steps), \(trainTimesteps), \(mu.map { "\($0)" } ?? "nil")"))
+        }
         let stop = 1.0 / Double(steps)
         let delta = steps > 1 ? (stop - 1.0) / Double(steps - 1) : 0.0
         let e = mu.map { Float(exp($0)) }

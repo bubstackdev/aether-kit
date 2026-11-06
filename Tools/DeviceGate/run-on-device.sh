@@ -60,7 +60,18 @@ for ((i = 0; i < ${GATE_TIMEOUT:-900}; i += 10)); do
   if pull Documents/gate.json "$OUT" \
      && python3 -I -c "import json,sys; r=json.load(open('$OUT')); sys.exit(not (r.get('runID') == '$RUN_ID' and any(c['name'].startswith('kokoro') for c in r['checks'])))" 2>/dev/null; then
     pull Documents/out results/out-$NAME || true
-    python3 -I -m json.tool "$OUT"; exit 0
+    python3 -I -m json.tool "$OUT"
+    # Pass only when both gates reported and every check passed.
+    python3 -I - "$OUT" <<'PY'
+import json, sys
+checks = json.load(open(sys.argv[1]))["checks"]
+failed = [c["name"] for c in checks if c.get("passed") is not True]
+missing = [family for family in ("sd-turbo.", "kokoro.") if not any(c["name"].startswith(family) for c in checks)]
+for name in failed: print(f"FAILED: {name}", file=sys.stderr)
+for family in missing: print(f"MISSING: no {family}* checks", file=sys.stderr)
+sys.exit(1 if failed or missing else 0)
+PY
+    exit $?
   fi
   sleep 10
 done

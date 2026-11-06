@@ -1,4 +1,5 @@
 public import AetherCore
+public import AetherHost
 public import AetherRuntime
 import AetherText
 import Foundation
@@ -66,8 +67,7 @@ public actor Krea2Pipeline {
     nonisolated let encodePrompt: PromptEncoder
     let device: Device
     private let load: GraphResidency.Loader
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
@@ -107,6 +107,11 @@ public actor Krea2Pipeline {
         guard let latent = manifest.latent, latent.packing == .patch2x2ChannelMajor else {
             throw .manifestInvalid(field: "latent", reason: "\(Krea2Driver.id) requires patch2x2ChannelMajor latents")
         }
+        // These exports have no fixed sizes, so the token bound is what keeps a request's canvas (and its unmeasured
+        // memory) finite.
+        guard latent.maxImageTokens != nil else {
+            throw .manifestInvalid(field: "latent.maxImageTokens", reason: "required by \(Krea2Driver.id)")
+        }
         guard let krea2 = manifest.krea2 else {
             throw .manifestInvalid(field: "krea2", reason: "required by \(Krea2Driver.id)")
         }
@@ -123,7 +128,7 @@ public actor Krea2Pipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        self.fileBytes = fileBytes
+        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
     }
 
     /// Krea is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -166,13 +171,12 @@ public actor Krea2Pipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - The generation
 
@@ -185,14 +189,15 @@ public actor Krea2Pipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let profile = "\(size.width)x\(size.height)"
-        let (plan, reservation) = try options.admit(manifest: manifest, profile: profile, device: device, fileBytes: fileBytes)
-        defer { reservation?.release() }
-        let residency = residency(for: plan.mode, profile: profile)
+        // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
+        // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
+        let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
         do {
-            return try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size)
+            let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size)
+            admission.finish()
+            return image
         } catch {
-            residency.releaseAll()
+            admission.release()
             throw error
         }
     }
@@ -306,16 +311,6 @@ public actor Krea2Pipeline {
         try bindings.bindOutput(wiring.text.conditioning, to: rows)
         try await text.run(&bindings)
         return rows
-    }
-
-    /// The residency for `mode`, keeping loaded graphs when the mode and profile are unchanged.
-    private func residency(for mode: ResidencyPlan.Mode, profile: String) -> GraphResidency {
-        if let residency, residency.mode == mode, residency.profile == profile { return residency }
-        residency?.releaseAll()
-        let fresh = GraphResidency(
-            manifest: manifest, mode: mode, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
     }
 
     private func turn() async {

@@ -1,3 +1,4 @@
+import AetherHost
 import Foundation
 import Testing
 @testable import AetherCore
@@ -153,5 +154,25 @@ struct MiniMaxH3Tests {
         let plan = try await pipeline.plan(VideoRequest(prompt: "a fox in snow"))
         #expect(plan.profile.key == "960x544x124" && plan.ids.count == 13)
         #expect(plan.cardinality == plan.recipe.steps.map(\.timesteps.count).max())
+    }
+
+    /// The review fixes on H3: the driver loads a model with settable options, and the qualified footprints are seeded
+    /// under the pipeline's ledger key (manifest id, source revision, device), so its first plan is measured.
+    @Test func qualifiedFootprintsSeedThePipelinesKey() throws {
+        #expect(MiniMaxH3Driver.Loaded.self == MiniMaxH3Model.self)
+        let ledger = FootprintLedger()
+        let device = Device(platform: .macOS, architecture: "h17c")
+        let manifest = try Self.manifest()
+        _ = try MiniMaxH3Pipeline(
+            manifest: manifest, device: device, bundle: nil, options: .init(ledger: ledger, probe: GPUMemoryProbe { 0 }),
+            tokenize: { _ in [] }, load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "none") })
+        let key = ResidentAdmission(
+            manifest: manifest, device: device,
+            settings: .init(memory: .videoGeneration, coordinator: nil, ledger: ledger, probe: GPUMemoryProbe { 0 }),
+            load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "none") }, fileBytes: { _ in 0 }).modelKey
+        let seeded = ledger.snapshot.keys.filter { $0.profile == "960x544x124" }
+        #expect(seeded.count == 3 && seeded.allSatisfy { $0.model == key } && key.hasSuffix("/macos-h17c"))
+        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: ledger, model: key, profile: "960x544x124") { _ in 0 }
+        #expect(inputs.isMeasured)
     }
 }

@@ -56,9 +56,9 @@
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "KokoroSpeechSession",
-        "printedName": "AetherSpeech.KokoroSpeechSession",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC"
+        "name": "KokoroModel",
+        "printedName": "AetherSpeech.KokoroModel",
+        "usr": "s:12AetherSpeech11KokoroModelV"
        },
        {
         "kind": "TypeNominal",
@@ -79,21 +79,21 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s12AetherSpeech12KokoroDriverO4load_7optionsAA0cB7SessionC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
+      "mangledName": "$s12AetherSpeech12KokoroDriverO4load_7optionsAA0C5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
       "moduleName": "AetherSpeech",
       "name": "load",
       "printedName": "load(_:options:)",
       "static": true,
       "throwing": true,
-      "usr": "s:12AetherSpeech12KokoroDriverO4load_7optionsAA0cB7SessionC0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
+      "usr": "s:12AetherSpeech12KokoroDriverO4load_7optionsAA0C5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
      },
      {
       "children": [
        {
         "kind": "TypeNominal",
-        "name": "KokoroSpeechSession",
-        "printedName": "AetherSpeech.KokoroSpeechSession",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC"
+        "name": "KokoroModel",
+        "printedName": "AetherSpeech.KokoroModel",
+        "usr": "s:12AetherSpeech11KokoroModelV"
        }
       ],
       "declKind": "TypeAlias",
@@ -113,9 +113,9 @@
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "KokoroSpeechSession",
-          "printedName": "AetherSpeech.KokoroSpeechSession",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC"
+          "name": "KokoroModel",
+          "printedName": "AetherSpeech.KokoroModel",
+          "usr": "s:12AetherSpeech11KokoroModelV"
          }
         ],
         "kind": "TypeWitness",
@@ -166,6 +166,394 @@
     "name": "KokoroDriver",
     "printedName": "KokoroDriver",
     "usr": "s:12AetherSpeech12KokoroDriverO"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV6bundle0A4Core15InstalledBundleVvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech11KokoroModelV6bundle0A4Core15InstalledBundleVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech11KokoroModelV6bundle0A4Core15InstalledBundleVvp",
+      "moduleName": "AetherSpeech",
+      "name": "bundle",
+      "printedName": "bundle",
+      "usr": "s:12AetherSpeech11KokoroModelV6bundle0A4Core15InstalledBundleVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech11KokoroModelV8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech11KokoroModelV8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherSpeech",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:12AetherSpeech11KokoroModelV8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Device",
+          "printedName": "AetherCore.Device",
+          "usr": "s:10AetherCore6DeviceV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV6device0A4Core6DeviceVvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech11KokoroModelV6device0A4Core6DeviceVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech11KokoroModelV6device0A4Core6DeviceVvp",
+      "moduleName": "AetherSpeech",
+      "name": "device",
+      "printedName": "device",
+      "usr": "s:12AetherSpeech11KokoroModelV6device0A4Core6DeviceVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Options",
+          "printedName": "AetherSpeech.KokoroSpeechSession.Options"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Options",
+          "printedName": "AetherSpeech.KokoroSpeechSession.Options"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvs",
+        "moduleName": "AetherSpeech",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Options",
+        "printedName": "AetherSpeech.KokoroSpeechSession.Options"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvp",
+      "moduleName": "AetherSpeech",
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:12AetherSpeech11KokoroModelV7options0A4Host15PipelineOptionsVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV8frameCapSiSgvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech11KokoroModelV8frameCapSiSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech11KokoroModelV8frameCapSiSgvs",
+        "moduleName": "AetherSpeech",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:12AetherSpeech11KokoroModelV8frameCapSiSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech11KokoroModelV8frameCapSiSgvp",
+      "moduleName": "AetherSpeech",
+      "name": "frameCap",
+      "printedName": "frameCap",
+      "usr": "s:12AetherSpeech11KokoroModelV8frameCapSiSgvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "KokoroSpeechSession",
+        "printedName": "AetherSpeech.KokoroSpeechSession",
+        "usr": "s:12AetherSpeech06KokoroB7SessionC"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s12AetherSpeech11KokoroModelV7sessionAA0cB7SessionCyKF",
+      "moduleName": "AetherSpeech",
+      "name": "session",
+      "printedName": "session()",
+      "throwing": true,
+      "usr": "s:12AetherSpeech11KokoroModelV7sessionAA0cB7SessionCyKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s12AetherSpeech11KokoroModelV",
+    "moduleName": "AetherSpeech",
+    "name": "KokoroModel",
+    "printedName": "KokoroModel",
+    "usr": "s:12AetherSpeech11KokoroModelV"
    },
    {
     "children": [
@@ -1046,792 +1434,19 @@
      {
       "children": [
        {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "CachePolicy",
-            "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-            "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "CachePolicy",
-            "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-            "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovs"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "CachePolicy",
-          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovp",
-        "moduleName": "AetherSpeech",
-        "name": "cachePolicy",
-        "printedName": "cachePolicy",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0A7Runtime05GraphE0V05CacheG0Ovp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Cache",
-            "printedName": "AetherRuntime.GraphOptions.Cache",
-            "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "Cache",
-            "printedName": "AetherRuntime.GraphOptions.Cache",
-            "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvs"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Cache",
-          "printedName": "AetherRuntime.GraphOptions.Cache",
-          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvp",
-        "moduleName": "AetherSpeech",
-        "name": "cache",
-        "printedName": "cache",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5cache0A7Runtime05GraphE0V5CacheOvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "MemoryBudget",
-            "printedName": "AetherRuntime.MemoryBudget",
-            "usr": "s:13AetherRuntime12MemoryBudgetV"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "MemoryBudget",
-            "printedName": "AetherRuntime.MemoryBudget",
-            "usr": "s:13AetherRuntime12MemoryBudgetV"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvs"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "MemoryBudget",
-          "printedName": "AetherRuntime.MemoryBudget",
-          "usr": "s:13AetherRuntime12MemoryBudgetV"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvp",
-        "moduleName": "AetherSpeech",
-        "name": "memory",
-        "printedName": "memory",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6memory0A7Runtime12MemoryBudgetVvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "ResourceCoordinator",
-              "printedName": "AetherHost.ResourceCoordinator",
-              "usr": "s:10AetherHost19ResourceCoordinatorC"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "AetherHost.ResourceCoordinator?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "ResourceCoordinator",
-              "printedName": "AetherHost.ResourceCoordinator",
-              "usr": "s:10AetherHost19ResourceCoordinatorC"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "AetherHost.ResourceCoordinator?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvs"
-         }
-        ],
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "ResourceCoordinator",
-            "printedName": "AetherHost.ResourceCoordinator",
-            "usr": "s:10AetherHost19ResourceCoordinatorC"
-           }
-          ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.ResourceCoordinator?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declAttributes": [
-         "HasInitialValue",
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp",
-        "moduleName": "AetherSpeech",
-        "name": "coordinator",
-        "printedName": "coordinator",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11coordinator0A4Host19ResourceCoordinatorCSgvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "GPUAdmissionOwner",
-              "printedName": "AetherHost.GPUAdmissionOwner",
-              "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "AetherHost.GPUAdmissionOwner?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "GPUAdmissionOwner",
-              "printedName": "AetherHost.GPUAdmissionOwner",
-              "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "AetherHost.GPUAdmissionOwner?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvs"
-         }
-        ],
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declAttributes": [
-         "HasInitialValue",
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp",
-        "moduleName": "AetherSpeech",
-        "name": "gpu",
-        "printedName": "gpu",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV3gpu0A4Host17GPUAdmissionOwnerVSgvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "FootprintLedger",
-            "printedName": "AetherRuntime.FootprintLedger",
-            "usr": "s:13AetherRuntime15FootprintLedgerC"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "FootprintLedger",
-            "printedName": "AetherRuntime.FootprintLedger",
-            "usr": "s:13AetherRuntime15FootprintLedgerC"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvs"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "FootprintLedger",
-          "printedName": "AetherRuntime.FootprintLedger",
-          "usr": "s:13AetherRuntime15FootprintLedgerC"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvp",
-        "moduleName": "AetherSpeech",
-        "name": "ledger",
-        "printedName": "ledger",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV6ledger0A7Runtime15FootprintLedgerCvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUMemoryProbe",
-            "printedName": "AetherRuntime.GPUMemoryProbe",
-            "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "GPUMemoryProbe",
-            "printedName": "AetherRuntime.GPUMemoryProbe",
-            "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvs"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUMemoryProbe",
-          "printedName": "AetherRuntime.GPUMemoryProbe",
-          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvp",
-        "moduleName": "AetherSpeech",
-        "name": "probe",
-        "printedName": "probe",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV5probe0A7Runtime14GPUMemoryProbeVvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Int",
-              "printedName": "Swift.Int",
-              "usr": "s:Si"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "Swift.Int?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvg",
-          "moduleName": "AetherSpeech",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvg"
-         },
-         {
-          "accessorKind": "set",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Void",
-            "printedName": "()"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Int",
-              "printedName": "Swift.Int",
-              "usr": "s:Si"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "Swift.Int?",
-            "usr": "s:Sq"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvs",
-          "moduleName": "AetherSpeech",
-          "name": "Set",
-          "printedName": "Set()",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvs"
-         }
-        ],
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Int",
-            "printedName": "Swift.Int",
-            "usr": "s:Si"
-           }
-          ],
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "Swift.Int?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declAttributes": [
-         "HasInitialValue",
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvp",
-        "moduleName": "AetherSpeech",
-        "name": "frameCap",
-        "printedName": "frameCap",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV8frameCapSiSgvp"
-       },
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Options",
-          "printedName": "AetherSpeech.KokoroSpeechSession.Options",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV"
-         },
-         {
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "CachePolicy",
-          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
-          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
-         },
-         {
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "Cache",
-          "printedName": "AetherRuntime.GraphOptions.Cache",
-          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
-         },
-         {
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "MemoryBudget",
-          "printedName": "AetherRuntime.MemoryBudget",
-          "usr": "s:13AetherRuntime12MemoryBudgetV"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "ResourceCoordinator",
-            "printedName": "AetherHost.ResourceCoordinator",
-            "usr": "s:10AetherHost19ResourceCoordinatorC"
-           }
-          ],
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.ResourceCoordinator?",
-          "usr": "s:Sq"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
-         },
-         {
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "FootprintLedger",
-          "printedName": "AetherRuntime.FootprintLedger",
-          "usr": "s:13AetherRuntime15FootprintLedgerC"
-         },
-         {
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "GPUMemoryProbe",
-          "printedName": "AetherRuntime.GPUMemoryProbe",
-          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Int",
-            "printedName": "Swift.Int",
-            "usr": "s:Si"
-           }
-          ],
-          "hasDefaultArg": true,
-          "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "Swift.Int?",
-          "usr": "s:Sq"
-         }
-        ],
-        "declKind": "Constructor",
-        "init_kind": "Designated",
-        "kind": "Constructor",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0F06memory11coordinator3gpu6ledger5probe8frameCapAE0A7Runtime05GraphE0V05CacheG0O_AP0Q0OAN12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAW17GPUAdmissionOwnerVSgAN15FootprintLedgerCAN14GPUMemoryProbeVSiSgtcfc",
-        "moduleName": "AetherSpeech",
-        "name": "init",
-        "printedName": "init(cachePolicy:cache:memory:coordinator:gpu:ledger:probe:frameCap:)",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV11cachePolicy0F06memory11coordinator3gpu6ledger5probe8frameCapAE0A7Runtime05GraphE0V05CacheG0O_AP0Q0OAN12MemoryBudgetV0A4Host19ResourceCoordinatorCSgAW17GPUAdmissionOwnerVSgAN15FootprintLedgerCAN14GPUMemoryProbeVSiSgtcfc"
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
        }
       ],
-      "conformances": [
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8CopyableP",
-        "name": "Copyable",
-        "printedName": "Copyable",
-        "usr": "s:s8CopyableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss9EscapableP",
-        "name": "Escapable",
-        "printedName": "Escapable",
-        "usr": "s:s9EscapableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8SendableP",
-        "name": "Sendable",
-        "printedName": "Sendable",
-        "usr": "s:s8SendableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss16SendableMetatypeP",
-        "name": "SendableMetatype",
-        "printedName": "SendableMetatype",
-        "usr": "s:s16SendableMetatypeP"
-       }
-      ],
-      "declKind": "Struct",
-      "kind": "TypeDecl",
-      "mangledName": "$s12AetherSpeech06KokoroB7SessionC7OptionsV",
+      "declKind": "TypeAlias",
+      "kind": "TypeAlias",
+      "mangledName": "$s12AetherSpeech06KokoroB7SessionC7Optionsa",
       "moduleName": "AetherSpeech",
       "name": "Options",
       "printedName": "Options",
-      "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV"
+      "usr": "s:12AetherSpeech06KokoroB7SessionC7Optionsa"
      },
      {
       "accessors": [
@@ -2151,10 +1766,17 @@
         "accessorKind": "get",
         "children": [
          {
-          "kind": "TypeNominal",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
           "name": "Options",
-          "printedName": "AetherSpeech.KokoroSpeechSession.Options",
-          "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV"
+          "printedName": "AetherSpeech.KokoroSpeechSession.Options"
          }
         ],
         "declAttributes": [
@@ -2164,19 +1786,26 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7optionsAC7OptionsVvg",
+        "mangledName": "$s12AetherSpeech06KokoroB7SessionC7options0A4Host15PipelineOptionsVvg",
         "moduleName": "AetherSpeech",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7optionsAC7OptionsVvg"
+        "usr": "s:12AetherSpeech06KokoroB7SessionC7options0A4Host15PipelineOptionsVvg"
        }
       ],
       "children": [
        {
-        "kind": "TypeNominal",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "kind": "TypeNameAlias",
         "name": "Options",
-        "printedName": "AetherSpeech.KokoroSpeechSession.Options",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV"
+        "printedName": "AetherSpeech.KokoroSpeechSession.Options"
        }
       ],
       "declAttributes": [
@@ -2188,11 +1817,11 @@
       "hasStorage": true,
       "isLet": true,
       "kind": "Var",
-      "mangledName": "$s12AetherSpeech06KokoroB7SessionC7optionsAC7OptionsVvp",
+      "mangledName": "$s12AetherSpeech06KokoroB7SessionC7options0A4Host15PipelineOptionsVvp",
       "moduleName": "AetherSpeech",
       "name": "options",
       "printedName": "options",
-      "usr": "s:12AetherSpeech06KokoroB7SessionC7optionsAC7OptionsVvp"
+      "usr": "s:12AetherSpeech06KokoroB7SessionC7options0A4Host15PipelineOptionsVvp"
      },
      {
       "children": [
@@ -2221,22 +1850,44 @@
         "usr": "s:10AetherCore6DeviceV"
        },
        {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNameAlias",
+        "name": "Options",
+        "printedName": "AetherSpeech.KokoroSpeechSession.Options"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
         "hasDefaultArg": true,
         "kind": "TypeNominal",
-        "name": "Options",
-        "printedName": "AetherSpeech.KokoroSpeechSession.Options",
-        "usr": "s:12AetherSpeech06KokoroB7SessionC7OptionsV"
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Convenience",
       "kind": "Constructor",
-      "mangledName": "$s12AetherSpeech06KokoroB7SessionC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAC7OptionsVtAH0A5ErrorOYKcfc",
+      "mangledName": "$s12AetherSpeech06KokoroB7SessionC6bundle8manifest6device7options8frameCapAC0A4Core15InstalledBundleV_AI8ManifestVAI6DeviceV0A4Host15PipelineOptionsVSiSgtAI0A5ErrorOYKcfc",
       "moduleName": "AetherSpeech",
       "name": "init",
-      "printedName": "init(bundle:manifest:device:options:)",
+      "printedName": "init(bundle:manifest:device:options:frameCap:)",
       "throwing": true,
-      "usr": "s:12AetherSpeech06KokoroB7SessionC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceVAC7OptionsVtAH0A5ErrorOYKcfc"
+      "usr": "s:12AetherSpeech06KokoroB7SessionC6bundle8manifest6device7options8frameCapAC0A4Core15InstalledBundleV_AI8ManifestVAI6DeviceV0A4Host15PipelineOptionsVSiSgtAI0A5ErrorOYKcfc"
      },
      {
       "children": [
@@ -3072,11 +2723,12 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s12AetherSpeech16KokoroVocabularyVyAC0A4Core8ManifestV0C0V8PhonemesVcfc",
+      "mangledName": "$s12AetherSpeech16KokoroVocabularyVyAC0A4Core8ManifestV0C0V8PhonemesVAD0A5ErrorOYKcfc",
       "moduleName": "AetherSpeech",
       "name": "init",
       "printedName": "init(_:)",
-      "usr": "s:12AetherSpeech16KokoroVocabularyVyAC0A4Core8ManifestV0C0V8PhonemesVcfc"
+      "throwing": true,
+      "usr": "s:12AetherSpeech16KokoroVocabularyVyAC0A4Core8ManifestV0C0V8PhonemesVAD0A5ErrorOYKcfc"
      },
      {
       "children": [
@@ -3669,7 +3321,7 @@
         "kind": "TypeNominal",
         "name": "Language",
         "printedName": "AetherSpeech.KokoroVoice.Language",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
        }
       ],
       "declAttributes": [
@@ -3679,14 +3331,14 @@
       "funcSelfKind": "NonMutating",
       "genericSig": "<Self where Self : AetherSpeech.SpeechPhonemizer>",
       "kind": "Function",
-      "mangledName": "$s12AetherSpeech0B10PhonemizerP9phonemize_8languageSaySSGSS_AA11KokoroVoiceV8LanguageOtYaKF",
+      "mangledName": "$s12AetherSpeech0B10PhonemizerP9phonemize_8languageSaySSGSS_AA11KokoroVoiceV8LanguageVtYaKF",
       "moduleName": "AetherSpeech",
       "name": "phonemize",
       "printedName": "phonemize(_:language:)",
       "protocolReq": true,
       "reqNewWitnessTableEntry": true,
       "throwing": true,
-      "usr": "s:12AetherSpeech0B10PhonemizerP9phonemize_8languageSaySSGSS_AA11KokoroVoiceV8LanguageOtYaKF"
+      "usr": "s:12AetherSpeech0B10PhonemizerP9phonemize_8languageSaySSGSS_AA11KokoroVoiceV8LanguageVtYaKF"
      }
     ],
     "conformances": [
@@ -3733,339 +3385,6 @@
      {
       "children": [
        {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO15americanEnglishyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "americanEnglish",
-        "printedName": "americanEnglish",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO15americanEnglishyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO14britishEnglishyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "britishEnglish",
-        "printedName": "britishEnglish",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO14britishEnglishyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO7spanishyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "spanish",
-        "printedName": "spanish",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO7spanishyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO6frenchyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "french",
-        "printedName": "french",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO6frenchyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO5hindiyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "hindi",
-        "printedName": "hindi",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO5hindiyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO7italianyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "italian",
-        "printedName": "italian",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO7italianyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8japaneseyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "japanese",
-        "printedName": "japanese",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8japaneseyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO19brazilianPortugueseyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "brazilianPortuguese",
-        "printedName": "brazilianPortuguese",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO19brazilianPortugueseyA2EmF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Language",
-            "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherSpeech.KokoroVoice.Language.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "Function",
-          "printedName": "(AetherSpeech.KokoroVoice.Language.Type) -> AetherSpeech.KokoroVoice.Language"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO15mandarinChineseyA2EmF",
-        "moduleName": "AetherSpeech",
-        "name": "mandarinChinese",
-        "printedName": "mandarinChinese",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO15mandarinChineseyA2EmF"
-       },
-       {
         "accessors": [
          {
           "accessorKind": "get",
@@ -4077,13 +3396,17 @@
             "usr": "s:SS"
            }
           ],
+          "declAttributes": [
+           "Transparent"
+          ],
           "declKind": "Accessor",
+          "implicit": true,
           "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO5bcp47SSvg",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8rawValueSSvg",
           "moduleName": "AetherSpeech",
           "name": "Get",
           "printedName": "Get()",
-          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO5bcp47SSvg"
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8rawValueSSvg"
          }
         ],
         "children": [
@@ -4094,13 +3417,18 @@
           "usr": "s:SS"
          }
         ],
+        "declAttributes": [
+         "HasStorage"
+        ],
         "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
         "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO5bcp47SSvp",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8rawValueSSvp",
         "moduleName": "AetherSpeech",
-        "name": "bcp47",
-        "printedName": "bcp47",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO5bcp47SSvp"
+        "name": "rawValue",
+        "printedName": "rawValue",
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8rawValueSSvp"
        },
        {
         "children": [
@@ -4110,7 +3438,7 @@
             "kind": "TypeNominal",
             "name": "Language",
             "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
            }
           ],
           "kind": "TypeNominal",
@@ -4125,62 +3453,455 @@
           "usr": "s:SS"
          }
         ],
-        "declAttributes": [
-         "Inlinable"
-        ],
         "declKind": "Constructor",
-        "implicit": true,
         "init_kind": "Designated",
         "kind": "Constructor",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8rawValueAESgSS_tcfc",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8rawValueAESgSS_tcfc",
         "moduleName": "AetherSpeech",
         "name": "init",
         "printedName": "init(rawValue:)",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8rawValueAESgSS_tcfc"
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8rawValueAESgSS_tcfc"
        },
        {
-        "children": [
+        "accessors": [
          {
+          "accessorKind": "get",
           "children": [
            {
             "kind": "TypeNominal",
             "name": "Language",
             "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
            }
           ],
-          "kind": "TypeNominal",
-          "name": "Array",
-          "printedName": "[AetherSpeech.KokoroVoice.Language]",
-          "usr": "s:Sa"
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV15americanEnglishAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV15americanEnglishAEvgZ"
          }
         ],
-        "declKind": "TypeAlias",
-        "implicit": true,
-        "kind": "TypeAlias",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8AllCasesa",
-        "moduleName": "AetherSpeech",
-        "name": "AllCases",
-        "printedName": "AllCases",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8AllCasesa"
-       },
-       {
         "children": [
          {
           "kind": "TypeNominal",
-          "name": "String",
-          "printedName": "Swift.String",
-          "usr": "s:SS"
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
          }
         ],
-        "declKind": "TypeAlias",
-        "implicit": true,
-        "kind": "TypeAlias",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8RawValuea",
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV15americanEnglishAEvpZ",
         "moduleName": "AetherSpeech",
-        "name": "RawValue",
-        "printedName": "RawValue",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8RawValuea"
+        "name": "americanEnglish",
+        "printedName": "americanEnglish",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV15americanEnglishAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV14britishEnglishAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV14britishEnglishAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV14britishEnglishAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "britishEnglish",
+        "printedName": "britishEnglish",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV14britishEnglishAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV7spanishAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV7spanishAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV7spanishAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "spanish",
+        "printedName": "spanish",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV7spanishAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV6frenchAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV6frenchAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV6frenchAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "french",
+        "printedName": "french",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV6frenchAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5hindiAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5hindiAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5hindiAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "hindi",
+        "printedName": "hindi",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5hindiAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV7italianAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV7italianAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV7italianAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "italian",
+        "printedName": "italian",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV7italianAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8japaneseAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8japaneseAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8japaneseAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "japanese",
+        "printedName": "japanese",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8japaneseAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV19brazilianPortugueseAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV19brazilianPortugueseAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV19brazilianPortugueseAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "brazilianPortuguese",
+        "printedName": "brazilianPortuguese",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV19brazilianPortugueseAEvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Language",
+            "printedName": "AetherSpeech.KokoroVoice.Language",
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV15mandarinChineseAEvgZ",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "static": true,
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV15mandarinChineseAEvgZ"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Language",
+          "printedName": "AetherSpeech.KokoroVoice.Language",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV15mandarinChineseAEvpZ",
+        "moduleName": "AetherSpeech",
+        "name": "mandarinChinese",
+        "printedName": "mandarinChinese",
+        "static": true,
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV15mandarinChineseAEvpZ"
        },
        {
         "accessors": [
@@ -4193,7 +3914,7 @@
               "kind": "TypeNominal",
               "name": "Language",
               "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
              }
             ],
             "kind": "TypeNominal",
@@ -4202,15 +3923,18 @@
             "usr": "s:Sa"
            }
           ],
+          "declAttributes": [
+           "Transparent"
+          ],
           "declKind": "Accessor",
           "implicit": true,
           "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8allCasesSayAEGvgZ",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5knownSayAEGvgZ",
           "moduleName": "AetherSpeech",
           "name": "Get",
           "printedName": "Get()",
           "static": true,
-          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8allCasesSayAEGvgZ"
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5knownSayAEGvgZ"
          }
         ],
         "children": [
@@ -4220,7 +3944,7 @@
             "kind": "TypeNominal",
             "name": "Language",
             "printedName": "AetherSpeech.KokoroVoice.Language",
-            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+            "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
            }
           ],
           "kind": "TypeNominal",
@@ -4230,17 +3954,72 @@
          }
         ],
         "declAttributes": [
-         "Nonisolated"
+         "HasInitialValue",
+         "HasStorage"
         ],
         "declKind": "Var",
-        "implicit": true,
+        "hasStorage": true,
+        "isLet": true,
         "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8allCasesSayAEGvpZ",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5knownSayAEGvpZ",
         "moduleName": "AetherSpeech",
-        "name": "allCases",
-        "printedName": "allCases",
+        "name": "known",
+        "printedName": "known",
         "static": true,
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8allCasesSayAEGvpZ"
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5knownSayAEGvpZ"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.String?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declKind": "Accessor",
+          "kind": "Accessor",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5bcp47SSSgvg",
+          "moduleName": "AetherSpeech",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5bcp47SSSgvg"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.String?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declKind": "Var",
+        "kind": "Var",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV5bcp47SSSgvp",
+        "moduleName": "AetherSpeech",
+        "name": "bcp47",
+        "printedName": "bcp47",
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV5bcp47SSSgvp"
        },
        {
         "accessors": [
@@ -4254,17 +4033,13 @@
             "usr": "s:SS"
            }
           ],
-          "declAttributes": [
-           "Inlinable"
-          ],
           "declKind": "Accessor",
-          "implicit": true,
           "kind": "Accessor",
-          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8rawValueSSvg",
+          "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV11descriptionSSvg",
           "moduleName": "AetherSpeech",
           "name": "Get",
           "printedName": "Get()",
-          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8rawValueSSvg"
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV11descriptionSSvg"
          }
         ],
         "children": [
@@ -4276,52 +4051,46 @@
          }
         ],
         "declKind": "Var",
-        "implicit": true,
         "kind": "Var",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO8rawValueSSvp",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV11descriptionSSvp",
         "moduleName": "AetherSpeech",
-        "name": "rawValue",
-        "printedName": "rawValue",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO8rawValueSSvp"
-       }
-      ],
-      "conformances": [
+        "name": "description",
+        "printedName": "description",
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV11descriptionSSvp"
+       },
        {
         "children": [
          {
-          "children": [
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Language",
-              "printedName": "AetherSpeech.KokoroVoice.Language",
-              "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Array",
-            "printedName": "[AetherSpeech.KokoroVoice.Language]",
-            "usr": "s:Sa"
-           }
-          ],
-          "kind": "TypeWitness",
-          "name": "AllCases",
-          "printedName": "AllCases"
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
          }
         ],
-        "kind": "Conformance",
-        "mangledName": "$ss12CaseIterableP",
-        "name": "CaseIterable",
-        "printedName": "CaseIterable",
-        "usr": "s:s12CaseIterableP"
-       },
+        "declKind": "TypeAlias",
+        "implicit": true,
+        "kind": "TypeAlias",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV8RawValuea",
+        "moduleName": "AetherSpeech",
+        "name": "RawValue",
+        "printedName": "RawValue",
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV8RawValuea"
+       }
+      ],
+      "conformances": [
        {
         "kind": "Conformance",
         "mangledName": "$ss8CopyableP",
         "name": "Copyable",
         "printedName": "Copyable",
         "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss23CustomStringConvertibleP",
+        "name": "CustomStringConvertible",
+        "printedName": "CustomStringConvertible",
+        "usr": "s:s23CustomStringConvertibleP"
        },
        {
         "kind": "Conformance",
@@ -4395,15 +4164,13 @@
         "usr": "s:s16SendableMetatypeP"
        }
       ],
-      "declKind": "Enum",
-      "enumRawTypeName": "String",
-      "isEnumExhaustive": true,
+      "declKind": "Struct",
       "kind": "TypeDecl",
-      "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageO",
+      "mangledName": "$s12AetherSpeech11KokoroVoiceV8LanguageV",
       "moduleName": "AetherSpeech",
       "name": "Language",
       "printedName": "Language",
-      "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+      "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
      },
      {
       "children": [
@@ -4723,7 +4490,7 @@
           "kind": "TypeNominal",
           "name": "Language",
           "printedName": "AetherSpeech.KokoroVoice.Language",
-          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+          "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
          }
         ],
         "declAttributes": [
@@ -4732,11 +4499,11 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s12AetherSpeech11KokoroVoiceV8languageAC8LanguageOvg",
+        "mangledName": "$s12AetherSpeech11KokoroVoiceV8languageAC8LanguageVvg",
         "moduleName": "AetherSpeech",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8languageAC8LanguageOvg"
+        "usr": "s:12AetherSpeech11KokoroVoiceV8languageAC8LanguageVvg"
        }
       ],
       "children": [
@@ -4744,7 +4511,7 @@
         "kind": "TypeNominal",
         "name": "Language",
         "printedName": "AetherSpeech.KokoroVoice.Language",
-        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageO"
+        "usr": "s:12AetherSpeech11KokoroVoiceV8LanguageV"
        }
       ],
       "declAttributes": [
@@ -4754,11 +4521,11 @@
       "hasStorage": true,
       "isLet": true,
       "kind": "Var",
-      "mangledName": "$s12AetherSpeech11KokoroVoiceV8languageAC8LanguageOvp",
+      "mangledName": "$s12AetherSpeech11KokoroVoiceV8languageAC8LanguageVvp",
       "moduleName": "AetherSpeech",
       "name": "language",
       "printedName": "language",
-      "usr": "s:12AetherSpeech11KokoroVoiceV8languageAC8LanguageOvp"
+      "usr": "s:12AetherSpeech11KokoroVoiceV8languageAC8LanguageVvp"
      },
      {
       "accessors": [

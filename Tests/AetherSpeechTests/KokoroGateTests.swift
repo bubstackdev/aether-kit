@@ -1,3 +1,4 @@
+import AetherHost
 import AetherCore
 import AetherRuntime
 import Foundation
@@ -21,8 +22,7 @@ import Testing
 @Suite("Kokoro gates", .serialized, .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
 struct KokoroGateTests {
     static let environment = ProcessInfo.processInfo.environment
-    static let outputs = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "forge-outputs/kokoro-82m")
+    static let outputs = forgeOutputs().appending(path: "kokoro-82m")
     static let bundleURL = environment["AETHER_KOKORO_BUNDLE"].map { URL(filePath: $0) } ?? outputs.appending(path: "bundle")
     static let referenceURL = environment["AETHER_KOKORO_REFERENCE"].map { URL(filePath: $0) } ?? outputs.appending(path: "reference")
     static let mac = Device(platform: .macOS, architecture: Device.current.architecture)
@@ -53,7 +53,7 @@ struct KokoroGateTests {
         let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: Self.referenceURL.appending(path: "references.json")))
         let session = try await Registry.speech.load(
             try Self.localBundle(Self.bundleURL), as: KokoroDriver.self,
-            options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default))
+            options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default)).session()
         #expect(session.voices.count == 54 && session.frameCap == 1024)
         for entry in index.cases {
             let directory = Self.referenceURL.appending(path: entry.name)
@@ -91,4 +91,18 @@ struct KokoroGateTests {
         await session.unload()
         #expect(await session.residentRoles.isEmpty)
     }
+}
+
+/// The Forge outputs directory beside the repo: the first `forge-outputs` found walking up from this file, so the gates
+/// find it from a worktree under `.worktrees/` as from the main checkout (`AETHER_FORGE_OUTPUTS` overrides).
+func forgeOutputs(from file: String = #filePath) -> URL {
+    if let path = ProcessInfo.processInfo.environment["AETHER_FORGE_OUTPUTS"] { return URL(filePath: path) }
+    var directory = URL(filePath: file).deletingLastPathComponent()
+    while directory.path != "/" {
+        let candidate = directory.appending(path: "forge-outputs")
+        if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        directory = directory.deletingLastPathComponent()
+    }
+    return URL(filePath: file).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "forge-outputs")
 }

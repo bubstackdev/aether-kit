@@ -88,13 +88,14 @@ public actor ChatSession {
     ) async throws -> T {
         let thinking = configuration.parameters.thinking == true
         var parameters = configuration.parameters
-        parameters.logitsProcessors.append(try await generator.jsonConstraint(schema, allowThinking: thinking))
+        let constraint = try await generator.jsonConstraint(schema, allowThinking: thinking)
+        parameters.logitsProcessors.append(constraint)
         parameters.thinking = thinking
         let message = ChatMessage.user(includeSchemaInPrompt ? Self.withSchemaInstruction(text, schema) : text)
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
         let task = Task {
             await self.turn(message, parameters: parameters, check: { reply, summary in
-                _ = try Self.decode(T.self, reply, summary)
+                _ = try Self.decode(T.self, reply, summary, constraint: constraint)
             }, continuation)
         }
         var reply = ""
@@ -107,7 +108,7 @@ public actor ChatSession {
         } onCancel: {
             task.cancel()
         }
-        return try Self.decode(T.self, reply, summary)
+        return try Self.decode(T.self, reply, summary, constraint: constraint)
     }
 
     /// The text that describes a schema (0.0.x's wording).
@@ -121,8 +122,18 @@ public actor ChatSession {
     }
 
     /// Decodes first: a value that completes exactly at `maxTokens` is a value. Only a reply that doesn't decode is
-    /// blamed on the limit it reached.
-    static func decode<T: Decodable>(_ type: T.Type, _ reply: String, _ summary: GenerationSummary?) throws -> T {
+    /// blamed on the limit it reached. With the schema's constraint, the reply must also be a complete value of the
+    /// schema: a prefix cut at the limit can still decode (`100` cut to `1`) while breaking the schema's bounds.
+    static func decode<T: Decodable>(
+        _ type: T.Type, _ reply: String, _ summary: GenerationSummary?, constraint: JSONSchemaConstraint? = nil
+    ) throws -> T {
+        if let constraint, !constraint.completes(reply) {
+            switch summary?.stopReason {
+            case .maxTokens?: throw AetherError.generation(.decodingFailed("the reply reached maxTokens before its value ended"))
+            case .capacity?: throw AetherError.generation(.decodingFailed("the reply reached the context capacity before its value ended"))
+            default: throw AetherError.generation(.decodingFailed("the reply is not a complete value of the schema"))
+            }
+        }
         do {
             return try JSONDecoder().decode(T.self, from: Data(reply.utf8))
         } catch {

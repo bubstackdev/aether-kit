@@ -5,36 +5,9 @@ public import AetherRuntime
 // What the image drivers share (DESIGN.md §6.4): their options and request, the admission prologue every generation
 // runs, and the load-time check of each graph against its driver contract.
 
-/// How an image pipeline loads its graphs and shares memory and the GPU.
-public struct ImagePipelineOptions: Sendable {
-    public var cachePolicy: GraphOptions.CachePolicy
-    public var cache: GraphOptions.Cache
-    /// The budget a generation's planned peak must fit when there is no coordinator (default ``MemoryBudget/imageGeneration``).
-    public var memory: MemoryBudget
-    /// A shared memory budget: the generation reserves its planned peak here (and fits the available bytes).
-    public var coordinator: ResourceCoordinator?
-    /// GPU admission for the generation (in-process and, if configured, the cross-process lease).
-    public var gpu: GPUAdmissionOwner?
-    /// Measured footprints, shared with other pipelines of the model (and seedable with qualified values).
-    public var ledger: FootprintLedger
-    /// What phases are measured with. Tests pass a fixed probe, so what they plan never depends on whatever else
-    /// the process has allocated.
-    public var probe: GPUMemoryProbe
-
-    public init(
-        cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default,
-        memory: MemoryBudget = .imageGeneration, coordinator: ResourceCoordinator? = nil,
-        gpu: GPUAdmissionOwner? = nil, ledger: FootprintLedger = FootprintLedger(), probe: GPUMemoryProbe = .system
-    ) {
-        self.cachePolicy = cachePolicy
-        self.cache = cache
-        self.memory = memory
-        self.coordinator = coordinator
-        self.gpu = gpu
-        self.ledger = ledger
-        self.probe = probe
-    }
-}
+/// How an image pipeline loads its graphs and shares memory and the GPU: AetherHost's ``PipelineOptions``, whose absent
+/// `memory` means ``MemoryBudget/imageGeneration`` here.
+public typealias ImagePipelineOptions = PipelineOptions
 
 extension MemoryBudget {
     /// The image pipelines' default budget: on macOS three quarters of RAM, about Metal's recommended working set on
@@ -79,17 +52,14 @@ public struct ImageRequest: Sendable, Hashable {
     }
 }
 
-extension ImagePipelineOptions {
-    /// Plans residency for `profile` from the ledger (or the graphs' file sizes) and reserves the plan's peak from the
-    /// coordinator, if any. Refuses with `capacity` before anything loads.
-    func admit(
-        manifest: Manifest, profile: String, device: Device, fileBytes: (String) -> Int64
-    ) throws(AetherError) -> (plan: ResidencyPlan, reservation: ResourceReservation?) {
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: ledger, profile: profile, fileBytes: fileBytes)
-        let budget = coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        let reservation = try coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
-        return (plan, reservation)
+extension PipelineOptions {
+    /// An image pipeline's admission (absent `memory`: ``MemoryBudget/imageGeneration``).
+    func admission(
+        manifest: Manifest, device: Device, load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64,
+        maximumShapes: Int = 4
+    ) -> ResidentAdmission {
+        admission(manifest: manifest, device: device, defaultMemory: .imageGeneration, maximumShapes: maximumShapes,
+                  load: load, fileBytes: fileBytes)
     }
 }
 

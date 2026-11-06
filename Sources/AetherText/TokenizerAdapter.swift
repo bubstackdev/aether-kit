@@ -80,7 +80,10 @@ public struct TokenizerAdapter: TokenDecoding {
         for (i, stop) in (block.stop ?? []).enumerated() {
             switch stop {
             case .id(let id):
-                stops.insert(Int32(id))
+                guard let id = Int32(exactly: id) else {
+                    throw AetherError.manifestInvalid(field: "tokenizer.stop.\(i)", reason: "must fit Int32")
+                }
+                stops.insert(id)
             case .text(let text):
                 guard let id = Self.singleToken(text, tokenizer) else {
                     throw AetherError.manifestMismatch(
@@ -95,7 +98,7 @@ public struct TokenizerAdapter: TokenDecoding {
     /// The id of `text` if it is exactly one token (the id maps back to the same string; an UNK fallback does not).
     static func singleToken(_ text: String, _ tokenizer: any Tokenizer) -> Int32? {
         guard let id = tokenizer.convertTokenToId(text), tokenizer.convertIdToToken(id) == text else { return nil }
-        return Int32(id)
+        return Int32(exactly: id)
     }
 
     public func tokenID(_ text: String) -> Int32? { Self.singleToken(text, tokenizer) }

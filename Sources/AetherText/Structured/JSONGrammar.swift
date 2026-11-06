@@ -76,6 +76,16 @@ struct JSONGrammar: Sendable {
             if let unknown = schema.keys.first(where: { !Self.allowedKeys.contains($0) }) {
                 throw AetherError.generation(.unsupportedSchema("the keyword \"\(unknown)\" isn't supported"))
             }
+            // A `$ref` or `anyOf` node takes no constraint beside it: the grammar compiles the reference or the
+            // alternatives alone, so a sibling (a `minimum`, a `type`) would be accepted and not held to.
+            for combinator in ["$ref", "anyOf"] where schema[combinator] != nil {
+                if let sibling = schema.keys.sorted().first(where: { !["$ref", "anyOf", "$defs", "title", "description"].contains($0) }) {
+                    throw AetherError.generation(.unsupportedSchema("\"\(sibling)\" beside \"\(combinator)\" isn't supported"))
+                }
+                if schema["$ref"] != nil, schema["anyOf"] != nil {
+                    throw AetherError.generation(.unsupportedSchema("\"$ref\" and \"anyOf\" in one node aren't supported"))
+                }
+            }
             if case .string(let reference)? = schema["$ref"] {
                 let prefix = "#/$defs/"
                 guard reference.hasPrefix(prefix), let target = definitions[String(reference.dropFirst(prefix.count))] else {
@@ -188,6 +198,12 @@ struct JSONGrammar: Sendable {
         /// a magnitude below 10^18 in those units (18 integer digits, or 9 + 9 for numbers), so a bound beyond that
         /// excludes nothing (`nil`) or everything (an empty range), and the rest convert to `Int64` exactly.
         private func limit(_ value: JSONValue?, scale: Double, rounding: FloatingPointRoundingRule, kind: String) throws -> Int64? {
+            // An integer bound converts exactly: through Double it lost precision above 2^53 (9007199254740993 became
+            // ...992 and the bound itself was refused).
+            if case .int(let integer)? = value {
+                let (scaled, overflow) = Int64(integer).multipliedReportingOverflow(by: Int64(scale))
+                if !overflow, scaled.magnitude < 1_000_000_000_000_000_000 { return scaled }
+            }
             guard let number = try bound(value) else { return nil }
             let producible = 1e18
             // Exact when the bound's shortest decimal form lands on the fixed-point grid: `number * scale` in binary

@@ -26,6 +26,14 @@ struct DecoderEngineTests {
         return (engine, stepLog, prefillLog)
     }
 
+    /// Second review, item 11: a canary of zero steps (or capacity) is refused, not run as a vacuous pass. (That
+    /// `canary: false` keeps greedy decoding at depth one needs an encoding engine: the engine gates cover it.)
+    @Test func aCanaryOfNoLengthIsRefused() async throws {
+        var options = Self.options()
+        options.canarySteps = 0
+        await #expect(throws: AetherError.self) { _ = try await Self.engine(options: options) }
+    }
+
     static func prompt(_ n: Int, seed: Int = 3) -> [Int32] { (0..<n).map { Int32(($0 * 13 + seed) % 61 + 1) } }
 
     /// Greedy reference computed directly from the fake's rule (no engine).

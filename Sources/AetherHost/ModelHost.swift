@@ -76,8 +76,11 @@ public actor ModelHost {
         load: @escaping @Sendable () async throws -> Model,
         _ body: (Model) async throws -> Result
     ) async throws -> Result {
+        // A cancelled caller loads nothing and runs nothing.
+        try Task.checkCancellation()
         let model: Model = try await acquire(ref, policy: policy, load: load)
         do {
+            try Task.checkCancellation()
             let result = try await body(model)
             await relinquish(ref)
             return result
@@ -146,21 +149,30 @@ public actor ModelHost {
         while true {
             guard var resident = residents[ref] else { preconditionFailure("residents are never removed") }
             if let model = resident.model {
+                // Cast before pinning: a type mismatch must not leave the model pinned for good.
+                let typed: Model = try cast(model, ref)
                 resident.pins += 1
                 resident.lastUsed = clock.now()
                 residents[ref] = resident
                 transition(ref, to: .running, idleTimer: false)
-                return try cast(model, ref)
+                return typed
             }
             if let loading = resident.loading {
                 // Join the load in flight; its initiator installs the model and reports the state.
                 resident.pins += 1
                 residents[ref] = resident
+                let joined: any Sendable
                 do {
-                    return try cast(try await loading.value, ref)
+                    joined = try await loading.value
                 } catch {
                     residents[ref]?.pins -= 1
                     settleFailedLoad(ref)
+                    throw error
+                }
+                do {
+                    return try cast(joined, ref)
+                } catch {
+                    relinquish(ref)
                     throw error
                 }
             }
@@ -180,17 +192,24 @@ public actor ModelHost {
             resident.pins += 1
             residents[ref] = resident
             transition(ref, to: .loading, idleTimer: false)
+            let model: any Sendable
             do {
-                let model = try await task.value
-                residents[ref]?.loading = nil
-                residents[ref]?.model = model
-                residents[ref]?.lastUsed = clock.now()
-                transition(ref, to: .running, idleTimer: false)
-                return try cast(model, ref)
+                model = try await task.value
             } catch {
                 residents[ref]?.loading = nil
                 residents[ref]?.pins -= 1
                 settleFailedLoad(ref)
+                throw error
+            }
+            residents[ref]?.loading = nil
+            residents[ref]?.model = model
+            residents[ref]?.lastUsed = clock.now()
+            transition(ref, to: .running, idleTimer: false)
+            do {
+                return try cast(model, ref)
+            } catch {
+                // Loaded, but not the type this caller wants: the model stays resident, unpinned by this caller.
+                relinquish(ref)
                 throw error
             }
         }

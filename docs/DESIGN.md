@@ -30,7 +30,7 @@ from-scratch re-architecture of `john-rocky/coreai-kit`. It shares no code with 
 |---|---|
 | Bundles | The native `aether.json` manifest is the contract. Existing zoo bundles load through an **adapter** that synthesizes a manifest. |
 | LLM engine | **We own it**, written directly on Core AI (`CoreAIRuntime`). No dependency on `coreai-models`. |
-| v1 scope | Chat, the FoundationModels bridge, vision, embeddings, and LM-readout typed decisions. Speech is deferred. |
+| v1 scope | Chat, the FoundationModels bridge, vision, embeddings, and LM-readout typed decisions; image (SD-Turbo, FLUX.2, Krea 2), speech (Kokoro) and video (H3) generation from the 0.0.x ports. |
 | Catalog | Our own catalog, compiled in. No runtime fetch. Weights may come from the zoo's HF repos. |
 | OS floor | `platforms: [.macOS(.v27), .iOS(.v27)]`, with no `@available` noise. |
 | System One | The Swift API comes first. The wire codec, HTTP server and MCP server come later, on the same `Decider` protocol. |
@@ -318,8 +318,20 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     be seeded with qualified values.
   - A measurement holds only for the shapes it ran at: each distinct input shape keeps its own memory until the model
     is released (lab/h3-spike), so a profile pins its shapes.
-  - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`.
-  - The pipeline reserves the plan's peak from AetherHost's shared `ResourceCoordinator` (ported from 0.0.7).
+  - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`. A manifest with no
+    `residency` at all (Kokoro) plans with what its driver measured under the phase it opens (`unphasedPhase`).
+  - After graphs are released (per phase, or on a profile change) the next phase measures from where the released
+    phase started: their memory comes back seconds late, and a baseline still holding it under-counts. That
+    overestimates instead.
+  - **`ResidentAdmission`** (AetherHost) is each pipeline's graphs and their admission across generations. It plans
+    against a shared `ResourceCoordinator`'s available bytes plus the pipeline's own reservation, or against the
+    `MemoryBudget`, adding back the resident graphs' bytes when the budget is what the process may still allocate
+    (that figure already excludes them). It reserves the plan's peak for the generation, then shrinks the reservation
+    to what stays resident, so another pipeline can't take memory resident graphs use; a failure, a refusal or an
+    unload releases the graphs and the reservation together.
+  - Graphs whose shape follows the request (Krea's unpadded text rows, in segments that load without the reshape hint)
+    keep one specialization per shape; past `maximumShapes` (4) distinct shapes they are released before the next
+    generation, so memory stays near what was measured.
 - **Measured, G0 gate (qwen3-0.6b, M5 Max):**
   - A graph load allocates almost nothing (+0.4 MiB for 320 MiB of files).
   - Memory arrives with the first run: +1.33 GiB peak, held while loaded, about 4× the files. So load deltas measure
@@ -339,14 +351,19 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
 - Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
   the plan's peak to a shared `ResourceCoordinator` (reserving it) or a `MemoryBudget`, and refuses before loading if
   nothing fits. Graphs that stay resident are reused across generations.
+- Every generative driver loads a model value, not the pipeline: `LatentDiffusionModel`, `Flux2KleinModel`,
+  `Krea2Model` (which also needs the app's filter) and `KokoroModel`. Its `options` start from the `LoadOptions` cache
+  settings, and the app sets the coordinator, GPU admission and ledger there before making the pipeline (`LoadOptions`
+  is AetherRuntime's and can't carry AetherHost's types).
 - Each graph is checked against its manifest role when it loads (`SignatureValidator`); a request for a size the export
   doesn't have (`latent.sizes`) is refused before any work.
 - Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.
 - **Measured (gate, M5 Max, float32 512²):** phase peaks 1.25 GiB (prompt), 3.5 GiB (steps), 1.25 GiB (image); 4
-  steps take under a second warm. Per phase that is about 4.8 GiB, the figure an iPhone has to fit.
+  steps take under a second warm. Per phase that is about 4.8 GiB, too much for an iPhone, so iOS takes a mixed-precision
+  export (fp32 text encoder, fp16 U-Net and VAE): about 1.7 GiB at peak, qualified on an iPhone (docs/DEVICE.md).
 
 The second is **`flux2-klein@1`** (FLUX.2 [klein] 4B, G2). `Flux2KleinPipeline` has the same shape (the options,
-request, admission prologue and load-time contract check are shared: `ImagePipelineOptions`, `ImageRequest`), with
+request, admission prologue and load-time contract check are shared: `ImagePipelineOptions` (an alias of AetherHost's `PipelineOptions`, which speech uses too and vision and video will), `ImageRequest`), with
 FLUX.2's host recipe:
 
 - The prompt is the bundle's Qwen3 chat template (thinking off) through AetherText's `TokenizerAdapter`, right-padded
@@ -439,8 +456,8 @@ phonemes into 24 kHz float32 PCM (`GeneratedAudio`):
 - **Placement:** both graphs on the GPU (durations with the reshape hint, the bucketed decoder without). Swift's Core
   AI runtime traps loading `durations` for the CPU on macOS 27.2 (`loadFunction`), the placement 0.0.x and Python used.
 - One request at a time, in order (queue, not fail); cancellation stops between graph calls; any failure releases the
-  graphs and the session stays usable; `unload()` waits for the running request. Runs on iOS (the iPhone run is
-  pending).
+  graphs and the session stays usable; `unload()` waits for the running request. Qualified on an iPhone at the
+  512-frame cap (docs/DEVICE.md).
 - **Measured (gate, M5 Max, 5 cases):** frames exact; rel. L2 0.0076–0.032 against upstream on the CPU; held
   3.0 GiB, peak 3.2 GiB with buckets up to 1024 specialized.
 
@@ -467,8 +484,10 @@ runtime pieces:
   `check_h3.py` qualifies against the original modules (the step-0 head velocities moved 5.4%, 10.8% at step 1);
   without it the driver is bit-identical to that path, step 0 and step 1 alike (gate). The conditioner specializes
   per prompt length within its phase.
-- **Memory:** residency planned per profile from the ledger, seeded with the qualified profile's measured phases
-  (`qualifiedFootprints`); an unmeasured graph stands in as its file plus two banks of its largest weight block.
+- **Memory:** residency planned per profile through `ResidentAdmission`, from the ledger seeded under the pipeline's
+  key with the qualified profile's measured phases (`qualifiedFootprints`); an unmeasured graph stands in as its file
+  plus two banks of its largest weight block. Options are `PipelineOptions` (`VideoPipelineOptions`; absent memory
+  means `MemoryBudget.videoGeneration`, three quarters of RAM), and `MiniMaxH3Driver` loads a `MiniMaxH3Model`.
 - macOS only in 0.1.0 (`unsupportedDevice` on iOS before loading). FL2VA keyframes are not presented yet (the bundle
   carries the vision tower and keyframe encoder).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph

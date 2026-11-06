@@ -134,6 +134,34 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   tensors between host and Metal arenas. The exporter's manifest fixes: `video.noise.order` is `sourceVideoThenAudio`
   (0.0.x's draw order), the pack's text input is named `text`, and no graph takes the reshape hint. FL2VA keyframes are
   deferred; the bundle isn't publicly hosted (license).
+- **Second pre-release review fixes:** store references are validated and contained before any file operation
+  (`AetherError.invalidReference`); an install is reused only for the same installation; tokenizer paths are
+  contained and stop ids bounded; released bindings no longer validate; structured replies must complete their
+  schema; exact integer schema bounds, and constraints beside `$ref`/`anyOf` refused; ModelHost leaks no pin on a type
+  mismatch and cancelled callers load nothing; the GPU-admission timeout race; cancellation between prefill chunks;
+  canary off means depth one; a top-k crash at tiny temperatures; cumulative resident footprints keyed by revision
+  and device; float32 logits reads 377 → 6 µs; bounded constraint cache; download backpressure; the device gate
+  script fails on failed checks; `Aether` re-exports `AetherSpeech`.
+- **Pre-release review fixes:** `ResidentAdmission` (AetherHost) keeps a pipeline's resident graphs reserved on a
+  shared coordinator and releases them on refusal; measured footprints are used for manifests without residency
+  (Kokoro) and after late releases; canvases need `maxImageTokens`; drivers load model values with settable options;
+  `KokoroVoice.Language` is open; `GeneratedAudio.sampleCount` (was `frameCount`).
+
+### Known limitations
+
+- **Decoder capacity** is sized at load from the model's load-time Metal delta (at least its files), but memory
+  arrives with the first run (G0: about 3× the files held). Re-sizing after the canary needs the engine to lower its
+  capacity limit after construction.
+- **Per-phase plans** assume only the phase before a phase is still releasing (≈5 s late return). Phases shorter than
+  that (SD-Turbo's are sub-second) can overlap three deep; per-phase mode is the memory-short fallback, and Krea's
+  phases, the case it exists for, run longer.
+- **Kokoro** is admitted against the measurement for its frame cap's bucket; until a cap-bucket run (or `prewarm`)
+  is measured, a smaller bucket's measurement stands in and under-counts.
+- **Waiting turns:** five actor-owned FIFO queues (Generator, ChatSession, the image pipelines, Kokoro, `SerialGate`)
+  keep a cancelled waiter until its turn comes (it then checks cancellation and leaves); one cancellation-aware
+  primitive is planned. A cancelled `ModelHost` caller joined to another caller's load waits for that load to end.
+- **The FoundationModels adapter** renders the prompt again for its context check (the Generator's duplicate render
+  for attention-only models is gone).
 
 ### In progress before 0.1.0 is tagged
 

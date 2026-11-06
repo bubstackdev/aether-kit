@@ -82,6 +82,10 @@ struct FlowMatchScheduleTests {
         #expect(try FlowMatchSchedule(Self.krea, steps: 1).sigmas == [1, 0])
         #expect(throws: AetherError.self) { try FlowMatchSchedule(Self.krea, steps: 0) }
         #expect(throws: AetherError.self) { try FlowMatchSchedule(Self.krea, steps: 51) }
+        // Review finding 10: the direct initializer refuses bad values instead of trapping.
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 0, mu: nil) }
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: .nan) }
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(steps: 4, mu: 1, trainTimesteps: 0) }
     }
 
     @Test func fluxEmpiricalShiftMatchesTheReferencePipeline() throws {
@@ -164,7 +168,7 @@ struct GeneratedMediaTests {
         #expect(samples == [0.25, -0.5, 3, 1])  // interleaved, unclipped
         let surround = try GeneratedAudio(channels: Array(repeating: [0], count: 3), sampleRate: 8_000)
         #expect(try surround.wavData().count == 12 + 8 + 40 + 12 + 8 + 6)
-        #expect(try GeneratedAudio.concatenating([mono, mono]).frameCount == 10)
+        #expect(try GeneratedAudio.concatenating([mono, mono]).sampleCount == 10)
         #expect(throws: AetherError.self) { try GeneratedAudio.concatenating([mono, stereo]) }
         #expect(throws: AetherError.self) { try GeneratedAudio(channels: [[0], [0, 1]], sampleRate: 8_000) }
         #expect(throws: AetherError.self) { try GeneratedAudio(mono: [.infinity], sampleRate: 8_000) }
@@ -274,7 +278,10 @@ struct ResidencyTests {
         residency.beginPhase(.perStep)
         for role in ["denoiser0", "denoiser1", "denoiser2", "denoiser3"] { _ = try await residency.graph(role) }
         residency.endPhase(.perStep)
-        #expect(ledger.footprint(key(.perStep)) == PhaseFootprint(peakBytes: 4, heldBytes: 4))
+        // Per phase, the prompt's graphs were released but their memory (the fake never frees it) still counts: the
+        // steps phase measures from where the prompt began, the overestimate admission prefers.
+        #expect(ledger.footprint(key(.perStep)) == (mode == .allResident
+            ? PhaseFootprint(peakBytes: 4, heldBytes: 4) : PhaseFootprint(peakBytes: 605, heldBytes: 605)))
 
         switch mode {
         case .allResident:
@@ -288,6 +295,47 @@ struct ResidencyTests {
         residency.beginPhase(.perImage)
         residency.releaseAll()  // an open phase is discarded unrecorded
         #expect(residency.residentRoles.isEmpty && ledger.footprint(key(.perImage)) == nil)
+    }
+
+    /// Review finding 4: a released phase's memory returns seconds late. Measured from a baseline that still held it,
+    /// the next phase came out low (here its held bytes negative) once that memory returned mid-phase.
+    @Test func aPhaseAfterAReleaseMeasuresFromBeforeTheReleasedGraphs() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let residency = GraphResidency(manifest: try Self.krea(), mode: .perPhase, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        residency.beginPhase(.perPrompt)       // 1000
+        _ = try await residency.graph("textEncoder")
+        gpu.add(600)
+        residency.endPhase(.perPrompt)         // released; its 600 not yet returned
+        residency.beginPhase(.perStep)         // the level is still 1600
+        _ = try await residency.graph("denoiser0")
+        gpu.add(200)
+        residency.sample()                     // 1800
+        gpu.add(-600)                          // the prompt's memory returns
+        residency.endPhase(.perStep)           // 1200
+        let steps = ledger.footprint(.init(model: "krea-2-turbo", profile: "p", phase: .perStep))
+        #expect(steps == PhaseFootprint(peakBytes: 800, heldBytes: 200))
+        #expect(residency.floor == 1000)
+    }
+
+    /// Second review, overlap with finding 4: resident graphs that grow on a phase's next occurrence (100, then 80
+    /// more) were recorded as the largest single growth (100), not what they hold (180).
+    @Test func residentGrowthAccumulatesAcrossOccurrences() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let manifest = try Self.krea()
+        let residency = GraphResidency(manifest: manifest, mode: .allResident, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        residency.beginPhase(.perPrompt)
+        _ = try await residency.graph("textEncoder")
+        gpu.add(100)
+        residency.endPhase(.perPrompt)
+        residency.beginPhase(.perPrompt)
+        gpu.add(80)
+        residency.endPhase(.perPrompt)
+        #expect(ledger.footprint(.init(model: manifest.id, profile: "p", phase: .perPrompt))
+            == PhaseFootprint(peakBytes: 180, heldBytes: 180))
     }
 
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {

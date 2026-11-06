@@ -3,14 +3,31 @@ public import AetherHost
 public import AetherRuntime
 import Foundation
 
-/// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M speech from phonemes. Loads a ``KokoroSpeechSession``.
+/// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M speech from phonemes. Loads a ``KokoroModel``: set its options (a shared
+/// coordinator, GPU admission, a ledger, the frame cap), then make the ``KokoroSpeechSession``.
 public enum KokoroDriver: ModelDriver {
     public static let id: DriverID = .kokoro
 
-    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> KokoroSpeechSession {
-        try KokoroSpeechSession(
-            bundle: bundle, manifest: try Manifest.load(fromBundle: bundle.url), device: options.device,
+    public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> KokoroModel {
+        let manifest = try Manifest.load(fromBundle: bundle.url)
+        try DriverContract.kokoro.validate(manifest)
+        return KokoroModel(
+            bundle: bundle, manifest: manifest, device: options.device,
             options: .init(cachePolicy: options.cachePolicy, cache: options.cache))
+    }
+}
+
+/// An opened Kokoro bundle. Nothing is loaded yet; ``options`` start from the `LoadOptions` cache settings.
+public struct KokoroModel: Sendable {
+    public let bundle: InstalledBundle
+    public let manifest: Manifest
+    public let device: Device
+    public var options: KokoroSpeechSession.Options
+    /// The longest utterance in frames; absent, the manifest's cap for the platform.
+    public var frameCap: Int?
+
+    public func session() throws -> KokoroSpeechSession {
+        try KokoroSpeechSession(bundle: bundle, manifest: manifest, device: device, options: options, frameCap: frameCap)
     }
 }
 
@@ -69,34 +86,8 @@ public struct KokoroSpeech: Sendable, Hashable {
 /// - **Cancellation** stops between graph calls with `CancellationError`. Any failure releases the graphs; the session
 ///   stays usable.
 public actor KokoroSpeechSession {
-    public struct Options: Sendable {
-        public var cachePolicy: GraphOptions.CachePolicy
-        public var cache: GraphOptions.Cache
-        /// The budget a request's planned peak must fit when there is no coordinator.
-        public var memory: MemoryBudget
-        public var coordinator: ResourceCoordinator?
-        public var gpu: GPUAdmissionOwner?
-        public var ledger: FootprintLedger
-        /// What requests are measured with. Tests pass a fixed probe.
-        public var probe: GPUMemoryProbe
-        /// The longest utterance in frames. Absent: the manifest's cap for the platform. At most the largest bucket.
-        public var frameCap: Int?
-
-        public init(
-            cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default,
-            memory: MemoryBudget = .platformDefault, coordinator: ResourceCoordinator? = nil, gpu: GPUAdmissionOwner? = nil,
-            ledger: FootprintLedger = FootprintLedger(), probe: GPUMemoryProbe = .system, frameCap: Int? = nil
-        ) {
-            self.cachePolicy = cachePolicy
-            self.cache = cache
-            self.memory = memory
-            self.coordinator = coordinator
-            self.gpu = gpu
-            self.ledger = ledger
-            self.probe = probe
-            self.frameCap = frameCap
-        }
-    }
+    /// AetherHost's ``PipelineOptions``; absent `memory` means ``MemoryBudget/platformDefault`` here.
+    public typealias Options = PipelineOptions
 
     /// The most segments one request takes; each segment's audio is kept in the result.
     public static let maximumSegments = 256
@@ -117,20 +108,22 @@ public actor KokoroSpeechSession {
     public nonisolated let options: Options
     let names: Names
     let device: Device
-    private let load: GraphResidency.Loader
     private let readTable: @Sendable (Manifest.Table) throws(AetherError) -> [Float]
-    private let fileBytes: @Sendable (String) -> Int64
-    private var residency: GraphResidency?
+    private let admission: ResidentAdmission
     private var styles: [KokoroVoice: [Float]] = [:]
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
     /// Opens an installed bundle; the graphs load on the first request.
-    public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) throws(AetherError) {
+    /// `frameCap` is the longest utterance in frames; absent, the manifest's cap for the platform (at most the
+    /// largest bucket).
+    public init(
+        bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options(), frameCap: Int? = nil
+    ) throws(AetherError) {
         let loader = GraphResidency.bundleLoader(
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         try self.init(
-            manifest: manifest, device: device, options: options,
+            manifest: manifest, device: device, options: options, frameCap: frameCap,
             load: Self.validating(loader, manifest: manifest),
             readTable: { table throws(AetherError) in try Self.readTable(table, in: bundle) },
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
@@ -138,7 +131,7 @@ public actor KokoroSpeechSession {
 
     /// The session over any graph loader and table reader (tests drive it with fakes).
     init(
-        manifest: Manifest, device: Device, options: Options, load: @escaping GraphResidency.Loader,
+        manifest: Manifest, device: Device, options: Options, frameCap requested: Int? = nil, load: @escaping GraphResidency.Loader,
         readTable: @escaping @Sendable (Manifest.Table) throws(AetherError) -> [Float],
         fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
@@ -147,7 +140,7 @@ public actor KokoroSpeechSession {
             throw .manifestInvalid(field: "kokoro", reason: "\(KokoroDriver.id) requires the kokoro block")
         }
         let platformCap = kokoro.frames.cap[device.platform.rawValue] ?? kokoro.frames.maxFrames
-        let frameCap = options.frameCap ?? platformCap
+        let frameCap = requested ?? platformCap
         guard (1...kokoro.frames.maxFrames).contains(frameCap) else {
             throw .generation(.invalidParameters("the frame cap must be in 1...\(kokoro.frames.maxFrames), not \(frameCap)"))
         }
@@ -169,14 +162,16 @@ public actor KokoroSpeechSession {
             frames: decoder.inputs["frames"]!.name, audio: decoder.outputs["audio"]!.name)
         self.manifest = manifest
         self.kokoro = kokoro
-        vocabulary = KokoroVocabulary(kokoro.phonemes)
+        vocabulary = try KokoroVocabulary(kokoro.phonemes)
         self.voices = voices
         self.frameCap = frameCap
         self.options = options
         self.device = device
-        self.load = load
         self.readTable = readTable
-        self.fileBytes = fileBytes
+        // Kokoro's graphs have no residency: both stay loaded, and the session measures them under `perStep`.
+        admission = options.admission(
+            manifest: manifest, device: device, defaultMemory: .platformDefault, unphasedPhase: .perStep,
+            load: load, fileBytes: fileBytes)
     }
 
     /// Parses phonemes against this bundle's vocabulary.
@@ -214,9 +209,7 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let reservation = try admit()
-        defer { reservation?.release() }
-        let residency = openResidency()
+        let residency = try admission.begin(profile: profile)
         do {
             let style = try styles(request.voice, table: voice.table)
             var results: [KokoroSpeech] = []
@@ -228,10 +221,10 @@ public actor KokoroSpeechSession {
                 onSegment?(index, speech)
                 results.append(speech)
             }
+            admission.finish()
             return results
         } catch {
-            residency.releaseAll()
-            self.residency = nil
+            admission.release()
             throw error
         }
     }
@@ -261,9 +254,7 @@ public actor KokoroSpeechSession {
         try Task.checkCancellation()
         let grant = try await options.gpu?.admit()
         defer { grant?.release() }
-        let reservation = try admit()
-        defer { reservation?.release() }
-        let residency = openResidency()
+        let residency = try admission.begin(profile: profile)
         do {
             residency.beginPhase(.perStep)
             _ = try await residency.graph("durations")
@@ -274,10 +265,10 @@ public actor KokoroSpeechSession {
                 _ = try await decode(residency, prosody: nil, text: nil, style: style, frames: bucket, bucket: bucket, seed: 0)
             }
             residency.endPhase(.perStep)
+            admission.finish()
             return buckets
         } catch {
-            residency.releaseAll()
-            self.residency = nil
+            admission.release()
             throw error
         }
     }
@@ -286,14 +277,13 @@ public actor KokoroSpeechSession {
     /// again.
     public func unload() async {
         await turn()
-        residency?.releaseAll()
-        residency = nil
+        admission.release()
         styles = [:]
         endTurn()
     }
 
     /// Roles currently loaded (for tests and diagnostics).
-    public var residentRoles: [String] { residency?.residentRoles ?? [] }
+    public var residentRoles: [String] { admission.residentRoles }
 
     // MARK: - One utterance
 
@@ -388,25 +378,8 @@ public actor KokoroSpeechSession {
 
     // MARK: - Admission, residency, voices
 
-    /// The peak a request needs: the cap bucket's measured footprint, or the graphs' files; reserved from the
-    /// coordinator if there is one. Refuses with `capacity` before anything loads.
-    private func admit() throws(AetherError) -> ResourceReservation? {
-        let inputs = ResidencyPlan.inputs(manifest: manifest, ledger: options.ledger, profile: profile, fileBytes: fileBytes)
-        let budget = options.coordinator.map { Int64(clamping: $0.snapshot.availableBytes) } ?? options.memory.bytes(on: device)
-        let plan = try ResidencyPlan.choose(inputs, budget: budget)
-        return try options.coordinator?.reserve(bytes: UInt64(max(1, plan.peakBytes)))
-    }
-
     /// Footprints are keyed by the bucket the cap allows: each bucket the decoder has run at keeps its memory.
     private var profile: String { "frames<=\(kokoro.frames.bucket(for: frameCap) ?? frameCap)" }
-
-    private func openResidency() -> GraphResidency {
-        if let residency { return residency }
-        let fresh = GraphResidency(
-            manifest: manifest, mode: .allResident, ledger: options.ledger, profile: profile, probe: options.probe, load: load)
-        residency = fresh
-        return fresh
-    }
 
     private func styles(_ voice: KokoroVoice, table name: String) throws(AetherError) -> [Float] {
         if let cached = styles[voice] { return cached }
