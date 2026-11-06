@@ -1,8 +1,28 @@
-/// The closed set of roles a driver understands (DESIGN.md §4: "Roles are a closed set per driver").
-///
-/// A contract is pure data: AetherCore checks a manifest's roles against it, and AetherRuntime checks the same
-/// roles against a loaded graph's signature (rank and scalar kind). Drivers own their contract; this file only
-/// holds the ones whose drivers are part of the plan, so the adapter and the tests can refer to them.
+/// Every driver id and graph kind MANIFEST.md §1 defines. A known id that no registered driver implements is
+/// `unsupported`; an id outside this set is `unknownDriver`.
+public enum DriverCatalog {
+    public static let drivers: Set<DriverID> = Set([
+        "decoder-lm@1", "static-chunked-lm@1", "decoder-hostcache@1",
+        "vlm-static-inject@1", "vlm-embeds@1",
+        "detector-dense@1", "detector-detr@1", "depth-estimator@1", "clip-joint@1", "image-to-image-tiled@1",
+        "text-embedder@1", "late-interaction-retriever@1", "gliner-classifier@1", "yes-no-classifier@1",
+        "decision-lm@1", "decision-hidden-head@1", "decision-joint-head@1", "encoder-decider@1",
+    ].map(DriverID.init(validated:)))
+
+    /// Reusable graph contracts a driver embeds. Never a top-level `driver`.
+    public static let graphKinds: Set<DriverID> = [DriverID(validated: "vision-tower@1"), DriverID(validated: "audio-encoder@1")]
+
+    /// The role contracts implemented so far. The other drivers' contracts arrive with their milestones.
+    public static let contracts: [DriverID: DriverContract] = [DriverContract.decoderLM.driver: .decoderLM]
+
+    /// `.unknownDriver` unless `id` is a driver this build knows.
+    public static func requireKnown(_ id: DriverID) throws(AetherError) {
+        guard drivers.contains(id) else { throw .unknownDriver(id) }
+    }
+}
+
+/// The closed set of roles a driver understands (MANIFEST.md §1). Pure data: AetherCore checks a manifest's
+/// roles against it, and AetherRuntime checks the same roles against the graph signatures.
 public struct DriverContract: Sendable, Hashable {
     public enum ScalarKind: String, Sendable, Hashable {
         case integer
@@ -21,43 +41,50 @@ public struct DriverContract: Sendable, Hashable {
         public var required: Bool
         /// The exact rank, or nil for any rank.
         public var rank: Int?
-        public var scalar: ScalarKind
+        public var scalar: ScalarKind?
 
-        public init(required: Bool, rank: Int?, scalar: ScalarKind) {
+        public init(required: Bool, rank: Int?, scalar: ScalarKind?) {
             self.required = required
             self.rank = rank
             self.scalar = scalar
         }
     }
 
-    /// The roles of one graph of the bundle.
     public struct GraphContract: Sendable, Hashable {
         public var inputs: [String: RoleSpec]
+        /// Inputs outside `inputs` are accepted only as `binding: static` with a `source` (tables, fills, chaining).
+        public var allowsStaticSourcedInputs: Bool
         public var outputs: [String: RoleSpec]
-        /// Minimum number of kv state names (0 when kv is not allowed), and whether they must come in pairs.
-        public var minimumKV: Int
-        public var kvInPairs: Bool
-        public var kvScalar: ScalarKind
+        public var minimumSequenceStates: Int
+        public var sequenceScalar: ScalarKind
         public var allowsRecurrent: Bool
         public var recurrentScalar: ScalarKind
+        /// Phases allowed in `functions` (`function` is the `step` phase).
+        public var phases: Set<String>
+        public var allowsFunctionFamily: Bool
+        public var requiresMaxContext: Bool
 
         public init(
-            inputs: [String: RoleSpec], outputs: [String: RoleSpec], minimumKV: Int = 0, kvInPairs: Bool = true,
-            kvScalar: ScalarKind = .floatingPoint, allowsRecurrent: Bool = false,
-            recurrentScalar: ScalarKind = .floatingPoint
+            inputs: [String: RoleSpec], allowsStaticSourcedInputs: Bool, outputs: [String: RoleSpec],
+            minimumSequenceStates: Int, sequenceScalar: ScalarKind = .floatingPoint, allowsRecurrent: Bool,
+            recurrentScalar: ScalarKind = .floatingPoint, phases: Set<String>, allowsFunctionFamily: Bool,
+            requiresMaxContext: Bool
         ) {
             self.inputs = inputs
+            self.allowsStaticSourcedInputs = allowsStaticSourcedInputs
             self.outputs = outputs
-            self.minimumKV = minimumKV
-            self.kvInPairs = kvInPairs
-            self.kvScalar = kvScalar
+            self.minimumSequenceStates = minimumSequenceStates
+            self.sequenceScalar = sequenceScalar
             self.allowsRecurrent = allowsRecurrent
             self.recurrentScalar = recurrentScalar
+            self.phases = phases
+            self.allowsFunctionFamily = allowsFunctionFamily
+            self.requiresMaxContext = requiresMaxContext
         }
     }
 
     public var driver: DriverID
-    /// Graph role → its contract. Every key is required; no other graph role is accepted.
+    /// Graph role → contract. Every key is required; no other graph role is accepted.
     public var graphs: [String: GraphContract]
     public var requiresTokenizer: Bool
 
@@ -72,8 +99,11 @@ public struct DriverContract: Sendable, Hashable {
         guard manifest.driver == driver else {
             throw .manifestMismatch(field: "driver", expected: driver.description, found: manifest.driver.description)
         }
-        if requiresTokenizer, manifest.tokenizer == nil {
-            throw .manifestInvalid(field: "tokenizer", reason: "\(driver) requires a tokenizer")
+        if requiresTokenizer {
+            guard let tokenizer = manifest.tokenizer else {
+                throw .manifestInvalid(field: "tokenizer", reason: "\(driver) requires a tokenizer")
+            }
+            try require(!(tokenizer.stop ?? []).isEmpty, "tokenizer.stop", "\(driver) requires at least one stop marker")
         }
         for key in manifest.graphs.keys.sorted() where graphs[key] == nil {
             throw .manifestInvalid(
@@ -91,46 +121,56 @@ public struct DriverContract: Sendable, Hashable {
 
 extension DriverContract.GraphContract {
     func validate(_ graph: Manifest.Graph, at prefix: String, driver: DriverID) throws(AetherError) {
-        try Self.checkRoles(graph.inputs, against: inputs, at: "\(prefix).inputs", driver: driver)
-        try Self.checkRoles(graph.outputs, against: outputs, at: "\(prefix).outputs", driver: driver)
-        let kv = graph.states.kv
-        if minimumKV == 0 {
-            try Manifest.require(kv.isEmpty, "\(prefix).states.kv", "\(driver) does not take kv states")
-        } else {
-            try Manifest.require(kv.count >= minimumKV, "\(prefix).states.kv",
-                                 "\(driver) requires at least \(minimumKV) kv state names")
+        if graph.functionFamily != nil, !allowsFunctionFamily {
+            throw .manifestInvalid(field: "\(prefix).functionFamily", reason: "\(driver) does not take function families")
         }
-        if kvInPairs {
-            try Manifest.require(kv.count % 2 == 0, "\(prefix).states.kv", "kv states come in [keys, values] pairs")
+        for phase in graph.phases.keys.sorted() where !phases.contains(phase) {
+            throw .manifestInvalid(
+                field: "\(prefix).functions.\(phase)",
+                reason: "\(driver) has no phase '\(phase)'; known: \(phases.sorted().joined(separator: ", "))")
         }
-        if !kv.isEmpty {
-            try Manifest.require(graph.states.sequenceAxis != nil, "\(prefix).states.sequenceAxis",
-                                 "required when kv states are present")
+        for phase in graph.phases.keys.sorted() {
+            let field = graph.inputsByFunction?[phase] != nil ? "\(prefix).inputsByFunction.\(phase)" : "\(prefix).inputs"
+            try checkInputs(graph.inputs(forPhase: phase), at: field, driver: driver)
         }
+        for role in graph.outputs.keys.sorted() where outputs[role] == nil {
+            throw .manifestInvalid(
+                field: "\(prefix).outputs.\(role)",
+                reason: "\(driver) has no output role '\(role)'; known: \(outputs.keys.sorted().joined(separator: ", "))")
+        }
+        for (role, spec) in outputs.sorted(by: { $0.key < $1.key }) where spec.required && graph.outputs[role] == nil {
+            throw .manifestInvalid(field: "\(prefix).outputs.\(role)", reason: "required by \(driver)")
+        }
+        let states = graph.states ?? Manifest.States()
+        try require(states.sequence.count >= minimumSequenceStates, "\(prefix).states.sequence",
+                    "\(driver) requires at least \(minimumSequenceStates) sequence state(s)")
         if !allowsRecurrent {
-            try Manifest.require(graph.states.recurrent.isEmpty, "\(prefix).states.recurrent",
-                                 "\(driver) does not take recurrent states")
+            try require(states.recurrent.isEmpty, "\(prefix).states.recurrent", "\(driver) does not take recurrent states")
+        }
+        try require((states.host ?? []).isEmpty, "\(prefix).states.host", "host-held state is reserved for decoder-hostcache@1")
+        if requiresMaxContext {
+            try require(graph.limits?.maxContext != nil, "\(prefix).limits.maxContext", "required by \(driver)")
         }
     }
 
-    static func checkRoles(
-        _ roles: [String: String], against specs: [String: DriverContract.RoleSpec], at prefix: String,
-        driver: DriverID
-    ) throws(AetherError) {
-        for role in roles.keys.sorted() where specs[role] == nil {
-            throw .manifestInvalid(
-                field: "\(prefix).\(role)",
-                reason: "\(driver) has no role '\(role)'; known: \(specs.keys.sorted().joined(separator: ", "))")
+    func checkInputs(_ bindings: [String: Manifest.Binding], at prefix: String, driver: DriverID) throws(AetherError) {
+        for (role, binding) in bindings.sorted(by: { $0.key < $1.key }) where inputs[role] == nil {
+            guard allowsStaticSourcedInputs, binding.isStatic, binding.source != nil else {
+                throw .manifestInvalid(
+                    field: "\(prefix).\(role)",
+                    reason: "\(driver) has no input role '\(role)' (known: \(inputs.keys.sorted().joined(separator: ", "))); "
+                        + "other inputs must be binding: static with a source")
+            }
         }
-        for (role, spec) in specs.sorted(by: { $0.key < $1.key }) where spec.required && roles[role] == nil {
+        for (role, spec) in inputs.sorted(by: { $0.key < $1.key }) where spec.required && bindings[role] == nil {
             throw .manifestInvalid(field: "\(prefix).\(role)", reason: "required by \(driver)")
         }
     }
 }
 
 extension DriverContract {
-    /// `decoder-lm@1` (§4, §6.2): inputs `tokens [1,S]` and `positions [1,P]`, output `logits [1,S,V]` and an optional
-    /// `hidden`, at least one kv pair with a declared sequence axis, and optional recurrent states.
+    /// `decoder-lm@1` (MANIFEST.md §1.1): in `tokens`, `positions`; out `logits`, optional `hidden`; at least one
+    /// sequence state; optional recurrent states; static table inputs; phases `step` and `prefill`.
     public static let decoderLM = DriverContract(
         driver: .decoderLM,
         graphs: [
@@ -139,15 +179,13 @@ extension DriverContract {
                     "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
                     "positions": RoleSpec(required: true, rank: 2, scalar: .integer),
                 ],
+                allowsStaticSourcedInputs: true,
                 outputs: [
                     "logits": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
                     "hidden": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
                 ],
-                minimumKV: 2, kvInPairs: true, kvScalar: .floatingPoint,
-                allowsRecurrent: true, recurrentScalar: .floatingPoint),
+                minimumSequenceStates: 1, allowsRecurrent: true, phases: ["step", "prefill"],
+                allowsFunctionFamily: false, requiresMaxContext: true),
         ],
         requiresTokenizer: true)
-
-    /// The contracts this build knows by driver id.
-    public static let known: [DriverID: DriverContract] = [DriverContract.decoderLM.driver: .decoderLM]
 }

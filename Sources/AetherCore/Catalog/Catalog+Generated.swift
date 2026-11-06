@@ -7,26 +7,217 @@ extension Catalog {
         CatalogEntry(
             id: "qwen3-0.6b",
             task: "text-generation",
-            driver: DriverID(validated: "decoder-lm@1"),
             repo: "mlboydaisuke/qwen3-0.6b-CoreAI-official",
             revision: "943eb6a4f967de53d7e1458d75deac0b68ac3d85",
             license: "apache-2.0",
             variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "static-chunked-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "ios",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 610, sha256: "914629c2db6286d102682fc1bec07bb614357d25c9b313c42dff103c6e59b2ad"),
+                                CatalogFile(path: "qwen3_0_6b_mixed_4bit_8bit_static.aimodel/main.hash", size: 32, sha256: "636b2bb6c2aafdc2b0b2ee603654a5b45dcc2760c06c78e3f2e471d029ad0f8a"),
+                                CatalogFile(path: "qwen3_0_6b_mixed_4bit_8bit_static.aimodel/main.mlirb", size: 440413772, sha256: "ae1924cad7c3deee8c789eec5787fd704613af4e724d3fd0da028d6d576897a4"),
+                                CatalogFile(path: "qwen3_0_6b_mixed_4bit_8bit_static.aimodel/metadata.json", size: 105, sha256: "bce1804d72a7b1decb7676938feffd2389be5a9b46f85a0a0ad402081776cbdf"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 707, sha256: "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 4168, sha256: "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 1671853, sha256: "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 613, sha256: "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 11422654, sha256: "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 5404, sha256: "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 2776833, sha256: "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
                 "macos": CatalogVariant(
-                    subtree: "macos",
-                    bytes: 351561081,
-                    files: [
-                        CatalogFile(path: "metadata.json", size: 568, sha256: "ac650a87d4fd25333ae5e02bb89039dcb409f5b5d6413bcc1ae88cf3091bd6de"),
-                        CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/main.hash", size: 32, sha256: "73669a06ee4f157578db3ed3f2363d347dde3ef363dda0088aff112d99d03a2a"),
-                        CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/main.mlirb", size: 335678144, sha256: "9752caf7f72d1d38e2f3e63409f70312f6791ca6772bbace4a0b364905fed8b8"),
-                        CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/metadata.json", size: 105, sha256: "8ddfc427fa510d0bd6dfc6fbae5524ca153ccb27ef3c1b2823169e70977f389c"),
-                        CatalogFile(path: "tokenizer/added_tokens.json", size: 707, sha256: "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"),
-                        CatalogFile(path: "tokenizer/chat_template.jinja", size: 4168, sha256: "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"),
-                        CatalogFile(path: "tokenizer/merges.txt", size: 1671853, sha256: "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"),
-                        CatalogFile(path: "tokenizer/special_tokens_map.json", size: 613, sha256: "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"),
-                        CatalogFile(path: "tokenizer/tokenizer.json", size: 11422654, sha256: "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"),
-                        CatalogFile(path: "tokenizer/tokenizer_config.json", size: 5404, sha256: "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"),
-                        CatalogFile(path: "tokenizer/vocab.json", size: 2776833, sha256: "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"),
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "macos",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 568, sha256: "ac650a87d4fd25333ae5e02bb89039dcb409f5b5d6413bcc1ae88cf3091bd6de"),
+                                CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/main.hash", size: 32, sha256: "73669a06ee4f157578db3ed3f2363d347dde3ef363dda0088aff112d99d03a2a"),
+                                CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/main.mlirb", size: 335678144, sha256: "9752caf7f72d1d38e2f3e63409f70312f6791ca6772bbace4a0b364905fed8b8"),
+                                CatalogFile(path: "qwen3_0_6b_4bit_dynamic.aimodel/metadata.json", size: 105, sha256: "8ddfc427fa510d0bd6dfc6fbae5524ca153ccb27ef3c1b2823169e70977f389c"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 707, sha256: "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 4168, sha256: "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 1671853, sha256: "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 613, sha256: "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 11422654, sha256: "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 5404, sha256: "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 2776833, sha256: "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "gemma-3-4b-it",
+            task: "text-generation",
+            repo: "mlboydaisuke/gemma-3-4b-it-CoreAI-official",
+            revision: "89a7c7a7a4e0c870f50f73d587f2bc8fad6acc28",
+            license: "gemma",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "macos",
+                            files: [
+                                CatalogFile(path: "gemma_3_4b_it_4bit_dynamic.aimodel/main.hash", size: 32, sha256: "38a34e33ef044dbf074425d85adae63197ec004ef592a91f56c8a4de909bfec5"),
+                                CatalogFile(path: "gemma_3_4b_it_4bit_dynamic.aimodel/main.mlirb", size: 2183566789, sha256: "600024be98c68be92499644d38afde87652bfbeeb900c2e1d37138c00f086869"),
+                                CatalogFile(path: "gemma_3_4b_it_4bit_dynamic.aimodel/metadata.json", size: 105, sha256: "b09cbbdc46c0a76c894a88af2949460b52e0e7877b2b5649823ff97dcabe406d"),
+                                CatalogFile(path: "metadata.json", size: 586, sha256: "2dc4e070e15a0b40b77879409b5daa01e216642f30671097b21198ef460855ab"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 35, sha256: "50b2f405ba56a26d4913fd772089992252d7f942123cc0a034d96424221ba946"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 1532, sha256: "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 662, sha256: "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 33384568, sha256: "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795"),
+                                CatalogFile(path: "tokenizer/tokenizer.model", size: 4689074, sha256: "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 1155387, sha256: "983c80895e7b188911f5ccfbb4f780a4e73fb3131ed2080a3e847ef8623cfdca"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "minicpm5-1b",
+            task: "text-generation",
+            repo: "mlboydaisuke/MiniCPM5-1B-CoreAI",
+            revision: "b8a6ac397ccd5fb815f97336f8a8b1800b110da1",
+            license: "apache-2.0",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "int8",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 581, sha256: "e1b92fb5111c468e6afa504e2682ada1b1c3e466975f161f703c22fb5d7cd532"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/main.hash", size: 32, sha256: "180ca619a197658d0ab2dd1577ca548376ab831553fca1fadf4d6092507df2e0"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/main.mlirb", size: 1148614014, sha256: "6380a69f24a0b714cbb0fd5f94dfe8204203e6cf054a578b2c5fc097241edcaf"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/metadata.json", size: 408, sha256: "3e47615a9d10f2a007ba2b66d2474e55c3704d5849ea1f5963d5a4be0b31d523"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 9062, sha256: "7451a05cf1e28a79d97d7c0bc951028c0b1915119bf9046acd06a0e3d931f47c"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 556, sha256: "03b09de3166b4c4c369a5262b63f97e22060e093278a628d9212e675b54ae485"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 9894271, sha256: "3e065a558a034185fe299917b398685c1facd0169a9eea1e629eb30c171fed81"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 94421, sha256: "8a86209cd2ea4cf5f2ad3898144a87bdf772dc3721037ea8263bafe0507b7b23"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "int8",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 581, sha256: "e1b92fb5111c468e6afa504e2682ada1b1c3e466975f161f703c22fb5d7cd532"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/main.hash", size: 32, sha256: "180ca619a197658d0ab2dd1577ca548376ab831553fca1fadf4d6092507df2e0"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/main.mlirb", size: 1148614014, sha256: "6380a69f24a0b714cbb0fd5f94dfe8204203e6cf054a578b2c5fc097241edcaf"),
+                                CatalogFile(path: "minicpm5_1b_int8.aimodel/metadata.json", size: 408, sha256: "3e47615a9d10f2a007ba2b66d2474e55c3704d5849ea1f5963d5a4be0b31d523"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 9062, sha256: "7451a05cf1e28a79d97d7c0bc951028c0b1915119bf9046acd06a0e3d931f47c"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 556, sha256: "03b09de3166b4c4c369a5262b63f97e22060e093278a628d9212e675b54ae485"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 9894271, sha256: "3e065a558a034185fe299917b398685c1facd0169a9eea1e629eb30c171fed81"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 94421, sha256: "8a86209cd2ea4cf5f2ad3898144a87bdf772dc3721037ea8263bafe0507b7b23"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "youtu-llm-2b",
+            task: "text-generation",
+            repo: "mlboydaisuke/Youtu-LLM-2B-CoreAI",
+            revision: "74351b0c55fa621ea3fb2670dd3d239de067cd94",
+            license: "other",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/youtu_llm_2b_decode_absorbed_int8_msdpa",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 608, sha256: "1d45bf6e22e3a71a5317f2c5075a3d46891a659b9d818a12d6d71cb9acb842a0"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 4125, sha256: "22b9b42250ff4d3515d18040bc586843dc8fa1508a6b6b58d223274d7a3e6e50"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 490, sha256: "7389434bf6a406c958afeae891906aeae69f40eb471c8cb9febdd2aec630463f"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 9353318, sha256: "2885591ad59de23306329eb64e179951e6f21ea1a6d1f9dc1dca83cf558ef31c"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 49983, sha256: "c9c57d329c12c92490ef77671649346d1ec7c3476115fa59cc956c0ac70b6295"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/main.hash", size: 32, sha256: "8cd555c5c43bce405548547715e8af24f7c2b49294968df6036f1f33dd9109c3"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/main.mlirb", size: 2148064829, sha256: "2a6f7685b255d1da5e1a96f31ad833ee38f822005e7dbc2636ab2734c8f51494"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/metadata.json", size: 105, sha256: "b824fd22eb076ad52301c781c0d6172101a4539371a9cadf5b90de5270e0759a"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/youtu_llm_2b_decode_absorbed_int8_msdpa",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 608, sha256: "1d45bf6e22e3a71a5317f2c5075a3d46891a659b9d818a12d6d71cb9acb842a0"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 4125, sha256: "22b9b42250ff4d3515d18040bc586843dc8fa1508a6b6b58d223274d7a3e6e50"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 490, sha256: "7389434bf6a406c958afeae891906aeae69f40eb471c8cb9febdd2aec630463f"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 9353318, sha256: "2885591ad59de23306329eb64e179951e6f21ea1a6d1f9dc1dca83cf558ef31c"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 49983, sha256: "c9c57d329c12c92490ef77671649346d1ec7c3476115fa59cc956c0ac70b6295"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/main.hash", size: 32, sha256: "8cd555c5c43bce405548547715e8af24f7c2b49294968df6036f1f33dd9109c3"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/main.mlirb", size: 2148064829, sha256: "2a6f7685b255d1da5e1a96f31ad833ee38f822005e7dbc2636ab2734c8f51494"),
+                                CatalogFile(path: "youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel/metadata.json", size: 105, sha256: "b824fd22eb076ad52301c781c0d6172101a4539371a9cadf5b90de5270e0759a"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "nanbeige4.1-3b",
+            task: "text-generation",
+            repo: "mlboydaisuke/Nanbeige4.1-3B-CoreAI",
+            revision: "b2efbe7b01a8a92ecd43c19c4d5cae15b0601879",
+            license: "apache-2.0",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/nanbeige4_1_3b_decode_int8hu_block32_sym_s1",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 622, sha256: "5839826060055e57dd6fe999617b3a69c7f64f3006fe2c1b13dfd05b5dd702e4"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/main.hash", size: 32, sha256: "19b730e637678038cc6d8673f2920e842372a86a5c81a0d23ea799baa723ebac"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/main.mlirb", size: 4578848918, sha256: "cda972902a1f2d0062511957cb6ee048b8a86688206505d55a55261c197a4779"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/metadata.json", size: 105, sha256: "919a3ba459c0b78f7104195d5f0b6c2f81ec3267a2a0e9e494f0965e431cc2b1"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 174, sha256: "9e3b127a27647df2c353cc1e5500826f7cdbe8bd15a458e368bba8422e9719cf"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 5527, sha256: "757f108242fb797d23b79f72c088cb5b4bc37fb3744e29dc8771c1dc2b1cb335"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 623, sha256: "b718fce2b7a8940ffeddc1e67f3b092cc0d13ac885c63a021528786f8c4cf6c0"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 18450979, sha256: "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f"),
+                                CatalogFile(path: "tokenizer/tokenizer.model", size: 2782298, sha256: "fb41d04798b714520a9b075727b0226538b7330254299062742c50ec8374bc36"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 2306, sha256: "ddd7cfc868f117421028f3c98da5a705b16fa10ac09dc34f3459fe052dd5699c"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/nanbeige4_1_3b_decode_int8hu_block32_sym_s1",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 622, sha256: "5839826060055e57dd6fe999617b3a69c7f64f3006fe2c1b13dfd05b5dd702e4"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/main.hash", size: 32, sha256: "19b730e637678038cc6d8673f2920e842372a86a5c81a0d23ea799baa723ebac"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/main.mlirb", size: 4578848918, sha256: "cda972902a1f2d0062511957cb6ee048b8a86688206505d55a55261c197a4779"),
+                                CatalogFile(path: "nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel/metadata.json", size: 105, sha256: "919a3ba459c0b78f7104195d5f0b6c2f81ec3267a2a0e9e494f0965e431cc2b1"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 174, sha256: "9e3b127a27647df2c353cc1e5500826f7cdbe8bd15a458e368bba8422e9719cf"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 5527, sha256: "757f108242fb797d23b79f72c088cb5b4bc37fb3744e29dc8771c1dc2b1cb335"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 623, sha256: "b718fce2b7a8940ffeddc1e67f3b092cc0d13ac885c63a021528786f8c4cf6c0"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 18450979, sha256: "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f"),
+                                CatalogFile(path: "tokenizer/tokenizer.model", size: 2782298, sha256: "fb41d04798b714520a9b075727b0226538b7330254299062742c50ec8374bc36"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 2306, sha256: "ddd7cfc868f117421028f3c98da5a705b16fa10ac09dc34f3459fe052dd5699c"),
+                            ]),
                     ],
                     architectures: nil
                 ),
@@ -35,26 +226,285 @@ extension Catalog {
         CatalogEntry(
             id: "qwen3.5-0.8b",
             task: "text-generation",
-            driver: DriverID(validated: "decoder-lm@1"),
             repo: "mlboydaisuke/qwen3.5-0.8B-CoreAI",
             revision: "1b8c0203c0f317027db508e97372c589afaace7b",
             license: "apache-2.0",
             variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/qwen3_5_0_8b_decode_int8hu_block32_sym",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 600, sha256: "d0fe493bf21b9fb73ab265c8ed4bb195d0b8d10c2da8609a4be651713fe64f23"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "9fb558e1a2174dff88a8564e7538a6380741174ea52fdc5fcdde9c371a1ac1d7"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1309263272, sha256: "7c8f66425aa034267121bfd0250c0cd9e21ffcead12ca86698bfc210b7244b8e"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "df2720116202da3296d2c7ee00d5f21be779d7ee34be219509cf31b554ae7974"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 904, sha256: "e5f9bfb644ead13bd36dd6cfc41553a93b7c264c0a2e1ac67d033aa8250c8538"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 7755, sha256: "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 3353273, sha256: "3bd640ba6d8da8f5844f3548b7e2184fc664dd670e1447e425a48dbaaad1ef43"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 875, sha256: "ce0d9ff22f10349bc6609d40dee870b5e77f70fc8cde5d6140cb9aa0396b213c"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 19989343, sha256: "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 7380, sha256: "e3ca3754699d8dfb963a85d64d419645291594796197bb170870f208953e4241"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 5234494, sha256: "4ab0d5c096294054b66444a116a20baf6e29998fc1fae410ffe4b6fadbc56b5c"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
                 "macos": CatalogVariant(
-                    subtree: "gpu-pipelined/qwen3_5_0_8b_decode_int8hu_block32_sym",
-                    bytes: 1337858033,
-                    files: [
-                        CatalogFile(path: "metadata.json", size: 600, sha256: "d0fe493bf21b9fb73ab265c8ed4bb195d0b8d10c2da8609a4be651713fe64f23"),
-                        CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "9fb558e1a2174dff88a8564e7538a6380741174ea52fdc5fcdde9c371a1ac1d7"),
-                        CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1309263272, sha256: "7c8f66425aa034267121bfd0250c0cd9e21ffcead12ca86698bfc210b7244b8e"),
-                        CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "df2720116202da3296d2c7ee00d5f21be779d7ee34be219509cf31b554ae7974"),
-                        CatalogFile(path: "tokenizer/added_tokens.json", size: 904, sha256: "e5f9bfb644ead13bd36dd6cfc41553a93b7c264c0a2e1ac67d033aa8250c8538"),
-                        CatalogFile(path: "tokenizer/chat_template.jinja", size: 7755, sha256: "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"),
-                        CatalogFile(path: "tokenizer/merges.txt", size: 3353273, sha256: "3bd640ba6d8da8f5844f3548b7e2184fc664dd670e1447e425a48dbaaad1ef43"),
-                        CatalogFile(path: "tokenizer/special_tokens_map.json", size: 875, sha256: "ce0d9ff22f10349bc6609d40dee870b5e77f70fc8cde5d6140cb9aa0396b213c"),
-                        CatalogFile(path: "tokenizer/tokenizer.json", size: 19989343, sha256: "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"),
-                        CatalogFile(path: "tokenizer/tokenizer_config.json", size: 7380, sha256: "e3ca3754699d8dfb963a85d64d419645291594796197bb170870f208953e4241"),
-                        CatalogFile(path: "tokenizer/vocab.json", size: 5234494, sha256: "4ab0d5c096294054b66444a116a20baf6e29998fc1fae410ffe4b6fadbc56b5c"),
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/qwen3_5_0_8b_decode_int8hu_block32_sym",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 600, sha256: "d0fe493bf21b9fb73ab265c8ed4bb195d0b8d10c2da8609a4be651713fe64f23"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "9fb558e1a2174dff88a8564e7538a6380741174ea52fdc5fcdde9c371a1ac1d7"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1309263272, sha256: "7c8f66425aa034267121bfd0250c0cd9e21ffcead12ca86698bfc210b7244b8e"),
+                                CatalogFile(path: "qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "df2720116202da3296d2c7ee00d5f21be779d7ee34be219509cf31b554ae7974"),
+                                CatalogFile(path: "tokenizer/added_tokens.json", size: 904, sha256: "e5f9bfb644ead13bd36dd6cfc41553a93b7c264c0a2e1ac67d033aa8250c8538"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 7755, sha256: "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 3353273, sha256: "3bd640ba6d8da8f5844f3548b7e2184fc664dd670e1447e425a48dbaaad1ef43"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 875, sha256: "ce0d9ff22f10349bc6609d40dee870b5e77f70fc8cde5d6140cb9aa0396b213c"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 19989343, sha256: "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 7380, sha256: "e3ca3754699d8dfb963a85d64d419645291594796197bb170870f208953e4241"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 5234494, sha256: "4ab0d5c096294054b66444a116a20baf6e29998fc1fae410ffe4b6fadbc56b5c"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "lfm2.5-1.2b",
+            task: "text-generation",
+            repo: "mlboydaisuke/LFM2.5-1.2B-CoreAI",
+            revision: "8dc37422e5ace08e7c6ae56048c129813e4e0a56",
+            license: "other",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/lfm2_5_1_2b_instruct_decode_int8hu_block32_sym",
+                            files: [
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "37ef429c7d20f4496588652337754dfe4248279ce8b03c75c3c9302178381cbf"),
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1697098741, sha256: "c88e05419998e18c262382dbf1d601d0679194ca8ef4cd04a9dbbcef5a3d56cb"),
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "d514373b814dfd60851a78482b396c8a5c5008b89acb028550d242c3d171dfbc"),
+                                CatalogFile(path: "metadata.json", size: 639, sha256: "e2cdc138a27b33501efab437beba1d9aab67710f2fb83302fd6cc5970918327a"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 1783, sha256: "f05bf4b967dc993bdc7a2fe6e43759ee218eb0eb340d68b063e1c4f8ad148176"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 434, sha256: "742aefe2b7dec496e8caffdba03a75d0c1a9925d53bd3f3e0d388c96b591b6f4"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 4733389, sha256: "df1d8d5ec5d091b460562ffd545e4a5e91d17d4a0db7ebe733be34ed374377bd"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 92225, sha256: "2a52ec012d3df831ba434b081bef3726a6ee22501f062ad8353c557a0cfa0d01"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/lfm2_5_1_2b_instruct_decode_int8hu_block32_sym",
+                            files: [
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "37ef429c7d20f4496588652337754dfe4248279ce8b03c75c3c9302178381cbf"),
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1697098741, sha256: "c88e05419998e18c262382dbf1d601d0679194ca8ef4cd04a9dbbcef5a3d56cb"),
+                                CatalogFile(path: "lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "d514373b814dfd60851a78482b396c8a5c5008b89acb028550d242c3d171dfbc"),
+                                CatalogFile(path: "metadata.json", size: 639, sha256: "e2cdc138a27b33501efab437beba1d9aab67710f2fb83302fd6cc5970918327a"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 1783, sha256: "f05bf4b967dc993bdc7a2fe6e43759ee218eb0eb340d68b063e1c4f8ad148176"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 434, sha256: "742aefe2b7dec496e8caffdba03a75d0c1a9925d53bd3f3e0d388c96b591b6f4"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 4733389, sha256: "df1d8d5ec5d091b460562ffd545e4a5e91d17d4a0db7ebe733be34ed374377bd"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 92225, sha256: "2a52ec012d3df831ba434b081bef3726a6ee22501f062ad8353c557a0cfa0d01"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "granite-4.0-h-1b",
+            task: "text-generation",
+            repo: "mlboydaisuke/granite-4.0-h-CoreAI",
+            revision: "e0c884d19ecb9f90407904adcf629732fc8e6e38",
+            license: "apache-2.0",
+            variants: [
+                "ios": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/granite_4_0_h_1b_decode_int8hu_block32_sym",
+                            files: [
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8hu_block32_sym.aimodel/main.hash", size: 32, sha256: "794a881a01bcf09a4a642fa44bd9f77388513815ab4ecd20989b73a9c36fb1ca"),
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8hu_block32_sym.aimodel/main.mlirb", size: 1862897627, sha256: "52542c0e2c9663edc0d83e936a53f5f5b56d60d75a2de2537ceaa00b7ee6fe05"),
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8hu_block32_sym.aimodel/metadata.json", size: 105, sha256: "cfce27a3e386ecf79f6f3edb0a9670cd9bd3719f36bc0fdb510843679919f983"),
+                                CatalogFile(path: "metadata.json", size: 630, sha256: "7173644224daef7338d00c2deaf909a1630f2d4706f3879ad4e3b0db51358833"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 6418, sha256: "9524df67b77a7b25a2dfee898f75b316a157eb9d855b51e32aeac79d7c8a83ce"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 916646, sha256: "b6fe424e334903f7fb84d3a106d9730455f4744b9fe3c21ee136d97a00e72502"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 579, sha256: "c08676c49fd7969a3130f72be6d4bf34da66aa484a6e21dffe359893a1bd5f2e"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 7153421, sha256: "e2bad66439538cb4d5a7580680932432ed9ece9d3b8577e675512bdf11599253"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 17659, sha256: "a5ec5daab12ba090a90f3dd169c8f9c275557013a87b9c1258dc7cb497a35c86"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 1612704, sha256: "8af71076de8b0b626eed0f4c984faf0a7c062479164b2a31308a948524d4f69c"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/granite_4_0_h_1b_decode_int8lin",
+                            files: [
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8lin.aimodel/main.hash", size: 32, sha256: "a19807a9e0d1d335160189816227837fb9144bdb56fad9385c8a737803a9a920"),
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8lin.aimodel/main.mlirb", size: 1699122470, sha256: "ae550bce63501955f95121a961ec577f7031ab6e778f162a620b598501cd80eb"),
+                                CatalogFile(path: "granite_4_0_h_1b_decode_int8lin.aimodel/metadata.json", size: 105, sha256: "d04fde86f8faa103a56d452394491fdc00143b6e181d852c12c5f079ec06b304"),
+                                CatalogFile(path: "metadata.json", size: 608, sha256: "4a46a3b4caf1c2cd55d55b53397d7cb1dd28857524de851bbbba6241cd326e9b"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 6418, sha256: "9524df67b77a7b25a2dfee898f75b316a157eb9d855b51e32aeac79d7c8a83ce"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 916646, sha256: "b6fe424e334903f7fb84d3a106d9730455f4744b9fe3c21ee136d97a00e72502"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 579, sha256: "c08676c49fd7969a3130f72be6d4bf34da66aa484a6e21dffe359893a1bd5f2e"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 7153421, sha256: "e2bad66439538cb4d5a7580680932432ed9ece9d3b8577e675512bdf11599253"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 17659, sha256: "a5ec5daab12ba090a90f3dd169c8f9c275557013a87b9c1258dc7cb497a35c86"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 1612704, sha256: "8af71076de8b0b626eed0f4c984faf0a7c062479164b2a31308a948524d4f69c"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "nemotron-3-nano-4b",
+            task: "text-generation",
+            repo: "mlboydaisuke/Nemotron-3-Nano-4B-CoreAI",
+            revision: "0f9e01aa8d3f569be4b067a67ff7681591c235c4",
+            license: "other",
+            variants: [
+                "ios-h18p": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "ios-h18p/nemotron_3_nano_4b_decode_int8hu",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 676, sha256: "ac56da869da61dfa6dad11fe842c0ac7af2eb6177a839477a4210412c8476d9f"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/manifest.plist", size: 60342, sha256: "cded2c34f53e7d2582f907117cd6ac885823692f0d1f2389cbac4b3b9d432650"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/original_model_0.mpsgraph", size: 536645, sha256: "8c1d5547fcfb5dc2fd382f8a767351928d20dfaa5724b37407c14c4c6353845e"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/reflection.fb", size: 560, sha256: "0ae1bd517d427dd042df8f759e0dce2a33a3c2aca3f538e7b461d4739e33dd39"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/resources.bin", size: 4610120768, sha256: "73042a1fb479cd0f8dbb0abd0abce7954735ad8e08dcce2baa2dedbb7b62c7c8"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/specialized_model_1.mpsgraph", size: 975705, sha256: "bf6cd098376a1bafdc81af14801aa02e90f800e76472ed7df47970ac13be9c8c"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main-h18p.mlirb", size: 2863, sha256: "7de08edf011b72dc648a302f7943f3f861335d1d00b11cd92f63675d7b3d8031"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/main.hash", size: 32, sha256: "a0a19817768650153e282f85624b3b6692adbc131acf227b16b14079966233d6"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/metadata.json", size: 193, sha256: "896ea6b7a3c014149e6194dd8e4468214e19546d5c6540b439c47a8fcaa14c1a"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.h18p.aimodelc/stats.json", size: 2029, sha256: "c99d396e7ccafefe0681eee35211d828ff3f1bf1c4b19a6f1f683bda0812893a"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 10504, sha256: "ab7813c3abdd9cb655905a410728b26c7884eca45ddfab8d9f931553485a7862"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 420, sha256: "e3a4f63da745f02317a45e00e6476c17fc66ac41faf14bb1b0be1f3211b0ca53"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 17077484, sha256: "623c34567aebb18582765289fbe23d901c62704d6518d71866e0e58db892b5b7"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 177180, sha256: "50d5c40a1e06a86e8d0fc2d4c6a9bf73ed0ffca7bdad3c9b42cedca48baa25dc"),
+                            ]),
+                    ],
+                    architectures: ["h18p"]
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined/nemotron_3_nano_4b_decode_int8hu",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 652, sha256: "36b893df92eca49db5f69d45586a69ce0210e8954e4023cb8bdeb957e5a15714"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.aimodel/main.hash", size: 32, sha256: "18b1ab6a407227bc5b70398a97b323fe0ed26c41e27e3bef18ae77dd1ea87089"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.aimodel/main.mlirb", size: 4609064544, sha256: "0516a03cf2de9405af691e35ba1c2d48c6261528d467b368d444f318530f88b4"),
+                                CatalogFile(path: "nemotron_3_nano_4b_decode_int8hu.aimodel/metadata.json", size: 105, sha256: "41345a92f009d59acb343fd81a32e301f99e2d7e270bd957e21f8700d1fb34e4"),
+                                CatalogFile(path: "tokenizer/chat_template.jinja", size: 10504, sha256: "ab7813c3abdd9cb655905a410728b26c7884eca45ddfab8d9f931553485a7862"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 420, sha256: "e3a4f63da745f02317a45e00e6476c17fc66ac41faf14bb1b0be1f3211b0ca53"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 17077484, sha256: "623c34567aebb18582765289fbe23d901c62704d6518d71866e0e58db892b5b7"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 177180, sha256: "50d5c40a1e06a86e8d0fc2d4c6a9bf73ed0ffca7bdad3c9b42cedca48baa25dc"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "gemma-4-e2b",
+            task: "text-generation",
+            repo: "mlboydaisuke/gemma-4-E2B-CoreAI",
+            revision: "d669ab2b44c691e35e2b795f0535c0e1937b8390",
+            license: "apache-2.0",
+            variants: [
+                "ios-h18p": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined-b2/gemma4_e2b_qat_decode_int4lin_tbl_aotc_h18p",
+                            files: [
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/manifest.plist", size: 139195, sha256: "4e9021ce71e0223ea91308026124c17984481d5b2dd6be4cf106165b011b9b17"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/original_model_0.mpsgraph", size: 1112644, sha256: "1ca99d0079a429bdcea730f905e184df1c8e7a767c177acf80ed69ee5c4104a6"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/resources.bin", size: 2088055648, sha256: "fd4360a186c1d3e15f26e7bda51764813d027365f94d58986435e38a4ed41aac"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main-h18p-delegates/MPSGraph/mpsExecutable.mpsgraphpackage/specialized_model_1.mpsgraph", size: 2044737, sha256: "b16981e65bc56e963d4e803153c406e43cfd7648ad2c5d00de4365013d737316"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main-h18p.mlirb", size: 2910, sha256: "26fbac4159f866d9e25bb7f6d25c3cd46e0cfd3a2db7b01e2e27c48b7e32f571"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/main.hash", size: 32, sha256: "0c7bd09e331d5724d2eb5d846021b66deef6d2cef096302ea3f228c93e26c41c"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/metadata.json", size: 197, sha256: "608f2718619889e28048002d1b22c4e16c465a68973e02b4f32697b344d7979c"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.h18p.aimodelc/stats.json", size: 1954, sha256: "307eabdf18be8ef6c3b18b69dfb66620e1e1f3f6c15b41317dbf151096b0d76b"),
+                                CatalogFile(path: "metadata.json", size: 656, sha256: "bfcce4c4f1502933b6dd6192f2dc54db0430a8c058d68a94dd939619edfcee55"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 32169626, sha256: "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 3005, sha256: "86db462db23efa0123c6a3d226c602e3cab67cf1758e43e1ac0189e3100fea37"),
+                            ]),
+                        "tables": CatalogAsset(
+                            subtree: "ios-frontend/gemma4_qat_gather_raw",
+                            files: [
+                                CatalogFile(path: "embed_per_layer.i8", size: 2348810240, sha256: "cf8818a39f6652df4f20a3d9aa8646cb65a11cb57390738894229f72ee42d76c"),
+                                CatalogFile(path: "embed_per_layer.scale.f32", size: 1048576, sha256: "f85b1364ba6646b932817b30695a777a51c43a14a321ab7dfd8334a2cddfe789"),
+                            ]),
+                    ],
+                    architectures: ["h18p"]
+                ),
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "gpu-pipelined-b2/gemma4_e2b_qat_decode_int4lin_tbl",
+                            files: [
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.aimodel/main.hash", size: 32, sha256: "18be6d06e2b52a0601d565bb2a9a1e1357dc7ac2dbc03bd5e27cce6e744913f4"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.aimodel/main.mlirb", size: 2089287029, sha256: "fc6830d06f9fd657676fbc3ff33c5e8fff492e77ac5d5269cef2153740a225d0"),
+                                CatalogFile(path: "gemma4_e2b_qat_decode_int4lin_tbl.aimodel/metadata.json", size: 105, sha256: "74c7714946fd2b9233bb22bff66bbc0523836ec17f5203e5b9d7be83e7497bf6"),
+                                CatalogFile(path: "metadata.json", size: 640, sha256: "8dcdc01445ba9d882fc6db13cb1e435bf1cf8578cc250cdac30c03e6b4bb5c69"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 32169626, sha256: "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 3005, sha256: "86db462db23efa0123c6a3d226c602e3cab67cf1758e43e1ac0189e3100fea37"),
+                            ]),
+                        "tables": CatalogAsset(
+                            subtree: "ios-frontend/gemma4_qat_gather_raw",
+                            files: [
+                                CatalogFile(path: "embed_per_layer.i8", size: 2348810240, sha256: "cf8818a39f6652df4f20a3d9aa8646cb65a11cb57390738894229f72ee42d76c"),
+                                CatalogFile(path: "embed_per_layer.scale.f32", size: 1048576, sha256: "f85b1364ba6646b932817b30695a777a51c43a14a321ab7dfd8334a2cddfe789"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
+        CatalogEntry(
+            id: "mistral-7b-v0.3",
+            task: "text-generation",
+            repo: "mlboydaisuke/mistral-7b-v0.3-CoreAI-official",
+            revision: "9898c50a532b89cf933c7daa8c6f088b26c8a57f",
+            license: "apache-2.0",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "decoder-lm@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "macos",
+                            files: [
+                                CatalogFile(path: "metadata.json", size: 633, sha256: "b775f3779a677d11dc833b5599e006c917899b219e0d7f4a9233a254002594c0"),
+                                CatalogFile(path: "mistral_7b_instruct_v0_3_4bit_dynamic.aimodel/main.hash", size: 32, sha256: "2f819e20ee0d23cbcb1d78e1bf5d31cffea91a8d345d67f755438b0b8d0fe94b"),
+                                CatalogFile(path: "mistral_7b_instruct_v0_3_4bit_dynamic.aimodel/main.mlirb", size: 4077557801, sha256: "4aadb8705206881e2f232ddb6de2335e575ec013355c85a9b77ba2abfdf6a4cd"),
+                                CatalogFile(path: "mistral_7b_instruct_v0_3_4bit_dynamic.aimodel/metadata.json", size: 105, sha256: "01d90d5d76ad0ff610be3660bf84de591c552679d0600e55fd92ec889509610c"),
+                            ]),
+                        "tokenizer": CatalogAsset(
+                            repo: "mistralai/Mistral-7B-Instruct-v0.3",
+                            revision: "c170c708c41dac9275d15a8fff4eca08d52bab71",
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: "special_tokens_map.json", size: 414, sha256: "6fa06efa2785e450051989a6f8fb4416b10149ded485ddd3f127a40734f5cfd0"),
+                                CatalogFile(path: "tokenizer.json", size: 1961548, sha256: "e553af6fff7d7ad76e830608b218c5c0b0822998d5a1a96099a74cd3c1cb1a49"),
+                                CatalogFile(path: "tokenizer.model", size: 587404, sha256: "37f00374dea48658ee8f5d0f21895b9bc55cb0103939607c8185bfd1c6ca1f89"),
+                                CatalogFile(path: "tokenizer_config.json", size: 140874, sha256: "0533dec9cfe319163801b6618d0f3ec9cfa126b6288e3df5deca6e32acb09cd2"),
+                            ]),
                     ],
                     architectures: nil
                 ),

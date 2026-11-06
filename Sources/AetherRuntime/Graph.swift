@@ -34,17 +34,25 @@ public struct GraphOptions: Sendable, Hashable {
         self.cache = cache
     }
 
-    /// Options from a manifest graph. Fails, naming the field, when the manifest does not state its specialization.
+    /// Options from a manifest graph: its required `compute`, and `expectFrequentReshapes` as written or, when
+    /// absent, its default (`gpu` and any dynamic input or state), which needs the graph's `signature`.
     public init(
-        manifest graph: Manifest.Graph, at field: String, cachePolicy: CachePolicy, cache: Cache
+        manifest graph: Manifest.Graph, at field: String, signature: GraphSignature? = nil,
+        cachePolicy: CachePolicy, cache: Cache
     ) throws(AetherError) {
-        guard let specialization = graph.specialization else {
+        let reshapes: Bool
+        if let stated = graph.expectFrequentReshapes {
+            reshapes = stated
+        } else if let signature {
+            reshapes = graph.expectFrequentReshapes(hasDynamicDimension: signature.hasDynamicInputsOrStates)
+        } else if graph.compute != .gpu {
+            reshapes = false
+        } else {
             throw .manifestInvalid(
-                field: "\(field).specialization", reason: "required to load: Aether never specializes with defaults")
+                field: "\(field).expectFrequentReshapes",
+                reason: "absent, and its default depends on the graph's dynamic dimensions; state it or pass the signature")
         }
-        self.init(
-            computeUnit: specialization.computeUnit, expectFrequentReshapes: specialization.expectFrequentReshapes,
-            cachePolicy: cachePolicy, cache: cache)
+        self.init(computeUnit: graph.compute, expectFrequentReshapes: reshapes, cachePolicy: cachePolicy, cache: cache)
     }
 
     var specializationOptions: SpecializationOptions {
@@ -136,5 +144,24 @@ public final class Graph: GraphBackend {
     public func run(_ bindings: inout Bindings) async throws(AetherError) {
         try bindings.validate(against: signature)
         try await bindings.arena.run(function, bindings: bindings)
+    }
+}
+
+extension Graph {
+    /// Opens graph `role`'s `phase` function of an installed bundle, resolving its file for `architecture`.
+    public convenience init(
+        bundle: InstalledBundle, manifest: Manifest, role: String = "decoder", phase: String = "step",
+        architecture: String, options: GraphOptions
+    ) async throws(AetherError) {
+        guard let graph = manifest.graphs[role] else {
+            throw .manifestInvalid(field: "graphs.\(role)", reason: "the manifest has no such graph")
+        }
+        guard let function = graph.phases[phase] else {
+            throw .manifestInvalid(field: "graphs.\(role).functions.\(phase)", reason: "the graph has no such phase")
+        }
+        guard let path = graph.file.resolve(architecture: architecture), let url = bundle.url(of: path) else {
+            throw .manifestInvalid(field: "graphs.\(role).file", reason: "no file for architecture \(architecture)")
+        }
+        try await self.init(url: url, function: function, options: options)
     }
 }

@@ -1,0 +1,81 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined/granite_4_0_h_1b_decode_int8lin"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:granite_4_0_h_1b_decode_int8lin.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "recurrent" : [
+          {
+            "name" : "convState"
+          },
+          {
+            "name" : "recState"
+          }
+        ],
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "granite-4.0-h-1b",
+  "license" : "apache-2.0",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "ibm-granite/granite-4.0-h-1b@d18cca4c121edb87d022116d281ce212c9136f57:generation_config.json#/eos_token_id"
+    },
+    "source" : "ibm-granite/granite-4.0-h-1b",
+    "subtrees" : {
+      "main" : "gpu-pipelined/granite_4_0_h_1b_decode_int8lin"
+    },
+    "zooRepo" : "mlboydaisuke/granite-4.0-h-CoreAI",
+    "zooRevision" : "e0c884d19ecb9f90407904adcf629732fc8e6e38"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "9524df67b77a7b25a2dfee898f75b316a157eb9d855b51e32aeac79d7c8a83ce",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|end_of_text|>"
+    ],
+    "toolDialect" : "hermes-json"
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

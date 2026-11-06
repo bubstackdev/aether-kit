@@ -27,7 +27,7 @@ step "build (warnings are errors)"
 swift build --scratch-path "$SCRATCH" --build-tests -Xswiftc -warnings-as-errors
 
 step "hermetic tests"
-swift test --scratch-path "$SCRATCH" --skip-build
+env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"

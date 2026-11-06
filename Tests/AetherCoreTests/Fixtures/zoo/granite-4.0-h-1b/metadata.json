@@ -1,0 +1,28 @@
+{
+  "metadata_version": "0.2",
+  "kind": "llm",
+  "name": "granite_4_0_h_1b_decode_int8lin",
+  "assets": {
+    "main": "granite_4_0_h_1b_decode_int8lin.aimodel"
+  },
+  "language": {
+    "tokenizer": "ibm-granite/granite-4.0-h-1b",
+    "vocab_size": 100352,
+    "max_context_length": 4096,
+    "embedded_tokenizer": true,
+    "function_map": {
+      "main": [
+        "main"
+      ]
+    }
+  },
+  "source": {
+    "model_definition": "torch",
+    "hf_model_id": "ibm-granite/granite-4.0-h-1b"
+  },
+  "compression": null,
+  "compilation": {
+    "date": "2026-07-17T14:13:13.556306+00:00",
+    "targets": []
+  }
+}

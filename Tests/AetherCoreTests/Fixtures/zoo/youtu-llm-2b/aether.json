@@ -1,0 +1,81 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined/youtu_llm_2b_decode_absorbed_int8_msdpa"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:youtu_llm_2b_decode_absorbed_int8_msdpa.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 8192,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "sequence" : [
+          {
+            "kind" : "latent",
+            "seqAxis" : 3,
+            "tensors" : [
+              "kvCacheA",
+              "kvCacheB"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "youtu-llm-2b",
+  "license" : "other",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "tencent/Youtu-LLM-2B@d69af0fc88814aafe7528eda55b63283c7790931:generation_config.json#/eos_token_id"
+    },
+    "source" : "tencent/Youtu-LLM-2B",
+    "subtrees" : {
+      "main" : "gpu-pipelined/youtu_llm_2b_decode_absorbed_int8_msdpa"
+    },
+    "zooRepo" : "mlboydaisuke/Youtu-LLM-2B-CoreAI",
+    "zooRevision" : "74351b0c55fa621ea3fb2670dd3d239de067cd94"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "22b9b42250ff4d3515d18040bc586843dc8fa1508a6b6b58d223274d7a3e6e50",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|end_of_text|>"
+    ],
+    "thinking" : {
+      "close" : "</think>",
+      "defaultOn" : true,
+      "open" : "<think>",
+      "toggle" : {
+        "templateVar" : "enable_thinking"
+      }
+    }
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined/lfm2_5_1_2b_instruct_decode_int8hu_block32_sym"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:lfm2_5_1_2b_instruct_decode_int8hu_block32_sym.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "recurrent" : [
+          {
+            "name" : "convState"
+          }
+        ],
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "lfm2.5-1.2b",
+  "license" : "other",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "LiquidAI/LFM2.5-1.2B-Instruct@b9d816ab510f9a28dca37cb182e9da8b0226e13c:generation_config.json#/eos_token_id"
+    },
+    "source" : "LiquidAI/LFM2.5-1.2B-Instruct",
+    "subtrees" : {
+      "main" : "gpu-pipelined/lfm2_5_1_2b_instruct_decode_int8hu_block32_sym"
+    },
+    "zooRepo" : "mlboydaisuke/LFM2.5-1.2B-CoreAI",
+    "zooRevision" : "8dc37422e5ace08e7c6ae56048c129813e4e0a56"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "f05bf4b967dc993bdc7a2fe6e43759ee218eb0eb340d68b063e1c4f8ad148176",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|im_end|>"
+    ]
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

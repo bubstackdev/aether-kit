@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 """Aether-Kit catalog generator.
 
-`catalog/catalog.json` is the source of truth for which models ship. This script keeps it and the compiled-in Swift
-catalog (`Sources/AetherCore/Catalog/Catalog+Generated.swift`) in step.
+`catalog/catalog.json` is the source of truth for which models ship, and `catalog/zoo-overrides.json` holds the
+per-entry family knowledge the zoo adapter cannot infer (MANIFEST.md §2.9). This script keeps both and their
+compiled-in Swift (`Sources/AetherCore/Catalog/Catalog+Generated.swift`, `.../ZooOverrides+Generated.swift`) in step.
+
+Catalog layout: entry → variants{"macos"|"ios"|"ios-<arch>": {driver, architectures?, assets{name: {repo?,
+revision?, subtree, include?, files}}}}. `include` (authoring only) limits an asset to the listed paths or `*`
+globs; a foreign `repo` needs a pinned `revision`.
 
 Commands:
-  refresh [--id ID ...]  Re-list every variant's files from the Hugging Face API at the pinned revision and record
+  refresh [--id ID ...]  Re-list every asset's files from the Hugging Face API at its pinned revision and record
                          path, size and SHA-256. LFS files take the hash from the tree listing's `lfs.oid`; small
                          non-LFS files (whose `oid` is a git blob SHA-1) are downloaded once and hashed here.
                          Network access is needed; the result is written back to catalog.json.
-  emit                   Write the Swift source from catalog.json (offline, deterministic). This is the default.
-  check                  Exit 1 if the Swift source is stale or an entry is incomplete. CI runs this.
+  emit                   Write the Swift sources (offline, deterministic). This is the default.
+  check                  Exit 1 if the Swift sources are stale or an entry is incomplete. CI runs this.
 
 Standard library only. Run it as `scripts/gen-catalog <command>` from anywhere.
 """
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -25,7 +31,9 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG = os.path.join(ROOT, "catalog", "catalog.json")
+OVERRIDES = os.path.join(ROOT, "catalog", "zoo-overrides.json")
 SWIFT_OUT = os.path.join(ROOT, "Sources", "AetherCore", "Catalog", "Catalog+Generated.swift")
+OVERRIDES_OUT = os.path.join(ROOT, "Sources", "AetherCore", "Catalog", "ZooOverrides+Generated.swift")
 HF = "https://huggingface.co"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -48,8 +56,8 @@ def http_get(url):
 
 
 def tree(repo, revision, subtree):
-    path = urllib.parse.quote(subtree)
-    url = f"{HF}/api/models/{repo}/tree/{revision}/{path}?recursive=true"
+    path = ("/" + urllib.parse.quote(subtree)) if subtree else ""
+    url = f"{HF}/api/models/{repo}/tree/{revision}{path}?recursive=true"
     return json.loads(http_get(url))
 
 
@@ -71,27 +79,37 @@ def refresh(catalog, only):
         if only and entry["id"] not in only:
             continue
         for key, variant in sorted(entry["variants"].items()):
-            subtree = variant["subtree"].strip("/")
-            listing = tree(entry["repo"], entry["revision"], subtree)
-            files = []
-            for item in listing:
-                if item.get("type") != "file":
-                    continue
-                full = item["path"]
-                rel = full[len(subtree) + 1:] if subtree else full
-                size = int(item.get("size", 0))
-                lfs = item.get("lfs")
-                if lfs and SHA256.match(lfs.get("oid", "")):
-                    digest = lfs["oid"]
-                    size = int(lfs.get("size", size))
-                else:
-                    print(f"  hashing non-LFS {entry['id']}:{rel} ({size} bytes)", file=sys.stderr)
-                    digest = sha256_of_remote(entry["repo"], entry["revision"], full)
-                files.append({"path": rel, "size": size, "sha256": digest})
-            files.sort(key=lambda f: f["path"])
-            variant["files"] = files
-            variant["bytes"] = sum(f["size"] for f in files)
-            print(f"{entry['id']} [{key}] {len(files)} files, {variant['bytes']} bytes", file=sys.stderr)
+            for name, asset in sorted(variant["assets"].items()):
+                repo = asset.get("repo", entry["repo"])
+                revision = asset.get("revision", entry["revision"])
+                subtree = asset["subtree"].strip("/")
+                include = asset.get("include")
+                listing = tree(repo, revision, subtree)
+                files = []
+                for item in listing:
+                    if item.get("type") != "file":
+                        continue
+                    full = item["path"]
+                    rel = full[len(subtree) + 1:] if subtree else full
+                    if include and not any(fnmatch.fnmatchcase(rel, pattern) for pattern in include):
+                        continue
+                    size = int(item.get("size", 0))
+                    lfs = item.get("lfs")
+                    if lfs and SHA256.match(lfs.get("oid", "")):
+                        digest = lfs["oid"]
+                        size = int(lfs.get("size", size))
+                    else:
+                        print(f"  hashing non-LFS {entry['id']}[{key}].{name}:{rel} ({size} bytes)", file=sys.stderr)
+                        digest = sha256_of_remote(repo, revision, full)
+                    files.append({"path": rel, "size": size, "sha256": digest})
+                files.sort(key=lambda f: f["path"])
+                if include:
+                    missing = [p for p in include if not any(fnmatch.fnmatchcase(f["path"], p) for f in files)]
+                    if missing:
+                        raise SystemExit(f"{entry['id']}[{key}].{name}: include matched nothing for {missing}")
+                asset["files"] = files
+                total = sum(f["size"] for f in files)
+                print(f"{entry['id']} [{key}] {name}: {len(files)} files, {total} bytes", file=sys.stderr)
 
 
 def validate(catalog):
@@ -104,23 +122,55 @@ def validate(catalog):
         if eid in seen:
             problems.append(f"{eid}: duplicate id")
         seen.add(eid)
-        for field in ("id", "task", "driver", "repo", "revision", "license", "variants"):
+        for field in ("id", "task", "repo", "revision", "license", "variants"):
             if not entry.get(field):
                 problems.append(f"{eid}: missing {field}")
         if not re.match(r"^[0-9a-f]{40}$", entry.get("revision", "")):
             problems.append(f"{eid}: revision must be a full 40-hex commit SHA")
-        if not re.match(r"^[a-z0-9][a-z0-9.-]*@[0-9]+$", entry.get("driver", "")):
-            problems.append(f"{eid}: driver must look like name@version")
         for key, variant in entry.get("variants", {}).items():
-            files = variant.get("files", [])
-            if not files:
-                problems.append(f"{eid}[{key}]: no files (run `refresh`)")
-            for f in files:
-                if not SHA256.match(f.get("sha256", "")):
-                    problems.append(f"{eid}[{key}] {f.get('path')}: missing sha256")
-            if variant.get("bytes") != sum(f.get("size", 0) for f in files):
-                problems.append(f"{eid}[{key}]: bytes does not equal the sum of file sizes")
+            if not re.match(r"^(macos|ios)(-[a-z0-9]+)?$", key):
+                problems.append(f"{eid}: variant key '{key}' is not platform or platform-arch")
+            if not re.match(r"^[a-z0-9][a-z0-9.-]*@[0-9]+$", variant.get("driver", "")):
+                problems.append(f"{eid}[{key}]: driver must look like name@version")
+            assets = variant.get("assets", {})
+            if "main" not in assets:
+                problems.append(f"{eid}[{key}]: no main asset")
+            for name, asset in assets.items():
+                if "repo" in asset and not re.match(r"^[0-9a-f]{40}$", asset.get("revision", "")):
+                    problems.append(f"{eid}[{key}].{name}: a foreign repo needs a pinned 40-hex revision")
+                files = asset.get("files", [])
+                if not files:
+                    problems.append(f"{eid}[{key}].{name}: no files (run `refresh`)")
+                for f in files:
+                    if not SHA256.match(f.get("sha256", "")):
+                        problems.append(f"{eid}[{key}].{name} {f.get('path')}: missing sha256")
     return problems
+
+
+def load_overrides():
+    with open(OVERRIDES, encoding="utf-8") as f:
+        text = f.read()
+    json.loads(text)  # must parse
+    return text
+
+
+def emit_overrides(text):
+    # A raw string literal with enough #s that the JSON cannot terminate it.
+    hashes = "#"
+    while ('"' + hashes) in text:
+        hashes += "#"
+    out = [
+        "// GENERATED by scripts/gen-catalog from catalog/zoo-overrides.json. Do not edit by hand.",
+        "// Regenerate with `scripts/gen-catalog emit`; CI runs `scripts/gen-catalog check`.",
+        "",
+        "extension ZooOverrides {",
+        "    /// The override table compiled into this build (MANIFEST.md §2.9).",
+        f"    static let builtinJSON = {hashes}\"\"\"",
+        text.rstrip("\n"),
+        f"\"\"\"{hashes}",
+        "}",
+    ]
+    return "\n".join(out) + "\n"
 
 
 def swift_string(s):
@@ -140,7 +190,6 @@ def emit_swift(catalog):
         w("        CatalogEntry(")
         w(f"            id: {swift_string(entry['id'])},")
         w(f"            task: {swift_string(entry['task'])},")
-        w(f"            driver: DriverID(validated: {swift_string(entry['driver'])}),")
         w(f"            repo: {swift_string(entry['repo'])},")
         w(f"            revision: {swift_string(entry['revision'])},")
         w(f"            license: {swift_string(entry['license'])},")
@@ -148,12 +197,20 @@ def emit_swift(catalog):
         for key in sorted(entry["variants"]):
             v = entry["variants"][key]
             w(f"                {swift_string(key)}: CatalogVariant(")
-            w(f"                    subtree: {swift_string(v['subtree'])},")
-            w(f"                    bytes: {v['bytes']},")
-            w("                    files: [")
-            for f in v["files"]:
-                w(f"                        CatalogFile(path: {swift_string(f['path'])}, size: {f['size']}, "
-                  f"sha256: {swift_string(f['sha256'])}),")
+            w(f"                    driver: DriverID(validated: {swift_string(v['driver'])}),")
+            w("                    assets: [")
+            for name in sorted(v["assets"]):
+                a = v["assets"][name]
+                w(f"                        {swift_string(name)}: CatalogAsset(")
+                if "repo" in a:
+                    w(f"                            repo: {swift_string(a['repo'])},")
+                    w(f"                            revision: {swift_string(a['revision'])},")
+                w(f"                            subtree: {swift_string(a['subtree'])},")
+                w("                            files: [")
+                for f in a["files"]:
+                    w(f"                                CatalogFile(path: {swift_string(f['path'])}, size: {f['size']}, "
+                      f"sha256: {swift_string(f['sha256'])}),")
+                w("                            ]),")
             w("                    ],")
             archs = v.get("architectures")
             if archs is None:
@@ -181,15 +238,16 @@ def main():
         args.command = "emit"
 
     problems = validate(catalog)
-    swift = emit_swift(catalog)
+    outputs = {SWIFT_OUT: emit_swift(catalog), OVERRIDES_OUT: emit_overrides(load_overrides())}
     if args.command == "check":
-        try:
-            with open(SWIFT_OUT, encoding="utf-8") as f:
-                current = f.read()
-        except FileNotFoundError:
-            current = ""
-        if current != swift:
-            problems.append(f"{os.path.relpath(SWIFT_OUT, ROOT)} is stale; run `scripts/gen-catalog emit`")
+        for path, text in outputs.items():
+            try:
+                with open(path, encoding="utf-8") as f:
+                    current = f.read()
+            except FileNotFoundError:
+                current = ""
+            if current != text:
+                problems.append(f"{os.path.relpath(path, ROOT)} is stale; run `scripts/gen-catalog emit`")
         for p in problems:
             print(f"error: {p}", file=sys.stderr)
         sys.exit(1 if problems else 0)
@@ -198,10 +256,11 @@ def main():
         for p in problems:
             print(f"error: {p}", file=sys.stderr)
         sys.exit(1)
-    os.makedirs(os.path.dirname(SWIFT_OUT), exist_ok=True)
-    with open(SWIFT_OUT, "w", encoding="utf-8") as f:
-        f.write(swift)
-    print(f"wrote {os.path.relpath(SWIFT_OUT, ROOT)}", file=sys.stderr)
+    for path, text in outputs.items():
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"wrote {os.path.relpath(path, ROOT)}", file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -55,15 +55,18 @@ public struct Registry: Sendable {
         return copy
     }
 
+    /// The registered driver for `id`. A driver id this build knows but has no driver for is `.unsupported`; an id
+    /// outside the driver catalog (MANIFEST.md §1) is `.unknownDriver`.
     public func driver(for id: DriverID) throws(AetherError) -> any ModelDriver.Type {
-        guard let driver = drivers[id] else { throw .unsupported(driver: id) }
-        return driver
+        if let driver = drivers[id] { return driver }
+        try DriverCatalog.requireKnown(id)
+        throw .unsupported(driver: id)
     }
 
-    /// Fails with `.unsupported` unless a driver for `entry.driver` is registered. Call it before installing, so
-    /// an unsupported model never downloads.
-    public func require(_ entry: CatalogEntry) throws(AetherError) {
-        _ = try driver(for: entry.driver)
+    /// Fails unless a driver for the resolved variant is registered. Call it after `ModelRef.resolve` and before
+    /// installing, so an unsupported model never downloads.
+    public func require(_ ref: ModelRef) throws(AetherError) {
+        _ = try driver(for: ref.driver)
     }
 
     /// Loads `bundle` with the driver its manifest names.

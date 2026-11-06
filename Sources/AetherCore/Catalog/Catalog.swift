@@ -20,37 +20,29 @@ public struct Catalog: Sendable, Hashable, Codable {
         return entry
     }
 
-    /// Decodes `catalog.json` (used by tests and tools; the app uses ``builtin``).
+    /// Decodes `catalog.json` (tests and tools; the app uses ``builtin``).
     public static func decode(_ data: Data) throws(AetherError) -> Catalog {
-        do {
-            return try JSONDecoder().decode(Catalog.self, from: data)
-        } catch let error as DecodingError {
-            throw AetherError(decoding: error)
-        } catch {
-            throw AetherError.manifestInvalid(field: "", reason: "\(error)")
-        }
+        try decodeSanitized(Catalog.self, from: data)
     }
 }
 
+/// One model. Each variant is one install: every asset it lists lands under `<repo>/<revision>/`.
 public struct CatalogEntry: Sendable, Hashable, Codable, Identifiable {
     public var id: String
     public var task: String
-    public var driver: DriverID
     /// Hugging Face repo, `owner/name`.
     public var repo: String
     /// Full commit SHA the files were hashed at.
     public var revision: String
     public var license: String
-    /// Variant key (`macos`, `ios`, `ios-<arch>`) → what to download.
+    /// `platform` or `platform-arch` (`macos`, `ios`, `ios-h18p`) → what to install.
     public var variants: [String: CatalogVariant]
 
     public init(
-        id: String, task: String, driver: DriverID, repo: String, revision: String, license: String,
-        variants: [String: CatalogVariant]
+        id: String, task: String, repo: String, revision: String, license: String, variants: [String: CatalogVariant]
     ) {
         self.id = id
         self.task = task
-        self.driver = driver
         self.repo = repo
         self.revision = revision
         self.license = license
@@ -59,28 +51,47 @@ public struct CatalogEntry: Sendable, Hashable, Codable, Identifiable {
 }
 
 public struct CatalogVariant: Sendable, Hashable, Codable {
-    /// Directory inside the repo that is the bundle root.
-    public var subtree: String
-    /// Sum of file sizes.
-    public var bytes: Int64
-    /// Paths relative to ``subtree``.
-    public var files: [CatalogFile]
+    /// The driver this variant loads with (it may differ between variants of one model).
+    public var driver: DriverID
+    /// Asset name → subtree and files. `main` is required.
+    public var assets: [String: CatalogAsset]
     /// When set, only these Core AI architectures may use the variant.
     public var architectures: [String]?
 
-    public init(subtree: String, bytes: Int64, files: [CatalogFile], architectures: [String]? = nil) {
-        self.subtree = subtree
-        self.bytes = bytes
-        self.files = files
+    public init(driver: DriverID, assets: [String: CatalogAsset], architectures: [String]? = nil) {
+        self.driver = driver
+        self.assets = assets
         self.architectures = architectures
     }
+
+    /// Sum of every asset's file sizes.
+    public var bytes: Int64 { assets.values.reduce(0) { $0 + $1.bytes } }
+}
+
+public struct CatalogAsset: Sendable, Hashable, Codable {
+    /// Defaults to the entry's repo (a foreign tokenizer source sets its own, with a pinned revision).
+    public var repo: String?
+    public var revision: String?
+    /// Directory in the repo that is the asset root; `""` is the repo root.
+    public var subtree: String
+    /// Paths relative to ``subtree``.
+    public var files: [CatalogFile]
+
+    public init(repo: String? = nil, revision: String? = nil, subtree: String, files: [CatalogFile]) {
+        self.repo = repo
+        self.revision = revision
+        self.subtree = subtree
+        self.files = files
+    }
+
+    public var bytes: Int64 { files.reduce(0) { $0 + $1.size } }
 }
 
 public struct CatalogFile: Sendable, Hashable, Codable {
-    /// Path relative to the bundle root.
+    /// Path relative to the asset root.
     public var path: String
     public var size: Int64
-    /// Lowercase hex SHA-256 of the file's contents (the HF LFS `oid` for LFS files).
+    /// Lowercase hex SHA-256 of the contents (the HF LFS `oid` for LFS files).
     public var sha256: String
 
     public init(path: String, size: Int64, sha256: String) {

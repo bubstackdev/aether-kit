@@ -4,8 +4,11 @@
 /// in an associated payload (``DownloadFailure``, ``TensorFailure``, or `underlying`), never in a separate public
 /// error enum.
 public enum AetherError: Error, Sendable, CustomStringConvertible {
-    /// No driver is registered for `driver`. Raised before anything downloads.
+    /// `driver` is a known driver id (MANIFEST.md §1) that no registered driver implements in this build.
+    /// Raised before anything downloads.
     case unsupported(driver: DriverID)
+    /// `driver` is not a driver id this build knows at all.
+    case unknownDriver(DriverID)
     /// The catalog entry has no variant this device can run.
     case unsupportedDevice(catalogID: String, platform: String, architecture: String)
     /// The id is not in the catalog.
@@ -69,6 +72,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
         switch self {
         case .unsupported(let driver):
             "Unsupported driver '\(driver)': no registered driver loads it"
+        case .unknownDriver(let driver):
+            "Unknown driver '\(driver)'"
         case .unsupportedDevice(let id, let platform, let arch):
             "'\(id)' has no variant for \(platform) (\(arch))"
         case .unknownModel(let id):

@@ -14,21 +14,25 @@ enum Fixtures {
         try data("zoo/\(id)/\(file)")
     }
 
-    static func signature(_ id: String) throws -> GraphSignature {
-        try JSONDecoder().decode(GraphSignature.self, from: zoo(id, "signature.json"))
+    static let goldenIDs = [
+        "qwen3-0.6b", "gemma-3-4b-it", "minicpm5-1b", "youtu-llm-2b", "nanbeige4.1-3b", "qwen3.5-0.8b",
+        "lfm2.5-1.2b", "granite-4.0-h-1b", "nemotron-3-nano-4b", "gemma-4-e2b",
+    ]
+
+    static func signatures(_ id: String) throws -> [String: GraphSignature] {
+        try JSONDecoder().decode([String: GraphSignature].self, from: zoo(id, "signatures.json"))
     }
 
-    /// The adapter input for a catalog entry's pinned zoo bundle: its small files plus the builtin catalog listing.
+    static func optional(_ id: String, _ file: String) -> Data? { try? zoo(id, file) }
+
+    /// The adapter input for a catalog entry's macOS variant: its fixture files plus the builtin catalog.
     static func adapterInput(_ id: String) throws -> ZooBundleAdapter.Input {
-        let entry = try Catalog.builtin.entry(id)
-        let variant = try #require(entry.variants["macos"])
-        return ZooBundleAdapter.Input(
+        ZooBundleAdapter.Input(
+            entry: try Catalog.builtin.entry(id), variant: "macos",
             metadata: try zoo(id, "metadata.json"),
-            signatures: ["main": try signature(id)],
-            files: variant.files.map(\.path),
-            tokenizerConfig: try zoo(id, "tokenizer_config.json"),
-            chatTemplate: String(decoding: try zoo(id, "chat_template.jinja"), as: UTF8.self),
-            catalogID: id, repo: entry.repo, revision: entry.revision)
+            signatures: try signatures(id),
+            tokenizerConfig: optional(id, "tokenizer_config.json"),
+            chatTemplate: optional(id, "chat_template.jinja").map { String(decoding: $0, as: UTF8.self) })
     }
 
     /// `aether-kit/` (for catalog/catalog.json).

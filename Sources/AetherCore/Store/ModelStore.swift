@@ -2,9 +2,10 @@ public import Foundation
 
 /// Downloads, verifies and installs model bundles (DESIGN.md §5).
 ///
-/// - Layout: `<root>/<repo>/<revision>/<subtree>`, default root `Application Support/Aether/Models`.
-/// - Atomic installs: files land in `<root>/.staging/…`, then one rename moves the finished bundle into place. A
-///   bundle is complete exactly when its receipt (`.aether-install.json`) is present.
+/// - Layout: one variant is one install at `<root>/<repo>/<revision>/`, holding every asset of the variant (see
+///   `InstalledBundle`), with Aether's files in `.aether/`. Default root `Application Support/Aether/Models`.
+/// - Atomic installs: files land in `<root>/.staging/…`, then one rename moves the finished install into place. An
+///   install is complete exactly when its receipt (`.aether/receipt.json`) is present.
 /// - Every file's SHA-256 is checked against the catalog before the bundle is accepted.
 /// - Interrupted downloads resume from the staged bytes with an HTTP `Range` request.
 /// - Concurrent requests for one bundle join a single download, and every caller receives the progress.
@@ -49,37 +50,27 @@ public actor ModelStore {
 
     // MARK: - Queries
 
+    /// The revision root of `ref`'s install: `<root>/<repo>/<revision>`.
     public nonisolated func bundleURL(for ref: ModelRef) -> URL {
-        var url = root
-        for part in [ref.repo, ref.revision, ref.subtree] {
-            for component in part.split(separator: "/") { url = url.appending(path: String(component)) }
-        }
-        return url
+        InstalledLayout.appendingComponents(InstalledLayout.appendingComponents(root, ref.repo), ref.revision)
     }
 
-    /// The installed bundle for exactly `ref`'s revision, if it is complete.
+    /// The installed bundle for exactly `ref` (same revision and variant), if it is complete.
     public func installed(_ ref: ModelRef) -> InstalledBundle? {
         let url = bundleURL(for: ref)
-        guard FileManager.default.fileExists(atPath: url.appending(path: InstallReceipt.fileName).path) else { return nil }
-        return InstalledBundle(ref: ref, url: url, isStale: false)
+        guard let receipt = Self.receipt(at: url), receipt.ref.variant == ref.variant else { return nil }
+        return InstalledBundle(ref: receipt.ref, url: url, isStale: false)
     }
 
-    /// The newest complete installation of `ref`'s repo and subtree at any other revision.
+    /// The newest complete install of the same model and variant at any other revision.
     public func staleSibling(of ref: ModelRef) -> InstalledBundle? {
-        let fm = FileManager.default
-        var repoDir = root
-        for component in ref.repo.split(separator: "/") { repoDir = repoDir.appending(path: String(component)) }
-        guard let revisions = try? fm.contentsOfDirectory(atPath: repoDir.path) else { return nil }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let repoDir = InstalledLayout.appendingComponents(root, ref.repo)
+        guard let revisions = try? FileManager.default.contentsOfDirectory(atPath: repoDir.path) else { return nil }
         var best: (InstalledBundle, Date)?
         for revision in revisions where revision != ref.revision && !revision.hasPrefix(".") {
-            var candidate = ref
-            candidate.revision = revision
-            let url = bundleURL(for: candidate)
-            guard let data = try? Data(contentsOf: url.appending(path: InstallReceipt.fileName)),
-                  let receipt = try? decoder.decode(InstallReceipt.self, from: data),
-                  receipt.ref.subtree == ref.subtree
+            let url = repoDir.appending(path: revision)
+            guard let receipt = Self.receipt(at: url), receipt.ref.catalogID == ref.catalogID,
+                  receipt.ref.variant == ref.variant
             else { continue }
             if best == nil || receipt.installedAt > best!.1 {
                 best = (InstalledBundle(ref: receipt.ref, url: url, isStale: true), receipt.installedAt)
@@ -88,7 +79,14 @@ public actor ModelStore {
         return best?.0
     }
 
-    /// Deletes the installed bundle for `ref` (and any staged bytes for it).
+    private static func receipt(at root: URL) -> InstallReceipt? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let data = try? Data(contentsOf: InstallReceipt.url(in: root)) else { return nil }
+        return try? decoder.decode(InstallReceipt.self, from: data)
+    }
+
+    /// Deletes the install for `ref` (and any staged bytes for it).
     public func remove(_ ref: ModelRef) throws(AetherError) {
         let fm = FileManager.default
         for url in [bundleURL(for: ref), stagingURL(for: ref)] where fm.fileExists(atPath: url.path) {
@@ -102,7 +100,7 @@ public actor ModelStore {
     /// download; each caller's stream receives every progress update from the moment it joins. Cancelling a stream
     /// detaches that caller; the download is cancelled when the last caller leaves (staged bytes are kept for resume).
     public func installation(
-        _ ref: ModelRef, files: [CatalogFile], options: InstallOptions = []
+        _ ref: ModelRef, options: InstallOptions = []
     ) -> AsyncThrowingStream<InstallEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream<InstallEvent, any Error>.makeStream()
         if let bundle = installed(ref) {
@@ -119,9 +117,15 @@ public actor ModelStore {
         job.subscribers[id] = (continuation, options)
         if let latest = job.latest { continuation.yield(.progress(latest)) }
         if job.task == nil {
-            let installer = Installer(
-                transport: transport, endpoint: endpoint, ref: ref, files: files,
-                staging: stagingURL(for: ref), destination: bundleURL(for: ref))
+            let installer: Installer
+            do {
+                installer = try Installer(
+                    transport: transport, endpoint: endpoint, ref: ref, staging: stagingURL(for: ref),
+                    destination: bundleURL(for: ref))
+            } catch {
+                continuation.finish(throwing: error)
+                return stream
+            }
             let generation = job.generation
             let prior = unwinding[ref]
             job.task = Task {
@@ -135,10 +139,9 @@ public actor ModelStore {
 
     /// Installs `ref`, reporting progress to `progress`, and returns the bundle.
     public func install(
-        _ ref: ModelRef, files: [CatalogFile], options: InstallOptions = [],
-        progress: (@Sendable (InstallProgress) -> Void)? = nil
+        _ ref: ModelRef, options: InstallOptions = [], progress: (@Sendable (InstallProgress) -> Void)? = nil
     ) async throws -> InstalledBundle {
-        for try await event in installation(ref, files: files, options: options) {
+        for try await event in installation(ref, options: options) {
             switch event {
             case .progress(let p): progress?(p)
             case .finished(let bundle): return bundle
@@ -152,14 +155,14 @@ public actor ModelStore {
         _ id: String, in catalog: Catalog = .builtin, for device: Device, options: InstallOptions = [],
         progress: (@Sendable (InstallProgress) -> Void)? = nil
     ) async throws -> InstalledBundle {
-        let (ref, variant) = try ModelRef.resolve(id, in: catalog, for: device)
-        return try await install(ref, files: variant.files, options: options, progress: progress)
+        let ref = try ModelRef.resolve(id, in: catalog, for: device)
+        return try await install(ref, options: options, progress: progress)
     }
 
     // MARK: - Job plumbing
 
     nonisolated func stagingURL(for ref: ModelRef) -> URL {
-        let key = [ref.repo, ref.revision, ref.subtree].joined(separator: "@")
+        let key = [ref.repo, ref.revision, ref.variant].joined(separator: "@")
             .replacingOccurrences(of: "/", with: "~")
         return root.appending(path: ".staging", directoryHint: .isDirectory).appending(path: key)
     }

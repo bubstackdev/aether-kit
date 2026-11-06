@@ -6,33 +6,57 @@ import Testing
 
 @Suite("ModelStore")
 struct ModelStoreTests {
-    /// A tiny bundle: one multi-megabyte "weights" file (several progress steps), a small one, and a nested one.
+    /// A tiny two-asset install: a main asset with a multi-megabyte "weights" file (several progress steps) and a
+    /// small nested file, plus a tokenizer asset from a foreign repo at its own pin.
     struct Bundle {
         let ref: ModelRef
-        let files: [CatalogFile]
+        /// Local path relative to the revision root → contents.
         let contents: [String: Data]
+        /// Local path → remote URL path.
+        let remote: [String: String]
+
+        static let foreignRepo = "vendor/tokenizer-repo"
+        static let foreignRevision = String(repeating: "f", count: 40)
 
         init(revision: String = String(repeating: "1", count: 40)) {
-            ref = ModelRef(catalogID: "toy", repo: "owner/toy-model", revision: revision, subtree: "macos/toy", variant: "macos")
             var generator = SplitMix(seed: 42)
             let weights = Data((0..<(2_500_000)).map { _ in UInt8(truncatingIfNeeded: generator.next()) })
-            let contents = [
+            let main: [String: Data] = [
                 "toy.aimodel/main.mlirb": weights,
                 "metadata.json": Data(#"{"kind":"llm"}"#.utf8),
-                "tokenizer/vocab.json": Data(#"{"a":1}"#.utf8),
             ]
-            self.contents = contents
-            files = contents.keys.sorted().map { path in
-                CatalogFile(path: path, size: Int64(contents[path]!.count), sha256: Self.sha256(contents[path]!))
+            let tokenizer: [String: Data] = ["tokenizer.json": Data(#"{"a":1}"#.utf8)]
+            func files(_ map: [String: Data]) -> [CatalogFile] {
+                map.keys.sorted().map { CatalogFile(path: $0, size: Int64(map[$0]!.count), sha256: Self.sha256(map[$0]!)) }
             }
+            ref = ModelRef(
+                catalogID: "toy", repo: "owner/toy-model", revision: revision, variant: "macos", driver: .decoderLM,
+                assets: [
+                    .init(name: "main", repo: "owner/toy-model", revision: revision, subtree: "macos/toy", files: files(main)),
+                    .init(name: "tokenizer", repo: Self.foreignRepo, revision: Self.foreignRevision, subtree: "", files: files(tokenizer)),
+                ])
+            var contents: [String: Data] = [:]
+            var remote: [String: String] = [:]
+            for (path, data) in main {
+                contents["macos/toy/\(path)"] = data
+                remote["macos/toy/\(path)"] = "/owner/toy-model/resolve/\(revision)/macos/toy/\(path)"
+            }
+            for (path, data) in tokenizer {
+                contents[".aether/assets/tokenizer/\(path)"] = data
+                remote[".aether/assets/tokenizer/\(path)"] = "/\(Self.foreignRepo)/resolve/\(Self.foreignRevision)/\(path)"
+            }
+            self.contents = contents
+            self.remote = remote
         }
 
         static func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
-        func remotePath(_ file: String) -> String { "/\(ref.repo)/resolve/\(ref.revision)/\(ref.subtree)/\(file)" }
+        static let weights = "macos/toy/toy.aimodel/main.mlirb"
+
+        func remotePath(_ local: String) -> String { remote[local]! }
 
         func serve(on site: StubSite) {
-            for (path, data) in contents { site.serve(remotePath(path), data) }
+            for (local, data) in contents { site.serve(remote[local]!, data) }
         }
     }
 
@@ -51,6 +75,8 @@ struct ModelStoreTests {
         for (path, data) in bundle.contents {
             #expect(try Data(contentsOf: installed.url.appending(path: path)) == data, "\(path)")
         }
+        #expect(installed.url(ofAsset: "tokenizer") == installed.url.appending(path: ".aether/assets/tokenizer"))
+        #expect(installed.url(of: AssetPath(asset: "main", path: "metadata.json")) == installed.url.appending(path: "macos/toy/metadata.json"))
         let excluded = try installed.url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup
         #expect(excluded == true)
     }
@@ -62,22 +88,22 @@ struct ModelStoreTests {
             bundle.serve(on: site)
             let store = Self.store(root, site)
             let updates = Mutex<[InstallProgress]>([])
-            let installed = try await store.install(bundle.ref, files: bundle.files) { p in updates.withLock { $0.append(p) } }
+            let installed = try await store.install(bundle.ref) { p in updates.withLock { $0.append(p) } }
 
-            #expect(installed.url == root.appending(path: "owner/toy-model/\(bundle.ref.revision)/macos/toy"))
+            #expect(installed.url == root.appending(path: "owner/toy-model/\(bundle.ref.revision)"))
             #expect(!installed.isStale)
             try Self.expectInstalled(installed, bundle)
-            #expect(FileManager.default.fileExists(atPath: installed.url.appending(path: ".aether-install.json").path))
+            #expect(FileManager.default.fileExists(atPath: installed.url.appending(path: ".aether/receipt.json").path))
             #expect(!FileManager.default.fileExists(atPath: store.stagingURL(for: bundle.ref).path), "staging was renamed away")
 
             let progress = updates.withLock { $0 }
             #expect(progress.count >= 3)
-            #expect(progress.last?.completedBytes == bundle.files.reduce(0) { $0 + $1.size })
+            #expect(progress.last?.completedBytes == bundle.ref.bytes)
             #expect(zip(progress, progress.dropFirst()).allSatisfy { $0.completedBytes <= $1.completedBytes })
 
             // Installed: a second call touches no network.
             let before = site.requests.count
-            let again = try await store.install(bundle.ref, files: bundle.files)
+            let again = try await store.install(bundle.ref)
             #expect(again == installed)
             #expect(site.requests.count == before)
         }
@@ -88,22 +114,22 @@ struct ModelStoreTests {
             let site = StubSite()
             let bundle = Bundle()
             bundle.serve(on: site)
-            let weights = bundle.remotePath("toy.aimodel/main.mlirb")
+            let weights = bundle.remotePath(Bundle.weights)
             site.behave(weights, .init(failAfter: (bytes: 1_000_000, times: 1)))
             let store = Self.store(root, site)
 
             await #expect {
-                _ = try await store.install(bundle.ref, files: bundle.files)
+                _ = try await store.install(bundle.ref)
             } throws: { error in
-                if case AetherError.download(let file, .transport) = error { return file == "toy.aimodel/main.mlirb" }
+                if case AetherError.download(let file, .transport) = error { return file == Bundle.weights }
                 return false
             }
-            let partial = store.stagingURL(for: bundle.ref).appending(path: "toy.aimodel/main.mlirb")
+            let partial = store.stagingURL(for: bundle.ref).appending(path: Bundle.weights)
             let kept = try #require(try FileManager.default.attributesOfItem(atPath: partial.path)[.size] as? Int)
             #expect(kept > 0 && kept <= 1_000_000)
             #expect(!FileManager.default.fileExists(atPath: store.bundleURL(for: bundle.ref).path))
 
-            let installed = try await store.install(bundle.ref, files: bundle.files)
+            let installed = try await store.install(bundle.ref)
             try Self.expectInstalled(installed, bundle)
             let weightRequests = site.requests.filter { $0.path == weights }
             #expect(weightRequests.count == 2)
@@ -117,15 +143,15 @@ struct ModelStoreTests {
             let site = StubSite()
             let bundle = Bundle()
             bundle.serve(on: site)
-            let path = "tokenizer/vocab.json"
+            let path = ".aether/assets/tokenizer/tokenizer.json"
             site.behave(bundle.remotePath(path), .init(corrupt: Data(#"{"b":2}"#.utf8)))
             let store = Self.store(root, site)
 
             await #expect {
-                _ = try await store.install(bundle.ref, files: bundle.files)
+                _ = try await store.install(bundle.ref)
             } throws: { error in
                 if case AetherError.integrity(let file, let expected, let actual) = error {
-                    return file == path && expected == bundle.files.first { $0.path == path }!.sha256 && actual != expected
+                    return file == path && expected == Bundle.sha256(bundle.contents[path]!) && actual != expected
                 }
                 return false
             }
@@ -142,12 +168,12 @@ struct ModelStoreTests {
             bundle.serve(on: site)
             let store = Self.store(root, site)
             // A partial file from an earlier session, with bad bytes in it.
-            let path = "toy.aimodel/main.mlirb"
+            let path = Bundle.weights
             let staged = store.stagingURL(for: bundle.ref).appending(path: path)
             try FileManager.default.createDirectory(at: staged.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(repeating: 0xEE, count: 4096).write(to: staged)
 
-            let installed = try await store.install(bundle.ref, files: bundle.files)
+            let installed = try await store.install(bundle.ref)
             try Self.expectInstalled(installed, bundle)
             let requests = site.requests.filter { $0.path == bundle.remotePath(path) }
             #expect(requests.map(\.range) == ["bytes=4096-", nil])
@@ -159,14 +185,14 @@ struct ModelStoreTests {
             let site = StubSite()
             let bundle = Bundle()
             bundle.serve(on: site)
-            let path = "toy.aimodel/main.mlirb"
+            let path = Bundle.weights
             site.behave(bundle.remotePath(path), .init(ignoreRange: true))
             let store = Self.store(root, site)
             let staged = store.stagingURL(for: bundle.ref).appending(path: path)
             try FileManager.default.createDirectory(at: staged.deletingLastPathComponent(), withIntermediateDirectories: true)
             try bundle.contents[path]!.prefix(5000).write(to: staged)
 
-            let installed = try await store.install(bundle.ref, files: bundle.files)
+            let installed = try await store.install(bundle.ref)
             try Self.expectInstalled(installed, bundle)
         }
     }
@@ -179,8 +205,8 @@ struct ModelStoreTests {
             let gate = Gate()
             let store = Self.store(root, site, gate: gate)
 
-            let first = await store.installation(bundle.ref, files: bundle.files)
-            let second = await store.installation(bundle.ref, files: bundle.files)
+            let first = await store.installation(bundle.ref)
+            let second = await store.installation(bundle.ref)
             async let a = Self.drain(first)
             async let b = Self.drain(second)
             // Both callers are attached before any byte moves.
@@ -192,8 +218,8 @@ struct ModelStoreTests {
             try Self.expectInstalled(resultA.bundle, bundle)
             #expect(resultA.progress.count >= 2 && resultB.progress.count >= 2)
             #expect(resultA.progress.last?.completedBytes == resultB.progress.last?.completedBytes)
-            for file in bundle.files {
-                #expect(site.requests.filter { $0.path == bundle.remotePath(file.path) }.count == 1, "\(file.path)")
+            for local in bundle.contents.keys {
+                #expect(site.requests.filter { $0.path == bundle.remotePath(local) }.count == 1, "\(local)")
             }
         }
     }
@@ -215,18 +241,18 @@ struct ModelStoreTests {
             let old = Bundle(revision: String(repeating: "1", count: 40))
             old.serve(on: site)
             let store = Self.store(root, site)
-            let cached = try await store.install(old.ref, files: old.files)
+            let cached = try await store.install(old.ref)
 
             let new = Bundle(revision: String(repeating: "2", count: 40))
             site.setOffline(true)
             await #expect {
-                _ = try await store.install(new.ref, files: new.files)
+                _ = try await store.install(new.ref)
             } throws: { error in
                 if case AetherError.download = error { return true }
                 return false
             }
 
-            let fallback = try await store.install(new.ref, files: new.files, options: .allowStaleRevision)
+            let fallback = try await store.install(new.ref, options: .allowStaleRevision)
             #expect(fallback.isStale)
             #expect(fallback.url == cached.url)
             #expect(fallback.ref.revision == old.ref.revision)
@@ -239,13 +265,13 @@ struct ModelStoreTests {
             let old = Bundle(revision: String(repeating: "1", count: 40))
             old.serve(on: site)
             let store = Self.store(root, site)
-            _ = try await store.install(old.ref, files: old.files)
+            _ = try await store.install(old.ref)
 
             let new = Bundle(revision: String(repeating: "3", count: 40))
             new.serve(on: site)
-            site.behave(new.remotePath("metadata.json"), .init(corrupt: Data(#"{"kind":"xxx"}"#.utf8)))
+            site.behave(new.remotePath("macos/toy/metadata.json"), .init(corrupt: Data(#"{"kind":"xxx"}"#.utf8)))
             await #expect {
-                _ = try await store.install(new.ref, files: new.files, options: .allowStaleRevision)
+                _ = try await store.install(new.ref, options: .allowStaleRevision)
             } throws: { error in
                 if case AetherError.integrity = error { return true }
                 return false
@@ -258,12 +284,12 @@ struct ModelStoreTests {
             let site = StubSite()
             let bundle = Bundle()
             bundle.serve(on: site)
-            site.behave(bundle.remotePath("metadata.json"), .init(status: 503))
+            site.behave(bundle.remotePath("macos/toy/metadata.json"), .init(status: 503))
             let store = Self.store(root, site)
             await #expect {
-                _ = try await store.install(bundle.ref, files: bundle.files)
+                _ = try await store.install(bundle.ref)
             } throws: { error in
-                if case AetherError.download("metadata.json", .http(503)) = error { return true }
+                if case AetherError.download("macos/toy/metadata.json", .http(503)) = error { return true }
                 return false
             }
         }
@@ -273,10 +299,9 @@ struct ModelStoreTests {
         try await withTemporaryDirectory { root in
             let site = StubSite()
             let store = Self.store(root, site)
-            let ref = Bundle().ref
-            await #expect(throws: AetherError.self) {
-                _ = try await store.install(ref, files: [CatalogFile(path: "../escape", size: 1, sha256: "")])
-            }
+            var ref = Bundle().ref
+            ref.assets[0].files = [CatalogFile(path: "../escape", size: 1, sha256: "")]
+            await #expect(throws: AetherError.self) { _ = try await store.install(ref) }
         }
     }
 }
@@ -304,13 +329,13 @@ extension ModelStoreTests {
             let store = Self.store(root, site, gate: gate)
 
             // The only caller walks away before any byte moves: the download is cancelled.
-            let abandoned = Task { try await Self.drain(await store.installation(bundle.ref, files: bundle.files)) }
+            let abandoned = Task { try await Self.drain(await store.installation(bundle.ref)) }
             while await gate.waitingCount == 0 { try await Task.sleep(for: .milliseconds(5)) }
             abandoned.cancel()
             _ = await abandoned.result
 
             await gate.open()
-            let installed = try await store.install(bundle.ref, files: bundle.files)
+            let installed = try await store.install(bundle.ref)
             try Self.expectInstalled(installed, bundle)
         }
     }

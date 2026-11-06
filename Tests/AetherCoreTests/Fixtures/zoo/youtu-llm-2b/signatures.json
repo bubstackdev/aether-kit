@@ -1,0 +1,63 @@
+{
+  "main" : {
+    "function" : "main",
+    "inputs" : [
+      {
+        "kind" : "ndArray",
+        "name" : "input_ids",
+        "scalarType" : "int32",
+        "shape" : [
+          1,
+          1
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "position_ids",
+        "scalarType" : "int32",
+        "shape" : [
+          1,
+          -1
+        ]
+      }
+    ],
+    "outputs" : [
+      {
+        "kind" : "ndArray",
+        "name" : "logits",
+        "scalarType" : "float16",
+        "shape" : [
+          1,
+          1,
+          128256
+        ]
+      }
+    ],
+    "states" : [
+      {
+        "kind" : "ndArray",
+        "name" : "kvCacheA",
+        "scalarType" : "float16",
+        "shape" : [
+          32,
+          1,
+          1,
+          -1,
+          288
+        ]
+      },
+      {
+        "kind" : "ndArray",
+        "name" : "kvCacheB",
+        "scalarType" : "float16",
+        "shape" : [
+          32,
+          1,
+          1,
+          -1,
+          288
+        ]
+      }
+    ]
+  }
+}

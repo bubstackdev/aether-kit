@@ -13,8 +13,15 @@ enum Fixtures {
         try Data(contentsOf: zoo.appending(path: "\(id)/\(file)"))
     }
 
-    static func signature(_ id: String) throws -> GraphSignature {
-        try JSONDecoder().decode(GraphSignature.self, from: data(id, "signature.json"))
+    /// Every catalog entry with a golden (the chat entries downloaded in lab/models).
+    static let goldenIDs = [
+        "qwen3-0.6b", "gemma-3-4b-it", "minicpm5-1b", "youtu-llm-2b", "nanbeige4.1-3b", "qwen3.5-0.8b",
+        "lfm2.5-1.2b", "granite-4.0-h-1b", "nemotron-3-nano-4b", "gemma-4-e2b",
+    ]
+
+    /// The recorded decoder signatures, keyed by function name.
+    static func signatures(_ id: String) throws -> [String: GraphSignature] {
+        try JSONDecoder().decode([String: GraphSignature].self, from: data(id, "signatures.json"))
     }
 
     static func manifest(_ id: String) throws -> Manifest {

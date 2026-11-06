@@ -1,8 +1,15 @@
 {
+  "assets" : {
+    "main" : {
+      "subtree" : "macos"
+    }
+  },
   "driver" : "decoder-lm@1",
   "graphs" : {
     "decoder" : {
-      "file" : "qwen3_0_6b_4bit_dynamic.aimodel",
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:qwen3_0_6b_4bit_dynamic.aimodel",
       "function" : "main",
       "inputs" : {
         "positions" : "position_ids",
@@ -13,47 +20,64 @@
         "prefillChunk" : 512
       },
       "outputs" : {
-        "logits" : "logits"
-      },
-      "specialization" : {
-        "computeUnit" : "gpu",
-        "expectFrequentReshapes" : true
+        "logits" : {
+          "name" : "logits",
+          "rows" : "all"
+        }
       },
       "states" : {
-        "kv" : [
-          "keyCache",
-          "valueCache"
-        ],
-        "recurrent" : [
-
-        ],
-        "sequenceAxis" : 3
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
       }
     }
   },
   "id" : "qwen3-0.6b",
-  "precision" : {
-    "activations" : "fp16",
-    "weights" : "int4"
-  },
+  "license" : "apache-2.0",
   "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "Qwen/Qwen3-0.6B@c1899de289a04d12100db370d81485cdf75e47ca:generation_config.json#/eos_token_id"
+    },
     "source" : "Qwen/Qwen3-0.6B",
-    "synthesizedBy" : "zoo-bundle-adapter@1",
+    "subtrees" : {
+      "main" : "macos"
+    },
+    "zooCompression" : "4bit",
     "zooRepo" : "mlboydaisuke/qwen3-0.6b-CoreAI-official",
     "zooRevision" : "943eb6a4f967de53d7e1458d75deac0b68ac3d85"
   },
   "schema" : 1,
   "task" : "text-generation",
   "tokenizer" : {
-    "chatTemplate" : "tokenizer/chat_template.jinja",
-    "dir" : "tokenizer",
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
     "stop" : [
-      "<|im_end|>"
+      "<|im_end|>",
+      "<|endoftext|>"
     ],
     "thinking" : {
       "close" : "</think>",
-      "open" : "<think>"
+      "defaultOn" : true,
+      "open" : "<think>",
+      "toggle" : {
+        "templateVar" : "enable_thinking"
+      }
     },
-    "toolDialect" : "hermes"
+    "toolDialect" : "hermes-json"
+  },
+  "variant" : {
+    "platform" : "macos"
   }
 }

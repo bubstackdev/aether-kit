@@ -2,45 +2,52 @@ public import Foundation
 
 /// Gets an installed bundle's manifest, synthesizing it once for zoo bundles (DESIGN.md §4).
 ///
-/// If `aether.json` exists it is the contract. Otherwise, for a zoo bundle (`metadata.json`), the graph's
-/// signature is read, the ``ZooBundleAdapter`` runs, the result is validated against the signature, and the
-/// manifest is written next to the bundle, so the heuristics run once per install and never at inference time.
+/// If `.aether/aether.json` exists it is the contract. Otherwise the decoder graph's signatures are read, the
+/// ``ZooBundleAdapter`` runs with the catalog entry and the override table, the result is validated against the
+/// signatures, and the manifest is written to `.aether/`, so inference never runs a heuristic.
 public enum BundleManifest {
     public typealias SignatureProvider = (_ graph: URL, _ function: String) async throws -> GraphSignature
 
     public static func loadOrSynthesize(
-        _ bundle: InstalledBundle, signature provider: SignatureProvider
+        _ bundle: InstalledBundle, catalog: Catalog = .builtin, overrides: ZooOverrides = .builtin,
+        signature provider: SignatureProvider
     ) async throws -> Manifest {
-        let root = bundle.url
         let fm = FileManager.default
-        if fm.fileExists(atPath: root.appending(path: Manifest.fileName).path) {
-            return try Manifest.load(fromBundle: root)
+        if fm.fileExists(atPath: Manifest.url(inBundle: bundle.url).path) {
+            return try Manifest.load(fromBundle: bundle.url)
         }
-        let metadataURL = root.appending(path: "metadata.json")
+        var entry = try catalog.entry(bundle.catalogID)
+        guard entry.revision == bundle.ref.revision else {
+            throw AetherError.manifestInvalid(
+                field: Manifest.fileName,
+                reason: "a stale install (\(bundle.ref.revision)) without its manifest cannot be re-synthesized at \(entry.revision)")
+        }
+        entry.variants = entry.variants.filter { $0.key == bundle.ref.variant }
+        guard let main = bundle.url(ofAsset: "main") else {
+            throw AetherError.manifestInvalid(field: "assets.main", reason: "the install has no main asset")
+        }
+        let metadataURL = main.appending(path: "metadata.json")
         guard fm.fileExists(atPath: metadataURL.path) else {
-            throw AetherError.manifestInvalid(field: Manifest.fileName, reason: "the bundle has neither aether.json nor metadata.json")
+            throw AetherError.manifestInvalid(
+                field: Manifest.fileName, reason: "the install has neither .aether/aether.json nor a zoo metadata.json")
         }
         let metadata = try Data(contentsOf: metadataURL)
-        let request = try ZooBundleAdapter.graphRequests(metadata: metadata)
+        let request = try ZooBundleAdapter.graphRequest(
+            entry: entry, variant: bundle.ref.variant, metadata: metadata, overrides: overrides)
+        guard let graphURL = bundle.url(of: request.file) else {
+            throw AetherError.manifestInvalid(field: "graphs.decoder.file", reason: "'\(request.file)' is not installed")
+        }
         var signatures: [String: GraphSignature] = [:]
         for function in request.functions {
-            signatures[function] = try await provider(root.appending(path: request.file), function)
+            signatures[function] = try await provider(graphURL, function)
         }
-        let input = ZooBundleAdapter.Input(
-            metadata: metadata,
-            signatures: signatures,
-            files: try relativeFiles(in: root),
-            tokenizerConfig: try? Data(contentsOf: root.appending(path: "tokenizer/tokenizer_config.json")),
-            chatTemplate: try? String(contentsOf: root.appending(path: "tokenizer/chat_template.jinja"), encoding: .utf8),
-            catalogID: bundle.catalogID,
-            repo: bundle.ref.repo,
-            revision: bundle.ref.revision)
-        let manifest = try ZooBundleAdapter.manifest(from: input)
-        let byRole = Dictionary(uniqueKeysWithValues: manifest.graphs.compactMap { role, graph in
-            signatures[graph.function].map { (role, $0) }
-        })
-        try SignatureValidator.validate(manifest, signatures: byRole)
-        try manifest.write(toBundle: root)
+        let manifest = try ZooBundleAdapter.manifest(from: ZooBundleAdapter.Input(
+            entry: entry, variant: bundle.ref.variant, metadata: metadata, signatures: signatures,
+            tokenizerConfig: try? Data(contentsOf: main.appending(path: "tokenizer/tokenizer_config.json")),
+            chatTemplate: try? String(contentsOf: main.appending(path: "tokenizer/chat_template.jinja"), encoding: .utf8),
+            overrides: overrides))
+        try SignatureValidator.validate(manifest, signatures: ["decoder": signatures])
+        try manifest.write(toBundle: bundle.url)
         return manifest
     }
 
@@ -50,23 +57,5 @@ public enum BundleManifest {
         try await loadOrSynthesize(bundle) { url, function in
             try await Graph(url: url, function: function, options: options).signature
         }
-    }
-
-    /// Every regular file under `root`, relative to it, excluding Aether's own bookkeeping files.
-    static func relativeFiles(in root: URL) throws -> [String] {
-        let base = root.standardizedFileURL.resolvingSymlinksInPath().path + "/"
-        guard let walker = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: [.isRegularFileKey], options: [])
-        else { return [] }
-        var files: [String] = []
-        for case let url as URL in walker {
-            guard (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true else { continue }
-            let path = url.standardizedFileURL.resolvingSymlinksInPath().path
-            guard path.hasPrefix(base) else { continue }
-            let relative = String(path.dropFirst(base.count))
-            if relative == Manifest.fileName || relative.hasPrefix(".aether") { continue }
-            files.append(relative)
-        }
-        return files.sorted()
     }
 }

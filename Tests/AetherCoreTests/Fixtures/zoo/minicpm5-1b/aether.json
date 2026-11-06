@@ -1,0 +1,81 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "int8"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:minicpm5_1b_int8.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 131072,
+        "prefillChunk" : 512
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "all"
+        }
+      },
+      "states" : {
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "minicpm5-1b",
+  "license" : "apache-2.0",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "openbmb/MiniCPM5-1B@87179e5c1f455ef22e6223592d2d61351b525bfc:generation_config.json#/eos_token_id"
+    },
+    "source" : "openbmb/MiniCPM5-1B",
+    "subtrees" : {
+      "main" : "int8"
+    },
+    "zooCompression" : "minicpm5_int8sym_b32",
+    "zooRepo" : "mlboydaisuke/MiniCPM5-1B-CoreAI",
+    "zooRevision" : "b8a6ac397ccd5fb815f97336f8a8b1800b110da1"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "7451a05cf1e28a79d97d7c0bc951028c0b1915119bf9046acd06a0e3d931f47c",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|im_end|>",
+      "</s>"
+    ],
+    "thinking" : {
+      "close" : "</think>",
+      "open" : "<think>",
+      "toggle" : {
+        "templateVar" : "enable_thinking"
+      }
+    }
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

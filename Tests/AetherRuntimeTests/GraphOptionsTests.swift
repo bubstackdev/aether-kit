@@ -13,12 +13,24 @@ struct GraphOptionsTests {
         #expect(specialization.expectFrequentReshapes)
         #expect(specialization != .default)
         #expect(options.aiCachePolicy == .persistent)
+    }
 
-        var bare = graph
-        bare.specialization = nil
-        expectField("graphs.decoder.specialization") {
-            _ = try GraphOptions(manifest: bare, at: "graphs.decoder", cachePolicy: .default, cache: .default)
+    @Test func reshapeHintDefaultsFromTheSignature() throws {
+        var graph = try #require(try Fixtures.manifest("qwen3.5-0.8b").graphs["decoder"])
+        graph.expectFrequentReshapes = nil
+        expectField("graphs.decoder.expectFrequentReshapes") {
+            _ = try GraphOptions(manifest: graph, at: "graphs.decoder", cachePolicy: .default, cache: .default)
         }
+        let signature = try #require(try Fixtures.signatures("qwen3.5-0.8b")["main"])
+        #expect(try GraphOptions(manifest: graph, at: "g", signature: signature, cachePolicy: .default, cache: .default)
+            .expectFrequentReshapes)
+        var static_ = signature
+        static_.states = static_.states.filter { !$0.isDynamic }
+        static_.inputs = static_.inputs.map { TensorSpec(name: $0.name, scalarType: $0.scalarType, shape: [1, 1]) }
+        #expect(!(try GraphOptions(manifest: graph, at: "g", signature: static_, cachePolicy: .default, cache: .default)
+            .expectFrequentReshapes))
+        graph.compute = .neuralEngine
+        #expect(!(try GraphOptions(manifest: graph, at: "g", cachePolicy: .default, cache: .default).expectFrequentReshapes))
     }
 
     @Test(arguments: Manifest.ComputeUnit.allCases)

@@ -2,10 +2,13 @@ import Foundation
 import Testing
 @testable import AetherRuntime
 
-/// Parity gates on real bundles (DESIGN.md §12). Off by default: they load multi-hundred-megabyte graphs onto
-/// the GPU. Run with `AETHER_GATES=1 swift test --filter GateTests`. Bundles are read from `lab/models` (a sibling of
-/// this repo), or from `AETHER_LAB_MODELS` when set.
-@Suite("Gates", .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
+/// Parity gates on real bundles (DESIGN.md §12). Off by default: they load multi-gigabyte graphs onto the GPU.
+/// Run with `AETHER_GATES=1 swift test --filter GateTests` (serially). Bundles are read from `lab/models` (a sibling
+/// of this repo), or from `AETHER_LAB_MODELS`. The lab layout `<models>/<id>/<subtree>` is the install layout, so
+/// `<models>/<id>` serves as the revision root.
+///
+/// `AETHER_RECORD_SIGNATURES=1` additionally rewrites every fixture `signatures.json` from the real graphs.
+@Suite("Gates", .serialized, .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
 struct GateTests {
     static var models: URL {
         if let override = ProcessInfo.processInfo.environment["AETHER_LAB_MODELS"] {
@@ -16,34 +19,63 @@ struct GateTests {
             .deletingLastPathComponent().appending(path: "lab/models")
     }
 
-    @Test func qwen3SignatureMatchesTheAdapterManifest() async throws {
-        let bundle = Self.models.appending(path: "qwen3-0.6b/macos")
-        let manifest = try Fixtures.manifest("qwen3-0.6b")
-        let decoder = try #require(manifest.graphs["decoder"])
-        let file = try #require(decoder.file.resolve(architecture: Device.current.architecture))
-        let options = try GraphOptions(manifest: decoder, at: "graphs.decoder", cachePolicy: .default, cache: .default)
+    static let mac = Device(platform: .macOS, architecture: Device.current.architecture)
 
-        let graph = try await Graph(url: bundle.appending(path: file), function: decoder.function, options: options)
-
-        // The transcribed fixture is the real descriptor…
-        #expect(graph.signature == (try Fixtures.signature("qwen3-0.6b")))
-        // …the golden manifest validates against the real graph…
-        try SignatureValidator.validate(manifest, signatures: ["decoder": graph.signature])
-        // …and the adapter, given the real signature, reproduces the golden.
-        let entry = try Catalog.builtin.entry("qwen3-0.6b")
-        let produced = try ZooBundleAdapter.manifest(from: ZooBundleAdapter.Input(
-            metadata: try Data(contentsOf: bundle.appending(path: "metadata.json")),
-            signatures: [decoder.function: graph.signature],
-            files: entry.variants["macos"]!.files.map(\.path),
-            tokenizerConfig: try Data(contentsOf: bundle.appending(path: "tokenizer/tokenizer_config.json")),
-            chatTemplate: try String(contentsOf: bundle.appending(path: "tokenizer/chat_template.jinja"), encoding: .utf8),
-            catalogID: entry.id, repo: entry.repo, revision: entry.revision))
-        #expect(produced == manifest)
+    /// The lab copy of a catalog entry's macOS variant, as an installed bundle.
+    static func labBundle(_ id: String) throws -> InstalledBundle {
+        InstalledBundle(ref: try ModelRef.resolve(id, for: mac), url: models.appending(path: id), isStale: false)
     }
 
-    // MARK: - First real Graph.run: greedy parity with the lab spike (itself token-exact vs llm-runner)
+    /// Loads every function of the decoder graph that the adapter would inspect.
+    static func realSignatures(_ id: String) async throws -> [String: GraphSignature] {
+        let bundle = try labBundle(id)
+        let entry = try Catalog.builtin.entry(id)
+        let main = try #require(bundle.url(ofAsset: "main"))
+        let metadata = try Data(contentsOf: main.appending(path: "metadata.json"))
+        let request = try ZooBundleAdapter.graphRequest(entry: entry, variant: "macos", metadata: metadata)
+        let url = try #require(bundle.url(of: request.file))
+        // Signatures do not depend on specialization; GPU with the reshape hint is how every decoder loads.
+        let options = GraphOptions(computeUnit: .gpu, expectFrequentReshapes: true, cachePolicy: .default, cache: .default)
+        var out: [String: GraphSignature] = [:]
+        for function in request.functions {
+            out[function] = try await Graph(url: url, function: function, options: options).signature
+        }
+        return out
+    }
 
-    /// The lab spike's recorded greedy run for the same bundle: prompt ids and generated ids.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["AETHER_RECORD_SIGNATURES"] == "1"))
+    func recordSignatures() async throws {
+        for id in Fixtures.goldenIDs {
+            let signatures = try await Self.realSignatures(id)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            var data = try encoder.encode(signatures)
+            data.append(0x0A)
+            try data.write(to: Fixtures.zoo.appending(path: "\(id)/signatures.json"))
+        }
+    }
+
+    /// Every golden: the recorded fixture is the real descriptor, the golden validates against the real graph,
+    /// and the adapter, given the real signatures, reproduces the golden.
+    @Test(arguments: Fixtures.goldenIDs)
+    func goldenMatchesRealGraph(_ id: String) async throws {
+        let real = try await Self.realSignatures(id)
+        #expect(real == (try Fixtures.signatures(id)))
+        let golden = try Fixtures.manifest(id)
+        try SignatureValidator.validate(golden, signatures: ["decoder": real])
+
+        let main = try #require(try Self.labBundle(id).url(ofAsset: "main"))
+        let produced = try ZooBundleAdapter.manifest(from: ZooBundleAdapter.Input(
+            entry: try Catalog.builtin.entry(id), variant: "macos",
+            metadata: try Data(contentsOf: main.appending(path: "metadata.json")),
+            signatures: real,
+            tokenizerConfig: try? Data(contentsOf: main.appending(path: "tokenizer/tokenizer_config.json")),
+            chatTemplate: try? String(contentsOf: main.appending(path: "tokenizer/chat_template.jinja"), encoding: .utf8)))
+        #expect(produced == golden)
+    }
+
+    // MARK: - Greedy parity with the lab spike (itself token-exact vs llm-runner)
+
     struct SpikeReference: Decodable { var promptTokens: [Int32]; var generated: [Int32] }
 
     static func spikeReference(_ id: String) throws -> SpikeReference {
@@ -59,30 +91,26 @@ struct GateTests {
     }
 
     /// Prefill in one call (dynamic token axis) or token by token (static), then greedy-decode `count` tokens.
-    /// Positions live in one capacity-sized buffer written once and bound by leading extent: this exercises the
-    /// region binding against real Core AI for the first time.
-    static func greedy(bundle: String, manifestID: String, count: Int) async throws -> (prompt: Int, tokens: [Int32]) {
-        let manifest = try Fixtures.manifest(manifestID)
+    /// Positions live in one capacity-sized buffer written once and bound by leading extent.
+    static func greedy(_ id: String, count: Int) async throws -> [Int32] {
+        let manifest = try Fixtures.manifest(id)
         let decoder = try #require(manifest.graphs["decoder"])
-        let file = try #require(decoder.file.resolve(architecture: Device.current.architecture))
         let options = try GraphOptions(manifest: decoder, at: "graphs.decoder", cachePolicy: .default, cache: .default)
-        let graph = try await Graph(url: models.appending(path: bundle).appending(path: file),
-                                    function: decoder.function, options: options)
-        try SignatureValidator.validate(manifest, signatures: ["decoder": graph.signature])
-        #expect(graph.signature == (try Fixtures.signature(manifestID)))
+        let graph = try await Graph(
+            bundle: try labBundle(id), manifest: manifest, architecture: mac.architecture, options: options)
+        try SignatureValidator.validate(manifest, signatures: ["decoder": [graph.signature.function: graph.signature]])
 
-        let tokensName = try #require(decoder.inputs["tokens"])
-        let positionsName = try #require(decoder.inputs["positions"])
-        let logitsName = try #require(decoder.outputs["logits"])
+        let tokensName = try #require(decoder.inputs["tokens"]).name
+        let positionsName = try #require(decoder.inputs["positions"]).name
+        let logitsName = try #require(decoder.outputs["logits"]).name
         let tokenSpec = try #require(graph.signature.input(tokensName))
-        let logitsSpec = try #require(graph.signature.output(logitsName))
-        let vocab = try #require(logitsSpec.shape.last)
-        let staticTokens = !tokenSpec.shape.contains(where: { $0 < 0 })
+        let vocab = try #require(graph.signature.output(logitsName)?.shape.last)
+        let staticTokens = !tokenSpec.isDynamic
 
         let capacity = 256
         let arena = TensorArena()
         let states = try graph.makeStateSet(graph.signature.states.map(\.name), in: arena) { spec in
-            spec.shape.contains(where: { $0 < 0 }) ? [capacity] : []
+            spec.isDynamic ? [capacity] : []
         }
         let positions = try graph.makeBuffer(for: positionsName, role: .input, dimensions: [capacity], in: arena)
         try positions.write(Int32.self, count: capacity) { Int32($0) }
@@ -106,8 +134,7 @@ struct GateTests {
             return try argmaxLastRow(stepLogits, rows: 1, vocab: vocab)
         }
 
-        let reference = try spikeReference(manifestID)
-        let prompt = reference.promptTokens
+        let prompt = try spikeReference(id).promptTokens
         var next: Int32
         if staticTokens {
             next = 0
@@ -123,20 +150,16 @@ struct GateTests {
         }
         var out: [Int32] = [next]
         while out.count < count { out.append(try await step(out.last!)) }
-        return (prompt.count, out)
+        return out
     }
 
     @Test func qwen3GreedyMatchesSpike() async throws {
         let n = 32
-        let (_, tokens) = try await Self.greedy(bundle: "qwen3-0.6b/macos", manifestID: "qwen3-0.6b", count: n)
-        #expect(tokens == Array(try Self.spikeReference("qwen3-0.6b").generated.prefix(n)))
+        #expect(try await Self.greedy("qwen3-0.6b", count: n) == Array(try Self.spikeReference("qwen3-0.6b").generated.prefix(n)))
     }
 
     @Test func hybridQwen35GreedyMatchesSpike() async throws {
         let n = 32
-        let (_, tokens) = try await Self.greedy(
-            bundle: "qwen3.5-0.8b/gpu-pipelined/qwen3_5_0_8b_decode_int8hu_block32_sym",
-            manifestID: "qwen3.5-0.8b", count: n)
-        #expect(tokens == Array(try Self.spikeReference("qwen3.5-0.8b").generated.prefix(n)))
+        #expect(try await Self.greedy("qwen3.5-0.8b", count: n) == Array(try Self.spikeReference("qwen3.5-0.8b").generated.prefix(n)))
     }
 }

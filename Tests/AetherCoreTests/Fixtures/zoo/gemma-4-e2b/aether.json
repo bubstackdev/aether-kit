@@ -1,0 +1,128 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined-b2/gemma4_e2b_qat_decode_int4lin_tbl"
+    },
+    "tables" : {
+      "subtree" : "ios-frontend/gemma4_qat_gather_raw"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:gemma4_e2b_qat_decode_int4lin_tbl.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "pleScale" : {
+          "binding" : "static",
+          "name" : "ple_scale",
+          "source" : {
+            "storage" : "auto",
+            "table" : "pleScale"
+          }
+        },
+        "pleTable" : {
+          "binding" : "static",
+          "name" : "ple_table",
+          "source" : {
+            "storage" : "auto",
+            "table" : "ple"
+          }
+        },
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      },
+      "warmup" : false
+    }
+  },
+  "id" : "gemma-4-e2b",
+  "license" : "apache-2.0",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "google/gemma-4-E2B-it-qat-q4_0-unquantized@6befbaca7398925921802abd1f277b495b78b738:generation_config.json#/eos_token_id"
+    },
+    "source" : "google/gemma-4-E2B-it-qat-q4_0-unquantized",
+    "subtrees" : {
+      "main" : "gpu-pipelined-b2/gemma4_e2b_qat_decode_int4lin_tbl",
+      "tables" : "ios-frontend/gemma4_qat_gather_raw"
+    },
+    "zooRepo" : "mlboydaisuke/gemma-4-E2B-CoreAI",
+    "zooRevision" : "d669ab2b44c691e35e2b795f0535c0e1937b8390"
+  },
+  "schema" : 1,
+  "tables" : {
+    "ple" : {
+      "asset" : "tables",
+      "dtype" : "int8",
+      "file" : "embed_per_layer.i8",
+      "sha256" : "cf8818a39f6652df4f20a3d9aa8646cb65a11cb57390738894229f72ee42d76c",
+      "shape" : [
+        262144,
+        8960
+      ]
+    },
+    "pleScale" : {
+      "asset" : "tables",
+      "dtype" : "float32",
+      "file" : "embed_per_layer.scale.f32",
+      "sha256" : "f85b1364ba6646b932817b30695a777a51c43a14a321ab7dfd8334a2cddfe789",
+      "shape" : [
+        262144
+      ]
+    }
+  },
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "renderer",
+    "renderer" : "gemma4-turns",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<turn|>",
+      "<eos>",
+      "<|tool_response>"
+    ],
+    "thinking" : {
+      "close" : "<channel|>",
+      "open" : "<|channel>thought\n",
+      "toggle" : {
+        "emitEmpty" : "<|channel>thought\n<channel|>"
+      }
+    },
+    "turnFormat" : {
+      "assistantRole" : "model",
+      "bos" : "<bos>",
+      "endOfTurn" : "<turn|>",
+      "startOfTurn" : "<|turn>"
+    }
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

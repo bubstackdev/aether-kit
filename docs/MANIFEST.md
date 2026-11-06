@@ -15,7 +15,7 @@ The survey itself lives in the separate `lab` repo; nothing here depends on it.
 | Context | `limits.maxContext` is the declared maximum. **Capacity is derived from the memory budget at load** (DESIGN.md §6.2). |
 | Per-arch AOT | Prefer the device's `ios-<arch>/` subtree, else the generic JIT subtree. `unsupportedDevice` only when neither exists. Resolution happens in `ModelRef`, before download. |
 | BOS | The chat template owns BOS (measured: 33/33 identical to HF). |
-| Stops | Source `generation_config.eos_token_id` ∪ tokenizer eos, pinned per entry. |
+| Stops | Source `generation_config.eos_token_id`, else `config.json` (`text_config.eos_token_id`) when the source has no generation config (Qwen3.5), ∪ tokenizer eos. Pinned per entry as `{source, eosTokenIds, tokens}`, provenance in `provenance.refs["tokenizer.stop"]`. A generic `</s>` in the union is harmless for chat (it never occurs mid-turn) and is kept for fidelity to the source. |
 | Compute | `gpu` by default for every class (measured). `neuralEngine` only per entry with a measured win. |
 | Tokenizer source | Never an unpinned hub fetch. A missing `tokenizer/` dir means `tokenizer.source.hf` at a pinned revision with hashed files. |
 
@@ -349,3 +349,23 @@ from metadata, `stop` from eos, the chat template path and sha, `thinking` tags 
 | **Static graph not on ANE** | laya, most vision graphs, kev | `compute` required |
 | **Metadata drift vs graph** | mineru/glm (VLArchitecture 3072/768 vs graph 2728/682), lfm3 h19p `function_map: main`, openthai `vocab_size: 256`, gliner coreai-kit pin ≠ catalog pin, embeddinggemma comment says fp16 but graph is fp32 | descriptor wins; adapter goldens assert shapes against the descriptor at install |
 | **No bundle-level metadata** | every vision/embedding bundle, vlm towers, unlimited-ocr | override table + `$ref` sidecars |
+
+## 4. Resolved during M1 implementation (2026-11-05)
+
+These clarify or amend §1–§3. The implementation and the per-entry goldens follow them.
+
+| # | Topic | Rule |
+|---|---|---|
+| 1 | `main` asset | Every variant has an asset **named** `main`. JSON object order is not preserved, so "the first asset" means nothing. |
+| 2 | `expectFrequentReshapes` | **Required when `compute` is `gpu`, and written by the adapter.** The default ("gpu and anything dynamic") needs the descriptor, which only exists after specialization, so it can't be computed at load. |
+| 3 | `outputs.<role>.rows` | May be a single value or a per-phase map (`{"step": "last", "prefill": "all"}`) for graphs with `functions`. |
+| 4 | Static table inputs | Role names are camelCase, prefixed by table (`pleTable`, `pleScale` for Gemma 4). |
+| 5 | Foreign assets | Assets from another repo (Mistral's tokenizer) install under `<revision>/.aether/assets/<name>/`. The install receipt is `<revision>/.aether/receipt.json`. |
+| 6 | `provenance.subtrees` | A map from asset name to subtree. |
+| 7 | File sizes | Manifest `assets.files[].bytes` and catalog `files[].size` mean the same thing (decimal bytes). They should be unified (to `size`) in schema 1.1; both are accepted now. |
+| 8 | Unknown vs unsupported driver | A driver id **in the catalog** (§1) with no registered driver gives `unsupported`. An id **outside** the catalog gives `unknownDriver`. A graph kind used as a top-level driver is rejected. |
+| 9 | `thinking.defaultOn` | Comes from the override table, citing the template text: qwen3 `true`, youtu `true`, qwen3.5 `false`, nemotron `true`. It is left unset where the template emits nothing when undefined (MiniCPM5) or has no toggle (Nanbeige). |
+| 10 | `toolDialect` | `hermes-json` for qwen3 and granite. **Qwen3.5 uses an XML dialect** (`<tool_call><function=…><parameter=…>`), to be named `qwen-xml` when M3 implements it. Youtu, Nanbeige and Nemotron also emit `<tool_call>`, but their dialect is unverified, so it stays unset until M3 gates it. |
+| 11 | Structured metadata | When a zoo field changes type (nemotron `compression` is `{"scheme":"int8hu"}`), the adapter keeps it as compact JSON in `provenance.zooCompression` and never interprets it. |
+| 12 | AOT-only iOS variants | nemotron-3-nano and gemma-4 ship iOS graphs **only** as `ios-h18p` AOT. They resolve to `unsupportedDevice` on other iPhones: intended, but a behaviour change from coreai-kit. |
+| 13 | One install per revision | `<repo>/<revision>/` holds exactly one variant, because a device resolves exactly one. A reinstall replaces it atomically. |

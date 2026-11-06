@@ -2,7 +2,7 @@
 ///
 /// Matching is exact: `decoder-lm@2` is a different driver from `decoder-lm@1`, and a bundle asking for a version
 /// nobody registered is unsupported rather than loaded by a near match.
-public struct DriverID: Hashable, Sendable, Codable, CustomStringConvertible {
+public struct DriverID: Hashable, Sendable, Codable, CustomStringConvertible, ExpressibleByStringLiteral {
     public let name: String
     public let version: Int
 
@@ -29,6 +29,9 @@ public struct DriverID: Hashable, Sendable, Codable, CustomStringConvertible {
     public init(validated text: String) {
         do { try self.init(parsing: text) } catch { preconditionFailure("\(error)") }
     }
+
+    /// A literal that must be well formed (traps otherwise), for compiled-in ids.
+    public init(stringLiteral value: String) { self.init(validated: value) }
 
     public var description: String { "\(name)@\(version)" }
 

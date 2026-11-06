@@ -1,319 +1,475 @@
 public import Foundation
 
-/// Synthesizes an `aether.json` for a zoo bundle (DESIGN.md §4, "Zoo adapter").
+/// Synthesizes the `aether.json` of a zoo catalog variant (DESIGN.md §4, MANIFEST.md §2.9).
 ///
-/// **Every heuristic in Aether-Kit lives in this file and nowhere else.** The adapter runs once per install; its
-/// output is written next to the bundle, and from then on code binds to the manifest's roles. Each heuristic is
-/// listed in ``Heuristic`` and covered by a golden `aether.json` per catalog entry.
-///
-/// Inputs are plain data. The graph signature is passed in (AetherRuntime reads it from Core AI), so this type
-/// never touches Core AI.
+/// Inputs: the catalog entry and variant (assets, file lists and hashes), the main asset's `metadata.json`, the
+/// graph signatures (read from Core AI by AetherRuntime and passed in as plain data), the tokenizer config and
+/// chat template, and the override table (`catalog/zoo-overrides.json`), which is the only home of family
+/// knowledge. **Every inference rule lives in this file**; each is named in ``Rule`` and pinned by a golden.
 public enum ZooBundleAdapter {
-    /// Recorded in `provenance.synthesizedBy`. Bump it when a heuristic changes, so stale sidecars can be found.
-    public static let version = "zoo-bundle-adapter@1"
+    /// Recorded in `provenance.adapter`. Bump it when a rule changes, so stale sidecars can be found.
+    public static let version = "zoo-bundle-adapter@2"
 
-    /// The default prefill chunk for a dynamic token axis: M0's correctness limit (≤ 512 tokens per call).
+    /// The dynamic-axis prefill chunk: M0's correctness limit (≤ 512 tokens per call).
     public static let defaultPrefillChunk = 512
 
-    /// The heuristics, named so tests and reviews can refer to them.
-    public enum Heuristic: String, CaseIterable, Sendable {
-        /// `kind: "llm"` → `text-generation` served by `decoder-lm@1`.
-        case llmKindMeansDecoderLM
-        /// The decoder function is `main` if `function_map` lists it, otherwise the first one listed.
-        case decoderFunction
-        /// Tokens: the input whose name contains `input_ids`/`token`, else the first input. Positions: the input
-        /// whose name contains `position`, else the second. Exactly two inputs are supported.
-        case tokensThenPositions
-        /// Logits: the output named `logits`, else the first output. An output whose name contains `hidden` is the
-        /// optional `hidden` role.
-        case logitsOutput
-        /// A state is KV if its name says key/value (`key`, `value`, `k_cache`, `v_cache`); otherwise one with a
-        /// dynamic axis is KV and a fully static one is recurrent.
-        case stateRoles
-        /// The KV sequence axis is the single dynamic axis shared by every KV state.
-        case kvSequenceAxis
-        /// A static token axis of length N means `staticSequence = N`; a dynamic one gets the default prefill chunk.
-        case tokenAxisLimits
-        /// Any dynamic input or state → GPU with `expectFrequentReshapes`; a fully static graph → Neural Engine.
-        case specializationFromShapeKind
-        /// Stop markers: `eos_token` from `tokenizer_config.json`.
-        case stopFromEOS
-        /// Thinking tags: `<think>`/`</think>` when the chat template mentions both.
+    /// The inference rules (MANIFEST.md §2.9, "the adapter infers these").
+    public enum Rule: String, CaseIterable, Sendable {
+        /// `kind: llm` → `decoder-lm@1` unless the override names a driver; it must agree with the catalog variant.
+        case driverFromKind
+        /// `language.function_map`: `[main]` → `function: main`; `[main, prefill]` → `functions {step, prefill}`.
+        case functionsFromFunctionMap
+        /// Tokens and positions by the standard zoo names (`input_ids`, `position_ids`); every other graph input
+        /// must be bound by the override.
+        case standardInputNames
+        /// Logits: the output named `logits`; `hidden` by name. `rows` from the shape: rank 0 → none, dim 1
+        /// static 1 → last, else all.
+        case logitsRowsFromShape
+        /// A state with one dynamic axis is a sequence state on that axis (states sharing an axis form one entry,
+        /// keys first); a fully static state is recurrent. Exceptions come from the override.
+        case statesFromDynamicAxis
+        /// `maxContext` from `language.max_context_length`; `staticSequence` from static token axes (per phase);
+        /// `prefillChunk` 512 for a dynamic token axis.
+        case limitsFromMetadataAndShapes
+        /// `compute: gpu` unless overridden (measured); `expectFrequentReshapes` written explicitly.
+        case gpuCompute
+        /// Tokenizer source: the `tokenizer/` directory when the bundle has one (never `embedded_tokenizer`),
+        /// else the override's pinned source.
+        case tokenizerSourceFromDirectory
+        /// Chat template path and sha256 from the catalog listing; `addBos` follows the template or renderer.
+        case chatTemplateFromListing
+        /// Stops: tokenizer eos ∪ the override's pinned generation_config eos list.
+        case stopsFromEOSAndGenerationConfig
+        /// Thinking tags when the template uses `<think>`, `</think>` and `enable_thinking`.
         case thinkingFromTemplate
-        /// Tool dialect: `hermes` when the chat template emits `<tool_call>`.
-        case hermesFromTemplate
-        /// Weights precision from `compression` (`4bit` → `int4`); activations from the logits scalar type.
-        case precisionFromCompression
     }
 
     public struct Input: Sendable {
-        /// The bundle's `metadata.json`.
+        public var entry: CatalogEntry
+        /// The catalog variant key (`macos`, `ios`, `ios-h18p`).
+        public var variant: String
+        /// The main asset's `metadata.json`.
         public var metadata: Data
-        /// The signature of every function the adapter may bind, keyed by function name.
+        /// Signatures of the decoder graph's functions, keyed by function name.
         public var signatures: [String: GraphSignature]
-        /// Every file in the bundle, relative to its root (`tokenizer/vocab.json`, …).
-        public var files: [String]
-        /// `tokenizer/tokenizer_config.json`, if the bundle has one.
         public var tokenizerConfig: Data?
-        /// `tokenizer/chat_template.jinja`, if the bundle has one.
         public var chatTemplate: String?
-        /// The catalog id, repo and revision the bundle was installed from.
-        public var catalogID: String
-        public var repo: String?
-        public var revision: String?
+        public var overrides: ZooOverrides
 
         public init(
-            metadata: Data, signatures: [String: GraphSignature], files: [String], tokenizerConfig: Data? = nil,
-            chatTemplate: String? = nil, catalogID: String, repo: String? = nil, revision: String? = nil
+            entry: CatalogEntry, variant: String, metadata: Data, signatures: [String: GraphSignature],
+            tokenizerConfig: Data? = nil, chatTemplate: String? = nil, overrides: ZooOverrides = .builtin
         ) {
+            self.entry = entry
+            self.variant = variant
             self.metadata = metadata
             self.signatures = signatures
-            self.files = files
             self.tokenizerConfig = tokenizerConfig
             self.chatTemplate = chatTemplate
-            self.catalogID = catalogID
-            self.repo = repo
-            self.revision = revision
+            self.overrides = overrides
         }
     }
 
     /// The subset of the zoo's `metadata.json` (format 0.2) the adapter reads.
     public struct ZooMetadata: Sendable, Hashable, Decodable {
-        public struct Assets: Sendable, Hashable, Decodable {
-            public var main: String
-        }
+        public struct Assets: Sendable, Hashable, Decodable { public var main: String }
         public struct Language: Sendable, Hashable, Decodable {
             public var tokenizer: String?
-            public var vocabSize: Int?
             public var maxContextLength: Int?
             public var functionMap: [String: [String]]?
+            public var chatTemplateSha256: String?
 
             enum CodingKeys: String, CodingKey {
                 case tokenizer
-                case vocabSize = "vocab_size"
                 case maxContextLength = "max_context_length"
                 case functionMap = "function_map"
+                case chatTemplateSha256 = "chat_template_sha256"
             }
         }
         public struct Source: Sendable, Hashable, Decodable {
             public var hfModelID: String?
-            enum CodingKeys: String, CodingKey { case hfModelID = "hf_model_id" }
+            public var hfRevision: String?
+            enum CodingKeys: String, CodingKey {
+                case hfModelID = "hf_model_id"
+                case hfRevision = "hf_revision"
+            }
         }
 
-        public var metadataVersion: String?
         public var kind: String
-        public var name: String?
         public var assets: Assets
         public var language: Language?
         public var source: Source?
-        public var compression: String?
-
-        enum CodingKeys: String, CodingKey {
-            case metadataVersion = "metadata_version"
-            case kind, name, assets, language, source, compression
-        }
+        /// A string (`4bit`) or an object (`{"scheme": "int8hu"}`) depending on the exporter.
+        public var compression: JSONValue?
     }
 
-    /// The function names the adapter will want signatures for, read from `metadata.json` alone. AetherRuntime
-    /// calls this first, loads those functions, and passes their signatures to ``manifest(from:)``.
-    public static func graphRequests(metadata data: Data) throws(AetherError) -> (file: String, functions: [String]) {
-        let meta = try decodeMetadata(data)
-        return (meta.assets.main, [try decoderFunction(meta)])
+    /// The decoder file and functions to inspect, from the catalog, metadata and overrides alone. AetherRuntime
+    /// loads these and passes their signatures to ``manifest(from:)``.
+    public static func graphRequest(
+        entry: CatalogEntry, variant: String, metadata: Data, overrides: ZooOverrides = .builtin
+    ) throws(AetherError) -> (file: AssetPath, functions: [String]) {
+        let meta = try decodeMetadata(metadata)
+        let override = try overrides.override(for: entry, variant: variant)?.graphs?["decoder"]
+        let file = override?.file ?? AssetPath(asset: "main", path: meta.assets.main)
+        let phases = try phases(meta, override: override)
+        return (file, Array(Set(phases.values)).sorted())
     }
 
     /// Produces a validated manifest. Errors name the offending field: `metadata.*` for the zoo document,
-    /// `graphs.decoder.*` for anything bound from the signature.
+    /// `zoo-overrides.*` for the table, manifest paths for everything else.
     public static func manifest(from input: Input) throws(AetherError) -> Manifest {
+        let entry = input.entry
         let meta = try decodeMetadata(input.metadata)
-        // Heuristic.llmKindMeansDecoderLM
-        guard meta.kind == "llm" else {
-            throw .manifestInvalid(field: "metadata.kind", reason: "zoo kind '\(meta.kind)' has no adapter yet")
+        guard let variant = entry.variants[input.variant] else {
+            throw .manifestInvalid(field: "variant", reason: "\(entry.id) has no catalog variant '\(input.variant)'")
         }
-        let function = try decoderFunction(meta)
-        guard let signature = input.signatures[function] else {
-            throw .manifestInvalid(field: "graphs.decoder.function", reason: "no signature given for '\(function)'")
+        guard let main = variant.assets["main"] else {
+            throw .manifestInvalid(field: "assets.main", reason: "the catalog variant has no main asset")
         }
-        let files = Set(input.files)
-        guard files.contains(where: { $0 == meta.assets.main || $0.hasPrefix(meta.assets.main + "/") }) else {
-            throw .manifestInvalid(field: "metadata.assets.main", reason: "'\(meta.assets.main)' is not in the bundle")
+        let override = try input.overrides.override(for: entry, variant: input.variant)
+
+        // Rule.driverFromKind
+        let driver: DriverID
+        if let named = override?.driver {
+            driver = named
+        } else if meta.kind == "llm" {
+            driver = .decoderLM
+        } else {
+            throw .manifestInvalid(field: "metadata.kind", reason: "zoo kind '\(meta.kind)' needs a driver override")
+        }
+        guard driver == variant.driver else {
+            throw .manifestMismatch(field: "driver", expected: variant.driver.description, found: driver.description)
+        }
+        guard driver == .decoderLM else {
+            throw .unsupported(driver: driver)  // the adapter synthesizes decoder-lm@1 only so far
         }
 
-        let graph = try decoderGraph(file: meta.assets.main, function: function, signature: signature, meta: meta)
+        let platformName = String(input.variant.split(separator: "-").first ?? "")
+        guard let platform = Device.Platform(rawValue: platformName) else {
+            throw .manifestInvalid(field: "variant.platform", reason: "'\(input.variant)' does not start with macos or ios")
+        }
+        let mainFiles = Set(main.files.map(\.path))
+        var assets: [String: Manifest.Asset] = [:]
+        for (name, asset) in variant.assets {
+            assets[name] = Manifest.Asset(repo: asset.repo, revision: asset.revision, subtree: asset.subtree)
+        }
+
+        let graphOverride = override?.graphs?["decoder"]
+        let graph = try decoderGraph(
+            meta: meta, signatures: input.signatures, mainFiles: mainFiles, override: graphOverride)
+        let tables = try tables(override?.tables, variant: variant)
+        let (tokenizer, stopSource) = try tokenizer(
+            input: input, meta: meta, variant: variant, mainFiles: mainFiles, override: override?.tokenizer)
+
+        var refs: [String: String] = [:]
+        if let stopSource { refs["tokenizer.stop"] = stopSource }
+        let compression: String? = switch meta.compression {
+        case .string(let s)?: s
+        case nil, .null?: nil
+        case let value?: value.compactText
+        }
         let manifest = Manifest(
-            id: input.catalogID,
-            task: "text-generation",
-            driver: .decoderLM,
+            id: entry.id,
+            task: override?.task ?? entry.task,
+            driver: driver,
+            variant: Manifest.Variant(platform: platform, architectures: variant.architectures),
+            assets: assets,
             graphs: ["decoder": graph],
-            tokenizer: try tokenizer(files: files, config: input.tokenizerConfig, template: input.chatTemplate),
-            precision: precision(meta: meta, signature: signature, logits: graph.outputs["logits"]),
+            tables: tables,
+            tokenizer: tokenizer,
             provenance: Manifest.Provenance(
                 source: meta.source?.hfModelID ?? meta.language?.tokenizer,
-                zooRepo: input.repo,
-                zooRevision: input.revision,
-                synthesizedBy: version))
+                sourceRevision: meta.source?.hfRevision,
+                adapter: version,
+                zooRepo: entry.repo,
+                zooRevision: entry.revision,
+                subtrees: assets.mapValues(\.subtree),
+                zooCompression: compression,
+                metadataKind: meta.kind,
+                refs: refs.isEmpty ? nil : refs),
+            license: entry.license)
         try manifest.validate()
         try DriverContract.decoderLM.validate(manifest)
         return manifest
     }
 
-    // MARK: - Pieces
+    // MARK: - Graph
 
     static func decodeMetadata(_ data: Data) throws(AetherError) -> ZooMetadata {
         do {
             return try JSONDecoder().decode(ZooMetadata.self, from: data)
         } catch let error as DecodingError {
-            let mapped = AetherError(decoding: error)
-            if case .manifestInvalid(let field, let reason) = mapped {
+            if case .manifestInvalid(let field, let reason) = AetherError(decoding: error) {
                 throw .manifestInvalid(field: field.isEmpty ? "metadata" : "metadata.\(field)", reason: reason)
             }
-            throw mapped
+            throw .manifestInvalid(field: "metadata", reason: "\(error)")
         } catch {
             throw .manifestInvalid(field: "metadata", reason: "\(error)")
         }
     }
 
-    /// Heuristic.decoderFunction
-    static func decoderFunction(_ meta: ZooMetadata) throws(AetherError) -> String {
-        let listed = (meta.language?.functionMap ?? [:]).sorted { $0.key < $1.key }.flatMap(\.value)
-        if listed.isEmpty || listed.contains("main") { return "main" }
-        return listed[0]
+    /// Rule.functionsFromFunctionMap
+    static func phases(_ meta: ZooMetadata, override: ZooOverrides.GraphOverride?) throws(AetherError) -> [String: String] {
+        if let functions = override?.functions { return functions }
+        let listed = Set((meta.language?.functionMap ?? [:]).values.flatMap { $0 })
+        switch listed {
+        case [], ["main"]: return ["step": "main"]
+        case ["main", "prefill"]: return ["step": "main", "prefill": "prefill"]
+        default:
+            throw .manifestInvalid(
+                field: "graphs.decoder.functions",
+                reason: "cannot infer phases from function_map \(listed.sorted()); add a functions override")
+        }
     }
 
     static func decoderGraph(
-        file: String, function: String, signature: GraphSignature, meta: ZooMetadata
+        meta: ZooMetadata, signatures: [String: GraphSignature], mainFiles: Set<String>,
+        override: ZooOverrides.GraphOverride?
     ) throws(AetherError) -> Manifest.Graph {
-        // Heuristic.tokensThenPositions
-        guard signature.inputs.count == 2 else {
+        let file = override?.file ?? AssetPath(asset: "main", path: meta.assets.main)
+        if file.asset == "main" {
+            guard mainFiles.contains(where: { $0 == file.path || $0.hasPrefix(file.path + "/") }) else {
+                throw .manifestInvalid(field: "graphs.decoder.file", reason: "'\(file.path)' is not in the main asset")
+            }
+        }
+        let phases = try phases(meta, override: override)
+        var phaseSignatures: [String: GraphSignature] = [:]
+        for (phase, function) in phases {
+            guard let signature = signatures[function] else {
+                throw .manifestInvalid(field: "graphs.decoder.functions.\(phase)", reason: "no signature given for '\(function)'")
+            }
+            phaseSignatures[phase] = signature
+        }
+        guard let step = phaseSignatures["step"] else {
+            throw .manifestInvalid(field: "graphs.decoder.functions.step", reason: "a decoder needs a step phase")
+        }
+
+        // Rule.standardInputNames
+        let staticNames = Set((override?.inputs ?? [:]).values.map(\.name))
+        let names = step.inputs.map(\.name).filter { !staticNames.contains($0) }
+        guard let tokens = names.first(where: { $0 == "input_ids" }),
+              let positions = names.first(where: { $0 == "position_ids" })
+        else {
             throw .manifestInvalid(
                 field: "graphs.decoder.inputs",
-                reason: "expected 2 graph inputs (tokens, positions), found \(signature.inputs.map(\.name))")
+                reason: "expected input_ids and position_ids, found \(names); bind non-standard inputs in the override")
         }
-        let names = signature.inputs.map(\.name)
-        let tokens = names.first { $0.lowercased().contains("input_ids") || $0.lowercased().contains("token") }
-            ?? names[0]
-        let positions = names.first { $0 != tokens && $0.lowercased().contains("position") }
-            ?? names.first { $0 != tokens }!
+        if let extra = names.first(where: { $0 != tokens && $0 != positions }) {
+            throw .manifestInvalid(
+                field: "graphs.decoder.inputs", reason: "graph input '\(extra)' has no role; bind it in the override")
+        }
+        var inputs: [String: Manifest.Binding] = ["tokens": .init(name: tokens), "positions": .init(name: positions)]
+        for (role, binding) in override?.inputs ?? [:] { inputs[role] = binding }
 
-        // Heuristic.logitsOutput
-        guard let logits = signature.outputs.first(where: { $0.name == "logits" }) ?? signature.outputs.first else {
-            throw .manifestInvalid(field: "graphs.decoder.outputs.logits", reason: "the graph has no outputs")
+        // Rule.logitsRowsFromShape
+        guard let logits = step.output("logits") else {
+            throw .manifestInvalid(field: "graphs.decoder.outputs.logits", reason: "the graph has no output named logits")
         }
-        var outputs = ["logits": logits.name]
-        if let hidden = signature.outputs.first(where: { $0.name != logits.name && $0.name.lowercased().contains("hidden") }) {
-            outputs["hidden"] = hidden.name
-        }
-
-        // Heuristic.stateRoles
-        var kv: [TensorSpec] = []
-        var recurrent: [TensorSpec] = []
-        for state in signature.states {
-            switch nameRole(state.name) ?? (state.isDynamic ? .kv : .recurrent) {
-            case .kv: kv.append(state)
-            case .recurrent: recurrent.append(state)
-            }
-        }
-        // Keys before values within the pair, so `kv` reads [keys…, values…] whatever the graph's order.
-        kv.sort { kvRank($0.name) < kvRank($1.name) }
-
-        // Heuristic.kvSequenceAxis
-        var sequenceAxis: Int?
-        if !kv.isEmpty {
-            let axes = Set(kv.map(\.dynamicAxes))
-            guard axes.count == 1, let only = axes.first, only.count == 1 else {
-                throw .manifestInvalid(
-                    field: "graphs.decoder.states.sequenceAxis",
-                    reason: "cannot infer the KV sequence axis from \(kv.map(\.summary)); ship an aether.json")
-            }
-            sequenceAxis = only[0]
+        var outputs = ["logits": Manifest.OutputBinding(name: logits.name, rows: rows(of: logits))]
+        if let hidden = step.outputs.first(where: { $0.name.lowercased().contains("hidden") }) {
+            outputs["hidden"] = Manifest.OutputBinding(name: hidden.name, rows: rows(of: hidden))
         }
 
-        // Heuristic.tokenAxisLimits
-        let tokenSpec = signature.input(tokens)!
-        var limits = Manifest.Limits(maxContext: meta.language?.maxContextLength)
-        if tokenSpec.rank == 2, tokenSpec.shape[1] != TensorSpec.dynamic {
-            limits.staticSequence = tokenSpec.shape[1]
+        // Rule.statesFromDynamicAxis
+        let states: Manifest.States
+        if let replaced = override?.states {
+            states = replaced
         } else {
-            limits.prefillChunk = min(defaultPrefillChunk, meta.language?.maxContextLength ?? defaultPrefillChunk)
+            var byAxis: [Int: [String]] = [:]
+            var recurrent: [Manifest.RecurrentState] = []
+            for state in step.states {
+                switch state.dynamicAxes.count {
+                case 0: recurrent.append(Manifest.RecurrentState(name: state.name))
+                case 1: byAxis[state.dynamicAxes[0], default: []].append(state.name)
+                default:
+                    throw .manifestInvalid(
+                        field: "graphs.decoder.states",
+                        reason: "'\(state.name)' \(state.summary) has several dynamic axes; classify it in the override")
+                }
+            }
+            let sequence = byAxis.keys.sorted().map { axis in
+                Manifest.SequenceState(tensors: byAxis[axis]!.sorted { keysFirst($0, $1) }, seqAxis: axis)
+            }
+            states = Manifest.States(sequence: sequence, recurrent: recurrent)
         }
 
-        // Heuristic.specializationFromShapeKind
-        let dynamic = signature.hasDynamicInputsOrStates
-        let specialization = Manifest.Specialization(
-            computeUnit: dynamic ? .gpu : .neuralEngine, expectFrequentReshapes: dynamic)
+        // Rule.limitsFromMetadataAndShapes
+        guard let maxContext = meta.language?.maxContextLength else {
+            throw .manifestInvalid(field: "metadata.language.max_context_length", reason: "a decoder needs its declared maximum")
+        }
+        var staticByPhase: [String: Int] = [:]
+        for (phase, signature) in phaseSignatures {
+            if let spec = signature.input(tokens), spec.rank == 2, spec.shape[1] != TensorSpec.dynamic {
+                staticByPhase[phase] = spec.shape[1]
+            }
+        }
+        var limits = Manifest.Limits(maxContext: maxContext, kvCapacityCap: override?.kvCapacityCap)
+        if phases.count == 1, let s = staticByPhase["step"] {
+            limits.staticSequence = .one(s)
+        } else if !staticByPhase.isEmpty {
+            limits.staticSequence = .perPhase(staticByPhase.mapValues { .one($0) })
+        }
+        if staticByPhase["step"] == nil || staticByPhase["prefill"] != nil {
+            limits.prefillChunk = min(defaultPrefillChunk, staticByPhase["prefill"] ?? maxContext)
+        }
+
+        // Rule.gpuCompute
+        let compute = override?.compute ?? .gpu
+        let dynamic = phaseSignatures.values.contains { $0.hasDynamicInputsOrStates }
 
         return Manifest.Graph(
             file: .single(file),
-            function: function,
-            inputs: ["tokens": tokens, "positions": positions],
+            function: phases.count == 1 ? phases["step"] : nil,
+            functions: phases.count == 1 ? nil : phases,
+            inputs: inputs,
             outputs: outputs,
-            states: Manifest.States(kv: kv.map(\.name), recurrent: recurrent.map(\.name), sequenceAxis: sequenceAxis),
+            states: states,
             limits: limits,
-            specialization: specialization)
+            compute: compute,
+            expectFrequentReshapes: compute == .gpu && dynamic,
+            warmup: override?.warmup)
     }
 
-    enum StateRole { case kv, recurrent }
-
-    static func nameRole(_ name: String) -> StateRole? {
-        let n = name.lowercased()
-        if kvRank(name) < 2 { return .kv }
-        if n.contains("conv") || n.contains("rec") || n.contains("ssm") { return .recurrent }
-        return nil
+    static func rows(of spec: TensorSpec) -> Manifest.OutputBinding.Rows {
+        if spec.rank == 0 { return .none }
+        if spec.rank >= 2 && spec.shape[1] == 1 { return .last }
+        return .all
     }
 
-    /// 0 for keys, 1 for values, 2 for neither.
-    static func kvRank(_ name: String) -> Int {
-        let n = name.lowercased()
-        if n.contains("key") || n.hasPrefix("k_") || n.contains("_k_") || n.hasSuffix("_k") { return 0 }
-        if n.contains("value") || n.hasPrefix("v_") || n.contains("_v_") || n.hasSuffix("_v") { return 1 }
-        return 2
+    /// Keys before values, then by name.
+    static func keysFirst(_ a: String, _ b: String) -> Bool {
+        func rank(_ n: String) -> Int {
+            let n = n.lowercased()
+            if n.contains("key") || n.hasPrefix("k_") { return 0 }
+            if n.contains("value") || n.hasPrefix("v_") { return 1 }
+            return 2
+        }
+        return (rank(a), a) < (rank(b), b)
     }
 
-    static func tokenizer(files: Set<String>, config: Data?, template: String?) throws(AetherError) -> Manifest.Tokenizer? {
-        let dir = "tokenizer"
-        guard files.contains(where: { $0.hasPrefix(dir + "/") }) else { return nil }
-        let templatePath = "\(dir)/chat_template.jinja"
-
-        // Heuristic.stopFromEOS
-        var stop: [String] = []
-        if let config {
-            struct Config: Decodable {
-                var eosToken: String?
-                enum CodingKeys: String, CodingKey { case eosToken = "eos_token" }
+    static func tables(_ tables: [String: Manifest.Table]?, variant: CatalogVariant) throws(AetherError) -> [String: Manifest.Table]? {
+        guard var tables else { return nil }
+        for name in tables.keys.sorted() {
+            let table = tables[name]!
+            guard let asset = variant.assets[table.asset] else {
+                throw .manifestInvalid(field: "tables.\(name).asset", reason: "the catalog variant has no asset '\(table.asset)'")
             }
-            do {
-                if let eos = try JSONDecoder().decode(Config.self, from: config).eosToken, !eos.isEmpty {
-                    stop.append(eos)
+            guard let file = asset.files.first(where: { $0.path == table.file }) else {
+                throw .manifestInvalid(field: "tables.\(name).file", reason: "'\(table.file)' is not in asset '\(table.asset)'")
+            }
+            if let bytes = table.byteCount, bytes != file.size {
+                throw .manifestMismatch(
+                    field: "tables.\(name).shape", expected: "\(file.size) bytes (catalog)", found: "\(bytes) bytes from dtype × shape")
+            }
+            tables[name]!.sha256 = file.sha256
+        }
+        return tables
+    }
+
+    // MARK: - Tokenizer
+
+    static func tokenizer(
+        input: Input, meta: ZooMetadata, variant: CatalogVariant, mainFiles: Set<String>,
+        override: ZooOverrides.TokenizerOverride?
+    ) throws(AetherError) -> (Manifest.Tokenizer, String?) {
+        // Rule.tokenizerSourceFromDirectory: `embedded_tokenizer` is never trusted.
+        let hasDirectory = mainFiles.contains { $0.hasPrefix("tokenizer/") }
+        let source: Manifest.TokenizerSource
+        if let pinned = override?.source {
+            source = pinned
+        } else if hasDirectory {
+            source = .dir(AssetPath(asset: "main", path: "tokenizer"))
+        } else {
+            throw .manifestInvalid(
+                field: "tokenizer.source",
+                reason: "the bundle has no tokenizer/ directory (embedded_tokenizer is not trusted); pin a source in the override")
+        }
+        if case .hf(let repo, let revision) = source {
+            guard variant.assets.values.contains(where: { $0.repo == repo && $0.revision == revision }) else {
+                throw .manifestInvalid(
+                    field: "tokenizer.source", reason: "no catalog asset installs \(repo)@\(revision)")
+            }
+        }
+
+        // Rule.chatTemplateFromListing
+        let chatTemplate: AssetPath?
+        switch override?.chatTemplate {
+        case .none?: chatTemplate = nil
+        case .path(let path)?: chatTemplate = path
+        case nil:
+            chatTemplate = mainFiles.contains("tokenizer/chat_template.jinja")
+                ? AssetPath(asset: "main", path: "tokenizer/chat_template.jinja") : nil
+        }
+        var templateSha: String?
+        if let chatTemplate {
+            templateSha = variant.assets[chatTemplate.asset]?.files.first { $0.path == chatTemplate.path }?.sha256
+            if let declared = meta.language?.chatTemplateSha256, let templateSha, declared != templateSha {
+                throw .manifestMismatch(
+                    field: "tokenizer.chatTemplateSha256", expected: "\(declared) (metadata)", found: "\(templateSha) (catalog)")
+            }
+        }
+        let renderer = override?.renderer
+        let addBos: Manifest.AddBos? = override?.addBos ?? (chatTemplate != nil ? .template : renderer != nil ? .renderer : nil)
+
+        // Rule.stopsFromEOSAndGenerationConfig
+        let config = try tokenizerConfig(input.tokenizerConfig)
+        var stop: [Manifest.StopToken] = []
+        if let eos = config.eos { stop.append(.text(eos)) }
+        if let pinned = override?.stop {
+            guard pinned.tokens.count == pinned.eosTokenIds.count else {
+                throw .manifestInvalid(
+                    field: "zoo-overrides.\(input.entry.id).tokenizer.stop", reason: "tokens and eosTokenIds differ in length")
+            }
+            for (id, token) in zip(pinned.eosTokenIds, pinned.tokens) {
+                if let known = config.addedTokens[id], known != token {
+                    throw .manifestMismatch(
+                        field: "tokenizer.stop", expected: "id \(id) = '\(token)' (override)", found: "'\(known)' (tokenizer_config)")
                 }
-            } catch {
-                throw .manifestInvalid(field: "tokenizer_config.eos_token", reason: "\(error)")
+                if !stop.contains(.text(token)) { stop.append(.text(token)) }
             }
         }
 
-        // Heuristic.thinkingFromTemplate, Heuristic.hermesFromTemplate
+        // Rule.thinkingFromTemplate
         var thinking: Manifest.Thinking?
-        var toolDialect: String?
-        if let template {
-            if template.contains("<think>") && template.contains("</think>") {
-                thinking = Manifest.Thinking(open: "<think>", close: "</think>")
-            }
-            if template.contains("<tool_call>") { toolDialect = "hermes" }
+        if let template = input.chatTemplate, chatTemplate != nil,
+           template.contains("<think>"), template.contains("</think>"), template.contains("enable_thinking")
+        {
+            thinking = Manifest.Thinking(open: "<think>", close: "</think>", toggle: .templateVar("enable_thinking"))
         }
-        return Manifest.Tokenizer(
-            dir: dir, chatTemplate: files.contains(templatePath) ? templatePath : nil, stop: stop,
-            thinking: thinking, toolDialect: toolDialect)
+        if let t = override?.thinking {
+            if thinking == nil {
+                guard let open = t.open, let close = t.close else {
+                    throw .manifestInvalid(
+                        field: "zoo-overrides.\(input.entry.id).tokenizer.thinking",
+                        reason: "no thinking tags were inferred, so the override must give open and close")
+                }
+                thinking = Manifest.Thinking(open: open, close: close)
+            }
+            if let open = t.open { thinking!.open = open }
+            if let close = t.close { thinking!.close = close }
+            if let toggle = t.toggle { thinking!.toggle = toggle }
+            if let defaultOn = t.defaultOn { thinking!.defaultOn = defaultOn }
+        }
+
+        let tokenizer = Manifest.Tokenizer(
+            source: source, chatTemplate: chatTemplate, chatTemplateSha256: templateSha, renderer: renderer,
+            turnFormat: override?.turnFormat, addBos: addBos, stop: stop.isEmpty ? nil : stop, thinking: thinking,
+            toolDialect: override?.toolDialect)
+        return (tokenizer, override?.stop?.source)
     }
 
-    /// Heuristic.precisionFromCompression
-    static func precision(meta: ZooMetadata, signature: GraphSignature, logits: String?) -> Manifest.Precision {
-        var weights: String?
-        if let compression = meta.compression?.lowercased() {
-            if compression.hasSuffix("bit"), let bits = Int(compression.dropLast(3)) {
-                weights = "int\(bits)"
-            } else {
-                weights = compression
-            }
+    /// `eos_token` (string or `{content}`) and `added_tokens_decoder` id → content.
+    static func tokenizerConfig(_ data: Data?) throws(AetherError) -> (eos: String?, addedTokens: [Int: String]) {
+        guard let data else { return (nil, [:]) }
+        let value: JSONValue
+        do { value = try JSONDecoder().decode(JSONValue.self, from: data) } catch {
+            throw .manifestInvalid(field: "tokenizer_config", reason: "\(error)")
         }
-        let activations = logits.flatMap { signature.output($0) }.map(\.scalarType.precisionName)
-        return Manifest.Precision(weights: weights, activations: activations)
+        let eos = value["eos_token"]?.string ?? value["eos_token"]?["content"]?.string
+        var added: [Int: String] = [:]
+        for (key, token) in value["added_tokens_decoder"]?.object ?? [:] {
+            if let id = Int(key), let content = token["content"]?.string { added[id] = content }
+        }
+        return (eos?.isEmpty == false ? eos : nil, added)
     }
 }

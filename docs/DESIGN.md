@@ -76,7 +76,8 @@ Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherEmbeddi
   per-layer tables, retriever query/doc encoders) and may use a different driver from other variants of the same id
   (qwen3-0.6b on iOS is `static-chunked-lm@1`). It is generated at install into `.aether/aether.json` at the
   revision root, or shipped by our own exports. Versioned with `"schema": 1`. Unknown fields and `x-` fields are
-  ignored; an unknown `driver` or a missing required block fails the load ("unsupported"), never a fallback.
+  ignored. A catalogued driver with no registered implementation fails as `unsupported`, an uncatalogued driver
+  id as `unknownDriver`, and a missing required block names its field. None of these ever falls back.
 - **The manifest declares only what the graph descriptor cannot show.** Shapes, dtypes and static vs dynamic
   dimensions come from `InferenceFunctionDescriptor` at load. The manifest names *roles* and *meanings*: which input
   is tokens, which state is recurrent, which axis is sequence, which logits space, what preprocessing applies. Any
