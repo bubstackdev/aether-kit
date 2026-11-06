@@ -243,14 +243,16 @@ public struct Sampler: Sendable {
     /// repetition penalty.
     public mutating func sample(_ logits: inout [Float], constraint: TokenConstraint = .unconstrained) throws(AetherError) -> Int32 {
         try narrow(&logits, constraint: constraint)
+        // The shared invalid-logit policy first, on every path (a NaN anywhere, or nothing above −inf, throws).
+        let best = try Logits.argmax(logits[...])
         let token: Int32
         if parameters.isGreedy {
-            token = try Self.greedy(logits)
-        } else if let forced = logits.firstIndex(of: .infinity) {
+            token = best
+        } else if logits[Int(best)] == .infinity {
             // +inf forces the token (the lowest such index): its probability is 1, and exp(inf − inf) would be NaN.
             // The draw is still consumed, so a replay never drifts.
             _ = rng.next()
-            token = Int32(forced)
+            token = best
         } else {
             let candidates = try Self.distribution(logits, temperature: parameters.temperature, topK: parameters.topK, topP: parameters.topP)
             token = Int32(Self.draw(candidates, unit: rng.nextUnit()))
@@ -281,21 +283,6 @@ public struct Sampler: Sendable {
             allowed.mask(&logits)
             guard logits.contains(where: { $0 > -.infinity }) else { throw .generation(.constraintExhausted("every logit is masked")) }
         }
-    }
-
-    /// The first index of the largest value (+inf ranks first, −inf is never chosen); NaN throws.
-    static func greedy(_ logits: [Float]) throws(AetherError) -> Int32 {
-        var best = -Float.infinity
-        var token: Int?
-        for (i, score) in logits.enumerated() {
-            guard !score.isNaN else { throw .generation(.invalidLogits("NaN")) }
-            if score > best {
-                best = score
-                token = i
-            }
-        }
-        guard let token else { throw .generation(.invalidLogits("no finite logit")) }
-        return Int32(token)
     }
 
     /// The tokens a random draw can pick and their probabilities (ascending by id, summing to 1): finite logits

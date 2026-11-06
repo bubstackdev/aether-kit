@@ -20,9 +20,11 @@ public actor DecoderEngine: LanguageEngine {
             case run
         }
 
-        /// An explicit capacity (tokens). Above the derived capacity it throws `capacity`.
+        /// An explicit capacity (tokens): the most the state holds. Above the derived capacity (or a graph's static
+        /// sequence axis) it throws `capacity`; below a static axis it limits the tokens, the allocation staying static.
         public var capacity: Int?
-        /// The first allocation of the sequence axis; it grows geometrically from there. Default min(capacity, 1024).
+        /// The first allocation of the sequence axis; it grows geometrically from there. Default min(capacity, 1024),
+        /// or the whole capacity when the budget can't hold the growth copy (``KVSizing/initialAllocation(capacity:budget:)``).
         public var initialCapacity: Int?
         public var memoryBudget: MemoryBudget
         public var execution: Execution
@@ -30,6 +32,11 @@ public actor DecoderEngine: LanguageEngine {
         public var pipelineDepth: Int
         /// Run the delayed-argmax canary at load. Without it (or if it fails) greedy decoding uses depth 1.
         public var canary: Bool
+        /// Host snapshots at full capacity that the memory budget keeps room for, on a model with recurrent state
+        /// (where prefix reuse goes through ``snapshot()`` and ``restore(_:)``; attention-only models are charged
+        /// none). The default, 3, is the Generator's most (`Generator.maxSnapshots`): the two it keeps, plus the one it
+        /// reuses while it takes their replacements. 0 for a client that never snapshots.
+        public var reservedSnapshots: Int
         /// Canary length, argmax delay (spin iterations) and the capacity it runs at (default ≥ 4096: the lab's
         /// race appeared at capacity ≥ 4096).
         public var canarySteps: Int
@@ -52,8 +59,9 @@ public actor DecoderEngine: LanguageEngine {
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
             execution: Execution = .automatic, pipelineDepth: Int = 3, canary: Bool = true, canarySteps: Int = 64,
             canaryDelay: UInt32 = 200_000, canaryCapacity: Int = 4096, cachePolicy: GraphOptions.CachePolicy = .default,
-            cache: GraphOptions.Cache = .default
+            cache: GraphOptions.Cache = .default, reservedSnapshots: Int = 3
         ) {
+            self.reservedSnapshots = reservedSnapshots
             self.capacity = capacity
             self.initialCapacity = initialCapacity
             self.memoryBudget = memoryBudget
@@ -116,7 +124,8 @@ public actor DecoderEngine: LanguageEngine {
     /// Fixed facts about the loaded model.
     public struct Description: Sendable, Hashable {
         public var vocab: Int
-        /// The capacity the sequence axis may grow to.
+        /// The most tokens the state can hold: what the sequence axis may grow to, or, on a graph with a static
+        /// sequence axis, at most that axis (``DecoderEngine/capacity`` is the allocation).
         public var maxCapacity: Int
         /// Recurrent states force snapshot/restore instead of a partial rewind.
         public var hasRecurrentState: Bool
@@ -210,11 +219,18 @@ public actor DecoderEngine: LanguageEngine {
         guard let maxContext = limits.maxContext else {
             throw .manifestInvalid(field: "graphs.decoder.limits.maxContext", reason: "required by decoder-lm@1")
         }
-        var sizing = try Self.sizing(step.signature, graph: graph, maxContext: maxContext, platform: device.platform)
+        guard options.reservedSnapshots >= 0 else {
+            throw .generation(.invalidParameters("reservedSnapshots \(options.reservedSnapshots); at least 0"))
+        }
+        var sizing = try Self.sizing(
+            step.signature, prefill: prefill?.signature, graph: graph, maxContext: maxContext, platform: device.platform,
+            options: options)
         sizing.modelBytes = modelBytes
         self.sizing = sizing
-        let maxCapacity = try sizing.capacity(budget: options.memoryBudget.bytes(on: device), requested: options.capacity)
-        let initial = options.initialCapacity ?? min(maxCapacity, 1024)
+        let budget = options.memoryBudget.bytes(on: device)
+        let maxCapacity = try sizing.capacity(budget: budget, requested: options.capacity)
+        // Grow on demand when the growth copy fits, else allocate the whole capacity upfront.
+        let initial = sizing.initialAllocation(capacity: maxCapacity, budget: budget)
         guard initial <= maxCapacity else {
             throw .capacity(what: "KV initial capacity (tokens)", needed: Int64(initial), available: Int64(maxCapacity))
         }
@@ -247,10 +263,13 @@ public actor DecoderEngine: LanguageEngine {
         Int64(MTLCreateSystemDefaultDevice()?.currentAllocatedSize ?? 0)
     }
 
-    /// Sizes KV from the graph signature: bytes per sequence slot over every sequence state, and the owned bytes
-    /// that do not scale (recurrent states, logits and token buffers).
+    /// Sizes KV from the graph signatures: bytes per sequence slot over every sequence state; the owned bytes that do
+    /// not scale (recurrent states, the step's and the prefill phase's logits buffers, the greedy ring, token
+    /// buffers); and what one host snapshot costs, reserved `options.reservedSnapshots` times on a model with
+    /// recurrent state (attention-only models rewind instead).
     static func sizing(
-        _ signature: GraphSignature, graph: Manifest.Graph, maxContext: Int, platform: Device.Platform
+        _ signature: GraphSignature, prefill: GraphSignature?, graph: Manifest.Graph, maxContext: Int,
+        platform: Device.Platform, options: Options
     ) throws(AetherError) -> KVSizing {
         let states = graph.states ?? Manifest.States()
         var perToken: Int64 = 0
@@ -262,25 +281,43 @@ public actor DecoderEngine: LanguageEngine {
                 }
                 let others = spec.shape.enumerated().filter { $0.offset != entry.seqAxis }.map { max($0.element, 1) }
                 perToken += Int64(others.reduce(1, *) * width)
-                if spec.shape[entry.seqAxis] != TensorSpec.dynamic { staticAxis = spec.shape[entry.seqAxis] }
+                if spec.shape[entry.seqAxis] != TensorSpec.dynamic { staticAxis = min(staticAxis ?? .max, spec.shape[entry.seqAxis]) }
             }
         }
-        var fixed: Int64 = 0
+        var recurrent: Int64 = 0
         for entry in states.recurrent {
             if let spec = signature.state(entry.name), let width = spec.scalarType.byteWidth {
-                fixed += Int64(spec.shape.map { max($0, 1) }.reduce(1, *) * width)
+                recurrent += Int64(spec.shape.map { max($0, 1) }.reduce(1, *) * width)
             }
         }
-        if let logits = graph.outputs["logits"], let spec = signature.output(logits.name), let v = spec.shape.last,
-           let width = spec.scalarType.byteWidth {
-            let rows = spec.shape.count > 1 && spec.shape[1] == TensorSpec.dynamic ? (graph.limits?.prefillChunk ?? 512) : 1
-            fixed += Int64((rows + DecoderCore.ring) * v * width)
-        }
+        // The logits buffers DecoderCore allocates: the step's for its largest call, one row per greedy ring slot, and
+        // the prefill phase's own for its static chunk.
+        var logitsBytes: Int64 = 0
+        var vocab: Int64 = 0
         let limits = graph.limits ?? Manifest.Limits()
+        if let logits = graph.outputs["logits"], let spec = signature.output(logits.name), spec.rank == 3,
+           let v = spec.shape.last, let width = spec.scalarType.byteWidth {
+            vocab = Int64(v)
+            let tokens = graph.inputs(forPhase: "step")["tokens"].flatMap { signature.input($0.name) }
+            let stepTokens = tokens.flatMap { $0.rank == 2 && $0.shape[1] != TensorSpec.dynamic ? $0.shape[1] : nil }
+            let staticRows = spec.shape[1] == TensorSpec.dynamic ? nil : spec.shape[1]
+            let stepRows = staticRows ?? stepTokens ?? max(1, limits.prefillChunk ?? 512)
+            var rows = stepRows + DecoderCore.ring * (staticRows ?? 1)
+            if let prefill, let p = prefill.output(logits.name), p.rank == 3,
+               let chunk = graph.inputs(forPhase: "prefill")["tokens"].flatMap({ prefill.input($0.name) }), chunk.rank == 2 {
+                rows += p.shape[1] == TensorSpec.dynamic ? chunk.shape[1] : p.shape[1]
+            }
+            logitsBytes = Int64(rows) * vocab * Int64(width)
+        }
         return KVSizing(
             maxContext: maxContext, platformCap: limits.kvCapacityCap?[platform.rawValue], maxPosition: limits.maxPosition,
             // + 8: the int32 token history and positions buffers, sized with the capacity.
-            bytesPerToken: perToken + 8, fixedBytes: fixed, staticAxis: staticAxis)
+            bytesPerToken: perToken + 8, fixedBytes: recurrent + logitsBytes, staticAxis: staticAxis,
+            initialCapacity: options.initialCapacity,
+            // A snapshot: the sequence states up to its position, the recurrent states, and the float logits row a
+            // client keeps with it (the Generator does, to regenerate).
+            snapshotBytesPerToken: perToken, snapshotFixedBytes: recurrent + 4 * vocab,
+            reservedSnapshots: states.recurrent.isEmpty ? 0 : options.reservedSnapshots)
     }
 
     // MARK: - State
@@ -335,17 +372,23 @@ public actor DecoderEngine: LanguageEngine {
     }
 
     /// The next token: delivered by the GPU argmax's completion handler, with the pipeline refilled before this
-    /// returns. Nil at the limit or when the calling task is cancelled.
+    /// returns. Nil at the limit or when the calling task is cancelled. A step whose command buffer failed throws
+    /// `runtime` (Metal's error), and a row with no token `invalidLogits`; the state is then undefined past the
+    /// tokens returned: end the decode, then ``reset()`` or ``restore(_:)`` (the Generator does).
     public func nextGreedy() async throws(AetherError) -> Int32? { try await core.nextGreedy() }
 
     /// Ends greedy decoding: waits for in-flight GPU work and sets the position to the tokens fed (every token
     /// returned except the last). Returns how many were fed and how many steps ran past the last returned token.
-    /// Refused (`unsupportedOperation`) while a ``nextGreedy()`` is in progress.
+    /// Refused (`unsupportedOperation`) while a ``nextGreedy()`` is in progress. A GPU failure seen while draining
+    /// is thrown after the decode has ended.
     @discardableResult
     public func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int) {
         let end = try await core.endGreedy()
         return (end.fed, end.overshoot)
     }
+
+    /// Tests only: make every command buffer the engine commits from now on report a GPU failure (no-op on `run`).
+    func injectGPUFailure(_ on: Bool) { core.kernels?.injectedFailure = on }
 }
 
 /// The `decoder-lm@1` driver (DESIGN.md §6.3): loads an installed bundle into a ``DecoderEngine``.
