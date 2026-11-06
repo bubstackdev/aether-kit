@@ -47,11 +47,14 @@ public struct SpeechRequest: Sendable, Hashable {
     /// global generator), so a seed always gives the same audio. Segment `i` of a multi-segment request uses
     /// `seed &+ i`.
     public var seed: UInt64
+    /// The request's GPU priority (absent: `.medium`). Keep the job to change it while the request waits.
+    public var job: GPUJob?
 
-    public init(voice: KokoroVoice = .afHeart, speed: Float = 1, seed: UInt64 = 0) {
+    public init(voice: KokoroVoice = .afHeart, speed: Float = 1, seed: UInt64 = 0, job: GPUJob? = nil) {
         self.voice = voice
         self.speed = speed
         self.seed = seed
+        self.job = job
     }
 
     func validate() throws(AetherError) {
@@ -81,8 +84,10 @@ public struct KokoroSpeech: Sendable, Hashable {
 ///   iOS); the decoder's memory grows faster than its bucket. Split longer input into segments.
 /// - **Memory and the GPU:** both graphs stay loaded until ``unload()``. Each request is admitted against the measured
 ///   footprint (``FootprintLedger``, keyed by the cap's bucket) or the files' size, with the shared
-///   `ResourceCoordinator` and GPU admission when the options set them.
-/// - **One at a time:** requests run in the order made; ``unload()`` waits for the running one.
+///   `ResourceCoordinator` when the options set one, and through the options' GPU admission (by default
+///   ``GPUAdmission/shared``), one grant per request.
+/// - **One at a time:** requests run in GPU priority order (the request's `job`), in the order made within a priority;
+///   ``unload()`` waits for the running one.
 /// - **Cancellation** stops between graph calls with `CancellationError`. Any failure releases the graphs; the session
 ///   stays usable.
 public actor KokoroSpeechSession {
@@ -204,11 +209,12 @@ public actor KokoroSpeechSession {
             throw AetherError.generation(.invalidParameters("'\(phonemes)' was parsed with another vocabulary"))
         }
 
+        // The GPU first, so a request's priority also orders it among this session's own requests.
+        let grant = try await options.gpu.admit(job: request.job)
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         let residency = try admission.begin(profile: profile)
         do {
             let style = try styles(request.voice, table: voice.table)
@@ -249,11 +255,11 @@ public actor KokoroSpeechSession {
         guard limit >= 1, let top = kokoro.frames.bucket(for: limit) else {
             throw AetherError.generation(.invalidParameters("the prewarm frame limit must be in 1...\(frameCap)"))
         }
+        let grant = try await options.gpu.admit()
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         let residency = try admission.begin(profile: profile)
         do {
             residency.beginPhase(.perStep)

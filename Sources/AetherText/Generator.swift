@@ -1,3 +1,4 @@
+public import AetherHost
 public import AetherRuntime
 import Foundation
 
@@ -14,10 +15,12 @@ public struct GenerationParameters: Sendable {
     /// Tools the model may call, rendered into the template. Needs a manifest `tokenizer.toolDialect` this build
     /// implements (`hermes-json`); otherwise the request is refused.
     public var tools: [ToolDefinition]
+    /// The reply's GPU priority (absent: `.medium`). Keep the job to change it while the reply waits for the GPU.
+    public var job: GPUJob?
 
     public init(
         maxTokens: Int = 512, sampling: SamplingParameters = .greedy, stopSequences: [String] = [], thinking: Bool? = nil,
-        logitsProcessors: [any LogitsProcessor] = [], tools: [ToolDefinition] = []
+        logitsProcessors: [any LogitsProcessor] = [], tools: [ToolDefinition] = [], job: GPUJob? = nil
     ) {
         self.maxTokens = maxTokens
         self.sampling = sampling
@@ -25,6 +28,7 @@ public struct GenerationParameters: Sendable {
         self.thinking = thinking
         self.logitsProcessors = logitsProcessors
         self.tools = tools
+        self.job = job
     }
 }
 
@@ -66,9 +70,13 @@ public struct GenerationSummary: Sendable, Equatable {
 ///   the end of the previous prompt (with that prompt's last logits), else start over.
 ///
 /// Plain greedy decoding with no logits processor runs on the engine's pipelined GPU path; anything else feeds one
-/// token at a time and samples on the CPU. Requests are served one at a time, in arrival order.
+/// token at a time and samples on the CPU. Each request (prefill and decode of one reply) holds one GPU grant from
+/// ``gpu`` (by default ``GPUAdmission/shared``) and requests are served one at a time: in GPU priority order
+/// (`GenerationParameters.job`), in arrival order within a priority.
 public actor Generator {
     public nonisolated let engine: DecoderEngine
+    /// The GPU admission every request takes before it renders or prefills.
+    public nonisolated let gpu: GPUAdmissionOwner
     public nonisolated let decoder: any TokenDecoding
     public nonisolated let renderer: any PromptRenderer
     public nonisolated let stopTokens: Set<Int32>
@@ -87,9 +95,10 @@ public actor Generator {
 
     public init(
         engine: DecoderEngine, decoder: any TokenDecoding, renderer: any PromptRenderer, stopTokens: Set<Int32>,
-        profile: OutputProfile
+        profile: OutputProfile, gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
     ) {
         self.engine = engine
+        self.gpu = gpu
         self.decoder = decoder
         self.renderer = renderer
         self.stopTokens = stopTokens
@@ -104,7 +113,7 @@ public actor Generator {
     public nonisolated func generate(_ messages: [ChatMessage], parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
-        stream { generator, continuation in
+        stream(job: parameters.job) { generator, continuation in
             if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
             let rendered = try generator.renderer.render(
                 messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
@@ -124,14 +133,25 @@ public actor Generator {
     public nonisolated func generate(prompt: RenderedPrompt, parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
-        stream { generator, continuation in try await generator.run(prompt, parameters, continuation) }
+        stream(job: parameters.job) { generator, continuation in try await generator.run(prompt, parameters, continuation) }
     }
 
     private nonisolated func stream(
+        job: GPUJob?,
         _ body: @escaping @Sendable (isolated Generator, AsyncThrowingStream<GenerationEvent, any Error>.Continuation) async throws -> Void
     ) -> AsyncThrowingStream<GenerationEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
         let task = Task {
+            // The GPU before this generator's own turn, so priority also orders this generator's requests. The grant
+            // is released after the turn, once the decode's GPU work has joined.
+            let grant: GPUAdmissionGrant
+            do {
+                grant = try await self.gpu.admit(job: job)
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
+            defer { grant.release() }
             await self.acquire()
             do {
                 // A request cancelled while it waited for its turn renders and prefills nothing.

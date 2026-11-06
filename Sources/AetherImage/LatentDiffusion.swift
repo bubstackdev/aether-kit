@@ -36,7 +36,8 @@ public struct LatentDiffusionModel: Sendable {
 /// - **Memory:** before each generation it plans residency from measured footprints (``ResidencyPlan``): every graph
 ///   resident if that fits, else each phase's graphs released when the phase ends, else `capacity` before anything
 ///   loads. With a ``Options/coordinator`` it reserves the plan's peak there for the generation.
-/// - **One at a time:** generations run in the order requested; ``unload()`` waits for the running one.
+/// - **One at a time:** generations run in GPU priority order (the request's `job`; the options' admission, by
+///   default ``GPUAdmission/shared``), in the order requested within a priority; ``unload()`` waits for the running one.
 /// - **Cancellation:** cancelling the calling task stops between graph calls with `CancellationError`. Any failure
 ///   releases every graph; the pipeline stays usable.
 /// - The seed draws the initial latents from Kit's ``SeededGaussianNoise`` in NCHW order (not PyTorch's generator), so
@@ -123,11 +124,12 @@ public actor LatentDiffusionPipeline {
         let grid = try latent.tokenGrid(width: size.width, height: size.height)
         let ids = try tokenizer.encode(request.prompt)
 
+        // The GPU first, so a request's priority also orders it among this pipeline's own requests.
+        let grant = try await options.gpu.admit(job: request.job)
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
         do {
             let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)

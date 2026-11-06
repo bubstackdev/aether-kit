@@ -839,6 +839,103 @@
       "usr": "s:12AetherSpeech0B7RequestV4seeds6UInt64Vvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvg",
+        "moduleName": "AetherSpeech",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvs",
+        "moduleName": "AetherSpeech",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvp",
+      "moduleName": "AetherSpeech",
+      "name": "job",
+      "printedName": "job",
+      "usr": "s:12AetherSpeech0B7RequestV3job0A4Host6GPUJobCSgvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -866,16 +963,31 @@
         "name": "UInt64",
         "printedName": "Swift.UInt64",
         "usr": "s:s6UInt64V"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s12AetherSpeech0B7RequestV5voice5speed4seedAcA11KokoroVoiceV_Sfs6UInt64Vtcfc",
+      "mangledName": "$s12AetherSpeech0B7RequestV5voice5speed4seed3jobAcA11KokoroVoiceV_Sfs6UInt64V0A4Host6GPUJobCSgtcfc",
       "moduleName": "AetherSpeech",
       "name": "init",
-      "printedName": "init(voice:speed:seed:)",
-      "usr": "s:12AetherSpeech0B7RequestV5voice5speed4seedAcA11KokoroVoiceV_Sfs6UInt64Vtcfc"
+      "printedName": "init(voice:speed:seed:job:)",
+      "usr": "s:12AetherSpeech0B7RequestV5voice5speed4seed3jobAcA11KokoroVoiceV_Sfs6UInt64V0A4Host6GPUJobCSgtcfc"
      },
      {
       "children": [

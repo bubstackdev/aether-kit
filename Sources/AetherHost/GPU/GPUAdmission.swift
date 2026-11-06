@@ -1,16 +1,23 @@
 public import Foundation
 import Synchronization
 
-/// In-process GPU admission, shared explicitly by the work that should take turns. Ported from AetherKit 0.0.7.
+/// GPU admission: the lock every generation takes. Ported from AetherKit 0.0.7.
 ///
-/// There is no process-global default: concurrency is a host decision, so a host creates one and passes it (or an
-/// ``owner(_:)`` handle) to every engine or pipeline that should queue behind it. Requests are served by a
-/// ``FairInferenceQueue``: FIFO per owner and round-robin across owners, with at most `maximumConcurrent` grants
-/// running. A request either queues (optionally with a timeout; cancellation leaves the queue) or fails fast.
+/// Enforced by default: every image, speech and video pipeline and the text `Generator` admits through ``shared``
+/// unless given another admission, one grant per turn (a generation, a clip, an utterance, a chat reply), held until
+/// its native work has drained. A host that wants other limits creates its own and passes it (or an ``owner(_:)``
+/// handle) to each engine or pipeline that should queue behind it.
+///
+/// Requests are served by a ``PriorityInferenceQueue``: the highest ``GPUPriority`` waiting starts first, in arrival
+/// order within a level, with at most `maximumConcurrent` grants running. Running work is never preempted. A request
+/// names its priority with a ``GPUJob``, whose priority the caller may change while the request waits; without one it
+/// is `.medium`. A request either queues (optionally with a timeout; cancellation leaves the queue) or fails fast. The
+/// owner name is a label for `maximumOutstandingPerOwner`, nothing more.
 ///
 /// With `crossProcessLease`, the admission also holds a ``SharedGPULease`` while any grant runs, so cooperating
-/// processes (Atelier, the lab wrappers, Aether tools) are excluded. Use it only in unsandboxed hosts: a sandboxed
-/// app's temporary directory is private, so the lease would exclude nothing outside it.
+/// processes (Atelier, the lab wrappers, Aether tools) are excluded. The lease is a plain mutex: priority orders this
+/// process's requests only. Use it only in unsandboxed hosts: a sandboxed app's temporary directory is private, so the
+/// lease would exclude nothing outside it (``shared`` leaves it off there and on iOS).
 ///
 /// The lease is polled, so under steady in-process load another process could starve. The admission therefore keeps
 /// an owned lease across consecutive (or overlapping) grants for at most `crossProcessTurn`. After that it starts no
@@ -38,7 +45,9 @@ public final class GPUAdmission: Sendable {
 
     private enum Step: Sendable, Equatable { case granted, acquireLease(after: Duration) }
     private struct State: Sendable {
-        var queue: FairInferenceQueue<String, Void>
+        var queue: PriorityInferenceQueue<String, Void>
+        /// The jobs of queued requests that have one, read at each start so a priority change takes effect.
+        var jobs: [UUID: GPUJob] = [:]
         var waiters: [UUID: CheckedContinuation<Step, any Error>] = [:]
         /// Requests abandoned (cancelled or timed out) before they were queued, with the error their enqueue throws.
         var cancelledBeforeQueueing: [UUID: any Error] = [:]
@@ -56,7 +65,7 @@ public final class GPUAdmission: Sendable {
     public init(maximumConcurrent: Int = 1, waiting: Waiting = .queue(), maximumOutstanding: Int = 64,
                 maximumOutstandingPerOwner: Int = 8, crossProcessLease: SharedGPULease.Configuration? = nil,
                 crossProcessTurn: Duration = .seconds(30), crossProcessHandOffGap: Duration = .milliseconds(500)) throws(AetherError) {
-        let queue = try FairInferenceQueue<String, Void>(
+        let queue = try PriorityInferenceQueue<String, Void>(
             maximumOutstanding: maximumOutstanding, maximumOutstandingPerOwner: maximumOutstandingPerOwner,
             maximumRunning: maximumConcurrent)
         self.maximumConcurrent = maximumConcurrent
@@ -65,6 +74,30 @@ public final class GPUAdmission: Sendable {
         self.crossProcessTurn = crossProcessTurn
         self.crossProcessHandOffGap = crossProcessHandOffGap
         state = Mutex(State(queue: queue))
+    }
+
+    /// The process's default admission, which pipelines and the text `Generator` use unless given another: one grant
+    /// at a time, queued without a timeout, up to 64 outstanding requests (with no tighter per-owner limit). On macOS
+    /// outside the App Sandbox it also holds the machine's ``SharedGPULease`` (``SharedGPULease/sharedDirectory``),
+    /// accepting a lease handed off through ``SharedGPULease/holderEnvironmentKey``; in a sandboxed app and on iOS it is
+    /// in-process only.
+    public static let shared: GPUAdmission = {
+        do {
+            return try GPUAdmission(maximumOutstandingPerOwner: 64,
+                                    crossProcessLease: defaultCrossProcessLease(ProcessInfo.processInfo.environment))
+        } catch {
+            preconditionFailure("the shared GPU admission's limits are valid")
+        }
+    }()
+
+    /// ``shared``'s lease: the shared directory on unsandboxed macOS (`APP_SANDBOX_CONTAINER_ID` unset), else none.
+    static func defaultCrossProcessLease(_ environment: [String: String]) -> SharedGPULease.Configuration? {
+        #if os(macOS)
+        guard environment["APP_SANDBOX_CONTAINER_ID"] == nil else { return nil }
+        return SharedGPULease.Configuration(handedOffBy: environment[SharedGPULease.holderEnvironmentKey].flatMap { Int32($0) })
+        #else
+        return nil
+        #endif
     }
 
     public struct Snapshot: Sendable, Equatable {
@@ -83,14 +116,15 @@ public final class GPUAdmission: Sendable {
         state.withLock { Snapshot(running: $0.queue.runningCount, queued: $0.queue.queuedCount, holdsCrossProcessLease: $0.lease != nil) }
     }
 
-    /// A handle naming the owner whose requests share one fairness lane.
+    /// A handle naming the owner whose requests count against one `maximumOutstandingPerOwner`.
     public func owner(_ name: String) -> GPUAdmissionOwner { GPUAdmissionOwner(admission: self, name: name) }
 
-    /// Admits one unit of GPU work for `owner`. Hold the grant until the work's native submissions have joined.
-    public func admit(owner: String, waiting: Waiting? = nil) async throws -> GPUAdmissionGrant {
+    /// Admits one unit of GPU work for `owner`, at `job`'s priority (absent: `.medium`). Hold the grant until the
+    /// work's native submissions have joined.
+    public func admit(owner: String, waiting: Waiting? = nil, job: GPUJob? = nil) async throws -> GPUAdmissionGrant {
         switch waiting ?? self.waiting {
-        case .failFast: return try admitImmediately(owner: owner)
-        case .queue(let timeout): return try await admitQueued(owner: owner, timeout: timeout, beforeEnqueue: nil)
+        case .failFast: return try admitImmediately(owner: owner, priority: job?.priority ?? .medium)
+        case .queue(let timeout): return try await admitQueued(owner: owner, timeout: timeout, job: job, beforeEnqueue: nil)
         }
     }
 
@@ -124,7 +158,7 @@ public final class GPUAdmission: Sendable {
         return since.duration(to: now) >= crossProcessTurn
     }
 
-    private func admitImmediately(owner: String) throws -> GPUAdmissionGrant {
+    private func admitImmediately(owner: String, priority: GPUPriority) throws -> GPUAdmissionGrant {
         try Task.checkCancellation()
         let id = UUID()
         let check = crossProcessLease == nil ? nil : checkLease()
@@ -139,8 +173,8 @@ public final class GPUAdmission: Sendable {
                 if !state.leaseGrants.isEmpty { state.draining = true }
                 throw .admission(.busy)
             }
-            try state.queue.enqueue(id: id, owner: owner, work: ())
-            guard state.queue.next()?.id == id else { preconditionFailure("an idle fair queue must start its only ticket") }
+            try state.queue.enqueue(id: id, owner: owner, priority: priority, work: ())
+            guard state.queue.next()?.id == id else { preconditionFailure("an idle queue must start its only ticket") }
             guard crossProcessLease != nil, !Self.joinLease(&state, id, check) else { return false }
             state.leaseBusy = true
             return true
@@ -176,7 +210,7 @@ public final class GPUAdmission: Sendable {
 
     /// Queues with `timeout`. `beforeEnqueue` runs between starting the timer and queueing (tests widen the window).
     func admitQueued(
-        owner: String, timeout: Duration?, beforeEnqueue: (@Sendable () async -> Void)?
+        owner: String, timeout: Duration?, job: GPUJob? = nil, beforeEnqueue: (@Sendable () async -> Void)?
     ) async throws -> GPUAdmissionGrant {
         let id = UUID()
         let clock = ContinuousClock()
@@ -198,7 +232,10 @@ public final class GPUAdmission: Sendable {
             try await withCheckedThrowingContinuation { continuation in
                 let refusal: (any Error)? = state.withLock { state in
                     if let abandoned = state.cancelledBeforeQueueing.removeValue(forKey: id) { return abandoned }
-                    do { try state.queue.enqueue(id: id, owner: owner, work: ()) } catch { return error }
+                    do { try state.queue.enqueue(id: id, owner: owner, priority: job?.priority ?? .medium, work: ()) } catch {
+                        return error
+                    }
+                    if let job { state.jobs[id] = job }
                     state.waiters[id] = continuation
                     return nil
                 }
@@ -234,7 +271,9 @@ public final class GPUAdmission: Sendable {
     private func abandon(_ id: UUID, with error: any Error, beforeQueueing: Bool) {
         let waiter: CheckedContinuation<Step, any Error>? = state.withLock { state in
             switch state.queue.cancel(id: id) {
-            case .removedQueued: return state.waiters.removeValue(forKey: id)
+            case .removedQueued:
+                state.jobs.removeValue(forKey: id)
+                return state.waiters.removeValue(forKey: id)
             case .notFound: if beforeQueueing { state.cancelledBeforeQueueing[id] = error }; return nil
             case .drainRunning: return nil
             }
@@ -249,6 +288,8 @@ public final class GPUAdmission: Sendable {
         let (started, handOff) = state.withLock { state -> ([(CheckedContinuation<Step, any Error>, Step)], SharedGPULease?) in
             var started: [(CheckedContinuation<Step, any Error>, Step)] = []
             var handOff: SharedGPULease?
+            // Priorities changed while waiting count from here; a running request's job no longer matters.
+            for (id, job) in state.jobs { state.queue.setPriority(job.priority, of: id) }
             while true {
                 if crossProcessLease != nil {
                     if state.leaseBusy || state.draining { break }
@@ -269,6 +310,7 @@ public final class GPUAdmission: Sendable {
                     }
                 }
                 guard let ticket = state.queue.next() else { break }
+                state.jobs.removeValue(forKey: ticket.id)
                 guard let waiter = state.waiters.removeValue(forKey: ticket.id) else {
                     try? state.queue.release(id: ticket.id)
                     continue
@@ -349,9 +391,23 @@ public struct GPUAdmissionOwner: Sendable {
         self.name = name
     }
 
-    public func admit(waiting: GPUAdmission.Waiting? = nil) async throws -> GPUAdmissionGrant {
-        try await admission.admit(owner: name, waiting: waiting)
+    public func admit(waiting: GPUAdmission.Waiting? = nil, job: GPUJob? = nil) async throws -> GPUAdmissionGrant {
+        try await admission.admit(owner: name, waiting: waiting, job: job)
     }
+}
+
+extension GPUAdmissionOwner {
+    /// For tests only: an owner on a private admission that never makes a request wait (up to 1024 run at once) and
+    /// takes no cross-process lease, so parallel tests of pipelines and generators neither serialize on
+    /// ``GPUAdmission/shared`` nor hold the machine's GPU lease. Never use it for real GPU work.
+    @_spi(Testing) public static let unadmitted: GPUAdmissionOwner = {
+        do {
+            return try GPUAdmission(maximumConcurrent: 1024, maximumOutstanding: 1024, maximumOutstandingPerOwner: 1024)
+                .owner("unadmitted")
+        } catch {
+            preconditionFailure("the unadmitted owner's limits are valid")
+        }
+    }()
 }
 
 /// One operation's admission, which the operation's owner can withdraw while it is still waiting, so an unload never

@@ -58,13 +58,19 @@ public struct VideoRequest: Sendable, Hashable {
     public var recipe: String?
     /// Whether to decode the soundtrack.
     public var audio: Bool
+    /// The request's GPU priority (absent: `.medium`). Keep the job to change it while the request waits.
+    public var job: GPUJob?
 
-    public init(prompt: String, seed: UInt64 = 0, profile: String? = nil, recipe: String? = nil, audio: Bool = true) {
+    public init(
+        prompt: String, seed: UInt64 = 0, profile: String? = nil, recipe: String? = nil, audio: Bool = true,
+        job: GPUJob? = nil
+    ) {
         self.prompt = prompt
         self.seed = seed
         self.profile = profile
         self.recipe = recipe
         self.audio = audio
+        self.job = job
     }
 }
 
@@ -179,11 +185,12 @@ public actor MiniMaxH3Pipeline {
     ) async throws -> GeneratedVideo {
         var plan = try plan(request)
         plan.stepLimit = stepLimit
+        // The GPU first, so a request's priority also orders it among this pipeline's own requests.
+        let grant = try await options.gpu.admit(job: request.job)
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         let residency = try admission.begin(profile: plan.profile.key)
         do {
             let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)

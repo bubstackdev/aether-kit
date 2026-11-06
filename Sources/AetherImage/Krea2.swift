@@ -153,7 +153,7 @@ public actor Krea2Pipeline {
         try await filter.requireAllowed(prompt: request.prompt)
         try Task.checkCancellation()
 
-        let image = try await render(prompt, seed: request.seed, schedule: table, grid: grid, size: size)
+        let image = try await render(prompt, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job)
         try await filter.requireAllowed(image: image, prompt: request.prompt)
         return image
     }
@@ -182,13 +182,14 @@ public actor Krea2Pipeline {
 
     private func render(
         _ prompt: Prompt, seed: UInt64, schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int),
-        size: (width: Int, height: Int)
+        size: (width: Int, height: Int), job: GPUJob?
     ) async throws -> GeneratedImage {
+        // The GPU first, so a request's priority also orders it among this pipeline's own requests.
+        let grant = try await options.gpu.admit(job: job)
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
         // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
         let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
