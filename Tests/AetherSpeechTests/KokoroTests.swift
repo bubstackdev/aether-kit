@@ -234,7 +234,7 @@ struct KokoroTests {
         let index = Dictionary(uniqueKeysWithValues: manifest.kokoro!.voices.keys.sorted().enumerated().map { ($1, $0) })
         return try KokoroSpeechSession(
             manifest: manifest, device: device,
-            options: .init(memory: .bytes(budget), probe: GPUMemoryProbe { 0 }, frameCap: frameCap),
+            options: .init(memory: .bytes(budget), probe: GPUMemoryProbe { 0 }), frameCap: frameCap,
             load: { role throws(AetherError) in
                 log.append("load \(role)")
                 return role == "durations" ? FakeDurations(log, perToken: perToken, gate: gate) : FakeDecoder(log, observed)

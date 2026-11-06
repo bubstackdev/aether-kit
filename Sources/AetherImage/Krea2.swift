@@ -1,4 +1,5 @@
 public import AetherCore
+public import AetherHost
 public import AetherRuntime
 import AetherText
 import Foundation

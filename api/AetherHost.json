@@ -6407,6 +6407,812 @@
    {
     "children": [
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "CachePolicy",
+          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "CachePolicy",
+          "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+          "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "CachePolicy",
+        "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+        "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovp",
+      "moduleName": "AetherHost",
+      "name": "cachePolicy",
+      "printedName": "cachePolicy",
+      "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0A7Runtime05GraphD0V05CacheF0Ovp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Cache",
+          "printedName": "AetherRuntime.GraphOptions.Cache",
+          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Cache",
+          "printedName": "AetherRuntime.GraphOptions.Cache",
+          "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Cache",
+        "printedName": "AetherRuntime.GraphOptions.Cache",
+        "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvp",
+      "moduleName": "AetherHost",
+      "name": "cache",
+      "printedName": "cache",
+      "usr": "s:10AetherHost15PipelineOptionsV5cache0A7Runtime05GraphD0V5CacheOvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherRuntime.MemoryBudget?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryBudget",
+            "printedName": "AetherRuntime.MemoryBudget",
+            "usr": "s:13AetherRuntime12MemoryBudgetV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherRuntime.MemoryBudget?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherRuntime.MemoryBudget?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvp",
+      "moduleName": "AetherHost",
+      "name": "memory",
+      "printedName": "memory",
+      "usr": "s:10AetherHost15PipelineOptionsV6memory0A7Runtime12MemoryBudgetVSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ResourceCoordinator",
+            "printedName": "AetherHost.ResourceCoordinator",
+            "usr": "s:10AetherHost19ResourceCoordinatorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.ResourceCoordinator?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ResourceCoordinator",
+          "printedName": "AetherHost.ResourceCoordinator",
+          "usr": "s:10AetherHost19ResourceCoordinatorC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.ResourceCoordinator?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvp",
+      "moduleName": "AetherHost",
+      "name": "coordinator",
+      "printedName": "coordinator",
+      "usr": "s:10AetherHost15PipelineOptionsV11coordinatorAA19ResourceCoordinatorCSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUAdmissionOwner",
+            "printedName": "AetherHost.GPUAdmissionOwner",
+            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUAdmissionOwner?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUAdmissionOwner",
+            "printedName": "AetherHost.GPUAdmissionOwner",
+            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUAdmissionOwner?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUAdmissionOwner?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvp",
+      "moduleName": "AetherHost",
+      "name": "gpu",
+      "printedName": "gpu",
+      "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "FootprintLedger",
+          "printedName": "AetherRuntime.FootprintLedger",
+          "usr": "s:13AetherRuntime15FootprintLedgerC"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "FootprintLedger",
+        "printedName": "AetherRuntime.FootprintLedger",
+        "usr": "s:13AetherRuntime15FootprintLedgerC"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvp",
+      "moduleName": "AetherHost",
+      "name": "ledger",
+      "printedName": "ledger",
+      "usr": "s:10AetherHost15PipelineOptionsV6ledger0A7Runtime15FootprintLedgerCvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUMemoryProbe",
+          "printedName": "AetherRuntime.GPUMemoryProbe",
+          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GPUMemoryProbe",
+          "printedName": "AetherRuntime.GPUMemoryProbe",
+          "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUMemoryProbe",
+        "printedName": "AetherRuntime.GPUMemoryProbe",
+        "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvp",
+      "moduleName": "AetherHost",
+      "name": "probe",
+      "printedName": "probe",
+      "usr": "s:10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "CachePolicy",
+        "printedName": "AetherRuntime.GraphOptions.CachePolicy",
+        "usr": "s:13AetherRuntime12GraphOptionsV11CachePolicyO"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Cache",
+        "printedName": "AetherRuntime.GraphOptions.Cache",
+        "usr": "s:13AetherRuntime12GraphOptionsV5CacheO"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryBudget",
+          "printedName": "AetherRuntime.MemoryBudget",
+          "usr": "s:13AetherRuntime12MemoryBudgetV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherRuntime.MemoryBudget?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ResourceCoordinator",
+          "printedName": "AetherHost.ResourceCoordinator",
+          "usr": "s:10AetherHost19ResourceCoordinatorC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.ResourceCoordinator?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUAdmissionOwner?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "FootprintLedger",
+        "printedName": "AetherRuntime.FootprintLedger",
+        "usr": "s:13AetherRuntime15FootprintLedgerC"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUMemoryProbe",
+        "printedName": "AetherRuntime.GPUMemoryProbe",
+        "usr": "s:13AetherRuntime14GPUMemoryProbeV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(cachePolicy:cache:memory:coordinator:gpu:ledger:probe:)",
+      "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ResidentAdmission",
+        "printedName": "AetherHost.ResidentAdmission",
+        "usr": "s:10AetherHost17ResidentAdmissionC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "MemoryBudget",
+        "printedName": "AetherRuntime.MemoryBudget",
+        "usr": "s:13AetherRuntime12MemoryBudgetV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Residency",
+        "printedName": "AetherCore.Manifest.Residency",
+        "usr": "s:10AetherCore8ManifestV9ResidencyO"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GraphBackend",
+            "printedName": "any AetherRuntime.GraphBackend",
+            "usr": "s:13AetherRuntime12GraphBackendP"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.String) async throws(AetherCore.AetherError) -> any AetherRuntime.GraphBackend"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Loader",
+        "printedName": "AetherRuntime.GraphResidency.Loader"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(Swift.String) -> Swift.Int64"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AN6DeviceV0A7Runtime0I6BudgetVAP9ResidencyOSiAS12GraphBackend_pSSYaAN0A5ErrorOYKYCcs5Int64VSSctF",
+      "moduleName": "AetherHost",
+      "name": "admission",
+      "printedName": "admission(manifest:device:defaultMemory:unphasedPhase:maximumShapes:load:fileBytes:)",
+      "usr": "s:10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AN6DeviceV0A7Runtime0I6BudgetVAP9ResidencyOSiAS12GraphBackend_pSSYaAN0A5ErrorOYKYCcs5Int64VSSctF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost15PipelineOptionsV",
+    "moduleName": "AetherHost",
+    "name": "PipelineOptions",
+    "printedName": "PipelineOptions",
+    "usr": "s:10AetherHost15PipelineOptionsV"
+   },
+   {
+    "children": [
+     {
       "children": [
        {
         "accessors": [

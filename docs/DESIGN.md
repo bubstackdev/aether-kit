@@ -362,7 +362,7 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
   export (fp32 text encoder, fp16 U-Net and VAE): about 1.7 GiB at peak, qualified on an iPhone (docs/DEVICE.md).
 
 The second is **`flux2-klein@1`** (FLUX.2 [klein] 4B, G2). `Flux2KleinPipeline` has the same shape (the options,
-request, admission prologue and load-time contract check are shared: `ImagePipelineOptions`, `ImageRequest`), with
+request, admission prologue and load-time contract check are shared: `ImagePipelineOptions` (an alias of AetherHost's `PipelineOptions`, which speech uses too and vision and video will), `ImageRequest`), with
 FLUX.2's host recipe:
 
 - The prompt is the bundle's Qwen3 chat template (thinking off) through AetherText's `TokenizerAdapter`, right-padded
