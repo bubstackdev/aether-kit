@@ -88,6 +88,10 @@ struct FlowMatchScheduleTests {
         // Observed in the unmodified FLUX.2 [klein] pipeline: 2 steps at 256 generated tokens.
         #expect(try FlowMatchSchedule(Self.klein, steps: 2, imageTokens: 256).sigmas == [1, 0.8787367343902588, 0])
         let four = try FlowMatchSchedule(Self.klein, imageTokens: 1024)
+        // The pinned Diffusers v0.42.1 pipeline at 512x512, 4 steps (Forge/flux2/reference_flux2.py): sigmas and the
+        // transformer's timestep inputs, bit for bit.
+        #expect(four.sigmas.map(\.bitPattern) == [1065353216, 1064650005, 1063406755, 1060613595, 0])
+        #expect(four.timesteps.map(\.bitPattern) == [1065353216, 1064650006, 1063406755, 1060613595])
         #expect(four.sigmas.count == 5 && four.sigmas.first == 1 && four.sigmas.last == 0)
         #expect(four.timesteps == Array(four.sigmas.dropLast()).map { $0 * 1000 / 1000 })
         #expect(zip(four.sigmas, four.sigmas.dropFirst()).allSatisfy { $0 > $1 })

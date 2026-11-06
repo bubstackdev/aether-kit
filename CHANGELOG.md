@@ -58,6 +58,10 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
   the 0.1.0 freeze sets `"enforce": true`.
 
+- **FLUX.2 [klein] 4B Forge exporter (G2 step 1)** (`Forge/flux2/`): text encoder and denoisers in int8 per-channel
+  weights, VAE decoder and encoder; GPU gate against CPU Diffusers, 31/31 (image SSIM 0.991, PSNR 34.0 dB from the
+  reference's conditioning). Driver `flux2-klein@1` is proposed in MANIFEST.md §5.7 until the Swift driver lands.
+
 ### In progress before 0.1.0 is tagged
 
 Krea 2 Turbo (vanilla and realism), MiniMax H3, FLUX.2 [klein] and Kokoro-82M on the new runtime; SD-Turbo's

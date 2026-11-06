@@ -1,0 +1,323 @@
+{
+  "schema": 1,
+  "id": "flux2-klein-4b",
+  "task": "text-to-image",
+  "driver": "flux2-klein@1",
+  "x-status": "draft: driver flux2-klein@1 and its flux2 block are proposed in MANIFEST.md §5 (G2)",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "flux2_klein_4b-denoiser0.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "flux2_klein_4b-denoiser1.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "flux2_klein_4b-denoiser2.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "flux2_klein_4b-text.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "flux2_klein_4b-vae-encoder.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "flux2_klein_4b-vae.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/chat_template.jinja",
+          "bytes": 1,
+          "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "textEncoder": {
+      "file": "main:flux2_klein_4b-text.aimodel",
+      "function": "encode",
+      "inputs": {
+        "tokens": "input_ids",
+        "positions": "position_ids",
+        "tokenMask": "attention_mask"
+      },
+      "outputs": {
+        "conditioning": "text_embeds"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perPrompt"
+    },
+    "denoiser0": {
+      "file": "main:flux2_klein_4b-denoiser0.aimodel",
+      "function": "segment",
+      "inputs": {
+        "latents": "latents",
+        "conditioning": {
+          "name": "text_embeds",
+          "source": {
+            "from": "textEncoder.text_embeds"
+          }
+        },
+        "sigma": "sigma",
+        "textRotary": "rope_text",
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "carryImage": "image_1",
+        "carryText": "text_1",
+        "condition": "cond"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "denoiser1": {
+      "file": "main:flux2_klein_4b-denoiser1.aimodel",
+      "function": "segment",
+      "inputs": {
+        "carryImage": {
+          "name": "image_1",
+          "source": {
+            "from": "denoiser0.image_1"
+          }
+        },
+        "carryText": {
+          "name": "text_1",
+          "source": {
+            "from": "denoiser0.text_1"
+          }
+        },
+        "condition": {
+          "name": "cond",
+          "source": {
+            "from": "denoiser0.cond"
+          }
+        },
+        "textRotary": "rope_text",
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "carryImage": "image_2",
+        "carryText": "text_2"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "denoiser2": {
+      "file": "main:flux2_klein_4b-denoiser2.aimodel",
+      "function": "segment",
+      "inputs": {
+        "carryImage": {
+          "name": "image_2",
+          "source": {
+            "from": "denoiser1.image_2"
+          }
+        },
+        "carryText": {
+          "name": "text_2",
+          "source": {
+            "from": "denoiser1.text_2"
+          }
+        },
+        "condition": {
+          "name": "cond",
+          "source": {
+            "from": "denoiser0.cond"
+          }
+        },
+        "textRotary": "rope_text",
+        "imageRotary": "rope_image"
+      },
+      "outputs": {
+        "velocity": "velocity"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "residency": "perStep"
+    },
+    "vaeDecoder": {
+      "file": "main:flux2_klein_4b-vae.aimodel",
+      "function": "decode",
+      "inputs": {
+        "latents": "latents"
+      },
+      "outputs": {
+        "image": "image"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perImage"
+    },
+    "vaeEncoder": {
+      "file": "main:flux2_klein_4b-vae-encoder.aimodel",
+      "function": "encode",
+      "inputs": {
+        "referencePixels": "reference_pixels"
+      },
+      "outputs": {
+        "referenceLatents": "reference_latents"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perPrompt"
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+    "renderer": "flux2-prompt"
+  },
+  "schedule": {
+    "kind": "flowMatchEuler",
+    "steps": 4,
+    "maxSteps": 50,
+    "trainTimesteps": 1000,
+    "sigmas": {
+      "base": "linspace(1, 1/steps, steps)",
+      "shift": {
+        "rule": "empirical",
+        "empirical": {
+          "lowSteps": 10,
+          "lowSlope": 8.73809524e-05,
+          "lowIntercept": 1.89833333,
+          "highSteps": 200,
+          "highSlope": 0.00016927,
+          "highIntercept": 0.45666666,
+          "tokenThreshold": 4300
+        }
+      },
+      "terminal": 0.0
+    },
+    "timestep": "sigma * trainTimesteps / trainTimesteps",
+    "update": "x + (sigma[i+1] - sigma[i]) * velocity",
+    "guidance": {
+      "kind": "none"
+    }
+  },
+  "latent": {
+    "channels": 128,
+    "pixelsPerToken": 16,
+    "packing": "patch2x2ChannelMajor",
+    "layout": "tokens[rows*columns, 128]",
+    "decoderLayout": "[rows, columns, 128]",
+    "noise": {
+      "kind": "splitmix64BoxMuller",
+      "order": "packedToken",
+      "dtype": "float32"
+    },
+    "maxImageTokens": 4096
+  },
+  "flux2": {
+    "prompt": {
+      "template": "chat",
+      "thinking": "off",
+      "addGenerationPrompt": true,
+      "maxTokens": 512,
+      "padding": "right",
+      "padToken": 151643,
+      "truncation": "keepPrefix",
+      "positions": "running"
+    },
+    "conditioning": {
+      "taps": [
+        9,
+        18,
+        27
+      ],
+      "width": 7680,
+      "rows": 512,
+      "paddingRows": "conditioning"
+    },
+    "rotary": {
+      "axes": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "theta": 2000.0,
+      "textIds": "(0, 0, 0, i)",
+      "imageIds": "(0, row, column, 0)",
+      "referenceIds": "(10 * (k + 1), row, column, 0)",
+      "layout": "splitHalves",
+      "dtype": "float32"
+    },
+    "segments": [
+      "denoiser0",
+      "denoiser1",
+      "denoiser2"
+    ],
+    "condRows": 17,
+    "references": {
+      "encoder": "vaeEncoder",
+      "kind": "packedLatents",
+      "positionStride": 10,
+      "maxImages": 2,
+      "maxSide": 512,
+      "maxTotalTokens": 4096,
+      "pixels": "[3, H, W] in [-1, 1], sides multiples of 16",
+      "velocity": "discarded",
+      "mu": "generated tokens only"
+    }
+  },
+  "precision": {
+    "weights": "int8 per-channel (text encoder, denoisers; the 20 single-block proj_out fp16); fp16 (both VAE graphs)",
+    "activations": "fp16 matmul/attention; fp32 residual, norms, modulation and rotary products",
+    "components": {
+      "vaeDecoder": "fp16 weights, fp32 compute",
+      "vaeEncoder": "fp16 weights, fp32 compute"
+    },
+    "quantization": {
+      "scheme": "int8-linear-perchannel",
+      "weightBits": 8,
+      "exceptions": {
+        "singles.*.proj_out": "none"
+      },
+      "modules": {
+        "int8-linear-perchannel": 205,
+        "none": 20
+      }
+    }
+  },
+  "license": "Apache-2.0",
+  "x-license": {
+    "files": [
+      "LICENSE.md",
+      "NOTICE"
+    ],
+    "modified": true
+  },
+  "provenance": {
+    "source": "black-forest-labs/FLUX.2-klein-4B",
+    "sourceRevision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "producer": "aether-kit Forge/flux2/export_flux2.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "diffusersCommit": "2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}
