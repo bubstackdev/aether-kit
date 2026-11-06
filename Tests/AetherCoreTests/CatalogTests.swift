@@ -40,7 +40,19 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b"]))
+    }
+
+    /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
+    @Test func generativeEntriesResolvePerPlatform() throws {
+        let mac = Device(platform: .macOS, architecture: "h17c")
+        let phone = Device(platform: .iOS, architecture: "h18p")
+        for device in [mac, phone] {
+            let ref = try ModelRef.resolve("sd-turbo", for: device)
+            #expect(ref.asset("main")?.files.contains { $0.path == ".aether/aether.json" } == true)
+        }
+        _ = try ModelRef.resolve("flux2-klein-4b", for: mac)
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("flux2-klein-4b", for: phone) }
     }
 
     @Test func mistralTokenizerIsAPinnedForeignAsset() throws {

@@ -78,6 +78,8 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
   enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
   MANIFEST.md §5.8 proposes the `weights` table.
+- **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
+  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded.
 
 ### In progress before 0.1.0 is tagged
 
