@@ -119,6 +119,11 @@ let package = Package(
             swiftSettings: common
         ),
         .testTarget(
+            name: "AetherVisionTests",
+            dependencies: ["AetherVision", "AetherRuntime", "AetherCore", "AetherHost"],
+            swiftSettings: common
+        ),
+        .testTarget(
             name: "AetherSpeechTests",
             dependencies: ["AetherSpeech", "AetherRuntime", "AetherCore", "AetherHost"],
             // The CPU known answers (tokenization, noise, rounding) recorded by 0.0.x's Forge/kokoro/make_cpu_fixtures.py.

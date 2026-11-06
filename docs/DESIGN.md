@@ -573,6 +573,11 @@ runtime pieces:
   `detrSigmoid`, `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`, all decoded and validated since M4a) and an
   actor on `StatelessPipeline`. Graphs bind by role (`image`, `boxes`, `scores`, `depth`, `embedding`). Pad ids and
   pooling (mean or CLS) come from the manifest and tokenizer config.
+  - **`DepthEstimator`** (M4b, `depth-estimator@1`, Depth Anything 3 small): `estimate(ImageInput | PreparedImage,
+    DepthRequest)` → `DepthMap` (row-major values, optional confidence, the manifest's polarity, the geometry). With
+    `resizeBack` (manifest default, request override) both maps are resampled to the source through the geometry:
+    bilinear at pixel centres, clamped to the content rectangle, so letterbox padding is never read. The GPU grant
+    covers only the graph call; the resample runs after it.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 

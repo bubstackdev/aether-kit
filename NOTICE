@@ -27,6 +27,17 @@ licenses and NOTICE lines separately (the Krea 2 Community License; the
 Stability AI Community License; FLUX.2 [klein]'s Apache-2.0 LICENSE.md with a
 modification NOTICE; the MiniMax H3 Community License).
 
+Depth Anything 3 (https://github.com/ByteDance-Seed/Depth-Anything-3, commit
+3d835ec1a5802d64a8b8b15f817a1ab54809bfe4), Apache License 2.0, copyright
+ByteDance Seed; it includes DINOv2 vision transformer code, Apache License 2.0,
+copyright (c) Meta Platforms, Inc. and affiliates. Forge/depth/depth_graphs.py
+wraps DepthAnything3Net's single-view depth path (the DINOv2 backbone and the
+DualDPT head, with ImageNet normalization folded in) as an export graph and
+re-expresses its 2D rotary position embedding with a static table; the
+upstream code is fetched unmodified by Forge/depth/fetch_upstream.py. The
+depth-anything/DA3-SMALL weights are not part of this repository; the
+exported bundle carries their Apache-2.0 license and a modification NOTICE.
+
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
 OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
 tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the

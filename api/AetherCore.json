@@ -8425,6 +8425,57 @@
       "printedName": "minimaxH3",
       "static": true,
       "usr": "s:10AetherCore8DriverIDV9minimaxH3ACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore8DriverIDV14depthEstimatorACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore8DriverIDV14depthEstimatorACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore8DriverIDV14depthEstimatorACvpZ",
+      "moduleName": "AetherCore",
+      "name": "depthEstimator",
+      "printedName": "depthEstimator",
+      "static": true,
+      "usr": "s:10AetherCore8DriverIDV14depthEstimatorACvpZ"
      }
     ],
     "conformances": [
@@ -14786,6 +14837,57 @@
       "printedName": "minimaxH3",
       "static": true,
       "usr": "s:10AetherCore14DriverContractV9minimaxH3ACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverContract",
+          "printedName": "AetherCore.DriverContract",
+          "usr": "s:10AetherCore14DriverContractV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore14DriverContractV14depthEstimatorACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore14DriverContractV14depthEstimatorACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore14DriverContractV14depthEstimatorACvpZ",
+      "moduleName": "AetherCore",
+      "name": "depthEstimator",
+      "printedName": "depthEstimator",
+      "static": true,
+      "usr": "s:10AetherCore14DriverContractV14depthEstimatorACvpZ"
      }
     ],
     "conformances": [
