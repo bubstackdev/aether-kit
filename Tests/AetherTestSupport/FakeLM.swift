@@ -76,6 +76,8 @@ public final class FakeLM: GraphBackend {
         public var gate: RunGate?
         /// Replaces the logits row for a context when it returns one (invalid-logit tests: NaN or −∞ rows).
         public var rowOverride: (@Sendable ([Int32]) -> [Float]?)?
+        /// A static sequence axis of this many slots (nil: dynamic), like a graph exported at a fixed context.
+        public var staticSequence: Int?
 
         public init(vocab: Int = 64, staticStep: Bool = false, recurrent: Bool = false, chunk: Int? = nil,
                     lastRowOnly: Bool = false, log: CallLog? = nil,
@@ -98,8 +100,8 @@ public final class FakeLM: GraphBackend {
         let s = config.chunk ?? (config.staticStep ? 1 : -1)
         let rows = config.lastRowOnly ? 1 : config.chunk ?? (config.staticStep ? 1 : -1)
         var states = [
-            TensorSpec(name: "keys", scalarType: .float32, shape: [1, -1]),
-            TensorSpec(name: "values", scalarType: .float32, shape: [1, -1]),
+            TensorSpec(name: "keys", scalarType: .float32, shape: [1, config.staticSequence ?? -1]),
+            TensorSpec(name: "values", scalarType: .float32, shape: [1, config.staticSequence ?? -1]),
         ]
         if config.recurrent { states.append(TensorSpec(name: "rec", scalarType: .float32, shape: [1, 1])) }
         signature = GraphSignature(

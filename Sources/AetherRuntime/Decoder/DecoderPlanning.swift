@@ -84,7 +84,8 @@ public struct KVSizing: Sendable, Hashable {
     public var fixedBytes: Int64
     /// The model's own memory: max(the Metal allocation delta across its load, its files on disk).
     public var modelBytes: Int64
-    /// A sequence axis that is static in the graph: capacity is that, and fixed.
+    /// A sequence axis that is static in the graph: the allocation is that, and fixed. Capacity (the token limit)
+    /// is at most that: an explicit smaller one caps the tokens, a larger one is refused.
     public var staticAxis: Int?
 
     public init(
@@ -121,6 +122,9 @@ public struct KVSizing: Sendable, Hashable {
             throw .capacity(what: "KV capacity (static sequence axis)", needed: Int64(staticAxis), available: Int64(derived))
         }
         if let requested {
+            if let staticAxis, requested > staticAxis {
+                throw .capacity(what: "KV capacity (static sequence axis)", needed: Int64(requested), available: Int64(staticAxis))
+            }
             guard requested > 0, requested <= derived else {
                 throw .capacity(what: "KV capacity (tokens)", needed: Int64(requested), available: Int64(derived))
             }

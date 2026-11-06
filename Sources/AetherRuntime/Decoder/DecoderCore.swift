@@ -47,6 +47,7 @@ final class DecoderCore {
     let logitsType: ScalarType
     let sequenceStates: [SequenceState]
     let recurrentNames: [String]
+    /// The token limit (an explicit capacity, or what the budget fits); a static sequence axis may be larger.
     let maxCapacity: Int
     let staticCapacity: Bool
     let shape: PrefillPlan.Shape
@@ -152,8 +153,13 @@ final class DecoderCore {
         }
         sequenceStates = sequence
         recurrentNames = manifestStates.recurrent.map(\.name)
+        // The token limit and the allocation are separate: a static axis fixes the allocation, and a smaller limit
+        // (an app's explicit capacity) still caps the tokens it holds.
+        if let staticAxis, capacityLimit > staticAxis {
+            throw .capacity(what: "KV capacity (static sequence axis)", needed: Int64(capacityLimit), available: Int64(staticAxis))
+        }
         staticCapacity = staticAxis != nil
-        maxCapacity = staticAxis ?? capacityLimit
+        maxCapacity = capacityLimit
         capacity = staticAxis ?? min(max(initialCapacity, 1), capacityLimit)
 
         let limits = graph.limits ?? Manifest.Limits()
@@ -262,9 +268,9 @@ final class DecoderCore {
         capacity = next
     }
 
-    /// Replaces the states with zeroed ones at `newCapacity` (no copy).
+    /// Replaces the states with zeroed ones at `newCapacity` (no copy). A static allocation stays as it is.
     private func reallocateStates(capacity newCapacity: Int) throws(AetherError) {
-        guard newCapacity != capacity else { return }
+        guard newCapacity != capacity, !staticCapacity else { return }
         let fresh = try Self.makeStates(step.graph, sequence: sequenceStates, recurrent: recurrentNames, capacity: newCapacity, arena: arena)
         for (_, buffer) in states.entries { try arena.release(buffer) }
         states = fresh
@@ -469,8 +475,10 @@ final class DecoderCore {
     /// engine as it was.
     func restore(_ snapshot: DecoderEngine.Snapshot) throws(AetherError) {
         try requireIdle("restore")
-        guard snapshot.position <= maxCapacity, snapshot.capacity <= maxCapacity else {
-            throw .capacity(what: "KV capacity (tokens)", needed: Int64(snapshot.capacity), available: Int64(maxCapacity))
+        // The allocation it carries: up to the token limit, or the static axis itself.
+        let allocation = staticCapacity ? capacity : maxCapacity
+        guard snapshot.position <= maxCapacity, snapshot.capacity <= allocation else {
+            throw .capacity(what: "KV capacity (tokens)", needed: Int64(max(snapshot.position, snapshot.capacity)), available: Int64(allocation))
         }
         if snapshot.capacity == capacity {
             try states.restore(snapshot.states)  // validates every entry before copying

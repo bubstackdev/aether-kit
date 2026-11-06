@@ -196,4 +196,44 @@ struct DecoderOwnerReviewTests {
         await T.expectError({ _ = try await engine.nextGreedy() }, Self.isInvalidLogits)
         try await engine.endGreedy()
     }
+
+    static func isCapacity(_ error: AetherError) -> Bool {
+        if case .capacity = error { return true }
+        return false
+    }
+
+    /// Finding 4: an explicit capacity below a static sequence axis is the token limit (the allocation stays the
+    /// static axis); one above it is refused at load. It used to be replaced by the static axis.
+    @Test func explicitCapacityLimitsAStaticSequenceAxis() async throws {
+        var config = FakeLM.Config()
+        config.staticSequence = 64
+        let (engine, _, _) = try await T.engine(config, options: T.options(capacity: 16))
+        #expect(engine.maxCapacity == 16)
+        #expect(await engine.capacity == 64, "the allocation is the graph's static axis")
+        let prompt = T.prompt(12)
+        let logits = try await engine.prefill(prompt)!
+        #expect(try Logits.argmax(logits.last) == T.expectedGreedy(prompt, count: 1)[0])
+        await T.expectError({ _ = try await engine.prefill(T.prompt(5)) }, Self.isCapacity)
+        #expect(await engine.position == 12, "a refused feed leaves the position")
+        // A greedy decode stops at the token limit, not at the allocation.
+        try await engine.beginGreedy(first: try Logits.argmax(logits.last), limit: 100)
+        var count = 0
+        while try await engine.nextGreedy() != nil { count += 1 }
+        try await engine.endGreedy()
+        #expect(count == 4)
+        // A snapshot of the static allocation restores under the smaller token limit.
+        try await engine.rewind(to: 0)
+        _ = try await engine.prefill(prompt)
+        let snapshot = try await engine.snapshot()
+        try await engine.reset()
+        try await engine.restore(snapshot)
+        #expect(await engine.position == 12)
+
+        let (whole, _, _) = try await T.engine(config)
+        #expect(whole.maxCapacity == 64)
+        await T.expectError({ _ = try await T.engine(config, options: T.options(capacity: 100)) }) { error in
+            if case .capacity(let what, 100, 64) = error { return what.contains("static") }
+            return false
+        }
+    }
 }

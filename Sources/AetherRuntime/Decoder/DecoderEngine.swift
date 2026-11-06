@@ -20,7 +20,8 @@ public actor DecoderEngine: LanguageEngine {
             case run
         }
 
-        /// An explicit capacity (tokens). Above the derived capacity it throws `capacity`.
+        /// An explicit capacity (tokens): the most the state holds. Above the derived capacity (or a graph's static
+        /// sequence axis) it throws `capacity`; below a static axis it limits the tokens, the allocation staying static.
         public var capacity: Int?
         /// The first allocation of the sequence axis; it grows geometrically from there. Default min(capacity, 1024).
         public var initialCapacity: Int?
@@ -116,7 +117,8 @@ public actor DecoderEngine: LanguageEngine {
     /// Fixed facts about the loaded model.
     public struct Description: Sendable, Hashable {
         public var vocab: Int
-        /// The capacity the sequence axis may grow to.
+        /// The most tokens the state can hold: what the sequence axis may grow to, or, on a graph with a static
+        /// sequence axis, at most that axis (``DecoderEngine/capacity`` is the allocation).
         public var maxCapacity: Int
         /// Recurrent states force snapshot/restore instead of a partial rewind.
         public var hasRecurrentState: Bool
