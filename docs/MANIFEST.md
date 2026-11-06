@@ -54,7 +54,7 @@ Rules that apply to every driver:
 | `detector-dense@1` | graph `detector`: in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
 | `detector-detr@1` | graph `detector`: in `image` (or `features` chained from graph `backbone`); out `boxes` [1,Q,4], `classLogits` [1,Q,C] | out `masks` [1,Q,h,w]; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
 | `depth-estimator@1` | in `image`; out `depth` | out `confidence` | depth-anything-3-small; *base, fp32* |
-| `clip-joint@1` | in `image`, `tokens`; out `imageEmbedding`, `textEmbedding` | in `attentionMask`; `unusedOutputs` | clip-vit-b32 |
+| `clip-joint@1` | graph `imageEncoder` (in `image` [1,3,H,W]; out `imageEmbedding` [1,D]); graph `textEncoder` (in `tokens` [B,L], `L` in `limits.staticSequence`; out `textEmbedding` [B,D]); `postprocess.embedding.logitScale`; a `clip-bpe` tokenizer with `text.padTo` | textEncoder in `attentionMask` (by `text.maskRule`); textEncoder `buckets` on axis `batch`; `unusedOutputs` | clip-vit-b32 |
 | `image-to-image-tiled@1` | in `image`; out `image` | — | adcsr-x4 |
 | `text-embedder@1` | in `tokens`, `attentionMask`; out `embedding` | — | embeddinggemma-300m |
 | `late-interaction-retriever@1` | graph `queryEncoder` (in `tokens`, `attentionMask`; out `tokenEmbeddings`); graph `docEncoder` (in `image`; out `tokenEmbeddings`) | docEncoder in `pixelMask` (fill `ones`) | colmodernvbert |
@@ -141,7 +141,7 @@ Not part of v1 (earlier draft names): top-level `companions` (now `assets` + `ta
 | `function` | R (one of the three) | string | the single-function case (unchanged) |
 | `functions` | ↑ | `{phase: name}`; phases `step`, `prefill`, `decode`, `act`, … | lfm3 pf64 and mineru pf64 (`step: main`, `prefill: prefill`, S=64), decider-2b-vision (`prefill` S=16), unlimited-ocr (`prefill` + `decode`, no `main`), laya (`main` + `act`). All phases of one graph share its `states`. |
 | `functionFamily` | ↑ | `{pattern, axes: {capacity: [...], chunk: [...]}, phases: {extend: pattern, promptOnly?: pattern}}` | qwen3-0.6b ios (`extend_{capacity}_{chunk}`, `prompt_opt_…`), lfm3 h19p, clef head (`t{tokens}`). The driver validates that every expanded name exists. |
-| `buckets` | O | `{axis: "sequence"\|"audioSeconds"\|…, rule: "smallestFitting", entries: [{value, file\|function\|asset}]}` | separate files or folders per shape: GLiNER s256/s512, d1-omni decide L64…L4096 (7) and audio 5/10/20/30 s (4). Per-platform subtree choices (Shieldstral s512 macOS vs s256 iOS) go through `variant`, not buckets. |
+| `buckets` | O | `{axis: "sequence"\|"audioSeconds"\|"batch"\|…, rule: "smallestFitting", entries: [{value, file\|function\|asset}]}` | separate files or folders per shape: GLiNER s256/s512, d1-omni decide L64…L4096 (7) and audio 5/10/20/30 s (4). `batch` is a static batch's rows: CLIP's text graph has functions `batch1` and `batch8` (`function` is the default, bucket 1); a request runs in groups of the largest value, each at the smallest that holds it. A `function` or `file` entry replaces the graph's own for that bucket (the `step` phase of a single-function graph); the runtime loads each as its own graph (`GraphResidency.graph(_:bucket:)`). Per-platform subtree choices (Shieldstral s512 macOS vs s256 iOS) go through `variant`, not buckets. |
 | `inputs` | R | `{role: name \| Binding}` | closed role set per driver (§1) |
 | `inputsByFunction` | O | `{phase: {role: …}}` | unlimited-ocr prefill (`embeds` [1,115,H]) and decode (`embeds` [1,1,H] + scalar `position`) have different input sets. When absent, `inputs` applies to every phase. |
 | `outputs` | R | `{role: name \| {name, rows?, space?}}` | `rows: all\|last\|none` resolves logitsPositions/logitsAt/logitsRows. The adapter infers it from shape (dim 1 static 1 → last; rank 0 → none). It has to be written only for a prefill phase with S>1 that returns [1×1×V] (decider-2b-vision). `space: vocab\|slots\|options\|scalar` (openthai 256 slots, scorer 1, clef head 128). |
@@ -225,7 +225,7 @@ Dtype and shape are not manifest fields. bf16 (Gemma 3) and fp16 come from the d
 | `stop` | R for generation | list of strings or ids: the **source model's `generation_config.json` `eos_token_id` list** (pinned in the override table, because zoo bundles don't ship it) unioned with the tokenizer's eos. Gemma 4 is `[1 <eos>, 106 <turn|>, 50 <|tool_response>]` (measured; `<|tool_response>` is the tool-call hand-back, which coreai-kit misses). Gemma 3 `[1 <eos>, 106 <end_of_turn>]` (verified from the gated `google/gemma-3-4b-it@093f9f3` config; 12B identical). Granite `<|end_of_text|>`. |
 | `thinking` | O | `{open, close, toggle: {templateVar: "enable_thinking"} \| {emitEmpty: "<|channel>thought\n<channel|>"} \| "none", defaultOn}`. defaultOn is true for LFM3 and Nemotron, false for Qwen3.5. Nanbeige has no toggle. |
 | `toolDialect` | O | §7 already names it; values `hermes-json` (Granite `<tool_call>` JSON), `lfm3-xml` |
-| `text` | O | `{padId, padSide: left\|right [right], padTo: int, truncation: right\|word\|bodyOnly [right], prompts: {role: text}, template: {prefix, suffix, body}, unusedBatchRows, maskRule: realTokens [realTokens]}`, typed as `Manifest.Tokenizer.Text` (`template` and `unusedBatchRows` arrive with their drivers). An encoder's text is `prompts[role]` + the input, stripped of leading and trailing whitespace, encoded with the tokenizer's special tokens (`addSpecialTokens`); `right` truncation keeps the first content ids and every special token (HF `longest_first` on one sequence); then it is padded to exactly `padTo` (the graph's `limits.staticSequence`) with `padId`. `realTokens`: the mask is 1 for every real id, prompt and specials included, 0 for padding. Prompts are inline (the bundle's, from `config_sentence_transformers.json`). Values: embeddinggemma pad 0 right to 256, `<bos>` … `<eos>` kept on truncation, prompts `query` / `document` (M4c, `TextEmbedder`); colmodernvbert right-pad 50283 to 32; Shieldstral flattened prefix/suffix with body-only truncation and pad 11; CLIP pad = EOT 49407 to 77, mask through first EOT, dummy rows. |
+| `text` | O | `{padId, padSide: left\|right [right], padTo: int, truncation: right\|word\|bodyOnly [right], prompts: {role: text}, template: {prefix, suffix, body}, unusedBatchRows: [id…], maskRule: realTokens\|nonPad\|throughFirstEos\|none [realTokens]}`, typed as `Manifest.Tokenizer.Text` (`template` arrives with its driver); each driver requires the fields it reads (both M4 drivers: `padId`, `padTo`). An encoder's text is `prompts[role]` + the input, stripped of leading and trailing whitespace, encoded with the tokenizer's special tokens (`addSpecialTokens`); `right` truncation keeps the first content ids and every special token (HF `longest_first` on one sequence); then it is padded to exactly `padTo` (the graph's `limits.staticSequence`) with `padId`. `maskRule` says what an `attentionMask` input holds: `realTokens` 1 for every real id, prompt and specials included, 0 for padding; `nonPad` 1 wherever the id isn't `padId`; `throughFirstEos` 1 up to and including the first EOS; `none` the graph takes no mask (a driver whose graph binds one refuses it). `unusedBatchRows` is the start of a static batch's rows beyond the texts, padded with `padId` to `padTo`; their outputs are discarded (absent: rows of `padId`). Prompts are inline (the bundle's, from `config_sentence_transformers.json`). Values: embeddinggemma pad 0 right to 256, `<bos>` … `<eos>` kept on truncation, prompts `query` / `document` (M4c, `TextEmbedder`); colmodernvbert right-pad 50283 to 32; Shieldstral flattened prefix/suffix with body-only truncation and pad 11; CLIP pad = EOT 49407 right to 77, `maskRule: none` (its graph takes no mask: causal attention pooled at the first EOT; for a CLIP row `realTokens` is `throughFirstEos`), `unusedBatchRows: [49406, 49407]` (M4d, `ImageTextEncoder`). |
 | `escapes` | O | `[{from: "<|", to: "<¦"}…]` for kev and d1-omni user-text escaping |
 | `preTokenize` | O | `icuCodePoints` (openthai Thai) |
 | `class` | O | tokenizer class override (GLiNER `XLMRobertaTokenizer` stand-in; CLIP custom lowercase BPE) |
@@ -237,8 +237,8 @@ Dtype and shape are not manifest fields. bf16 (Gemma 3) and fp16 come from the d
 brackets:
 
 ```
-{resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, anchor: center|topLeft [center],
-           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
+{resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, shortestSide, anchor: center|topLeft [center],
+           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|pillowBilinear|torchUint8Bicubic|torchBilinear},
  colorSpace: deviceRGB|sRGB [deviceRGB], channelOrder: RGB|BGR [RGB], scale [1], mean [0,0,0], std [1,1,1],
  layout: NCHW|NVCHW|patches [NCHW], views [1], patchify?: {patch, temporal [1], merge [1], rowOrder: blockMajor|rowMajor,
  withinPatch: "C,T,py,px"|"py,px,C"}, hostDType: float32|float16 [float32], orientation: exif [exif]}
@@ -247,16 +247,28 @@ brackets:
 - **Order:** decode (EXIF orientation applied, alpha by the app's `ImageInput` policy) in `colorSpace` (`deviceRGB` keeps
   stored values, as Pillow decodes; `sRGB` converts), resize on 8-bit RGB, then `(x · scale − mean) / std` in float32
   (multiply, subtract, divide), `mean` and `std` given in RGB order, then `channelOrder`, `layout` and `hostDType`
-  (rounded to nearest even).
-- **Resize:** no `resize` keeps the decoded size. `stretch` goes to `size`. `letterbox` fits inside `size` (the scaled
-  side floored) at `anchor` on an 8-bit `padValue` canvas. `centerCrop` covers `size` (scaled side floored) and cuts
-  the centre at `round((scaled − size) / 2)`, ties to even (torchvision). `fitLongSide` scales an image whose longer
+  (rounded to nearest even). With `torchBilinear`, torchvision's float order instead: `x · scale`, the resize in
+  float32, then `(x − mean) / std`.
+- **Resize:** no `resize` keeps the decoded size. `stretch` goes to `size`. `letterbox` fits inside `size` (the
+  ratio `r = min(H / h, W / w)` in double, each side `int(side · r)` truncated and at least 1, YOLOX's preproc, so the
+  fitting side can fall one short: 2443 × 424 into 640 is 639 × 111) at `anchor` on an 8-bit `padValue` canvas.
+  `centerCrop` covers `size` (scaled side floored) and cuts the centre at `round((scaled − size) / 2)`, ties to even
+  (torchvision); with `shortestSide` (at least both sides of `size`) it first scales the shorter side to that length,
+  the longer floored, as torchvision's `Resize(n)` before `CenterCrop` (CLIP's 224 for a 224 square is the same as
+  covering). `fitLongSide` scales an image whose longer
   side exceeds `maxSide` down to it (other side floored); smaller images are untouched. `size` goes with the first
-  three modes, `maxSide` only with `fitLongSide`, `anchor` and `padValue` only with `letterbox`.
+  three modes, `maxSide` only with `fitLongSide`, `shortestSide` only with `centerCrop`, `anchor` and `padValue` only with `letterbox`.
 - **Filters:** `vImage` is Accelerate's `vImageScale` (fast, its own kernel, not a parity filter). `pillowBicubic` is
   Pillow's `Image.resize(BICUBIC)` and `torchUint8Bicubic` torch's uint8 `interpolate(bicubic, antialias=True)` (what
-  torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit. A
-  filter is added when an export needs one (`pillowBilinear`, `coreGraphicsHigh`, …); until then the name is rejected.
+  torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit.
+  `pillowBilinear` is Pillow's `Image.resize(BILINEAR)` (the triangle filter, widened by the scale when downscaling,
+  22-bit fixed-point weights, as `ImagingResample`), bit for bit (YOLOX's reference letterbox). `torchBilinear` is
+  torch's float32 `interpolate(bilinear, align_corners=False, antialias=False)` (torchvision's `resize(antialias=False)`
+  of a float tensor, RF-DETR's `predict`), to the bit in float32: the source index `fma(in/out, i + 0.5, −0.5)`, and
+  torch's own CPU kernel choice and fused sums (height + width ≤ 128: the four corners with combined weights; above:
+  separable, row then column; a single-threaded torch would take the first at every size). It is the one float filter,
+  so it takes `stretch` and the `NCHW` or `NVCHW` layout only. A filter is added when an export needs one (cv2's
+  `INTER_AREA` for DA3, `coreGraphicsHigh`, …); until then the name is rejected.
 - **Layouts:** `NCHW` is `[1, 3, H, W]`; `NVCHW` repeats the image in `views` views, `[1, V, 3, H, W]`; `patches` is
   `[rows, 3 · temporal · patch²]`, rows block-major (each `merge × merge` block contiguous, Qwen-VL) or row-major
   (SigLIP 2), each row `C,T,py,px` (the frame repeated `temporal` times) or `py,px,C` (`temporal` 1). The image's sides
@@ -269,7 +281,8 @@ brackets:
 Each field has a bundle that needs it: BGR, 0–255 and letterbox top-left pad 114 (yolox); `[-1,1]` (adcsr: scale
 1/255, mean 0.5, std 0.5); NVCHW (colmodernvbert, DA3 multi-view); patchify, which fails silently when wrong (qwen3-vl
 block-major C,T,py,px; lfm channel-last row-major); fp16 graph fed from fp32 host (DA3); tiling with overlap
-`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs torch filters (decision towers, VLMs).
+`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs torch filters (decision towers, VLMs); `pillowBilinear` and YOLOX's letterbox
+rounding (yolox-s); `torchBilinear` (rf-detr-nano, rf-detr-seg-nano).
 Postprocess-side resampling such as resize-back goes in `postprocess`.
 
 `audio` (O): `{sampleRate: 16000, nFFT: 512, hop: 160, nMels: 128, melScale: slaney, filterbank: {table}, normalize:
@@ -309,7 +322,7 @@ kind's sit in its own sub-object. Interpreters arrive with each driver; decoding
 | `depth` | `depth-estimator@1` | `depth: {polarity: largerIsNearer\|largerIsFarther, resizeBack [false]}` |
 | `denseNms` | `detector-dense@1` | `boxFormat: cxcywh\|xyxy, boxSpace: letterboxPixels\|normalized, activation: applied\|sigmoid [applied], nms: {type: perClass\|classAgnostic, iou ∈ (0, 1]}, defaults: {scoreThreshold ∈ [0, 1], maxDetections ≥ 1}, classIndex: contiguous\|cocoId [contiguous]` |
 | `detrSigmoid` | `detector-detr@1` | `boxFormat, boxSpace, defaults, classIndex` as above, `selection: topKPairs [topKPairs]`, `masks?: {logitThreshold [0]}` (present exactly when the graph binds `masks`) |
-| `embedding` | `clip-joint@1`, `text-embedder@1` | `embedding: {normalized: inGraph\|host\|none, pooling: inGraph\|mean\|cls [inGraph], similarity: cosine\|dot}` |
+| `embedding` | `clip-joint@1`, `text-embedder@1` | `embedding: {normalized: inGraph\|host\|none, pooling: inGraph\|mean\|cls [inGraph], similarity: cosine\|dot, dimension?, logitScale?}`; `dimension` is checked against the graphs' outputs (by `clip-joint@1`); `logitScale` (> 0, required by `clip-joint@1`) is the zero-shot temperature: scores are `softmax(logitScale · similarity)` over the labels (CLIP's `logit_scale.exp()`, 100) |
 | `gliner` | `gliner-classifier@1` | `gliner?: {threshold [0.5]}` (multi-label sigmoid threshold) |
 | `yesNo` | `yes-no-classifier@1` | `probs: {positiveIndex, threshold [0.5]}` |
 | `maxSim` | `late-interaction-retriever@1` | `retrieval: {imageTokenSpan: [start, end), patchGrid: [rows, columns]}`, `rows · columns = end − start` |

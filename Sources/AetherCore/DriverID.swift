@@ -82,6 +82,9 @@ extension DriverID {
     /// Text embedding: one static graph from padded token ids and their attention mask to one vector per text
     /// (MANIFEST.md §1.3, §2.4 `tokenizer.text`, §2.8).
     public static let textEmbedder = DriverID(validated: "text-embedder@1")
+    /// Joint image-text embeddings (CLIP): an image tower and a batch-bucketed text tower into one embedding space,
+    /// for retrieval and zero-shot classification (MANIFEST.md §1.3, §2.8).
+    public static let clipJoint = DriverID(validated: "clip-joint@1")
 }
 
 private enum LowerAlnum {

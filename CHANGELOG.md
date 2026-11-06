@@ -84,7 +84,7 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     `TextEmbedderModel.embedder()`); `embed(_:role:_:)` for one text or a batch (one request, one graph call per text)
     as an `EmbeddingRole` (`.query`, `.document`), with a `TextEmbeddingRequest` (`GPUJob`); `tokenize(_:role:)` then
     `embed(_: [TokenizedText])` splits the CPU and GPU halves.
-  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimensions`, cosine `similarity(_:)`;
+  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimension`, cosine `similarity(_:)`;
     `truncated(to:)` for Matryoshka prefixes, re-normalized.
   - `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
     `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's
@@ -95,9 +95,52 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
   - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
     `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
+- **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`, `DriverID.clipJoint`) for OpenAI CLIP ViT-B/32 from our
+  Forge export (`Forge/clip/`):
+  - `ImageTextEncoder` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`ImageTextEncoderDriver` →
+    `ImageTextEncoderModel.encoder()`): `embed(image:)` (`ImageInput` or `PreparedImage`), `embed(texts:)` (in groups
+    of the text graph's batch buckets, unused rows filled from `tokenizer.text.unusedBatchRows`),
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`; the template defaults to
+    OpenAI's `"a photo of a {}."`), `scores(image:labels:texts:)` for label embeddings made once, `tokenize(_:)`; an
+    `ImageTextRequest` carries the `GPUJob`.
+  - M4c's `Embedding` gains `dot`, `norm` and `normalized` (its `dimensions` is now `dimension`), and `LabelScore` joins
+    it in AetherRuntime, so AetherVision and AetherEmbeddings share both.
+  - Graph buckets on axis `batch`: `Manifest.Graph.bucket(_:)`, `Buckets.values`/`smallestFitting(_:)`, and
+    `GraphResidency.graph(_:bucket:)` (loader key `role[value]`), so one role's bucket functions load beside each other.
+  - Manifest fields: `preprocess.image.resize.shortestSide` (`centerCrop`: torchvision's `Resize(n)` before the crop),
+    `postprocess.embedding.dimension` and `logitScale`; M4c's `Manifest.Tokenizer.Text` gains `unusedBatchRows` and
+    the mask rules `nonPad`, `throughFirstEos` and `none` (`noMask`) beside `realTokens`, the default.
+  - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
+  - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
+
+- **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
+  `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
+  `interpolate(bilinear, antialias=False)`, as torchvision's `resize` of a float tensor runs it, bit-exact in float32;
+  `stretch` with `NCHW`/`NVCHW` only, resized between `x · scale` and `(x − mean) / std`). Known answers in
+  `Forge/vision/fixtures_preprocess.py`.
+
+### Tooling
+
+- `scripts/gpu-lease [--timeout S] [--quiet] -- <command>`: runs a command while holding the cross-process GPU lease
+  (`SharedGPULease`'s protocol, in stdlib Python), handing it to kit processes inside through `AETHER_GPU_LEASE_HOLDER`.
+  For Forge checks and other GPU work outside the kit (docs/RELEASE.md); `AETHER_GATES=1 scripts/ci.sh` runs its gate
+  step under it. Interop-tested against the Swift lease in `SharedGPULeaseTests`.
 
 ### Changed
 
+- `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
+  side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
+- The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
+  (were `vImage`), re-exported and re-pinned (`e57fcca8`, `49e797b1`, `b7408d29`). Their gates check that Pillow's
+  decoded pixels through `preprocess.image` give the reference tensor bit for bit, and gate the end-to-end detections
+  from `ImageInput` at the tensor path's bars wherever ImageIO decodes the same bytes as Pillow (YOLOX's PNG cases:
+  IoU 1.0, scores within 2e-6); JPEG photos, which the two decoders decode differently, are printed. The references
+  record that decode (`decoded.png`).
+- `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
+  Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
+  `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's
+  tokenizer still adds `!` as its pad (0), while OpenAI CLIP's encodes `hello!` as 3306, 256. `init(directory:length:pad:)`
+  takes `pad: Int32?` (nil: the files' `pad_token`, else EOS); `addedTokens` lists them.
 - `postprocess` `detrSigmoid` has a typed `selection` (`topKPairs`, the default; the RF-DETR export's `x-selection`
   note before), and its `masks` block must be present exactly when the graph binds `masks`.
 - `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.

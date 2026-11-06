@@ -158,9 +158,12 @@ extension Manifest {
             try text?.validate()
         }
 
-        /// `tokenizer.text` (§2.4): an encoder's plain-text rules. The text is the role's prompt followed by the input,
-        /// stripped of leading and trailing whitespace and encoded with the tokenizer's special tokens
-        /// (`addSpecialTokens`); a longer one is truncated, then padded to exactly `padTo` ids.
+        /// `tokenizer.text` (§2.4): how an encoder's plain text becomes fixed-shape id rows (prompts, truncation,
+        /// padding, the attention mask, a static batch's unused rows). For `text-embedder@1` the text is the role's
+        /// prompt followed by the input, stripped of leading and trailing whitespace and encoded with the tokenizer's
+        /// special tokens (`addSpecialTokens`); a longer one is truncated, then padded to exactly `padTo` ids. The
+        /// drivers that read it check the fields they need (`padId`, `padTo`). `template` stays in the JSON until its
+        /// driver lands.
         public struct Text: Sendable, Hashable, Codable {
             public enum Side: String, Sendable, Hashable, Codable { case left, right }
 
@@ -174,27 +177,38 @@ extension Manifest {
                 case bodyOnly
             }
 
+            /// Which positions of a row the graph's `attentionMask` marks 1.
             public enum MaskRule: String, Sendable, Hashable, Codable {
-                /// 1 for every real id (prompt and special tokens included), 0 for padding.
+                /// 1 for every real id (prompt and special tokens included), 0 for padding. The default.
                 case realTokens
+                /// 1 wherever the id isn't ``Text/padId``.
+                case nonPad
+                /// 1 up to and including the first EOS (a pad id equal to EOS, as CLIP's).
+                case throughFirstEos
+                /// `"none"`: the graph takes no mask (CLIP: causal attention pooled at the first EOS makes one
+                /// redundant). A driver whose graph binds `attentionMask` refuses it.
+                case noMask = "none"
             }
 
             /// The padding id.
             public var padId: Int?
             /// Default `right`.
             public var padSide: Side?
-            /// The fixed length every text is padded to (the graph's static sequence).
+            /// The fixed length every text is padded (and truncated) to (the graph's static sequence).
             public var padTo: Int?
             /// Default `right`.
             public var truncation: Truncation?
             /// Role → prompt prepended to the text (EmbeddingGemma: `query`, `document`).
             public var prompts: [String: String]?
-            /// Default `realTokens`.
+            /// Default ``MaskRule/realTokens``.
             public var maskRule: MaskRule?
+            /// A static batch's rows beyond the texts: these ids, then ``padId`` to ``padTo`` (CLIP: `[BOS, EOS]`).
+            /// Their outputs are discarded. Absent: rows of ``padId`` only.
+            public var unusedBatchRows: [Int]?
 
             public init(
                 padId: Int? = nil, padSide: Side? = nil, padTo: Int? = nil, truncation: Truncation? = nil,
-                prompts: [String: String]? = nil, maskRule: MaskRule? = nil
+                prompts: [String: String]? = nil, maskRule: MaskRule? = nil, unusedBatchRows: [Int]? = nil
             ) {
                 self.padId = padId
                 self.padSide = padSide
@@ -202,13 +216,21 @@ extension Manifest {
                 self.truncation = truncation
                 self.prompts = prompts
                 self.maskRule = maskRule
+                self.unusedBatchRows = unusedBatchRows
             }
 
             func validate() throws(AetherError) {
-                if let padId { try require((0...Int(Int32.max)).contains(padId), "tokenizer.text.padId", "must be in 0...\(Int32.max)") }
+                let ids = 0...Int(Int32.max)
+                if let padId { try require(ids.contains(padId), "tokenizer.text.padId", "must be in 0...\(Int32.max)") }
                 if let padTo { try require(padTo > 0, "tokenizer.text.padTo", "must be positive") }
                 for key in (prompts ?? [:]).keys.sorted() {
                     try require(!key.isEmpty, "tokenizer.text.prompts", "a role must not be empty")
+                }
+                if let rows = unusedBatchRows {
+                    try require(rows.allSatisfy(ids.contains), "tokenizer.text.unusedBatchRows", "must be token ids in 0...\(Int32.max)")
+                    if let padTo {
+                        try require(rows.count <= padTo, "tokenizer.text.unusedBatchRows", "must fit in padTo (\(padTo))")
+                    }
                 }
             }
         }

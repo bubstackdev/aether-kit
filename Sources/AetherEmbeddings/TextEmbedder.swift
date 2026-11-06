@@ -310,10 +310,10 @@ struct TextRules: Sendable, Hashable {
 }
 
 extension Embedding {
-    /// A Matryoshka embedding's first `dimensions` values, re-normalized to unit length (EmbeddingGemma: 512, 256 or
+    /// A Matryoshka embedding's first `dimension` values, re-normalized to unit length (EmbeddingGemma: 512, 256 or
     /// 128 of its 768 are valid smaller embeddings; which prefixes a model supports is its model card's).
-    public func truncated(to dimensions: Int) -> Embedding {
-        precondition(dimensions > 0 && dimensions <= vector.count, "truncated(to: \(dimensions)) of \(vector.count) dimensions")
-        return Embedding(TextEmbedder.normalized(Array(vector.prefix(dimensions))))
+    public func truncated(to dimension: Int) -> Embedding {
+        precondition(dimension > 0 && dimension <= vector.count, "truncated(to: \(dimension)) of dimension \(vector.count)")
+        return Embedding(TextEmbedder.normalized(Array(vector.prefix(dimension))))
     }
 }

@@ -370,8 +370,8 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 ### 6.5 AetherImage (G1–G3)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
-`LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
-lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
+`LatentDiffusionPipeline` is an actor that encodes the prompt (`CLIPTokenizer`, in AetherRuntime since M4d so CLIP's
+text tower shares it, because swift-transformers' BPE lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
 scaled input, the table's timestep, the Euler epsilon update), then the VAE decoder.
 
 - Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
@@ -610,6 +610,11 @@ runtime pieces:
     grant; `Detection`, `DetectionRequest` and `DetectionLabels` (`coco-91` built in) are shared with the DETR driver.
     M4f adds `detector-detr@1` (RF-DETR nano, seg-nano) as a second head of the same actor: `detrSigmoid` (sigmoid,
     top-k over (query, class) pairs, no NMS) and, with `masks`, compact `DetectionMask`s at the source's resolution.
+  - **`ImageTextEncoder`** (M4d, `clip-joint@1`, CLIP ViT-B/32): `embed(image:)`, `embed(texts:)` and
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`, template `"a photo of a {}."`
+    by default). Texts run in the text graph's `batch` buckets, each bucket its own resident graph, unused rows from
+    `tokenizer.text.unusedBatchRows`. `Embedding` and `LabelScore` are AetherRuntime values, shared with
+    AetherEmbeddings without either module depending on the other.
   - **`TextEmbedder`** (M4c, AetherEmbeddings, `text-embedder@1`, EmbeddingGemma 300M): `embed([String], role:)` →
     `[Embedding]` (AetherRuntime's, shared with CLIP). `tokenizer.text` drives tokenization: the role's prompt plus the
     text, stripped, encoded with the tokenizer's specials, truncated keeping them, right-padded to `padTo` with a mask.

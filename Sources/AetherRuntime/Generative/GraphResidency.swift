@@ -210,7 +210,7 @@ extension Manifest.Residency {
 /// ``sample()`` and the end. Measurements are of process-wide allocations, so work running alongside in the process
 /// inflates them; the ledger keeps the maximum, which errs towards refusing.
 public final class GraphResidency {
-    /// Loads graph `role`.
+    /// Loads graph `role`, or a bucket of it (a ``key(_:bucket:)``).
     public typealias Loader = (_ role: String) async throws(AetherError) -> any GraphBackend
 
     public let mode: ResidencyPlan.Mode
@@ -256,16 +256,45 @@ public final class GraphResidency {
     /// Roles currently loaded, sorted.
     public var residentRoles: [String] { loaded.keys.sorted() }
 
-    /// Graph `role`, loading it if it isn't resident.
+    /// Graph `role` (or a ``key(_:bucket:)``), loading it if it isn't resident.
     public func graph(_ role: String) async throws(AetherError) -> any GraphBackend {
         if let graph = loaded[role] { return graph }
-        guard residency[role] != nil else {
+        guard residency[Self.parse(role).role] != nil else {
             throw .manifestInvalid(field: "graphs.\(role)", reason: "the manifest has no such graph")
         }
         let graph = try await load(role)
         loaded[role] = graph
         sample()
         return graph
+    }
+
+    /// Graph `role` as its `buckets` entry `bucket` runs it (that entry's function or file), loading it if it isn't
+    /// resident. Each bucket is its own graph, resident beside the role's others.
+    public func graph(_ role: String, bucket: Int) async throws(AetherError) -> any GraphBackend {
+        try await graph(Self.key(role, bucket: bucket))
+    }
+
+    /// The loader key of graph `role` at bucket `value`: `role[value]`.
+    public static func key(_ role: String, bucket value: Int) -> String { "\(role)[\(value)]" }
+
+    /// A loader key's role and bucket.
+    public static func parse(_ key: String) -> (role: String, bucket: Int?) {
+        guard key.hasSuffix("]"), let open = key.lastIndex(of: "["),
+              let value = Int(key[key.index(after: open)..<key.index(before: key.endIndex)]) else { return (key, nil) }
+        return (String(key[..<open]), value)
+    }
+
+    /// The manifest graph a loader key names: the role's, or its bucket's variant (``Manifest/Graph/bucket(_:)``).
+    public static func spec(_ key: String, in manifest: Manifest) throws(AetherError) -> Manifest.Graph {
+        let (role, bucket) = parse(key)
+        guard let graph = manifest.graphs[role] else {
+            throw .manifestInvalid(field: "graphs.\(role)", reason: "the manifest has no such graph")
+        }
+        guard let bucket else { return graph }
+        guard let variant = graph.bucket(bucket) else {
+            throw .manifestInvalid(field: "graphs.\(role).buckets", reason: "no function or file entry for bucket \(bucket)")
+        }
+        return variant
     }
 
     /// Samples the Metal level into the open phase now (after a run, say).
@@ -350,30 +379,36 @@ private final class PeakMeter: Sendable {
 }
 
 extension GraphResidency {
-    /// A loader for an installed bundle: each role's `step` function (its `function`), with the manifest's compute
-    /// and reshape hint.
+    /// A loader for an installed bundle: each role's `step` function (its `function`, or a bucket's for a
+    /// ``key(_:bucket:)``), with the manifest's compute and reshape hint.
     public static func bundleLoader(
         bundle: InstalledBundle, manifest: Manifest, device: Device,
         cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default
     ) -> Loader {
-        { role throws(AetherError) in
-            guard let spec = manifest.graphs[role] else {
-                throw .manifestInvalid(field: "graphs.\(role)", reason: "the manifest has no such graph")
-            }
+        { key throws(AetherError) in
+            let spec = try spec(key, in: manifest)
+            let role = parse(key).role
             let options = try GraphOptions(manifest: spec, at: "graphs.\(role)", cachePolicy: cachePolicy, cache: cache)
-            return try await Graph(
-                bundle: bundle, manifest: manifest, role: role, architecture: device.architecture, options: options)
+            guard let function = spec.phases["step"] else {
+                throw .manifestInvalid(field: "graphs.\(role).functions.step", reason: "the graph has no such phase")
+            }
+            guard let path = spec.file.resolve(architecture: device.architecture), let url = bundle.url(of: path) else {
+                throw .manifestInvalid(field: "graphs.\(role).file", reason: "no file for architecture \(device.architecture)")
+            }
+            return try await Graph(url: url, function: function, options: options)
         }
     }
 
     /// Wraps `loader` so each graph is checked against its manifest role and `contract` before use (MANIFEST.md §2.1.1):
     /// its `step` function's signature against the role's names, ranks and scalar kinds.
     public static func validating(_ loader: @escaping Loader, manifest: Manifest, contract: DriverContract) -> Loader {
-        { role throws(AetherError) in
-            let graph = try await loader(role)
-            guard let spec = manifest.graphs[role], let graphContract = contract.graph(role) else {
+        { key throws(AetherError) in
+            let graph = try await loader(key)
+            let role = parse(key).role
+            guard let graphContract = contract.graph(role) else {
                 throw .manifestInvalid(field: "graphs.\(role)", reason: "not a \(contract.driver) graph")
             }
+            let spec = try spec(key, in: manifest)
             try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
                                             contract: graphContract, tables: manifest.tables ?? [:])
             return graph
