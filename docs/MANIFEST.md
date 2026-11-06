@@ -76,8 +76,8 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 
 ### 1.5 Generation
 
-The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative) and `krea2@1` (§5.5,
-proposed until G3).
+The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4), `krea2@1` (§5.5–§5.6) and
+`flux2-klein@1` (§5.7), all normative.
 
 ---
 
@@ -380,8 +380,7 @@ These clarify or amend §1–§3. The implementation and the per-entry goldens f
 Status: §5.1–§5.3 (the generic `schedule` and `latent` blocks and per-graph `residency`) are **normative since G0**,
 2026-11-06, with `epsilonEuler` and spatial latents since G1; `latent-diffusion@1` (§5.4) is **normative since G1**;
 `flux2-klein@1` and its `flux2` block (§5.7) are **normative since G2**; `krea2@1` and its `krea2` block (§5.5–§5.6)
-stay **proposed until G3**, and a v1 loader treats them as an uncatalogued driver (`unknownDriver`) until `krea2@1` is
-registered. The producers are `Forge/krea2/export_krea2.py`, `Forge/sdturbo/export_sdturbo.py` and
+are **normative since G3**. The producers are `Forge/krea2/export_krea2.py`, `Forge/sdturbo/export_sdturbo.py` and
 `Forge/flux2/export_flux2.py`; their `--sample-manifest` output is the decoding fixture
 (`Tests/AetherCoreTests/Fixtures/krea2/`, `…/sd-turbo/`, `…/flux2/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
 the string-valued rules below are closed vocabularies, and anything else is rejected naming its field.
@@ -443,28 +442,30 @@ it. **Licensing:** SD-Turbo is under the Stability AI Community License: free fo
 commercial use under USD 1M annual revenue with registration; distributions ship `LICENSE.md` and the NOTICE line,
 and products display "Powered by Stability AI". The manifest records this in `license` and `x-license`.
 
-### 5.5 Driver catalog addition (proposed until G3)
+### 5.5 `krea2@1` (normative since G3)
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
 | `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
 
-Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism. Segment
-carries stay float32. A future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder
-(refine) are reserved for `krea2@1` and absent from the first export.
+Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism; the
+driver reads the bindings once at load and refuses a chain that runs forward or a host-fed carry. Segment carries stay
+float32; the latents the first segment and the decoder read are fp16 (rounded from the host's float32 latents). A
+future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder (refine) are reserved for
+`krea2@1` and absent from the first export. The driver is macOS-only in 0.1.0 (refused on iOS before loading).
 
-### 5.6 `krea2` (proposed until G3)
+### 5.6 `krea2` (normative since G3)
 
 `krea2` is owned by `krea2@1`.
 
 | field | req | meaning |
 |---|---|---|
 | `prompt` | R | `{systemPrefix, suffix, maxTokens: 546, keepTrailingTokens: 5, dropLeadingRows: 34, padding: none, positions: running}`: the rendered ids are never padded; Diffusers' padded block masks its padding as keys everywhere, so unpadded rows are exactly its real rows |
-| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major |
+| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major; `rows` is `"lower...upper"` with upper = `maxTokens − dropLeadingRows`, and a prompt outside the range is refused |
 | `rotary` | R | `{axes: [32,48,48], theta: 1000, positions: "(0, row, column)", layout: splitHalves, textRotated: false}`; the host builds `imageRotary [N, 2, 128]` |
 | `segments` | R | the denoiser graph roles in call order |
 | `condRows` | R | 8: six shared block-modulation rows and the final layer's (scale, shift) |
-| `contentFilter` | R | `{required: true}`. The Krea 2 Community License §4.2 requires deployments to filter output; the driver takes an explicit `ContentFilter` from the app and has no default |
+| `contentFilter` | R | `{required: true, reason?}`; `false` is rejected. The Krea 2 Community License §4.2 requires deployments to filter output: loading gives a `Krea2Model`, and a pipeline is only made with the app's `ContentFilter` (no default), which reviews the prompt before any work and the image before it is returned |
 
 `tokenizer.renderer: "krea2-prompt"` names the fixed template above (no chat template); `addSpecialTokens: false`.
 

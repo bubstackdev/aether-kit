@@ -48,7 +48,7 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
  ├── AetherText         tokenizer adapter · prompt rendering · Generator · ChatSession · constrained decoding
  │    └── AetherFoundationModels   LanguageModel/Executor bridge (separate product; FoundationModels link)
  ├── AetherVision       image I/O + preprocessing · detection · depth · CLIP · super-resolution
- ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), then Krea 2 (§6.5)
+ ├── AetherImage        image generation: latent-diffusion@1 (SD-Turbo), flux2-klein@1 (FLUX.2), krea2@1 (Krea 2) (§6.5)
  ├── AetherEmbeddings   text embedder · reranker · classifier
  ├── AetherDecide       Decision types · Decider protocol · LMReadoutDecider
  └── AetherHost         ModelHost: load-through-registry · residency · memory policy · capability()
@@ -327,7 +327,7 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 - **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
   Diffusers' order.
 
-### 6.5 AetherImage (G1, G2)
+### 6.5 AetherImage (G1–G3)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
 `LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
@@ -359,6 +359,31 @@ FLUX.2's host recipe:
   deferred.
 - **Measured (gate, M5 Max, int8 512², 4 steps):** phase peaks 3.2 GiB (prompt), 5.6 GiB (steps), 1.2 GiB (image);
   about 15 s cold (loading included) and 1.4 s warm.
+
+The third is **`krea2@1`** (Krea 2 Turbo, vanilla and realism, G3). `Krea2Pipeline` has the same shape again, with
+Krea's recipe and the content filter its license requires:
+
+- **Content filter.** The Krea 2 Community License (§4.2) requires a deployment to filter output, and the deployer is
+  the app. `Krea2Driver.load` gives a `Krea2Model`, not a pipeline; a `Krea2Pipeline` is only made with the app's
+  `ContentFilter` (`model.pipeline(filter:)`, or the initializer), so there is no default and no unfiltered path. The
+  filter reviews the prompt before any work (nothing loads for a refused prompt) and the finished image before it is
+  returned (a refused image is discarded); a refusal is `generation(.contentRefused(stage:reason:))`, and a filter that
+  throws fails the generation (fail closed). What the filter does is the app's choice; a pass-through filter is the
+  app's decision, documented as such.
+- The prompt is `krea2.prompt.systemPrefix + prompt + suffix`, tokenized without added specials and never padded; a
+  longer rendering keeps its first 541 ids and its last 5. The text encoder drops the 34 prefix rows, so the
+  conditioning is exactly the real rows.
+- Four segments chained by their carries, wired from the manifest's `source.from` bindings as for FLUX.2; the host
+  builds one image rotary table (`(0, row, column)`, split halves). Carries stay float32; latents go in as fp16 and take
+  the float32 Euler update with the fixed exponential shift (μ 1.15).
+- macOS only in 0.1.0. Reference images and refine are reserved (the first export has no vision graph or VAE encoder).
+- **Specialization:** the four segments and the VAE load without `expectFrequentReshapes`. With the hint, every
+  segment's carries came back non-finite on the GPU (Xcode 27.2, M5 Max), while the exporter's Python check, which
+  passed no hint, was exact; the text encoder keeps the hint and is exact (row cosine 0.999999).
+- **Measured (gate, M5 Max, fp16 512², 8 steps; both variants alike):** phase peaks 7.2 GiB (prompt), 26.6 GiB (steps),
+  1.4 GiB (image); released per phase that plans to about 34 GiB, above `MemoryBudget.platformDefault`'s half of a
+  64 GB Mac, so image pipelines default to `MemoryBudget.imageGeneration` (three quarters of RAM on macOS, about Metal's
+  recommended working set). About 70 s cold (loading included) and 6–7 s warm.
 
 ## 7. AetherText
 

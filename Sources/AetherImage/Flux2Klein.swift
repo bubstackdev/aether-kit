@@ -483,6 +483,6 @@ enum Flux2Rotary {
 }
 
 extension Registry {
-    /// The drivers AetherImage links: `latent-diffusion@1` and `flux2-klein@1`.
-    public static let image = Registry([LatentDiffusionDriver.self, Flux2KleinDriver.self])
+    /// The drivers AetherImage links: `latent-diffusion@1`, `flux2-klein@1` and `krea2@1`.
+    public static let image = Registry([LatentDiffusionDriver.self, Flux2KleinDriver.self, Krea2Driver.self])
 }
