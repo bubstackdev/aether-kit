@@ -8011,6 +8011,21 @@
        {
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherCore.InstalledBundle?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -8057,11 +8072,12 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AN6DeviceV0A7Runtime0I6BudgetVAP9ResidencyOSiAS12GraphBackend_pSSYaAN0A5ErrorOYKYCcs5Int64VSSctF",
+      "mangledName": "$s10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes6bundle4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AO6DeviceV0A7Runtime0I6BudgetVAQ9ResidencyOSiAO15InstalledBundleVSgAT12GraphBackend_pSSYaAO0A5ErrorOYKYCcs5Int64VSSctA2_YKF",
       "moduleName": "AetherHost",
       "name": "admission",
-      "printedName": "admission(manifest:device:defaultMemory:unphasedPhase:maximumShapes:load:fileBytes:)",
-      "usr": "s:10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AN6DeviceV0A7Runtime0I6BudgetVAP9ResidencyOSiAS12GraphBackend_pSSYaAN0A5ErrorOYKYCcs5Int64VSSctF"
+      "printedName": "admission(manifest:device:defaultMemory:unphasedPhase:maximumShapes:bundle:load:fileBytes:)",
+      "throwing": true,
+      "usr": "s:10AetherHost15PipelineOptionsV9admission8manifest6device13defaultMemory13unphasedPhase13maximumShapes6bundle4load9fileBytesAA17ResidentAdmissionC0A4Core8ManifestV_AO6DeviceV0A7Runtime0I6BudgetVAQ9ResidencyOSiAO15InstalledBundleVSgAT12GraphBackend_pSSYaAO0A5ErrorOYKYCcs5Int64VSSctA2_YKF"
      }
     ],
     "conformances": [
@@ -8564,6 +8580,150 @@
         "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13maximumShapesSivp"
        },
        {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Duration",
+            "printedName": "Swift.Duration",
+            "usr": "s:s8DurationV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Duration",
+            "printedName": "Swift.Duration",
+            "usr": "s:s8DurationV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Duration",
+          "printedName": "Swift.Duration",
+          "usr": "s:s8DurationV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvp",
+        "moduleName": "AetherHost",
+        "name": "releaseWindow",
+        "printedName": "releaseWindow",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV13releaseWindows8DurationVvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Clock",
+            "printedName": "AetherRuntime.ReleaseLog.Clock",
+            "usr": "s:13AetherRuntime10ReleaseLogC5ClockV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Clock",
+            "printedName": "AetherRuntime.ReleaseLog.Clock",
+            "usr": "s:13AetherRuntime10ReleaseLogC5ClockV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Clock",
+          "printedName": "AetherRuntime.ReleaseLog.Clock",
+          "usr": "s:13AetherRuntime10ReleaseLogC5ClockV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvp",
+        "moduleName": "AetherHost",
+        "name": "releaseClock",
+        "printedName": "releaseClock",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvp"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
@@ -8616,16 +8776,30 @@
           "name": "Int",
           "printedName": "Swift.Int",
           "usr": "s:Si"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Duration",
+          "printedName": "Swift.Duration",
+          "usr": "s:s8DurationV"
+         },
+         {
+          "hasDefaultArg": true,
+          "kind": "TypeNominal",
+          "name": "Clock",
+          "printedName": "AetherRuntime.ReleaseLog.Clock",
+          "usr": "s:13AetherRuntime10ReleaseLogC5ClockV"
          }
         ],
         "declKind": "Constructor",
         "init_kind": "Designated",
         "kind": "Constructor",
-        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapesAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAL15FootprintLedgerCAL14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSitcfc",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapes13releaseWindow0N5ClockAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAN15FootprintLedgerCAN14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSis8DurationVAN10ReleaseLogC0P0Vtcfc",
         "moduleName": "AetherHost",
         "name": "init",
-        "printedName": "init(memory:coordinator:ledger:probe:unphasedPhase:maximumShapes:)",
-        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapesAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAL15FootprintLedgerCAL14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSitcfc"
+        "printedName": "init(memory:coordinator:ledger:probe:unphasedPhase:maximumShapes:releaseWindow:releaseClock:)",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV6memory11coordinator6ledger5probe13unphasedPhase13maximumShapes13releaseWindow0N5ClockAE0A7Runtime12MemoryBudgetV_AA19ResourceCoordinatorCSgAN15FootprintLedgerCAN14GPUMemoryProbeV0A4Core8ManifestV9ResidencyOSis8DurationVAN10ReleaseLogC0P0Vtcfc"
        }
       ],
       "conformances": [
@@ -8802,6 +8976,54 @@
         "accessorKind": "get",
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "ReleaseLog",
+          "printedName": "AetherRuntime.ReleaseLog",
+          "usr": "s:13AetherRuntime10ReleaseLogC"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8releases0A7Runtime10ReleaseLogCvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC8releases0A7Runtime10ReleaseLogCvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ReleaseLog",
+        "printedName": "AetherRuntime.ReleaseLog",
+        "usr": "s:13AetherRuntime10ReleaseLogC"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8releases0A7Runtime10ReleaseLogCvp",
+      "moduleName": "AetherHost",
+      "name": "releases",
+      "printedName": "releases",
+      "usr": "s:10AetherHost17ResidentAdmissionC8releases0A7Runtime10ReleaseLogCvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -8939,6 +9161,21 @@
        {
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherCore.InstalledBundle?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -8985,11 +9222,55 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherHost17ResidentAdmissionC8manifest6device8settings4load9fileBytesAC0A4Core8ManifestV_AI6DeviceVAC8SettingsV0A7Runtime12GraphBackend_pSSYaAI0A5ErrorOYKYCcs5Int64VSSctcfc",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8manifest6device8settings6bundle4load9fileBytesAC0A4Core8ManifestV_AJ6DeviceVAC8SettingsVAJ15InstalledBundleVSg0A7Runtime12GraphBackend_pSSYaAJ0A5ErrorOYKYCcs5Int64VSSctAWYKcfc",
       "moduleName": "AetherHost",
       "name": "init",
-      "printedName": "init(manifest:device:settings:load:fileBytes:)",
-      "usr": "s:10AetherHost17ResidentAdmissionC8manifest6device8settings4load9fileBytesAC0A4Core8ManifestV_AI6DeviceVAC8SettingsV0A7Runtime12GraphBackend_pSSYaAI0A5ErrorOYKYCcs5Int64VSSctcfc"
+      "printedName": "init(manifest:device:settings:bundle:load:fileBytes:)",
+      "throwing": true,
+      "usr": "s:10AetherHost17ResidentAdmissionC8manifest6device8settings6bundle4load9fileBytesAC0A4Core8ManifestV_AJ6DeviceVAC8SettingsVAJ15InstalledBundleVSg0A7Runtime12GraphBackend_pSSYaAJ0A5ErrorOYKYCcs5Int64VSSctAWYKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC10holdsLeaseSbvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC10holdsLeaseSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC10holdsLeaseSbvp",
+      "moduleName": "AetherHost",
+      "name": "holdsLease",
+      "printedName": "holdsLease",
+      "usr": "s:10AetherHost17ResidentAdmissionC10holdsLeaseSbvp"
      },
      {
       "children": [
@@ -9216,6 +9497,26 @@
       "name": "release",
       "printedName": "release()",
       "usr": "s:10AetherHost17ResidentAdmissionC7releaseyyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6unloadyyF",
+      "moduleName": "AetherHost",
+      "name": "unload",
+      "printedName": "unload()",
+      "usr": "s:10AetherHost17ResidentAdmissionC6unloadyyF"
      }
     ],
     "conformances": [
@@ -10442,6 +10743,21 @@
        {
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherCore.InstalledBundle?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -10488,12 +10804,12 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory4load9fileBytesAC0A4Core8ManifestV_AK6DeviceVAK14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAT12GraphBackend_pSSYaAK0A5ErrorOYKYCcs5Int64VSSctAYYKcfc",
+      "mangledName": "$s10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory6bundle4load9fileBytesAC0A4Core8ManifestV_AL6DeviceVAL14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAL15InstalledBundleVSgAU12GraphBackend_pSSYaAL0A5ErrorOYKYCcs5Int64VSSctA1_YKcfc",
       "moduleName": "AetherHost",
       "name": "init",
-      "printedName": "init(manifest:device:contract:options:defaultMemory:load:fileBytes:)",
+      "printedName": "init(manifest:device:contract:options:defaultMemory:bundle:load:fileBytes:)",
       "throwing": true,
-      "usr": "s:10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory4load9fileBytesAC0A4Core8ManifestV_AK6DeviceVAK14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAT12GraphBackend_pSSYaAK0A5ErrorOYKYCcs5Int64VSSctAYYKcfc"
+      "usr": "s:10AetherHost17StatelessPipelineC8manifest6device8contract7options13defaultMemory6bundle4load9fileBytesAC0A4Core8ManifestV_AL6DeviceVAL14DriverContractVAA0D7OptionsV0A7Runtime0J6BudgetVAL15InstalledBundleVSgAU12GraphBackend_pSSYaAL0A5ErrorOYKYCcs5Int64VSSctA1_YKcfc"
      },
      {
       "accessors": [
