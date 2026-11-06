@@ -16,8 +16,7 @@ import Testing
 @Suite("Latent diffusion gates", .serialized, .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
 struct LatentDiffusionGateTests {
     static let environment = ProcessInfo.processInfo.environment
-    static let outputs = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "forge-outputs")
+    static let outputs = forgeOutputs()
     static let bundleURL = environment["AETHER_SDTURBO_BUNDLE"].map { URL(filePath: $0) } ?? outputs.appending(path: "sd-turbo")
     static let referenceURL = environment["AETHER_SDTURBO_REFERENCE"].map { URL(filePath: $0) }
         ?? outputs.appending(path: "references/sd-turbo")
@@ -91,4 +90,18 @@ struct LatentDiffusionGateTests {
         let body = data.dropFirst(10 + headerLength)
         return body.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
     }
+}
+
+/// The Forge outputs directory beside the repo: the first `forge-outputs` found walking up from this file, so the gates
+/// find it from a worktree under `.worktrees/` as from the main checkout (`AETHER_FORGE_OUTPUTS` overrides).
+func forgeOutputs(from file: String = #filePath) -> URL {
+    if let path = ProcessInfo.processInfo.environment["AETHER_FORGE_OUTPUTS"] { return URL(filePath: path) }
+    var directory = URL(filePath: file).deletingLastPathComponent()
+    while directory.path != "/" {
+        let candidate = directory.appending(path: "forge-outputs")
+        if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        directory = directory.deletingLastPathComponent()
+    }
+    return URL(filePath: file).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().appending(path: "forge-outputs")
 }
