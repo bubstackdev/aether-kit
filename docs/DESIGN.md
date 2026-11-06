@@ -63,8 +63,9 @@ Aether (umbrella: one-line task ops; re-exports the task modules below)
 Rules:
 - `AetherCore` has no Core AI import. It covers identity, manifests and bytes on disk. It can be tested anywhere.
 - `AetherRuntime` is the **only** module that touches `CoreAIRuntime` types. Nothing above it sees `NDArray` or `AIModel`.
-- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exception is
-  `AetherDecide → AetherText`, because LM readout uses the Generator's prefix machinery.
+- Task modules depend on `AetherRuntime` + `AetherCore`, never on each other. The exceptions are on `AetherText`:
+  `AetherDecide`, because LM readout uses the Generator's prefix machinery, and the modules whose text goes through
+  its tokenizer adapter (`AetherImage`, `AetherVideo`, `AetherEmbeddings`).
 - Third-party dependencies are limited to `swift-transformers` (tokenizers, Jinja chat templates), in `AetherText` only.
   Downloads use `URLSession` directly; we don't need swift-huggingface.
 
@@ -579,10 +580,15 @@ runtime pieces:
     bilinear at pixel centres, clamped to the content rectangle, so letterbox padding is never read. The GPU grant
     covers only the graph call; the resample runs after it.
   - **`ImageTextEncoder`** (M4d, `clip-joint@1`, CLIP ViT-B/32): `embed(image:)`, `embed(texts:)` and
-    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`). Texts run in the text graph's
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`, template `"a photo of a {}."`
+    by default). Texts run in the text graph's
     `batch` buckets, each bucket its own resident graph, unused rows from `tokenizer.text.unusedBatchRows`. `Embedding`
     and `LabelScore` are AetherRuntime values, shared with AetherEmbeddings without either module depending on the
     other.
+  - **`TextEmbedder`** (M4c, AetherEmbeddings, `text-embedder@1`, EmbeddingGemma 300M): `embed([String], role:)` →
+    `[Embedding]` (AetherRuntime's, shared with CLIP). `tokenizer.text` drives tokenization: the role's prompt plus the
+    text, stripped, encoded with the tokenizer's specials, truncated keeping them, right-padded to `padTo` with a mask.
+    One GPU grant per batch, one graph call per text, cancellation between them.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 

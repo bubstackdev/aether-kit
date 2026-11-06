@@ -2879,6 +2879,100 @@
       }
     },
     {
+      "id": "embeddinggemma-300m",
+      "license": "gemma",
+      "repo": "aether-models/aether-kit-embeddinggemma-300m",
+      "revision": "d50169656d89f09b76c392aaa9a5c81b585d8384",
+      "task": "text-embedding",
+      "variants": {
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "2ac7d136524442cca4de57c6792c360be5acb0317da97b6bda69e27f2a9dc683",
+                  "size": 5251
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "28446d91d6c90c5d4f669078d1aafd121c1112feaf7c1de374ef0979ed495efe",
+                  "size": 1655
+                },
+                {
+                  "path": "GEMMA-PROHIBITED-USE-POLICY.txt",
+                  "sha256": "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b",
+                  "size": 4061
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d",
+                  "size": 9144
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "80d6f964d375677e517d4123eb3bdd3478d184446674883b0d7917bd474aade1",
+                  "size": 1425
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "c086f2d2625d0ec592a8a81e04914875dcf7fc6825eabcb24dcd9dd7d9d2e427",
+                  "size": 1357
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "c4953b6f2d989e6892a6450d5066ba4687089317bbbfc7bc1346507cffc9e5c2",
+                  "size": 1098
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/main.hash",
+                  "sha256": "7e862ad9f99fd2f128ff23acbd5f885573a7d7a4517a0c32b53817f2e51f5624",
+                  "size": 32
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/main.mlirb",
+                  "sha256": "53f0baf671f985d1a555f273a7d6e3a18c26ed143f5537d81ab328a6c0cd045b",
+                  "size": 647579874
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/metadata.json",
+                  "sha256": "e649b534f6cb8a52d83d217e2784028b17495fd4f937874826ec2c6f318ea767",
+                  "size": 483
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "f8678460ae5b714f658c129e466072654260af0fc9cc2183a00f09c7a9e3d4aa",
+                  "size": 4618
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "5a8c9a61615debdb966990008523921df6799e317630afa6563c548a0592c08f",
+                  "size": 490
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+                  "size": 662
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e",
+                  "size": 33385008
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118",
+                  "size": 1155346
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "text-embedder@1"
+        }
+      }
+    },
+    {
       "id": "clip-vit-b32",
       "license": "mit",
       "repo": "aether-models/aether-kit-clip-vit-b32",

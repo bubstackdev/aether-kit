@@ -67,9 +67,13 @@ public actor ImageTextEncoder {
         var tokens: String, attentionMask: String?, textEmbedding: String
         var embedding: Manifest.Postprocess.Embedding
         var logitScale: Float
-        var text: Manifest.TokenizerText
+        var text: Manifest.Tokenizer.Text
         /// `padTo`: the token rows' length.
         var length: Int
+        /// `padId`.
+        var padId: Int32
+        /// `maskRule` (default `realTokens`), read when the text graph binds `attentionMask`.
+        var maskRule: Manifest.Tokenizer.Text.MaskRule
         /// The text graph's `buckets` on axis `batch`, ascending; empty: the default function's own static batch.
         var batches: [Int]
         var preprocessor: ImagePreprocessor
@@ -93,8 +97,11 @@ public actor ImageTextEncoder {
             guard let tokenizer = manifest.tokenizer, tokenizer.renderer == "clip-bpe" else {
                 throw .manifestInvalid(field: "tokenizer.renderer", reason: "\(id) requires a clip-bpe tokenizer")
             }
-            guard let text = try tokenizer.textBlock() else {
+            guard let text = tokenizer.text else {
                 throw .manifestInvalid(field: "tokenizer.text", reason: "required by \(id)")
+            }
+            guard let padId = text.padId else {
+                throw .manifestInvalid(field: "tokenizer.text.padId", reason: "required by \(id)")
             }
             guard let length = text.padTo else {
                 throw .manifestInvalid(field: "tokenizer.text.padTo", reason: "required by \(id)")
@@ -108,8 +115,9 @@ public actor ImageTextEncoder {
             tokens = textGraph.inputs["tokens"]!.name
             attentionMask = textGraph.inputs["attentionMask"]?.name
             textEmbedding = textGraph.outputs["textEmbedding"]!.name
-            if attentionMask != nil, (text.maskRule ?? .noMask) == .noMask {
-                throw .manifestInvalid(field: "tokenizer.text.maskRule", reason: "the text graph binds attentionMask: name a rule")
+            maskRule = text.maskRule ?? .realTokens
+            if attentionMask != nil, maskRule == .noMask {
+                throw .manifestInvalid(field: "tokenizer.text.maskRule", reason: "the text graph binds attentionMask: none takes no mask")
             }
             if let buckets = textGraph.buckets {
                 guard buckets.axis == "batch", buckets.rule == "smallestFitting" else {
@@ -126,6 +134,7 @@ public actor ImageTextEncoder {
             self.logitScale = Float(logitScale)
             self.text = text
             self.length = length
+            self.padId = Int32(padId)
         }
     }
 
@@ -149,7 +158,7 @@ public actor ImageTextEncoder {
         }
         try self.init(
             configuration: configuration,
-            tokenizer: CLIPTokenizer(directory: directory, length: configuration.length, pad: Int32(configuration.text.padId)),
+            tokenizer: CLIPTokenizer(directory: directory, length: configuration.length, pad: configuration.padId),
             pipeline: StatelessPipeline(bundle: bundle, manifest: manifest, device: device, contract: .clipJoint, options: options))
     }
 
@@ -165,9 +174,9 @@ public actor ImageTextEncoder {
     }
 
     private init(configuration: Configuration, tokenizer: CLIPTokenizer, pipeline: StatelessPipeline) throws(AetherError) {
-        guard tokenizer.length == configuration.length, Int(tokenizer.pad) == configuration.text.padId else {
+        guard tokenizer.length == configuration.length, tokenizer.pad == configuration.padId else {
             throw .manifestMismatch(
-                field: "tokenizer.text", expected: "padTo \(configuration.length), padId \(configuration.text.padId)",
+                field: "tokenizer.text", expected: "padTo \(configuration.length), padId \(configuration.padId)",
                 found: "a tokenizer of length \(tokenizer.length), pad \(tokenizer.pad)")
         }
         self.configuration = configuration
@@ -222,17 +231,17 @@ public actor ImageTextEncoder {
     // MARK: - Zero-shot
 
     /// Scores `labels` for `image`: `softmax(logitScale · similarity(image, text(label)))`, in the labels' order. Each
-    /// label is embedded as `template` with `{}` replaced by it (OpenAI's prompt for ImageNet-style labels is
-    /// `"a photo of a {}."`; the default uses the label as is). Image and texts run under one GPU grant.
+    /// label is embedded as `template` with `{}` replaced by it: by default OpenAI's prompt for ImageNet-style labels,
+    /// `"a photo of a {}."`; pass `"{}"` to embed the labels as they are. Image and texts run under one GPU grant.
     public nonisolated func classify(
-        _ image: ImageInput, labels: [String], template: String = "{}", _ request: Request = Request()
+        _ image: ImageInput, labels: [String], template: String = "a photo of a {}.", _ request: Request = Request()
     ) async throws -> [LabelScore] {
         try await classify(prepare(image), labels: labels, template: template, request)
     }
 
     /// ``classify(_:labels:template:_:)-(ImageInput,_,_,_)`` for an image this encoder's ``prepare(_:)`` made.
     public func classify(
-        _ prepared: PreparedImage, labels: [String], template: String = "{}", _ request: Request = Request()
+        _ prepared: PreparedImage, labels: [String], template: String = "a photo of a {}.", _ request: Request = Request()
     ) async throws -> [LabelScore] {
         guard !labels.isEmpty else { throw AetherError.invalidInput("classify needs at least one label") }
         let rows = try tokenize(labels.map { template.replacingOccurrences(of: "{}", with: $0) })
@@ -315,7 +324,7 @@ public actor ImageTextEncoder {
                 found: graph.signature.input(c.tokens).map { "\($0.shape)" } ?? "no such input")
         }
         let unused = (c.text.unusedBatchRows ?? []).map(Int32.init)
-        let filler = unused + Array(repeating: Int32(c.text.padId), count: c.length - unused.count)
+        let filler = unused + Array(repeating: c.padId, count: c.length - unused.count)
         let ids = group.flatMap { $0 } + Array(repeating: filler, count: batch - group.count).flatMap { $0 }
         let arena = TensorArena()
         var bindings = Bindings(arena: arena)
@@ -324,7 +333,7 @@ public actor ImageTextEncoder {
         try bindings.bindInput(c.tokens, to: tokens)
         if let name = c.attentionMask {
             let mask = try graph.makeBuffer(for: name, role: .input, dimensions: [], in: arena)
-            try mask.write(Self.mask(ids, length: c.length, rule: c.text.maskRule ?? .noMask, pad: Int32(c.text.padId)))
+            try mask.write(Self.mask(ids, length: c.length, rule: c.maskRule, pad: c.padId))
             try bindings.bindInput(name, to: mask)
         }
         let output = try Self.output(c.textEmbedding, of: graph, role: "textEncoder", rows: batch, dimension: c.embedding.dimension)
@@ -354,14 +363,16 @@ public actor ImageTextEncoder {
         return name
     }
 
-    /// The attention mask of `ids` (rows of `length`) under `rule`, as int32.
-    static func mask(_ ids: [Int32], length: Int, rule: Manifest.TokenizerText.MaskRule, pad: Int32) -> [Int32] {
+    /// The attention mask of `ids` (rows of `length`) under `rule`, as int32. A CLIP row's real ids are BOS through its
+    /// EOS (the tokenizer always ends a text with EOS, truncated or not, and an unused row starts `[BOS, EOS]`), so
+    /// `realTokens` is `throughFirstEos`.
+    static func mask(_ ids: [Int32], length: Int, rule: Manifest.Tokenizer.Text.MaskRule, pad: Int32) -> [Int32] {
         switch rule {
         case .noMask:
             return Array(repeating: 1, count: ids.count)
         case .nonPad:
             return ids.map { $0 == pad ? 0 : 1 }
-        case .throughFirstEos:
+        case .realTokens, .throughFirstEos:
             var mask = [Int32](repeating: 0, count: ids.count)
             for row in stride(from: 0, to: ids.count, by: length) {
                 for i in row..<(row + length) {

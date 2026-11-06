@@ -33,20 +33,38 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     letterbox padding.
   - Gate `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02).
   - Catalog: `depth-anything-3-small` (macOS), `aether-models/aether-kit-depth-anything-3-small`, Apache-2.0.
+- **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`,
+  `DriverID.textEmbedder`), for EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`):
+  - `TextEmbedder` (actor on `StatelessPipeline`), loaded through `Registry.embeddings` (`TextEmbedderDriver` →
+    `TextEmbedderModel.embedder()`); `embed(_:role:_:)` for one text or a batch (one request, one graph call per text)
+    as an `EmbeddingRole` (`.query`, `.document`), with a `TextEmbeddingRequest` (`GPUJob`); `tokenize(_:role:)` then
+    `embed(_: [TokenizedText])` splits the CPU and GPU halves.
+  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimension`, cosine `similarity(_:)`;
+    `truncated(to:)` for Matryoshka prefixes, re-normalized.
+  - `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
+    `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's
+    special tokens, truncated keeping them (`right`), right-padded with a mask of real ids.
+  - The `embedding` postprocess: pooling in the graph; `normalized: host` L2-normalizes on the CPU.
+  - Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one truncated), cosine ≥ 0.9999999 against
+    the CPU float32 upstream reference (bar 0.999), every query's best document as the reference's.
+  - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
+  - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
+    `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
 - **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`, `DriverID.clipJoint`) for OpenAI CLIP ViT-B/32 from our
   Forge export (`Forge/clip/`):
   - `ImageTextEncoder` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`ImageTextEncoderDriver` →
     `ImageTextEncoderModel.encoder()`): `embed(image:)` (`ImageInput` or `PreparedImage`), `embed(texts:)` (in groups
     of the text graph's batch buckets, unused rows filled from `tokenizer.text.unusedBatchRows`),
-    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`), `scores(image:labels:texts:)`
-    for label embeddings made once, `tokenize(_:)`; an `ImageTextRequest` carries the `GPUJob`.
-  - `Embedding` (vector, `dot`, `similarity` (cosine), `norm`, `normalized`) and `LabelScore`, in AetherRuntime so
-    AetherVision and AetherEmbeddings share them.
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`; the template defaults to
+    OpenAI's `"a photo of a {}."`), `scores(image:labels:texts:)` for label embeddings made once, `tokenize(_:)`; an
+    `ImageTextRequest` carries the `GPUJob`.
+  - M4c's `Embedding` gains `dot`, `norm` and `normalized` (its `dimensions` is now `dimension`), and `LabelScore` joins
+    it in AetherRuntime, so AetherVision and AetherEmbeddings share both.
   - Graph buckets on axis `batch`: `Manifest.Graph.bucket(_:)`, `Buckets.values`/`smallestFitting(_:)`, and
     `GraphResidency.graph(_:bucket:)` (loader key `role[value]`), so one role's bucket functions load beside each other.
   - Manifest fields: `preprocess.image.resize.shortestSide` (`centerCrop`: torchvision's `Resize(n)` before the crop),
-    `postprocess.embedding.dimension` and `logitScale`, and `Manifest.TokenizerText` (`tokenizer.textBlock()`), the
-    typed view of `tokenizer.text` (`padId`, `padSide`, `padTo`, `truncation`, `maskRule`, `unusedBatchRows`).
+    `postprocess.embedding.dimension` and `logitScale`; M4c's `Manifest.Tokenizer.Text` gains `unusedBatchRows` and
+    the mask rules `nonPad`, `throughFirstEos` and `none` (`noMask`) beside `realTokens`, the default.
   - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
   - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
 
@@ -59,6 +77,7 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   takes `pad: Int32?` (nil: the files' `pad_token`, else EOS); `addedTokens` lists them.
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
   `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
+- `Manifest.Tokenizer.text` is the typed `Manifest.Tokenizer.Text` (was a `JSONValue`).
 - `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
   `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
 

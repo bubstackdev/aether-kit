@@ -207,6 +207,7 @@ struct ImageTextEncoderTests {
             ("tokenizer.renderer", tokenizer { $0["renderer"] = nil }),
             ("tokenizer.text", tokenizer { $0["text"] = nil }),
             ("tokenizer.text.padTo", tokenizer { $0["text"] = ["padId": 49407] }),
+            ("tokenizer.text.padId", tokenizer { $0["text"] = ["padTo": 8] }),
             ("tokenizer.text", tokenizer { $0["text"] = ["padId": 49407, "padTo": 8, "padSide": "left"] }),
             ("graphs.textEncoder.buckets", textGraph(Self.textGraph(buckets: [
                 "axis": "sequence", "rule": "smallestFitting", "entries": [["value": 4, "function": "batch4"]]]))),
@@ -285,6 +286,8 @@ struct ImageTextEncoderTests {
         let ids: [Int32] = [49406, 5, 49407, 0, 49407, 49407]
         #expect(ImageTextEncoder.mask(ids, length: 3, rule: .throughFirstEos, pad: 49407) == [1, 1, 1, 1, 1, 0])
         #expect(ImageTextEncoder.mask(ids, length: 3, rule: .nonPad, pad: 49407) == [1, 1, 0, 1, 0, 0])
+        // A CLIP row's real ids end at its EOS: realTokens (the default) is throughFirstEos.
+        #expect(ImageTextEncoder.mask(ids, length: 3, rule: .realTokens, pad: 49407) == [1, 1, 1, 1, 1, 0])
     }
 
     // MARK: - Images and zero-shot
@@ -316,6 +319,10 @@ struct ImageTextEncoderTests {
         let image = try await encoder.embed(image: Self.image((255, 0, 0)))
         let texts = try await encoder.embed(texts: ["a r", "a g", "a b"])
         #expect(encoder.scores(image: image, labels: ["r", "g", "b"], texts: texts) == scores)
+
+        // The default template is OpenAI's "a photo of a {}." ("a</w> p h o t o</w>", truncated to the fake's 8 ids).
+        _ = try await encoder.classify(Self.image((255, 0, 0)), labels: ["r"])
+        #expect(log.entries.last?.contains("[49406, 200, 115, 107, 114, 119, 214, 49407") == true)
         await #expect(throws: AetherError.self) { _ = try await encoder.classify(Self.image((0, 0, 0)), labels: []) }
     }
 
