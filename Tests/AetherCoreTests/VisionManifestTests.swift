@@ -33,6 +33,45 @@ struct VisionManifestTests {
         #expect(try Manifest.decode(m.encoded()) == m)
     }
 
+    /// CLIP's Forge export (`Forge/clip/`): `resize.shortestSide`, `embedding.dimension` and `logitScale`, and the typed
+    /// view of `tokenizer.text` (`maskRule`, `unusedBatchRows`).
+    @Test func theCLIPExportersBlocksDecode() throws {
+        let m = try Manifest.decode(Self.manifest("""
+        "tokenizer": { "source": { "dir": "main:tokenizer" }, "renderer": "clip-bpe", "addSpecialTokens": true,
+                       "text": { "padId": 49407, "padSide": "right", "padTo": 77, "truncation": "right", "maskRule": "none",
+                                 "unusedBatchRows": [49406, 49407] } },
+        "preprocess": { "image": { "resize": { "mode": "centerCrop", "size": [224, 224], "filter": "pillowBicubic", "shortestSide": 224 },
+                                   "scale": 0.00392156862745098, "layout": "NCHW" } },
+        "postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "pooling": "inGraph", "similarity": "cosine",
+                                                             "dimension": 512, "logitScale": 100.00000762939453 } }
+        """))
+        #expect(m.preprocess?.image?.resize == .init(mode: .centerCrop, size: .init(width: 224, height: 224), shortestSide: 224,
+                                                     filter: .pillowBicubic))
+        #expect(m.postprocess == .embedding(.init(normalized: .inGraph, pooling: .inGraph, similarity: .cosine, dimension: 512,
+                                                  logitScale: 100.00000762939453)))
+        #expect(try m.tokenizer?.textBlock() == .init(padId: 49407, padSide: .right, padTo: 77, truncation: .right, maskRule: .noMask,
+                                                      unusedBatchRows: [49406, 49407]))
+        #expect(try Manifest.decode(m.encoded()) == m)
+        #expect(try Manifest.decode(Self.manifest(#""tokenizer": { "source": { "dir": "main:t" } }"#)).tokenizer?.textBlock() == nil)
+    }
+
+    @Test func invalidCLIPBlocksNameTheirField() throws {
+        func expect(_ field: String, _ json: String, sourceLocation: SourceLocation = #_sourceLocation) {
+            expectField(field, sourceLocation: sourceLocation) { _ = try Manifest.decode(Self.manifest(json)) }
+        }
+        expect("preprocess.image.resize.shortestSide", #""preprocess": { "image": { "resize": { "mode": "stretch", "size": [2, 2], "shortestSide": 2, "filter": "vImage" } } }"#)
+        expect("preprocess.image.resize.shortestSide", #""preprocess": { "image": { "resize": { "mode": "centerCrop", "size": [4, 2], "shortestSide": 3, "filter": "vImage" } } }"#)
+        expect("postprocess.embedding.logitScale", #""postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine", "logitScale": 0 } }"#)
+        expect("postprocess.embedding.dimension", #""postprocess": { "kind": "embedding", "embedding": { "normalized": "inGraph", "similarity": "cosine", "dimension": 0 } }"#)
+        func text(_ json: String) throws -> Manifest.TokenizerText? {
+            try Manifest.decode(Self.manifest(#""tokenizer": { "source": { "dir": "main:t" }, "text": "# + json + "}")).tokenizer?.textBlock()
+        }
+        expectField("tokenizer.text.maskRule") { _ = try text(#"{ "padId": 0, "maskRule": "causal" }"#) }
+        expectField("tokenizer.text.padId") { _ = try text(#"{ "padTo": 4 }"#) }
+        expectField("tokenizer.text.padTo") { _ = try text(#"{ "padId": 0, "padTo": 0 }"#) }
+        expectField("tokenizer.text.unusedBatchRows") { _ = try text(#"{ "padId": 0, "padTo": 1, "unusedBatchRows": [1, 2] }"#) }
+    }
+
     @Test func everyPostprocessKindDecodesAndRoundTrips() throws {
         let cases: [(String, Manifest.Postprocess)] = [
             (#"{ "kind": "depth", "depth": { "polarity": "largerIsNearer" } }"#, .depth(.init(polarity: .largerIsNearer))),

@@ -344,8 +344,8 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
 ### 6.5 AetherImage (G1–G3)
 
 Image generation drivers, on the generative foundation. The first is **`latent-diffusion@1`** (SD-Turbo):
-`LatentDiffusionPipeline` is an actor that encodes the prompt (its own `CLIPTokenizer`, since swift-transformers' BPE
-lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
+`LatentDiffusionPipeline` is an actor that encodes the prompt (`CLIPTokenizer`, in AetherRuntime since M4d so CLIP's
+text tower shares it, because swift-transformers' BPE lacks CLIP's `</w>`), runs the U-Net per step with the latents on the host (seeded NCHW noise × `initNoiseSigma`,
 scaled input, the table's timestep, the Euler epsilon update), then the VAE decoder.
 
 - Before each generation it plans residency from the `FootprintLedger` (keyed by model and `<width>x<height>`), fits
@@ -578,6 +578,11 @@ runtime pieces:
     `resizeBack` (manifest default, request override) both maps are resampled to the source through the geometry:
     bilinear at pixel centres, clamped to the content rectangle, so letterbox padding is never read. The GPU grant
     covers only the graph call; the resample runs after it.
+  - **`ImageTextEncoder`** (M4d, `clip-joint@1`, CLIP ViT-B/32): `embed(image:)`, `embed(texts:)` and
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`). Texts run in the text graph's
+    `batch` buckets, each bucket its own resident graph, unused rows from `tokenizer.text.unusedBatchRows`. `Embedding`
+    and `LabelScore` are AetherRuntime values, shared with AetherEmbeddings without either module depending on the
+    other.
 - Live camera: `LiveVision` wraps any `Pipeline` with frame dropping and back-pressure. Overlay geometry, mapping
   model space to view space, is part of the result type.
 

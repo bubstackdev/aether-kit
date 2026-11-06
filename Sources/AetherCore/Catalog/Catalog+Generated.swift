@@ -935,5 +935,43 @@ extension Catalog {
                 ),
             ]
         ),
+        CatalogEntry(
+            id: "clip-vit-b32",
+            task: "image-text-embedding",
+            repo: "aether-models/aether-kit-clip-vit-b32",
+            revision: "1efefba78d652dafd8cdc9df5fac2cd4ee1e6cf6",
+            license: "mit",
+            variants: [
+                "macos": CatalogVariant(
+                    driver: DriverID(validated: "clip-joint@1"),
+                    assets: [
+                        "main": CatalogAsset(
+                            subtree: "",
+                            files: [
+                                CatalogFile(path: ".aether/aether.json", size: 7685, sha256: "ab851888c05356d89b9eb7ef1bfe1b017e282b02055926847ef76d360510b035"),
+                                CatalogFile(path: ".gitattributes", size: 1666, sha256: "a2bde3a0718f6a7db92e6a01ba731aaa6a899f887ad0afa3ce0d75f4c90881e5"),
+                                CatalogFile(path: "LICENSE", size: 1064, sha256: "987e63b32f6c89ff5160e429458a872ff048e6860b590a3912e938f9da8f14db"),
+                                CatalogFile(path: "NOTICE", size: 1129, sha256: "65fb3e46dcdcc7b630ef96ece0da2fb177e7a5d348c57091fe345c0d2d5def18"),
+                                CatalogFile(path: "README.md", size: 1300, sha256: "ae045dc8fc978ef9a972b3442286128da3cc00f67e997254c8e77824cde83fca"),
+                                CatalogFile(path: "SHA256SUMS", size: 1482, sha256: "233956bd6632d7de1aeaf8414e7656a3c976bc8287d9a3138fab90b662ebdabd"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/main.hash", size: 32, sha256: "d1c0b0f0323349a4bd9c48460bc7681a560c8ebb14bc00aa800f165a645f9f79"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/main.mlirb", size: 175768383, sha256: "d1e96135d26898b55cad462a2da4e75ea41149b4f79ca608cb01a648d24ea4e8"),
+                                CatalogFile(path: "clip_vit_b32_image.aimodel/metadata.json", size: 350, sha256: "be18860a32f3c74e9faec571fe89a8cc705b123ee5b52a3f4a43d8e2a878459d"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/main.hash", size: 32, sha256: "5107534982347924da3ed4aded6564ac8c17be238e8b37021520bc2a650ed8f9"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/main.mlirb", size: 127030587, sha256: "69a0127b96cac208d3ef71fdf0b6e832997621008abd2ab64cc1d8b87b0d4e01"),
+                                CatalogFile(path: "clip_vit_b32_text.aimodel/metadata.json", size: 367, sha256: "6a4f126ad607f3aea64335f49a3f1cd8f126d9c6c0775ecd2c77691c4c2e7511"),
+                                CatalogFile(path: "export-report.json", size: 4799, sha256: "1730e2280967bf6099f2ca4f1886362d1dec6135b74dfe08aaf55ee9ccdb1dbd"),
+                                CatalogFile(path: "forge-log.jsonl", size: 664, sha256: "eb48bef227383a335a136c1ff4aba92a8720223b7d25eec4ab46847b0c39d4d3"),
+                                CatalogFile(path: "tokenizer/merges.txt", size: 524657, sha256: "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85"),
+                                CatalogFile(path: "tokenizer/special_tokens_map.json", size: 389, sha256: "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf"),
+                                CatalogFile(path: "tokenizer/tokenizer.json", size: 2224041, sha256: "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842"),
+                                CatalogFile(path: "tokenizer/tokenizer_config.json", size: 592, sha256: "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad"),
+                                CatalogFile(path: "tokenizer/vocab.json", size: 862328, sha256: "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"),
+                            ]),
+                    ],
+                    architectures: nil
+                ),
+            ]
+        ),
     ])
 }

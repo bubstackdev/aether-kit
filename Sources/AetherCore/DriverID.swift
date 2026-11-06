@@ -73,6 +73,9 @@ extension DriverID {
     /// Monocular depth: one static graph from an image to a depth map and an optional confidence map (MANIFEST.md
     /// §1.3, §2.8).
     public static let depthEstimator = DriverID(validated: "depth-estimator@1")
+    /// Joint image-text embeddings (CLIP): an image tower and a batch-bucketed text tower into one embedding space,
+    /// for retrieval and zero-shot classification (MANIFEST.md §1.3, §2.8).
+    public static let clipJoint = DriverID(validated: "clip-joint@1")
 }
 
 private enum LowerAlnum {

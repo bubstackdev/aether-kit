@@ -33,9 +33,30 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     letterbox padding.
   - Gate `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02).
   - Catalog: `depth-anything-3-small` (macOS), `aether-models/aether-kit-depth-anything-3-small`, Apache-2.0.
+- **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`, `DriverID.clipJoint`) for OpenAI CLIP ViT-B/32 from our
+  Forge export (`Forge/clip/`):
+  - `ImageTextEncoder` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`ImageTextEncoderDriver` →
+    `ImageTextEncoderModel.encoder()`): `embed(image:)` (`ImageInput` or `PreparedImage`), `embed(texts:)` (in groups
+    of the text graph's batch buckets, unused rows filled from `tokenizer.text.unusedBatchRows`),
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`), `scores(image:labels:texts:)`
+    for label embeddings made once, `tokenize(_:)`; an `ImageTextRequest` carries the `GPUJob`.
+  - `Embedding` (vector, `dot`, `similarity` (cosine), `norm`, `normalized`) and `LabelScore`, in AetherRuntime so
+    AetherVision and AetherEmbeddings share them.
+  - Graph buckets on axis `batch`: `Manifest.Graph.bucket(_:)`, `Buckets.values`/`smallestFitting(_:)`, and
+    `GraphResidency.graph(_:bucket:)` (loader key `role[value]`), so one role's bucket functions load beside each other.
+  - Manifest fields: `preprocess.image.resize.shortestSide` (`centerCrop`: torchvision's `Resize(n)` before the crop),
+    `postprocess.embedding.dimension` and `logitScale`, and `Manifest.TokenizerText` (`tokenizer.textBlock()`), the
+    typed view of `tokenizer.text` (`padId`, `padSide`, `padTo`, `truncation`, `maskRule`, `unusedBatchRows`).
+  - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
+  - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
 
 ### Changed
 
+- `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
+  Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
+  `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's
+  tokenizer still adds `!` as its pad (0), while OpenAI CLIP's encodes `hello!` as 3306, 256. `init(directory:length:pad:)`
+  takes `pad: Int32?` (nil: the files' `pad_token`, else EOS); `addedTokens` lists them.
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
   `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
 - `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
