@@ -108,10 +108,14 @@ public actor Generator {
             if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
             let rendered = try generator.renderer.render(
                 messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
-            // The history alone (no generation prompt): where the next turn's prompt will diverge from this one.
-            let history = try generator.renderer.render(
-                messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
-            let boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
+            // The history alone (no generation prompt): where the next turn's prompt will diverge from this one. Only a
+            // recurrent model uses it (to snapshot there); an attention-only model reuses any common prefix.
+            var boundary: Int?
+            if generator.engine.description.hasRecurrentState {
+                let history = try generator.renderer.render(
+                    messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
+                boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
+            }
             try await generator.run(rendered, parameters, continuation, boundary: boundary)
         }
     }
@@ -130,8 +134,12 @@ public actor Generator {
         let task = Task {
             await self.acquire()
             do {
+                // A request cancelled while it waited for its turn renders and prefills nothing.
+                try Task.checkCancellation()
                 try await body(self, continuation)
                 continuation.finish()
+            } catch AetherError.runtime(let underlying) where underlying is CancellationError {
+                continuation.finish(throwing: CancellationError())
             } catch {
                 continuation.finish(throwing: error)
             }

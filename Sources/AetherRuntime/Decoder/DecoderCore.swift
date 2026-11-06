@@ -339,9 +339,12 @@ final class DecoderCore {
             arena.endRun()
             lent = false
         }
-        do {
+        do throws(AetherError) {
             if isEncoding { try lend() }
             for (i, call) in plan.calls.enumerated() {
+                // A long prompt is many chunks: stop between them when the caller is cancelled. The position stays at
+                // `start` (it advances only once every chunk has run), so the engine stays consistent.
+                if i > 0, Task.isCancelled { throw AetherError.runtime(underlying: CancellationError()) }
                 let phase = call.phase == .prefill ? prefillPhase! : step
                 let at = start + call.start
                 var b = try bindings(phase, at: at, fed: call.fed, tokens: nil, logits: phase.logits)
