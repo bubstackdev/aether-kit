@@ -7056,6 +7056,54 @@
         "accessorKind": "get",
         "children": [
          {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8modelKeySSvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC8modelKeySSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC8modelKeySSvp",
+      "moduleName": "AetherHost",
+      "name": "modelKey",
+      "printedName": "modelKey",
+      "usr": "s:10AetherHost17ResidentAdmissionC8modelKeySSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
           "children": [
            {
             "kind": "TypeNominal",

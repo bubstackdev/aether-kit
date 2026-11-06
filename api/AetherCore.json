@@ -293,6 +293,69 @@
       ],
       "declKind": "EnumElement",
       "kind": "Var",
+      "mangledName": "$s10AetherCore0A5ErrorO16invalidReferenceyACSS_SStcACmF",
+      "moduleName": "AetherCore",
+      "name": "invalidReference",
+      "printedName": "invalidReference",
+      "usr": "s:10AetherCore0A5ErrorO16invalidReferenceyACSS_SStcACmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "AetherError",
+            "printedName": "AetherCore.AetherError",
+            "usr": "s:10AetherCore0A5ErrorO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Tuple",
+            "printedName": "(field: Swift.String, reason: Swift.String)"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.String, Swift.String) -> AetherCore.AetherError"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "AetherError",
+            "printedName": "AetherCore.AetherError",
+            "usr": "s:10AetherCore0A5ErrorO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherCore.AetherError.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherCore.AetherError.Type) -> (Swift.String, Swift.String) -> AetherCore.AetherError"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
       "mangledName": "$s10AetherCore0A5ErrorO15manifestInvalidyACSS_SStcACmF",
       "moduleName": "AetherCore",
       "name": "manifestInvalid",
@@ -82154,6 +82217,24 @@
       "name": "description",
       "printedName": "description",
       "usr": "s:10AetherCore8ModelRefV11descriptionSSvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherCore8ModelRefV16validateForStoreyyAA0A5ErrorOYKF",
+      "moduleName": "AetherCore",
+      "name": "validateForStore",
+      "printedName": "validateForStore()",
+      "throwing": true,
+      "usr": "s:10AetherCore8ModelRefV16validateForStoreyyAA0A5ErrorOYKF"
      },
      {
       "accessors": [

@@ -4890,6 +4890,89 @@
         "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV17staleTokenHandoffSbvp"
        },
        {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "spi_group_names": [
+           "Diagnostics"
+          ],
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "spi_group_names": [
+           "Diagnostics"
+          ],
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "SPIAccessControl",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvp",
+        "moduleName": "AetherRuntime",
+        "name": "uncheckedPipelineDepth",
+        "printedName": "uncheckedPipelineDepth",
+        "spi_group_names": [
+         "Diagnostics"
+        ],
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvp"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
