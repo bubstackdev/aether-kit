@@ -3,11 +3,20 @@ public struct LoadOptions: Sendable, Hashable {
     public var device: Device
     public var cachePolicy: GraphOptions.CachePolicy
     public var cache: GraphOptions.Cache
+    /// Decoder engine options (capacity, memory budget, pipelining). Its cache settings are replaced by the two above.
+    public var decoder: DecoderEngine.Options
 
-    public init(device: Device, cachePolicy: GraphOptions.CachePolicy, cache: GraphOptions.Cache) {
+    public init(
+        device: Device, cachePolicy: GraphOptions.CachePolicy, cache: GraphOptions.Cache,
+        decoder: DecoderEngine.Options = DecoderEngine.Options()
+    ) {
         self.device = device
         self.cachePolicy = cachePolicy
         self.cache = cache
+        var decoder = decoder
+        decoder.cachePolicy = cachePolicy
+        decoder.cache = cache
+        self.decoder = decoder
     }
 }
 

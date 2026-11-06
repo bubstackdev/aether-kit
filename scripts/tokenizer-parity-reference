@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Records the HF `transformers` token ids that Tests/AetherTextTests/Fixtures/tokenizer-parity-hf.json pins: every chat
+golden x 3 message shapes, rendered with `apply_chat_template(add_generation_prompt=True)` (the method of the lab's
+engine-spike/scripts/tokenizer-parity.py). Each tokenizer.json is checked against the catalog sha256 first.
+
+Usage (the HF venv, Python 3.12, transformers 5.22.1):
+  ../_reference/.venv-hf/bin/python -I scripts/tokenizer-parity-reference ../lab/models catalog/catalog.json \
+      Tests/AetherTextTests/Fixtures/tokenizer-parity-hf.json
+"""
+import json, sys, hashlib
+from pathlib import Path
+import transformers
+from transformers import AutoTokenizer
+
+models, catalog, out = map(Path, sys.argv[1:4])
+CASES = [
+    {"prompt": "Hi", "system": None, "thinking": None},
+    {"prompt": "What is the capital of Japan? Answer in one sentence.", "system": "You are concise.", "thinking": None},
+    {"prompt": "Write a haiku about rain.", "system": None, "thinking": False},
+]
+IDS = ["qwen3-0.6b", "gemma-3-4b-it", "minicpm5-1b", "youtu-llm-2b", "nanbeige4.1-3b", "qwen3.5-0.8b",
+       "lfm2.5-1.2b", "granite-4.0-h-1b", "nemotron-3-nano-4b"]
+cat = {e["id"]: e for e in json.load(open(catalog))["entries"]}
+result = {"generator": f"transformers {transformers.__version__} apply_chat_template(add_generation_prompt=True, tokenize=True)",
+          "cases": CASES, "models": {}}
+for id in IDS:
+    sub = cat[id]["variants"]["macos"]["assets"]["main"]["subtree"]
+    tdir = models / id / sub / "tokenizer"
+    sha = {f["path"]: f["sha256"] for f in cat[id]["variants"]["macos"]["assets"]["main"]["files"]}
+    tj = hashlib.sha256((tdir / "tokenizer.json").read_bytes()).hexdigest()
+    assert tj == sha["tokenizer/tokenizer.json"], id
+    tok = AutoTokenizer.from_pretrained(str(tdir))
+    rows = []
+    for case in CASES:
+        msgs = ([{"role": "system", "content": case["system"]}] if case["system"] else []) + [{"role": "user", "content": case["prompt"]}]
+        kw = {} if case["thinking"] is None else {"enable_thinking": case["thinking"]}
+        ids = tok.apply_chat_template(msgs, add_generation_prompt=True, tokenize=True, **kw)
+        if isinstance(ids, dict) or hasattr(ids, "input_ids"):
+            ids = ids["input_ids"]
+        rows.append([int(i) for i in ids])
+    result["models"][id] = {"tokenizerSha256": tj, "ids": rows}
+    print(id, [len(r) for r in rows])
+out.write_text(json.dumps(result, indent=1, sort_keys=True) + "\n")

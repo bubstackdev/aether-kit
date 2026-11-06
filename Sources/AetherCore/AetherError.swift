@@ -27,6 +27,10 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
     case tensor(name: String, reason: TensorFailure)
     /// The underlying runtime (Core AI or the file system) failed.
     case runtime(underlying: any Error)
+    /// The request is valid in general but not for this model or in its current state: a partial rewind of
+    /// recurrent state, feeding a decoder whose state ran past its position, a renderer this build does not
+    /// implement yet. `reason` says which, and what to do instead.
+    case unsupportedOperation(String)
 
     public enum DownloadFailure: Sendable, Hashable, CustomStringConvertible {
         /// The server answered with an unexpected HTTP status.
@@ -92,6 +96,8 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
             "Tensor '\(name)': \(reason)"
         case .runtime(let underlying):
             "Runtime failure: \(underlying)"
+        case .unsupportedOperation(let reason):
+            "Unsupported operation: \(reason)"
         }
     }
 }

@@ -1,3 +1,5 @@
+import Accelerate
+
 /// A typed handle to one tensor's storage in a ``TensorArena`` (DESIGN.md §6.1).
 ///
 /// Allocated once, from a graph descriptor or an explicit shape, and reused across steps. All access is
@@ -88,6 +90,27 @@ public struct TensorBuffer {
             try arena.withMutablePointer(self, as: Float.self) { pointer throws(AetherError) in
                 layout.forEachOffset(from: range.lowerBound, count: range.count) { _, offset in out.append(pointer[offset]) }
             }
+        case .float16 where layout.isContiguous:
+            // A logits row is ~150k values per token: convert with Accelerate, not element by element.
+            out = [Float](repeating: 0, count: range.count)
+            try arena.withMutablePointer(self, as: Float16.self) { pointer throws(AetherError) in
+                out.withUnsafeMutableBufferPointer { dst in
+                    var source = vImage_Buffer(
+                        data: UnsafeMutableRawPointer(pointer + range.lowerBound), height: 1, width: vImagePixelCount(range.count),
+                        rowBytes: range.count * 2)
+                    var destination = vImage_Buffer(
+                        data: UnsafeMutableRawPointer(dst.baseAddress!), height: 1, width: vImagePixelCount(range.count),
+                        rowBytes: range.count * 4)
+                    _ = vImageConvert_Planar16FtoPlanarF(&source, &destination, vImage_Flags(kvImageNoFlags))
+                }
+            }
+        case .float32 where layout.isContiguous:
+            out = [Float](repeating: 0, count: range.count)
+            try arena.withMutablePointer(self, as: Float.self) { pointer throws(AetherError) in
+                out.withUnsafeMutableBufferPointer { dst in
+                    dst.baseAddress!.update(from: pointer + range.lowerBound, count: range.count)
+                }
+            }
         case .float16:
             try arena.withMutablePointer(self, as: Float16.self) { pointer throws(AetherError) in
                 layout.forEachOffset(from: range.lowerBound, count: range.count) { _, offset in
@@ -129,6 +152,12 @@ public struct TensorBuffer {
         try arena.copyBytes(from: source, to: self)
     }
 
+    /// Copies the leading region this buffer shares with `source` (the elementwise minimum of the two shapes). Same
+    /// rank and scalar type; strides may differ. A KV cache moves to a new capacity this way.
+    public func copyRegion(from source: TensorBuffer) throws(AetherError) {
+        try arena.copyRegion(from: source, to: self)
+    }
+
     private func checkRange(_ start: Int, _ length: Int) throws(AetherError) {
         guard start >= 0, length >= 0, start + length <= count else {
             throw .tensor(name: name, reason: .outOfBounds(index: start + length, count: count))
@@ -144,6 +173,17 @@ struct StridedLayout: Hashable {
     /// Elements from offset 0 to one past the largest offset.
     let spannedElements: Int
     let isContiguous: Bool
+
+    /// Contiguous row-major strides, in elements.
+    static func rowMajorStrides(_ shape: [Int]) -> [Int] {
+        var strides = [Int](repeating: 1, count: shape.count)
+        var running = 1
+        for axis in shape.indices.reversed() {
+            strides[axis] = running
+            running *= shape[axis]
+        }
+        return strides
+    }
 
     init(shape: [Int], strides: [Int]) {
         self.shape = shape
