@@ -35,6 +35,11 @@ from-scratch re-architecture of `john-rocky/coreai-kit`. It shares no code with 
 | OS floor | `platforms: [.macOS(.v27), .iOS(.v27)]`, with no `@available` noise. |
 | System One | The Swift API comes first. The wire codec, HTTP server and MCP server come later, on the same `Decider` protocol. |
 | Bespoke deciders | Re-ported in `lab/`, then promoted once they fit the runtime and manifest contracts. |
+| Multi-asset bundles | One catalog entry per model, listing every asset subtree with per-file hashes; installed together, manifest in `.aether/`. |
+| State roles | Dynamic sequence axis → sequence state, fully static → recurrent; exceptions in a reviewed override table. |
+| Context | Capacity derived from the memory budget at load; the manifest carries only the declared maximum. |
+| Per-arch AOT | `ios-<arch>/` if present, else the generic JIT subtree; `unsupportedDevice` only when neither exists. |
+| Compute | GPU by default for every graph class (measured); Neural Engine only per entry with a measured win. |
 
 ## 3. Module layout
 
@@ -65,57 +70,72 @@ Products: `AetherText`, `AetherFoundationModels`, `AetherVision`, `AetherEmbeddi
 
 ## 4. The manifest (`aether.json`)
 
-The manifest sits at the bundle root, next to the `.aimodel` / `.aimodelc` graphs. It is versioned (`"schema": 1`).
-Unknown fields are ignored. An unknown `driver` is an error ("unsupported"), never a fallback.
+**The normative schema and the driver catalog are in [`MANIFEST.md`](MANIFEST.md).** This section is the summary.
+
+- **One manifest per catalog variant.** A variant may span several asset subtrees of one repo (VLM towers, Gemma 4
+  per-layer tables, retriever query/doc encoders) and may use a different driver from other variants of the same id
+  (qwen3-0.6b on iOS is `static-chunked-lm@1`). It is generated at install into `.aether/aether.json` at the
+  revision root, or shipped by our own exports. Versioned with `"schema": 1`. Unknown fields and `x-` fields are
+  ignored; an unknown `driver` or a missing required block fails the load ("unsupported"), never a fallback.
+- **The manifest declares only what the graph descriptor cannot show.** Shapes, dtypes and static vs dynamic
+  dimensions come from `InferenceFunctionDescriptor` at load. The manifest names *roles* and *meanings*: which input
+  is tokens, which state is recurrent, which axis is sequence, which logits space, what preprocessing applies. Any
+  shape written in a manifest is an assertion the driver checks, never an input.
+- **Every role binding has one shape:** `name | {name, binding: perCall|static, source: table|from|fill}`. Static
+  tables (Gemma 4 PLE), graph-to-graph chaining (vision tower → decoder) and generated fills are the same mechanism.
+- **Graphs** declare `file` (`"<asset>:<path>"`), one of `function` / `functions` (phases such as `step` and
+  `prefill` sharing states) / `functionFamily` (capacity × chunk buckets), `inputs`, `outputs` (with `rows:
+  all|last|none` and `space`), `states` (`sequence[]` with a required `seqAxis`, and optional `recurrent[]`),
+  `limits`, a required `compute`, and an optional `expectFrequentReshapes` and `warmup`.
+- **Driver-owned blocks** at top level: `tokenizer`, `preprocess`, `image`, `decision`, `postprocess`, `labels`,
+  `generation`, `calibration`. Each block belongs to the drivers that declare it in MANIFEST.md §1.
+- **About 17 drivers** cover the 38 surveyed bundles, including `decoder-lm@1`, `static-chunked-lm@1`,
+  `vlm-static-inject@1`, `detector-dense@1`/`detector-detr@1`, `depth-estimator@1`, `clip-joint@1`,
+  `text-embedder@1`, `late-interaction-retriever@1`, `gliner-classifier@1` and `decision-lm@1`. v1 implements
+  only the drivers its milestones need. The rest are reserved names with fixed contracts.
 
 ```jsonc
-{
-  "schema": 1,
-  "id": "qwen3-0.6b",                       // catalog id this bundle belongs to
-  "task": "text-generation",                // what it does (task protocol it can serve)
-  "driver": "decoder-lm@1",                 // who loads it (registry key, versioned)
-  "graphs": {
-    "decoder": {
-      "file": "qwen3_0_6b_4bit_dynamic.aimodel",   // or per-arch: {"h18p": "x.h18p.aimodelc", "*": "x.aimodel"}
-      "function": "main",
-      "inputs":  { "tokens": "input_ids", "positions": "position_ids" },   // role -> graph name
-      "outputs": { "logits": "logits" },
-      "states":  { "kv": ["k_cache", "v_cache"], "recurrent": [] },
-      "limits":  { "maxContext": 8192, "prefillChunk": null, "staticSequence": null }
-    }
-  },
-  "tokenizer": { "dir": "tokenizer", "chatTemplate": "tokenizer/chat_template.jinja",
-                 "stop": ["<|im_end|>"], "thinking": { "open": "<think>", "close": "</think>" } },
-  "preprocess": null,                        // vision: { resize, mode, mean, std, layout, orientation }
-  "precision": { "weights": "int4", "activations": "fp16" },
-  "provenance": { "source": "Qwen/Qwen3-0.6B", "gate": "token-exact vs fp16 ref", "zooRevision": "943eb6a…" }
-}
+{ "schema": 1, "id": "qwen3.5-0.8b", "task": "text-generation", "driver": "decoder-lm@1",
+  "variant": { "platform": "macos" },
+  "assets": { "main": { "subtree": "gpu-pipelined/qwen3_5_0_8b_decode_int8hu_block32_sym" } },
+  "graphs": { "decoder": {
+      "file": "main:qwen3_5_0_8b_decode_int8hu_block32_sym.aimodel", "function": "main",
+      "inputs":  { "tokens": "input_ids", "positions": "position_ids" },
+      "outputs": { "logits": { "name": "logits", "rows": "last" } },
+      "states":  { "sequence":  [ { "tensors": ["keyCache", "valueCache"], "seqAxis": 3 } ],
+                   "recurrent": [ { "name": "convState" }, { "name": "recState" } ] },
+      "limits":  { "maxContext": 4096, "staticSequence": 1 },
+      "compute": "gpu", "expectFrequentReshapes": true } },
+  "tokenizer": { "source": { "dir": "main:tokenizer" }, "chatTemplate": "main:tokenizer/chat_template.jinja",
+                 "addBos": "template", "stop": ["<|im_end|>", "<|endoftext|>"],
+                 "thinking": { "open": "<think>", "close": "</think>", "toggle": { "templateVar": "enable_thinking" } } },
+  "provenance": { "source": "Qwen/Qwen3.5-0.8B", "zooRepo": "mlboydaisuke/qwen3.5-0.8B-CoreAI", "zooRevision": "1b8c020…" } }
 ```
 
-Roles are a **closed set per driver**. For example, `decoder-lm@1` requires `tokens`, `positions`, `logits` and at
-least one `kv` pair, and accepts optional `recurrent` states and a `hidden` output. The driver validates the manifest
-against the graph's `InferenceFunctionDescriptor` at load time: names exist, ranks match, and the scalar types are
-supported. A mismatch fails the load and names the offending field.
+**Zoo adapter.** `ZooBundleAdapter` builds a manifest from the zoo `metadata.json`, the graph descriptors, tokenizer
+files and sidecars, plus a checked-in **override table** (`catalog/zoo-overrides.json`, keyed by catalog id and
+variant at the pinned revision). The override table is the only place family knowledge lives. MANIFEST.md §2.9 lists
+exactly which fields need an override and why. The adapter's heuristics live only there, run once per install, and
+are pinned by a golden manifest per catalog entry.
 
-**Zoo adapter.** `ZooBundleAdapter` reads the zoo's `metadata.json` (`kind: "llm"`, `assets.main`,
-`language.function_map`, `vocab_size`, `max_context_length`) and the graph's descriptor, then emits an `aether.json`.
-Its heuristics, such as "the first input is tokens", live **only** in the adapter and are covered by golden tests for
-each catalog entry. The generated manifest is written next to the installed bundle, so the heuristic runs once per
-install and never at inference time.
-
-**Later:** embed the manifest in the `.aimodel` itself through `AIModelAsset.Metadata.creatorDefinedMetadata`
-(`["aether": .dictionary(…)]`) for bundles we export ourselves. The sidecar stays the override.
+**Later:** embed the manifest in our own exports through `AIModelAsset.Metadata.creatorDefinedMetadata`
+(`["aether": .dictionary(…)]`). The `.aether/` sidecar stays the override.
 
 ## 5. AetherCore
 
-- **`ModelRef`**: `{ catalogID, repo, revision, subtree }`. It is resolved from the catalog for the current device:
-  `ios-<arch>/` first when the entry lists the device's architecture, then `ios/` or `macos/`.
+- **`ModelRef`**: `{ catalogID, repo, revision, variant, assets: [(name, repo, revision, subtree, files)] }`. It is
+  resolved from the catalog for the current device **before any download**: the device's `ios-<arch>/` variant
+  first, else the generic JIT variant (`ios/` or `macos/`), else `unsupportedDevice`. A per-arch `.aimodelc` for
+  another chip fails to load, so there is no load-time fallback across architectures. Device support is claimed only
+  after a hardware gate.
 - **`Catalog`**: Swift source generated from `catalog/catalog.json` by `scripts/gen-catalog`. CI fails if the two differ.
-  Each entry holds `id, task, driver, repo, revision, variants{platform: {subtree, bytes, files[{path, size, sha256}],
-  architectures?}}, license`. **Per-file SHA-256** comes from the HF LFS `oid`, which the gen script records. It is
+  Each entry holds `id, task, repo, revision, variants{platform[-arch]: {driver, assets{name: {repo?, revision?,
+  subtree, files[{path, size, sha256}]}}, architectures?}}, license`. Assets include foreign tokenizer sources
+  (Mistral-7B's tokenizer from `mistralai/…` at a pinned revision), so nothing is ever fetched unpinned at runtime. **Per-file SHA-256** comes from the HF LFS `oid`, which the gen script records. It is
   verified after download, replacing coreai-kit's size-only check.
 - **`ModelStore`** (actor):
-  - Root directory: `Application Support/Aether/Models/<repo>/<revision>/<subtree>`.
+  - Root directory: `Application Support/Aether/Models/<repo>/<revision>/`. Every asset subtree of the variant
+    installs there as one unit, with the generated manifest in `<revision>/.aether/`. One model is one install.
   - Installs atomically: files go into a hidden staging directory, and one rename moves the bundle into place.
   - Each file's hash is verified before it is accepted.
   - Downloads support resume through HTTP `Range` into the staging directory.
@@ -149,19 +169,36 @@ final class Graph {                               // non-Sendable; owned by one 
 
 - **Specialization comes from the manifest and is never left at `.default`.** In M0, a dynamic-shape decoder under
   `SpecializationOptions.default` decoded at 4 tok/s. With `.gpu` and `expectFrequentReshapes = true` it decoded at
-  274 tok/s (qwen3-0.6b, M5 Max). The driver derives the options from the graph's shape kind: dynamic → GPU plus the
-  reshape hint; static chunks → Neural Engine.
+  274 tok/s (qwen3-0.6b, M5 Max). The compute unit is the manifest's required `graphs.<g>.compute`.
+  `expectFrequentReshapes` defaults to true when the unit is GPU and any input or state has a dynamic dimension.
+  The adapter writes `gpu` for every class. This was measured on 11 graphs in 5 classes: a `.neuralEngine`
+  preference gave GPU-identical output on 9 (most likely not honoured), the one graph that clearly moved was 6× slower,
+  and CPU failed or was wrong on 6 of 11.
+- **Functions and warmup:** a graph with `functions` or `functionFamily` loads one `InferenceFunction` per phase or
+  bucket, lazily, and they all share one `StateSet`. Warmup only ever uses the declared static shapes, or nothing when
+  `warmup: false`. It never assumes a fixed S (the Gemma 4 S=1 graph rejects S=256).
 - **`TensorBuffer`** owns an `NDArray`, which is allocated once from a descriptor resolved with
   `resolvingDynamicDimensions`. It exposes typed read/write through `mutableView(as:)`. Callers reuse buffers across
   steps; `Graph.run` never allocates.
 - **`Bindings`** maps role-resolved names to `TensorBuffer`s for inputs, states and outputs. It is built once per
-  shape and rebuilt only when a dynamic dimension changes.
+  shape and rebuilt only when a dynamic dimension changes. An input or output can bind the leading extent of a larger
+  buffer, so one capacity-sized positions buffer serves every step (verified against real Core AI in the M1 gates).
+  Inputs with `binding: static` are bound once per engine. A `table` source is owned or copy-on-write mapped per its
+  `storage` (`auto` = owned when the residency budget allows). A `from` source aliases the producing graph's output
+  without a copy. A `fill` source is generated once.
 - **`StateSet`** is a named group of state buffers that knows how to `zero()`, `snapshot()` and `restore()`. Snapshot
   is a host or Metal copy.
 - Lifetimes: Core AI's `MutableViews` are `~Escapable`. That lifetime escape stays in **one** audited helper inside
   `AetherRuntime`, the same `_lifetime(immortal)` pattern the fork uses, and nowhere else.
 - **Pipelined execution** (`InferenceFunction.encode(…, to: ComputeStream)`) is an internal optimization of
-  `DecoderEngine`, adopted only after the `lab/` spike measures the gain. The public `Graph` API doesn't change.
+  `DecoderEngine`; the public `Graph` API doesn't change. Measured in the lab spike on qwen3-0.6b:
+  - Depth 1 (encode plus GPU argmax, one step in flight) is token-exact at ≈385 tok/s, against ≈288 for `run()`.
+  - The fork's deeper pipeline is token-exact at ≈554–564 tok/s over 1200 tokens.
+  - The spike's own depth-3 attempt raced, because `encode` reads its inputs at encode time.
+
+  v1 ships depth 1 by default. Depth > 1 ships only with a token handoff Core AI orders, gated by a ≥1k-token
+  parity check at KV capacity 4096. Prefill goes through `encode` and reads only the logits rows it needs. Converting
+  every row to `[Float]` made `run()` prefill 8× slower.
 
 ### 6.2 DecoderEngine (the owned LLM engine)
 
@@ -181,9 +218,13 @@ actor DecoderEngine {
 ```
 
 - **Graph contract** (`decoder-lm@1`):
-  - Inputs are `tokens [1,S]` and `positions [1,P]`.
-  - States are the KV pairs, with the sequence on a declared axis, plus optional recurrent states.
-  - The output is `logits [1,S,V]`.
+  - Inputs are `tokens [1,S]` and `positions [1,P]`. `S` is dynamic, or static per phase (`staticSequence`, such
+    as step 1 and prefill 64). `tokens` may carry ids ≥ vocab when `inputEncodings.tokens.extensionIds` is declared.
+  - States are `states.sequence` entries (KV pairs or MLA latents) with a declared `seqAxis`, plus optional
+    `recurrent` states. Dtype comes from the descriptor (fp16 or bf16).
+  - The output is `logits [1,S,V]` (`rows: all`) or `[1,1,V]` (`rows: last`). Asking a `last` graph for another
+    position is a `manifestMismatch`, not a silent misread. `V` is the vocab unless `space` says slots, options or scalar.
+  - Static inputs belong to the engine. `snapshot()` records which image or table is bound, not its bytes.
   - This matches today's zoo exports. The M0 spike confirmed it on qwen3-0.6b: `input_ids`/`position_ids` int32
     `[1×?]`, `keyCache`/`valueCache` fp16 `[28×1×8×?×128]` (sequence on axis 3), and `logits` fp16 `[1×?×V]`.
     Positions carry the whole range `0..<position+S`.
@@ -191,16 +232,24 @@ actor DecoderEngine {
     layers, and two **static recurrent states** (`convState`, `recState`) cover the 18 linear-attention layers. The
     `states.kv` / `states.recurrent` roles must come from the manifest, because shape heuristics misread `recState`
     as a KV cache.
-- **KV capacity:** a dynamic sequence axis grows geometrically up to `maxContext`, and a static axis is fixed.
+- **KV capacity is derived from memory at load.** The default capacity is `min(maxContext, kvCapacityCap[platform],
+  what fits the device memory budget after weights)`, and a dynamic axis grows geometrically up to it. An app may
+  request a capacity; asking beyond the cap throws `capacity`. A static axis is fixed. `functionFamily` graphs move
+  between capacity buckets by copying KV into the next bucket's state.
   Rewinding attention-only models is O(1), because the position counter just moves back and stale slots are
   overwritten. Hybrid and SSM models can't rewind partially, so they rewind by `restore(snapshot)`. The Generator takes
   a snapshot at the end of each prompt, which replaces the fork's `checkpointAfter`.
 - **Prefill is always chunked, with at most `prefillChunk` tokens per call (default 512).** This is a correctness limit.
   In M0, a single 896+-token batch on qwen3-0.6b produced logits off by 7–16 from both chunked and token-by-token
   feeding, and at 2048 tokens it changed the greedy output. Batches of ≤ 768 tokens matched. Chunking is also faster
-  (3.8k against 2.7k tok/s at 3072 tokens). Graphs with `staticSequence == 1` feed one token at a time. All of these
-  values come from the manifest, never from the bundle name or an env var. The parity gate checks chunked prefill
-  against token-by-token feeding at about 3k tokens for every model.
+  (3.8k against 2.7k tok/s at 3072 tokens). The schedule, all from the manifest, never from a bundle name or env var:
+  1. If a `prefill` phase exists with static S=C, feed full chunks on `prefill`, then the remainder on `step`.
+     With `padTail`, a padded final chunk replaces the remainder; a 64-token tail fed one token at a time costs as
+     much as 15 chunks. In M0, LFM3's pf64 prefill ran at 2.1–5.5k tok/s against 162 one at a time, within tolerance.
+  2. Else, if `step` has static S=1, feed one token per call.
+  3. Else, feed dynamic chunks of ≤ `prefillChunk`.
+
+  The parity gate checks chunked prefill against token-by-token feeding at about 3k tokens for every model.
 - **Sampling** runs on the CPU over `Logits` in v1: greedy, temperature, top-k, top-p and repetition penalty, all with a
   seeded RNG. A GPU sampler is an optimization behind the same interface.
 
@@ -221,7 +270,13 @@ installs and loads the model. A missing driver produces `AetherError.unsupported
 ## 7. AetherText
 
 - **`TokenizerAdapter`** wraps swift-transformers' `Tokenizer`. It reads special ids (pad, eos, stop markers) from the
-  bundle's tokenizer config and the manifest. Nothing is hardcoded.
+  bundle's tokenizer config and the manifest. Nothing is hardcoded. Three rules come from measurement:
+  - **BOS:** the chat template owns BOS and the runtime adds none. swift-transformers `applyChatTemplate` is
+    token-identical to HF `apply_chat_template` on 11 chat bundles × 3 message shapes, and that parity script
+    becomes a per-entry adapter gate.
+  - **Stops:** the source model's `generation_config.json` `eos_token_id` list, unioned with the tokenizer eos and
+    pinned per entry. Gemma 4 needs `<|tool_response>`, its tool-call hand-back, besides `<eos>` and `<turn|>`.
+  - **Source:** a tokenizer is loaded only from a hashed, installed asset. There is never a hub fetch at runtime.
 - **`PromptRenderer`** is a protocol. `JinjaChatTemplate` is the default, and it handles `enable_thinking` along with the
   "template ignores the flag" fallback. Family-specific renderers, such as Gemma's, register by `driver` or `template`
   id rather than through a catalog-id check.
@@ -330,8 +385,8 @@ ready to promote when:
 | # | Deliverable | Exit criterion |
 |---|---|---|
 | **M0** | `lab/engine-spike`: the owned decode loop on raw Core AI | qwen3-0.6b greedy output token-exact against a reference, two-turn rewind correct, logits readable at a chosen position, tok/s recorded (Mac) |
-| M1 | AetherCore + AetherRuntime (Graph, TensorBuffer, StateSet, Registry) | Hermetic tests green; zoo adapter goldens for the chat entries |
-| M2 | DecoderEngine + Generator + ChatSession | Parity gate on 3 chat models including one hybrid; tok/s within 10% of the M0 spike |
+| M1 | AetherCore + AetherRuntime (Graph, TensorBuffer, StateSet, Registry) | Hermetic tests green; schema v1 per MANIFEST.md with the override table; adapter goldens for the chat entries; real-graph gates (signature + greedy parity) on one attention and one hybrid model |
+| M2 | DecoderEngine + Generator + ChatSession | Parity gate on 3 chat models including one hybrid; ≥1k-token chunked-prefill parity; depth-1 pipelined decode ≥ 370 tok/s on qwen3-0.6b (Mac), token-exact |
 | M3 | AetherFoundationModels | Two-turn `LanguageModelSession` recall, a tool call (Hermes), and `@Generable` guided output |
 | M4 | AetherVision + AetherEmbeddings | Detector, depth, CLIP and embedder parity gates |
 | M5 | AetherDecide (LM readout) | Matches recorded distributions on a decision fixture |
@@ -339,16 +394,16 @@ ready to promote when:
 
 ## 15. Risks and unknowns (each should become a lab question)
 
-- **Performance without the fork's pipelined engine.** The fork's `CoreAIPipelinedEngine` (2.6k lines) uses
-  `ComputeStream` encode and GPU sampling. Our sequential loop may be noticeably slower. M0 measures the gap, and a
-  follow-up spike measures `encode(to:)`.
-- **The hybrid/SSM recurrent-state contract.** Confirmed on Qwen3.5: snapshot/restore is bit-exact, and all 35 MB of
-  state copies in 4 ms. Still to check: LFM2.5 and Granite 4. The open cost is **prefill on decode-only hybrid
-  bundles**: 164 tok/s, because they take one token per call. Supporting the zoo's chunked "prefill" function, or
-  exporting a dynamic-S prefill graph, is the M2 performance item.
-- **No independent token-exact reference yet.** M0 criteria 2 and 6 (parity and speed against the fork's
-  `llm-runner`) are still open.
-- **The per-architecture AOT `.aimodelc`** selection and `AIModelCache` specialization behaviour on iPhone.
-- **iOS memory:** whether the measured-footprint residency policy holds for models of 2 GB and up.
-- **Nonescapable `MutableViews` lifetimes** across `await`: the single audited escape helper must be proven sound
-  under Swift 6.4 strict concurrency.
+- **Deep pipelining.** The fork reaches ≈554–564 tok/s token-exact on qwen3-0.6b. Our depth 1 reaches ≈385, and our
+  depth 3 raced (`encode` reads inputs at encode time). Next lab task: reproduce the fork's token-ordering mechanism.
+  The hybrid is limited by about 4.1 ms of host-side `encode` per step, which is a Core AI question, not an engine one.
+- **Hybrid prefill.** Decode-only hybrids take one token per call (164 tok/s). LFM3 shows that a `prefill` function
+  fixes this (2.1–5.5k tok/s). Qwen3.5 has no prefill bundle that loads on macOS 27.2, so it needs a pf64 export
+  sharing the decoder's four states.
+- **Rewind on non-standard sequence states.** MLA latents (Youtu) and shared-KV layers (Gemma 4) are assumed to rewind
+  like KV until a per-model two-turn gate confirms it.
+- **The per-architecture AOT `.aimodelc`** loading and `AIModelCache` specialization on iPhone are untested. Only an
+  h19p graph failing on an h17c Mac was observed.
+- **iOS memory and power:** whether memory-derived capacity and the residency policy hold for models of 2 GB and up,
+  and whether the Neural Engine wins on power on iPhone, even though it showed no speed win on the Mac.
+- **Gemma 3's upstream generation config** is gated, so its stop set is unverified until an HF token is available.
