@@ -95,7 +95,8 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
   MANIFEST.md §5.8 proposes the `weights` table.
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
-  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded.
+  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
+  `aether-models/aether-kit-kokoro-82m`.
 
 - **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
   - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
