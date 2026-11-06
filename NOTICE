@@ -38,6 +38,18 @@ upstream code is fetched unmodified by Forge/depth/fetch_upstream.py. The
 depth-anything/DA3-SMALL weights are not part of this repository; the
 exported bundle carries their Apache-2.0 license and a modification NOTICE.
 
+Gemma is provided under and subject to the Gemma Terms of Use found at
+ai.google.dev/gemma/terms. EmbeddingGemma (google/embeddinggemma-300m, revision
+57c266a740f537b4dc058e1b0cda161fd15afa75), by Google DeepMind:
+Forge/embeddinggemma/embeddinggemma_graphs.py re-expresses its
+sentence-transformers pipeline (mean pooling, two dense layers, L2
+normalization) around transformers' Gemma3TextModel as one export graph, and
+Sources/AetherEmbeddings/TextEmbedder.swift applies its query and document
+prompts and tokenization rules. The weights are not part of this repository;
+the exported bundle is a Model Derivative carrying the Gemma Terms of Use, the
+Gemma Prohibited Use Policy (whose restrictions must be passed on to users),
+a modification notice and this NOTICE line.
+
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
 OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
 tokenizer: the pre-tokenization pattern, the byte-to-unicode table and the

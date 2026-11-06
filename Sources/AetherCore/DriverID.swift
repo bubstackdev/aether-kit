@@ -73,6 +73,9 @@ extension DriverID {
     /// Monocular depth: one static graph from an image to a depth map and an optional confidence map (MANIFEST.md
     /// §1.3, §2.8).
     public static let depthEstimator = DriverID(validated: "depth-estimator@1")
+    /// Text embedding: one static graph from padded token ids and their attention mask to one vector per text
+    /// (MANIFEST.md §1.3, §2.4 `tokenizer.text`, §2.8).
+    public static let textEmbedder = DriverID(validated: "text-embedder@1")
 }
 
 private enum LowerAlnum {
