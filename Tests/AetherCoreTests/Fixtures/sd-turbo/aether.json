@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "id": "sd-turbo",
+  "task": "text-to-image",
+  "driver": "latent-diffusion@1",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "sd_turbo-text.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "sd_turbo-unet.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "sd_turbo-vae.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "textEncoder": {
+      "file": "main:sd_turbo-text.aimodel",
+      "function": "encode",
+      "inputs": {
+        "tokens": "input_ids"
+      },
+      "outputs": {
+        "conditioning": "text_embeds"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perPrompt",
+      "limits": {
+        "staticSequence": 77
+      }
+    },
+    "denoiser": {
+      "file": "main:sd_turbo-unet.aimodel",
+      "function": "denoise",
+      "inputs": {
+        "latents": "sample",
+        "timestep": "timestep",
+        "conditioning": {
+          "name": "text_embeds",
+          "source": {
+            "from": "textEncoder.text_embeds"
+          }
+        }
+      },
+      "outputs": {
+        "epsilon": "epsilon"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perStep"
+    },
+    "vaeDecoder": {
+      "file": "main:sd_turbo-vae.aimodel",
+      "function": "decode",
+      "inputs": {
+        "latents": "latents"
+      },
+      "outputs": {
+        "image": "image"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perImage"
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": null,
+    "renderer": "clip-bpe",
+    "addSpecialTokens": true
+  },
+  "schedule": {
+    "kind": "epsilonEuler",
+    "steps": 1,
+    "maxSteps": 4,
+    "trainTimesteps": 1000,
+    "tables": {
+      "1": {
+        "timesteps": [
+          999.0
+        ],
+        "sigmas": [
+          14.614646911621094,
+          0.0
+        ],
+        "initNoiseSigma": 14.614646911621094
+      },
+      "2": {
+        "timesteps": [
+          999.0,
+          499.0
+        ],
+        "sigmas": [
+          14.614646911621094,
+          1.6128870248794556,
+          0.0
+        ],
+        "initNoiseSigma": 14.614646911621094
+      },
+      "3": {
+        "timesteps": [
+          999.0,
+          666.0,
+          332.0
+        ],
+        "sigmas": [
+          14.614646911621094,
+          2.9183084964752197,
+          0.9292148947715759,
+          0.0
+        ],
+        "initNoiseSigma": 14.614646911621094
+      },
+      "4": {
+        "timesteps": [
+          999.0,
+          749.0,
+          499.0,
+          249.0
+        ],
+        "sigmas": [
+          14.614646911621094,
+          4.081730842590332,
+          1.6128870248794556,
+          0.6932054162025452,
+          0.0
+        ],
+        "initNoiseSigma": 14.614646911621094
+      }
+    },
+    "modelInput": "x / sqrt(sigma[i]^2 + 1)",
+    "timestep": "tables[steps].timesteps[i]",
+    "update": "x + (x - (x - sigma[i] * epsilon)) / sigma[i] * (sigma[i+1] - sigma[i])",
+    "guidance": {
+      "kind": "none"
+    }
+  },
+  "latent": {
+    "channels": 4,
+    "pixelsPerToken": 8,
+    "packing": "spatial",
+    "layout": "nchw[1, 4, rows, columns]",
+    "decoderLayout": "nchw[1, 4, rows, columns]",
+    "noise": {
+      "kind": "splitmix64BoxMuller",
+      "order": "nchw",
+      "dtype": "float32"
+    },
+    "maxImageTokens": 4096,
+    "sizes": [
+      [
+        512,
+        512
+      ]
+    ]
+  },
+  "precision": {
+    "weights": "fp32 (widened from the fp16 checkpoint)",
+    "activations": "fp32",
+    "components": {
+      "vaeDecoder": "divides by the VAE scaling factor 0.18215 itself"
+    }
+  },
+  "license": "LicenseRef-Stability-AI-Community-License",
+  "x-license": {
+    "files": [
+      "LICENSE.md",
+      "NOTICE"
+    ],
+    "modified": true,
+    "commercialRevenueCapUSD": 1000000,
+    "commercialUse": "requires registration at https://stability.ai/community-license",
+    "attribution": "display \"Powered by Stability AI\" (license §IV.a)"
+  },
+  "provenance": {
+    "source": "stabilityai/sd-turbo",
+    "sourceRevision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+    "producer": "aether-kit Forge/sdturbo/export_sdturbo.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "diffusersCommit": "2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}

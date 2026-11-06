@@ -6,6 +6,7 @@
     "AetherRuntime": ["*"],
     "AetherHost": ["*"],
     "AetherText": ["*"],
-    "AetherFoundationModels": ["*"]
+    "AetherFoundationModels": ["*"],
+    "AetherImage": ["*"]
   }
 }

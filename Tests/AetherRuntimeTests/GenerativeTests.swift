@@ -1,3 +1,4 @@
+import AetherCore
 import CryptoKit
 import Foundation
 import ImageIO
@@ -296,5 +297,64 @@ struct ResidencyTests {
         gpu.add(-700)
         residency.endPhase(.perImage)
         #expect(ledger.footprint(.init(model: "krea-2-turbo", profile: "", phase: .perImage)) == PhaseFootprint(peakBytes: 700, heldBytes: 0))
+    }
+}
+
+/// `epsilonEuler` (MANIFEST.md §5.2): 0.0.x's `EpsilonSchedule` cases, and the arithmetic against Diffusers' order.
+@Suite("Epsilon Euler schedule")
+struct EpsilonEulerScheduleTests {
+    @Test func inputScalingAndUpdateMatch0_0_x() throws {
+        let s = try EpsilonEulerSchedule(timesteps: [999, 499], sigmas: [2, 1, 0], initNoiseSigma: 2)
+        #expect(try s.modelInput(step: 0, latents: [6]) == [6 / Float(5).squareRoot()])
+        var x: [Float] = [6]
+        try s.advance(step: 0, latents: &x, epsilon: [2])
+        #expect(x == [4])
+        x = [6]
+        try s.advance(step: 1, latents: &x, epsilon: [2])
+        #expect(x == [4])
+        #expect(throws: AetherError.self) { try s.advance(step: 2, latents: &x, epsilon: [2]) }
+        var noise: [Float] = [1, -0.5]
+        noise.withUnsafeMutableBufferPointer { s.scaleInitialNoise($0) }
+        #expect(noise == [2, -1])
+    }
+
+    @Test func invalidTablesAreRefused() {
+        for (t, sigmas, initial): ([Float], [Float], Float) in [
+            ([1], [0, 0], 1), ([1], [1, 0], .nan), ([], [0], 1), ([1, 2], [2, 1, 0], 1), ([1], [1, 0.5], 1),
+        ] {
+            #expect(throws: AetherError.self) { try EpsilonEulerSchedule(timesteps: t, sigmas: sigmas, initNoiseSigma: initial) }
+        }
+    }
+
+    /// The update in Diffusers' float32 order, element by element, against a non-trivial table.
+    @Test func updateFollowsDiffusersOrder() throws {
+        let sigmas: [Float] = [14.614646911621094, 4.081730842590332, 1.6128870248794556, 0.6932054162025452, 0]
+        let s = try EpsilonEulerSchedule(timesteps: [999, 749, 499, 249], sigmas: sigmas, initNoiseSigma: sigmas[0])
+        let x0: [Float] = [0.3, -1.7, 12.5, -0.001], e: [Float] = [0.11, -2.5, 0.75, 3.25]
+        for step in 0..<4 {
+            var x = x0
+            try s.advance(step: step, latents: &x, epsilon: e)
+            for i in x0.indices {
+                let product: Float = sigmas[step] * e[i]
+                let original: Float = x0[i] - product
+                let derivative: Float = (x0[i] - original) / sigmas[step]
+                let dt: Float = sigmas[step + 1] - sigmas[step]
+                let move: Float = derivative * dt
+                #expect(x[i] == x0[i] + move)
+            }
+        }
+        var bad: [Float] = [1]
+        #expect(throws: AetherError.self) { try s.advance(step: 0, latents: &bad, epsilon: [.infinity]) }
+        #expect(bad == [1])
+    }
+
+    @Test func aFlowMatchScheduleIsNotEpsilon() throws {
+        let flow = Manifest.Schedule(steps: 4, sigmas: .init(shift: .init(rule: .none)))
+        #expect(throws: AetherError.self) { try EpsilonEulerSchedule(flow) }
+        let epsilon = Manifest.Schedule(
+            kind: .epsilonEuler, steps: 1, tables: ["1": .init(timesteps: [999], sigmas: [1, 0], initNoiseSigma: 1)],
+            modelInput: .scaled, timestep: .table, update: .eulerEpsilon)
+        #expect(throws: AetherError.self) { try FlowMatchSchedule(epsilon) }
+        #expect(try EpsilonEulerSchedule(epsilon).timesteps == [999])
     }
 }

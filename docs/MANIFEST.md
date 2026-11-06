@@ -74,6 +74,11 @@ Rules that apply to every driver:
 Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` with `tables` static inputs and
 `tokenizer.renderer: "gemma4-turns"` covers it.
 
+### 1.5 Generation
+
+The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative) and `krea2@1` (§5.5,
+proposed until G3).
+
 ---
 
 ## 2. Manifest schema v1
@@ -373,26 +378,31 @@ These clarify or amend §1–§3. The implementation and the per-entry goldens f
 ## 5. Generative drivers
 
 Status: §5.1–§5.3 (the generic `schedule` and `latent` blocks and per-graph `residency`) are **normative since G0**,
-2026-11-06; `krea2@1` and its `krea2` block (§5.4–§5.5) stay **proposed until G3**, and a v1 loader treats them as an
+2026-11-06, with `epsilonEuler` and spatial latents since G1; `latent-diffusion@1` (§5.4) is **normative since G1**;
+`krea2@1` and its `krea2` block (§5.5–§5.6) stay **proposed until G3**, and a v1 loader treats them as an
 uncatalogued driver (`unknownDriver`) until `krea2@1` is registered. The first producer is
-`Forge/krea2/export_krea2.py`; its `--sample-manifest` output is the decoding fixture
-(`Tests/AetherCoreTests/Fixtures/krea2/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
+`Forge/krea2/export_krea2.py`, then `Forge/sdturbo/export_sdturbo.py`; their `--sample-manifest` output is the decoding
+fixture (`Tests/AetherCoreTests/Fixtures/krea2/`, `…/sd-turbo/`). Unlike the loose driver blocks of §2.5–§2.8, these blocks are fully typed:
 the string-valued rules below are closed vocabularies, and anything else is rejected naming its field.
 
 ### 5.1 `schedule`
 
-Any flow-matching or diffusion driver. Implemented by `FlowMatchSchedule` (AetherRuntime).
+Any flow-matching or diffusion driver. Implemented by `FlowMatchSchedule` and `EpsilonEulerSchedule` (AetherRuntime).
+Each kind takes exactly its own fields: `sigmas` only with `flowMatchEuler`, `tables` and `modelInput` only with
+`epsilonEuler`, and each kind's one `timestep` and `update` rule.
 
 | field | req | meaning |
 |---|---|---|
-| `kind` | R | `flowMatchEuler` (Krea, FLUX.2). Other solvers (SD-Turbo's `epsilonEuler`, H3's) join with their drivers |
+| `kind` | R | `flowMatchEuler` (Krea, FLUX.2) or `epsilonEuler` (SD-Turbo: Diffusers' `EulerDiscreteScheduler`, epsilon prediction, gamma 0). H3's solver joins with its driver |
 | `steps`, `maxSteps` | R, O | default and maximum step counts (`maxSteps` ≥ `steps`; absent: `steps`) |
 | `trainTimesteps` | R | ≥ 1 (1000) |
-| `sigmas.base` | R | `"linspace(1, 1/steps, steps)"`: in Double, each value rounded to Float, the last exactly `1/steps` |
-| `sigmas.shift` | R | `{rule: exponential, mu}` (Krea: μ 1.15, `is_distilled`) · `{rule: empirical, empirical: {lowSteps, lowSlope, lowIntercept, highSteps, highSlope, highIntercept, tokenThreshold}}` (FLUX.2: μ from the generated token count and the steps) · `{rule: none}`. The shifted σ is `e / (e + (1/σ − 1))` in Float, `e = Float(exp(μ))` |
-| `sigmas.terminal` | R | 0, appended after the last step (the only defined value) |
-| `timestep` | R | `"sigma * trainTimesteps / trainTimesteps"`: what the denoiser's `sigma` input receives, in Float |
-| `update` | R | `"x + (sigma[i+1] - sigma[i]) * velocity"`: the host update in Float, the product rounded before the add |
+| `tables` | R (epsilonEuler) | step count (`"1"`…`"maxSteps"`, exactly those) → `{timesteps, sigmas, initNoiseSigma}`: the pinned scheduler's values for that count, captured by the exporter (the runtime never derives an epsilon schedule). `timesteps` decreasing; `sigmas` one longer, decreasing, ending in 0; `initNoiseSigma` > 0 |
+| `modelInput` | R (epsilonEuler) | `"x / sqrt(sigma[i]^2 + 1)"`: the denoiser's latent input, in Float |
+| `sigmas.base` | R (flowMatchEuler) | `"linspace(1, 1/steps, steps)"`: in Double, each value rounded to Float, the last exactly `1/steps` |
+| `sigmas.shift` | R (flowMatchEuler) | `{rule: exponential, mu}` (Krea: μ 1.15, `is_distilled`) · `{rule: empirical, empirical: {lowSteps, lowSlope, lowIntercept, highSteps, highSlope, highIntercept, tokenThreshold}}` (FLUX.2: μ from the generated token count and the steps) · `{rule: none}`. The shifted σ is `e / (e + (1/σ − 1))` in Float, `e = Float(exp(μ))` |
+| `sigmas.terminal` | R (flowMatchEuler) | 0, appended after the last step (the only defined value) |
+| `timestep` | R | flowMatchEuler `"sigma * trainTimesteps / trainTimesteps"`: what the denoiser's `sigma` input receives, in Float. epsilonEuler `"tables[steps].timesteps[i]"` |
+| `update` | R | flowMatchEuler `"x + (sigma[i+1] - sigma[i]) * velocity"`: the host update in Float, the product rounded before the add. epsilonEuler `"x + (x - (x - sigma[i] * epsilon)) / sigma[i] * (sigma[i+1] - sigma[i])"`: Diffusers' order in Float, each product rounded; the initial latents are `noise · initNoiseSigma` |
 | `guidance` | R | `{kind: none}` (no `scale`; Krea 2 Turbo is distilled) or `{kind: cfg, scale > 0}` |
 
 ### 5.2 `latent`
@@ -401,12 +411,13 @@ The image-latent contract.
 
 | field | req | meaning |
 |---|---|---|
-| `channels` | R | per-token channels the denoiser sees (Krea 64 = 16 VAE channels × 2 × 2); a multiple of 4 for 2×2 packing |
-| `pixelsPerToken` | R | 16 (VAE 8× × patch 2); also the multiple width and height must be |
-| `packing` | R | `patch2x2ChannelMajor`: packed channel `c·4 + 2·dy + dx` |
-| `layout`, `decoderLayout` | R | descriptive: denoiser `tokens[rows*columns, 64]`, decoder `[rows, columns, 64]` |
-| `noise` | R | `{kind: splitmix64BoxMuller, order: packedToken, dtype: float32}`: `SeededGaussianNoise`, prefix-stable and bit-identical to 0.0.x's stream |
+| `channels` | R | per-token channels the denoiser sees (Krea 64 = 16 VAE channels × 2 × 2; SD-Turbo 4); a multiple of 4 for 2×2 packing |
+| `pixelsPerToken` | R | 16 (Krea: VAE 8× × patch 2), 8 (SD-Turbo: VAE 8×); also the multiple width and height must be |
+| `packing` | R | `patch2x2ChannelMajor`: packed channel `c·4 + 2·dy + dx` · `spatial`: unpatched `[1, channels, rows, columns]` (U-Nets) |
+| `layout`, `decoderLayout` | R | descriptive: denoiser `tokens[rows*columns, 64]`, decoder `[rows, columns, 64]`; spatial `nchw[1, 4, rows, columns]` |
+| `noise` | R | `{kind: splitmix64BoxMuller, order, dtype: float32}`: `SeededGaussianNoise`, prefix-stable and bit-identical to 0.0.x's stream. `order` is `packedToken` for packed latents and `nchw` (row-major `[1, C, H, W]`) for spatial ones |
 | `maxImageTokens` | O | the export's bound on `rows · columns` (4096) |
+| `sizes` | O | `[[width, height], …]`: the sizes a fixed-geometry export supports, the first the default (SD-Turbo `[[512, 512]]`). An assertion the driver checks against the graphs' static shapes; a request for another size is refused before anything runs. Absent: any size the grid rules allow |
 
 ### 5.3 `residency` and other field additions
 
@@ -416,9 +427,22 @@ The image-latent contract.
 | top level | `x-status`, `x-license` | draft marker; license files, `modified: true`, revenue cap, adapter permissions |
 | `provenance` | `mergedAdapter` | `{file, sha256, format, merge, multiplier, scale}` for an adapter merged before export (realism) |
 | `provenance.refs` | `diffusersCommit`, `forgeLockSHA256`, `exportReport` | the exporter's environment pins |
-| `license` | `LicenseRef-Krea-2-Community-License-1.0` | an SPDX `LicenseRef`; the bundle ships `LICENSE.pdf`, the text, the use policy and `NOTICE` |
+| `license` | `LicenseRef-Krea-2-Community-License-1.0`, `LicenseRef-Stability-AI-Community-License` | an SPDX `LicenseRef`; the bundle ships the license (Krea: `LICENSE.pdf`, the text, the use policy; SD-Turbo: `LICENSE.md`) and `NOTICE` |
 
-### 5.4 Driver catalog addition (proposed until G3)
+### 5.4 `latent-diffusion@1` (normative since G1)
+
+| driver | graphs | required roles / blocks | optional | bundles |
+|---|---|---|---|---|
+| `latent-diffusion@1` | `textEncoder` (`encode`), `denoiser` (`denoise`), `vaeDecoder` (`decode`), each one stateless function | textEncoder in `tokens` (int, rank 2; its static axis declared in `limits.staticSequence`); out `conditioning`. denoiser in `latents` (rank 4), `timestep` (rank 1), `conditioning` (`from: textEncoder.<conditioning>`); out `epsilon` (rank 4). vaeDecoder in `latents`; out `image` `[3, H, W]` on [-1, 1] (the decoder applies the VAE scaling factor). Blocks `tokenizer` (`renderer: clip-bpe`, a `dir` with `vocab.json` and `merges.txt`), `schedule` (`epsilonEuler`), `latent` (`spatial`); `guidance: none` | `residency` per graph; `latent.sizes` | sd-turbo (Forge export) |
+
+The name is the family, not the checkpoint: any text-conditioned U-Net latent diffusion model with a CLIP tokenizer,
+an epsilon Euler schedule and no classifier-free guidance fits it (SD 2.x-Turbo-like). SDXL's pooled and size
+conditioning, CFG and v-prediction would be additions here, each a new rule the driver refuses until it implements
+it. **Licensing:** SD-Turbo is under the Stability AI Community License: free for research, non-commercial use and
+commercial use under USD 1M annual revenue with registration; distributions ship `LICENSE.md` and the NOTICE line,
+and products display "Powered by Stability AI". The manifest records this in `license` and `x-license`.
+
+### 5.5 Driver catalog addition (proposed until G3)
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
@@ -428,7 +452,7 @@ Roles are bound once per step from host buffers or chained graph outputs (`sourc
 carries stay float32. A future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder
 (refine) are reserved for `krea2@1` and absent from the first export.
 
-### 5.5 `krea2` (proposed until G3)
+### 5.6 `krea2` (proposed until G3)
 
 `krea2` is owned by `krea2@1`.
 

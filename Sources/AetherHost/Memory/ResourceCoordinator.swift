@@ -2,7 +2,7 @@ public import AetherCore
 public import Foundation
 import Synchronization
 
-/// An explicitly shared, fail-fast memory budget (ported from AetherKit 0.0.7). A host creates one and passes it to
+/// An explicitly shared, fail-fast memory budget. A host creates one and passes it to
 /// every pipeline that should share the capacity; there is no process-global default, eviction or scheduling policy.
 ///
 /// Generative pipelines reserve their measured peak (``ResidencyPlan``'s `peakBytes`, from AetherRuntime) before

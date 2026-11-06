@@ -12171,6 +12171,695 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9timestepsSaySfGvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV9timestepsSaySfGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9timestepsSaySfGvp",
+      "moduleName": "AetherRuntime",
+      "name": "timesteps",
+      "printedName": "timesteps",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV9timestepsSaySfGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Float",
+            "printedName": "Swift.Float",
+            "usr": "s:Sf"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Float]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV6sigmasSaySfGvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV6sigmasSaySfGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV6sigmasSaySfGvp",
+      "moduleName": "AetherRuntime",
+      "name": "sigmas",
+      "printedName": "sigmas",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV6sigmasSaySfGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV14initNoiseSigmaSfvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV14initNoiseSigmaSfvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Float",
+        "printedName": "Swift.Float",
+        "usr": "s:Sf"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV14initNoiseSigmaSfvp",
+      "moduleName": "AetherRuntime",
+      "name": "initNoiseSigma",
+      "printedName": "initNoiseSigma",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV14initNoiseSigmaSfvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV5stepsSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV5stepsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV5stepsSivp",
+      "moduleName": "AetherRuntime",
+      "name": "steps",
+      "printedName": "steps",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV5stepsSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "EpsilonEulerSchedule",
+        "printedName": "AetherRuntime.EpsilonEulerSchedule",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Schedule",
+        "printedName": "AetherCore.Manifest.Schedule",
+        "usr": "s:10AetherCore8ManifestV8ScheduleV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV_5stepsAC0A4Core8ManifestV0E0V_SiSgtAE0A5ErrorOYKcfc",
+      "moduleName": "AetherRuntime",
+      "name": "init",
+      "printedName": "init(_:steps:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV_5stepsAC0A4Core8ManifestV0E0V_SiSgtAE0A5ErrorOYKcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "EpsilonEulerSchedule",
+        "printedName": "AetherRuntime.EpsilonEulerSchedule",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Float",
+        "printedName": "Swift.Float",
+        "usr": "s:Sf"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9timesteps6sigmas14initNoiseSigmaACSaySfG_AGSft0A4Core0A5ErrorOYKcfc",
+      "moduleName": "AetherRuntime",
+      "name": "init",
+      "printedName": "init(timesteps:sigmas:initNoiseSigma:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV9timesteps6sigmas14initNoiseSigmaACSaySfG_AGSft0A4Core0A5ErrorOYKcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "UnsafeMutableBufferPointer",
+        "printedName": "Swift.UnsafeMutableBufferPointer<Swift.Float>",
+        "usr": "s:Sr"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV17scaleInitialNoiseyySrySfGF",
+      "moduleName": "AetherRuntime",
+      "name": "scaleInitialNoise",
+      "printedName": "scaleInitialNoise(_:)",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV17scaleInitialNoiseyySrySfGF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "UnsafeBufferPointer",
+        "printedName": "Swift.UnsafeBufferPointer<Swift.Float>",
+        "usr": "s:SR"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "UnsafeMutableBufferPointer",
+        "printedName": "Swift.UnsafeMutableBufferPointer<Swift.Float>",
+        "usr": "s:Sr"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV10modelInput4step7latents4intoySi_SRySfGSrySfGt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "modelInput",
+      "printedName": "modelInput(step:latents:into:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV10modelInput4step7latents4intoySi_SRySfGSrySfGt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "UnsafeMutableBufferPointer",
+        "printedName": "Swift.UnsafeMutableBufferPointer<Swift.Float>",
+        "usr": "s:Sr"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "UnsafeBufferPointer",
+        "printedName": "Swift.UnsafeBufferPointer<Swift.Float>",
+        "usr": "s:SR"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV7advance4step7latents7epsilonySi_SrySfGSRySfGt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "advance",
+      "printedName": "advance(step:latents:epsilon:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV7advance4step7latents7epsilonySi_SrySfGSRySfGt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "paramValueOwnership": "InOut",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV7advance4step7latents7epsilonySi_SaySfGzAHt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "advance",
+      "printedName": "advance(step:latents:epsilon:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV7advance4step7latents7epsilonySi_SaySfGzAHt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV10modelInput4step7latentsSaySfGSi_AGt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "modelInput",
+      "printedName": "modelInput(step:latents:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV10modelInput4step7latentsSaySfGSi_AGt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "EpsilonEulerSchedule",
+        "printedName": "AetherRuntime.EpsilonEulerSchedule",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "EpsilonEulerSchedule",
+        "printedName": "AetherRuntime.EpsilonEulerSchedule",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherRuntime",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherRuntime",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9hashValueSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime20EpsilonEulerScheduleV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV9hashValueSivp",
+      "moduleName": "AetherRuntime",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:13AetherRuntime20EpsilonEulerScheduleV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime20EpsilonEulerScheduleV",
+    "moduleName": "AetherRuntime",
+    "name": "EpsilonEulerSchedule",
+    "printedName": "EpsilonEulerSchedule",
+    "usr": "s:13AetherRuntime20EpsilonEulerScheduleV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Float",
+            "printedName": "Swift.Float",
+            "usr": "s:Sf"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Float]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
         "mangledName": "$s13AetherRuntime17FlowMatchScheduleV6sigmasSaySfGvg",
         "moduleName": "AetherRuntime",
         "name": "Get",

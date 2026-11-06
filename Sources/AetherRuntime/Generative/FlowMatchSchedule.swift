@@ -25,7 +25,9 @@ public struct FlowMatchSchedule: Sendable, Hashable {
         guard (1...schedule.stepLimit).contains(steps) else {
             throw .generation(.invalidParameters("steps must be in 1...\(schedule.stepLimit), not \(steps)"))
         }
-        let shift = schedule.sigmas.shift
+        guard schedule.kind == .flowMatchEuler, let shift = schedule.sigmas?.shift else {
+            throw .manifestMismatch(field: "schedule.kind", expected: "flowMatchEuler", found: schedule.kind.rawValue)
+        }
         let mu: Double?
         switch shift.rule {
         case .exponential:

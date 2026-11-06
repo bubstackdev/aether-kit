@@ -18,10 +18,48 @@ extension Manifest {
 
     /// `schedule` (MANIFEST.md §5.2): the step schedule, the denoiser's timestep input and the host update.
     public struct Schedule: Sendable, Hashable, Codable {
-        /// `flowMatchEuler` (Krea, FLUX.2). Other solvers (SD-Turbo's `epsilonEuler`, H3's) are added with their
-        /// drivers; until then a manifest naming one is rejected.
+        /// The solver. Others (H3's) are added with their drivers; until then a manifest naming one is rejected.
         public enum Kind: String, Sendable, Hashable, Codable {
+            /// Flow matching with a velocity-predicting denoiser and computed sigmas (Krea, FLUX.2).
             case flowMatchEuler
+            /// Diffusers' `EulerDiscreteScheduler` with an epsilon-predicting denoiser, its sigmas and timesteps given
+            /// as `tables` captured from the pinned scheduler (SD-Turbo). The runtime never derives them.
+            case epsilonEuler
+        }
+
+        /// One step count's schedule (`epsilonEuler`): what Diffusers' scheduler produces for it, verbatim.
+        public struct Table: Sendable, Hashable, Codable {
+            /// The denoiser's timestep input for each step, decreasing.
+            public var timesteps: [Float]
+            /// `timesteps.count + 1` values, decreasing, ending in 0.
+            public var sigmas: [Float]
+            /// The scale of the initial noise (`init_noise_sigma`).
+            public var initNoiseSigma: Float
+
+            public init(timesteps: [Float], sigmas: [Float], initNoiseSigma: Float) {
+                self.timesteps = timesteps
+                self.sigmas = sigmas
+                self.initNoiseSigma = initNoiseSigma
+            }
+
+            /// Checks the table for `steps` steps. Errors are `manifestInvalid` naming `prefix`'s fields.
+            public func validate(at prefix: String, steps: Int) throws(AetherError) {
+                try require(steps >= 1, "\(prefix).timesteps", "must hold at least one step")
+                try require(timesteps.count == steps, "\(prefix).timesteps", "must hold \(steps) values")
+                try require(sigmas.count == steps + 1, "\(prefix).sigmas", "must hold \(steps + 1) values")
+                try require(timesteps.allSatisfy { $0.isFinite && $0 >= 0 } && zip(timesteps, timesteps.dropFirst()).allSatisfy { $0 > $1 },
+                            "\(prefix).timesteps", "must be finite, non-negative and decreasing")
+                try require(sigmas.last == 0 && sigmas.allSatisfy { $0.isFinite && $0 >= 0 }
+                                && zip(sigmas, sigmas.dropFirst()).allSatisfy { $0 > $1 },
+                            "\(prefix).sigmas", "must be finite, decreasing and end in 0")
+                try require(initNoiseSigma.isFinite && initNoiseSigma > 0, "\(prefix).initNoiseSigma", "must be finite and > 0")
+            }
+        }
+
+        /// What the denoiser receives as its latent input.
+        public enum ModelInput: String, Sendable, Hashable, Codable {
+            /// `x / sqrt(σ[i]² + 1)` in Float (Diffusers' Euler `scale_model_input`).
+            case scaled = "x / sqrt(sigma[i]^2 + 1)"
         }
 
         /// The base sigma grid. The only one so far: numpy's `linspace(1, 1/steps, steps)`, computed in Double and
@@ -34,12 +72,17 @@ extension Manifest {
         public enum Timestep: String, Sendable, Hashable, Codable {
             /// `Float(σ · trainTimesteps) / trainTimesteps`, in Float (Krea, FLUX.2).
             case sigmaRoundTrip = "sigma * trainTimesteps / trainTimesteps"
+            /// The step's entry of the step count's table (`epsilonEuler`).
+            case table = "tables[steps].timesteps[i]"
         }
 
         /// The host update after each denoiser call.
         public enum Update: String, Sendable, Hashable, Codable {
             /// `x + (σ[i+1] − σ[i]) · v` in Float, the product rounded before the add (no fused multiply-add).
             case eulerVelocity = "x + (sigma[i+1] - sigma[i]) * velocity"
+            /// Diffusers' Euler epsilon step (gamma 0), in Float in its order: the predicted original
+            /// `x − σ[i]·ε`, the derivative `(x − original) / σ[i]`, then `x + derivative · (σ[i+1] − σ[i])`.
+            case eulerEpsilon = "x + (x - (x - sigma[i] * epsilon)) / sigma[i] * (sigma[i+1] - sigma[i])"
         }
 
         /// The flux pipelines' empirical μ rule (MANIFEST.md §5.2 `shift.rule: empirical`): linear in the step count
@@ -149,22 +192,38 @@ extension Manifest {
         /// The largest step count a request may ask for. Absent: `steps`.
         public var maxSteps: Int?
         public var trainTimesteps: Int
-        public var sigmas: Sigmas
+        /// The computed sigma grid (`flowMatchEuler` only).
+        public var sigmas: Sigmas?
+        /// Step count (as a string) → its schedule (`epsilonEuler` only): exactly the counts `1...stepLimit`.
+        public var tables: [String: Table]?
+        /// The denoiser's latent input (`epsilonEuler`: `scaled`); absent, the latents as they are.
+        public var modelInput: ModelInput?
         public var timestep: Timestep
         public var update: Update
         public var guidance: Guidance
 
         public init(kind: Kind = .flowMatchEuler, steps: Int, maxSteps: Int? = nil, trainTimesteps: Int = 1000,
-                    sigmas: Sigmas, timestep: Timestep = .sigmaRoundTrip, update: Update = .eulerVelocity,
+                    sigmas: Sigmas? = nil, tables: [String: Table]? = nil, modelInput: ModelInput? = nil,
+                    timestep: Timestep = .sigmaRoundTrip, update: Update = .eulerVelocity,
                     guidance: Guidance = Guidance(kind: .none)) {
             self.kind = kind
             self.steps = steps
             self.maxSteps = maxSteps
             self.trainTimesteps = trainTimesteps
             self.sigmas = sigmas
+            self.tables = tables
+            self.modelInput = modelInput
             self.timestep = timestep
             self.update = update
             self.guidance = guidance
+        }
+
+        /// `epsilonEuler`: the table for `steps` steps (request errors are `generation(.invalidParameters)`).
+        public func table(steps: Int) throws(AetherError) -> Table {
+            guard (1...stepLimit).contains(steps), let table = tables?[String(steps)] else {
+                throw .generation(.invalidParameters("steps must be in 1...\(stepLimit), not \(steps)"))
+            }
+            return table
         }
 
         /// The step-count bound requests are checked against.
@@ -174,8 +233,31 @@ extension Manifest {
             try require(steps >= 1, "schedule.steps", "must be >= 1")
             if let maxSteps { try require(maxSteps >= steps, "schedule.maxSteps", "must be >= steps") }
             try require(trainTimesteps >= 1, "schedule.trainTimesteps", "must be >= 1")
-            try require(sigmas.terminal == 0, "schedule.sigmas.terminal", "only 0 is defined")
-            try sigmas.shift.validate(at: "schedule.sigmas.shift")
+            switch kind {
+            case .flowMatchEuler:
+                guard let sigmas else {
+                    throw .manifestInvalid(field: "schedule.sigmas", reason: "flowMatchEuler requires its sigma rule")
+                }
+                try require(tables == nil, "schedule.tables", "only for epsilonEuler")
+                try require(modelInput == nil, "schedule.modelInput", "flowMatchEuler feeds the latents as they are")
+                try require(timestep == .sigmaRoundTrip, "schedule.timestep", "flowMatchEuler uses '\(Timestep.sigmaRoundTrip.rawValue)'")
+                try require(update == .eulerVelocity, "schedule.update", "flowMatchEuler uses '\(Update.eulerVelocity.rawValue)'")
+                try require(sigmas.terminal == 0, "schedule.sigmas.terminal", "only 0 is defined")
+                try sigmas.shift.validate(at: "schedule.sigmas.shift")
+            case .epsilonEuler:
+                guard let tables else {
+                    throw .manifestInvalid(field: "schedule.tables", reason: "epsilonEuler requires the scheduler's tables")
+                }
+                try require(sigmas == nil, "schedule.sigmas", "only for flowMatchEuler")
+                try require(modelInput == .scaled, "schedule.modelInput", "epsilonEuler uses '\(ModelInput.scaled.rawValue)'")
+                try require(timestep == .table, "schedule.timestep", "epsilonEuler uses '\(Timestep.table.rawValue)'")
+                try require(update == .eulerEpsilon, "schedule.update", "epsilonEuler uses '\(Update.eulerEpsilon.rawValue)'")
+                try require(Set(tables.keys) == Set((1...stepLimit).map(String.init)), "schedule.tables",
+                            "must hold exactly the step counts 1...\(stepLimit)")
+                for steps in 1...stepLimit {
+                    try tables[String(steps)]!.validate(at: "schedule.tables.\(steps)", steps: steps)
+                }
+            }
             switch guidance.kind {
             case .none:
                 try require(guidance.scale == nil, "schedule.guidance.scale", "guidance none takes no scale")
@@ -191,6 +273,8 @@ extension Manifest {
         public enum Packing: String, Sendable, Hashable, Codable {
             /// 2×2 patches, channel-major: packed channel `c·4 + 2·dy + dx`.
             case patch2x2ChannelMajor
+            /// Unpatched spatial latents, `[1, channels, rows, columns]` (U-Net models; SD-Turbo).
+            case spatial
         }
 
         /// `{kind: splitmix64BoxMuller, order: packedToken, dtype: float32}`: the seeded stream, read in the order the
@@ -203,6 +287,8 @@ extension Manifest {
             public enum Order: String, Sendable, Hashable, Codable {
                 /// Value `i` is element `i` of the packed `[tokens, channels]` latents.
                 case packedToken
+                /// Value `i` is element `i` of the `[1, channels, rows, columns]` latents, row-major.
+                case nchw
             }
 
             public var kind: Kind
@@ -227,9 +313,12 @@ extension Manifest {
         public var noise: Noise
         /// The largest `rows · columns` the export supports.
         public var maxImageTokens: Int?
+        /// The `[width, height]` pairs a fixed-geometry export supports, the first the default; absent, any size the
+        /// grid rules allow. An assertion the driver checks against its graphs' static shapes.
+        public var sizes: [[Int]]?
 
         public init(channels: Int, pixelsPerToken: Int, packing: Packing = .patch2x2ChannelMajor, layout: String,
-                    decoderLayout: String, noise: Noise = Noise(), maxImageTokens: Int? = nil) {
+                    decoderLayout: String, noise: Noise = Noise(), maxImageTokens: Int? = nil, sizes: [[Int]]? = nil) {
             self.channels = channels
             self.pixelsPerToken = pixelsPerToken
             self.packing = packing
@@ -237,6 +326,7 @@ extension Manifest {
             self.decoderLayout = decoderLayout
             self.noise = noise
             self.maxImageTokens = maxImageTokens
+            self.sizes = sizes
         }
 
         func validate() throws(AetherError) {
@@ -251,12 +341,36 @@ extension Manifest {
             try require(!layout.isEmpty, "latent.layout", "must not be empty")
             try require(!decoderLayout.isEmpty, "latent.decoderLayout", "must not be empty")
             try require(noise.dtype == .float32, "latent.noise.dtype", "the seeded stream is float32")
+            try require(noise.order == (packing == .spatial ? .nchw : .packedToken), "latent.noise.order",
+                        packing == .spatial ? "spatial latents read the stream in nchw order" : "packed latents read the stream in packedToken order")
             if let maxImageTokens { try require(maxImageTokens >= 1, "latent.maxImageTokens", "must be >= 1") }
+            if let sizes {
+                try require(!sizes.isEmpty, "latent.sizes", "must list at least one size")
+                for (i, size) in sizes.enumerated() {
+                    guard size.count == 2, case let (width, height) = (size[0], size[1]) else {
+                        throw .manifestInvalid(field: "latent.sizes.\(i)", reason: "must be [width, height]")
+                    }
+                    do { _ = try tokenGrid(width: width, height: height, checkingSizes: false) } catch {
+                        throw .manifestInvalid(field: "latent.sizes.\(i)", reason: "\(width)x\(height) is not a valid size: \(error)")
+                    }
+                }
+            }
         }
 
         /// The token grid for an image of `width` × `height` pixels: each side a positive multiple of
         /// `pixelsPerToken`, and at most `maxImageTokens` tokens. Errors name the request, not the manifest.
         public func tokenGrid(width: Int, height: Int) throws(AetherError) -> (rows: Int, columns: Int) {
+            try tokenGrid(width: width, height: height, checkingSizes: true)
+        }
+
+        /// The default `[width, height]`: the first of `sizes`, nil when the export lists none.
+        public var defaultSize: (width: Int, height: Int)? { sizes?.first.map { ($0[0], $0[1]) } }
+
+        func tokenGrid(width: Int, height: Int, checkingSizes: Bool) throws(AetherError) -> (rows: Int, columns: Int) {
+            if checkingSizes, let sizes, !sizes.contains([width, height]) {
+                throw .generation(.invalidParameters(
+                    "this export supports only \(sizes.map { "\($0[0])x\($0[1])" }.joined(separator: ", ")), not \(width)x\(height)"))
+            }
             guard width > 0, height > 0, width % pixelsPerToken == 0, height % pixelsPerToken == 0 else {
                 throw .generation(.invalidParameters(
                     "width and height must be positive multiples of \(pixelsPerToken), not \(width)x\(height)"))

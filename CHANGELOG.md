@@ -44,10 +44,21 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   - `ResourceCoordinator` reservations;
   - new on top: typed `schedule`, `latent` and `residency` manifest blocks (MANIFEST.md §5), and `GraphResidency`
     with Metal-measured phase footprints.
+- **SD-Turbo (G1),** the first generative port, in the new **`AetherImage`** product:
+  - the `latent-diffusion@1` driver (`LatentDiffusionPipeline`): CLIP text encoder → U-Net steps on the host Euler
+    epsilon update → VAE decoder, with measured residency planning, an optional shared `ResourceCoordinator` and GPU
+    admission, cancellation between graph calls, and its own CLIP BPE tokenizer;
+  - `epsilonEuler` schedules (`EpsilonEulerSchedule`, tables captured from the pinned Diffusers scheduler) and
+    spatial latents in the manifest;
+  - a reproducible Forge exporter (`Forge/sdturbo/`, float32), a CPU Diffusers reference and a GPU graph check. The
+    gate runs the driver from the seed alone: RMSE 1.0e-5 (1 step) and 3.3e-5 (4 steps) against Diffusers.
+  - SD-Turbo is under the Stability AI Community License (commercial use only under USD 1M revenue, with
+    registration; "Powered by Stability AI" attribution). The exported bundle carries the license and NOTICE line.
 - **Public-API freeze check** (`scripts/check-api.sh`, run by `scripts/ci.sh`): `swift-api-digester` dumps of
   AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
   the 0.1.0 freeze sets `"enforce": true`.
 
 ### In progress before 0.1.0 is tagged
 
-Krea 2 Turbo (vanilla and realism), MiniMax H3, FLUX.2 [klein], SD-Turbo and Kokoro-82M on the new runtime.
+Krea 2 Turbo (vanilla and realism), MiniMax H3, FLUX.2 [klein] and Kokoro-82M on the new runtime; SD-Turbo's
+hosted bundle and catalog entry, and its iPhone validation.
