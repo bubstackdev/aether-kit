@@ -22,27 +22,102 @@ private func eventually(_ condition: () -> Bool) async throws {
 
 private func isBusy(_ error: any Error) -> Bool { admissionFailure(error) == .busy }
 
-@Test func queuedGrantsAreFairAndSerialized() async throws {
-    let admission = try GPUAdmission()
-    let first = try await admission.admit(owner: "a")
-    let order = Order()
+/// Queues `requests` (label, job) one at a time behind `admission`'s running grant, each recording its label when
+/// granted and releasing after a moment.
+private func queue(
+    _ requests: [(String, GPUJob?)], on admission: GPUAdmission, order: Order
+) async throws -> [Task<Void, any Error>] {
     var waiters: [Task<Void, any Error>] = []
-    for (owner, label) in [("a", "a1"), ("a", "a2"), ("b", "b1")] {
+    for (label, job) in requests {
         let queued = admission.snapshot.queued
         waiters.append(Task {
-            let grant = try await admission.admit(owner: owner)
+            let grant = try await admission.admit(owner: label, job: job)
             order.append(label)
             try await Task.sleep(for: .milliseconds(10))
             grant.release()
         })
         try await eventually { admission.snapshot.queued == queued + 1 }
     }
-    #expect(admission.snapshot == .init(running: 1, queued: 3, holdsCrossProcessLease: false))
+    return waiters
+}
+
+@Test func queuedGrantsAreSerializedInPriorityOrder() async throws {
+    let admission = try GPUAdmission()
+    let first = try await admission.admit(owner: "running", job: GPUJob(priority: .low))
+    let order = Order()
+    let waiters = try await queue([
+        ("low1", GPUJob(priority: .low)), ("medium1", nil), ("high1", GPUJob(priority: .high)),
+        ("medium2", GPUJob(priority: .medium)), ("low2", GPUJob(priority: .low)), ("high2", GPUJob(priority: .high)),
+    ], on: admission, order: order)
+    // A queued high request never preempts the running one.
+    #expect(admission.snapshot == .init(running: 1, queued: 6, holdsCrossProcessLease: false))
     first.release()
     for waiter in waiters { try await waiter.value }
-    // "a" just ran, so the new owner "b" goes before a's queued burst.
-    #expect(order.values == ["b1", "a1", "a2"])
+    // Highs first, lows only once nothing else waits; arrival order within a level, whatever the owner.
+    #expect(order.values == ["high1", "high2", "medium1", "medium2", "low1", "low2"])
     #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+}
+
+@Test func aWaitingJobCanBeReprioritizedUntilItIsGranted() async throws {
+    let admission = try GPUAdmission()
+    let held = try await admission.admit(owner: "a")
+    let order = Order()
+    let late = GPUJob(priority: .low), bulk = GPUJob(priority: .medium)
+    let waiters = try await queue([("medium", nil), ("late", late), ("high", GPUJob(priority: .high))], on: admission, order: order)
+    // Low to high while waiting: it moves ahead of the queued medium, and keeps its arrival order among the highs.
+    late.priority = .high
+    // A shared job lowered to low: its request now waits for everything else.
+    let lowered = Task {
+        let grant = try await admission.admit(owner: "bulk", job: bulk)
+        order.append("bulk")
+        grant.release()
+    }
+    try await eventually { admission.snapshot.queued == 4 }
+    bulk.priority = .low
+    held.release()
+    for waiter in waiters { try await waiter.value }
+    try await lowered.value
+    #expect(order.values == ["late", "high", "medium", "bulk"])
+    // Changing the priority of a granted request does nothing: it keeps running, and the line is unchanged.
+    let job = GPUJob(priority: .low)
+    let running = try await admission.admit(owner: "a", job: job)
+    let next = Task { try await admission.admit(owner: "b", job: GPUJob(priority: .medium)) }
+    try await eventually { admission.snapshot.queued == 1 }
+    job.priority = .high
+    #expect(admission.snapshot == .init(running: 1, queued: 1, holdsCrossProcessLease: false))
+    running.release()
+    try await next.value.release()
+    #expect(admission.snapshot == .init(running: 0, queued: 0, holdsCrossProcessLease: false))
+}
+
+@Test func cancellingAWaitingJobLeavesTheLineToTheOthers() async throws {
+    let admission = try GPUAdmission()
+    let held = try await admission.admit(owner: "a")
+    let order = Order()
+    let urgent = Task { try await admission.admit(owner: "urgent", job: GPUJob(priority: .high)) }
+    try await eventually { admission.snapshot.queued == 1 }
+    let waiters = try await queue([("low", GPUJob(priority: .low))], on: admission, order: order)
+    urgent.cancel()
+    await #expect(throws: CancellationError.self) { try await urgent.value }
+    #expect(admission.snapshot == .init(running: 1, queued: 1, holdsCrossProcessLease: false))
+    held.release()
+    for waiter in waiters { try await waiter.value }
+    #expect(order.values == ["low"])
+}
+
+@Test func theSharedAdmissionHoldsTheMachineLeaseOnlyOutsideTheSandbox() throws {
+    let shared = GPUAdmission.shared
+    #expect(shared === GPUAdmission.shared && shared.maximumConcurrent == 1 && shared.waiting == .queue())
+    #if os(macOS)
+    #expect(GPUAdmission.defaultCrossProcessLease([:]) == SharedGPULease.Configuration())
+    #expect(GPUAdmission.defaultCrossProcessLease([SharedGPULease.holderEnvironmentKey: "42"])
+        == SharedGPULease.Configuration(handedOffBy: 42))
+    #expect(GPUAdmission.defaultCrossProcessLease(["APP_SANDBOX_CONTAINER_ID": "com.example.app"]) == nil)
+    #else
+    #expect(GPUAdmission.defaultCrossProcessLease([:]) == nil)
+    #endif
+    // Pipelines default to it.
+    #expect(PipelineOptions().gpu.admission === shared)
 }
 
 @Test func failFastRefusesWhileBusyOrWhenWorkIsQueuedAhead() async throws {

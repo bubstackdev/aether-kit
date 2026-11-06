@@ -6,918 +6,6 @@
      {
       "children": [
        {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "UUID",
-            "printedName": "Foundation.UUID",
-            "usr": "s:10Foundation4UUIDV"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV2id10Foundation4UUIDVvg",
-          "moduleName": "AetherHost",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:10AetherHost18FairInferenceQueueV6TicketV2id10Foundation4UUIDVvg"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "UUID",
-          "printedName": "Foundation.UUID",
-          "usr": "s:10Foundation4UUIDV"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "isLet": true,
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV2id10Foundation4UUIDVvp",
-        "moduleName": "AetherHost",
-        "name": "id",
-        "printedName": "id",
-        "usr": "s:10AetherHost18FairInferenceQueueV6TicketV2id10Foundation4UUIDVvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GenericTypeParam",
-            "printedName": "Owner"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV5ownerxvg",
-          "moduleName": "AetherHost",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:10AetherHost18FairInferenceQueueV6TicketV5ownerxvg"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GenericTypeParam",
-          "printedName": "Owner"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "isLet": true,
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV5ownerxvp",
-        "moduleName": "AetherHost",
-        "name": "owner",
-        "printedName": "owner",
-        "usr": "s:10AetherHost18FairInferenceQueueV6TicketV5ownerxvp"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GenericTypeParam",
-            "printedName": "Work"
-           }
-          ],
-          "declAttributes": [
-           "Transparent"
-          ],
-          "declKind": "Accessor",
-          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV4workq_vg",
-          "moduleName": "AetherHost",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:10AetherHost18FairInferenceQueueV6TicketV4workq_vg"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GenericTypeParam",
-          "printedName": "Work"
-         }
-        ],
-        "declAttributes": [
-         "HasStorage"
-        ],
-        "declKind": "Var",
-        "hasStorage": true,
-        "isLet": true,
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV4workq_vp",
-        "moduleName": "AetherHost",
-        "name": "work",
-        "printedName": "work",
-        "usr": "s:10AetherHost18FairInferenceQueueV6TicketV4workq_vp"
-       }
-      ],
-      "conformances": [
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8CopyableP",
-        "name": "Copyable",
-        "printedName": "Copyable",
-        "usr": "s:s8CopyableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss9EscapableP",
-        "name": "Escapable",
-        "printedName": "Escapable",
-        "usr": "s:s9EscapableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8SendableP",
-        "name": "Sendable",
-        "printedName": "Sendable",
-        "usr": "s:s8SendableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss16SendableMetatypeP",
-        "name": "SendableMetatype",
-        "printedName": "SendableMetatype",
-        "usr": "s:s16SendableMetatypeP"
-       }
-      ],
-      "declKind": "Struct",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "kind": "TypeDecl",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV6TicketV",
-      "moduleName": "AetherHost",
-      "name": "Ticket",
-      "printedName": "Ticket",
-      "usr": "s:10AetherHost18FairInferenceQueueV6TicketV"
-     },
-     {
-      "children": [
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Cancellation",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-            "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Cancellation",
-              "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-              "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "GenericFunction",
-          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.FairInferenceQueue<Owner, Work>.Cancellation"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO8notFoundyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
-        "moduleName": "AetherHost",
-        "name": "notFound",
-        "printedName": "notFound",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO8notFoundyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Cancellation",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-            "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Cancellation",
-              "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-              "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "GenericFunction",
-          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.FairInferenceQueue<Owner, Work>.Cancellation"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO13removedQueuedyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
-        "moduleName": "AetherHost",
-        "name": "removedQueued",
-        "printedName": "removedQueued",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO13removedQueuedyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
-       },
-       {
-        "children": [
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Cancellation",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-            "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-           },
-           {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Cancellation",
-              "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-              "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-             }
-            ],
-            "kind": "TypeNominal",
-            "name": "Metatype",
-            "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type"
-           }
-          ],
-          "kind": "TypeFunc",
-          "name": "GenericFunction",
-          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.FairInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.FairInferenceQueue<Owner, Work>.Cancellation"
-         }
-        ],
-        "declKind": "EnumElement",
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO12drainRunningyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
-        "moduleName": "AetherHost",
-        "name": "drainRunning",
-        "printedName": "drainRunning",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO12drainRunningyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
-       },
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Bool",
-          "printedName": "Swift.Bool",
-          "usr": "s:Sb"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "Cancellation",
-          "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-          "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "Cancellation",
-          "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-          "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-         }
-        ],
-        "declAttributes": [
-         "Implements",
-         "Semantics"
-        ],
-        "declKind": "Func",
-        "funcSelfKind": "NonMutating",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "implicit": true,
-        "kind": "Function",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO21__derived_enum_equalsySbAEyxq__G_AGtFZ",
-        "moduleName": "AetherHost",
-        "name": "__derived_enum_equals",
-        "printedName": "__derived_enum_equals(_:_:)",
-        "static": true,
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO21__derived_enum_equalsySbAEyxq__G_AGtFZ"
-       },
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Void",
-          "printedName": "()"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "Hasher",
-          "paramValueOwnership": "InOut",
-          "printedName": "Swift.Hasher",
-          "usr": "s:s6HasherV"
-         }
-        ],
-        "declKind": "Func",
-        "funcSelfKind": "NonMutating",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "implicit": true,
-        "kind": "Function",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO4hash4intoys6HasherVz_tF",
-        "moduleName": "AetherHost",
-        "name": "hash",
-        "printedName": "hash(into:)",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO4hash4intoys6HasherVz_tF"
-       },
-       {
-        "accessors": [
-         {
-          "accessorKind": "get",
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Int",
-            "printedName": "Swift.Int",
-            "usr": "s:Si"
-           }
-          ],
-          "declKind": "Accessor",
-          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-          "implicit": true,
-          "kind": "Accessor",
-          "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO9hashValueSivg",
-          "moduleName": "AetherHost",
-          "name": "Get",
-          "printedName": "Get()",
-          "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO9hashValueSivg"
-         }
-        ],
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declKind": "Var",
-        "implicit": true,
-        "kind": "Var",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO9hashValueSivp",
-        "moduleName": "AetherHost",
-        "name": "hashValue",
-        "printedName": "hashValue",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO9hashValueSivp"
-       }
-      ],
-      "conformances": [
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8CopyableP",
-        "name": "Copyable",
-        "printedName": "Copyable",
-        "usr": "s:s8CopyableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$sSQ",
-        "name": "Equatable",
-        "printedName": "Equatable",
-        "usr": "s:SQ"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss9EscapableP",
-        "name": "Escapable",
-        "printedName": "Escapable",
-        "usr": "s:s9EscapableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$sSH",
-        "name": "Hashable",
-        "printedName": "Hashable",
-        "usr": "s:SH"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss8SendableP",
-        "name": "Sendable",
-        "printedName": "Sendable",
-        "usr": "s:s8SendableP"
-       },
-       {
-        "kind": "Conformance",
-        "mangledName": "$ss16SendableMetatypeP",
-        "name": "SendableMetatype",
-        "printedName": "SendableMetatype",
-        "usr": "s:s16SendableMetatypeP"
-       }
-      ],
-      "declKind": "Enum",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "isEnumExhaustive": true,
-      "kind": "TypeDecl",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV12CancellationO",
-      "moduleName": "AetherHost",
-      "name": "Cancellation",
-      "printedName": "Cancellation",
-      "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV18maximumOutstandingSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV18maximumOutstandingSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declAttributes": [
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "isLet": true,
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV18maximumOutstandingSivp",
-      "moduleName": "AetherHost",
-      "name": "maximumOutstanding",
-      "printedName": "maximumOutstanding",
-      "usr": "s:10AetherHost18FairInferenceQueueV18maximumOutstandingSivp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV26maximumOutstandingPerOwnerSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV26maximumOutstandingPerOwnerSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declAttributes": [
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "isLet": true,
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV26maximumOutstandingPerOwnerSivp",
-      "moduleName": "AetherHost",
-      "name": "maximumOutstandingPerOwner",
-      "printedName": "maximumOutstandingPerOwner",
-      "usr": "s:10AetherHost18FairInferenceQueueV26maximumOutstandingPerOwnerSivp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declAttributes": [
-         "Transparent"
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "implicit": true,
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV14maximumRunningSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV14maximumRunningSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declAttributes": [
-       "HasStorage"
-      ],
-      "declKind": "Var",
-      "hasStorage": true,
-      "isLet": true,
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV14maximumRunningSivp",
-      "moduleName": "AetherHost",
-      "name": "maximumRunning",
-      "printedName": "maximumRunning",
-      "usr": "s:10AetherHost18FairInferenceQueueV14maximumRunningSivp"
-     },
-     {
-      "children": [
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GenericTypeParam",
-          "printedName": "Owner"
-         },
-         {
-          "kind": "TypeNominal",
-          "name": "GenericTypeParam",
-          "printedName": "Work"
-         }
-        ],
-        "kind": "TypeNominal",
-        "name": "FairInferenceQueue",
-        "printedName": "AetherHost.FairInferenceQueue<Owner, Work>",
-        "usr": "s:10AetherHost18FairInferenceQueueV"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       },
-       {
-        "hasDefaultArg": true,
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declKind": "Constructor",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "init_kind": "Designated",
-      "kind": "Constructor",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV18maximumOutstanding0fG8PerOwner0F7RunningACyxq_GSi_S2it0A4Core0A5ErrorOYKcfc",
-      "moduleName": "AetherHost",
-      "name": "init",
-      "printedName": "init(maximumOutstanding:maximumOutstandingPerOwner:maximumRunning:)",
-      "throwing": true,
-      "usr": "s:10AetherHost18FairInferenceQueueV18maximumOutstanding0fG8PerOwner0F7RunningACyxq_GSi_S2it0A4Core0A5ErrorOYKcfc"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV16outstandingCountSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV16outstandingCountSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declKind": "Var",
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV16outstandingCountSivp",
-      "moduleName": "AetherHost",
-      "name": "outstandingCount",
-      "printedName": "outstandingCount",
-      "usr": "s:10AetherHost18FairInferenceQueueV16outstandingCountSivp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV12runningCountSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV12runningCountSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declKind": "Var",
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV12runningCountSivp",
-      "moduleName": "AetherHost",
-      "name": "runningCount",
-      "printedName": "runningCount",
-      "usr": "s:10AetherHost18FairInferenceQueueV12runningCountSivp"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Int",
-          "printedName": "Swift.Int",
-          "usr": "s:Si"
-         }
-        ],
-        "declKind": "Accessor",
-        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-        "kind": "Accessor",
-        "mangledName": "$s10AetherHost18FairInferenceQueueV11queuedCountSivg",
-        "moduleName": "AetherHost",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherHost18FairInferenceQueueV11queuedCountSivg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Int",
-        "printedName": "Swift.Int",
-        "usr": "s:Si"
-       }
-      ],
-      "declKind": "Var",
-      "kind": "Var",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV11queuedCountSivp",
-      "moduleName": "AetherHost",
-      "name": "queuedCount",
-      "printedName": "queuedCount",
-      "usr": "s:10AetherHost18FairInferenceQueueV11queuedCountSivp"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Void",
-        "printedName": "()"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "UUID",
-        "printedName": "Foundation.UUID",
-        "usr": "s:10Foundation4UUIDV"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "GenericTypeParam",
-        "printedName": "Owner"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "GenericTypeParam",
-        "printedName": "Work"
-       }
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "Mutating",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "kind": "Function",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV7enqueue2id5owner4worky10Foundation4UUIDV_xq_t0A4Core0A5ErrorOYKF",
-      "moduleName": "AetherHost",
-      "name": "enqueue",
-      "printedName": "enqueue(id:owner:work:)",
-      "throwing": true,
-      "usr": "s:10AetherHost18FairInferenceQueueV7enqueue2id5owner4worky10Foundation4UUIDV_xq_t0A4Core0A5ErrorOYKF"
-     },
-     {
-      "children": [
-       {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "Ticket",
-          "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Ticket",
-          "usr": "s:10AetherHost18FairInferenceQueueV6TicketV"
-         }
-        ],
-        "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Ticket?",
-        "usr": "s:Sq"
-       }
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "Mutating",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "kind": "Function",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV4nextAC6TicketVyxq__GSgyF",
-      "moduleName": "AetherHost",
-      "name": "next",
-      "printedName": "next()",
-      "usr": "s:10AetherHost18FairInferenceQueueV4nextAC6TicketVyxq__GSgyF"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Cancellation",
-        "printedName": "AetherHost.FairInferenceQueue<Owner, Work>.Cancellation",
-        "usr": "s:10AetherHost18FairInferenceQueueV12CancellationO"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "UUID",
-        "printedName": "Foundation.UUID",
-        "usr": "s:10Foundation4UUIDV"
-       }
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "Mutating",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "kind": "Function",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV6cancel2idAC12CancellationOyxq__G10Foundation4UUIDV_tF",
-      "moduleName": "AetherHost",
-      "name": "cancel",
-      "printedName": "cancel(id:)",
-      "usr": "s:10AetherHost18FairInferenceQueueV6cancel2idAC12CancellationOyxq__G10Foundation4UUIDV_tF"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Void",
-        "printedName": "()"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "UUID",
-        "printedName": "Foundation.UUID",
-        "usr": "s:10Foundation4UUIDV"
-       }
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "Mutating",
-      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-      "kind": "Function",
-      "mangledName": "$s10AetherHost18FairInferenceQueueV7release2idy10Foundation4UUIDV_t0A4Core0A5ErrorOYKF",
-      "moduleName": "AetherHost",
-      "name": "release",
-      "printedName": "release(id:)",
-      "throwing": true,
-      "usr": "s:10AetherHost18FairInferenceQueueV7release2idy10Foundation4UUIDV_t0A4Core0A5ErrorOYKF"
-     }
-    ],
-    "conformances": [
-     {
-      "kind": "Conformance",
-      "mangledName": "$ss8CopyableP",
-      "name": "Copyable",
-      "printedName": "Copyable",
-      "usr": "s:s8CopyableP"
-     },
-     {
-      "kind": "Conformance",
-      "mangledName": "$ss9EscapableP",
-      "name": "Escapable",
-      "printedName": "Escapable",
-      "usr": "s:s9EscapableP"
-     },
-     {
-      "kind": "Conformance",
-      "mangledName": "$ss8SendableP",
-      "name": "Sendable",
-      "printedName": "Sendable",
-      "usr": "s:s8SendableP"
-     },
-     {
-      "kind": "Conformance",
-      "mangledName": "$ss16SendableMetatypeP",
-      "name": "SendableMetatype",
-      "printedName": "SendableMetatype",
-      "usr": "s:s16SendableMetatypeP"
-     }
-    ],
-    "declKind": "Struct",
-    "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
-    "kind": "TypeDecl",
-    "mangledName": "$s10AetherHost18FairInferenceQueueV",
-    "moduleName": "AetherHost",
-    "name": "FairInferenceQueue",
-    "printedName": "FairInferenceQueue",
-    "usr": "s:10AetherHost18FairInferenceQueueV"
-   },
-   {
-    "children": [
-     {
-      "children": [
-       {
         "children": [
          {
           "children": [
@@ -1435,6 +523,57 @@
       "usr": "s:10AetherHost12GPUAdmissionC17maximumConcurrent7waiting0D11Outstanding0dG8PerOwner17crossProcessLease0jK4Turn0jK10HandOffGapACSi_AC7WaitingOS2iAA14SharedGPULeaseC13ConfigurationVSgs8DurationVASt0A4Core0A5ErrorOYKcfc"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUAdmission",
+          "printedName": "AetherHost.GPUAdmission",
+          "usr": "s:10AetherHost12GPUAdmissionC"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost12GPUAdmissionC6sharedACvgZ",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherHost12GPUAdmissionC6sharedACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUAdmission",
+        "printedName": "AetherHost.GPUAdmission",
+        "usr": "s:10AetherHost12GPUAdmissionC"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost12GPUAdmissionC6sharedACvpZ",
+      "moduleName": "AetherHost",
+      "name": "shared",
+      "printedName": "shared",
+      "static": true,
+      "usr": "s:10AetherHost12GPUAdmissionC6sharedACvpZ"
+     },
+     {
       "children": [
        {
         "accessors": [
@@ -1789,6 +928,21 @@
         "name": "Optional",
         "printedName": "AetherHost.GPUAdmission.Waiting?",
         "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
        }
       ],
       "declAttributes": [
@@ -1798,12 +952,12 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherHost12GPUAdmissionC5admit5owner7waitingAA0C5GrantCSS_AC7WaitingOSgtYaKF",
+      "mangledName": "$s10AetherHost12GPUAdmissionC5admit5owner7waiting3jobAA0C5GrantCSS_AC7WaitingOSgAA6GPUJobCSgtYaKF",
       "moduleName": "AetherHost",
       "name": "admit",
-      "printedName": "admit(owner:waiting:)",
+      "printedName": "admit(owner:waiting:job:)",
       "throwing": true,
-      "usr": "s:10AetherHost12GPUAdmissionC5admit5owner7waitingAA0C5GrantCSS_AC7WaitingOSgtYaKF"
+      "usr": "s:10AetherHost12GPUAdmissionC5admit5owner7waiting3jobAA0C5GrantCSS_AC7WaitingOSgAA6GPUJobCSgtYaKF"
      }
     ],
     "conformances": [
@@ -2106,6 +1260,21 @@
         "name": "Optional",
         "printedName": "AetherHost.GPUAdmission.Waiting?",
         "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
        }
       ],
       "declAttributes": [
@@ -2114,12 +1283,70 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherHost17GPUAdmissionOwnerV5admit7waitingAA0C5GrantCAA0C0C7WaitingOSg_tYaKF",
+      "mangledName": "$s10AetherHost17GPUAdmissionOwnerV5admit7waiting3jobAA0C5GrantCAA0C0C7WaitingOSg_AA6GPUJobCSgtYaKF",
       "moduleName": "AetherHost",
       "name": "admit",
-      "printedName": "admit(waiting:)",
+      "printedName": "admit(waiting:job:)",
       "throwing": true,
-      "usr": "s:10AetherHost17GPUAdmissionOwnerV5admit7waitingAA0C5GrantCAA0C0C7WaitingOSg_tYaKF"
+      "usr": "s:10AetherHost17GPUAdmissionOwnerV5admit7waiting3jobAA0C5GrantCAA0C0C7WaitingOSg_AA6GPUJobCSgtYaKF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17GPUAdmissionOwnerV10unadmittedACvgZ",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "spi_group_names": [
+         "Testing"
+        ],
+        "static": true,
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV10unadmittedACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "SPIAccessControl",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17GPUAdmissionOwnerV10unadmittedACvpZ",
+      "moduleName": "AetherHost",
+      "name": "unadmitted",
+      "printedName": "unadmitted",
+      "spi_group_names": [
+       "Testing"
+      ],
+      "static": true,
+      "usr": "s:10AetherHost17GPUAdmissionOwnerV10unadmittedACvpZ"
      }
     ],
     "conformances": [
@@ -2159,6 +1386,1704 @@
     "name": "GPUAdmissionOwner",
     "printedName": "GPUAdmissionOwner",
     "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherHost.GPUPriority.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherHost.GPUPriority.Type) -> AetherHost.GPUPriority"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost11GPUPriorityO3lowyA2CmF",
+      "moduleName": "AetherHost",
+      "name": "low",
+      "printedName": "low",
+      "usr": "s:10AetherHost11GPUPriorityO3lowyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherHost.GPUPriority.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherHost.GPUPriority.Type) -> AetherHost.GPUPriority"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost11GPUPriorityO6mediumyA2CmF",
+      "moduleName": "AetherHost",
+      "name": "medium",
+      "printedName": "medium",
+      "usr": "s:10AetherHost11GPUPriorityO6mediumyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherHost.GPUPriority.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherHost.GPUPriority.Type) -> AetherHost.GPUPriority"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost11GPUPriorityO4highyA2CmF",
+      "moduleName": "AetherHost",
+      "name": "high",
+      "printedName": "high",
+      "usr": "s:10AetherHost11GPUPriorityO4highyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost11GPUPriorityO1loiySbAC_ACtFZ",
+      "moduleName": "AetherHost",
+      "name": "<",
+      "printedName": "<(_:_:)",
+      "static": true,
+      "usr": "s:10AetherHost11GPUPriorityO1loiySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUPriority?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Inlinable"
+      ],
+      "declKind": "Constructor",
+      "implicit": true,
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost11GPUPriorityO8rawValueACSgSi_tcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(rawValue:)",
+      "usr": "s:10AetherHost11GPUPriorityO8rawValueACSgSi_tcfc"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherHost.GPUPriority]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s10AetherHost11GPUPriorityO8AllCasesa",
+      "moduleName": "AetherHost",
+      "name": "AllCases",
+      "printedName": "AllCases",
+      "usr": "s:10AetherHost11GPUPriorityO8AllCasesa"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s10AetherHost11GPUPriorityO8RawValuea",
+      "moduleName": "AetherHost",
+      "name": "RawValue",
+      "printedName": "RawValue",
+      "usr": "s:10AetherHost11GPUPriorityO8RawValuea"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[AetherHost.GPUPriority]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost11GPUPriorityO8allCasesSayACGvgZ",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherHost11GPUPriorityO8allCasesSayACGvgZ"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherHost.GPUPriority]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost11GPUPriorityO8allCasesSayACGvpZ",
+      "moduleName": "AetherHost",
+      "name": "allCases",
+      "printedName": "allCases",
+      "static": true,
+      "usr": "s:10AetherHost11GPUPriorityO8allCasesSayACGvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Inlinable"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost11GPUPriorityO8rawValueSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost11GPUPriorityO8rawValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost11GPUPriorityO8rawValueSivp",
+      "moduleName": "AetherHost",
+      "name": "rawValue",
+      "printedName": "rawValue",
+      "usr": "s:10AetherHost11GPUPriorityO8rawValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[AetherHost.GPUPriority]",
+          "usr": "s:Sa"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "AllCases",
+        "printedName": "AllCases"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$ss12CaseIterableP",
+      "name": "CaseIterable",
+      "printedName": "CaseIterable",
+      "usr": "s:s12CaseIterableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSL",
+      "name": "Comparable",
+      "printedName": "Comparable",
+      "usr": "s:SL"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "RawValue",
+        "printedName": "RawValue"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$sSY",
+      "name": "RawRepresentable",
+      "printedName": "RawRepresentable",
+      "usr": "s:SY"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "enumRawTypeName": "Int",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost11GPUPriorityO",
+    "moduleName": "AetherHost",
+    "name": "GPUPriority",
+    "printedName": "GPUPriority",
+    "usr": "s:10AetherHost11GPUPriorityO"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUJob",
+        "printedName": "AetherHost.GPUJob",
+        "usr": "s:10AetherHost6GPUJobC"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost6GPUJobC8priorityAcA11GPUPriorityO_tcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(priority:)",
+      "usr": "s:10AetherHost6GPUJobC8priorityAcA11GPUPriorityO_tcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost6GPUJobC8priorityAA11GPUPriorityOvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost6GPUJobC8priorityAA11GPUPriorityOvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost6GPUJobC8priorityAA11GPUPriorityOvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost6GPUJobC8priorityAA11GPUPriorityOvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost6GPUJobC8priorityAA11GPUPriorityOvp",
+      "moduleName": "AetherHost",
+      "name": "priority",
+      "printedName": "priority",
+      "usr": "s:10AetherHost6GPUJobC8priorityAA11GPUPriorityOvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GPUJob",
+        "printedName": "AetherHost.GPUJob",
+        "usr": "s:10AetherHost6GPUJobC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GPUJob",
+        "printedName": "AetherHost.GPUJob",
+        "usr": "s:10AetherHost6GPUJobC"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost6GPUJobC2eeoiySbAC_ACtFZ",
+      "moduleName": "AetherHost",
+      "name": "==",
+      "printedName": "==(_:_:)",
+      "static": true,
+      "usr": "s:10AetherHost6GPUJobC2eeoiySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost6GPUJobC4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherHost",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:10AetherHost6GPUJobC4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost6GPUJobC9hashValueSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost6GPUJobC9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost6GPUJobC9hashValueSivp",
+      "moduleName": "AetherHost",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:10AetherHost6GPUJobC9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost6GPUJobC",
+    "moduleName": "AetherHost",
+    "name": "GPUJob",
+    "printedName": "GPUJob",
+    "usr": "s:10AetherHost6GPUJobC"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "UUID",
+            "printedName": "Foundation.UUID",
+            "usr": "s:10Foundation4UUIDV"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV2id10Foundation4UUIDVvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV2id10Foundation4UUIDVvg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UUID",
+          "printedName": "Foundation.UUID",
+          "usr": "s:10Foundation4UUIDV"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV2id10Foundation4UUIDVvp",
+        "moduleName": "AetherHost",
+        "name": "id",
+        "printedName": "id",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV2id10Foundation4UUIDVvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GenericTypeParam",
+            "printedName": "Owner"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV5ownerxvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV5ownerxvg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenericTypeParam",
+          "printedName": "Owner"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV5ownerxvp",
+        "moduleName": "AetherHost",
+        "name": "owner",
+        "printedName": "owner",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV5ownerxvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GenericTypeParam",
+            "printedName": "Work"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV4workq_vg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV4workq_vg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenericTypeParam",
+          "printedName": "Work"
+         }
+        ],
+        "declAttributes": [
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "isLet": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV4workq_vp",
+        "moduleName": "AetherHost",
+        "name": "work",
+        "printedName": "work",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV4workq_vp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUPriority",
+            "printedName": "AetherHost.GPUPriority",
+            "usr": "s:10AetherHost11GPUPriorityO"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV8priorityAA11GPUPriorityOvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV8priorityAA11GPUPriorityOvg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUPriority",
+          "printedName": "AetherHost.GPUPriority",
+          "usr": "s:10AetherHost11GPUPriorityO"
+         }
+        ],
+        "declAttributes": [
+         "SetterAccess",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV8priorityAA11GPUPriorityOvp",
+        "moduleName": "AetherHost",
+        "name": "priority",
+        "printedName": "priority",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV8priorityAA11GPUPriorityOvp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Struct",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "TypeDecl",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV6TicketV",
+      "moduleName": "AetherHost",
+      "name": "Ticket",
+      "printedName": "Ticket",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Cancellation",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+            "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Cancellation",
+              "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+              "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "GenericFunction",
+          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO8notFoundyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
+        "moduleName": "AetherHost",
+        "name": "notFound",
+        "printedName": "notFound",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO8notFoundyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Cancellation",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+            "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Cancellation",
+              "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+              "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "GenericFunction",
+          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO13removedQueuedyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
+        "moduleName": "AetherHost",
+        "name": "removedQueued",
+        "printedName": "removedQueued",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO13removedQueuedyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Cancellation",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+            "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Cancellation",
+              "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+              "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "GenericFunction",
+          "printedName": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable> (AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation.Type) -> AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO12drainRunningyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF",
+        "moduleName": "AetherHost",
+        "name": "drainRunning",
+        "printedName": "drainRunning",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO12drainRunningyAEyxq__GAGmSHRzs8SendableRzsAHR_r0_lF"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Cancellation",
+          "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Cancellation",
+          "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+         }
+        ],
+        "declAttributes": [
+         "Implements",
+         "Semantics"
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO21__derived_enum_equalsySbAEyxq__G_AGtFZ",
+        "moduleName": "AetherHost",
+        "name": "__derived_enum_equals",
+        "printedName": "__derived_enum_equals(_:_:)",
+        "static": true,
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO21__derived_enum_equalsySbAEyxq__G_AGtFZ"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Hasher",
+          "paramValueOwnership": "InOut",
+          "printedName": "Swift.Hasher",
+          "usr": "s:s6HasherV"
+         }
+        ],
+        "declKind": "Func",
+        "funcSelfKind": "NonMutating",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "implicit": true,
+        "kind": "Function",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO4hash4intoys6HasherVz_tF",
+        "moduleName": "AetherHost",
+        "name": "hash",
+        "printedName": "hash(into:)",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO4hash4intoys6HasherVz_tF"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Accessor",
+          "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO9hashValueSivg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO9hashValueSivg"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Var",
+        "implicit": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO9hashValueSivp",
+        "moduleName": "AetherHost",
+        "name": "hashValue",
+        "printedName": "hashValue",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO9hashValueSivp"
+       }
+      ],
+      "conformances": [
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8CopyableP",
+        "name": "Copyable",
+        "printedName": "Copyable",
+        "usr": "s:s8CopyableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSQ",
+        "name": "Equatable",
+        "printedName": "Equatable",
+        "usr": "s:SQ"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss9EscapableP",
+        "name": "Escapable",
+        "printedName": "Escapable",
+        "usr": "s:s9EscapableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$sSH",
+        "name": "Hashable",
+        "printedName": "Hashable",
+        "usr": "s:SH"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss8SendableP",
+        "name": "Sendable",
+        "printedName": "Sendable",
+        "usr": "s:s8SendableP"
+       },
+       {
+        "kind": "Conformance",
+        "mangledName": "$ss16SendableMetatypeP",
+        "name": "SendableMetatype",
+        "printedName": "SendableMetatype",
+        "usr": "s:s16SendableMetatypeP"
+       }
+      ],
+      "declKind": "Enum",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "isEnumExhaustive": true,
+      "kind": "TypeDecl",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV12CancellationO",
+      "moduleName": "AetherHost",
+      "name": "Cancellation",
+      "printedName": "Cancellation",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV18maximumOutstandingSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV18maximumOutstandingSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV18maximumOutstandingSivp",
+      "moduleName": "AetherHost",
+      "name": "maximumOutstanding",
+      "printedName": "maximumOutstanding",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV18maximumOutstandingSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV26maximumOutstandingPerOwnerSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV26maximumOutstandingPerOwnerSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV26maximumOutstandingPerOwnerSivp",
+      "moduleName": "AetherHost",
+      "name": "maximumOutstandingPerOwner",
+      "printedName": "maximumOutstandingPerOwner",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV26maximumOutstandingPerOwnerSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV14maximumRunningSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV14maximumRunningSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV14maximumRunningSivp",
+      "moduleName": "AetherHost",
+      "name": "maximumRunning",
+      "printedName": "maximumRunning",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV14maximumRunningSivp"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenericTypeParam",
+          "printedName": "Owner"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GenericTypeParam",
+          "printedName": "Work"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "PriorityInferenceQueue",
+        "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Constructor",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV18maximumOutstanding0fG8PerOwner0F7RunningACyxq_GSi_S2it0A4Core0A5ErrorOYKcfc",
+      "moduleName": "AetherHost",
+      "name": "init",
+      "printedName": "init(maximumOutstanding:maximumOutstandingPerOwner:maximumRunning:)",
+      "throwing": true,
+      "usr": "s:10AetherHost22PriorityInferenceQueueV18maximumOutstanding0fG8PerOwner0F7RunningACyxq_GSi_S2it0A4Core0A5ErrorOYKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV16outstandingCountSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV16outstandingCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV16outstandingCountSivp",
+      "moduleName": "AetherHost",
+      "name": "outstandingCount",
+      "printedName": "outstandingCount",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV16outstandingCountSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV12runningCountSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12runningCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV12runningCountSivp",
+      "moduleName": "AetherHost",
+      "name": "runningCount",
+      "printedName": "runningCount",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV12runningCountSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost22PriorityInferenceQueueV11queuedCountSivg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV11queuedCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV11queuedCountSivp",
+      "moduleName": "AetherHost",
+      "name": "queuedCount",
+      "printedName": "queuedCount",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV11queuedCountSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UUID",
+        "printedName": "Foundation.UUID",
+        "usr": "s:10Foundation4UUIDV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GenericTypeParam",
+        "printedName": "Owner"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GenericTypeParam",
+        "printedName": "Work"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "Mutating",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV7enqueue2id5owner8priority4worky10Foundation4UUIDV_xAA11GPUPriorityOq_t0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherHost",
+      "name": "enqueue",
+      "printedName": "enqueue(id:owner:priority:work:)",
+      "throwing": true,
+      "usr": "s:10AetherHost22PriorityInferenceQueueV7enqueue2id5owner8priority4worky10Foundation4UUIDV_xAA11GPUPriorityOq_t0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "GPUPriority",
+        "printedName": "AetherHost.GPUPriority",
+        "usr": "s:10AetherHost11GPUPriorityO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UUID",
+        "printedName": "Foundation.UUID",
+        "usr": "s:10Foundation4UUIDV"
+       }
+      ],
+      "declAttributes": [
+       "DiscardableResult"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "Mutating",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV03setC0_2ofSbAA11GPUPriorityO_10Foundation4UUIDVtF",
+      "moduleName": "AetherHost",
+      "name": "setPriority",
+      "printedName": "setPriority(_:of:)",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV03setC0_2ofSbAA11GPUPriorityO_10Foundation4UUIDVtF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Ticket",
+          "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Ticket",
+          "usr": "s:10AetherHost22PriorityInferenceQueueV6TicketV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Ticket?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "Mutating",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV4nextAC6TicketVyxq__GSgyF",
+      "moduleName": "AetherHost",
+      "name": "next",
+      "printedName": "next()",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV4nextAC6TicketVyxq__GSgyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Cancellation",
+        "printedName": "AetherHost.PriorityInferenceQueue<Owner, Work>.Cancellation",
+        "usr": "s:10AetherHost22PriorityInferenceQueueV12CancellationO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UUID",
+        "printedName": "Foundation.UUID",
+        "usr": "s:10Foundation4UUIDV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "Mutating",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV6cancel2idAC12CancellationOyxq__G10Foundation4UUIDV_tF",
+      "moduleName": "AetherHost",
+      "name": "cancel",
+      "printedName": "cancel(id:)",
+      "usr": "s:10AetherHost22PriorityInferenceQueueV6cancel2idAC12CancellationOyxq__G10Foundation4UUIDV_tF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "UUID",
+        "printedName": "Foundation.UUID",
+        "usr": "s:10Foundation4UUIDV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "Mutating",
+      "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost22PriorityInferenceQueueV7release2idy10Foundation4UUIDV_t0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherHost",
+      "name": "release",
+      "printedName": "release(id:)",
+      "throwing": true,
+      "usr": "s:10AetherHost22PriorityInferenceQueueV7release2idy10Foundation4UUIDV_t0A4Core0A5ErrorOYKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "genericSig": "<Owner, Work where Owner : Swift.Hashable, Owner : Swift.Sendable, Work : Swift.Sendable>",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherHost22PriorityInferenceQueueV",
+    "moduleName": "AetherHost",
+    "name": "PriorityInferenceQueue",
+    "printedName": "PriorityInferenceQueue",
+    "usr": "s:10AetherHost22PriorityInferenceQueueV"
    },
    {
     "children": [
@@ -6750,18 +7675,10 @@
         "accessorKind": "get",
         "children": [
          {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
           "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
          }
         ],
         "declAttributes": [
@@ -6770,11 +7687,11 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvg",
+        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvg",
         "moduleName": "AetherHost",
         "name": "Get",
         "printedName": "Get()",
-        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvg"
+        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvg"
        },
        {
         "accessorKind": "set",
@@ -6785,18 +7702,10 @@
           "printedName": "()"
          },
          {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "GPUAdmissionOwner",
-            "printedName": "AetherHost.GPUAdmissionOwner",
-            "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-           }
-          ],
           "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "AetherHost.GPUAdmissionOwner?",
-          "usr": "s:Sq"
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
          }
         ],
         "declAttributes": [
@@ -6805,41 +7714,32 @@
         "declKind": "Accessor",
         "implicit": true,
         "kind": "Accessor",
-        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvs",
+        "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvs",
         "moduleName": "AetherHost",
         "name": "Set",
         "printedName": "Set()",
-        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvs"
+        "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvs"
        }
       ],
       "children": [
        {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUAdmissionOwner",
-          "printedName": "AetherHost.GPUAdmissionOwner",
-          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-         }
-        ],
         "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.GPUAdmissionOwner?",
-        "usr": "s:Sq"
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
        }
       ],
       "declAttributes": [
-       "HasInitialValue",
        "HasStorage"
       ],
       "declKind": "Var",
       "hasStorage": true,
       "kind": "Var",
-      "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvp",
+      "mangledName": "$s10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvp",
       "moduleName": "AetherHost",
       "name": "gpu",
       "printedName": "gpu",
-      "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVSgvp"
+      "usr": "s:10AetherHost15PipelineOptionsV3gpuAA17GPUAdmissionOwnerVvp"
      },
      {
       "accessors": [
@@ -7038,19 +7938,11 @@
         "usr": "s:Sq"
        },
        {
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "GPUAdmissionOwner",
-          "printedName": "AetherHost.GPUAdmissionOwner",
-          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
-         }
-        ],
         "hasDefaultArg": true,
         "kind": "TypeNominal",
-        "name": "Optional",
-        "printedName": "AetherHost.GPUAdmissionOwner?",
-        "usr": "s:Sq"
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
        },
        {
         "hasDefaultArg": true,
@@ -7070,11 +7962,11 @@
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc",
+      "mangledName": "$s10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc",
       "moduleName": "AetherHost",
       "name": "init",
       "printedName": "init(cachePolicy:cache:memory:coordinator:gpu:ledger:probe:)",
-      "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVSgAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc"
+      "usr": "s:10AetherHost15PipelineOptionsV11cachePolicy0E06memory11coordinator3gpu6ledger5probeAC0A7Runtime05GraphD0V05CacheF0O_AM0N0OAK12MemoryBudgetVSgAA19ResourceCoordinatorCSgAA17GPUAdmissionOwnerVAK15FootprintLedgerCAK14GPUMemoryProbeVtcfc"
      },
      {
       "children": [

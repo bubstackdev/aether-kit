@@ -33,6 +33,21 @@ A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues 
   output, Hermes tool calls) and `ChatSession`.
 - **FoundationModels** (AetherFoundationModels): `AetherLanguageModel` behind `LanguageModelSession`, with
   `@Generable` guided generation and tools.
+- **An enforced GPU lock with priorities** (AetherHost):
+  - `GPUAdmission.shared` is the process's default admission: every image, speech and video pipeline and the text
+    `Generator` (so `ChatSession` and `AetherLanguageModel`) admit through it unless given another
+    (`PipelineOptions.gpu`, `Generator(gpu:)`, `ChatSession.load(gpu:)`), one grant per generation, clip, utterance
+    request or chat reply. On unsandboxed macOS it also holds the machine's `SharedGPULease` and accepts a lease handed
+    off through `AETHER_GPU_LEASE_HOLDER`; in sandboxed apps and on iOS it is in-process only. Tests opt out with
+    `@_spi(Testing) GPUAdmissionOwner.unadmitted`.
+  - `GPUPriority` (`.low`, `.medium`, `.high`) through an optional `GPUJob` on each request (`ImageRequest.job`,
+    `SpeechRequest.job`, `VideoRequest.job`, `GenerationParameters.job`; absent: `.medium`). `.high` goes ahead of
+    every waiting request, `.low` waits until nothing else is waiting, FIFO within a level; running work is never
+    preempted. Setting `job.priority` moves a waiting request; it has no effect once the request runs. There is no
+    queue-management API; cancelling the task leaves the queue.
+  - `PriorityInferenceQueue` replaces `FairInferenceQueue` (round-robin across owners is gone; the owner is a label for
+    the per-owner limit). Pipelines and the Generator now take the GPU before their own turn, so priority also orders
+    one pipeline's requests.
 - **Generative pipelines** share one `PipelineOptions` (AetherHost; `ImagePipelineOptions`,
   `KokoroSpeechSession.Options` and `VideoPipelineOptions` are its aliases): graph cache, memory budget, an optional
   shared `ResourceCoordinator`, GPU admission and a footprint ledger. Each driver's `load` gives a model value

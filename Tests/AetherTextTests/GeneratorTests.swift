@@ -1,3 +1,4 @@
+import AetherHost
 import Foundation
 import Synchronization
 import Testing
@@ -48,6 +49,42 @@ struct GeneratorTests {
         let fresh = try await FakeChat.generator(recurrent: recurrent, renderer: renderer)
         let replay = try await FakeChat.collect(fresh.generate(Array(await chat.history.prefix(3))))
         #expect(replay.text == second.text)
+    }
+
+    /// Every reply takes the GPU admission: by default the process's shared one; given one, replies of different
+    /// generators queue there in priority order, a reply's first event only after its grant.
+    @Test(.timeLimit(.minutes(1))) func repliesQueueOnTheGPUAdmissionInPriorityOrder() async throws {
+        let unconfigured = Generator(
+            engine: try await FakeChat.generator().engine, decoder: FakeDecoding(), renderer: FakeRenderer(),
+            stopTokens: [Vocab.stop], profile: .plain)
+        #expect(unconfigured.gpu.admission === GPUAdmission.shared)
+
+        let admission = try GPUAdmission()
+        let a = try await FakeChat.generator(gpu: admission.owner("a")), b = try await FakeChat.generator(gpu: admission.owner("b"))
+        let held = try await admission.admit(owner: "image")
+        let started = Started()
+        func reply(_ generator: Generator, _ label: String, _ job: GPUJob) -> Task<Void, any Error> {
+            Task {
+                var first = true
+                for try await _ in generator.generate([.user(label)], parameters: GenerationParameters(maxTokens: 4, job: job)) {
+                    if first { started.append(label); first = false }
+                }
+            }
+        }
+        let late = GPUJob(priority: .low)
+        let low = reply(a, "low", late)
+        try await waitUntil { admission.snapshot.queued == 1 }
+        let medium = reply(b, "medium", GPUJob())
+        try await waitUntil { admission.snapshot.queued == 2 }
+        let otherLow = reply(a, "otherLow", GPUJob(priority: .low))
+        try await waitUntil { admission.snapshot.queued == 3 }
+        late.priority = .high
+        #expect(started.values.isEmpty)
+        held.release()
+        for task in [low, medium, otherLow] { try await task.value }
+        // "low" was raised to high while waiting; the other low waits for the medium.
+        #expect(started.values == ["low", "medium", "otherLow"])
+        #expect(admission.snapshot.running == 0 && admission.snapshot.queued == 0)
     }
 
     /// Regenerating the same prompt on a hybrid restores the end-of-prompt snapshot (with its logits).
@@ -220,3 +257,18 @@ struct OutputParsingTests {
     }
 }
 
+/// Labels in the order recorded.
+private final class Started: Sendable {
+    private let log = Mutex<[String]>([])
+    func append(_ label: String) { log.withLock { $0.append(label) } }
+    var values: [String] { log.withLock { $0 } }
+}
+
+/// Polls until `condition` holds (scheduling order is not fixed).
+private func waitUntil(_ condition: () -> Bool) async throws {
+    let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+    while !condition() {
+        guard ContinuousClock.now < deadline else { Issue.record("condition never held"); return }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+}

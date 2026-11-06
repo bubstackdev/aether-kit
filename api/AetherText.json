@@ -507,6 +507,13 @@
         "name": "Configuration",
         "printedName": "AetherText.ChatSession.Configuration",
         "usr": "s:10AetherText11ChatSessionC13ConfigurationV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
        }
       ],
       "declAttributes": [
@@ -516,13 +523,13 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherText11ChatSessionC4load6bundle8manifest6device6engine13configurationAC0A4Core15InstalledBundleV_AJ8ManifestVAJ6DeviceV0A7Runtime13DecoderEngineC7OptionsVAC13ConfigurationVtYaKFZ",
+      "mangledName": "$s10AetherText11ChatSessionC4load6bundle8manifest6device6engine13configuration3gpuAC0A4Core15InstalledBundleV_AK8ManifestVAK6DeviceV0A7Runtime13DecoderEngineC7OptionsVAC13ConfigurationV0A4Host17GPUAdmissionOwnerVtYaKFZ",
       "moduleName": "AetherText",
       "name": "load",
-      "printedName": "load(bundle:manifest:device:engine:configuration:)",
+      "printedName": "load(bundle:manifest:device:engine:configuration:gpu:)",
       "static": true,
       "throwing": true,
-      "usr": "s:10AetherText11ChatSessionC4load6bundle8manifest6device6engine13configurationAC0A4Core15InstalledBundleV_AJ8ManifestVAJ6DeviceV0A7Runtime13DecoderEngineC7OptionsVAC13ConfigurationVtYaKFZ"
+      "usr": "s:10AetherText11ChatSessionC4load6bundle8manifest6device6engine13configuration3gpuAC0A4Core15InstalledBundleV_AK8ManifestVAK6DeviceV0A7Runtime13DecoderEngineC7OptionsVAC13ConfigurationV0A4Host17GPUAdmissionOwnerVtYaKFZ"
      },
      {
       "children": [
@@ -556,6 +563,13 @@
         "name": "Options",
         "printedName": "AetherRuntime.DecoderEngine.Options",
         "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
        }
       ],
       "declAttributes": [
@@ -565,13 +579,13 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s10AetherText11ChatSessionC9generator6bundle8manifest6device6engineAA9GeneratorC0A4Core15InstalledBundleV_AK8ManifestVAK6DeviceV0A7Runtime13DecoderEngineC7OptionsVtYaKFZ",
+      "mangledName": "$s10AetherText11ChatSessionC9generator6bundle8manifest6device6engine3gpuAA9GeneratorC0A4Core15InstalledBundleV_AL8ManifestVAL6DeviceV0A7Runtime13DecoderEngineC7OptionsV0A4Host17GPUAdmissionOwnerVtYaKFZ",
       "moduleName": "AetherText",
       "name": "generator",
-      "printedName": "generator(bundle:manifest:device:engine:)",
+      "printedName": "generator(bundle:manifest:device:engine:gpu:)",
       "static": true,
       "throwing": true,
-      "usr": "s:10AetherText11ChatSessionC9generator6bundle8manifest6device6engineAA9GeneratorC0A4Core15InstalledBundleV_AK8ManifestVAK6DeviceV0A7Runtime13DecoderEngineC7OptionsVtYaKFZ"
+      "usr": "s:10AetherText11ChatSessionC9generator6bundle8manifest6device6engine3gpuAA9GeneratorC0A4Core15InstalledBundleV_AL8ManifestVAL6DeviceV0A7Runtime13DecoderEngineC7OptionsV0A4Host17GPUAdmissionOwnerVtYaKFZ"
      },
      {
       "children": [
@@ -1432,6 +1446,103 @@
       "usr": "s:10AetherText20GenerationParametersV5toolsSayAA14ToolDefinitionVGvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvs",
+        "moduleName": "AetherText",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvp",
+      "moduleName": "AetherText",
+      "name": "job",
+      "printedName": "job",
+      "usr": "s:10AetherText20GenerationParametersV3job0A4Host6GPUJobCSgvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -1512,16 +1623,31 @@
         "name": "Array",
         "printedName": "[AetherText.ToolDefinition]",
         "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherText20GenerationParametersV9maxTokens8sampling13stopSequences8thinking16logitsProcessors5toolsACSi_0A7Runtime08SamplingD0VSaySSGSbSgSayAJ15LogitsProcessor_pGSayAA14ToolDefinitionVGtcfc",
+      "mangledName": "$s10AetherText20GenerationParametersV9maxTokens8sampling13stopSequences8thinking16logitsProcessors5tools3jobACSi_0A7Runtime08SamplingD0VSaySSGSbSgSayAK15LogitsProcessor_pGSayAA14ToolDefinitionVG0A4Host6GPUJobCSgtcfc",
       "moduleName": "AetherText",
       "name": "init",
-      "printedName": "init(maxTokens:sampling:stopSequences:thinking:logitsProcessors:tools:)",
-      "usr": "s:10AetherText20GenerationParametersV9maxTokens8sampling13stopSequences8thinking16logitsProcessors5toolsACSi_0A7Runtime08SamplingD0VSaySSGSbSgSayAJ15LogitsProcessor_pGSayAA14ToolDefinitionVGtcfc"
+      "printedName": "init(maxTokens:sampling:stopSequences:thinking:logitsProcessors:tools:job:)",
+      "usr": "s:10AetherText20GenerationParametersV9maxTokens8sampling13stopSequences8thinking16logitsProcessors5tools3jobACSi_0A7Runtime08SamplingD0VSaySSGSbSgSayAK15LogitsProcessor_pGSayAA14ToolDefinitionVG0A4Host6GPUJobCSgtcfc"
      }
     ],
     "conformances": [
@@ -2847,6 +2973,55 @@
         "children": [
          {
           "kind": "TypeNominal",
+          "name": "GPUAdmissionOwner",
+          "printedName": "AetherHost.GPUAdmissionOwner",
+          "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText9GeneratorC3gpu0A4Host17GPUAdmissionOwnerVvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText9GeneratorC3gpu0A4Host17GPUAdmissionOwnerVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText9GeneratorC3gpu0A4Host17GPUAdmissionOwnerVvp",
+      "moduleName": "AetherText",
+      "name": "gpu",
+      "printedName": "gpu",
+      "usr": "s:10AetherText9GeneratorC3gpu0A4Host17GPUAdmissionOwnerVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
           "name": "TokenDecoding",
           "printedName": "any AetherText.TokenDecoding",
           "usr": "s:10AetherText13TokenDecodingP"
@@ -3097,16 +3272,23 @@
         "name": "OutputProfile",
         "printedName": "AetherText.OutputProfile",
         "usr": "s:10AetherText13OutputProfileV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GPUAdmissionOwner",
+        "printedName": "AetherHost.GPUAdmissionOwner",
+        "usr": "s:10AetherHost17GPUAdmissionOwnerV"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profileAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileVtcfc",
+      "mangledName": "$s10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc",
       "moduleName": "AetherText",
       "name": "init",
-      "printedName": "init(engine:decoder:renderer:stopTokens:profile:)",
-      "usr": "s:10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profileAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileVtcfc"
+      "printedName": "init(engine:decoder:renderer:stopTokens:profile:gpu:)",
+      "usr": "s:10AetherText9GeneratorC6engine7decoder8renderer10stopTokens7profile3gpuAC0A7Runtime13DecoderEngineC_AA13TokenDecoding_pAA14PromptRenderer_pShys5Int32VGAA13OutputProfileV0A4Host17GPUAdmissionOwnerVtcfc"
      },
      {
       "accessors": [

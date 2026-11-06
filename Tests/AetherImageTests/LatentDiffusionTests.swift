@@ -1,5 +1,5 @@
 import AetherCore
-import AetherHost
+@_spi(Testing) import AetherHost
 import AetherRuntime
 import Foundation
 import Synchronization
@@ -97,7 +97,7 @@ struct LatentDiffusionTests {
         let loads = Calls()
         let pipeline = try LatentDiffusionPipeline(
             manifest: try manifest(), tokenizer: try tokenizer(), device: mac,
-            options: .init(memory: .bytes(budget), coordinator: coordinator, probe: Flux2KleinTests.still),
+            options: .init(memory: .bytes(budget), coordinator: coordinator, gpu: .unadmitted, probe: Flux2KleinTests.still),
             load: { role throws(AetherError) in
                 loads.append(role)
                 switch role {
@@ -206,13 +206,13 @@ struct LatentDiffusionTests {
         manifest.schedule?.guidance = .init(kind: .cfg, scale: 2)
         #expect(throws: AetherError.self) {
             try LatentDiffusionPipeline(manifest: manifest, tokenizer: try Self.tokenizer(), device: Self.mac,
-                                        options: .init(), load: { _ throws(AetherError) in FakeText(Calls()) }, fileBytes: { _ in 0 })
+                                        options: .init(gpu: .unadmitted), load: { _ throws(AetherError) in FakeText(Calls()) }, fileBytes: { _ in 0 })
         }
         manifest = try Self.manifest()
         manifest.graphs["denoiser"]?.inputs["conditioning"]?.source = nil
         #expect(throws: AetherError.self) {
             try LatentDiffusionPipeline(manifest: manifest, tokenizer: try Self.tokenizer(), device: Self.mac,
-                                        options: .init(), load: { _ throws(AetherError) in FakeText(Calls()) }, fileBytes: { _ in 0 })
+                                        options: .init(gpu: .unadmitted), load: { _ throws(AetherError) in FakeText(Calls()) }, fileBytes: { _ in 0 })
         }
         #expect(Registry.image.supports(.latentDiffusion))
     }

@@ -1,4 +1,4 @@
-import AetherHost
+@_spi(Testing) import AetherHost
 import Foundation
 import Testing
 @testable import AetherCore
@@ -136,7 +136,7 @@ struct MiniMaxH3Tests {
 
     static func pipeline(device: Device = Device(platform: .macOS, architecture: "h17c")) throws -> MiniMaxH3Pipeline {
         try MiniMaxH3Pipeline(
-            manifest: try manifest(), device: device, bundle: nil, options: .init(probe: GPUMemoryProbe { 0 }),
+            manifest: try manifest(), device: device, bundle: nil, options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }),
             tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
             load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "no graphs in this test") })
     }
@@ -164,7 +164,7 @@ struct MiniMaxH3Tests {
         let device = Device(platform: .macOS, architecture: "h17c")
         let manifest = try Self.manifest()
         _ = try MiniMaxH3Pipeline(
-            manifest: manifest, device: device, bundle: nil, options: .init(ledger: ledger, probe: GPUMemoryProbe { 0 }),
+            manifest: manifest, device: device, bundle: nil, options: .init(gpu: .unadmitted, ledger: ledger, probe: GPUMemoryProbe { 0 }),
             tokenize: { _ in [] }, load: { role throws(AetherError) in throw .manifestInvalid(field: role, reason: "none") })
         let key = ResidentAdmission(
             manifest: manifest, device: device,

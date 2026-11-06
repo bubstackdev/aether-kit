@@ -1,3 +1,4 @@
+public import AetherHost
 public import AetherRuntime
 import Foundation
 
@@ -25,30 +26,27 @@ public actor ChatSession {
     }
 
     /// Loads a chat model from an installed bundle: the `decoder-lm@1` engine, the tokenizer, the manifest's renderer
-    /// and output profile.
+    /// and output profile. Replies take `gpu` (by default ``GPUAdmission/shared``); a reply's priority is
+    /// `configuration.parameters.job`.
     public static func load(
         bundle: InstalledBundle, manifest: Manifest, device: Device, engine options: DecoderEngine.Options = .init(),
-        configuration: Configuration = Configuration()
+        configuration: Configuration = Configuration(), gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
     ) async throws -> ChatSession {
-        let engine = try await DecoderEngine(bundle: bundle, manifest: manifest, device: device, options: options)
-        let tokenizer = try await TokenizerAdapter(bundle: bundle, manifest: manifest)
-        let renderer = try PromptRenderers.make(manifest: manifest, bundle: bundle, tokenizer: tokenizer)
-        let generator = Generator(
-            engine: engine, decoder: tokenizer, renderer: renderer, stopTokens: tokenizer.stopTokenIDs,
-            profile: OutputProfile(manifest: manifest.tokenizer))
+        let generator = try await generator(bundle: bundle, manifest: manifest, device: device, engine: options, gpu: gpu)
         return ChatSession(generator: generator, configuration: configuration)
     }
 
-    /// Generates loaded from an installed bundle, as ``load(bundle:manifest:device:engine:configuration:)``.
+    /// Generates loaded from an installed bundle, as ``load(bundle:manifest:device:engine:configuration:gpu:)``.
     public static func generator(
-        bundle: InstalledBundle, manifest: Manifest, device: Device, engine options: DecoderEngine.Options = .init()
+        bundle: InstalledBundle, manifest: Manifest, device: Device, engine options: DecoderEngine.Options = .init(),
+        gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
     ) async throws -> Generator {
         let engine = try await DecoderEngine(bundle: bundle, manifest: manifest, device: device, options: options)
         let tokenizer = try await TokenizerAdapter(bundle: bundle, manifest: manifest)
         let renderer = try PromptRenderers.make(manifest: manifest, bundle: bundle, tokenizer: tokenizer)
         return Generator(
             engine: engine, decoder: tokenizer, renderer: renderer, stopTokens: tokenizer.stopTokenIDs,
-            profile: OutputProfile(manifest: manifest.tokenizer))
+            profile: OutputProfile(manifest: manifest.tokenizer), gpu: gpu)
     }
 
     public func setConfiguration(_ configuration: Configuration) { self.configuration = configuration }

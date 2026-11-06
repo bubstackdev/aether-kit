@@ -101,7 +101,7 @@ public enum AetherError: Error, Sendable, CustomStringConvertible {
         }
     }
 
-    /// Why an admission (in-process `GPUAdmission`, its `FairInferenceQueue`, or the cross-process `SharedGPULease`)
+    /// Why an admission (in-process `GPUAdmission`, its `PriorityInferenceQueue`, or the cross-process `SharedGPULease`)
     /// refused. `holder` is the process a lease names, when it names one.
     public enum AdmissionFailure: Sendable, Hashable, CustomStringConvertible {
         /// The cross-process GPU lease is held by another live process (or by this one).

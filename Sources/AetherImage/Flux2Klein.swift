@@ -157,11 +157,12 @@ public actor Flux2KleinPipeline {
             prompt = try Prompt(rendered: try encodePrompt(request.prompt), rule: flux2.prompt)
         }
 
+        // The GPU first, so a request's priority also orders it among this pipeline's own requests.
+        let grant = try await options.gpu.admit(job: request.job)
+        defer { grant.release() }
         await turn()
         defer { endTurn() }
         try Task.checkCancellation()
-        let grant = try await options.gpu?.admit()
-        defer { grant?.release() }
         let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
         do {
             let image = try await run(

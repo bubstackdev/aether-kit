@@ -353,11 +353,12 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
   nothing fits. Graphs that stay resident are reused across generations.
 - Every generative driver loads a model value, not the pipeline: `LatentDiffusionModel`, `Flux2KleinModel`,
   `Krea2Model` (which also needs the app's filter) and `KokoroModel`. Its `options` start from the `LoadOptions` cache
-  settings, and the app sets the coordinator, GPU admission and ledger there before making the pipeline (`LoadOptions`
-  is AetherRuntime's and can't carry AetherHost's types).
+  settings, and the app sets the coordinator, GPU admission (default: `GPUAdmission.shared`) and ledger there before
+  making the pipeline (`LoadOptions` is AetherRuntime's and can't carry AetherHost's types).
 - Each graph is checked against its manifest role when it loads (`SignatureValidator`); a request for a size the export
   doesn't have (`latent.sizes`) is refused before any work.
-- Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.
+- Generations run one at a time, in GPU priority order (§10); cancellation stops between graph calls, and any failure
+  releases every graph.
 - **Measured (gate, M5 Max, float32 512²):** phase peaks 1.25 GiB (prompt), 3.5 GiB (steps), 1.25 GiB (image); 4
   steps take under a second warm. Per phase that is about 4.8 GiB, too much for an iPhone, so iOS takes a mixed-precision
   export (fp32 text encoder, fp16 U-Net and VAE): about 1.7 GiB at peak, qualified on an iPhone (docs/DEVICE.md).
@@ -598,9 +599,24 @@ runtime pieces:
   - **Unloads requested during a request** wait until it ends.
   - Pressure arrives through a `MemoryPressureMonitor` actor (`.system` or `.manual`).
 - **GPU lease** (ported; wire-compatible with Atelier's `SharedGPULock`): `SharedGPULease`, `GPUAdmission` and
-  `FairInferenceQueue`. These are `Sendable` classes over `Mutex`, not actors, because a grant must release
+  `PriorityInferenceQueue`. These are `Sendable` classes over `Mutex`, not actors, because a grant must release
   synchronously and safely in `deinit`. The signal handling uses one static `Mutex`, which is forced because signal
-  dispositions are process-wide. Real-model gates and the generative pipelines hold a `GPUAdmission`.
+  dispositions are process-wide.
+  - **Enforced by default:** every image, speech and video pipeline and the text `Generator` admits through
+    `GPUAdmission.shared` unless given another (`PipelineOptions.gpu`, `Generator(gpu:)`). One grant is one turn: a
+    generation, a clip, an utterance request or a chat reply (prefill and decode), held until its native work drains.
+    It is taken before the pipeline's or generator's own turn, so priority also orders one pipeline's requests. On
+    unsandboxed macOS `shared` also holds the machine's `SharedGPULease` (honouring `AETHER_GPU_LEASE_HOLDER`
+    hand-offs); in a sandboxed app (`APP_SANDBOX_CONTAINER_ID` set) and on iOS it is in-process only. Tests opt out
+    with `@_spi(Testing) GPUAdmissionOwner.unadmitted`. The pipeline gates and the text gates hold it through the
+    pipelines; the runtime gates (`GateTests`, `EngineGateTests`, the chain and generative graph gates) drive graphs and
+    the engine directly and hold nothing.
+  - **Priority, no queue management:** a request carries an optional `GPUJob` (`ImageRequest.job`,
+    `SpeechRequest.job`, `VideoRequest.job`, `GenerationParameters.job`); without one it is `.medium`. Waiting
+    requests start highest `GPUPriority` first (`.high` ahead of every waiting `.medium` and `.low`; `.low` only when
+    nothing else waits, no aging), FIFO within a level; running work is never preempted. Setting `job.priority` while
+    the request waits moves it; the admission reads it whenever it picks the next request, and ignores it once running.
+    Cancelling the task leaves the queue. Priority is in-process only: the cross-process lease stays a plain mutex.
 - **Capability and prefetch:**
   - `capability(for:)` returns `.ready`, `.needsDownload(bytes)`, `.insufficientStorage`, `.unsupportedDevice` or
     `.unsupportedDriver`.

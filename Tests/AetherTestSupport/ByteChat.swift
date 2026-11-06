@@ -1,3 +1,4 @@
+@_spi(Testing) import AetherHost
 public import AetherText
 public import Foundation
 import Synchronization
@@ -139,7 +140,7 @@ public enum ByteChat {
             step: fake, graph: fake.manifestGraph(maxContext: capacity), device: Device(platform: .macOS, architecture: "fake9", physicalMemory: 64 << 30),
             options: DecoderEngine.Options(capacity: capacity, memoryBudget: .bytes(1 << 30)))
         return Generator(engine: engine, decoder: decoder, renderer: renderer, stopTokens: [ByteVocab.imEnd],
-                         profile: profile)
+                         profile: profile, gpu: .unadmitted)
     }
 }
 
