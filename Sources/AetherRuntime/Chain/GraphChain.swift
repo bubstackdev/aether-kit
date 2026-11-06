@@ -103,10 +103,13 @@ public final class GraphChain {
             do {
                 let result = try await body(self)
                 await drain()
+                // Drained: nothing the run bound is still read, so a bank may be refilled before the next run.
+                inFlight.removeAll()
                 if gpu != nil { arena.endRun() }
                 return result
             } catch {
                 await drain()
+                inFlight.removeAll()
                 if gpu != nil { arena.endRun() }
                 throw error
             }
