@@ -82,7 +82,7 @@ let package = Package(
         // Test doubles shared by the test targets (the fake decoder). Not part of any product.
         .target(
             name: "AetherTestSupport",
-            dependencies: ["AetherRuntime", "AetherCore", "AetherText"],
+            dependencies: ["AetherRuntime", "AetherCore", "AetherText", "AetherHost"],
             path: "Tests/AetherTestSupport",
             swiftSettings: common
         ),
@@ -110,7 +110,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AetherFoundationModelsTests",
-            dependencies: ["AetherFoundationModels", "AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            dependencies: ["AetherFoundationModels", "AetherText", "AetherHost", "AetherRuntime", "AetherCore", "AetherTestSupport"],
             swiftSettings: common
         ),
         .testTarget(
@@ -134,7 +134,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AetherTextTests",
-            dependencies: ["AetherText", "AetherRuntime", "AetherCore", "AetherTestSupport"],
+            dependencies: ["AetherText", "AetherHost", "AetherRuntime", "AetherCore", "AetherTestSupport"],
             resources: [.copy("Fixtures")],
             swiftSettings: common
         ),

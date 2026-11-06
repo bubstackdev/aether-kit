@@ -1,4 +1,5 @@
 import Foundation
+@_spi(Testing) import AetherHost
 @testable import AetherText
 import AetherTestSupport
 
@@ -66,14 +67,15 @@ enum FakeChat {
 
     static func generator(
         recurrent: Bool = false, reply: @escaping @Sendable ([Int32]) -> [Int32] = echo, profile: OutputProfile = .plain,
-        log: CallLog? = nil, renderer: FakeRenderer = FakeRenderer()
+        log: CallLog? = nil, renderer: FakeRenderer = FakeRenderer(), gpu: GPUAdmissionOwner = .unadmitted
     ) async throws -> Generator {
         let config = FakeLM.Config(staticStep: recurrent, recurrent: recurrent, log: log, predict: scripted(reply))
         let fake = FakeLM(config)
         let graph = fake.manifestGraph()
         let engine = try await DecoderEngine(
             step: fake, graph: graph, device: device, options: DecoderEngine.Options(memoryBudget: .bytes(1 << 30)))
-        return Generator(engine: engine, decoder: FakeDecoding(), renderer: renderer, stopTokens: [Vocab.stop], profile: profile)
+        return Generator(engine: engine, decoder: FakeDecoding(), renderer: renderer, stopTokens: [Vocab.stop], profile: profile,
+                         gpu: gpu)
     }
 
     static func collect(_ stream: AsyncThrowingStream<GenerationEvent, any Error>) async throws -> (text: String, thinking: String, tools: [String], summary: GenerationSummary?) {

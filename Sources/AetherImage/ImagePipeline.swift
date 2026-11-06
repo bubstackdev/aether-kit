@@ -32,13 +32,18 @@ public struct ImageRequest: Sendable, Hashable {
     /// Absent: the export's default size. One side alone makes a square.
     public var width: Int?
     public var height: Int?
+    /// The request's GPU priority (absent: `.medium`). Keep the job to change it while the request waits.
+    public var job: GPUJob?
 
-    public init(prompt: String, seed: UInt64 = 0, steps: Int? = nil, width: Int? = nil, height: Int? = nil) {
+    public init(
+        prompt: String, seed: UInt64 = 0, steps: Int? = nil, width: Int? = nil, height: Int? = nil, job: GPUJob? = nil
+    ) {
         self.prompt = prompt
         self.seed = seed
         self.steps = steps
         self.width = width
         self.height = height
+        self.job = job
     }
 
     /// The requested size, or `fallback` (the export's default) when neither side is given.

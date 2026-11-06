@@ -1521,6 +1521,103 @@
       "usr": "s:11AetherVideo0B7RequestV5audioSbvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvs",
+        "moduleName": "AetherVideo",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvp",
+      "moduleName": "AetherVideo",
+      "name": "job",
+      "printedName": "job",
+      "usr": "s:11AetherVideo0B7RequestV3job0A4Host6GPUJobCSgvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -1577,16 +1674,31 @@
         "name": "Bool",
         "printedName": "Swift.Bool",
         "usr": "s:Sb"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
        }
       ],
       "declKind": "Constructor",
       "init_kind": "Designated",
       "kind": "Constructor",
-      "mangledName": "$s11AetherVideo0B7RequestV6prompt4seed7profile6recipe5audioACSS_s6UInt64VSSSgAKSbtcfc",
+      "mangledName": "$s11AetherVideo0B7RequestV6prompt4seed7profile6recipe5audio3jobACSS_s6UInt64VSSSgALSb0A4Host6GPUJobCSgtcfc",
       "moduleName": "AetherVideo",
       "name": "init",
-      "printedName": "init(prompt:seed:profile:recipe:audio:)",
-      "usr": "s:11AetherVideo0B7RequestV6prompt4seed7profile6recipe5audioACSS_s6UInt64VSSSgAKSbtcfc"
+      "printedName": "init(prompt:seed:profile:recipe:audio:job:)",
+      "usr": "s:11AetherVideo0B7RequestV6prompt4seed7profile6recipe5audio3jobACSS_s6UInt64VSSSgALSb0A4Host6GPUJobCSgtcfc"
      },
      {
       "children": [

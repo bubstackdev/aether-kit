@@ -1,5 +1,5 @@
 import AetherCore
-import AetherHost
+@_spi(Testing) import AetherHost
 import AetherRuntime
 import Foundation
 import Testing
@@ -142,7 +142,7 @@ struct Flux2KleinTests {
         let loads = Calls()
         let pipeline = try Flux2KleinPipeline(
             manifest: try manifest(), device: device,
-            options: .init(memory: .bytes(budget), coordinator: coordinator, probe: still), encodePrompt: encode,
+            options: .init(memory: .bytes(budget), coordinator: coordinator, gpu: .unadmitted, probe: still), encodePrompt: encode,
             load: { role throws(AetherError) in
                 loads.append(role)
                 switch role {
@@ -183,7 +183,7 @@ struct Flux2KleinTests {
         unbounded.latent?.maxImageTokens = nil
         #expect(throws: AetherError.self) {
             _ = try Flux2KleinPipeline(
-                manifest: unbounded, device: Self.mac, options: .init(probe: Self.still), encodePrompt: Self.encode,
+                manifest: unbounded, device: Self.mac, options: .init(gpu: .unadmitted, probe: Self.still), encodePrompt: Self.encode,
                 load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
         }
         var huge = try Self.manifest().latent!
@@ -285,7 +285,7 @@ struct Flux2KleinTests {
             var manifest = try Self.manifest()
             change(&manifest)
             #expect(throws: AetherError.self) {
-                try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(), encodePrompt: Self.encode,
+                try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(gpu: .unadmitted), encodePrompt: Self.encode,
                                        load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
             }
         }
@@ -298,7 +298,7 @@ struct Flux2KleinTests {
         // The optional reference encoder may be absent.
         var manifest = try Self.manifest()
         manifest.graphs["vaeEncoder"] = nil
-        _ = try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(), encodePrompt: Self.encode,
+        _ = try Flux2KleinPipeline(manifest: manifest, device: Self.mac, options: .init(gpu: .unadmitted), encodePrompt: Self.encode,
                                    load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
         #expect(Registry.image.supports(.flux2Klein) && Registry.image.supports(.latentDiffusion))
         // Review finding 8: every driver loads a model value whose options the app sets (a shared coordinator, GPU

@@ -11,8 +11,9 @@ public struct PipelineOptions: Sendable {
     public var memory: MemoryBudget?
     /// A shared memory budget: the generation reserves its planned peak here, then keeps what stays resident.
     public var coordinator: ResourceCoordinator?
-    /// GPU admission for each generation (in-process and, if configured, the cross-process lease).
-    public var gpu: GPUAdmissionOwner?
+    /// GPU admission for each generation (in-process and, if configured, the cross-process lease): by default the
+    /// process's ``GPUAdmission/shared``. A request's priority comes from its `GPUJob`.
+    public var gpu: GPUAdmissionOwner
     /// Measured footprints, shared with other pipelines of the model (and seedable with qualified values).
     public var ledger: FootprintLedger
     /// What phases are measured with. Tests pass a fixed probe, so what they plan never depends on whatever else the
@@ -21,8 +22,8 @@ public struct PipelineOptions: Sendable {
 
     public init(
         cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default, memory: MemoryBudget? = nil,
-        coordinator: ResourceCoordinator? = nil, gpu: GPUAdmissionOwner? = nil, ledger: FootprintLedger = FootprintLedger(),
-        probe: GPUMemoryProbe = .system
+        coordinator: ResourceCoordinator? = nil, gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("pipeline"),
+        ledger: FootprintLedger = FootprintLedger(), probe: GPUMemoryProbe = .system
     ) {
         self.cachePolicy = cachePolicy
         self.cache = cache

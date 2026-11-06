@@ -17,7 +17,7 @@ govern the integration:
 
 | From 0.0.x | Decision | Where in Aether-Kit | Gate |
 |---|---|---|---|
-| `SharedGPULease`, `GPUAdmission`, `FairInferenceQueue` (Atelier wire-compatible) | **Port** | `AetherHost` | Old CPU tests plus the Atelier interop check |
+| `SharedGPULease`, `GPUAdmission` (Atelier wire-compatible); 0.0.7's fair queue became the priority `PriorityInferenceQueue` | **Port** | `AetherHost` | Old CPU tests plus the Atelier interop check |
 | Lifecycle policy: idle unload, memory-pressure release, iOS easing rule | **Port** into `ModelHost` | `AetherHost` (§10) | Old CPU tests |
 | Store gaps: reader leases, cross-process install lock, abandoned-stage recovery, free-space check, HF token scoped to huggingface.co, auth headers dropped on cross-host redirect, 416 restart | **Port** into `ModelStore` | `AetherCore` | Old tests as specs |
 | `BackgroundTransport` (iOS background downloads, qualified on a device) | **Port** as a second `HTTPTransport` | `AetherCore` | Old tests; one device run later |

@@ -1,5 +1,5 @@
 import AetherCore
-import AetherHost
+@_spi(Testing) import AetherHost
 import AetherRuntime
 import Foundation
 import Synchronization
@@ -172,7 +172,7 @@ struct Krea2Tests {
         let loads = Calls()
         let pipeline = try Krea2Pipeline(
             manifest: try manifest ?? Self.manifest(), device: device, filter: filter,
-            options: .init(memory: .bytes(budget), probe: still), encodePrompt: encode,
+            options: .init(memory: .bytes(budget), gpu: .unadmitted, probe: still), encodePrompt: encode,
             load: { role throws(AetherError) in
                 loads.append(role)
                 switch role {
@@ -351,7 +351,7 @@ struct Krea2Tests {
             var manifest = try Self.manifest()
             change(&manifest)
             #expect(throws: AetherError.self) {
-                try Krea2Pipeline(manifest: manifest, device: Self.mac, filter: RecordingFilter(), options: .init(),
+                try Krea2Pipeline(manifest: manifest, device: Self.mac, filter: RecordingFilter(), options: .init(gpu: .unadmitted),
                                   encodePrompt: Self.encode, load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
             }
         }
@@ -361,7 +361,7 @@ struct Krea2Tests {
         try refuses { $0.schedule?.guidance = .init(kind: .cfg, scale: 2) }
         try refuses { $0.krea2 = nil }
         try refuses { $0.krea2?.segments = ["denoiser1", "denoiser0", "denoiser2", "denoiser3"] }
-        _ = try Krea2Pipeline(manifest: try Self.manifest(), device: Self.mac, filter: RecordingFilter(), options: .init(),
+        _ = try Krea2Pipeline(manifest: try Self.manifest(), device: Self.mac, filter: RecordingFilter(), options: .init(gpu: .unadmitted),
                               encodePrompt: Self.encode, load: { _ throws(AetherError) in FakeVAE(Calls()) }, fileBytes: { _ in 0 })
     }
 }
