@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs the hermetic CI before every push. Enable once per clone: git config core.hooksPath .githooks
+# Skip in an emergency with: git push --no-verify
+exec "$(git rev-parse --show-toplevel)/scripts/ci.sh"
