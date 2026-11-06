@@ -1,0 +1,41 @@
+{
+ "repository": "google/embeddinggemma-300m",
+ "revision": "57c266a740f537b4dc058e1b0cda161fd15afa75",
+ "license": "gemma",
+ "gated": "manual (accept the Gemma terms on the Hub; huggingface_hub reads the user's token)",
+ "comment": "Google DeepMind's EmbeddingGemma 300M checkpoint as a sentence-transformers model (Transformer -> mean Pooling -> Dense 768x3072 -> Dense 3072x768 -> Normalize). SHA-256 of every snapshot file the harness reads (model.safetensors, the Dense weights and tokenizer.json equal the Hub's LFS hashes at this revision), pinned 2026-11-06. The model card's front matter gives `license: gemma` and links the Gemma Terms of Use, whose Appendix lists EmbeddingGemma. The network code is transformers' Gemma3TextModel at the version Forge/uv.lock pins; the sentence-transformers modules (pooling, dense, normalize) are re-expressed from these configs in embeddinggemma_graphs.py.",
+ "files": {
+  "config.json": "8f863f76e2d9c710cc833dc92efa898c9adfd41031c786507cc6b0e49c2e3e68",
+  "model.safetensors": "cbf5a78393b6a033e0b8a63a57549964f7ed5c6fbeb4ba0694214f36123f2fd2",
+  "modules.json": "5b5649645fb756dad1a8e2efe7872d3bb32bc00b93c95f276dd17f474eedccdc",
+  "config_sentence_transformers.json": "8eadac15526f83d8950aa8d962a7f4f6e3d678bea71689960194561f33a5f64f",
+  "sentence_bert_config.json": "5ea26221ce733ace29a3897360e7c6ac8816b2ca0f7306657d69e594fece7325",
+  "1_Pooling/config.json": "35bbd47d7fdf1e378db6130bcc668b09d1aa67a7bbf7c8f89a9c71f4cc8ebcc6",
+  "2_Dense/config.json": "0661e5e0b67b8f8408ab31ab5d073a78972fc1dc24a49992a64796557e4f9e53",
+  "2_Dense/model.safetensors": "c327f2acb00149676ade24a75e11eb6ebbd367f9ee050267ba56829d2979f702",
+  "3_Dense/config.json": "8c4575c49353d63fb907878856ba94384635c3b2711fd5b7439e7f71888c66fc",
+  "3_Dense/model.safetensors": "ffb6cc5162e11e2ce6bc2367e121ee3bbbc4e82e1ee26826bd7573d4948d81b8",
+  "tokenizer.json": "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e",
+  "tokenizer_config.json": "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118",
+  "special_tokens_map.json": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+  "added_tokens.json": "50b2f405ba56a26d4913fd772089992252d7f942123cc0a034d96424221ba946",
+  "README.md": "e53702f564878ea87085742fe3f485872bef81317086e9ffe37125a81809772a"
+ },
+ "terms": {
+  "comment": "The Gemma Terms of Use and the Gemma Prohibited Use Policy it incorporates (Section 3.2), as plain text extracted from the pages on 2026-11-06 and checked in beside this file (Forge/embeddinggemma/terms/). Section 3.1 requires a copy of the Agreement, the use restrictions, a modification notice and a NOTICE file with Google's notice line in every Distribution; the exporter bundles all of them. The pages' HTML hashes at retrieval are recorded for provenance only (the pages change with site chrome).",
+  "files": {
+   "GEMMA-TERMS-OF-USE.txt": {
+    "sha256": "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d",
+    "url": "https://ai.google.dev/gemma/terms",
+    "lastModified": "April 1, 2026",
+    "htmlSHA256AtRetrieval": "8fb062f9bd2e387b9cae625b311c285afe7bf17c73e1167abc750782be37aafe"
+   },
+   "GEMMA-PROHIBITED-USE-POLICY.txt": {
+    "sha256": "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b",
+    "url": "https://ai.google.dev/gemma/prohibited_use_policy",
+    "lastModified": "February 21, 2024",
+    "htmlSHA256AtRetrieval": "00cdc23ed97a864695d17419c4a9ea3918ccafd91468e26ca4f04dcca30b2388"
+   }
+  }
+ }
+}
