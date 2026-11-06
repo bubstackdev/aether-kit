@@ -5,7 +5,11 @@ What 0.1.0 qualifies on a physical iPhone, against the same CPU references and b
 
 ```bash
 ASC_KEY_ID=… ASC_ISSUER_ID=… DEVELOPMENT_TEAM=… Tools/DeviceGate/run-on-device.sh <udid>   # build Release, sign, install, copy bundles + references, run, pull results
+GATES=m4 ASC_KEY_ID=… … Tools/DeviceGate/run-on-device.sh <udid> [result-name]           # one family only (sd-turbo, kokoro, m4)
 ```
+
+The device must be unlocked and reachable (cable, or the same network with Developer Mode on): `devicectl` refuses to
+launch on a locked phone.
 
 It signs with the App Store Connect API key in `~/.appstoreconnect/private_keys/`, has the increased-memory-limit
 entitlement, copies bundles and references into the app's Documents with `devicectl` (bundles aren't embedded), launches
@@ -70,3 +74,38 @@ The macOS bundle runs unchanged (durations on the GPU with the reshape hint, the
 
 macOS-only in 0.1.0: both pipelines refuse an iOS device (`unsupportedDevice`) before loading anything, covered by
 `Flux2KleinTests` and `Krea2Tests`.
+
+## M4 models: the harness (results pending)
+
+`GATES=m4` runs the five M4 models (`depth-anything-3-small`, `embeddinggemma-300m`, `clip-vit-b32`, `yolox-s`,
+`rf-detr-nano`, `rf-detr-seg-nano`; `Tools/DeviceGate/Sources/VisionGates.swift`):
+
+- **Bundles:** the Forge exports in `forge-outputs/<id>/bundle`, copied unchanged. They're JIT `.aimodel` packages with
+  nothing per architecture, so the macOS files serve iOS. Each loads with an **iOS variant manifest**: the script
+  writes a copy of the export's `.aether/aether.json` with `variant.platform: ios` to `Tools/DeviceGate/.staging/manifests/`
+  (gitignored) and copies it to `Documents/manifests/<id>.json`; the app checks the platform before it loads anything.
+  The run records the SHA-256 of each bundle's `SHA256SUMS` as copied (`bundles` in the result), so it names the
+  export that was measured.
+- **Parity (the qualification, `checks`):** each case's reference input tensor straight into the driver, against the
+  same CPU float32 reference and bars as the Mac gates: depth and confidence rel L2 ≤ 0.02 (DA3); token ids exact and
+  cosine ≥ 0.999 with retrieval (EmbeddingGemma); tokenizer 17/17, both towers cosine ≥ 0.999 and the zero-shot argmax
+  (CLIP); the same class set with IoU ≥ 0.95 and scores within 0.01 (YOLOX), plus mask IoU ≥ 0.95 (RF-DETR, the
+  reference's raw outputs through the driver's own head). Every case also checks that a repeat is bit-identical. The
+  end-to-end parts of the Mac gates need the upstream source images and are not run on the device.
+- **Placement (a measurement, `placement`; never fails the gate):** the same graphs with every `compute` set to `gpu`
+  and then to `neuralEngine`. Each gets the parity cases, then a sustained run of at least 30 inferences and 10 s on
+  the first case, which records the median, p90 and minimum latency. Over that run it also records the CPU energy
+  (`task_energy`), the GPU time (`task_gpu_utilisation`) and the CPU time (`getrusage`) billed to the app, plus the
+  ledger peak, the footprint delta and the thermal state before and after. Neural Engine work runs in `aned` and is
+  billed to none of these counters, so they can't compare GPU and ANE energy. What they can show is a fallback: an
+  "ANE" run that still bills GPU time per inference went to the GPU. `.neuralEngine` is only a preference in Core AI
+  (`allowedComputeUnitKinds` is read-only), and the result records `ComputeUnitKind.availableKinds`. No whole-device
+  power figure exists for the iPhone (`powermetrics` measures only the Mac).
+- **Build:** the M4 gates `@testable`-import AetherRuntime and AetherVision (`PreparedImage` from a tensor, the detector
+  heads), so the script builds with `ENABLE_TESTABILITY=YES` for every target.
+
+**2026-11-06, not yet measured on the phone.** The harness builds, signs, installs and copies every bundle (exports:
+DA3 `SHA256SUMS` 360e15f30084, EmbeddingGemma c4953b6f2d98, CLIP 233956bd6632, YOLOX-S 48bd6b75091d (parity-resize
+re-export, 14:08), RF-DETR nano 10db698f7d05 and seg-nano ac53fac5b4a8 (the same)). The launch was refused because the
+phone was locked, and it then dropped off the network. The results table, the GPU-versus-ANE comparison and any
+proposed iOS catalog variants wait for that run.

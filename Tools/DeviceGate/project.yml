@@ -16,6 +16,10 @@ targets:
         product: AetherImage
       - package: Aether
         product: AetherSpeech
+      - package: Aether
+        product: AetherVision
+      - package: Aether
+        product: AetherEmbeddings
     entitlements:
       path: Sources/DeviceGate.entitlements
       properties:
