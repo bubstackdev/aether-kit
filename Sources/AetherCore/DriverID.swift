@@ -59,6 +59,8 @@ public struct DriverID: Hashable, Sendable, Codable, CustomStringConvertible, Ex
 extension DriverID {
     /// Causal decoders: chat, VLM decoders, decision readout (DESIGN.md §6.2).
     public static let decoderLM = DriverID(validated: "decoder-lm@1")
+    /// Text-to-image latent diffusion with a U-Net and an epsilon Euler schedule (SD-Turbo; MANIFEST.md §5).
+    public static let latentDiffusion = DriverID(validated: "latent-diffusion@1")
 }
 
 private enum LowerAlnum {

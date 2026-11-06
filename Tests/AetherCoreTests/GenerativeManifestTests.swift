@@ -48,7 +48,7 @@ struct GenerativeManifestTests {
 
     @Test func closedVocabulariesRejectUnknownValues() throws {
         let cases: [(String, (inout [String: Any]) -> Void)] = [
-            ("schedule.kind", { Self.edit(&$0, "schedule") { $0["kind"] = "epsilonEuler" } }),
+            ("schedule.kind", { Self.edit(&$0, "schedule") { $0["kind"] = "ddim" } }),
             ("schedule.timestep", { Self.edit(&$0, "schedule") { $0["timestep"] = "sigma" } }),
             ("schedule.update", { Self.edit(&$0, "schedule") { $0["update"] = "x + dt * v, float32" } }),
             ("schedule.sigmas.base", { Self.edit(&$0, "schedule") {
@@ -108,9 +108,9 @@ struct GenerativeManifestTests {
         }
         // The valid alternatives decode.
         let flux = try Manifest.decode(try Self.mutated(shift(["rule": "empirical", "empirical": empirical])))
-        #expect(flux.schedule?.sigmas.shift.empirical?.tokenThreshold == 4300)
+        #expect(flux.schedule?.sigmas?.shift.empirical?.tokenThreshold == 4300)
         let unshifted = try Manifest.decode(try Self.mutated(shift(["rule": "none"])))
-        #expect(unshifted.schedule?.sigmas.shift.rule == Manifest.Schedule.Shift.Rule.none)
+        #expect(unshifted.schedule?.sigmas?.shift.rule == Manifest.Schedule.Shift.Rule.none)
         let cfg = try Manifest.decode(try Self.mutated { Self.edit(&$0, "schedule") { $0["guidance"] = ["kind": "cfg", "scale": 4.5] } })
         #expect(cfg.schedule?.guidance == .init(kind: .cfg, scale: 4.5))
     }
@@ -132,6 +132,81 @@ struct GenerativeManifestTests {
         #expect(try latent.tokenGrid(width: 768, height: 1344) == (84, 48))
         for (w, h) in [(0, 16), (17, 16), (1040, 1024), (Int.max - 15, Int.max - 15)] {
             #expect(throws: AetherError.self) { try latent.tokenGrid(width: w, height: h) }
+        }
+    }
+
+    // MARK: - epsilonEuler and spatial latents (SD-Turbo, `export_sdturbo.py --sample-manifest`)
+
+    static func sdTurbo(_ edit: ((inout [String: Any]) -> Void)? = nil) throws -> Data {
+        let data = try Fixtures.data("sd-turbo/aether.json")
+        guard let edit else { return data }
+        var json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        edit(&json)
+        return try JSONSerialization.data(withJSONObject: json)
+    }
+
+    @Test func theSDTurboExportDecodes() throws {
+        let manifest = try Manifest.decode(Self.sdTurbo())
+        #expect(manifest.driver == .latentDiffusion)
+        try DriverContract.latentDiffusion.validate(manifest)
+        let schedule = try #require(manifest.schedule)
+        #expect(schedule.kind == .epsilonEuler && schedule.steps == 1 && schedule.stepLimit == 4)
+        #expect(schedule.modelInput == .scaled && schedule.timestep == .table && schedule.update == .eulerEpsilon)
+        // The pinned scheduler's tables, as the 0.0.x spike recorded them (docs/evidence/sd-turbo-v006-2026-11-02.json).
+        let recorded: [Int: ([Float], [Float])] = [
+            1: ([999], [14.614646911621094, 0]),
+            2: ([999, 499], [14.614646911621094, 1.6128870248794556, 0]),
+            3: ([999, 666, 332], [14.614646911621094, 2.9183084964752197, 0.9292148947715759, 0]),
+            4: ([999, 749, 499, 249], [14.614646911621094, 4.081730842590332, 1.6128870248794556, 0.6932054162025452, 0]),
+        ]
+        for (steps, (timesteps, sigmas)) in recorded {
+            #expect(try schedule.table(steps: steps) == .init(timesteps: timesteps, sigmas: sigmas, initNoiseSigma: 14.614646911621094))
+        }
+        #expect(throws: AetherError.self) { try schedule.table(steps: 5) }
+        let latent = try #require(manifest.latent)
+        #expect(latent.packing == .spatial && latent.noise.order == .nchw && latent.channels == 4)
+        let size = try #require(latent.defaultSize)
+        #expect(size.width == 512 && size.height == 512)
+        #expect(try latent.tokenGrid(width: 512, height: 512) == (64, 64))
+        #expect(throws: AetherError.self) { try latent.tokenGrid(width: 256, height: 256) }
+        #expect(manifest.graphs.mapValues(\.residency) == ["textEncoder": .perPrompt, "denoiser": .perStep, "vaeDecoder": .perImage])
+        #expect(try Manifest.decode(manifest.encoded()) == manifest)
+    }
+
+    @Test func epsilonEulerRulesNameTheirField() throws {
+        func schedule(_ change: @escaping (inout [String: Any]) -> Void) -> (inout [String: Any]) -> Void {
+            { Self.edit(&$0, "schedule", change) }
+        }
+        func table(_ steps: String, _ change: @escaping (inout [String: Any]) -> Void) -> (inout [String: Any]) -> Void {
+            schedule { s in
+                var tables = s["tables"] as! [String: Any]
+                var t = tables[steps] as! [String: Any]
+                change(&t)
+                tables[steps] = t
+                s["tables"] = tables
+            }
+        }
+        let cases: [(String, (inout [String: Any]) -> Void)] = [
+            ("schedule.tables", schedule { $0["tables"] = nil }),
+            ("schedule.tables", schedule { $0["maxSteps"] = 5 }),
+            ("schedule.sigmas", schedule { $0["sigmas"] = ["base": "linspace(1, 1/steps, steps)", "shift": ["rule": "none"], "terminal": 0] }),
+            ("schedule.modelInput", schedule { $0["modelInput"] = nil }),
+            ("schedule.timestep", schedule { $0["timestep"] = "sigma * trainTimesteps / trainTimesteps" }),
+            ("schedule.update", schedule { $0["update"] = "x + (sigma[i+1] - sigma[i]) * velocity" }),
+            ("schedule.tables.2.timesteps", table("2") { $0["timesteps"] = [999] }),
+            ("schedule.tables.2.timesteps", table("2") { $0["timesteps"] = [499, 999] }),
+            ("schedule.tables.3.sigmas", table("3") { $0["sigmas"] = [14.6, 2.9, 0.9, 0.1] }),
+            ("schedule.tables.1.initNoiseSigma", table("1") { $0["initNoiseSigma"] = 0 }),
+            ("latent.noise.order", { Self.edit(&$0, "latent") { $0["noise"] = ["kind": "splitmix64BoxMuller", "order": "packedToken", "dtype": "float32"] } }),
+            ("latent.sizes.0", { Self.edit(&$0, "latent") { $0["sizes"] = [[500, 512]] } }),
+            ("latent.sizes", { Self.edit(&$0, "latent") { $0["sizes"] = [] as [Any] } }),
+        ]
+        for (expected, edit) in cases {
+            expectField(expected) { _ = try Manifest.decode(try Self.sdTurbo(edit)) }
+        }
+        // A flow-matching schedule must not carry epsilonEuler's fields.
+        expectField("schedule.tables") {
+            _ = try Manifest.decode(try Self.mutated { Self.edit(&$0, "schedule") { $0["tables"] = [:] as [String: Any] } })
         }
     }
 }
