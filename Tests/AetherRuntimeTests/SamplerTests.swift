@@ -32,6 +32,16 @@ struct SamplerTests {
     }
 
     /// The same greedy token, the same kept set, and probabilities within a relative 1e-4 on every recorded row.
+    /// Second review, item 12: a tiny positive temperature turned negative quotients into -inf, the top-k scan kept
+    /// fewer than k values and indexed past them (a crash).
+    @Test func aTinyTemperatureWithTopKDoesNotTrap() throws {
+        let logits: [Float] = [-1e30, -2e30, -3e30, 0.5]
+        let picked = try Sampler.distribution(logits, temperature: 1e-38, topK: 2, topP: nil)
+        #expect(picked.ids.contains(3))
+        #expect(abs(picked.probabilities.reduce(0, +) - 1) < 1e-9)
+        #expect(Sampler.kthLargest(logits, 2, divisor: 1) == -1e30)
+    }
+
     @Test func matchesTransformersProcessorsAndWarpers() throws {
         let fixture = try JSONDecoder().decode(WarperFixture.self, from: Self.fixture("transformers-warpers"))
         #expect(fixture.cases.count == 18 && fixture.transformers == "4.57.3")

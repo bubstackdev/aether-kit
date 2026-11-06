@@ -46,6 +46,9 @@ public final class ResidentAdmission {
     public let manifest: Manifest
     public let settings: Settings
     let device: Device
+    /// The ledger's model key: the manifest id, the weights' source revision and the device's Core AI architecture, so
+    /// another export of the model, or the same bundle on another device, never reuses these measurements.
+    public let modelKey: String
     private let load: GraphResidency.Loader
     private let fileBytes: (String) -> Int64
     public private(set) var residency: GraphResidency?
@@ -65,6 +68,7 @@ public final class ResidentAdmission {
         self.manifest = manifest
         self.device = device
         self.settings = settings
+        modelKey = "\(manifest.id)@\(manifest.provenance?.sourceRevision ?? "unpinned")/\(device.platform.rawValue)-\(device.architecture)"
         self.load = load
         self.fileBytes = fileBytes
     }
@@ -75,8 +79,8 @@ public final class ResidentAdmission {
     /// The plan's inputs for `profile`.
     public func inputs(profile: String) -> ResidencyPlan.Inputs {
         ResidencyPlan.inputs(
-            manifest: manifest, ledger: settings.ledger, profile: profile, unphasedPhase: settings.unphasedPhase,
-            fileBytes: fileBytes)
+            manifest: manifest, ledger: settings.ledger, model: modelKey, profile: profile,
+            unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes)
     }
 
     /// The budget a plan must fit now.
@@ -111,7 +115,7 @@ public final class ResidentAdmission {
             shapes = shape.map { [$0] } ?? []
         }
         let fresh = GraphResidency(
-            manifest: manifest, mode: plan.mode, ledger: settings.ledger, profile: profile, probe: settings.probe,
+            manifest: manifest, mode: plan.mode, ledger: settings.ledger, model: modelKey, profile: profile, probe: settings.probe,
             releasedBaseline: releasedFloor, load: load)
         releasedFloor = nil
         residency = fresh

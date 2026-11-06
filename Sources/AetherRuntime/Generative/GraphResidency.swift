@@ -227,6 +227,10 @@ public final class GraphResidency {
     private var releasedBaseline: Int64?
     /// The lowest baseline any phase began at: where released memory, once returned, leaves the level.
     public private(set) var floor: Int64?
+    /// All resident: what each phase's graphs hold so far. A phase that runs again (the next generation) adds to the
+    /// same graphs (a new shape's specialization, say), so its footprint is the sum of its occurrences' growth, not the
+    /// largest single one.
+    private var heldSoFar: [Manifest.Residency: Int64] = [:]
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
@@ -293,8 +297,11 @@ public final class GraphResidency {
             current.meter.stop()
             let level = probe.allocatedBytes()
             current.meter.observe(level)
+            let prior = mode == .allResident ? heldSoFar[phase] ?? 0 : 0
+            let held = prior + (level - current.baseline)
+            if mode == .allResident { heldSoFar[phase] = held }
             ledger.record(.init(model: model, profile: profile, phase: phase),
-                          PhaseFootprint(peakBytes: current.meter.peak - current.baseline, heldBytes: level - current.baseline))
+                          PhaseFootprint(peakBytes: prior + (current.meter.peak - current.baseline), heldBytes: held))
             open = nil
         }
         if mode == .perPhase {
@@ -307,6 +314,7 @@ public final class GraphResidency {
 
     /// Releases every graph (the driver unloads). An open phase is discarded unrecorded.
     public func releaseAll() {
+        heldSoFar = [:]
         open?.meter.stop()
         open = nil
         loaded.removeAll()

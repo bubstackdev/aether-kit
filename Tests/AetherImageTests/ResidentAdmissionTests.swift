@@ -62,7 +62,7 @@ struct ResidentAdmissionTests {
         let admission = try Self.admission(coordinator: coordinator, ledger: ledger)
         try await Self.loadAll(try admission.begin(profile: "512x512"))
         admission.finish()
-        ledger.record(.init(model: "sd-turbo", profile: "1024x1024", phase: .perStep),
+        ledger.record(.init(model: admission.modelKey, profile: "1024x1024", phase: .perStep),
                       PhaseFootprint(peakBytes: 5_000, heldBytes: 5_000))
         #expect(throws: AetherError.self) { _ = try admission.begin(profile: "1024x1024") }
         #expect(admission.residentRoles.isEmpty && coordinator.snapshot.reservedBytes == 0)
@@ -99,6 +99,17 @@ struct ResidentAdmissionTests {
 
     /// Finding 1: a manifest whose graphs have no residency (Kokoro) plans with what it measured under its phase; before,
     /// `phases` stayed empty and the plan always came from the files.
+    /// Second review (overlap with finding 5): measurements are keyed by the weights' revision and the device, not
+    /// the manifest id alone.
+    @Test func ledgerKeysNameTheRevisionAndTheDevice() throws {
+        let mac = try Self.admission()
+        let phone = ResidentAdmission(
+            manifest: try LatentDiffusionTests.manifest(), device: Device(platform: .iOS, architecture: "h19p"),
+            settings: .init(memory: .bytes(1 << 40), coordinator: nil, ledger: .init(), probe: GPUMemoryProbe { 0 }),
+            load: { _ in Inert() }, fileBytes: { _ in 0 })
+        #expect(mac.modelKey != phone.modelKey && mac.modelKey.hasPrefix("sd-turbo@"))
+    }
+
     @Test func unphasedManifestsPlanWithTheirMeasurement() throws {
         let url = LatentDiffusionTests.manifestURL.deletingLastPathComponent().deletingLastPathComponent()
             .appending(path: "kokoro/aether.json")

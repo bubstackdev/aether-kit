@@ -377,12 +377,16 @@ public struct Sampler: Sendable {
 
     /// The k-th largest finite logit divided by `divisor` (1 ≤ k ≤ the finite count), by one selection scan that keeps
     /// at most 2k values: whatever is not above the current k-th largest can't change it.
+    ///
+    /// Selects on the raw logits and divides only the result (dividing by a positive temperature keeps the order): a
+    /// tiny temperature turns negative quotients into `-inf`, which the scan used to skip, keeping fewer than `k`
+    /// values and then indexing past them.
     static func kthLargest(_ logits: [Float], _ k: Int, divisor: Float) -> Float {
         var kept: [Float] = []
         kept.reserveCapacity(2 * k)
         var floor = -Float.infinity
-        for score in logits where score.isFinite && score / divisor > floor {
-            kept.append(score / divisor)
+        for score in logits where score.isFinite && (kept.count < k || score > floor) {
+            kept.append(score)
             if kept.count == 2 * k {
                 kept.sort(by: >)
                 kept.removeLast(k)
@@ -390,7 +394,7 @@ public struct Sampler: Sendable {
             }
         }
         kept.sort(by: >)
-        return kept[k - 1]
+        return kept[min(k, kept.count) - 1] / divisor
     }
 
     /// Positions (ascending) of the nucleus: in descending value order, ties by ascending position, every candidate

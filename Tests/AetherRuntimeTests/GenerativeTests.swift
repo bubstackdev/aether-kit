@@ -319,6 +319,25 @@ struct ResidencyTests {
         #expect(residency.floor == 1000)
     }
 
+    /// Second review, overlap with finding 4: resident graphs that grow on a phase's next occurrence (100, then 80
+    /// more) were recorded as the largest single growth (100), not what they hold (180).
+    @Test func residentGrowthAccumulatesAcrossOccurrences() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let manifest = try Self.krea()
+        let residency = GraphResidency(manifest: manifest, mode: .allResident, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        residency.beginPhase(.perPrompt)
+        _ = try await residency.graph("textEncoder")
+        gpu.add(100)
+        residency.endPhase(.perPrompt)
+        residency.beginPhase(.perPrompt)
+        gpu.add(80)
+        residency.endPhase(.perPrompt)
+        #expect(ledger.footprint(.init(model: manifest.id, profile: "p", phase: .perPrompt))
+            == PhaseFootprint(peakBytes: 180, heldBytes: 180))
+    }
+
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {
         let gpu = FakeGPU()
         let ledger = FootprintLedger()
