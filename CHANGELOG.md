@@ -159,6 +159,11 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   from `ImageInput` at the tensor path's bars wherever ImageIO decodes the same bytes as Pillow (YOLOX's PNG cases:
   IoU 1.0, scores within 2e-6); JPEG photos, which the two decoders decode differently, are printed. The references
   record that decode (`decoded.png`).
+- The `depth-anything-3-small` bundle names `pillowBicubic` (was `vImage`), the stretch its reference already uses;
+  re-exported (the 504 × 504 graph unchanged: bit-identical outputs) and re-pinned (`4c1fae82`). The reference records
+  Pillow's decode (`decoded.png`); `DepthEstimatorGateTests` checks it gives the reference tensor bit for bit through
+  `preprocess.image` and gates the SOH frames end to end, resized back, at rel L2 0.02 (0.00074 and 0.00041, were
+  0.011 and 0.014 ungated). Upstream's aspect-preserving cv2 preprocessing is a later slice (docs/M4.md).
 - `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
   Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
   `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's

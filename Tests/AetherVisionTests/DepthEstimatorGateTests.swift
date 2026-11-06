@@ -12,13 +12,16 @@ import AetherHost
 ///
 /// - **Graph parity** (M4.md's bar): each case's `input.f32` straight into the graph, depth and confidence rel L2 ≤ 0.02,
 ///   and a repeat bit-identical.
-/// - **The same pixels end to end:** each image case's input rebuilt as an 8-bit 504 x 504 image (exact: the reference's
-///   input is Pillow's 8-bit resize / 255) and estimated from `ImageInput`, so decode, preprocess and postprocess are
-///   in the path; the same bar.
-/// - **The source frames end to end:** upstream's SOH frames (1208 x 680) estimated from their files, resized back to the
-///   source: finite, the source's size, and the polarity (the sky, top, farther than the foreground, bottom). The rel L2
-///   to the reference resized back the same way is reported, not gated: Kit stretches with vImage, the reference with
-///   Pillow's bicubic. The frames come from `Forge/depth/fetch_upstream.py`'s directory
+/// - **The host's preprocessing, apart from the decode:** the RGB Pillow decoded for the reference (`decoded.png`,
+///   lossless and untagged) through the bundle's `preprocess.image` (`pillowBicubic`, the 504 x 504 stretch) is the
+///   reference's `input.f32` bit for bit at the graph's float16 input, so its depth is the graph path's exactly.
+/// - **End to end from Pillow's pixels:** `decoded.png` estimated from ``ImageInput`` and resized back to the source
+///   (1208 x 680), against the reference resized back the same way: the same bar.
+/// - **The source frames end to end:** upstream's SOH frames estimated from their files (ImageIO's decode), resized
+///   back: finite, the source's size, and the polarity (the sky, top, farther than the foreground, bottom). Where ImageIO
+///   decodes the very bytes Pillow does (the frames are PNGs), the tensor must be the reference's and the rel L2 to the
+///   resized reference is gated at the same bar; where it does not (a JPEG source), it is reported, the resize being
+///   gated by the step above. The frames come from `Forge/depth/fetch_upstream.py`'s directory
 ///   (`~/.cache/aether-kit/depth/upstream/depth-anything-3-<commit>`) or `AETHER_DEPTH_FRAMES`, checked by SHA-256; absent,
 ///   that part is skipped with a note.
 ///
@@ -74,20 +77,29 @@ struct DepthEstimatorGateTests {
         return ((diff / max(norm, .leastNonzeroMagnitude)).squareRoot(), worst)
     }
 
-    /// An NCHW [1, 3, H, W] tensor on [0, 1] as the 8-bit sRGB image it was made from.
-    static func image(fromInput input: [Float], width: Int, height: Int) throws -> ImageInput {
-        let plane = width * height
-        var bytes = [UInt8](repeating: 255, count: 4 * plane)
-        for i in 0..<plane {
-            for c in 0..<3 { bytes[4 * i + c] = UInt8((input[c * plane + i] * 255).rounded()) }
+    /// How many values differ, and the largest difference.
+    static func differences<T: BinaryFloatingPoint>(_ a: [T], _ b: [T]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0.0
+        for (x, y) in zip(a, b) where x != y {
+            count += 1
+            largest = max(largest, abs(Double(x) - Double(y)))
         }
-        let provider = CGDataProvider(data: Data(bytes) as CFData)!
-        let image = try #require(CGImage(
-            width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: 4 * width,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue),
-            provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
-        return ImageInput(image)
+        return (count, largest)
     }
+
+    static func differences(_ a: [UInt8], _ b: [UInt8]) -> (count: Int, max: Double) {
+        guard a.count == b.count else { return (max(a.count, b.count), .infinity) }
+        var count = 0, largest = 0
+        for i in a.indices where a[i] != b[i] {
+            count += 1
+            largest = max(largest, abs(Int(a[i]) - Int(b[i])))
+        }
+        return (count, Double(largest))
+    }
+
+    /// Host float32 values as the graph's float16 input sees them (the reference's `input.f32` is fp16-representable).
+    static func float16(_ values: [Float]) -> [Float] { values.map { Float(Float16($0)) } }
 
     /// The mean of the top and bottom tenth of a map's rows.
     static func bands(_ map: DepthMap) -> (top: Double, bottom: Double) {
@@ -137,36 +149,63 @@ struct DepthEstimatorGateTests {
             let repeated = try await estimator.estimate(prepared, DepthRequest(resizeBack: false))
             #expect(repeated == map, "\(entry.name): repeat bit-identical")
 
-            // The image cases' inputs are 8-bit pixels / 255; the synthetic case's are not.
             guard c.source.kind == "image", let file = c.source.upstreamFile, let sha = c.source.sha256 else { continue }
 
-            // (b) The same pixels from an ImageInput: decode, preprocess (an identity stretch) and postprocess.
-            let pixels = try await estimator.estimate(Self.image(fromInput: input, width: width, height: height))
-            #expect(pixels.isSourceSized && pixels.width == width)
-            let p = Self.compare(pixels.values, depth)
-            print("gate: depth \(entry.name) pixels end to end: depth rel L2 \(p.relL2) (max |Δ| \(p.maxAbs))")
-            #expect(p.relL2 <= Self.bar, "\(entry.name): end-to-end rel L2 from the same pixels")
+            // (b) Pillow's decode through the host's preprocessing (`pillowBicubic`'s 504 x 504 stretch): the reference
+            // tensor bit for bit at the graph's float16 input, so the graph sees what upstream saw.
+            let preprocessor = try ImagePreprocessor(manifest: model.manifest)
+            let pillowRGB = try ImageInput(contentsOf: directory.appending(path: "decoded.png")).decode(colorSpace: .deviceRGB)
+            let fromPillow = try preprocessor.prepare(pillowRGB)
+            let resizeDiff = Self.differences(Self.float16(fromPillow.floats()), input)
+            print("gate: depth \(entry.name) Pillow's decode (\(pillowRGB.width)x\(pillowRGB.height)) through preprocess.image: "
+                  + "\(resizeDiff.count) values differ from input.f32 at float16 (max |Δ| \(resizeDiff.max))")
+            #expect(fromPillow.shape == shape, "\(entry.name): prepared shape")
+            #expect(resizeDiff.count == 0, "\(entry.name): \(resizeDiff.count) values differ from the reference tensor")
+            let pillowMap = try await estimator.estimate(fromPillow, DepthRequest(resizeBack: false))
+            #expect(pillowMap.values == map.values && pillowMap.confidence == map.confidence,
+                    "\(entry.name): depth from Pillow's pixels is the graph path's, bit for bit")
 
-            // (c) The source frame, resized back.
+            // (c) End to end from Pillow's pixels: decode, preprocess, graph and the resize back to the source, against
+            // the reference resized back the same way.
+            let pixels = try await estimator.estimate(ImageInput(contentsOf: directory.appending(path: "decoded.png")))
+            let g = pixels.geometry
+            #expect(pixels.isSourceSized && g.sourceWidth == pillowRGB.width && g.sourceHeight == pillowRGB.height)
+            let resizedReference = DepthResampler(g).resample(depth)
+            let p = Self.compare(pixels.values, resizedReference)
+            print("gate: depth \(entry.name) Pillow's pixels end to end \(g.sourceWidth)x\(g.sourceHeight): rel L2 to the "
+                  + "resized reference \(p.relL2) (max |Δ| \(p.maxAbs))")
+            #expect(p.relL2 <= Self.bar, "\(entry.name): end-to-end rel L2 from Pillow's pixels")
+
+            // (d) The source frame, ImageIO's decode, resized back: gated at the same bar where ImageIO decodes the very
+            // pixels Pillow does (the SOH frames are PNGs); otherwise (a JPEG) reported only, the resize gated by (b).
             let url = frames.appending(path: file)
             guard let data = try? Data(contentsOf: url) else {
                 print("gate: depth \(entry.name): no source frame at \(url.path) (Forge/depth/fetch_upstream.py); skipped")
                 continue
             }
             #expect(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() == sha, "\(file): SHA-256")
+            let source = ImageInput(contentsOf: url)
+            let decodeDiff = Self.differences(try source.decode(colorSpace: .deviceRGB).rgb, pillowRGB.rgb)
+            let framePrepared = try estimator.prepare(source)
+            let tensorDiff = Self.differences(Self.float16(framePrepared.floats()), input)
             let frameStarted = ContinuousClock.now
-            let frame = try await estimator.estimate(ImageInput(contentsOf: url))
+            let frame = try await estimator.estimate(source)
             let frameElapsed = ContinuousClock.now - frameStarted
-            let g = frame.geometry
-            #expect(frame.isSourceSized && frame.values.count == g.sourceWidth * g.sourceHeight)
+            #expect(frame.geometry == g && frame.isSourceSized && frame.values.count == g.sourceWidth * g.sourceHeight)
             #expect(frame.values.allSatisfy(\.isFinite) && frame.confidence?.allSatisfy(\.isFinite) == true)
             let (top, bottom) = Self.bands(frame)
             #expect(top > 1.5 * bottom, "\(entry.name): the sky is farther than the foreground (largerIsFarther)")
-            let resizedReference = DepthResampler(g).resample(depth)
             let f = Self.compare(frame.values, resizedReference)
             print("gate: depth \(entry.name) frame \(g.sourceWidth)x\(g.sourceHeight) end to end: rel L2 to the resized "
-                  + "reference \(f.relL2) (not gated: vImage vs Pillow bicubic), top/bottom band means \(top) / \(bottom), "
-                  + "range \(frame.range.map { "\($0)" } ?? "none"), \(frameElapsed)")
+                  + "reference \(f.relL2) (max |Δ| \(f.maxAbs)); ImageIO vs Pillow decode \(decodeDiff.count) bytes differ "
+                  + "(max \(Int(decodeDiff.max))), tensor \(tensorDiff.count) values differ (max \(tensorDiff.max)); "
+                  + "top/bottom band means \(top) / \(bottom), range \(frame.range.map { "\($0)" } ?? "none"), \(frameElapsed)")
+            if decodeDiff.count == 0 {
+                #expect(tensorDiff.count == 0, "\(entry.name) end to end: the same decode must give the reference tensor")
+                #expect(f.relL2 <= Self.bar, "\(entry.name) end to end: rel L2 to the resized reference")
+            } else {
+                print("gate: depth \(entry.name) end to end not gated: ImageIO's decode is not Pillow's (the resize is gated above)")
+            }
         }
         for (key, footprint) in estimator.options.ledger.snapshot.sorted(by: { $0.key.description < $1.key.description }) {
             print("gate: depth \(key): peak \(footprint.peakBytes >> 20) MiB, held \(footprint.heldBytes >> 20) MiB")
