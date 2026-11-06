@@ -52,8 +52,25 @@ the owner. It's an ostris ai-toolkit **LyCORIS LoKr**: per module `lokr_w1` [4×
 `up/down/gate`) and the text-fusion `layerwise_blocks` and `refiner_blocks`. The exporter maps those keys onto the
 diffusers transformer and adds `scale · kron(w1, w2)`, verifying the key mapping is total (no unmatched adapter key)
 and recording the adapter hash in the bundle provenance. It isn't on Hugging Face, so it's a local Forge input
-(`aether/forge-inputs/krea2-realism/`), and the **exported** realism bundle is what gets hosted and pinned. Its
-license is **not recorded in the file**; it must be recorded before the realism bundle is published.
+(`aether/forge-inputs/krea2-realism/`), and the **exported** realism bundle is what gets hosted and pinned. Its source is
+**Civitai model 2688234 "Realism Engine Ideogram 4 + Krea 2"** (by `razzz`, version "Krea2 v3.0", matched by SHA-256).
+Civitai's permissions allow sharing and selling merges, without credit, but `allowDifferentLicense: false` means
+**a merge keeps those same permissions**. Civitai marks the model NSFW: it's trained for explicit adult content.
+
+**Krea 2 Community License v.1 (2026-06-22)** covers both Krea variants and is the binding one:
+- **Derivatives:** merges are permitted Derivatives.
+- **Distribution:** ship the Agreement; the model name begins with "Krea"; a NOTICE carries Krea's attribution line
+  and states the model was modified; nothing is presented as official.
+- **Commercial use:** only while company-wide trailing-12-month revenue is under $1M; otherwise an enterprise
+  license.
+- **§4.2 content filtering:** **any deployment must implement content filters** against prohibited, harmful or
+  unlawful output. The Acceptable Use Policy prohibits, among other things, CSAM or any sexual depiction of minors,
+  and non-consensual intimate imagery, including deepfakes of real people.
+- **Consequence for G3:** the Krea driver takes an explicit `ContentFilter` from the app. It has no silent default;
+  the app chooses a classifier or moderation service and owns that choice. This applies to both variants, and it's a
+  requirement for the realism one.
+
+The full record is in `forge-inputs/krea2-realism/SOURCE.json`.
 
 `Forge/`, the Python export tooling with locked uv environments, comes over from 0.0.x as a top-level tooling
 directory outside SwiftPM. Its exporters write **this kit's** `aether.json`. The 0.0.x prototype bundles also call
