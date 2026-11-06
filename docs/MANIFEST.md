@@ -76,8 +76,8 @@ Rejected: `gemma4-ple-lm@1`. The PLE gather happens in-graph, so `decoder-lm@1` 
 
 ### 1.5 Generation
 
-The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative) and `krea2@1` (§5.5,
-proposed until G3).
+The generative drivers and their blocks are in §5: `latent-diffusion@1` (§5.4, normative), `krea2@1` (§5.5,
+proposed until G3) and the speech driver `kokoro@1` (§5.8, proposed until G5).
 
 ---
 
@@ -488,3 +488,35 @@ Precision is recorded in `precision` (int8 per-channel weights on the text encod
 `LICENSE.md` and a modification `NOTICE`. The exporter's parity gate (`check_flux2.py`) gates the real conditioning rows
 and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
 padding rows move the image under any precision change.
+
+### 5.8 `kokoro@1` (proposed until G5)
+
+Status: **proposed**, 2026-11-06. The producer is `Forge/kokoro/export_kokoro.py`; its `--sample-manifest` output is the
+decoding fixture (`Tests/AetherCoreTests/Fixtures/kokoro/`). A v1 loader treats the bundle as an uncatalogued driver
+(`unknownDriver`) until `kokoro@1` is registered (G5 step 2, `AetherSpeech`).
+
+| driver | graphs | required roles / blocks | optional | bundles |
+|---|---|---|---|---|
+| `kokoro@1` | `durations` (`durations`), `decoder` (`decode`) | durations in `tokens` (int32 [1,T], T 3…512), `style` [1,256]; out `durations` (per-token duration sums [1,T], before speed and rounding), `prosody` [1,T,640], `text` [1,512,T]. decoder in `prosody` [1,640,F_b], `text` [1,512,F_b] (aligned on the host, zero-padded to the bucket F_b), `style`, `noise` [1,F_b,600,9], `frames` (int32 [1], the valid count); out `audio` [1,600·F_b], of which the first 600·frames samples are the utterance. Blocks `tables` (one voice per entry), `kokoro`. | — | kokoro-82m (Forge export, `Forge/kokoro/`) |
+
+`kokoro` is owned by `kokoro@1`:
+
+| field | req | meaning |
+|---|---|---|
+| `sampleRate`, `samplesPerFrame`, `harmonics` | R | 24000, 600, 9 |
+| `phonemes` | R | `{vocabulary: {scalar: id}, boundaryToken: 0, maxPhonemes: 510, normalization: none, unknown: refuse}`: the input is a phoneme string in Kokoro's alphabet, read as Unicode scalars without normalization (nasal vowels are `a` + U+0303; `ç` is precomposed), wrapped in boundary tokens. Upstream silently drops unknown symbols; the driver refuses them, so a G2P mismatch shows. No grapheme-to-phoneme step is part of the bundle (see below) |
+| `style` | R | `{dimension: 256, row: "phonemeCount - 1", decoder: style[0..<128], prosody: style[128..<256]}`: a voice table's row chosen by phoneme count, as upstream does |
+| `durations` | R | `{frames: "max(1, roundHalfToEven(duration / speed))", alignment: repeat}`: per-token frames from the sums in float32 (`torch.round`), and the alignment as a gather (each token's features repeated for its frames) |
+| `frames` | R | `{buckets: [64…4096], maxFrames: 4096, cap: {macos: 1024, ios: 512}}`: the smallest bucket that fits; the decoder specializes once per bucket. Metal memory per bucket grows faster than the bucket (0.0.x), so utterances above the platform cap are refused (or split by the caller) |
+| `noise` | R | `{kind: splitmix64BoxMuller, shape: "[1, bucketFrames, 600, 9]", order: rowMajor, dtype: float32}`: the G0 stream for the request's seed, drawn for the whole bucket (prefix-stable, so the valid frames get an unpadded run's noise) |
+| `voices` | R | `{id: {table, language, gender}}`: language from the id's first letter (`a` en-US, `b` en-GB, `e` es, `f` fr, `h` hi, `i` it, `j` ja, `p` pt-BR, `z` zh), gender from the second |
+
+Each voice is a `tables` entry (`voices/<id>.f32`, float32 [510, 256], row-major little-endian). Placement: `durations`
+on the CPU with `expectFrequentReshapes` (dynamic T), `decoder` on the GPU without it (bucketed shapes; 0.0.x saw the
+hint abort on the GPU). License `Apache-2.0`; the bundle ships the license and a modification `NOTICE`.
+
+**Phonemes, not text.** Upstream's G2P (`misaki`) falls back to espeak-ng (GPL-3.0) for out-of-dictionary words, which
+an Apache-2.0 SDK can't link, so the driver takes phonemes and the app supplies G2P (0.0.x's `SpeechPhonemizer`
+protocol: text → utterances of ≤ 510 scalars). The exporter's gate (`check_kokoro.py`): token ids and frames exact;
+waveform rel. L2 ≤ min(0.05, 4× the case's float32-vs-float64 upstream difference); log-mel mean ≤ 0.03 nats; repeats
+bit-identical.
