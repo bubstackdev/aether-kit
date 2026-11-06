@@ -170,8 +170,11 @@ struct LatentDiffusionTests {
         let (shared, _) = try Self.pipeline(calls: Calls(), coordinator: coordinator)
         _ = try await shared.generate(.init(prompt: "a cat"))
         #expect(coordinator.snapshot.reservedBytes == 0)
+        // A fresh pipeline plans from its files (120): `shared` has measured its phases with the real Metal probe,
+        // and what fake graphs measure depends on whatever else the process runs.
+        let (fresh, _) = try Self.pipeline(calls: Calls(), coordinator: coordinator)
         let held = try coordinator.reserve(bytes: 950)
-        await #expect(throws: AetherError.self) { try await shared.generate(.init(prompt: "a cat")) }
+        await #expect(throws: AetherError.self) { try await fresh.generate(.init(prompt: "a cat")) }
         held.release()
     }
 

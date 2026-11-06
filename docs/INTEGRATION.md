@@ -78,6 +78,18 @@ directory outside SwiftPM. Its exporters write **this kit's** `aether.json`. The
 their manifest `aether.json` (`schema: 1, driver: "diffusion"`); this kit's loader rejects them as `unknownDriver`,
 and no ported pipeline reuses them.
 
+## Release decisions (2026-11-06)
+
+- **Hosting:** one Hugging Face repo per exported bundle in the `aether-models` org, pinned by revision
+  (`aether-models/aether-kit-<model>`, the 0.0.x naming). Krea repos begin with "Krea" (its license). A catalog
+  entry is added only after its bundle is uploaded and pinned; until then gates install from the local export.
+- **iOS in 0.1.0:** SD-Turbo is qualified on the iPhone. FLUX.2, Krea and H3 are macOS-only; on iOS, admission refuses
+  them with a clear error before loading.
+- **Krea `ContentFilter`:** a protocol the app implements, with no default; the driver can't be built without one.
+  The kit can't enforce what a filter does: the license (§4.2) binds the deployer, and the API docs say so.
+- **Realism:** its own **gated** repo, apart from vanilla Krea, carrying the Krea license, NOTICE, use policy and
+  the adapter's Civitai permissions; its catalog entry is marked mature.
+
 ## Lessons carried into the design (measured in 0.0.x)
 
 - **Core AI retains Metal memory on every input-shape change when `expectFrequentReshapes` is on,** until the model
