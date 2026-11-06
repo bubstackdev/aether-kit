@@ -1,0 +1,89 @@
+{
+ "repository": "ModernVBERT/colmodernvbert-merged",
+ "revision": "a8b921f15ec3c8ba4264d40e1dbd7d77ea1336f0",
+ "license": "MIT",
+ "gated": false,
+ "comment": "ColModernVBERT (Illuin Technology / the ModernVBERT authors) with its LoRA adapter merged into the base (BUILD_INFO.json: ModernVBERT/colmodernvbert-base + the ModernVBERT/colmodernvbert adapter), the checkpoint transformers' ColModernVBert documentation names. model.safetensors is the ModernVBertModel (float32) plus `custom_text_proj` (768 -> 128), which equals 1_Dense/model.safetensors, the sentence-transformers Dense module. SHA-256 of every snapshot file the harness reads (the safetensors equal the Hub's LFS hashes at this revision), pinned 2026-11-06. The card's front matter gives `license: mit` and says the architecture, weights and training code are released under MIT; the Hub repository has no LICENSE file, so the MIT text the bundle ships is the authors' code repository's (upstreamCode). The model code is transformers' ModernVBert / ColModernVBert at the version Forge/uv.lock pins.",
+ "files": {
+  "README.md": "9ecb517a32ffccc2311ef726fc2f229e5e84bd7faa25cf3cf36569923b3909a4",
+  "BUILD_INFO.json": "e38071a61460e5ee81d379159e41a025b7bd16657ad08362cd6ed9134764b36a",
+  "config.json": "b732f7f984f68084fa2e4734128f5ec97dd1eb21ba21c542643b9709f47acb89",
+  "model.safetensors": "fb3658a092dd13eef3561612a31794041c9fa9162246c8e5b957fcd082f469d5",
+  "1_Dense/config.json": "0106f337c1ebe652d0106be4e61d4f1c14cff0c170c1018aead4a39cb9e7c7f2",
+  "1_Dense/model.safetensors": "e7ec5433ad5f7366368a1fdecb0245e9948f2b7ab4a60ceefe20413d8fddb6ce",
+  "2_Normalize/config.json": "6d5d8f9c53fc983daed09cbfd278701b293a629a6906630ee6ae18f5d07cfe2a",
+  "3_MultiVectorMask/config.json": "2cee71b59d303d7779fe6a866f30fc5a4024b6ccd0c22c375b27c3bb0d55a898",
+  "modules.json": "2b09d169b37950de5f82f835269c17883c6773d5325e6d8c6546ecf86dcc4477",
+  "sentence_bert_config.json": "b7bb1a105e4ba7ae4892c3113ff12e25321acc9f47ed4d621726b5a7a1a07287",
+  "config_sentence_transformers.json": "b3be76a4b2b6d65a62b687d1606c86320005d1d766d56e89d45363be8fa97015",
+  "additional_chat_templates/sentence_transformers.jinja": "6ad758564a995eb03bc704a5473e3eaa73a53e92b36fda8263ae6327228b4ad6",
+  "chat_template.jinja": "fcbb6764942ea01454d80ccd9bd03365cd0ad41c31431208f7457f5cbb9ad69e",
+  "preprocessor_config.json": "6cb6e36d6fcb88ca1502c4a26750715dc3e7dedddc9a8f17b27d8d167d1457e7",
+  "processor_config.json": "e7bff42da73ae9eec9042ef20e066e11f1ee20f025358ff79131e3c0fb549b46",
+  "special_tokens_map.json": "8f23848b5d5e20595881fc5dd9884fd45ea60b1d9e42f68679393c6456ab7b46",
+  "tokenizer.json": "65f95fb6ac63df1ec57aa2814f5c45c02a1b99d4cf6e59ec2bede0c158de4ec8",
+  "tokenizer_config.json": "551f46e341b980fd5b60b651e0ade2cbef07ea6aa97aa2aa102809fa98f290a9"
+ },
+ "upstreamCode": {
+  "repository": "illuin-tech/modernvbert",
+  "commit": "d4727bde0525991585cc13ccdedecf32c69ed25c",
+  "license": "MIT",
+  "comment": "The ModernVBERT authors' code repository (linked from the paper, arXiv 2510.01149; GitHub reports MIT): its LICENSE (MIT, Copyright (c) 2025 Paul Teiletche; bundled), README, and assets/imgs/table.png (the authors' own ViDoRe results table, used as a reference page). No code is imported from it.",
+  "files": {
+   "LICENSE": "cc8236821fa6f5f613fab6352c04c95e6f17e25e03e48dc1106a597444afb0bd",
+   "README.md": "c2e9d3c350ef6686e2cc6cf6874dd6c119529a570d52e5cf0b238a2c2beedda5",
+   "assets/imgs/table.png": "cee9b1d779534d9b98bdaf17cc143015de764106559e762ff79a794190dcac5f"
+  }
+ },
+ "referenceImages": {
+  "comment": "Document pages from Wikimedia Commons, all US federal government works (public domain), used only as reference-case inputs; never bundled. SHA-256 of the original files (Commons' SHA-1 also matched when pinned, 2026-11-06).",
+  "files": {
+   "nasa-eclipse-fact-sheet.jpg": {
+    "sha256": "7865a0a0dd457a3a03b43bdb67b806cb4dad4841c197d869724e315542ee5619",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Annular_Solar_Eclipse_Flyers_%28SVS14400_-_Oct_14_2023_Eclipse_Fact_Sheet_Color-1%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Annular_Solar_Eclipse_Flyers_(SVS14400_-_Oct_14_2023_Eclipse_Fact_Sheet_Color-1).jpg",
+    "license": "public domain (NASA)",
+    "size": [2550, 3300]
+   },
+   "cdc-stop-the-spread.png": {
+    "sha256": "7af621cb7cdc81f108605c3d726f7f2fa14de89a93f158285e08f2aa1a2cb909",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Stop_the_Spread_of_Germs_%28CDC%29.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Stop_the_Spread_of_Germs_(CDC).png",
+    "license": "public domain (CDC)",
+    "size": [1700, 2200]
+   },
+   "cdc-antibiotic-resistance.jpg": {
+    "sha256": "4f0ff226e6604d1d6f8ce114f2939d9f0d8e47f48c041d4e082de8afd31da284",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Antibiotic_resistance_infographic_by_CDC.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Antibiotic_resistance_infographic_by_CDC.jpg",
+    "license": "public domain (CDC)",
+    "size": [950, 1229]
+   },
+   "fda-nutrition-facts.png": {
+    "sha256": "0f174340851a7db36d19a5dde2e0eb83ccce9367495b3423ac4942bd1351ba97",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e9/FDA_Nutrition_Facts_Label_2016.png",
+    "page": "https://commons.wikimedia.org/wiki/File:FDA_Nutrition_Facts_Label_2016.png",
+    "license": "public domain (FDA)",
+    "size": [752, 1444]
+   },
+   "nasa-pext-fact-sheet.jpg": {
+    "sha256": "0b25cdf7fec3628e4e62183d119b177e14333a784d46bdb7b38cdb5712db111f",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/3e/PExT_Fact_Sheet_%28Front%29_%28pext-one-pager-page-1%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:PExT_Fact_Sheet_(Front)_(pext-one-pager-page-1).jpg",
+    "license": "public domain (NASA)",
+    "size": [2550, 3300]
+   }
+  }
+ },
+ "zooCrossCheck": {
+  "repository": "mlboydaisuke/ColModernVBERT-CoreAI",
+  "revision": "8b1e802cabc8f3980be5fb58d179139c5118a72a",
+  "license": "MIT",
+  "comment": "The zoo bundle's sidecar references (lab/models/colmodernvbert came from this revision): fp16 query vectors of four queries (its own tokenization: no augmentation suffix, right-padded to 32) and doc vectors of test_doc.png (its own letterbox preprocessing), from colpali_engine's ColModernVBert at ModernVBERT/colmodernvbert as of 2026-07. A cross-check only: never gated, never bundled.",
+  "files": {
+   "reference_query.json": "339a6fc0bff7a6d505047986df7d30d33dadcaf978c4ceafe4baec74a0d8a83f",
+   "reference_doc.json": "f5bcbf27802e6bd975abf116bd225c9053ab21c2fb9dfa742135c826c07fb649",
+   "test_doc.png": "8d9eb4a07e92fd2b35ab569ee9d4e5bb8aa069697d6eee5976d2888c2189fefe"
+  }
+ }
+}
