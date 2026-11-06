@@ -40,7 +40,7 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism", "depth-anything-3-small", "yolox-s", "rf-detr-nano", "rf-detr-seg-nano"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism", "depth-anything-3-small", "yolox-s", "embeddinggemma-300m", "rf-detr-nano", "rf-detr-seg-nano", "clip-vit-b32"]))
     }
 
     /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
@@ -68,6 +68,13 @@ struct CatalogTests {
             #expect(try ModelRef.resolve(id, for: mac).driver == .detectorDetr)
             #expect(throws: AetherError.self) { _ = try ModelRef.resolve(id, for: phone) }
         }
+        // EmbeddingGemma 300M (M4c), likewise macOS-only; its repo is gated (a token installs it), not mature.
+        let gemma = try ModelRef.resolve("embeddinggemma-300m", for: mac)
+        #expect(gemma.driver == .textEmbedder && gemma.repo == "aether-models/aether-kit-embeddinggemma-300m")
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("embeddinggemma-300m", for: phone) }
+        // CLIP ViT-B/32 (M4d) likewise, macOS-only.
+        #expect(try ModelRef.resolve("clip-vit-b32", for: mac).driver == .clipJoint)
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("clip-vit-b32", for: phone) }
         // Krea 2 (both variants) is macOS-only; the realism merge is marked mature, and only it.
         for id in ["krea-2-turbo", "krea-2-turbo-realism"] {
             _ = try ModelRef.resolve(id, for: mac)

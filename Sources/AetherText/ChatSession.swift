@@ -42,6 +42,15 @@ public actor ChatSession {
         gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
     ) async throws -> Generator {
         let engine = try await DecoderEngine(bundle: bundle, manifest: manifest, device: device, options: options)
+        return try await generator(engine: engine, bundle: bundle, manifest: manifest, gpu: gpu)
+    }
+
+    /// A Generator over an engine already loaded (a ``DecoderEngine`` the caller keeps for its diagnostics, or another
+    /// backend's `LanguageEngine`), with the tokenizer, renderer and output profile of the bundle it was loaded from.
+    public static func generator(
+        engine: any LanguageEngine, bundle: InstalledBundle, manifest: Manifest,
+        gpu: GPUAdmissionOwner = GPUAdmission.shared.owner("text")
+    ) async throws -> Generator {
         let tokenizer = try await TokenizerAdapter(bundle: bundle, manifest: manifest)
         let renderer = try PromptRenderers.make(manifest: manifest, bundle: bundle, tokenizer: tokenizer)
         return Generator(

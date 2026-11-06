@@ -35,7 +35,12 @@ extension GateTests {
 
     /// Greedy: prefill, the first token from the prompt's last row, then `count - 1` more in the engine's mode.
     /// No stop tokens (fixed-length runs, as the lab references).
-    static func greedy(_ engine: DecoderEngine, prompt: [Int32], count: Int) async throws -> (tokens: [Int32], seconds: Double) {
+    static func greedy(_ engine: any LanguageEngine, prompt: [Int32], count: Int) async throws -> (tokens: [Int32], seconds: Double) {
+        try await LanguageEngineInvariants.greedy(engine, prompt: prompt, count: count)
+    }
+
+    /// ``greedy(_:prompt:count:)`` on the concrete type, without the existential (the speed gate's comparison).
+    static func concreteGreedy(_ engine: DecoderEngine, prompt: [Int32], count: Int) async throws -> (tokens: [Int32], seconds: Double) {
         try await engine.reset()
         let logits = try await engine.prefill(prompt)!
         var out = [Logits.argmax(logits.last)]
@@ -92,6 +97,28 @@ extension GateTests {
               + "lab run() \(Self.firstMismatch(runTokens, lab.generated).map { "mismatch at \($0)" } ?? "equal")")
         #expect(Self.firstMismatch(tokens, runTokens) == nil)
         #expect(Self.firstMismatch(runTokens, lab.generated) == nil)
+    }
+
+    // MARK: - LanguageEngine invariants on real bundles
+
+    /// The protocol's invariants on the pipelined engine (an attention model and a hybrid): greedy equals stepping
+    /// argmax, and a second turn reusing the first's state (rewind, or the hybrid's snapshot) equals the same turn
+    /// from a reset state.
+    @Test(arguments: [("qwen3-0.6b", "qwen3"), ("qwen3.5-0.8b", "qwen3.5")])
+    func languageEngineInvariants(_ id: String, _ short: String) async throws {
+        typealias I = LanguageEngineInvariants
+        let prompt = try Self.labJSON(TokenFile.self, "perf/depthN-exact/count-prompt-\(short).json").tokens
+        let engine: any LanguageEngine = try await Self.engine(id, Self.pipelinedOptions(capacity: 4096))
+        let greedy = try await I.greedy(engine, prompt: prompt, count: 96).tokens
+        let stepwise = try await I.stepwiseGreedy(engine, prompt: prompt, count: 96)
+        let history = Array(prompt.prefix(prompt.count * 2 / 3))
+        let turns = try await I.twoTurnReuse(
+            engine, history: history, first: Array(prompt[history.count...]), second: Array(prompt.suffix(8)), count: 64)
+        print("GATE invariants \(id): greedy vs step \(Self.firstMismatch(greedy, stepwise).map { "MISMATCH at \($0)" } ?? "96/96 equal"), "
+              + "two-turn reuse (\(engine.hasRecurrentState ? "snapshot" : "rewind")) vs fresh "
+              + "\(Self.firstMismatch(turns.reused, turns.fresh).map { "MISMATCH at \($0)" } ?? "64/64 equal")")
+        #expect(Self.firstMismatch(greedy, stepwise) == nil)
+        #expect(Self.firstMismatch(turns.reused, turns.fresh) == nil)
     }
 
     // MARK: - Chunked prefill parity at ~3k tokens
@@ -201,10 +228,14 @@ extension GateTests {
         let prompt = try Self.labJSON(TokenFile.self, "perf/depthN-exact/count-prompt-qwen3.json").tokens
         let engine = try await Self.engine("qwen3-0.6b", Self.pipelinedOptions(capacity: 2048))
         let run = try await Self.engine("qwen3-0.6b", Self.runOptions(capacity: 2048))
-        var rates: [Double] = [], runRates: [Double] = []
+        var rates: [Double] = [], concreteRates: [Double] = [], runRates: [Double] = []
+        // Interleaved: through `any LanguageEngine` (the Generator's path) and on the concrete type.
         for _ in 0..<3 {
             let (tokens, seconds) = try await Self.greedy(engine, prompt: prompt, count: 1200)
             rates.append(Double(tokens.count - 1) / seconds)
+            let (concrete, concreteSeconds) = try await Self.concreteGreedy(engine, prompt: prompt, count: 1200)
+            concreteRates.append(Double(concrete.count - 1) / concreteSeconds)
+            #expect(concrete == tokens)
         }
         for _ in 0..<3 {
             let (tokens, seconds) = try await Self.greedy(run, prompt: prompt, count: 400)
@@ -214,8 +245,8 @@ extension GateTests {
         let ms = { (x: Double) in String(format: "%.3f", 1000 * x / Double(max(t.steps, 1))) }
         print("GATE speed qwen3-0.6b host ms/step over \(t.steps) steps: bindings \(ms(t.bindings)), encode \(ms(t.encode)), "
               + "argmax commit \(ms(t.commit)), waiting for tokens \(ms(t.wait))")
-        print("GATE speed qwen3-0.6b depth 3, 1200 tokens, cap 2048: \(rates.map { String(format: "%.0f", $0) }) tok/s; "
-              + "run(): \(runRates.map { String(format: "%.0f", $0) }) tok/s (target ≥ 480, not asserted)")
+        print("GATE speed qwen3-0.6b depth 3, 1200 tokens, cap 2048: any LanguageEngine \(rates.map { String(format: "%.0f", $0) }) tok/s, "
+              + "DecoderEngine \(concreteRates.map { String(format: "%.0f", $0) }) tok/s; run(): \(runRates.map { String(format: "%.0f", $0) }) tok/s (target ≥ 480, not asserted)")
     }
 }
 

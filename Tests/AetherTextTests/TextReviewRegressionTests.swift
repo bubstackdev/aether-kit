@@ -54,13 +54,23 @@ struct TextReviewRegressionTests {
 
     /// #1: a cancelled reply is not appended to the history.
     @Test func cancelledReplyIsNotAppended() async throws {
-        // A paced reply (about 1 ms a token), so it can't finish before the consumer below has stopped listening:
-        // with an instant fake, a slow runner could finish all 200 tokens first and keep the reply.
-        let long: @Sendable ([Int32]) -> [Int32] = { _ in usleep(1_000); return Array(repeating: 12, count: 200) }
+        // The reply can't finish before the consumer below has stopped listening: halfway through its 200 tokens (well
+        // after its first text) the model is held until the consumer has walked away, so the cancellation is already
+        // set when it resumes. A fixed pace (1 ms a token) raced a consumer starved on a loaded machine, which could
+        // let every token through first and keep the reply. The hold is bounded so a regression fails, not hangs.
+        let calls = Mutex(0), stopped = Mutex(false)
+        let long: @Sendable ([Int32]) -> [Int32] = { _ in
+            if calls.withLock({ $0 += 1; return $0 }) == 100 {
+                let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+                while !stopped.withLock({ $0 }), ContinuousClock.now < deadline { usleep(1_000) }
+            }
+            return Array(repeating: 12, count: 200)
+        }
         let session = try await Self.chat(reply: long)
         for try await event in await session.respond(to: "hello") {
             if case .text = event { break }
         }
+        stopped.withLock { $0 = true }
         // The next turn waits for the cancelled one to unwind (turns are serialized), then completes.
         _ = try await FakeChat.collect(await session.respond(to: "next"))
         let history = await session.history

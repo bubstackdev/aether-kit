@@ -4,6 +4,25 @@
 
 M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
+### Breaking (source)
+
+- **The `LanguageEngine` seam (B1, docs/BACKENDS.md):** the text stack takes a protocol instead of `DecoderEngine`,
+  so another backend's engine can run under it. Lands before the 0.1.0 freeze; no behaviour change.
+  - New in AetherRuntime: `LanguageEngine` (an `Actor` protocol: `vocab`, `maxCapacity`, `hasRecurrentState`,
+    `position`, `stateRanAhead`, `decodeModeDescription`, `prefill(_:logits:)`, `step`, `rewind`, `reset`, `snapshot`,
+    `restore`, `beginGreedy`/`nextGreedy`/`endGreedy`) and the opaque `EngineSnapshot` (`position`, `byteCount`, the
+    engine's payload). `DecoderEngine` conforms.
+  - `Generator.engine` is `any LanguageEngine` (was `DecoderEngine`) and `Generator.init(engine:…)` takes one.
+    Migration: `generator.engine.description.maxCapacity` → `generator.engine.maxCapacity` (likewise `vocab`,
+    `hasRecurrentState`); for Core AI specifics (`canary`, `decodeMode`, `sizing`, `description.prefillChunk`), cast
+    with `generator.engine as? DecoderEngine`, or load the `DecoderEngine` yourself and wrap it with the new
+    `ChatSession.generator(engine:bundle:manifest:gpu:)`.
+  - `DecoderEngine.snapshot()` returns an `EngineSnapshot` and `restore(_:)` takes one; `DecoderEngine.Snapshot` is no
+    longer public (its `position` and `byteCount` are on `EngineSnapshot`). A snapshot of another engine type is
+    refused with `unsupportedOperation`.
+  - `ChatSession.load`, `ChatSession.generator(bundle:…)` and `AetherLanguageModel.load` keep their
+    `DecoderEngine.Options` parameter: they load `decoder-lm@1`.
+
 ### New
 
 - **Vision foundation (M4a):**
@@ -59,6 +78,40 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     raw outputs; on the GPU, the same detections on all six cases per variant (IoU ≥ 0.99999, scores within 4.4e-6, mask IoU 1.0; bar IoU 0.95, 0.01, mask 0.95).
   - Catalog: `rf-detr-nano` and `rf-detr-seg-nano` (macOS), `aether-models/aether-kit-rf-detr-nano` and
     `-seg-nano`, Apache-2.0.
+- **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`,
+  `DriverID.textEmbedder`), for EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`):
+  - `TextEmbedder` (actor on `StatelessPipeline`), loaded through `Registry.embeddings` (`TextEmbedderDriver` →
+    `TextEmbedderModel.embedder()`); `embed(_:role:_:)` for one text or a batch (one request, one graph call per text)
+    as an `EmbeddingRole` (`.query`, `.document`), with a `TextEmbeddingRequest` (`GPUJob`); `tokenize(_:role:)` then
+    `embed(_: [TokenizedText])` splits the CPU and GPU halves.
+  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimension`, cosine `similarity(_:)`;
+    `truncated(to:)` for Matryoshka prefixes, re-normalized.
+  - `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
+    `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's
+    special tokens, truncated keeping them (`right`), right-padded with a mask of real ids.
+  - The `embedding` postprocess: pooling in the graph; `normalized: host` L2-normalizes on the CPU.
+  - Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one truncated), cosine ≥ 0.9999999 against
+    the CPU float32 upstream reference (bar 0.999), every query's best document as the reference's.
+  - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
+  - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
+    `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
+- **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`, `DriverID.clipJoint`) for OpenAI CLIP ViT-B/32 from our
+  Forge export (`Forge/clip/`):
+  - `ImageTextEncoder` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`ImageTextEncoderDriver` →
+    `ImageTextEncoderModel.encoder()`): `embed(image:)` (`ImageInput` or `PreparedImage`), `embed(texts:)` (in groups
+    of the text graph's batch buckets, unused rows filled from `tokenizer.text.unusedBatchRows`),
+    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`; the template defaults to
+    OpenAI's `"a photo of a {}."`), `scores(image:labels:texts:)` for label embeddings made once, `tokenize(_:)`; an
+    `ImageTextRequest` carries the `GPUJob`.
+  - M4c's `Embedding` gains `dot`, `norm` and `normalized` (its `dimensions` is now `dimension`), and `LabelScore` joins
+    it in AetherRuntime, so AetherVision and AetherEmbeddings share both.
+  - Graph buckets on axis `batch`: `Manifest.Graph.bucket(_:)`, `Buckets.values`/`smallestFitting(_:)`, and
+    `GraphResidency.graph(_:bucket:)` (loader key `role[value]`), so one role's bucket functions load beside each other.
+  - Manifest fields: `preprocess.image.resize.shortestSide` (`centerCrop`: torchvision's `Resize(n)` before the crop),
+    `postprocess.embedding.dimension` and `logitScale`; M4c's `Manifest.Tokenizer.Text` gains `unusedBatchRows` and
+    the mask rules `nonPad`, `throughFirstEos` and `none` (`noMask`) beside `realTokens`, the default.
+  - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
+  - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
 
 - **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
   `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
@@ -74,12 +127,18 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
   (were `vImage`), re-exported and re-pinned; their gates now gate the end-to-end detections from the photos at the
   tensor path's bars, and check that Pillow's decoded pixels through `preprocess.image` give the reference tensor bit
   for bit. The references record that decode (`decoded.png`).
+- `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
+  Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
+  `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's
+  tokenizer still adds `!` as its pad (0), while OpenAI CLIP's encodes `hello!` as 3306, 256. `init(directory:length:pad:)`
+  takes `pad: Int32?` (nil: the files' `pad_token`, else EOS); `addedTokens` lists them.
 - `postprocess` `detrSigmoid` has a typed `selection` (`topKPairs`, the default; the RF-DETR export's `x-selection`
   note before), and its `masks` block must be present exactly when the graph binds `masks`.
 - `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.
 
 - `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
   `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
+- `Manifest.Tokenizer.text` is the typed `Manifest.Tokenizer.Text` (was a `JSONValue`).
 - `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
   `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
 

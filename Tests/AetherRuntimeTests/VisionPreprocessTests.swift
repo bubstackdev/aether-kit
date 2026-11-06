@@ -172,6 +172,11 @@ struct VisionPreprocessTests {
         #expect(crop.content == CGRect(x: -32, y: 0, width: 129, height: 64))
         let crop2 = try geometry(.init(mode: .centerCrop, size: size, filter: .pillowBicubic), 103, 50)
         #expect(crop2.content == CGRect(x: -34, y: 0, width: 131, height: 64))
+        // torchvision's Resize(n) + CenterCrop: the shorter side to shortestSide first (the longer floored).
+        let shortest = try geometry(.init(mode: .centerCrop, size: .init(width: 32, height: 32), shortestSide: 40, filter: .pillowBicubic), 101, 50)
+        #expect(shortest.content == CGRect(x: -24, y: -4, width: 80, height: 40))
+        let square = try geometry(.init(mode: .centerCrop, size: size, shortestSide: 64, filter: .pillowBicubic), 101, 50)
+        #expect(square == crop)
         // Fit the long side only when it is too long.
         let fit = try geometry(.init(mode: .fitLongSide, maxSide: 40, filter: .vImage), 30, 100)
         #expect(fit.width == 12 && fit.height == 40)

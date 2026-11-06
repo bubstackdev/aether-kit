@@ -135,8 +135,14 @@ public struct ImagePreprocessor: Sendable {
                     CGRect(x: ox, y: oy, width: nw, height: nh))
         case .centerCrop:
             let size = resize.size!
-            let (rw, rh) = size.width * h >= size.height * w
-                ? (size.width, max(size.height, h * size.width / w)) : (max(size.width, w * size.height / h), size.height)
+            let (rw, rh): (Int, Int)
+            if let side = resize.shortestSide {
+                // torchvision's `Resize(side)`: the shorter side to `side`, the longer one floored.
+                (rw, rh) = w <= h ? (side, max(side, h * side / w)) : (max(side, w * side / h), side)
+            } else {
+                (rw, rh) = size.width * h >= size.height * w
+                    ? (size.width, max(size.height, h * size.width / w)) : (max(size.width, w * size.height / h), size.height)
+            }
             let scaled = try resample(image, rw, rh, resize.filter)
             // torchvision's `int(round((scaled - size) / 2.0))`: Python rounds ties to even.
             let cx = Int((Double(rw - size.width) / 2).rounded(.toNearestOrEven))
