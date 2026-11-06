@@ -385,6 +385,10 @@ The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x p
 - **Measured (gate, M5 Max, the 64-wide fixture block, 6 blocks × 256 rows, float16):** chained and banked calls
   are byte-identical to the unchained path, and so are calls encoded back to back with one wait; 9.2 ms against
   49.7 ms unchained.
+- **On the real H3 block graph (G4 step 2a gate, M5 Max):** the exporter's own 22-input body graph (base + dynamic
+  Turbo LoRA, about 750 MB of bf16 weights a block) with seeded random weights in the real shapes, 4 blocks × 4096 rows:
+  the device chain's output is within 0.0051 relative L2 of the original block on the CPU after each block, and its
+  bytes equal the unchained path's (a host-arena chain). The graph itself is 32 KB; one specialization per profile.
 
 ## 7. AetherText
 

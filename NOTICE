@@ -16,10 +16,16 @@ Sources/AetherRuntime/Generative/EpsilonEulerSchedule.swift re-expresses
 EulerDiscreteScheduler's input scaling and epsilon step. Forge/flux2/flux2_graphs.py
 re-expresses Flux2Transformer2DModel, Flux2KleinPipeline's prompt encoding, latent
 packing and empirical shift, and AutoencoderKLFlux2's decode and encode tails.
+Forge/h3/h3_graphs.py and export_h3.py re-express MiniMaxH3Transformer3DModel's
+block, heads, text refiner and input projections, the MiniMax H3 scheduler's
+step grid, AutoencoderKLMiniMaxH3's window decode and tiled first-frame
+encode (encode_vae_condition), and AutoencoderKLMiniMaxH3Audio's decode as
+export graphs; the checkpoint key mapping is Diffusers' own MiniMax H3
+converter, called at export time.
 Model weights are not part of this repository; exported bundles carry their own
 licenses and NOTICE lines separately (the Krea 2 Community License; the
 Stability AI Community License; FLUX.2 [klein]'s Apache-2.0 LICENSE.md with a
-modification NOTICE).
+modification NOTICE; the MiniMax H3 Community License).
 
 OpenAI CLIP (https://github.com/openai/CLIP), MIT License, copyright (c) 2021
 OpenAI. Sources/AetherImage/CLIPTokenizer.swift re-expresses its byte-level BPE
@@ -32,7 +38,8 @@ recorded from it serve as test oracles: its logits processors' results
 (Tests/AetherRuntimeTests/Fixtures/transformers-warpers.json) and its chat
 templates' rendered token ids
 (Tests/AetherTextTests/Fixtures/chat-oracle/chat-oracle.json,
-olmo2-chat-oracle.json).
+olmo2-chat-oracle.json). Forge/h3/export_h3.py re-expresses its Qwen3-VL vision
+tower forward (Qwen3VLVisionModel) as an export graph.
 
 Tokenizer configuration and chat-template files, unchanged copies of their
 publishers' files, used as test inputs under

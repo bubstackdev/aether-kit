@@ -499,14 +499,14 @@ Precision is recorded in `precision` (int8 per-channel weights on the text encod
 and the image from the reference's conditioning; the whole pipeline from the graph's own rows is recorded, since the
 padding rows move the image under any precision change.
 
-### 5.8 `weights`: block weights as graph inputs (proposed until G4)
+### 5.8 `weights`: block weights as graph inputs (normative since G4 step 2a)
 
 For a graph that serves many blocks with its weights lifted to runtime inputs (H3's body and conditioner layers). The
 runtime type is `WeightTable` (AetherRuntime), read by `WeightBanks`.
 
 | where | field | meaning |
 |---|---|---|
-| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …]}`: the graph inputs bound per block, and the table file |
+| `graphs.<role>` | `weights` | `{table: "<asset>:<path>", inputs: [w0, …], blocks?}`: the graph inputs bound per block, the table file, and (a cross-check) its block count |
 | table file | `inputs` | the weight inputs, in the order the exporter lifted them |
 | table file | `blocks` | per block, each input's extent `{file: "<asset>:<path>", offset, bytes}` in a bundle file |
 
@@ -514,3 +514,33 @@ Each extent holds exactly its input's bytes (the graph's own descriptor, contigu
 bundle, or a block missing an input, is refused. The files are ordinary bundle assets, verified at install like any
 other; the runtime does not re-hash them. A driver running such a graph declares a shape profile for each measured
 canvas (DESIGN.md §6.6).
+
+Decoding refuses (naming the field): an empty or repeated `inputs` entry, a weight input that a role also binds (weight
+inputs come from the table only), a `table` outside the manifest's assets, and `blocks` < 1. The first producer is
+`Forge/h3/export_h3.py`: one file per block (`weights/body/block-NN.bin`, `weights/conditioner/layer-NN.bin`), each
+input's bytes contiguous in input order.
+
+### 5.9 `minimax-h3@1` (proposed until G4 step 2b)
+
+MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and keyframes) to video with audio. macOS only in 0.1.0. Producer
+`Forge/h3/export_h3.py`; the `h3` block is decoded loosely until the driver lands.
+
+| graph | inputs → outputs | weights | residency |
+|---|---|---|---|
+| `conditionerLayer` | hidden, cos, sin → hidden (one Qwen3-VL text decoder layer, causal) | `conditioner.json`, 11 inputs × 50 layers | perPrompt |
+| `prepareText` | text → refined (context embedder + token refiner + LoRA) | `prepare-text.json`, 1 block | perPrompt |
+| `preparePack` | video, audio, text (`from: prepareText.refined`), gather → hidden | — | perStep |
+| `body` | hidden (`from: preparePack.hidden`), table [6, 3k, D], tags, cos, sin → hidden | `body.json`, 22 inputs × 50 blocks (base + dynamic LoRA) | perStep |
+| `heads` | hidden (`from: body.hidden`), temb, indices, videoIndices, audioIndices → video, audio | — | perStep |
+| `videoDecoder` | rows [448, 96] → pixels [1, 3, 22, 256, 256] (bf16 window tile) | — | perImage |
+| `videoEncoderTile`, `videoEncoderTail<W>x<H>` | pixels → moments; tiles → condition (FL2VA keyframe) | — | perPrompt |
+| `audioDecoder<Na>` | rows [2, Na, 32] → pcm [2, 800·Na] (fixed latent count) | — | perImage |
+| `conditionerVision<W>x<H>` (optional) | pixels, posIndex, posWeight, patchRC → imageEmbeds, deepstack | `vision.json`, 1 block | perPrompt |
+
+The `h3` block carries `profiles` (each a canvas and frame count with its rows, keyframe rows, audio latents and the
+graphs it uses; the qualified one is 960×544×124), `limits` (rows 64…40960, cardinality 1…3, text tokens 2…4096),
+`conditioner` (layers, tap 50, the embedding row source `weights/conditioner/embedding.bin` [151936, 5120] bf16, the
+rotary tables), `recipes` (turbo8, turbo4: per task and step the timesteps, the temb file and the per-block AdaLN table
+files `tables/<recipe>/<task>/step-<i>/block-NN.raw`), `adapter`, `video` (tile, window, packing and noise), `keyframe`,
+`audio` and `platforms`. `license` is `LicenseRef-MiniMax-H3-Community-License`; the bundle ships `LICENSE` and the
+required `NOTICE`.

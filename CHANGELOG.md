@@ -79,6 +79,13 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
   MANIFEST.md §5.8 proposes the `weights` table.
 
+- **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
+  the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
+  bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
+  oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
+  `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
+  unchained path's). The real-weight export waits on the MiniMax H3 licence's territorial terms (INTEGRATION.md).
+
 ### In progress before 0.1.0 is tagged
 
 Krea 2 Turbo (vanilla and realism), MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo and FLUX.2 hosted
