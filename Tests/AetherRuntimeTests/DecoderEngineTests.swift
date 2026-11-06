@@ -194,12 +194,14 @@ struct DecoderEngineTests {
     @Test func capacityIsDerivedFromMemory() throws {
         let sizing = KVSizing(maxContext: 8192, platformCap: nil, bytesPerToken: 1000, fixedBytes: 100_000, modelBytes: 400_000)
         #expect(try sizing.capacity(budget: 100_000_000) == 8192)  // maxContext bounds it
-        // 2.0M left for KV: growing from 1024 to C > 1024 holds 1024 + C slots at once, so 1024 is the most (upfront,
-        // with no growth, (2.5M − 0.5M) / 1000 = 2000 fits, rounded down to 256s).
-        #expect(try sizing.capacity(budget: 2_500_000) == 1024)
-        var upfront = sizing
-        upfront.initialCapacity = 8192
-        #expect(try upfront.capacity(budget: 2_500_000) == 1792)
+        // 2.0M left for KV: growing from 1024 to C > 1024 holds 1024 + C slots at once, so growing fits 1024 at most;
+        // upfront, with no growth copy, (2.5M − 0.5M) / 1000 = 2000 fits, rounded down to 256s. Upfront wins.
+        #expect(try sizing.capacity(budget: 2_500_000) == 1792)
+        #expect(sizing.initialAllocation(capacity: 1792, budget: 2_500_000) == 1792, "allocated upfront")
+        #expect(sizing.initialAllocation(capacity: 8192, budget: 100_000_000) == 1024, "grows when the copy fits")
+        var growing = sizing
+        growing.initialCapacity = 1024
+        #expect(try growing.capacity(budget: 2_500_000) == 1024, "an explicit initial capacity always grows")
         var capped = sizing
         capped.platformCap = 1024
         #expect(try capped.capacity(budget: 100_000_000) == 1024)
@@ -222,11 +224,12 @@ struct DecoderEngineTests {
 
     @Test func engineSizesKVFromTheBudgetAndGrowsGeometrically() async throws {
         // The fake's KV is 2 float32 states plus the int32 history and positions: 16 bytes per token. Fixed: 512 + 8
-        // logits rows of 64 float32 = 133,120 bytes. (200,000 − 133,120) / 16 = 4,180 slots, and growing from 1024
-        // doubles: C plus the previous allocation must fit, so C ≤ 2,132 → 2,048 (1,024 + 2,048 slots at the copy).
+        // logits rows of 64 float32 = 133,120 bytes. (200,000 − 133,120) / 16 = 4,180 slots → 4,096, allocated
+        // upfront: growing from 1024 would need 4,096 + 2,048 slots at the last copy.
         let (tight, _, _) = try await Self.engine(maxContext: 100_000, options: Self.options(budget: 200_000))
         #expect(tight.sizing.bytesPerToken == 16 && tight.sizing.fixedBytes == 133_120)
-        #expect(tight.description.maxCapacity == 2048)
+        #expect(tight.description.maxCapacity == 4096)
+        #expect(await tight.capacity == 4096)
         await #expect(throws: AetherError.self) {
             _ = try await Self.engine(maxContext: 100_000, options: Self.options(capacity: 5000, budget: 200_000))
         }

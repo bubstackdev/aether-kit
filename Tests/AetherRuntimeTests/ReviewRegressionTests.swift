@@ -256,10 +256,13 @@ struct DecoderOwnerReviewTests {
         #expect(try sizing.capacity(budget: 10_500_000) == 2560)
         #expect(sizing.peakBytes(capacity: 2560) <= 10_500_000 && sizing.peakBytes(capacity: 2662 + 1) > 10_500_000)
         #expect(throws: AetherError.self) { try sizing.capacity(budget: 10_500_000, requested: 4096) }
-        // Growth from 1024 as well: C + 2048 slots of KV at the copy for C in (2048, 4096].
+        // Growing from 1024 as well: C + 2048 slots of KV at the copy for C in (2048, 4096], so 2048 at most.
+        sizing.initialCapacity = 1024
+        #expect(try sizing.capacity(budget: 10_500_000) == 2048)
+        // With no initial capacity, upfront fits more (2560) and is chosen.
         sizing.initialCapacity = nil
-        let derived = try sizing.capacity(budget: 10_500_000)
-        #expect(derived == 2048 && sizing.peakBytes(capacity: derived) <= 10_500_000)
+        #expect(try sizing.capacity(budget: 10_500_000) == 2560)
+        #expect(sizing.initialAllocation(capacity: 2560, budget: 10_500_000) == 2560)
         // A static axis is the allocation, whatever the capacity: its snapshots hold it whole.
         var fixed = KVSizing(maxContext: 8192, bytesPerToken: 1000, fixedBytes: 0, staticAxis: 1024,
                              snapshotBytesPerToken: 1000, reservedSnapshots: 2)

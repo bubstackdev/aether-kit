@@ -23,7 +23,8 @@ public actor DecoderEngine: LanguageEngine {
         /// An explicit capacity (tokens): the most the state holds. Above the derived capacity (or a graph's static
         /// sequence axis) it throws `capacity`; below a static axis it limits the tokens, the allocation staying static.
         public var capacity: Int?
-        /// The first allocation of the sequence axis; it grows geometrically from there. Default min(capacity, 1024).
+        /// The first allocation of the sequence axis; it grows geometrically from there. Default min(capacity, 1024),
+        /// or the whole capacity when the budget can't hold the growth copy (``KVSizing/initialAllocation(capacity:budget:)``).
         public var initialCapacity: Int?
         public var memoryBudget: MemoryBudget
         public var execution: Execution
@@ -221,8 +222,10 @@ public actor DecoderEngine: LanguageEngine {
             options: options)
         sizing.modelBytes = modelBytes
         self.sizing = sizing
-        let maxCapacity = try sizing.capacity(budget: options.memoryBudget.bytes(on: device), requested: options.capacity)
-        let initial = options.initialCapacity ?? min(maxCapacity, 1024)
+        let budget = options.memoryBudget.bytes(on: device)
+        let maxCapacity = try sizing.capacity(budget: budget, requested: options.capacity)
+        // Grow on demand when the growth copy fits, else allocate the whole capacity upfront.
+        let initial = sizing.initialAllocation(capacity: maxCapacity, budget: budget)
         guard initial <= maxCapacity else {
             throw .capacity(what: "KV initial capacity (tokens)", needed: Int64(initial), available: Int64(maxCapacity))
         }

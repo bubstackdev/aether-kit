@@ -76,7 +76,8 @@ public struct MemoryBudget: Sendable, Hashable {
 /// - the model, the fixed buffers and the sequence states at `C` (a static axis: at that axis);
 /// - growing a dynamic axis copies the cached prefix into the larger states while the old ones are live, so the
 ///   previous allocation (``previousAllocation(below:initial:)``) is charged too. Restoring a snapshot of another
-///   allocation is the same pair;
+///   allocation is the same pair. With no ``initialCapacity`` the capacity is the larger of growing on demand and
+///   allocating upfront (no copy), and ``initialAllocation(capacity:budget:)`` says which;
 /// - ``reservedSnapshots`` host snapshots at `C`, each ``snapshotBytesPerToken`` per position plus
 ///   ``snapshotFixedBytes``: what a client keeps for prefix reuse on recurrent models. The engine supplies the cost of
 ///   one snapshot; how many to reserve is the client's policy (`DecoderEngine.Options.reservedSnapshots`).
@@ -96,7 +97,8 @@ public struct KVSizing: Sendable, Hashable {
     /// A sequence axis that is static in the graph: the allocation is that, and fixed. Capacity (the token limit)
     /// is at most that: an explicit smaller one caps the tokens, a larger one is refused.
     public var staticAxis: Int?
-    /// The first allocation of a dynamic axis (`DecoderEngine.Options.initialCapacity`); nil: min(capacity, 1024).
+    /// The first allocation of a dynamic axis (`DecoderEngine.Options.initialCapacity`); nil: min(capacity, 1024)
+    /// when that growth fits the budget, else the whole capacity upfront.
     public var initialCapacity: Int?
     /// A host snapshot's bytes per position held (the sequence states up to the position).
     public var snapshotBytesPerToken: Int64
@@ -126,8 +128,9 @@ public struct KVSizing: Sendable, Hashable {
     /// Memory-derived capacities above this are rounded down to a multiple of it.
     static let granule = 256
 
-    /// The capacity the engine may grow to, given `budget` (``MemoryBudget/bytes(on:)``): the largest whose
-    /// ``peakBytes(capacity:)`` fits. `requested` (an app's explicit capacity) must not exceed it.
+    /// The capacity the engine may grow to, given `budget` (``MemoryBudget/bytes(on:)``): the largest whose peak
+    /// fits, growing from ``initialCapacity`` or, when that is nil, allocated upfront if growing fits fewer tokens.
+    /// `requested` (an app's explicit capacity) must not exceed it.
     public func capacity(budget: Int64, requested: Int? = nil) throws(AetherError) -> Int {
         var limit = maxContext
         if let platformCap { limit = min(limit, platformCap) }
@@ -137,7 +140,8 @@ public struct KVSizing: Sendable, Hashable {
         var low = 0, high = max(limit, 0)
         while low < high {
             let mid = high - (high - low) / 2
-            if peakBytes(capacity: mid) <= budget { low = mid } else { high = mid - 1 }
+            // Upfront never costs more than growing, so with no initial capacity it bounds the capacity.
+            if peakBytes(capacity: mid, initial: initialCapacity ?? mid) <= budget { low = mid } else { high = mid - 1 }
         }
         var derived = low
         if derived < limit, derived > Self.granule { derived -= derived % Self.granule }
@@ -159,13 +163,25 @@ public struct KVSizing: Sendable, Hashable {
         return derived
     }
 
-    /// The bytes live at once at `capacity` (see the type's notes): never less for a larger capacity.
+    /// The first allocation for `capacity`: ``initialCapacity`` if set; else min(capacity, 1024) when growing from
+    /// there fits `budget`, else `capacity` (upfront, with no growth copy).
+    public func initialAllocation(capacity: Int, budget: Int64) -> Int {
+        if let initialCapacity { return initialCapacity }
+        let growing = min(capacity, 1024)
+        return peakBytes(capacity: capacity, initial: growing) <= budget ? growing : capacity
+    }
+
+    /// The bytes live at once at `capacity` (see the type's notes), growing from ``initialCapacity`` (nil:
+    /// min(capacity, 1024)): never less for a larger capacity.
     public func peakBytes(capacity: Int) -> Int64 {
+        peakBytes(capacity: capacity, initial: initialCapacity ?? min(capacity, 1024))
+    }
+
+    func peakBytes(capacity: Int, initial: Int) -> Int64 {
         let slots = Int64(staticAxis ?? capacity)
         var bytes = modelBytes + fixedBytes + slots * bytesPerToken
         if staticAxis == nil {
-            let previous = Self.previousAllocation(below: capacity, initial: initialCapacity ?? min(capacity, 1024))
-            bytes += Int64(previous) * bytesPerToken
+            bytes += Int64(Self.previousAllocation(below: capacity, initial: initial)) * bytesPerToken
         }
         bytes += Int64(reservedSnapshots) * (slots * snapshotBytesPerToken + snapshotFixedBytes)
         return bytes
