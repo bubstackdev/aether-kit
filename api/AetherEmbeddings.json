@@ -1,0 +1,2193 @@
+{
+ "ABIRoot": {
+  "children": [
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings18TextEmbedderDriverO2id0A4Core0E2IDVvgZ",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:16AetherEmbeddings18TextEmbedderDriverO2id0A4Core0E2IDVvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings18TextEmbedderDriverO2id0A4Core0E2IDVvpZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "id",
+      "printedName": "id",
+      "static": true,
+      "usr": "s:16AetherEmbeddings18TextEmbedderDriverO2id0A4Core0E2IDVvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbedderModel",
+        "printedName": "AetherEmbeddings.TextEmbedderModel",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "LoadOptions",
+        "printedName": "AetherRuntime.LoadOptions",
+        "usr": "s:13AetherRuntime11LoadOptionsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings18TextEmbedderDriverO4load_7optionsAA0cD5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "load",
+      "printedName": "load(_:options:)",
+      "static": true,
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings18TextEmbedderDriverO4load_7optionsAA0cD5ModelV0A4Core15InstalledBundleV_0A7Runtime11LoadOptionsVtYaKFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbedderModel",
+        "printedName": "AetherEmbeddings.TextEmbedderModel",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s16AetherEmbeddings18TextEmbedderDriverO6Loadeda",
+      "moduleName": "AetherEmbeddings",
+      "name": "Loaded",
+      "printedName": "Loaded",
+      "usr": "s:16AetherEmbeddings18TextEmbedderDriverO6Loadeda"
+     }
+    ],
+    "conformances": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "TextEmbedderModel",
+          "printedName": "AetherEmbeddings.TextEmbedderModel",
+          "usr": "s:16AetherEmbeddings17TextEmbedderModelV"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "Loaded",
+        "printedName": "Loaded"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime11ModelDriverP",
+      "name": "ModelDriver",
+      "printedName": "ModelDriver",
+      "usr": "s:13AetherRuntime11ModelDriverP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings18TextEmbedderDriverO",
+    "moduleName": "AetherEmbeddings",
+    "name": "TextEmbedderDriver",
+    "printedName": "TextEmbedderDriver",
+    "usr": "s:16AetherEmbeddings18TextEmbedderDriverO"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "InstalledBundle",
+          "printedName": "AetherCore.InstalledBundle",
+          "usr": "s:10AetherCore15InstalledBundleV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV6bundle0A4Core15InstalledBundleVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV6bundle0A4Core15InstalledBundleVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV6bundle0A4Core15InstalledBundleVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "bundle",
+      "printedName": "bundle",
+      "usr": "s:16AetherEmbeddings17TextEmbedderModelV6bundle0A4Core15InstalledBundleVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:16AetherEmbeddings17TextEmbedderModelV8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Device",
+          "printedName": "AetherCore.Device",
+          "usr": "s:10AetherCore6DeviceV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV6device0A4Core6DeviceVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV6device0A4Core6DeviceVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV6device0A4Core6DeviceVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "device",
+      "printedName": "device",
+      "usr": "s:16AetherEmbeddings17TextEmbedderModelV6device0A4Core6DeviceVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvs",
+        "moduleName": "AetherEmbeddings",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:16AetherEmbeddings17TextEmbedderModelV7options0A4Host15PipelineOptionsVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbedder",
+        "printedName": "AetherEmbeddings.TextEmbedder",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV8embedderAA0cD0CyYaKF",
+      "moduleName": "AetherEmbeddings",
+      "name": "embedder",
+      "printedName": "embedder()",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings17TextEmbedderModelV8embedderAA0cD0CyYaKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings17TextEmbedderModelV",
+    "moduleName": "AetherEmbeddings",
+    "name": "TextEmbedderModel",
+    "printedName": "TextEmbedderModel",
+    "usr": "s:16AetherEmbeddings17TextEmbedderModelV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8rawValueSSvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV8rawValueSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8rawValueSSvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "rawValue",
+      "printedName": "rawValue",
+      "usr": "s:16AetherEmbeddings13EmbeddingRoleV8rawValueSSvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8rawValueACSS_tcfc",
+      "moduleName": "AetherEmbeddings",
+      "name": "init",
+      "printedName": "init(rawValue:)",
+      "usr": "s:16AetherEmbeddings13EmbeddingRoleV8rawValueACSS_tcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "EmbeddingRole",
+          "printedName": "AetherEmbeddings.EmbeddingRole",
+          "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV5queryACvgZ",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV5queryACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV5queryACvpZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "query",
+      "printedName": "query",
+      "static": true,
+      "usr": "s:16AetherEmbeddings13EmbeddingRoleV5queryACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "EmbeddingRole",
+          "printedName": "AetherEmbeddings.EmbeddingRole",
+          "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8documentACvgZ",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV8documentACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8documentACvpZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "document",
+      "printedName": "document",
+      "static": true,
+      "usr": "s:16AetherEmbeddings13EmbeddingRoleV8documentACvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "implicit": true,
+      "kind": "TypeAlias",
+      "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV8RawValuea",
+      "moduleName": "AetherEmbeddings",
+      "name": "RawValue",
+      "printedName": "RawValue",
+      "usr": "s:16AetherEmbeddings13EmbeddingRoleV8RawValuea"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeWitness",
+        "name": "RawValue",
+        "printedName": "RawValue"
+       }
+      ],
+      "kind": "Conformance",
+      "mangledName": "$sSY",
+      "name": "RawRepresentable",
+      "printedName": "RawRepresentable",
+      "usr": "s:SY"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings13EmbeddingRoleV",
+    "moduleName": "AetherEmbeddings",
+    "name": "EmbeddingRole",
+    "printedName": "EmbeddingRole",
+    "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GPUJob",
+            "printedName": "AetherHost.GPUJob",
+            "usr": "s:10AetherHost6GPUJobC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.GPUJob?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvs",
+        "moduleName": "AetherEmbeddings",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "job",
+      "printedName": "job",
+      "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV3job0A4Host6GPUJobCSgvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbeddingRequest",
+        "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV3jobAC0A4Host6GPUJobCSg_tcfc",
+      "moduleName": "AetherEmbeddings",
+      "name": "init",
+      "printedName": "init(job:)",
+      "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV3jobAC0A4Host6GPUJobCSg_tcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbeddingRequest",
+        "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbeddingRequest",
+        "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherEmbeddings",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV9hashValueSivg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV9hashValueSivp",
+      "moduleName": "AetherEmbeddings",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings20TextEmbeddingRequestV",
+    "moduleName": "AetherEmbeddings",
+    "name": "TextEmbeddingRequest",
+    "printedName": "TextEmbeddingRequest",
+    "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int32",
+            "printedName": "Swift.Int32",
+            "usr": "s:s5Int32V"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Int32]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13TokenizedTextV3idsSays5Int32VGvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV3idsSays5Int32VGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Int32]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV3idsSays5Int32VGvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "ids",
+      "printedName": "ids",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV3idsSays5Int32VGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int32",
+            "printedName": "Swift.Int32",
+            "usr": "s:s5Int32V"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.Int32]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13TokenizedTextV13attentionMaskSays5Int32VGvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV13attentionMaskSays5Int32VGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int32",
+          "printedName": "Swift.Int32",
+          "usr": "s:s5Int32V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Int32]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV13attentionMaskSays5Int32VGvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "attentionMask",
+      "printedName": "attentionMask",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV13attentionMaskSays5Int32VGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13TokenizedTextV10tokenCountSivg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV10tokenCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV10tokenCountSivp",
+      "moduleName": "AetherEmbeddings",
+      "name": "tokenCount",
+      "printedName": "tokenCount",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV10tokenCountSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13TokenizedTextV11isTruncatedSbvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV11isTruncatedSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV11isTruncatedSbvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "isTruncated",
+      "printedName": "isTruncated",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV11isTruncatedSbvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TokenizedText",
+        "printedName": "AetherEmbeddings.TokenizedText",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TokenizedText",
+        "printedName": "AetherEmbeddings.TokenizedText",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:16AetherEmbeddings13TokenizedTextV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherEmbeddings",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings13TokenizedTextV9hashValueSivg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings13TokenizedTextV9hashValueSivp",
+      "moduleName": "AetherEmbeddings",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:16AetherEmbeddings13TokenizedTextV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings13TokenizedTextV",
+    "moduleName": "AetherEmbeddings",
+    "name": "TokenizedText",
+    "printedName": "TokenizedText",
+    "usr": "s:16AetherEmbeddings13TokenizedTextV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "PipelineOptions",
+        "printedName": "AetherHost.PipelineOptions",
+        "usr": "s:10AetherHost15PipelineOptionsV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "kind": "TypeAlias",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC7Optionsa",
+      "moduleName": "AetherEmbeddings",
+      "name": "Options",
+      "printedName": "Options",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC7Optionsa"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbeddingRequest",
+        "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+        "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+       }
+      ],
+      "declKind": "TypeAlias",
+      "kind": "TypeAlias",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC7Requesta",
+      "moduleName": "AetherEmbeddings",
+      "name": "Request",
+      "printedName": "Request",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC7Requesta"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Manifest",
+          "printedName": "AetherCore.Manifest",
+          "usr": "s:10AetherCore8ManifestV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC8manifest0A4Core8ManifestVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC8manifest0A4Core8ManifestVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC8manifest0A4Core8ManifestVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "manifest",
+      "printedName": "manifest",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC8manifest0A4Core8ManifestVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PipelineOptions",
+            "printedName": "AetherHost.PipelineOptions",
+            "usr": "s:10AetherHost15PipelineOptionsV"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Options",
+          "printedName": "AetherEmbeddings.TextEmbedder.Options"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC7options0A4Host15PipelineOptionsVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC7options0A4Host15PipelineOptionsVvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Options",
+        "printedName": "AetherEmbeddings.TextEmbedder.Options"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC7options0A4Host15PipelineOptionsVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "options",
+      "printedName": "options",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC7options0A4Host15PipelineOptionsVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Embedding",
+          "printedName": "AetherCore.Manifest.Postprocess.Embedding",
+          "usr": "s:10AetherCore8ManifestV11PostprocessO9EmbeddingV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC11postprocess0A4Core8ManifestV11PostprocessO9EmbeddingVvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC11postprocess0A4Core8ManifestV11PostprocessO9EmbeddingVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherCore.Manifest.Postprocess.Embedding",
+        "usr": "s:10AetherCore8ManifestV11PostprocessO9EmbeddingV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC11postprocess0A4Core8ManifestV11PostprocessO9EmbeddingVvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "postprocess",
+      "printedName": "postprocess",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC11postprocess0A4Core8ManifestV11PostprocessO9EmbeddingVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TextEmbedder",
+        "printedName": "AetherEmbeddings.TextEmbedder",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "PipelineOptions",
+          "printedName": "AetherHost.PipelineOptions",
+          "usr": "s:10AetherHost15PipelineOptionsV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNameAlias",
+        "name": "Options",
+        "printedName": "AetherEmbeddings.TextEmbedder.Options"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceV0A4Host15PipelineOptionsVtYaKcfc",
+      "moduleName": "AetherEmbeddings",
+      "name": "init",
+      "printedName": "init(bundle:manifest:device:options:)",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings12TextEmbedderC6bundle8manifest6device7optionsAC0A4Core15InstalledBundleV_AH8ManifestVAH6DeviceV0A4Host15PipelineOptionsVtYaKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.String]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC13residentRolesSaySSGvg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC13residentRolesSaySSGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.String]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC13residentRolesSaySSGvp",
+      "moduleName": "AetherEmbeddings",
+      "name": "residentRoles",
+      "printedName": "residentRoles",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC13residentRolesSaySSGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC14sequenceLengthSivg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC14sequenceLengthSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC14sequenceLengthSivp",
+      "moduleName": "AetherEmbeddings",
+      "name": "sequenceLength",
+      "printedName": "sequenceLength",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC14sequenceLengthSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TokenizedText",
+        "printedName": "AetherEmbeddings.TokenizedText",
+        "usr": "s:16AetherEmbeddings13TokenizedTextV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC8tokenize_4roleAA09TokenizedC0VSS_AA13EmbeddingRoleVt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherEmbeddings",
+      "name": "tokenize",
+      "printedName": "tokenize(_:role:)",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings12TextEmbedderC8tokenize_4roleAA09TokenizedC0VSS_AA13EmbeddingRoleVt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "TextEmbeddingRequest",
+          "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+          "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNameAlias",
+        "name": "Request",
+        "printedName": "AetherEmbeddings.TextEmbedder.Request"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC5embed_4role_0A7Runtime9EmbeddingVSS_AA0H4RoleVAA0cH7RequestVtYaKF",
+      "moduleName": "AetherEmbeddings",
+      "name": "embed",
+      "printedName": "embed(_:role:_:)",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings12TextEmbedderC5embed_4role_0A7Runtime9EmbeddingVSS_AA0H4RoleVAA0cH7RequestVtYaKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Embedding",
+          "printedName": "AetherRuntime.Embedding",
+          "usr": "s:13AetherRuntime9EmbeddingV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherRuntime.Embedding]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.String]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "EmbeddingRole",
+        "printedName": "AetherEmbeddings.EmbeddingRole",
+        "usr": "s:16AetherEmbeddings13EmbeddingRoleV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "TextEmbeddingRequest",
+          "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+          "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNameAlias",
+        "name": "Request",
+        "printedName": "AetherEmbeddings.TextEmbedder.Request"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC5embed_4role_Say0A7Runtime9EmbeddingVGSaySSG_AA0H4RoleVAA0cH7RequestVtYaKF",
+      "moduleName": "AetherEmbeddings",
+      "name": "embed",
+      "printedName": "embed(_:role:_:)",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings12TextEmbedderC5embed_4role_Say0A7Runtime9EmbeddingVGSaySSG_AA0H4RoleVAA0cH7RequestVtYaKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Embedding",
+          "printedName": "AetherRuntime.Embedding",
+          "usr": "s:13AetherRuntime9EmbeddingV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherRuntime.Embedding]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "TokenizedText",
+          "printedName": "AetherEmbeddings.TokenizedText",
+          "usr": "s:16AetherEmbeddings13TokenizedTextV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherEmbeddings.TokenizedText]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "TextEmbeddingRequest",
+          "printedName": "AetherEmbeddings.TextEmbeddingRequest",
+          "usr": "s:16AetherEmbeddings20TextEmbeddingRequestV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNameAlias",
+        "name": "Request",
+        "printedName": "AetherEmbeddings.TextEmbedder.Request"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC5embedySay0A7Runtime9EmbeddingVGSayAA09TokenizedC0VG_AA0cG7RequestVtYaKF",
+      "moduleName": "AetherEmbeddings",
+      "name": "embed",
+      "printedName": "embed(_:_:)",
+      "throwing": true,
+      "usr": "s:16AetherEmbeddings12TextEmbedderC5embedySay0A7Runtime9EmbeddingVGSayAA09TokenizedC0VG_AA0cG7RequestVtYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC6unloadyyYaF",
+      "moduleName": "AetherEmbeddings",
+      "name": "unload",
+      "printedName": "unload()",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC6unloadyyYaF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UnownedSerialExecutor",
+          "printedName": "_Concurrency.UnownedSerialExecutor",
+          "usr": "s:Sce"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s16AetherEmbeddings12TextEmbedderC15unownedExecutorScevg",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:16AetherEmbeddings12TextEmbedderC15unownedExecutorScevg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "UnownedSerialExecutor",
+        "printedName": "_Concurrency.UnownedSerialExecutor",
+        "usr": "s:Sce"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "Semantics"
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s16AetherEmbeddings12TextEmbedderC15unownedExecutorScevp",
+      "moduleName": "AetherEmbeddings",
+      "name": "unownedExecutor",
+      "printedName": "unownedExecutor",
+      "usr": "s:16AetherEmbeddings12TextEmbedderC15unownedExecutorScevp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sScA",
+      "name": "Actor",
+      "printedName": "Actor",
+      "usr": "s:ScA"
+     }
+    ],
+    "declKind": "Class",
+    "hasMissingDesignatedInitializers": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s16AetherEmbeddings12TextEmbedderC",
+    "moduleName": "AetherEmbeddings",
+    "name": "TextEmbedder",
+    "printedName": "TextEmbedder",
+    "usr": "s:16AetherEmbeddings12TextEmbedderC"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Registry",
+          "printedName": "AetherRuntime.Registry",
+          "usr": "s:13AetherRuntime8RegistryV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime8RegistryV0A10EmbeddingsE10embeddingsACvgZ",
+        "moduleName": "AetherEmbeddings",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:13AetherRuntime8RegistryV0A10EmbeddingsE10embeddingsACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Registry",
+        "printedName": "AetherRuntime.Registry",
+        "usr": "s:13AetherRuntime8RegistryV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime8RegistryV0A10EmbeddingsE10embeddingsACvpZ",
+      "moduleName": "AetherEmbeddings",
+      "name": "embeddings",
+      "printedName": "embeddings",
+      "static": true,
+      "usr": "s:13AetherRuntime8RegistryV0A10EmbeddingsE10embeddingsACvpZ"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "isExternal": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime8RegistryV",
+    "moduleName": "AetherRuntime",
+    "name": "Registry",
+    "printedName": "Registry",
+    "usr": "s:13AetherRuntime8RegistryV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Embedding",
+        "printedName": "AetherRuntime.Embedding",
+        "usr": "s:13AetherRuntime9EmbeddingV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime9EmbeddingV0A10EmbeddingsE9truncated2toACSi_tF",
+      "moduleName": "AetherEmbeddings",
+      "name": "truncated",
+      "printedName": "truncated(to:)",
+      "usr": "s:13AetherRuntime9EmbeddingV0A10EmbeddingsE9truncated2toACSi_tF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "isExternal": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime9EmbeddingV",
+    "moduleName": "AetherRuntime",
+    "name": "Embedding",
+    "printedName": "Embedding",
+    "usr": "s:13AetherRuntime9EmbeddingV"
+   }
+  ],
+  "json_format_version": 8,
+  "kind": "Root",
+  "name": "AetherEmbeddings",
+  "printedName": "AetherEmbeddings"
+ }
+}
