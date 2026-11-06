@@ -8476,6 +8476,108 @@
       "printedName": "depthEstimator",
       "static": true,
       "usr": "s:10AetherCore8DriverIDV14depthEstimatorACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore8DriverIDV13detectorDenseACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore8DriverIDV13detectorDenseACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore8DriverIDV13detectorDenseACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDense",
+      "printedName": "detectorDense",
+      "static": true,
+      "usr": "s:10AetherCore8DriverIDV13detectorDenseACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore8DriverIDV12detectorDetrACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore8DriverIDV12detectorDetrACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore8DriverIDV12detectorDetrACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDetr",
+      "printedName": "detectorDetr",
+      "static": true,
+      "usr": "s:10AetherCore8DriverIDV12detectorDetrACvpZ"
      }
     ],
     "conformances": [
@@ -14888,6 +14990,108 @@
       "printedName": "depthEstimator",
       "static": true,
       "usr": "s:10AetherCore14DriverContractV14depthEstimatorACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverContract",
+          "printedName": "AetherCore.DriverContract",
+          "usr": "s:10AetherCore14DriverContractV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore14DriverContractV13detectorDenseACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore14DriverContractV13detectorDenseACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore14DriverContractV13detectorDenseACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDense",
+      "printedName": "detectorDense",
+      "static": true,
+      "usr": "s:10AetherCore14DriverContractV13detectorDenseACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverContract",
+          "printedName": "AetherCore.DriverContract",
+          "usr": "s:10AetherCore14DriverContractV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore14DriverContractV12detectorDetrACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore14DriverContractV12detectorDetrACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore14DriverContractV12detectorDetrACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDetr",
+      "printedName": "detectorDetr",
+      "static": true,
+      "usr": "s:10AetherCore14DriverContractV12detectorDetrACvpZ"
      }
     ],
     "conformances": [
@@ -81351,6 +81555,31 @@
           "children": [
            {
             "kind": "TypeNominal",
+            "name": "Resize",
+            "printedName": "AetherCore.Manifest.ImagePreprocess.Resize",
+            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Decoder",
+            "printedName": "any Swift.Decoder",
+            "usr": "s:s7DecoderP"
+           }
+          ],
+          "declKind": "Constructor",
+          "init_kind": "Designated",
+          "kind": "Constructor",
+          "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc",
+          "moduleName": "AetherCore",
+          "name": "init",
+          "printedName": "init(from:)",
+          "throwing": true,
+          "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
             "name": "Bool",
             "printedName": "Swift.Bool",
             "usr": "s:Sb"
@@ -81470,32 +81699,6 @@
           "name": "hashValue",
           "printedName": "hashValue",
           "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV9hashValueSivp"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Resize",
-            "printedName": "AetherCore.Manifest.ImagePreprocess.Resize",
-            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "Decoder",
-            "printedName": "any Swift.Decoder",
-            "usr": "s:s7DecoderP"
-           }
-          ],
-          "declKind": "Constructor",
-          "implicit": true,
-          "init_kind": "Designated",
-          "kind": "Constructor",
-          "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc",
-          "moduleName": "AetherCore",
-          "name": "init",
-          "printedName": "init(from:)",
-          "throwing": true,
-          "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc"
          }
         ],
         "conformances": [
@@ -89566,6 +89769,232 @@
          {
           "children": [
            {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Selection",
+                "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+                "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+               },
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "Selection",
+                  "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+                  "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection.Type"
+               }
+              ],
+              "kind": "TypeFunc",
+              "name": "Function",
+              "printedName": "(AetherCore.Manifest.Postprocess.DetrSigmoid.Selection.Type) -> AetherCore.Manifest.Postprocess.DetrSigmoid.Selection"
+             }
+            ],
+            "declKind": "EnumElement",
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO9topKPairsyA2ImF",
+            "moduleName": "AetherCore",
+            "name": "topKPairs",
+            "printedName": "topKPairs",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO9topKPairsyA2ImF"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Selection",
+                "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+                "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection?",
+              "usr": "s:Sq"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Inlinable"
+            ],
+            "declKind": "Constructor",
+            "implicit": true,
+            "init_kind": "Designated",
+            "kind": "Constructor",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueAISgSS_tcfc",
+            "moduleName": "AetherCore",
+            "name": "init",
+            "printedName": "init(rawValue:)",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueAISgSS_tcfc"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declKind": "TypeAlias",
+            "implicit": true,
+            "kind": "TypeAlias",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8RawValuea",
+            "moduleName": "AetherCore",
+            "name": "RawValue",
+            "printedName": "RawValue",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8RawValuea"
+           },
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "declAttributes": [
+               "Inlinable"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueSSvg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueSSvg"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declKind": "Var",
+            "implicit": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueSSvp",
+            "moduleName": "AetherCore",
+            "name": "rawValue",
+            "printedName": "rawValue",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO8rawValueSSvp"
+           }
+          ],
+          "conformances": [
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8CopyableP",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSe",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSE",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSQ",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss9EscapableP",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSH",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeWitness",
+              "name": "RawValue",
+              "printedName": "RawValue"
+             }
+            ],
+            "kind": "Conformance",
+            "mangledName": "$sSY",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "usr": "s:SY"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8SendableP",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss16SendableMetatypeP",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP"
+           }
+          ],
+          "declKind": "Enum",
+          "enumRawTypeName": "String",
+          "isEnumExhaustive": true,
+          "kind": "TypeDecl",
+          "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO",
+          "moduleName": "AetherCore",
+          "name": "Selection",
+          "printedName": "Selection",
+          "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+         },
+         {
+          "children": [
+           {
             "accessors": [
              {
               "accessorKind": "get",
@@ -90234,6 +90663,103 @@
               "children": [
                {
                 "kind": "TypeNominal",
+                "name": "Selection",
+                "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+                "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Selection",
+                "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+                "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Selection",
+              "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+              "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvp",
+          "moduleName": "AetherCore",
+          "name": "selection",
+          "printedName": "selection",
+          "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9selectionAG9SelectionOSgvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
                 "name": "Masks",
                 "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Masks",
                 "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV5MasksV"
@@ -90367,6 +90893,21 @@
             "children": [
              {
               "kind": "TypeNominal",
+              "name": "Selection",
+              "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection",
+              "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9SelectionO"
+             }
+            ],
+            "hasDefaultArg": true,
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Selection?",
+            "usr": "s:Sq"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
               "name": "Masks",
               "printedName": "AetherCore.Manifest.Postprocess.DetrSigmoid.Masks",
               "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV5MasksV"
@@ -90382,11 +90923,11 @@
           "declKind": "Constructor",
           "init_kind": "Designated",
           "kind": "Constructor",
-          "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9boxFormat0G5Space8defaults10classIndex5masksAgE03BoxH0O_AE0nI0OAE17DetectionDefaultsVAE05ClassL0OSgAG5MasksVSgtcfc",
+          "mangledName": "$s10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9boxFormat0G5Space8defaults10classIndex9selection5masksAgE03BoxH0O_AE0oI0OAE17DetectionDefaultsVAE05ClassL0OSgAG9SelectionOSgAG5MasksVSgtcfc",
           "moduleName": "AetherCore",
           "name": "init",
-          "printedName": "init(boxFormat:boxSpace:defaults:classIndex:masks:)",
-          "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9boxFormat0G5Space8defaults10classIndex5masksAgE03BoxH0O_AE0nI0OAE17DetectionDefaultsVAE05ClassL0OSgAG5MasksVSgtcfc"
+          "printedName": "init(boxFormat:boxSpace:defaults:classIndex:selection:masks:)",
+          "usr": "s:10AetherCore8ManifestV11PostprocessO11DetrSigmoidV9boxFormat0G5Space8defaults10classIndex9selection5masksAgE03BoxH0O_AE0oI0OAE17DetectionDefaultsVAE05ClassL0OSgAG9SelectionOSgAG5MasksVSgtcfc"
          },
          {
           "children": [

@@ -139,10 +139,13 @@ struct ObjectDetectorDetrGateTests {
             try Self.localBundle(directory.appending(path: "bundle")), as: DetrDetectorDriver.self,
             options: LoadOptions(device: Self.mac, cachePolicy: .default, cache: .default))
         let detector = try model.detector()
-        guard case .detrSigmoid(let post) = detector.postprocess else { Issue.record("not detrSigmoid"); return }
+        guard case .detrSigmoid(let post)? = detector.manifest.postprocess else { Issue.record("not detrSigmoid"); return }
         let segmented = index.shapes["masks"] != nil
         #expect(post.classIndex == .cocoId && post.selection == .topKPairs && (post.masks != nil) == segmented)
-        let head = try ObjectDetector.Configuration(model.manifest).head
+        guard case .detr(let head) = try ObjectDetector.Configuration(model.manifest).head else { Issue.record("not detr"); return }
+        func decode(_ raw: [String: DetectorOutput], _ geometry: ImageGeometry) -> [Detection] {
+            head.detections(raw, geometry: geometry, scoreThreshold: post.defaults.scoreThreshold, maxDetections: post.defaults.maxDetections)
+        }
         let threshold = Float(post.defaults.scoreThreshold)
         let shape = try #require(index.shapes["input"])
         let size = shape[3]
@@ -161,7 +164,7 @@ struct ObjectDetectorDetrGateTests {
                                          content: CGRect(x: 0, y: 0, width: size, height: size))
 
             // The head on the reference's raw outputs is upstream's PostProcess.
-            let reference = head.detections(raw, geometry: geometry, request: DetectionRequest())
+            let reference = decode(raw, geometry)
             #expect(reference.map(\.label.id) == c.detections.map(\.classId), "\(entry.name): upstream's classes, in order")
             var worstScore: Float = 0, worstBox = 0.0
             for (d, u) in zip(reference, c.detections) {
@@ -203,8 +206,8 @@ struct ObjectDetectorDetrGateTests {
             let photo = try await detector.detect(photoInput)
             let photoElapsed = ContinuousClock.now - photoStarted
             let g = try detector.prepare(photoInput).geometry
-            let mapped = head.detections(raw, geometry: g, request: DetectionRequest())
-            #expect(photo.allSatisfy { d in d.mask.map { $0.sourceWidth == g.sourceWidth && $0.sourceHeight == g.sourceHeight } ?? true })
+            let mapped = decode(raw, g)
+            #expect(photo.allSatisfy { d in d.mask.map { $0.width == g.sourceWidth && $0.height == g.sourceHeight } ?? true })
             print("gate: \(id) \(entry.name) photo \(g.sourceWidth)x\(g.sourceHeight) end to end: \(photo.count) detections "
                   + "\(Set(photo.map(\.label.name)).sorted()), vs the reference mapped to the photo: "
                   + "\(Self.match(photo, mapped, threshold: threshold).summary) (not gated: vImage vs torchvision bilinear); \(photoElapsed)")

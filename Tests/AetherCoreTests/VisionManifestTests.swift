@@ -33,6 +33,25 @@ struct VisionManifestTests {
         #expect(try Manifest.decode(m.encoded()) == m)
     }
 
+    /// YOLOX's Forge export writes `padValue` as a bare number, `activation` and `classIndex`, and `labels.set`.
+    @Test func theYOLOXExportersBlocksDecode() throws {
+        let m = try Manifest.decode(Self.manifest("""
+        "preprocess": { "image": { "resize": { "mode": "letterbox", "size": [640, 640], "anchor": "topLeft", "padValue": 114,
+                                               "filter": "vImage" }, "channelOrder": "BGR", "layout": "NCHW" } },
+        "postprocess": { "kind": "denseNms", "boxFormat": "cxcywh", "boxSpace": "letterboxPixels", "activation": "applied",
+                         "nms": { "type": "perClass", "iou": 0.45 }, "defaults": { "scoreThreshold": 0.3, "maxDetections": 50 },
+                         "classIndex": "contiguous", "x-notes": "n" },
+        "labels": { "set": "coco-91", "x-notes": "n" }
+        """))
+        #expect(m.preprocess?.image?.resize == .init(mode: .letterbox, size: .init(width: 640, height: 640), anchor: .topLeft,
+                                                    padValue: [114], filter: .vImage))
+        #expect(m.postprocess == .denseNms(.init(
+            boxFormat: .cxcywh, boxSpace: .letterboxPixels, activation: .applied, nms: .init(type: .perClass, iou: 0.45),
+            defaults: .init(scoreThreshold: 0.3, maxDetections: 50), classIndex: .contiguous)))
+        #expect(m.labels == .set(.coco91))
+        #expect(try Manifest.decode(m.encoded()) == m)
+    }
+
     @Test func everyPostprocessKindDecodesAndRoundTrips() throws {
         let cases: [(String, Manifest.Postprocess)] = [
             (#"{ "kind": "depth", "depth": { "polarity": "largerIsNearer" } }"#, .depth(.init(polarity: .largerIsNearer))),

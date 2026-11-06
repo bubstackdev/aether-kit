@@ -208,14 +208,18 @@ struct ObjectDetectorDetrTests {
     @Test func selectionRanksEveryQueryClassPairAndKeepsThoseStrictlyAboveTheThreshold() {
         // Flat indices 0...5 over 2 queries x 3 classes.
         let logits: [Float] = [2, 0, 1, 1, 3, -1]
+        func select(_ threshold: Float, _ limit: Int, labelled: [Bool] = [true, true, true]) -> [Int] {
+            DetrHead.select(logits, columns: 3, labelled: labelled, threshold: threshold, limit: limit).map(\.index)
+        }
         // Threshold 0.5: logit 0 scores exactly 0.5, not above it.
-        let picked = DetrHead.select(logits, threshold: 0.5, limit: 300)
-        #expect(picked.map(\.index) == [4, 0, 2, 3])    // 3 > 2 > (1 at 2, 1 at 3: ties by index)
-        #expect(picked[0].score == 1 / (1 + exp(-3)))
-        // The top-k cut comes before nothing else: the best `limit`, ties broken by index.
-        #expect(DetrHead.select(logits, threshold: 0.5, limit: 3).map(\.index) == [4, 0, 2])
-        #expect(DetrHead.select(logits, threshold: 0.95, limit: 3).map(\.index) == [4])
-        #expect(DetrHead.select(logits, threshold: 0, limit: 0).isEmpty)
+        #expect(select(0.5, 300) == [4, 0, 2, 3])    // 3 > 2 > (1 at 2, 1 at 3: ties by index)
+        #expect(DetrHead.select(logits, columns: 3, labelled: [true, true, true], threshold: 0.5, limit: 1)[0].score == 1 / (1 + exp(-3)))
+        // The best `limit`, ties broken by index.
+        #expect(select(0.5, 3) == [4, 0, 2])
+        #expect(select(0.95, 3) == [4])
+        #expect(select(0, 0).isEmpty)
+        // Unlabelled columns are left out before the cut.
+        #expect(select(0.5, 2, labelled: [false, true, true]) == [4, 2])
     }
 
     @Test func detectionsCarryCOCOLabelsBoxesInSourceSpaceAndOneQueryMayYieldSeveralClasses() async throws {
@@ -225,7 +229,7 @@ struct ObjectDetectorDetrTests {
             logits: [(0, 17, 4), (0, 18, 1), (1, 1, 2), (2, 3, -0.1)])
         let log = Log()
         let detector = try Self.detector(Self.manifest(), outputs, log: log)
-        #expect(detector.postprocess.kind == .detrSigmoid)
+        #expect(detector.manifest.postprocess?.kind == .detrSigmoid && detector.defaults.maxDetections == 300)
         // A 8x6 source stretched to 4x4: normalized boxes are already the source's.
         let detections = try await detector.detect(Self.image(width: 8, height: 6))
         #expect(detections.map(\.label) == [.init(id: 17, name: "cat"), .init(id: 1, name: "person"), .init(id: 18, name: "dog")])
@@ -247,35 +251,26 @@ struct ObjectDetectorDetrTests {
         #expect(try await detector.detect(prepared) == detections)
     }
 
-    @Test func anUnlabelledColumnTakesItsRankButIsNotReported() async throws {
-        // Column 0 (no COCO category) outscores the cat; with one detection allowed, nothing is left.
+    @Test func anUnlabelledColumnIsNeverReported() async throws {
+        // Column 0 (no COCO category) outscores the cat; it is left out before the cut, so the cat still returns.
         let outputs = Outputs(logits: [(0, 0, 5), (1, 17, 3)])
         let detector = try Self.detector(Self.manifest(), outputs)
         #expect(try await detector.detect(Self.image(width: 4, height: 4)).map(\.label.id) == [17])
-        #expect(try await detector.detect(Self.image(width: 4, height: 4), DetectionRequest(maxDetections: 1)).isEmpty)
+        #expect(try await detector.detect(Self.image(width: 4, height: 4), DetectionRequest(maxDetections: 1)).map(\.label.id) == [17])
     }
 
-    static func head(_ edit: (inout [String: Any]) -> Void = { _ in }) throws -> DetrHead {
-        let manifest = try Self.manifest(edit)
-        guard case .detrSigmoid(let p)? = manifest.postprocess else { throw AetherError.manifestInvalid(field: "postprocess", reason: "") }
-        return try DetrHead(manifest, p)
-    }
-
-    @Test func boxesMapThroughTheGeometry() throws {
-        let head = try Self.head()
-        // A 4x2 source letterboxed into rows 1...2 of a 4x4 canvas: the canvas's middle half is the whole source.
-        let letterbox = ImageGeometry(sourceWidth: 4, sourceHeight: 2, width: 4, height: 4, content: CGRect(x: 0, y: 1, width: 4, height: 2))
-        #expect(Self.close(head.sourceBox([0.5, 0.5, 0.5, 0.25], letterbox), CGRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)))
-        // Padding is outside the source: clamped away.
-        #expect(Self.close(head.sourceBox([0.5, 0.5, 1, 1], letterbox), CGRect(x: 0, y: 0, width: 1, height: 1)))
-        // xyxy in the graph's pixels.
-        let pixels = try Self.head { json in
-            var p = json["postprocess"] as! [String: Any]
-            p["boxFormat"] = "xyxy"
-            p["boxSpace"] = "letterboxPixels"
-            json["postprocess"] = p
+    @Test func letterboxedBoxesMapToTheSource() async throws {
+        // A 4x2 source letterboxed into rows 1...2 of the 4x4 input: the input's middle half is the whole source.
+        let manifest = try Self.manifest { json in
+            var image = (json["preprocess"] as! [String: Any])["image"] as! [String: Any]
+            image["resize"] = ["mode": "letterbox", "size": [4, 4], "filter": "vImage"] as [String: Any]
+            json["preprocess"] = ["image": image]
         }
-        #expect(Self.close(pixels.sourceBox([1, 1, 3, 2], letterbox), CGRect(x: 0.25, y: 0, width: 0.5, height: 0.5)))
+        let outputs = Outputs(queries: 2, boxes: [0.5, 0.5, 0.5, 0.25, 0.5, 0.5, 1, 1], logits: [(0, 17, 4), (1, 18, 3)])
+        let detections = try await Self.detector(manifest, outputs).detect(Self.image(width: 4, height: 2))
+        #expect(Self.close(detections[0].box, CGRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)))
+        // The padding is outside the source: clipped away.
+        #expect(Self.close(detections[1].box, CGRect(x: 0, y: 0, width: 1, height: 1)))
     }
 
     // MARK: - Masks
@@ -286,7 +281,9 @@ struct ObjectDetectorDetrTests {
         let resampler = MaskResampler(geometry, planeShape: [1, 1, 1, 2])
         let mask = resampler.mask([-1, 3], plane: 0, threshold: 0)
         #expect((0..<4).map { mask[x: $0, y: 0] } == [false, false, true, true])
-        #expect(mask.left == 2 && mask.top == 0 && mask.width == 2 && mask.height == 1 && mask.area == 2)
+        #expect(mask.bounds == .init(x: 2, y: 0, width: 2, height: 1) && mask.width == 4 && mask.area == 2)
+        #expect(DetectionMask(width: 4, height: 1, foreground: [false, false, true, true]) == mask)
+        #expect(mask.foreground == [false, false, true, true])
         #expect(mask.alpha() == [0, 0, 255, 255])
         // Lower the threshold: the interpolated 0 is now above it.
         #expect(resampler.mask([-1, 3], plane: 0, threshold: -0.5).area == 3)
@@ -328,10 +325,10 @@ struct ObjectDetectorDetrTests {
         #expect(detections.map(\.label.id) == [17, 1, 18])
         let cat = try #require(detections[0].mask), person = try #require(detections[1].mask)
         #expect(detections[2].mask == cat)
-        #expect(cat.sourceWidth == 4 && cat.sourceHeight == 4)
+        #expect(cat.width == 4 && cat.height == 4)
         // Logits 5 and -5 cross zero halfway between the cells' centres (source x = 2).
-        #expect(cat.left == 0 && cat.width == 2 && cat.top == 0 && cat.height == 4 && cat.area == 8)
-        #expect(person.top == 2 && person.height == 2 && person.width == 4 && person.area == 8)
+        #expect(cat.bounds == .init(x: 0, y: 0, width: 2, height: 4) && cat.area == 8)
+        #expect(person.bounds == .init(x: 0, y: 2, width: 4, height: 2) && person.area == 8)
         #expect(abs(cat.intersectionOverUnion(person) - 4.0 / 12) < 1e-12 && cat.intersectionOverUnion(cat) == 1)
     }
 

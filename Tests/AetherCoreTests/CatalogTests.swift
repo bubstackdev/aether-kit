@@ -40,7 +40,7 @@ struct CatalogTests {
                 }
             }
         }
-        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism", "depth-anything-3-small"]))
+        #expect(Set(Catalog.builtin.entries.map(\.id)) == Set(Fixtures.goldenIDs + ["mistral-7b-v0.3", "sd-turbo", "flux2-klein-4b", "kokoro-82m", "krea-2-turbo", "krea-2-turbo-realism", "depth-anything-3-small", "yolox-s", "rf-detr-nano", "rf-detr-seg-nano"]))
     }
 
     /// The generative exports (aether-models): SD-Turbo is the one image model on iOS in 0.1.0; FLUX.2 is macOS-only.
@@ -60,6 +60,14 @@ struct CatalogTests {
         // Depth Anything 3 small (M4b) is macOS-only until an iOS export is qualified.
         #expect(try ModelRef.resolve("depth-anything-3-small", for: mac).driver == .depthEstimator)
         #expect(throws: AetherError.self) { _ = try ModelRef.resolve("depth-anything-3-small", for: phone) }
+        // YOLOX-S (M4e) likewise.
+        #expect(try ModelRef.resolve("yolox-s", for: mac).driver == .detectorDense)
+        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("yolox-s", for: phone) }
+        // RF-DETR nano and seg-nano (M4f) are macOS-only, like the other M4 exports so far.
+        for id in ["rf-detr-nano", "rf-detr-seg-nano"] {
+            #expect(try ModelRef.resolve(id, for: mac).driver == .detectorDetr)
+            #expect(throws: AetherError.self) { _ = try ModelRef.resolve(id, for: phone) }
+        }
         // Krea 2 (both variants) is macOS-only; the realism merge is marked mature, and only it.
         for id in ["krea-2-turbo", "krea-2-turbo-realism"] {
             _ = try ModelRef.resolve(id, for: mac)

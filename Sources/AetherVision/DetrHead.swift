@@ -21,8 +21,8 @@ public enum DetrDetectorDriver: ModelDriver {
 /// 1. **Scores:** the sigmoid of every `classLogits` value, `[Q, C]`.
 /// 2. **Selection** (`topKPairs`): every (query, class) pair is a candidate; the `maxDetections` best by score
 ///    descending, ties by flat index `query · C + class` ascending, are kept when their score is strictly above
-///    `scoreThreshold`. A query can yield several classes; there is no NMS. A column with no label (COCO's unassigned
-///    ids, never scored by a COCO model) takes its place in the ranking but is not reported.
+///    `scoreThreshold`. A query can yield several classes; there is no NMS. Columns with no label (COCO's unassigned
+///    ids, which a COCO model never scores) are left out before ranking, so up to `maxDetections` labelled ones return.
 /// 3. **Boxes:** the pair's query box, `cxcywh` or `xyxy`, `normalized` to the graph's input or in its pixels
 ///    (`letterboxPixels`), mapped to the source image through the prepared image's geometry and clamped to [0, 1].
 /// 4. **Masks** (when the graph binds `masks`): the query's logit plane, which spans the graph's whole input, resampled
@@ -30,15 +30,16 @@ public enum DetrDetectorDriver: ModelDriver {
 ///    input; clamped to the content's edge cells when letterboxed, so padding is never read) and kept strictly above
 ///    `masks.logitThreshold`. Only the plane's region that can exceed it is resampled (bilinear values never exceed
 ///    their four cells'), so the cost follows the object's size, not the image's.
-struct DetrHead: DetectorHead {
-    let contract = DriverContract.detectorDetr
+struct DetrHead: Sendable {
     let postprocess: Manifest.Postprocess.DetrSigmoid
     let boxes: String, classLogits: String, masks: String?
-    /// Per class column.
-    let labels: [Detection.Label?]
+    let labels: DetectionLabels
 
-    init(_ manifest: Manifest, _ postprocess: Manifest.Postprocess.DetrSigmoid) throws(AetherError) {
-        try contract.validate(manifest)
+    /// Checks the manifest after ``DriverContract/detectorDetr`` has.
+    init(_ manifest: Manifest, labels: DetectionLabels) throws(AetherError) {
+        guard case .detrSigmoid(let postprocess)? = manifest.postprocess else {
+            throw .manifestInvalid(field: "postprocess", reason: "\(manifest.driver) requires kind detrSigmoid")
+        }
         let graph = manifest.graphs["detector"]!
         boxes = graph.outputs["boxes"]!.name
         classLogits = graph.outputs["classLogits"]!.name
@@ -52,11 +53,16 @@ struct DetrHead: DetectorHead {
             break
         }
         self.postprocess = postprocess
-        labels = try ObjectDetector.columnLabels(manifest, classIndex: postprocess.classIndex ?? .contiguous)
+        self.labels = labels
     }
 
+    var classIndex: Manifest.Postprocess.ClassIndex { postprocess.classIndex ?? .contiguous }
+
+    /// The detector graph's outputs to bind, by graph name.
     var outputs: [String] { [boxes, classLogits] + (masks.map { [$0] } ?? []) }
 
+    /// Throws unless the loaded graph's outputs are `[1, Q, 4]`, `[1, Q, C]` and `[1, Q, h, w]`, with C the label set's
+    /// size for contiguous columns and no more columns than its largest id for `cocoId`.
     func check(_ signature: GraphSignature) throws(AetherError) {
         func shape(_ name: String) -> [Int]? { signature.output(name)?.shape }
         func mismatch(_ expected: String, _ name: String) -> AetherError {
@@ -64,8 +70,10 @@ struct DetrHead: DetectorHead {
                               found: shape(name).map { "\($0)" } ?? "no such output")
         }
         guard let b = shape(boxes), b.count == 3, b[0] == 1, b[1] > 0, b[2] == 4 else { throw mismatch("[1, Q, 4]", boxes) }
-        guard let l = shape(classLogits), l.count == 3, l[0] == 1, l[1] == b[1], l[2] > 0, l[2] <= labels.count else {
-            throw mismatch("[1, \(b[1]), C] with C ≤ \(labels.count) (the label set's columns)", classLogits)
+        let columns = classIndex == .contiguous ? labels.labels.count : (labels.labels.map(\.id).max() ?? -1) + 1
+        guard let l = shape(classLogits), l.count == 3, l[0] == 1, l[1] == b[1], l[2] > 0,
+              classIndex == .contiguous ? l[2] == columns : l[2] <= columns else {
+            throw mismatch("[1, \(b[1]), C] with C \(classIndex == .contiguous ? "=" : "≤") \(columns) (the label set's)", classLogits)
         }
         if let masks {
             guard let m = shape(masks), m.count == 4, m[0] == 1, m[1] == b[1], m[2] > 0, m[3] > 0 else {
@@ -74,57 +82,53 @@ struct DetrHead: DetectorHead {
         }
     }
 
-    func detections(_ outputs: [String: DetectorOutput], geometry: ImageGeometry, request: DetectionRequest) -> [Detection] {
+    /// The detections, best first.
+    func detections(
+        _ outputs: [String: DetectorOutput], geometry: ImageGeometry, scoreThreshold: Double, maxDetections: Int
+    ) -> [Detection] {
         let logits = outputs[classLogits]!, box = outputs[boxes]!.values
         let columns = logits.shape[2]
-        let threshold = Float(request.scoreThreshold ?? postprocess.defaults.scoreThreshold)
-        let limit = request.maxDetections ?? postprocess.defaults.maxDetections
-        let picked = Self.select(logits.values, threshold: threshold, limit: limit)
-        let resampler = masks.flatMap { outputs[$0] }.map { MaskResampler(geometry, planeShape: $0.shape) }
+        let named = (0..<columns).map { labels.label(column: $0, classIndex: classIndex) }
+        let picked = Self.select(logits.values, columns: columns, labelled: named.map { $0 != nil },
+                                 threshold: Float(scoreThreshold), limit: maxDetections)
+        let mapper = DetectionBoxes(format: postprocess.boxFormat, space: postprocess.boxSpace, geometry: geometry)
+        let plane = masks.flatMap { outputs[$0] }
+        let resampler = plane.map { MaskResampler(geometry, planeShape: $0.shape) }
+        let maskThreshold = Float(postprocess.masks?.logitThreshold ?? 0)
         var planes: [Int: DetectionMask] = [:]
-        return picked.compactMap { pick in
+        return picked.map { pick in
             let query = pick.index / columns
-            guard let label = labels[pick.index % columns] else { return nil }
             var mask: DetectionMask?
-            if let resampler, let name = masks, let plane = outputs[name] {
-                mask = planes[query] ?? resampler.mask(
-                    plane.values, plane: query, threshold: Float(postprocess.masks?.logitThreshold ?? 0))
+            if let resampler, let plane {
+                mask = planes[query] ?? resampler.mask(plane.values, plane: query, threshold: maskThreshold)
                 planes[query] = mask
             }
-            return Detection(label: label, score: pick.score, box: sourceBox(box[(4 * query)..<(4 * query + 4)], geometry),
-                             mask: mask)
+            let v = (0..<4).map { Double(box[4 * query + $0]) }
+            return Detection(label: named[pick.index % columns]!, score: pick.score,
+                             box: mapper.source(v[0], v[1], v[2], v[3]), mask: mask)
         }
     }
 
-    /// The `topKPairs` rule: the flat indices scoring strictly above `threshold`, the best `limit` of them, by score
-    /// descending then index ascending. The same rows as ranking every pair and then thresholding: every pair kept
-    /// outscores every pair dropped.
-    static func select(_ logits: [Float], threshold: Float, limit: Int) -> [(index: Int, score: Float)] {
+    /// The `topKPairs` rule over the labelled columns: the flat indices scoring strictly above `threshold`, the best
+    /// `limit` of them, by score descending then index ascending. The same rows as ranking every pair and then
+    /// thresholding: every pair kept outscores every pair dropped.
+    static func select(
+        _ logits: [Float], columns: Int, labelled: [Bool], threshold: Float, limit: Int
+    ) -> [(index: Int, score: Float)] {
         var candidates: [(index: Int, score: Float)] = []
-        for (i, logit) in logits.enumerated() {
+        for (i, logit) in logits.enumerated() where labelled[i % columns] {
             let score = 1 / (1 + exp(-logit))
             if score > threshold { candidates.append((i, score)) }
         }
         candidates.sort { $0.score != $1.score ? $0.score > $1.score : $0.index < $1.index }
         return Array(candidates.prefix(max(0, limit)))
     }
+}
 
-    /// One query's box as a fraction of the source image, clamped to [0, 1].
-    func sourceBox(_ v: ArraySlice<Float>, _ geometry: ImageGeometry) -> CGRect {
-        let v = v.map(Double.init)
-        var (x0, y0, x1, y1) = switch postprocess.boxFormat {
-        case .cxcywh: (v[0] - 0.5 * v[2], v[1] - 0.5 * v[3], v[0] + 0.5 * v[2], v[1] + 0.5 * v[3])
-        case .xyxy: (v[0], v[1], v[2], v[3])
-        }
-        if postprocess.boxSpace == .normalized {
-            let w = Double(geometry.width), h = Double(geometry.height)
-            (x0, y0, x1, y1) = (x0 * w, y0 * h, x1 * w, y1 * h)
-        }
-        let r = geometry.normalizedSourceRect(fromPrepared: CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0))
-        func clamp(_ x: Double) -> Double { min(max(x, 0), 1) }
-        let left = clamp(r.minX), top = clamp(r.minY)
-        return CGRect(x: left, y: top, width: max(0, clamp(r.maxX) - left), height: max(0, clamp(r.maxY) - top))
-    }
+/// The graph's raw output, as the head reads it.
+struct DetectorOutput: Sendable {
+    var shape: [Int]
+    var values: [Float]
 }
 
 /// Mask planes (`[1, Q, h, w]`, spanning the graph's whole input) onto the source image's pixels: bilinear at pixel
@@ -166,7 +170,7 @@ struct MaskResampler: Sendable {
                 r1 = max(r1, r)
             }
         }
-        let empty = DetectionMask(sourceWidth: sourceWidth, sourceHeight: sourceHeight, left: 0, top: 0, width: 0, height: 0, bits: [])
+        let empty = DetectionMask(width: sourceWidth, height: sourceHeight, bounds: .init(x: 0, y: 0, width: 0, height: 0), bits: [])
         guard c1 >= 0 else { return empty }
         let xs = Self.span(columns, c0, c1), ys = Self.span(rows, r0, r1)
         var hits: [(Int, Int)] = []
@@ -196,7 +200,7 @@ struct MaskResampler: Sendable {
             let i = (y - top) * width + (x - left)
             bits[i >> 3] |= 1 << UInt8(i & 7)
         }
-        return DetectionMask(sourceWidth: sourceWidth, sourceHeight: sourceHeight, left: left, top: top, width: width,
-                             height: height, bits: bits)
+        return DetectionMask(width: sourceWidth, height: sourceHeight,
+                             bounds: .init(x: left, y: top, width: width, height: height), bits: bits)
     }
 }
