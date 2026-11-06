@@ -11,8 +11,9 @@ public struct GeneratedAudio: Sendable, Hashable {
     /// One array of samples per channel, all the same length.
     public let channels: [[Float]]
     public var channelCount: Int { channels.count }
-    public var frameCount: Int { channels[0].count }
-    public var duration: Duration { .seconds(Double(frameCount) / Double(sampleRate)) }
+    /// Samples per channel. (Kokoro's "frames" are its own 600-sample units: ``KokoroSpeech`` in AetherSpeech.)
+    public var sampleCount: Int { channels[0].count }
+    public var duration: Duration { .seconds(Double(sampleCount) / Double(sampleRate)) }
     /// The first channel; for mono audio, every sample.
     public var samples: [Float] { channels[0] }
 
@@ -54,7 +55,7 @@ public struct GeneratedAudio: Sendable, Hashable {
         let formatBytes = extensible ? 40 : (float ? 18 : 16)
         let factBytes = (float || extensible) ? 12 : 0
         let header = 12 + 8 + formatBytes + factBytes + 8
-        let (payload, overflow) = frameCount.multipliedReportingOverflow(by: channelCount * bytesPerSample)
+        let (payload, overflow) = sampleCount.multipliedReportingOverflow(by: channelCount * bytesPerSample)
         guard !overflow, payload <= Int(UInt32.max) - header else {
             throw .capacity(what: "WAV file bytes", needed: Int64(clamping: payload), available: Int64(UInt32.max) - Int64(header))
         }
@@ -76,7 +77,7 @@ public struct GeneratedAudio: Sendable, Hashable {
             } else if float {
                 u16(0)
             }
-            if factBytes > 0 { bytes("fact"); u32(4); u32(frameCount) }
+            if factBytes > 0 { bytes("fact"); u32(4); u32(sampleCount) }
             bytes("data"); u32(payload)
             let stride = channelCount * bytesPerSample
             for channel in 0..<channelCount {

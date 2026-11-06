@@ -168,7 +168,7 @@ struct GeneratedMediaTests {
         #expect(samples == [0.25, -0.5, 3, 1])  // interleaved, unclipped
         let surround = try GeneratedAudio(channels: Array(repeating: [0], count: 3), sampleRate: 8_000)
         #expect(try surround.wavData().count == 12 + 8 + 40 + 12 + 8 + 6)
-        #expect(try GeneratedAudio.concatenating([mono, mono]).frameCount == 10)
+        #expect(try GeneratedAudio.concatenating([mono, mono]).sampleCount == 10)
         #expect(throws: AetherError.self) { try GeneratedAudio.concatenating([mono, stereo]) }
         #expect(throws: AetherError.self) { try GeneratedAudio(channels: [[0], [0, 1]], sampleRate: 8_000) }
         #expect(throws: AetherError.self) { try GeneratedAudio(mono: [.infinity], sampleRate: 8_000) }
