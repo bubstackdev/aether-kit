@@ -597,7 +597,7 @@ extension MiniMaxH3Pipeline {
     public static let qualifiedFootprints: [String: [Manifest.Residency: PhaseFootprint]] = [
         "960x544x124": [
             .perPrompt: PhaseFootprint(peakBytes: 4261 << 20, heldBytes: 2395 << 20),
-            .perStep: PhaseFootprint(peakBytes: 9893 << 20, heldBytes: 8387 << 20),
+            .perStep: PhaseFootprint(peakBytes: 9893 << 20, heldBytes: 8614 << 20),
             .perImage: PhaseFootprint(peakBytes: 1445 << 20, heldBytes: 1151 << 20),
         ],
     ]
