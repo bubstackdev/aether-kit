@@ -1,8 +1,9 @@
 import CryptoKit
 import Foundation
+import Synchronization
 
 /// One install: every asset file of a variant into staging (with resume and SHA-256 verification), the receipt,
-/// then one rename into place. Runs off the store's actor.
+/// then one rename into place. Runs off the store's actor, under the install location's exclusive ``StoreLock``.
 struct Installer: Sendable {
     /// One file to fetch: where it lands (relative to the install root) and where it comes from.
     struct Item: Sendable {
@@ -17,14 +18,23 @@ struct Installer: Sendable {
     let items: [Item]
     let staging: URL
     let destination: URL
+    let layout: StoreLayout
+    let headers: @Sendable (URL) -> [String: String]
+    let diskSpace: @Sendable (URL) throws -> Int64
 
     private static let progressGranularity: Int64 = 1 << 20
 
-    init(transport: any HTTPTransport, endpoint: URL, ref: ModelRef, staging: URL, destination: URL) throws {
+    init(
+        transport: any HTTPTransport, endpoint: URL, ref: ModelRef, layout: StoreLayout,
+        headers: @escaping @Sendable (URL) -> [String: String], diskSpace: @escaping @Sendable (URL) throws -> Int64
+    ) throws {
         self.transport = transport
         self.ref = ref
-        self.staging = staging
-        self.destination = destination
+        self.layout = layout
+        self.staging = layout.staging(for: ref)
+        self.destination = layout.bundle(for: ref)
+        self.headers = headers
+        self.diskSpace = diskSpace
         var items: [Item] = []
         var byLocal: [String: String] = [:]
         for asset in ref.assets {
@@ -52,13 +62,32 @@ struct Installer: Sendable {
 
     /// Downloads every file into `staging`, verifies each SHA-256, writes the receipt, and renames the directory to
     /// `destination`. Returns `destination`.
+    ///
+    /// Holds the install location's lock throughout, so two processes never fetch into the same staging directory. A
+    /// process that waited for the lock and finds the bundle installed (another process finished it) returns at once.
     @concurrent
     func run(progress: @escaping @Sendable (InstallProgress) -> Void) async throws -> URL {
+        let lock = try await StoreLock.exclusive(layout.lock(for: ref))
+        defer { withExtendedLifetime(lock) {} }
+        if let receipt = InstallReceipt.read(at: destination), receipt.ref.variant == ref.variant { return destination }
+
         let fm = FileManager.default
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         try Self.excludeFromBackup(staging)
 
         let total = items.reduce(Int64(0)) { $0 + $1.file.size }
+        // Refuse before the first byte if the volume can't hold what is still missing. Install is a rename, so the
+        // missing bytes are all it needs.
+        let staged = items.reduce(Int64(0)) { sum, item in
+            let size = Self.size(of: staging.appending(path: item.local)) ?? 0
+            return sum + (size <= item.file.size ? size : 0)
+        }
+        let needed = total - staged
+        if needed > 0 {
+            let available = try diskSpace(staging)
+            guard available >= needed else { throw AetherError.capacity(what: "disk space", needed: needed, available: available) }
+        }
+
         var done: Int64 = 0
         progress(InstallProgress(completedBytes: 0, totalBytes: total, file: nil))
         for item in items {
@@ -76,9 +105,10 @@ struct Installer: Sendable {
         try fm.createDirectory(at: receiptURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try encoder.encode(receipt).write(to: receiptURL, options: .atomic)
 
-        // A directory at `destination` without a receipt is an interrupted earlier attempt: replace it.
+        // A directory at `destination` without this variant's receipt is an interrupted or superseded earlier
+        // attempt: move it out of the way in one rename, so a crash never leaves half of it looking installed.
         try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
+        if fm.fileExists(atPath: destination.path) { try layout.discard(destination) }
         try fm.moveItem(at: staging, to: destination)  // rename(2): atomic on one volume
         try Self.excludeFromBackup(destination)
         return destination
@@ -93,28 +123,40 @@ struct Installer: Sendable {
         let fm = FileManager.default
         try fm.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
 
-        var allowRetry = true
+        var refetchAllowed = true
+        var restartAllowed = true
         while true {
-            let existing = (try? fm.attributesOfItem(atPath: local.path)[.size] as? Int64) ?? nil
+            let existing = Self.size(of: local)
             let resumed: Bool
             switch existing {
             case let size? where size == file.size:
                 resumed = true  // complete from an earlier attempt; verify below
             case let size? where size > 0 && size < file.size:
                 resumed = true
-                try await download(item, to: local, from: size, before: done, total: total, progress: progress)
+                do {
+                    try await download(item, to: local, from: size, before: done, total: total, progress: progress)
+                } catch AetherError.download(_, .http(416)) where restartAllowed {
+                    // The server can't satisfy the range: the partial file doesn't match what it holds. Start over, once.
+                    restartAllowed = false
+                    try? fm.removeItem(at: local)
+                    continue
+                }
             default:
                 if existing != nil { try fm.removeItem(at: local) }
                 resumed = false
                 try await download(item, to: local, from: 0, before: done, total: total, progress: progress)
             }
 
+            guard Self.size(of: local) == file.size else {
+                try? fm.removeItem(at: local)
+                throw AetherError.download(file: item.local, reason: .unexpectedContent("not the catalog's \(file.size) bytes"))
+            }
             let actual = try Self.sha256(of: local)
             if actual == file.sha256.lowercased() { return }
             try? fm.removeItem(at: local)
             // A resumed file may have had a corrupt prefix: fetch it once from scratch before giving up.
-            if resumed && allowRetry {
-                allowRetry = false
+            if resumed && refetchAllowed {
+                refetchAllowed = false
                 continue
             }
             throw AetherError.integrity(file: item.local, expected: file.sha256, actual: actual)
@@ -125,65 +167,14 @@ struct Installer: Sendable {
         _ item: Item, to local: URL, from offset: Int64, before done: Int64, total: Int64,
         progress: @escaping @Sendable (InstallProgress) -> Void
     ) async throws {
-        let file = item.file
-        var headers: [String: String] = [:]
-        if offset > 0 { headers["Range"] = "bytes=\(offset)-" }
-
-        let head: HTTPResponseHead
-        let body: AsyncThrowingStream<Data, any Error>
-        do {
-            (head, body) = try await transport.get(item.remote, headers: headers)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            throw AetherError.download(file: item.local, reason: .transport(Self.describe(error)))
-        }
-
-        let start: Int64
-        switch head.status {
-        case 206 where offset > 0:
-            guard let rangeStart = Self.contentRangeStart(head.headers["content-range"]), rangeStart == offset else {
-                throw AetherError.download(
-                    file: item.local,
-                    reason: .unexpectedContent("Content-Range '\(head.headers["content-range"] ?? "")' does not start at \(offset)"))
+        let request = DownloadRequest(
+            url: item.remote, headers: headers(item.remote), destination: local, offset: offset, size: item.file.size,
+            file: item.local)
+        let throttle = ProgressThrottle(start: offset, granularity: Self.progressGranularity)
+        try await transport.download(request) { bytes in
+            if throttle.admit(bytes) {
+                progress(InstallProgress(completedBytes: done + bytes, totalBytes: total, file: item.local))
             }
-            start = offset
-        case 200:
-            start = 0  // the server ignored the range: start over
-        default:
-            throw AetherError.download(file: item.local, reason: .http(status: head.status))
-        }
-
-        if start == 0 { FileManager.default.createFile(atPath: local.path, contents: nil) }
-        let handle = try FileHandle(forWritingTo: local)
-        defer { try? handle.close() }
-        try handle.truncate(atOffset: UInt64(start))
-        try handle.seekToEnd()
-
-        var written = start
-        var reported = start
-        do {
-            for try await chunk in body {
-                guard written + Int64(chunk.count) <= file.size else {
-                    throw AetherError.download(file: item.local, reason: .unexpectedContent("more than the catalog's \(file.size) bytes"))
-                }
-                try handle.write(contentsOf: chunk)
-                written += Int64(chunk.count)
-                if written - reported >= Self.progressGranularity {
-                    reported = written
-                    progress(InstallProgress(completedBytes: done + written, totalBytes: total, file: item.local))
-                }
-            }
-        } catch let error as AetherError {
-            throw error
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            // The bytes so far stay in staging; the next attempt resumes from them.
-            throw AetherError.download(file: item.local, reason: .transport(Self.describe(error)))
-        }
-        guard written == file.size else {
-            throw AetherError.download(file: item.local, reason: .transport("connection closed after \(written) of \(file.size) bytes"))
         }
     }
 
@@ -213,14 +204,26 @@ struct Installer: Sendable {
         }
     }
 
-    /// `bytes 100-199/200` → 100.
-    static func contentRangeStart(_ header: String?) -> Int64? {
-        guard let header, header.hasPrefix("bytes ") else { return nil }
-        return header.dropFirst(6).split(separator: "-").first.flatMap { Int64($0) }
+    static func size(of url: URL) -> Int64? {
+        (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.int64Value
+    }
+}
+
+/// Admits a progress report once at least `granularity` bytes have arrived since the last one.
+private final class ProgressThrottle: Sendable {
+    private let reported: Mutex<Int64>
+    private let granularity: Int64
+
+    init(start: Int64, granularity: Int64) {
+        reported = Mutex(start)
+        self.granularity = granularity
     }
 
-    static func describe(_ error: any Error) -> String {
-        if let url = error as? URLError { return "URLError \(url.code.rawValue): \(url.localizedDescription)" }
-        return "\(error)"
+    func admit(_ bytes: Int64) -> Bool {
+        reported.withLock { last in
+            guard bytes - last >= granularity else { return false }
+            last = bytes
+            return true
+        }
     }
 }

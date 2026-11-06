@@ -8,6 +8,8 @@ final class StubSite: Sendable {
     struct Request: Sendable {
         var path: String
         var range: String?
+        var authorization: String?
+        var method = "GET"
     }
 
     struct Behavior: Sendable {
@@ -19,6 +21,16 @@ final class StubSite: Sendable {
         var status: Int?
         /// Ignore `Range` and always send the whole file with 200.
         var ignoreRange = false
+        /// Answer ranged requests with this status and no body (a `416`, say); unranged ones are served.
+        var rangeStatus: Int?
+        /// Answer a resumed request's `206` with a `Content-Range` starting here instead.
+        var contentRangeStart: Int?
+        /// Answer a ranged request with a `206` of the whole file (`bytes 0-…`).
+        var partialFromStart = false
+        /// Append these bytes to the body: more than the catalog's size.
+        var extra: Data?
+        /// Redirect (302) to this URL instead of serving.
+        var redirect: URL?
     }
 
     private struct State {
@@ -46,7 +58,9 @@ final class StubSite: Sendable {
     func handle(_ request: URLRequest, _ proto: StubURLProtocol) {
         let path = request.url!.path
         let range = request.value(forHTTPHeaderField: "Range")
-        state.withLock { $0.requests.append(Request(path: path, range: range)) }
+        let authorization = request.value(forHTTPHeaderField: "Authorization")
+        let method = request.httpMethod ?? "GET"
+        state.withLock { $0.requests.append(Request(path: path, range: range, authorization: authorization, method: method)) }
         respond(path: path, range: range, proto)
     }
 
@@ -63,16 +77,20 @@ final class StubSite: Sendable {
             return (s.files[path], behavior, s.offline)
         }
         if offline { return proto.fail(URLError(.notConnectedToInternet)) }
+        if let target = behavior.redirect { return proto.redirect(to: target) }
         if let status = behavior.status { return proto.reply(status: status, headers: [:], body: Data()) }
+        if range != nil, let status = behavior.rangeStatus { return proto.reply(status: status, headers: [:], body: Data()) }
         guard var body = behavior.corrupt ?? file else { return proto.reply(status: 404, headers: [:], body: Data()) }
+        if let extra = behavior.extra { body += extra }
         var status = 200
         var headers = ["Content-Length": "\(body.count)"]
         if let range, !behavior.ignoreRange, range.hasPrefix("bytes="),
            let start = Int(range.dropFirst(6).split(separator: "-").first ?? "")
         {
             guard start < body.count else { return proto.reply(status: 416, headers: [:], body: Data()) }
-            headers["Content-Range"] = "bytes \(start)-\(body.count - 1)/\(body.count)"
-            body = body.subdata(in: start..<body.count)
+            let from = behavior.partialFromStart ? 0 : start
+            headers["Content-Range"] = "bytes \(behavior.contentRangeStart ?? from)-\(body.count - 1)/\(body.count)"
+            body = body.subdata(in: from..<body.count)
             headers["Content-Length"] = "\(body.count)"
             status = 206
         }
@@ -122,6 +140,14 @@ final class StubURLProtocol: URLProtocol {
         } else {
             client?.urlProtocolDidFinishLoading(self)
         }
+    }
+
+    func redirect(to target: URL) {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 302, httpVersion: "HTTP/1.1", headerFields: ["Location": target.absoluteString])!
+        client?.urlProtocol(self, wasRedirectedTo: URLRequest(url: target), redirectResponse: response)
+        // If the session refuses the redirect, the 302 itself is the response the task completes with.
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocolDidFinishLoading(self)
     }
 
     func fail(_ error: URLError) {
