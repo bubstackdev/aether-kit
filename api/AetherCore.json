@@ -8496,6 +8496,57 @@
         "implicit": true,
         "isFromExtension": true,
         "kind": "Accessor",
+        "mangledName": "$s10AetherCore8DriverIDV13detectorDenseACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore8DriverIDV13detectorDenseACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverID",
+        "printedName": "AetherCore.DriverID",
+        "usr": "s:10AetherCore8DriverIDV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore8DriverIDV13detectorDenseACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDense",
+      "printedName": "detectorDense",
+      "static": true,
+      "usr": "s:10AetherCore8DriverIDV13detectorDenseACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverID",
+          "printedName": "AetherCore.DriverID",
+          "usr": "s:10AetherCore8DriverIDV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
         "mangledName": "$s10AetherCore8DriverIDV12textEmbedderACvgZ",
         "moduleName": "AetherCore",
         "name": "Get",
@@ -14939,6 +14990,57 @@
       "printedName": "depthEstimator",
       "static": true,
       "usr": "s:10AetherCore14DriverContractV14depthEstimatorACvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "DriverContract",
+          "printedName": "AetherCore.DriverContract",
+          "usr": "s:10AetherCore14DriverContractV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore14DriverContractV13detectorDenseACvgZ",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherCore14DriverContractV13detectorDenseACvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "DriverContract",
+        "printedName": "AetherCore.DriverContract",
+        "usr": "s:10AetherCore14DriverContractV"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore14DriverContractV13detectorDenseACvpZ",
+      "moduleName": "AetherCore",
+      "name": "detectorDense",
+      "printedName": "detectorDense",
+      "static": true,
+      "usr": "s:10AetherCore14DriverContractV13detectorDenseACvpZ"
      },
      {
       "accessors": [
@@ -83207,6 +83309,31 @@
           "children": [
            {
             "kind": "TypeNominal",
+            "name": "Resize",
+            "printedName": "AetherCore.Manifest.ImagePreprocess.Resize",
+            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Decoder",
+            "printedName": "any Swift.Decoder",
+            "usr": "s:s7DecoderP"
+           }
+          ],
+          "declKind": "Constructor",
+          "init_kind": "Designated",
+          "kind": "Constructor",
+          "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc",
+          "moduleName": "AetherCore",
+          "name": "init",
+          "printedName": "init(from:)",
+          "throwing": true,
+          "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
             "name": "Bool",
             "printedName": "Swift.Bool",
             "usr": "s:Sb"
@@ -83326,32 +83453,6 @@
           "name": "hashValue",
           "printedName": "hashValue",
           "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV9hashValueSivp"
-         },
-         {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Resize",
-            "printedName": "AetherCore.Manifest.ImagePreprocess.Resize",
-            "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV"
-           },
-           {
-            "kind": "TypeNominal",
-            "name": "Decoder",
-            "printedName": "any Swift.Decoder",
-            "usr": "s:s7DecoderP"
-           }
-          ],
-          "declKind": "Constructor",
-          "implicit": true,
-          "init_kind": "Designated",
-          "kind": "Constructor",
-          "mangledName": "$s10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc",
-          "moduleName": "AetherCore",
-          "name": "init",
-          "printedName": "init(from:)",
-          "throwing": true,
-          "usr": "s:10AetherCore8ManifestV15ImagePreprocessV6ResizeV4fromAGs7Decoder_p_tKcfc"
          }
         ],
         "conformances": [

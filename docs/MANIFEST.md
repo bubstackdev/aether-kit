@@ -51,7 +51,7 @@ Rules that apply to every driver:
 
 | driver | required roles | optional roles | bundles |
 |---|---|---|---|
-| `detector-dense@1` | in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
+| `detector-dense@1` | graph `detector`: in `image`; out `preds` [1,A,4+1+C] | — | yolox-s |
 | `detector-detr@1` | in `image` (or `features` chained from graph `backbone`); out `boxes`, `classLogits` | out `masks`; graph `backbone` (out `features`) | rf-detr nano, rf-detr nano split, rf-detr seg-nano; *other sizes* |
 | `depth-estimator@1` | in `image`; out `depth` | out `confidence` | depth-anything-3-small; *base, fp32* |
 | `clip-joint@1` | in `image`, `tokens`; out `imageEmbedding`, `textEmbedding` | in `attentionMask`; `unusedOutputs` | clip-vit-b32 |
@@ -238,7 +238,7 @@ brackets:
 
 ```
 {resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, anchor: center|topLeft [center],
-           padValue: [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
+           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
  colorSpace: deviceRGB|sRGB [deviceRGB], channelOrder: RGB|BGR [RGB], scale [1], mean [0,0,0], std [1,1,1],
  layout: NCHW|NVCHW|patches [NCHW], views [1], patchify?: {patch, temporal [1], merge [1], rowOrder: blockMajor|rowMajor,
  withinPatch: "C,T,py,px"|"py,px,C"}, hostDType: float32|float16 [float32], orientation: exif [exif]}
@@ -320,6 +320,14 @@ through the prepared image's geometry. DA3 is `largerIsFarther` (its exp head, c
 `resizeBack` resamples the map (and confidence) to the source through the geometry, bilinear at pixel centres and
 clamped to the content rectangle (M4b, `DepthEstimator`). `text-embedder@1` takes `pooling: inGraph` only (no token
 vectors leave the graph) and refuses `similarity: dot` over `normalized: none`; `host` L2-normalizes on the CPU (M4c).
+
+`denseNms` (M4e, `ObjectDetector`), on `preds` `[1, A, 4 + 1 + C]`: per anchor, score = objectness × the largest class
+score and the class its column (the first on ties), after a host sigmoid of both when `activation` is `sigmoid`
+(`applied`: the graph did it, as YOLOX's); scores below `scoreThreshold` dropped; greedy NMS in descending score (ties
+in anchor order), within a class (`perClass`) or across classes, dropping boxes whose IoU with a kept one exceeds
+`iou` (xyxy, no +1); then the first `maxDetections` by score. `classIndex: contiguous` makes column `i` label `i` of the
+set's contiguous list (C must be its size; `coco-91`'s is the 80 used COCO ids in ascending order), `cocoId` makes
+column `i` COCO id `i` (unused ids name no label). Boxes are returned normalized in the source and clipped to it.
 
 Required for every vision/embedding driver, because none of these values is in the bundles. Thresholds are
 defaults, and the app can override them.

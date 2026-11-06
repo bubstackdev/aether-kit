@@ -20,7 +20,7 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
 | `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
 | `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
-| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image), macOS only so far. More drivers (detection, CLIP, super-resolution) follow. |
+| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image). macOS only so far. More drivers (CLIP, super-resolution) follow. |
 | `AetherEmbeddings` | Embeddings on static graphs (M4): `TextEmbedder` runs EmbeddingGemma 300M (`text-embedder@1`, 768-dimensional unit vectors, query and document prompts, 256 tokens), macOS only so far. The reranker and classifiers follow. Gemma is provided under and subject to the Gemma Terms of Use found at [ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms). |
 | `Aether` | The umbrella: re-exports AetherText, AetherVision, AetherImage, AetherSpeech, AetherVideo, AetherEmbeddings and the placeholder. |
 | `AetherDecide` | Planned (milestones M5–M6). |
@@ -35,6 +35,7 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `krea-2-turbo-realism` | `krea2@1` | ✓ | refused | as Krea 2, plus the merged adapter's Civitai permissions. **Mature:** trained for explicit adult content; a gated Hugging Face repo (accept its terms, then install with a token) |
 | `kokoro-82m` | `kokoro@1` | ✓ | ✓ (512-frame cap) | Apache-2.0 |
 | `depth-anything-3-small` | `depth-estimator@1` | ✓ | refused | Apache-2.0 |
+| `yolox-s` | `detector-dense@1` | ✓ | refused | Apache-2.0 |
 | `embeddinggemma-300m` | `text-embedder@1` | ✓ | refused | Gemma Terms of Use and the Gemma Prohibited Use Policy, passed on to your users. A gated Hugging Face repo with automatic approval (accept the terms, then install with a token) |
 | none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
@@ -105,6 +106,12 @@ let depth = try await Registry.vision.load(
     depthBundle, as: DepthEstimatorDriver.self, options: LoadOptions(device: device, cachePolicy: .default, cache: .default))
 let map = try await depth.estimator().estimate(ImageInput(contentsOf: URL(filePath: "/path/to/photo.jpg")))   // map.values, map.confidence
 
+// YOLOX-S (macOS): COCO objects, boxes normalized in the source image.
+let yoloxBundle = try await store.install("yolox-s", for: device)
+let yolox = try await Registry.vision.load(
+    yoloxBundle, as: DenseDetectorDriver.self, options: LoadOptions(device: device, cachePolicy: .default, cache: .default))
+let objects = try await yolox.detector().detect(ImageInput(contentsOf: URL(filePath: "/path/to/photo.jpg")),
+                                                DetectionRequest(scoreThreshold: 0.4))   // [Detection]: label, score, box
 // EmbeddingGemma 300M (macOS): queries and documents are embedded with their own prompts, then compared by cosine.
 // Its repo is gated: accept the Gemma terms on Hugging Face and give the store a token (see below).
 let gemmaBundle = try await store.install("embeddinggemma-300m", for: device)
