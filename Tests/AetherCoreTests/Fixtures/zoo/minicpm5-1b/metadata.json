@@ -1,0 +1,28 @@
+{
+  "metadata_version": "0.2",
+  "kind": "llm",
+  "name": "minicpm5_1b_int8",
+  "assets": {
+    "main": "minicpm5_1b_int8.aimodel"
+  },
+  "language": {
+    "tokenizer": "openbmb/MiniCPM5-1B",
+    "vocab_size": 130560,
+    "max_context_length": 131072,
+    "embedded_tokenizer": true,
+    "function_map": {
+      "main": [
+        "main"
+      ]
+    }
+  },
+  "source": {
+    "model_definition": "torch",
+    "hf_model_id": "openbmb/MiniCPM5-1B"
+  },
+  "compression": "minicpm5_int8sym_b32",
+  "compilation": {
+    "date": "2026-09-09T22:31:10.485907+09:00",
+    "targets": []
+  }
+}

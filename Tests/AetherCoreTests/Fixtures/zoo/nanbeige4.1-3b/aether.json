@@ -1,0 +1,77 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined/nanbeige4_1_3b_decode_int8hu_block32_sym_s1"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:nanbeige4_1_3b_decode_int8hu_block32_sym_s1.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "nanbeige4.1-3b",
+  "license" : "apache-2.0",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "Nanbeige/Nanbeige4.1-3B@9c4555c37921c0982af8fffeee1e0a6e6b953c4f:generation_config.json#/eos_token_id"
+    },
+    "source" : "Nanbeige/Nanbeige4.1-3B",
+    "subtrees" : {
+      "main" : "gpu-pipelined/nanbeige4_1_3b_decode_int8hu_block32_sym_s1"
+    },
+    "zooRepo" : "mlboydaisuke/Nanbeige4.1-3B-CoreAI",
+    "zooRevision" : "b2efbe7b01a8a92ecd43c19c4d5cae15b0601879"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "757f108242fb797d23b79f72c088cb5b4bc37fb3744e29dc8771c1dc2b1cb335",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|im_end|>"
+    ],
+    "thinking" : {
+      "close" : "</think>",
+      "open" : "<think>",
+      "toggle" : "none"
+    }
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}

@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  hermetic:
+    # Core AI needs the macOS 27 SDK (Xcode 27). Use a self-hosted Apple-silicon Mac with Xcode 27 until hosted
+    # runners ship it; scripts/ci.sh fails fast with a clear message on an older SDK.
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hermetic CI (toolchain, catalog, build, tests)
+        run: scripts/ci.sh
+
+  gates:
+    # Real-graph parity gates: on demand only (needs downloaded models and a free GPU).
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hermetic CI + gates
+        env:
+          AETHER_GATES: "1"
+          AETHER_LAB_MODELS: ${{ vars.AETHER_LAB_MODELS }}
+        run: scripts/ci.sh

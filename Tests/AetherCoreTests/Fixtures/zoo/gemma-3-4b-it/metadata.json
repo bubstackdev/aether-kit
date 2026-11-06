@@ -1,0 +1,28 @@
+{
+  "metadata_version": "0.2",
+  "kind": "llm",
+  "name": "gemma_3_4b_it_4bit_dynamic",
+  "assets": {
+    "main": "gemma_3_4b_it_4bit_dynamic.aimodel"
+  },
+  "language": {
+    "tokenizer": "google/gemma-3-4b-it",
+    "vocab_size": 262208,
+    "max_context_length": 131072,
+    "embedded_tokenizer": true,
+    "function_map": {
+      "main": [
+        "main"
+      ]
+    }
+  },
+  "source": {
+    "model_definition": "torch",
+    "hf_model_id": "google/gemma-3-4b-it"
+  },
+  "compression": "4bit",
+  "compilation": {
+    "date": "2026-06-11T19:53:00.906925+09:00",
+    "targets": []
+  }
+}

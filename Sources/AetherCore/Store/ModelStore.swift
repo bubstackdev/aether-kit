@@ -1,0 +1,241 @@
+public import Foundation
+
+/// Downloads, verifies and installs model bundles (DESIGN.md §5).
+///
+/// - Layout: one variant is one install at `<root>/<repo>/<revision>/`, holding every asset of the variant (see
+///   `InstalledBundle`), with Aether's files in `.aether/`. Default root `Application Support/Aether/Models`.
+/// - Atomic installs: files land in `<root>/.staging/…`, then one rename moves the finished install into place. An
+///   install is complete exactly when its receipt (`.aether/receipt.json`) is present.
+/// - Every file's SHA-256 is checked against the catalog before the bundle is accepted.
+/// - Interrupted downloads resume from the staged bytes with an HTTP `Range` request.
+/// - Concurrent requests for one bundle join a single download, and every caller receives the progress.
+/// - Bundles and staging are excluded from backup.
+/// - With ``InstallOptions/allowStaleRevision``, a failed download falls back to a complete cached sibling revision.
+public actor ModelStore {
+    public nonisolated let root: URL
+    private let transport: any HTTPTransport
+    private let endpoint: URL
+    private var jobs: [ModelRef: Job] = [:]
+    /// Cancelled downloads still unwinding; a new download of the same ref waits for them (they share staging).
+    private var unwinding: [ModelRef: Task<Void, Never>] = [:]
+
+    private typealias Subscriber = AsyncThrowingStream<InstallEvent, any Error>.Continuation
+
+    private struct Job {
+        /// Distinguishes this download from a later one for the same ref (after a cancel).
+        let generation = UUID()
+        var subscribers: [UUID: (continuation: Subscriber, options: InstallOptions)] = [:]
+        var latest: InstallProgress?
+        var task: Task<Void, Never>?
+    }
+
+    public static let huggingFace = URL(string: "https://huggingface.co")!
+
+    public init(root: URL, transport: any HTTPTransport = URLSessionTransport(), endpoint: URL = ModelStore.huggingFace) {
+        self.root = root
+        self.transport = transport
+        self.endpoint = endpoint
+    }
+
+    /// `Application Support/Aether/Models` in the app's container.
+    public static func defaultRoot() throws(AetherError) -> URL {
+        do {
+            return try FileManager.default.url(
+                for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+            ).appending(path: "Aether/Models", directoryHint: .isDirectory)
+        } catch {
+            throw .runtime(underlying: error)
+        }
+    }
+
+    // MARK: - Queries
+
+    /// The revision root of `ref`'s install: `<root>/<repo>/<revision>`.
+    public nonisolated func bundleURL(for ref: ModelRef) -> URL {
+        InstalledLayout.appendingComponents(InstalledLayout.appendingComponents(root, ref.repo), ref.revision)
+    }
+
+    /// The installed bundle for exactly `ref` (same revision and variant), if it is complete.
+    public func installed(_ ref: ModelRef) -> InstalledBundle? {
+        let url = bundleURL(for: ref)
+        guard let receipt = Self.receipt(at: url), receipt.ref.variant == ref.variant else { return nil }
+        return InstalledBundle(ref: receipt.ref, url: url, isStale: false)
+    }
+
+    /// The newest complete install of the same model and variant at any other revision.
+    public func staleSibling(of ref: ModelRef) -> InstalledBundle? {
+        let repoDir = InstalledLayout.appendingComponents(root, ref.repo)
+        guard let revisions = try? FileManager.default.contentsOfDirectory(atPath: repoDir.path) else { return nil }
+        var best: (InstalledBundle, Date)?
+        for revision in revisions where revision != ref.revision && !revision.hasPrefix(".") {
+            let url = repoDir.appending(path: revision)
+            guard let receipt = Self.receipt(at: url), receipt.ref.catalogID == ref.catalogID,
+                  receipt.ref.variant == ref.variant
+            else { continue }
+            if best == nil || receipt.installedAt > best!.1 {
+                best = (InstalledBundle(ref: receipt.ref, url: url, isStale: true), receipt.installedAt)
+            }
+        }
+        return best?.0
+    }
+
+    private static func receipt(at root: URL) -> InstallReceipt? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let data = try? Data(contentsOf: InstallReceipt.url(in: root)) else { return nil }
+        return try? decoder.decode(InstallReceipt.self, from: data)
+    }
+
+    /// Deletes the install for `ref` (and any staged bytes for it).
+    public func remove(_ ref: ModelRef) throws(AetherError) {
+        let fm = FileManager.default
+        for url in [bundleURL(for: ref), stagingURL(for: ref)] where fm.fileExists(atPath: url.path) {
+            do { try fm.removeItem(at: url) } catch { throw .runtime(underlying: error) }
+        }
+    }
+
+    // MARK: - Install
+
+    /// Installs `ref` and streams progress, ending with `.finished`. Concurrent calls for the same `ref` share one
+    /// download; each caller's stream receives every progress update from the moment it joins. Cancelling a stream
+    /// detaches that caller; the download is cancelled when the last caller leaves (staged bytes are kept for resume).
+    public func installation(
+        _ ref: ModelRef, options: InstallOptions = []
+    ) -> AsyncThrowingStream<InstallEvent, any Error> {
+        let (stream, continuation) = AsyncThrowingStream<InstallEvent, any Error>.makeStream()
+        if let bundle = installed(ref) {
+            continuation.yield(.finished(bundle))
+            continuation.finish()
+            return stream
+        }
+        let id = UUID()
+        continuation.onTermination = { [weak self] _ in
+            guard let self else { return }
+            Task { await self.detach(id, from: ref) }
+        }
+        var job = jobs[ref] ?? Job()
+        job.subscribers[id] = (continuation, options)
+        if let latest = job.latest { continuation.yield(.progress(latest)) }
+        if job.task == nil {
+            let installer: Installer
+            do {
+                installer = try Installer(
+                    transport: transport, endpoint: endpoint, ref: ref, staging: stagingURL(for: ref),
+                    destination: bundleURL(for: ref))
+            } catch {
+                continuation.finish(throwing: error)
+                return stream
+            }
+            let generation = job.generation
+            let prior = unwinding[ref]
+            job.task = Task {
+                await prior?.value
+                await self.drive(installer, for: ref, generation: generation)
+            }
+        }
+        jobs[ref] = job
+        return stream
+    }
+
+    /// Installs `ref`, reporting progress to `progress`, and returns the bundle.
+    public func install(
+        _ ref: ModelRef, options: InstallOptions = [], progress: (@Sendable (InstallProgress) -> Void)? = nil
+    ) async throws -> InstalledBundle {
+        for try await event in installation(ref, options: options) {
+            switch event {
+            case .progress(let p): progress?(p)
+            case .finished(let bundle): return bundle
+            }
+        }
+        throw CancellationError()
+    }
+
+    /// Resolves `id` in `catalog` for `device` and installs it.
+    public func install(
+        _ id: String, in catalog: Catalog = .builtin, for device: Device, options: InstallOptions = [],
+        progress: (@Sendable (InstallProgress) -> Void)? = nil
+    ) async throws -> InstalledBundle {
+        let ref = try ModelRef.resolve(id, in: catalog, for: device)
+        return try await install(ref, options: options, progress: progress)
+    }
+
+    // MARK: - Job plumbing
+
+    nonisolated func stagingURL(for ref: ModelRef) -> URL {
+        let key = [ref.repo, ref.revision, ref.variant].joined(separator: "@")
+            .replacingOccurrences(of: "/", with: "~")
+        return root.appending(path: ".staging", directoryHint: .isDirectory).appending(path: key)
+    }
+
+    private func drive(_ installer: Installer, for ref: ModelRef, generation: UUID) async {
+        let (updates, sink) = AsyncStream<InstallProgress>.makeStream(bufferingPolicy: .bufferingNewest(64))
+        async let outcome = Self.execute(installer, sink: sink)
+        for await update in updates { publish(update, for: ref, generation: generation) }
+        finish(ref, generation: generation, with: await outcome)
+    }
+
+    @concurrent
+    private static func execute(
+        _ installer: Installer, sink: AsyncStream<InstallProgress>.Continuation
+    ) async -> Result<URL, any Error> {
+        defer { sink.finish() }
+        do {
+            return .success(try await installer.run { sink.yield($0) })
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func publish(_ update: InstallProgress, for ref: ModelRef, generation: UUID) {
+        guard var job = jobs[ref], job.generation == generation else { return }
+        job.latest = update
+        jobs[ref] = job
+        for subscriber in job.subscribers.values { subscriber.continuation.yield(.progress(update)) }
+    }
+
+    private func finish(_ ref: ModelRef, generation: UUID, with outcome: Result<URL, any Error>) {
+        guard let job = jobs[ref], job.generation == generation else { return }
+        jobs[ref] = nil
+        switch outcome {
+        case .success(let url):
+            let bundle = InstalledBundle(ref: ref, url: url, isStale: false)
+            for subscriber in job.subscribers.values {
+                subscriber.continuation.yield(.finished(bundle))
+                subscriber.continuation.finish()
+            }
+        case .failure(let error):
+            let stale = Self.isDownloadFailure(error) ? staleSibling(of: ref) : nil
+            for subscriber in job.subscribers.values {
+                if let stale, subscriber.options.contains(.allowStaleRevision) {
+                    subscriber.continuation.yield(.finished(stale))
+                    subscriber.continuation.finish()
+                } else {
+                    subscriber.continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func detach(_ id: UUID, from ref: ModelRef) {
+        guard var job = jobs[ref], job.subscribers.removeValue(forKey: id) != nil else { return }
+        if job.subscribers.isEmpty {
+            job.task?.cancel()
+            jobs[ref] = nil
+            if let task = job.task {
+                unwinding[ref] = task
+                Task { await task.value; self.doneUnwinding(ref, task) }
+            }
+        } else {
+            jobs[ref] = job
+        }
+    }
+
+    private func doneUnwinding(_ ref: ModelRef, _ task: Task<Void, Never>) {
+        if unwinding[ref] == task { unwinding[ref] = nil }
+    }
+
+    private static func isDownloadFailure(_ error: any Error) -> Bool {
+        if case AetherError.download = error { return true }
+        return false
+    }
+}

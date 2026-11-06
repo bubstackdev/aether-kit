@@ -1,0 +1,90 @@
+{
+  "assets" : {
+    "main" : {
+      "subtree" : "gpu-pipelined/nemotron_3_nano_4b_decode_int8hu"
+    }
+  },
+  "driver" : "decoder-lm@1",
+  "graphs" : {
+    "decoder" : {
+      "compute" : "gpu",
+      "expectFrequentReshapes" : true,
+      "file" : "main:nemotron_3_nano_4b_decode_int8hu.aimodel",
+      "function" : "main",
+      "inputs" : {
+        "positions" : "position_ids",
+        "tokens" : "input_ids"
+      },
+      "limits" : {
+        "maxContext" : 4096,
+        "staticSequence" : 1
+      },
+      "outputs" : {
+        "logits" : {
+          "name" : "logits",
+          "rows" : "last"
+        }
+      },
+      "states" : {
+        "recurrent" : [
+          {
+            "name" : "convState"
+          },
+          {
+            "name" : "recState"
+          }
+        ],
+        "sequence" : [
+          {
+            "seqAxis" : 3,
+            "tensors" : [
+              "keyCache",
+              "valueCache"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id" : "nemotron-3-nano-4b",
+  "license" : "other",
+  "provenance" : {
+    "adapter" : "zoo-bundle-adapter@2",
+    "metadataKind" : "llm",
+    "refs" : {
+      "tokenizer.stop" : "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16@dfaf35de3e30f1867dd8dbc38a7fc9fb52d3914f:generation_config.json#/eos_token_id"
+    },
+    "source" : "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+    "subtrees" : {
+      "main" : "gpu-pipelined/nemotron_3_nano_4b_decode_int8hu"
+    },
+    "zooCompression" : "{\"scheme\":\"int8hu\"}",
+    "zooRepo" : "mlboydaisuke/Nemotron-3-Nano-4B-CoreAI",
+    "zooRevision" : "0f9e01aa8d3f569be4b067a67ff7681591c235c4"
+  },
+  "schema" : 1,
+  "task" : "text-generation",
+  "tokenizer" : {
+    "addBos" : "template",
+    "chatTemplate" : "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256" : "ab7813c3abdd9cb655905a410728b26c7884eca45ddfab8d9f931553485a7862",
+    "source" : {
+      "dir" : "main:tokenizer"
+    },
+    "stop" : [
+      "<|im_end|>",
+      "</s>"
+    ],
+    "thinking" : {
+      "close" : "</think>",
+      "defaultOn" : true,
+      "open" : "<think>",
+      "toggle" : {
+        "templateVar" : "enable_thinking"
+      }
+    }
+  },
+  "variant" : {
+    "platform" : "macos"
+  }
+}
