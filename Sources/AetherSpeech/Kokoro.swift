@@ -128,7 +128,7 @@ public actor KokoroSpeechSession {
         let loader = GraphResidency.bundleLoader(
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         try self.init(
-            manifest: manifest, device: device, options: options, frameCap: frameCap,
+            manifest: manifest, device: device, options: options, frameCap: frameCap, bundle: bundle,
             load: Self.validating(loader, manifest: manifest),
             readTable: { table throws(AetherError) in try Self.readTable(table, in: bundle) },
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
@@ -136,7 +136,8 @@ public actor KokoroSpeechSession {
 
     /// The session over any graph loader and table reader (tests drive it with fakes).
     init(
-        manifest: Manifest, device: Device, options: Options, frameCap requested: Int? = nil, load: @escaping GraphResidency.Loader,
+        manifest: Manifest, device: Device, options: Options, frameCap requested: Int? = nil, bundle: InstalledBundle? = nil,
+        load: @escaping GraphResidency.Loader,
         readTable: @escaping @Sendable (Manifest.Table) throws(AetherError) -> [Float],
         fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
@@ -174,8 +175,8 @@ public actor KokoroSpeechSession {
         self.device = device
         self.readTable = readTable
         // Kokoro's graphs have no residency: both stay loaded, and the session measures them under `perStep`.
-        admission = options.admission(
-            manifest: manifest, device: device, defaultMemory: .platformDefault, unphasedPhase: .perStep,
+        admission = try options.admission(
+            manifest: manifest, device: device, defaultMemory: .platformDefault, unphasedPhase: .perStep, bundle: bundle,
             load: load, fileBytes: fileBytes)
     }
 
@@ -283,7 +284,7 @@ public actor KokoroSpeechSession {
     /// again.
     public func unload() async {
         await turn()
-        admission.release()
+        admission.unload()
         styles = [:]
         endTurn()
     }

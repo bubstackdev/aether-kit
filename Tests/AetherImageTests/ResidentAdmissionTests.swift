@@ -25,7 +25,7 @@ struct ResidentAdmissionTests {
         memory: MemoryBudget = .bytes(1 << 40), coordinator: ResourceCoordinator? = nil, ledger: FootprintLedger = .init(),
         probe: GPUMemoryProbe = GPUMemoryProbe { 0 }, maximumShapes: Int = 4
     ) throws -> ResidentAdmission {
-        ResidentAdmission(
+        try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
             settings: .init(memory: memory, coordinator: coordinator, ledger: ledger, probe: probe, maximumShapes: maximumShapes),
             load: { _ in Inert() }, fileBytes: { files[$0] ?? 0 })
@@ -61,7 +61,7 @@ struct ResidentAdmissionTests {
     @Test func aMeasurementTheCoordinatorCantHoldReleasesTheResidency() async throws {
         let coordinator = try ResourceCoordinator(capacityBytes: 100)
         let ledger = FootprintLedger()
-        let admission = ResidentAdmission(
+        let admission = try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
             settings: .init(memory: .bytes(1 << 40), coordinator: coordinator, ledger: ledger, probe: GPUMemoryProbe { 0 }),
             load: { _ in Inert() }, fileBytes: { _ in 0 })
@@ -124,7 +124,7 @@ struct ResidentAdmissionTests {
     /// the manifest id alone.
     @Test func ledgerKeysNameTheRevisionAndTheDevice() throws {
         let mac = try Self.admission()
-        let phone = ResidentAdmission(
+        let phone = try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: Device(platform: .iOS, architecture: "h19p"),
             settings: .init(memory: .bytes(1 << 40), coordinator: nil, ledger: .init(), probe: GPUMemoryProbe { 0 }),
             load: { _ in Inert() }, fileBytes: { _ in 0 })

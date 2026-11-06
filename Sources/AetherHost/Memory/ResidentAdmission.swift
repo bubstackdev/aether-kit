@@ -11,8 +11,13 @@ public import AetherRuntime
 /// 2. ``finish()`` after success: the reservation shrinks to what stays resident (every phase's held bytes when all
 ///    graphs stay loaded, nothing when they were released per phase), so a second pipeline on the same coordinator
 ///    can't take memory these graphs still use.
-/// 3. ``release()`` after a failure, on ``begin(profile:shape:)``'s refusal, and on unload: every graph is released and
-///    so is the reservation.
+/// 3. ``release()`` after a failure and on ``begin(profile:shape:)``'s refusal: every graph is released and so is the
+///    reservation. ``unload()`` does the same and also drops the bundle's reader lease.
+///
+/// **Reader lease.** Given a bundle from a ``ModelStore``, the admission holds its reader lease
+/// (``InstalledBundle/readLease()``) from creation until ``unload()`` or deinit, so the store refuses to remove files
+/// the pipeline reads, lazily included (H3 streams weights from the bundle mid-generation). After ``unload()`` the next
+/// ``begin(profile:shape:)`` takes the lease again, refusing with `inUse` or `unknownModel` before anything loads.
 ///
 /// A refusal releases the resident graphs too: the plan already counts them as this pipeline's, so a plan that
 /// doesn't fit wouldn't fit with them either.
@@ -53,6 +58,8 @@ public final class ResidentAdmission {
     public let modelKey: String
     private let load: GraphResidency.Loader
     private let fileBytes: (String) -> Int64
+    private let bundle: InstalledBundle?
+    private var lease: BundleReadLease?
     public private(set) var residency: GraphResidency?
     private var reservation: ResourceReservation?
     private var reservedBytes: Int64 = 0
@@ -63,17 +70,23 @@ public final class ResidentAdmission {
     /// late, so the next phase is measured from here (an overestimate, the direction admission prefers).
     private var releasedFloor: Int64?
 
+    /// `bundle` is the installed bundle the graphs load from, if any: its reader lease is taken here (see above).
     public init(
-        manifest: Manifest, device: Device, settings: Settings, load: @escaping GraphResidency.Loader,
-        fileBytes: @escaping (String) -> Int64
-    ) {
+        manifest: Manifest, device: Device, settings: Settings, bundle: InstalledBundle? = nil,
+        load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64
+    ) throws(AetherError) {
         self.manifest = manifest
         self.device = device
         self.settings = settings
         modelKey = Self.modelKey(manifest: manifest, device: device)
         self.load = load
         self.fileBytes = fileBytes
+        self.bundle = bundle
+        lease = try bundle?.readLease()
     }
+
+    /// Whether the bundle's reader lease is held now.
+    public var holdsLease: Bool { lease != nil }
 
     /// The ledger key for `manifest`'s graphs on `device` (``modelKey``).
     public static func modelKey(manifest: Manifest, device: Device) -> String {
@@ -106,6 +119,7 @@ public final class ResidentAdmission {
     /// Plans and reserves one generation at `profile` (and, for graphs whose shape varies with the request, `shape`),
     /// returning the residency to run it in. Refuses with `capacity` before anything loads, releasing what was loaded.
     public func begin(profile: String, shape: Int? = nil) throws(AetherError) -> GraphResidency {
+        if lease == nil, let bundle { lease = try bundle.readLease() }
         if let shape, !shapes.contains(shape), shapes.count >= settings.maximumShapes { release() }
         let plan: ResidencyPlan
         do {
@@ -175,6 +189,13 @@ public final class ResidentAdmission {
         reservedBytes = 0
         residentBytes = 0
         shapes = []
+    }
+
+    /// Releases every graph and the reservation, and drops the bundle's reader lease: the store may remove the bundle
+    /// until the next ``begin(profile:shape:)``.
+    public func unload() {
+        release()
+        lease = nil
     }
 
     private func note(_ floor: Int64?) {

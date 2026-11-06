@@ -128,6 +128,14 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
 ### Changed
 
+- **Reader leases in normal loading** (second review, batch C): a bundle from `ModelStore` remembers its store, and
+  `InstalledBundle.readLease()` takes its reader lease (nil for a bundle made by hand). Every pipeline built on
+  `ResidentAdmission` (SD-Turbo, FLUX.2, Krea, H3, Kokoro, the `StatelessPipeline` drivers) holds it from creation
+  until `unload()` or deinit, and the next request after `unload()` takes it again (refusing with `inUse` or
+  `unknownModel` before loading); `DecoderEngine` holds it for its lifetime. So `ModelStore.remove` refuses while a
+  model reads the files (H3's lazy weight reads included) without the caller leasing. `InstalledBundle` equality
+  ignores the store. Source changes: `ResidentAdmission.init` and `PipelineOptions.admission` take `bundle:` and
+  throw; `ResidentAdmission.unload()` and `holdsLease` are new; `StatelessPipeline.init(manifest:…)` takes `bundle:`.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`

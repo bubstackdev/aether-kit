@@ -160,8 +160,9 @@ public actor MiniMaxH3Pipeline {
         self.tokenize = tokenize
         self.load = load
         let fileBytes = { [manifest, device] (role: String) in Self.fileBytes(role, bundle: bundle, manifest: manifest, device: device) }
-        admission = options.admission(
-            manifest: manifest, device: device, defaultMemory: .videoGeneration, load: load, fileBytes: fileBytes)
+        admission = try options.admission(
+            manifest: manifest, device: device, defaultMemory: .videoGeneration, bundle: bundle, load: load,
+            fileBytes: fileBytes)
         Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
     }
 
@@ -205,7 +206,7 @@ public actor MiniMaxH3Pipeline {
     /// Releases every graph (waiting for a running generation).
     public func unload() async {
         await turn()
-        admission.release()
+        admission.unload()
         endTurn()
     }
 

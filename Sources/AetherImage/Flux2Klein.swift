@@ -79,14 +79,14 @@ public actor Flux2KleinPipeline {
                     [.user(text)], template: template, context: ["enable_thinking": false],
                     addGenerationPrompt: rule?.addGenerationPrompt ?? true)
             },
-            load: ImageGraphs.validating(loader, manifest: manifest, contract: .flux2Klein),
+            bundle: bundle, load: ImageGraphs.validating(loader, manifest: manifest, contract: .flux2Klein),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
     /// The pipeline over any prompt encoder and graph loader (tests drive it with fakes).
     init(
         manifest: Manifest, device: Device, options: Options, encodePrompt: @escaping PromptEncoder,
-        load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
+        bundle: InstalledBundle? = nil, load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
         try Self.requireMacOS(manifest, device)
         try DriverContract.flux2Klein.validate(manifest)
@@ -119,7 +119,7 @@ public actor Flux2KleinPipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
     /// FLUX.2, Krea and H3 are qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -188,7 +188,7 @@ public actor Flux2KleinPipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        admission.release()
+        admission.unload()
         endTurn()
     }
 

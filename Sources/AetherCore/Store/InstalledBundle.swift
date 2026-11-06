@@ -1,17 +1,47 @@
 public import Foundation
 
 /// A complete, verified install of one model variant: every asset under `<store root>/<repo>/<revision>/`.
+///
+/// A bundle a ``ModelStore`` returns remembers the store's root, so whatever loads it can take a reader lease
+/// (``readLease()``) without being handed the store: the pipelines hold one from creation until `unload()` or deinit,
+/// and ``ModelStore/remove(_:)`` refuses meanwhile. A bundle made with ``init(ref:url:isStale:)`` (a model on disk,
+/// outside any store) has no lease to take. Equality ignores where the bundle came from.
 public struct InstalledBundle: Sendable, Hashable {
     public var ref: ModelRef
     /// The revision root, `<store root>/<repo>/<revision>`.
     public var url: URL
     /// True when this is a cached sibling revision returned by the `.allowStaleRevision` fallback, not `ref`'s pin.
     public var isStale: Bool
+    /// The root of the store this bundle was found in; nil for a bundle made by hand.
+    let storeRoot: URL?
 
     public init(ref: ModelRef, url: URL, isStale: Bool) {
+        self.init(ref: ref, url: url, isStale: isStale, storeRoot: nil)
+    }
+
+    init(ref: ModelRef, url: URL, isStale: Bool, storeRoot: URL?) {
         self.ref = ref
         self.url = url
         self.isStale = isStale
+        self.storeRoot = storeRoot
+    }
+
+    public static func == (lhs: InstalledBundle, rhs: InstalledBundle) -> Bool {
+        lhs.ref == rhs.ref && lhs.url == rhs.url && lhs.isStale == rhs.isStale
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(ref)
+        hasher.combine(url)
+        hasher.combine(isStale)
+    }
+
+    /// A reader lease on this bundle's files in the store it came from (``ModelStore/lease(_:)``), or nil when the
+    /// bundle isn't from a store. Throws ``AetherError/inUse(resource:)`` while an install or removal of the location
+    /// runs, and ``AetherError/unknownModel(id:)`` once the bundle has been removed.
+    public func readLease() throws(AetherError) -> BundleReadLease? {
+        guard let storeRoot else { return nil }
+        return try StoreLayout(root: storeRoot).lease(self)
     }
 
     public var catalogID: String { ref.catalogID }

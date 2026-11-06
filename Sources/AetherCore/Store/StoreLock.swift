@@ -56,7 +56,8 @@ final class StoreLock: Sendable {
 /// Keeps an installed bundle's files in place while a model uses them: ``ModelStore/remove(_:)`` (from any process
 /// sharing the store root) refuses with ``AetherError/inUse(resource:)`` while a lease is held. Several leases may be
 /// held at once. There is no release method: the owner of the loaded model keeps the lease, and dropping the last
-/// reference releases it.
+/// reference releases it. Pipelines and `DecoderEngine` take one by themselves for a bundle a store returned
+/// (``InstalledBundle/readLease()``).
 public final class BundleReadLease: Sendable {
     public let bundle: InstalledBundle
     private let lock: StoreLock

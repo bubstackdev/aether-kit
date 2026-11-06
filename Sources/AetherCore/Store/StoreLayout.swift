@@ -32,6 +32,18 @@ struct StoreLayout: Sendable {
         locks.appending(path: "\(repo.replacingOccurrences(of: "/", with: "~"))@\(revision)")
     }
 
+    /// A shared lock on `bundle`'s install location, once its receipt is confirmed (``ModelStore/lease(_:)``).
+    func lease(_ bundle: InstalledBundle) throws(AetherError) -> BundleReadLease {
+        try bundle.ref.validateForStore()
+        guard let lock = try StoreLock.attempt(lock(for: bundle.ref), exclusive: false) else {
+            throw .inUse(resource: bundle.ref.description)
+        }
+        guard let receipt = InstallReceipt.read(at: bundle.url), receipt.ref == bundle.ref else {
+            throw .unknownModel(id: bundle.catalogID)
+        }
+        return BundleReadLease(bundle: bundle, lock: lock)
+    }
+
     /// `owner~name@revision@variant` → its parts.
     static func parseStagingKey(_ name: String) -> (repo: String, revision: String, variant: String)? {
         let parts = name.split(separator: "@", omittingEmptySubsequences: false)

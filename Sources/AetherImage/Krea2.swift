@@ -87,14 +87,14 @@ public actor Krea2Pipeline {
                 guard let rule else { throw AetherError.manifestInvalid(field: "krea2", reason: "required by \(Krea2Driver.id)") }
                 return tokenizer.encode(rule.systemPrefix + text + rule.suffix, addSpecialTokens: addSpecialTokens)
             },
-            load: ImageGraphs.validating(loader, manifest: manifest, contract: .krea2),
+            bundle: bundle, load: ImageGraphs.validating(loader, manifest: manifest, contract: .krea2),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
     /// The pipeline over any prompt encoder and graph loader (tests drive it with fakes).
     init(
         manifest: Manifest, device: Device, filter: any ContentFilter, options: Options, encodePrompt: @escaping PromptEncoder,
-        load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
+        bundle: InstalledBundle? = nil, load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
         try Self.requireMacOS(manifest, device)
         try DriverContract.krea2.validate(manifest)
@@ -128,7 +128,7 @@ public actor Krea2Pipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
     /// Krea is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -171,7 +171,7 @@ public actor Krea2Pipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        admission.release()
+        admission.unload()
         endTurn()
     }
 

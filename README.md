@@ -162,6 +162,8 @@ let clip = try await h3.generate(VideoRequest(prompt: "waves on a pebble beach a
 ```
 
 The image, speech and video pipelines are not managed by `ModelHost`: call `unload()` to release their graphs.
+A pipeline or engine loaded from a store's bundle holds the bundle's reader lease until `unload()` (or until it is
+released), so `store.remove(_:)` throws `inUse` meanwhile; the next request after `unload()` leases it again.
 
 `FLUX.2` works like SD-Turbo (`Flux2KleinPipeline(bundle:manifest:device:)`, which is `async`); its requests need a
 `width` and `height`. A gated repo needs a token: `ModelStore(root:headers: ModelStore.huggingFaceAuthorization(token:))`.

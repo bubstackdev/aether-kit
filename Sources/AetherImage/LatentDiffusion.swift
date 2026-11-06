@@ -73,14 +73,14 @@ public actor LatentDiffusionPipeline {
         let loader = GraphResidency.bundleLoader(
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         try self.init(
-            manifest: manifest, tokenizer: tokenizer, device: device, options: options,
+            manifest: manifest, tokenizer: tokenizer, device: device, options: options, bundle: bundle,
             load: ImageGraphs.validating(loader, manifest: manifest, contract: .latentDiffusion),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
     /// The pipeline over any graph loader (tests drive it with fakes).
     init(
-        manifest: Manifest, tokenizer: CLIPTokenizer, device: Device, options: Options,
+        manifest: Manifest, tokenizer: CLIPTokenizer, device: Device, options: Options, bundle: InstalledBundle? = nil,
         load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
         try DriverContract.latentDiffusion.validate(manifest)
@@ -110,7 +110,7 @@ public actor LatentDiffusionPipeline {
         self.tokenizer = tokenizer
         self.device = device
         self.options = options
-        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
     /// Generates one image.
@@ -144,7 +144,7 @@ public actor LatentDiffusionPipeline {
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
         await turn()
-        admission.release()
+        admission.unload()
         endTurn()
     }
 

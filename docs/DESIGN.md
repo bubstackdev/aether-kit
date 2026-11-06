@@ -151,6 +151,10 @@ are pinned by a golden manifest per catalog entry.
     `.allowStaleRevision`, and the result reports that it is stale.
 - **Store safety** (ported from 0.0.x; its tests are the spec):
   - **Reader leases:** `remove` throws `inUse(resource:)` while a lease or a running install holds the location.
+    A bundle the store returns remembers its store (`InstalledBundle.readLease()`), so loading takes the lease without
+    the caller's help: `ResidentAdmission` (every generative and stateless pipeline) holds it from creation until
+    `unload()` or deinit and takes it again on the next request, and `DecoderEngine` holds it for its lifetime. A
+    bundle made by hand (a model on disk, outside a store) has none.
   - **A per-installation cross-process lock** in `.locks/`: a second process waits and then finds the bundle installed.
   - **Recovery of abandoned stages:** once, before the first install or remove, and public as
     `recoverAbandonedStages()`. Removal and replacement first rename into `.trash/`.

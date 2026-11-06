@@ -60,11 +60,11 @@ public struct ImageRequest: Sendable, Hashable {
 extension PipelineOptions {
     /// An image pipeline's admission (absent `memory`: ``MemoryBudget/imageGeneration``).
     func admission(
-        manifest: Manifest, device: Device, load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64,
-        maximumShapes: Int = 4
-    ) -> ResidentAdmission {
-        admission(manifest: manifest, device: device, defaultMemory: .imageGeneration, maximumShapes: maximumShapes,
-                  load: load, fileBytes: fileBytes)
+        manifest: Manifest, device: Device, bundle: InstalledBundle?, load: @escaping GraphResidency.Loader,
+        fileBytes: @escaping (String) -> Int64, maximumShapes: Int = 4
+    ) throws(AetherError) -> ResidentAdmission {
+        try admission(manifest: manifest, device: device, defaultMemory: .imageGeneration, maximumShapes: maximumShapes,
+                      bundle: bundle, load: load, fileBytes: fileBytes)
     }
 }
 
