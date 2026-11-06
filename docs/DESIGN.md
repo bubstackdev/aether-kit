@@ -30,7 +30,7 @@ from-scratch re-architecture of `john-rocky/coreai-kit`. It shares no code with 
 |---|---|
 | Bundles | The native `aether.json` manifest is the contract. Existing zoo bundles load through an **adapter** that synthesizes a manifest. |
 | LLM engine | **We own it**, written directly on Core AI (`CoreAIRuntime`). No dependency on `coreai-models`. |
-| v1 scope | Chat, the FoundationModels bridge, vision, embeddings, and LM-readout typed decisions. Speech is deferred. |
+| v1 scope | Chat, the FoundationModels bridge, vision, embeddings, and LM-readout typed decisions; image (SD-Turbo, FLUX.2, Krea 2), speech (Kokoro) and video (H3) generation from the 0.0.x ports. |
 | Catalog | Our own catalog, compiled in. No runtime fetch. Weights may come from the zoo's HF repos. |
 | OS floor | `platforms: [.macOS(.v27), .iOS(.v27)]`, with no `@available` noise. |
 | System One | The Swift API comes first. The wire codec, HTTP server and MCP server come later, on the same `Decider` protocol. |
@@ -358,7 +358,8 @@ scaled input, the table's timestep, the Euler epsilon update), then the VAE deco
   doesn't have (`latent.sizes`) is refused before any work.
 - Generations run one at a time; cancellation stops between graph calls, and any failure releases every graph.
 - **Measured (gate, M5 Max, float32 512²):** phase peaks 1.25 GiB (prompt), 3.5 GiB (steps), 1.25 GiB (image); 4
-  steps take under a second warm. Per phase that is about 4.8 GiB, the figure an iPhone has to fit.
+  steps take under a second warm. Per phase that is about 4.8 GiB, too much for an iPhone, so iOS takes a mixed-precision
+  export (fp32 text encoder, fp16 U-Net and VAE): about 1.7 GiB at peak, qualified on an iPhone (docs/DEVICE.md).
 
 The second is **`flux2-klein@1`** (FLUX.2 [klein] 4B, G2). `Flux2KleinPipeline` has the same shape (the options,
 request, admission prologue and load-time contract check are shared: `ImagePipelineOptions`, `ImageRequest`), with
@@ -450,8 +451,8 @@ phonemes into 24 kHz float32 PCM (`GeneratedAudio`):
 - **Placement:** both graphs on the GPU (durations with the reshape hint, the bucketed decoder without). Swift's Core
   AI runtime traps loading `durations` for the CPU on macOS 27.2 (`loadFunction`), the placement 0.0.x and Python used.
 - One request at a time, in order (queue, not fail); cancellation stops between graph calls; any failure releases the
-  graphs and the session stays usable; `unload()` waits for the running request. Runs on iOS (the iPhone run is
-  pending).
+  graphs and the session stays usable; `unload()` waits for the running request. Qualified on an iPhone at the
+  512-frame cap (docs/DEVICE.md).
 - **Measured (gate, M5 Max, 5 cases):** frames exact; rel. L2 0.0076–0.032 against upstream on the CPU; held
   3.0 GiB, peak 3.2 GiB with buckets up to 1024 specialized.
 
