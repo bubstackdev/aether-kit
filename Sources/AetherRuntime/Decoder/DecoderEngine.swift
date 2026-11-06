@@ -330,17 +330,23 @@ public actor DecoderEngine: LanguageEngine {
     }
 
     /// The next token: delivered by the GPU argmax's completion handler, with the pipeline refilled before this
-    /// returns. Nil at the limit or when the calling task is cancelled.
+    /// returns. Nil at the limit or when the calling task is cancelled. A step whose command buffer failed throws
+    /// `runtime` (Metal's error), and a row with no token `invalidLogits`; the state is then undefined past the
+    /// tokens returned: end the decode, then ``reset()`` or ``restore(_:)`` (the Generator does).
     public func nextGreedy() async throws(AetherError) -> Int32? { try await core.nextGreedy() }
 
     /// Ends greedy decoding: waits for in-flight GPU work and sets the position to the tokens fed (every token
     /// returned except the last). Returns how many were fed and how many steps ran past the last returned token.
-    /// Refused (`unsupportedOperation`) while a ``nextGreedy()`` is in progress.
+    /// Refused (`unsupportedOperation`) while a ``nextGreedy()`` is in progress. A GPU failure seen while draining
+    /// is thrown after the decode has ended.
     @discardableResult
     public func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int) {
         let end = try await core.endGreedy()
         return (end.fed, end.overshoot)
     }
+
+    /// Tests only: make every command buffer the engine commits from now on report a GPU failure (no-op on `run`).
+    func injectGPUFailure(_ on: Bool) { core.kernels?.injectedFailure = on }
 }
 
 /// The `decoder-lm@1` driver (DESIGN.md §6.3): loads an installed bundle into a ``DecoderEngine``.
