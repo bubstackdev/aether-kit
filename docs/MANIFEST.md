@@ -238,7 +238,7 @@ brackets:
 
 ```
 {resize?: {mode: stretch|letterbox|centerCrop|fitLongSide, size: [width, height], maxSide, shortestSide, anchor: center|topLeft [center],
-           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|torchUint8Bicubic},
+           padValue: v | [v] | [r, g, b] [0], filter: vImage|pillowBicubic|pillowBilinear|torchUint8Bicubic|torchBilinear},
  colorSpace: deviceRGB|sRGB [deviceRGB], channelOrder: RGB|BGR [RGB], scale [1], mean [0,0,0], std [1,1,1],
  layout: NCHW|NVCHW|patches [NCHW], views [1], patchify?: {patch, temporal [1], merge [1], rowOrder: blockMajor|rowMajor,
  withinPatch: "C,T,py,px"|"py,px,C"}, hostDType: float32|float16 [float32], orientation: exif [exif]}
@@ -247,18 +247,28 @@ brackets:
 - **Order:** decode (EXIF orientation applied, alpha by the app's `ImageInput` policy) in `colorSpace` (`deviceRGB` keeps
   stored values, as Pillow decodes; `sRGB` converts), resize on 8-bit RGB, then `(x · scale − mean) / std` in float32
   (multiply, subtract, divide), `mean` and `std` given in RGB order, then `channelOrder`, `layout` and `hostDType`
-  (rounded to nearest even).
-- **Resize:** no `resize` keeps the decoded size. `stretch` goes to `size`. `letterbox` fits inside `size` (the scaled
-  side floored) at `anchor` on an 8-bit `padValue` canvas. `centerCrop` covers `size` (scaled side floored) and cuts
-  the centre at `round((scaled − size) / 2)`, ties to even (torchvision); with `shortestSide` (at least both sides of
-  `size`) it first scales the shorter side to that length, the longer floored, as torchvision's `Resize(n)` before
-  `CenterCrop` (CLIP's 224 for a 224 square is the same as covering). `fitLongSide` scales an image whose longer
+  (rounded to nearest even). With `torchBilinear`, torchvision's float order instead: `x · scale`, the resize in
+  float32, then `(x − mean) / std`.
+- **Resize:** no `resize` keeps the decoded size. `stretch` goes to `size`. `letterbox` fits inside `size` (the
+  ratio `r = min(H / h, W / w)` in double, each side `int(side · r)` truncated and at least 1, YOLOX's preproc, so the
+  fitting side can fall one short: 2443 × 424 into 640 is 639 × 111) at `anchor` on an 8-bit `padValue` canvas.
+  `centerCrop` covers `size` (scaled side floored) and cuts the centre at `round((scaled − size) / 2)`, ties to even
+  (torchvision); with `shortestSide` (at least both sides of `size`) it first scales the shorter side to that length,
+  the longer floored, as torchvision's `Resize(n)` before `CenterCrop` (CLIP's 224 for a 224 square is the same as
+  covering). `fitLongSide` scales an image whose longer
   side exceeds `maxSide` down to it (other side floored); smaller images are untouched. `size` goes with the first
   three modes, `maxSide` only with `fitLongSide`, `shortestSide` only with `centerCrop`, `anchor` and `padValue` only with `letterbox`.
 - **Filters:** `vImage` is Accelerate's `vImageScale` (fast, its own kernel, not a parity filter). `pillowBicubic` is
   Pillow's `Image.resize(BICUBIC)` and `torchUint8Bicubic` torch's uint8 `interpolate(bicubic, antialias=True)` (what
-  torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit. A
-  filter is added when an export needs one (`pillowBilinear`, `coreGraphicsHigh`, …); until then the name is rejected.
+  torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit.
+  `pillowBilinear` is Pillow's `Image.resize(BILINEAR)` (the triangle filter, widened by the scale when downscaling,
+  22-bit fixed-point weights, as `ImagingResample`), bit for bit (YOLOX's reference letterbox). `torchBilinear` is
+  torch's float32 `interpolate(bilinear, align_corners=False, antialias=False)` (torchvision's `resize(antialias=False)`
+  of a float tensor, RF-DETR's `predict`), to the bit in float32: the source index `fma(in/out, i + 0.5, −0.5)`, and
+  torch's own CPU kernel choice and fused sums (height + width ≤ 128: the four corners with combined weights; above:
+  separable, row then column; a single-threaded torch would take the first at every size). It is the one float filter,
+  so it takes `stretch` and the `NCHW` or `NVCHW` layout only. A filter is added when an export needs one (cv2's
+  `INTER_AREA` for DA3, `coreGraphicsHigh`, …); until then the name is rejected.
 - **Layouts:** `NCHW` is `[1, 3, H, W]`; `NVCHW` repeats the image in `views` views, `[1, V, 3, H, W]`; `patches` is
   `[rows, 3 · temporal · patch²]`, rows block-major (each `merge × merge` block contiguous, Qwen-VL) or row-major
   (SigLIP 2), each row `C,T,py,px` (the frame repeated `temporal` times) or `py,px,C` (`temporal` 1). The image's sides
@@ -271,7 +281,8 @@ brackets:
 Each field has a bundle that needs it: BGR, 0–255 and letterbox top-left pad 114 (yolox); `[-1,1]` (adcsr: scale
 1/255, mean 0.5, std 0.5); NVCHW (colmodernvbert, DA3 multi-view); patchify, which fails silently when wrong (qwen3-vl
 block-major C,T,py,px; lfm channel-last row-major); fp16 graph fed from fp32 host (DA3); tiling with overlap
-`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs torch filters (decision towers, VLMs).
+`max(4, tile/8)` (adcsr); the white letterbox pad (glm-ocr); Pillow vs torch filters (decision towers, VLMs); `pillowBilinear` and YOLOX's letterbox
+rounding (yolox-s); `torchBilinear` (rf-detr-nano, rf-detr-seg-nano).
 Postprocess-side resampling such as resize-back goes in `postprocess`.
 
 `audio` (O): `{sampleRate: 16000, nFFT: 512, hop: 160, nMels: 128, melScale: slaney, filterbank: {table}, normalize:
