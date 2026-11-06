@@ -73,6 +73,9 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
   prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
 
+- **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
+  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded.
+
 ### In progress before 0.1.0 is tagged
 
 Krea 2 Turbo (vanilla and realism), MiniMax H3 and Kokoro-82M on the new runtime; the SD-Turbo and FLUX.2 hosted
