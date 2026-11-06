@@ -1,0 +1,39 @@
+name: DeviceGate
+options:
+  bundleIdPrefix: dev.zakkeown.aether
+  deploymentTarget:
+    iOS: "27.0"
+packages:
+  Aether:
+    path: ../..
+targets:
+  DeviceGate:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    dependencies:
+      - package: Aether
+        product: AetherImage
+      - package: Aether
+        product: AetherSpeech
+    entitlements:
+      path: Sources/DeviceGate.entitlements
+      properties:
+        com.apple.developer.kernel.increased-memory-limit: true
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Aether Gate
+        UILaunchScreen: {}
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+    settings:
+      base:
+        PRODUCT_NAME: DeviceGate
+        PRODUCT_BUNDLE_IDENTIFIER: dev.zakkeown.aether.devicegate
+        GENERATE_INFOPLIST_FILE: NO
+        SDKROOT: iphoneos
+        IPHONEOS_DEPLOYMENT_TARGET: "27.0"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"

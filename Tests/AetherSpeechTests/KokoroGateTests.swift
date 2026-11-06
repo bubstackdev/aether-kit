@@ -16,7 +16,8 @@ import Testing
 /// - a repeat synthesis bit-identical.
 ///
 /// The bundle and references default to the Forge outputs beside this repo (`aether/forge-outputs/kokoro-82m/bundle`
-/// and `…/reference`), or `AETHER_KOKORO_BUNDLE` and `AETHER_KOKORO_REFERENCE`.
+/// and `…/reference`), or `AETHER_KOKORO_BUNDLE` and `AETHER_KOKORO_REFERENCE`. `AETHER_GATE_DUMP=<dir>` also writes each
+/// waveform as raw float32 (Tools/DeviceGate compares).
 @Suite("Kokoro gates", .serialized, .enabled(if: ProcessInfo.processInfo.environment["AETHER_GATES"] == "1"))
 struct KokoroGateTests {
     static let environment = ProcessInfo.processInfo.environment
@@ -77,6 +78,10 @@ struct KokoroGateTests {
                   + "\(value.rel_l2) (bound \(bound)), log-mel mean \(value.log_mel_mean_abs), \(elapsed)")
             #expect(value.rel_l2 <= bound, "\(c.name): rel L2")
             #expect(value.log_mel_mean_abs <= 0.03, "\(c.name): log-mel mean")
+            if let dump = Self.environment["AETHER_GATE_DUMP"] {   // raw float32, to compare with the device gate's
+                try speech.audio.samples.withUnsafeBufferPointer { Data(buffer: $0) }
+                    .write(to: URL(filePath: dump).appending(path: "kokoro-\(c.name).f32"))
+            }
             let repeated = try await session.synthesize(phonemes, request)
             #expect(repeated.audio == speech.audio, "\(c.name): repeat bit-identical")
         }

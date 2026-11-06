@@ -96,7 +96,8 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
   MANIFEST.md §5.8 proposes the `weights` table.
 - **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
   `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
-  `aether-models/aether-kit-kokoro-82m`.
+  `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
+  `aether-models/aether-kit-sd-turbo-ios`.
 
 - **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
   - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
@@ -107,6 +108,11 @@ A from-scratch re-architecture of AetherKit. 0.0.x continues at the `0.0.7` tag 
     54 voices). The Swift gate against unmodified upstream on the CPU: frames exact, rel. L2 0.0076–0.032 (bars
     min(0.05, 4× the fp32-vs-fp64 floor)), log-mel ≤ 0.015, repeats bit-identical.
   - Both graphs run on the GPU: Swift's Core AI runtime traps loading the durations graph for the CPU on macOS 27.2.
+
+- **On-device qualification** (`docs/DEVICE.md`, `Tools/DeviceGate`): SD-Turbo and Kokoro pass their gates on a
+  physical iPhone (iPhone Duo, `h19p`, iOS 27.2). SD-Turbo's iOS bundle is mixed precision (text encoder fp32, U-Net and
+  VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
+  peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
 
 ### In progress before 0.1.0 is tagged
 
