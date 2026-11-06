@@ -53,6 +53,20 @@ struct TensorBufferTests {
         #expect(out == [-2, 3] && out.capacity == capacity)
     }
 
+    /// Third review, P2-7: `copyBytes(from:)` between two host buffers of one arena nested two mutable accesses to the
+    /// arena's storage and trapped (exclusivity). It copies through the arena now; across arenas as before.
+    @Test func copyBytesWithinOneArena() throws {
+        let arena = TensorArena()
+        let a = try arena.allocate(name: "a", shape: [2, 3], scalarType: .float32)
+        let b = try arena.allocate(name: "b", shape: [2, 3], scalarType: .float32)
+        try a.write([1, 2, 3, 4, 5, 6] as [Float])
+        try b.copyBytes(from: a)
+        #expect(try b.readFloats() == [1, 2, 3, 4, 5, 6])
+        let other = try TensorArena().allocate(name: "c", shape: [2, 3], scalarType: .float32)
+        try other.copyBytes(from: b)
+        #expect(try other.readFloats() == [1, 2, 3, 4, 5, 6])
+    }
+
     @Test func misuseIsReportedNotTrapped() throws {
         let arena = TensorArena()
         let buffer = try arena.allocate(name: "b", shape: [2, 2], scalarType: .float16)
