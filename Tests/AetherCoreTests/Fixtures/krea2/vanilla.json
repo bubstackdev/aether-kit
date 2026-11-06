@@ -3,7 +3,6 @@
   "id": "krea-2-turbo",
   "task": "text-to-image",
   "driver": "krea2@1",
-  "x-status": "draft: driver krea2@1 and its krea2 block are proposed in MANIFEST.md §5 (G3)",
   "variant": {
     "platform": "macos"
   },
@@ -79,7 +78,7 @@
         "condition": "cond"
       },
       "compute": "gpu",
-      "expectFrequentReshapes": true,
+      "expectFrequentReshapes": false,
       "residency": "perStep"
     },
     "denoiser1": {
@@ -111,7 +110,7 @@
         "carryText": "text_2"
       },
       "compute": "gpu",
-      "expectFrequentReshapes": true,
+      "expectFrequentReshapes": false,
       "residency": "perStep"
     },
     "denoiser2": {
@@ -143,7 +142,7 @@
         "carryText": "text_3"
       },
       "compute": "gpu",
-      "expectFrequentReshapes": true,
+      "expectFrequentReshapes": false,
       "residency": "perStep"
     },
     "denoiser3": {
@@ -174,7 +173,7 @@
         "velocity": "velocity"
       },
       "compute": "gpu",
-      "expectFrequentReshapes": true,
+      "expectFrequentReshapes": false,
       "residency": "perStep"
     },
     "vaeDecoder": {
@@ -187,7 +186,7 @@
         "image": "image"
       },
       "compute": "gpu",
-      "expectFrequentReshapes": true,
+      "expectFrequentReshapes": false,
       "residency": "perImage"
     }
   },

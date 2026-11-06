@@ -101,6 +101,75 @@ struct GenerativeManifestTests {
         #expect(try refusal { _ in } == nil)
     }
 
+    /// The `krea2` block decodes typed, and the krea2@1 contract accepts the exporter's graphs.
+    @Test(arguments: ["vanilla", "realism"])
+    func theKrea2BlockDecodes(variant: String) throws {
+        let manifest = try Manifest.decode(Self.krea(variant))
+        let krea2 = try #require(manifest.krea2)
+        #expect(krea2.prompt.maxTokens == 546 && krea2.prompt.keepTrailingTokens == 5 && krea2.prompt.dropLeadingRows == 34)
+        #expect(krea2.prompt.padding == .unpadded && krea2.prompt.positions == .running)
+        #expect(krea2.prompt.systemPrefix.hasPrefix("<|im_start|>system\nDescribe the image") && krea2.prompt.suffix == "<|im_end|>\n<|im_start|>assistant\n")
+        #expect(krea2.conditioning.taps.count == 12 && krea2.conditioning.columns == 30720 && krea2.conditioning.rowRange == 1...512)
+        #expect(krea2.rotary.axes == [32, 48, 48] && krea2.rotary.theta == 1000 && krea2.rotary.dimension == 128)
+        #expect(krea2.segments == ["denoiser0", "denoiser1", "denoiser2", "denoiser3"] && krea2.condRows == 8)
+        #expect(krea2.contentFilter.required)
+        // Measured: with the reshape hint the segments' carries are non-finite on the GPU; the text encoder keeps it.
+        #expect(manifest.graphs.mapValues { $0.expectFrequentReshapes } == [
+            "textEncoder": true, "denoiser0": false, "denoiser1": false, "denoiser2": false, "denoiser3": false,
+            "vaeDecoder": false,
+        ])
+        try DriverContract.krea2.validate(manifest)
+    }
+
+    /// The `krea2` block holds the driver to what it implements: each refusal names its field.
+    @Test func krea2BlockRefusals() throws {
+        func refusal(_ change: @escaping (inout [String: Any]) -> Void) throws -> String? {
+            do {
+                _ = try Manifest.decode(try Self.mutated { Self.edit(&$0, "krea2", change) })
+                return nil
+            } catch let error as AetherError {
+                if case .manifestInvalid(let field, _) = error { return field }
+                return "\(error)"
+            }
+        }
+        func edit(_ key: String, _ field: String, _ value: Any) -> (inout [String: Any]) -> Void {
+            { block in
+                var inner = block[key] as! [String: Any]
+                inner[field] = value
+                block[key] = inner
+            }
+        }
+        #expect(try refusal(edit("prompt", "maxTokens", 300)) == "krea2.conditioning.rows")
+        #expect(try refusal(edit("prompt", "padding", "right"))?.hasPrefix("krea2.prompt.padding") == true)
+        #expect(try refusal(edit("conditioning", "rows", "512")) == "krea2.conditioning.rows")
+        #expect(try refusal(edit("rotary", "positions", "(0, column, row)")) == "krea2.rotary.positions")
+        #expect(try refusal(edit("rotary", "textRotated", true)) == "krea2.rotary.textRotated")
+        #expect(try refusal(edit("rotary", "axes", [64, 64])) == "krea2.rotary.axes")
+        #expect(try refusal(edit("contentFilter", "required", false)) == "krea2.contentFilter.required")
+        #expect(try refusal { $0["segments"] = ["denoiser0", "denoiser9"] } == "krea2.segments.1")
+        #expect(try refusal { _ in } == nil)
+    }
+
+    /// A merged adapter's `scale` is one number or a list (ai-toolkit writes `[1.0]`); one value encodes as a number.
+    @Test func mergedAdapterScaleIsANumberOrAList() throws {
+        func scale(_ value: Any) throws -> [Double]? {
+            let data = try Self.mutated(variant: "realism") { json in
+                Self.edit(&json, "provenance") { provenance in
+                    var adapter = provenance["mergedAdapter"] as! [String: Any]
+                    adapter["scale"] = value
+                    provenance["mergedAdapter"] = adapter
+                }
+            }
+            let manifest = try Manifest.decode(data)
+            #expect(try Manifest.decode(manifest.encoded()) == manifest)
+            return manifest.provenance?.mergedAdapter?.scale
+        }
+        #expect(try scale(1.0) == [1.0])
+        #expect(try scale([1.0]) == [1.0])
+        #expect(try scale([0.5, 2.0]) == [0.5, 2.0])
+        #expect(throws: AetherError.self) { _ = try scale("one") }
+    }
+
     @Test func absentBlocksStayAbsent() throws {
         let manifest = try Manifest.decode(Data(ManifestTests.example.utf8))
         #expect(manifest.schedule == nil && manifest.latent == nil)

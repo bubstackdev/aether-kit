@@ -9,7 +9,7 @@ public import AetherRuntime
 public struct ImagePipelineOptions: Sendable {
     public var cachePolicy: GraphOptions.CachePolicy
     public var cache: GraphOptions.Cache
-    /// The budget a generation's planned peak must fit when there is no coordinator.
+    /// The budget a generation's planned peak must fit when there is no coordinator (default ``MemoryBudget/imageGeneration``).
     public var memory: MemoryBudget
     /// A shared memory budget: the generation reserves its planned peak here (and fits the available bytes).
     public var coordinator: ResourceCoordinator?
@@ -23,7 +23,7 @@ public struct ImagePipelineOptions: Sendable {
 
     public init(
         cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default,
-        memory: MemoryBudget = .platformDefault, coordinator: ResourceCoordinator? = nil,
+        memory: MemoryBudget = .imageGeneration, coordinator: ResourceCoordinator? = nil,
         gpu: GPUAdmissionOwner? = nil, ledger: FootprintLedger = FootprintLedger(), probe: GPUMemoryProbe = .system
     ) {
         self.cachePolicy = cachePolicy
@@ -33,6 +33,20 @@ public struct ImagePipelineOptions: Sendable {
         self.gpu = gpu
         self.ledger = ledger
         self.probe = probe
+    }
+}
+
+extension MemoryBudget {
+    /// The image pipelines' default budget: on macOS three quarters of RAM, about Metal's recommended working set on
+    /// Apple silicon, since these models' graphs are almost all GPU memory (Krea 2 needs about 34 GiB a generation per
+    /// phase, measured: more than ``platformDefault``'s half of a 64 GB Mac, which suits a decoder's own buffers); on iOS
+    /// what the process may still allocate, less 512 MB, as ``platformDefault``.
+    public static var imageGeneration: MemoryBudget {
+        #if os(iOS)
+        .platformDefault
+        #else
+        MemoryBudget(.fractionOfRAM(0.75))
+        #endif
     }
 }
 
