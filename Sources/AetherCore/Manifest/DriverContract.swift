@@ -7,7 +7,7 @@ public enum DriverCatalog {
         "detector-dense@1", "detector-detr@1", "depth-estimator@1", "clip-joint@1", "image-to-image-tiled@1",
         "text-embedder@1", "late-interaction-retriever@1", "gliner-classifier@1", "yes-no-classifier@1",
         "decision-lm@1", "decision-hidden-head@1", "decision-joint-head@1", "encoder-decider@1",
-        "latent-diffusion@1", "flux2-klein@1", "krea2@1", "kokoro@1",
+        "latent-diffusion@1", "flux2-klein@1", "krea2@1", "kokoro@1", "minimax-h3@1",
     ].map(DriverID.init(validated:)))
 
     /// Reusable graph contracts a driver embeds. Never a top-level `driver`.
@@ -17,7 +17,7 @@ public enum DriverCatalog {
     public static let contracts: [DriverID: DriverContract] = [
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
         DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.krea2.driver: .krea2,
-        DriverContract.kokoro.driver: .kokoro,
+        DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -361,4 +361,51 @@ extension DriverContract {
                 outputs: ["audio": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
+}
+
+extension DriverContract {
+    /// `minimax-h3@1` (MANIFEST.md §5.10): MiniMax H3. `conditionerLayer` (one Qwen3-VL text decoder layer; `hidden`,
+    /// `cos`, `sin` → `hidden`) and `body` (one transformer block; `hidden`, `table`, `tags`, `cos`, `sin` → `hidden`)
+    /// take their weights from `weights` tables; `prepareText` (`text` → `refined`), `preparePack` (`video`, `audio`,
+    /// `text`, `gather` → `hidden`), `heads` (`hidden`, `temb`, `indices`, `videoIndices`, `audioIndices` → `video`,
+    /// `audio`) and `videoDecoder` (`rows` → `pixels`) are required. The per-profile graphs (the audio decoder at a
+    /// fixed latent count, the keyframe encoder and vision tower per canvas) are optional roles named for the qualified
+    /// profiles; `h3.profiles` names the ones a profile uses. The driver also requires a tokenizer and the `h3` block.
+    public static let minimaxH3 = DriverContract(
+        driver: .minimaxH3,
+        graphs: [
+            "conditionerLayer": stateless(
+                inputs: ["hidden": h3Float(3), "cos": h3Float(3), "sin": h3Float(3)], outputs: ["hidden": h3Float(3)]),
+            "prepareText": stateless(inputs: ["text": h3Float(3)], outputs: ["refined": h3Float(3)]),
+            "preparePack": stateless(
+                inputs: ["video": h3Float(3), "audio": h3Float(3), "text": h3Float(3), "gather": h3Int(1)],
+                outputs: ["hidden": h3Float(3)]),
+            "body": stateless(
+                inputs: ["hidden": h3Float(3), "table": h3Float(3), "tags": h3Int(1), "cos": h3Float(2), "sin": h3Float(2)],
+                outputs: ["hidden": h3Float(3)]),
+            "heads": stateless(
+                inputs: ["hidden": h3Float(3), "temb": h3Float(2), "indices": h3Int(1), "videoIndices": h3Int(1),
+                         "audioIndices": h3Int(1)],
+                outputs: ["video": h3Float(3), "audio": h3Float(3)]),
+            "videoDecoder": stateless(inputs: ["rows": h3Float(2)], outputs: ["pixels": h3Float(5)]),
+        ],
+        optionalGraphs: [
+            "audioDecoder207": stateless(inputs: ["rows": h3Float(3)], outputs: ["pcm": h3Float(2)]),
+            "videoEncoderTile": stateless(inputs: ["pixels": h3Float(5)], outputs: ["moments": h3Float(5)]),
+            "videoEncoderTail960x544": stateless(inputs: ["tiles": h3Float(5)], outputs: ["condition": h3Float(5)]),
+            "videoEncoderTail544x960": stateless(inputs: ["tiles": h3Float(5)], outputs: ["condition": h3Float(5)]),
+            "conditionerVision960x544": h3Vision,
+            "conditionerVision544x960": h3Vision,
+        ],
+        requiresTokenizer: false)
+
+    private static func h3Float(_ rank: Int) -> RoleSpec { RoleSpec(required: true, rank: rank, scalar: .floatingPoint) }
+    private static func h3Int(_ rank: Int) -> RoleSpec { RoleSpec(required: true, rank: rank, scalar: .integer) }
+    private static let h3Vision = stateless(
+        inputs: ["pixels": RoleSpec(required: true, rank: nil, scalar: .floatingPoint),
+                 "posIndex": RoleSpec(required: true, rank: nil, scalar: nil),
+                 "posWeight": RoleSpec(required: true, rank: nil, scalar: .floatingPoint),
+                 "patchRC": RoleSpec(required: true, rank: nil, scalar: nil)],
+        outputs: ["imageEmbeds": RoleSpec(required: true, rank: nil, scalar: .floatingPoint),
+                  "deepstack": RoleSpec(required: true, rank: nil, scalar: .floatingPoint)])
 }
