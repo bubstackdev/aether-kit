@@ -1,0 +1,139 @@
+{
+  "assets": {
+    "main": {
+      "files": [
+        {
+          "bytes": 11345,
+          "path": "LICENSE",
+          "sha256": "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca"
+        },
+        {
+          "bytes": 1051,
+          "path": "NOTICE",
+          "sha256": "efb066472a1857db6e3f565359dc227ad0eeea2702c03768906b52a85297dff5"
+        },
+        {
+          "bytes": 1003,
+          "path": "README.md",
+          "sha256": "7c2cde156f6fbbfdd0c38e89970a6aed891fc3a69ef678b3e5b5ef5464bbba6f"
+        },
+        {
+          "bytes": 32,
+          "path": "rf_detr_seg_nano.aimodel/main.hash",
+          "sha256": "a99d69c577a9ea095dbcafd39cce19dcbe062d8f3a52489597f157bf5b86744d"
+        },
+        {
+          "bytes": 122781822,
+          "path": "rf_detr_seg_nano.aimodel/main.mlirb",
+          "sha256": "5e9bd24fafe46218bbdea07cc52d87c92a8a7ed4946b6fe4e09d388e5ca90633"
+        },
+        {
+          "bytes": 437,
+          "path": "rf_detr_seg_nano.aimodel/metadata.json",
+          "sha256": "aa6c1bf60a2059938710fa4b652cb3a6252979a2cafe70a3c537d9f817668259"
+        }
+      ],
+      "subtree": ""
+    }
+  },
+  "driver": "detector-detr@1",
+  "graphs": {
+    "detector": {
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:rf_detr_seg_nano.aimodel",
+      "function": "main",
+      "inputs": {
+        "image": "image"
+      },
+      "outputs": {
+        "boxes": "dets",
+        "classLogits": "labels",
+        "masks": "masks"
+      }
+    }
+  },
+  "id": "rf-detr-seg-nano",
+  "labels": {
+    "set": "coco-91",
+    "x-notes": "logit column i is COCO category id i (classIndex cocoId); the names are the kit's."
+  },
+  "license": "Apache-2.0",
+  "postprocess": {
+    "boxFormat": "cxcywh",
+    "boxSpace": "normalized",
+    "classIndex": "cocoId",
+    "defaults": {
+      "maxDetections": 100,
+      "scoreThreshold": 0.5
+    },
+    "kind": "detrSigmoid",
+    "masks": {
+      "logitThreshold": 0.0
+    },
+    "selection": "topKPairs",
+    "x-notes": "Upstream PostProcess: sigmoid over all 100 x 91 logits, the top 100 (query, class) pairs by score (stable: ties by ascending flat index query * 91 + class), each kept when score > threshold; one query can yield several classes. No NMS. Boxes are cxcywh normalized to the stretched 312 x 312 input, so to the source image; converted to xyxy and clamped to [0, 1]. The class index is the logit column, which is the COCO category id (1..90; column 0 and the ten unassigned ids never score). masks: per-query mask logits at 78 x 78 over the stretched input; upstream gathers the selected queries' planes, upsamples bilinearly (align_corners false) to the output size and keeps logit > 0."
+  },
+  "precision": {
+    "activations": "fp32",
+    "components": {
+      "io": "image float32; outputs float32",
+      "normalization": "float32 (in graph)"
+    },
+    "weights": "fp32"
+  },
+  "preprocess": {
+    "image": {
+      "channelOrder": "RGB",
+      "colorSpace": "sRGB",
+      "hostDType": "float32",
+      "layout": "NCHW",
+      "mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": "exif",
+      "resize": {
+        "filter": "torchBilinear",
+        "mode": "stretch",
+        "size": [
+          312,
+          312
+        ]
+      },
+      "scale": 0.00392156862745098,
+      "std": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "x-notes": "ImageNet normalization (mean 0.485/0.456/0.406, std 0.229/0.224/0.225) is in the graph: feed RGB on [0,1]. Upstream predict stretches to 312 x 312 (no aspect preservation) with torchvision bilinear resize, antialias=False, on the float image (it matches the cv2.INTER_LINEAR resize the checkpoints were trained with); torchBilinear reproduces it in float32, between the 1/255 scale and the (in-graph) normalization."
+    }
+  },
+  "provenance": {
+    "exportScript": "7fe1d87e7dc5a5d8979f60410f8ca4a3df18ad150c75c7636bcb6a4d5b499342",
+    "producer": "aether-kit Forge/rfdetr/export_rfdetr.py",
+    "refs": {
+      "checkpoint": "https://repo.roboflow.com/rfdetr/rf-detr-seg-n-ft.pth",
+      "checkpointSHA256": "a44613a4ecd6b5ba61a62002c600b0b6cb7a9da2936a45317ec4b62c635fb99b",
+      "exportReport": "export-report.json",
+      "forgeLockSHA256": "6729c123d0399129ae8ed3db306a9a0b680da0f9b61890218c328a7ac6e1920a",
+      "upstreamCode": "roboflow/rf-detr@639eac4555ceb89ef399ccda3fde716bbcfe34cb"
+    },
+    "source": "roboflow/rf-detr@1.12.0",
+    "sourceRevision": "639eac4555ceb89ef399ccda3fde716bbcfe34cb"
+  },
+  "schema": 1,
+  "task": "instance-segmentation",
+  "variant": {
+    "platform": "ios"
+  },
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  }
+}

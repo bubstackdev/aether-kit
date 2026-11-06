@@ -1,0 +1,142 @@
+{
+  "assets": {
+    "main": {
+      "files": [
+        {
+          "bytes": 4061,
+          "path": "GEMMA-PROHIBITED-USE-POLICY.txt",
+          "sha256": "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b"
+        },
+        {
+          "bytes": 9144,
+          "path": "LICENSE",
+          "sha256": "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d"
+        },
+        {
+          "bytes": 1425,
+          "path": "NOTICE",
+          "sha256": "80d6f964d375677e517d4123eb3bdd3478d184446674883b0d7917bd474aade1"
+        },
+        {
+          "bytes": 1357,
+          "path": "README.md",
+          "sha256": "c086f2d2625d0ec592a8a81e04914875dcf7fc6825eabcb24dcd9dd7d9d2e427"
+        },
+        {
+          "bytes": 32,
+          "path": "embeddinggemma_300m.aimodel/main.hash",
+          "sha256": "7e862ad9f99fd2f128ff23acbd5f885573a7d7a4517a0c32b53817f2e51f5624"
+        },
+        {
+          "bytes": 647579874,
+          "path": "embeddinggemma_300m.aimodel/main.mlirb",
+          "sha256": "53f0baf671f985d1a555f273a7d6e3a18c26ed143f5537d81ab328a6c0cd045b"
+        },
+        {
+          "bytes": 483,
+          "path": "embeddinggemma_300m.aimodel/metadata.json",
+          "sha256": "e649b534f6cb8a52d83d217e2784028b17495fd4f937874826ec2c6f318ea767"
+        },
+        {
+          "bytes": 662,
+          "path": "tokenizer/special_tokens_map.json",
+          "sha256": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397"
+        },
+        {
+          "bytes": 33385008,
+          "path": "tokenizer/tokenizer.json",
+          "sha256": "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e"
+        },
+        {
+          "bytes": 1155346,
+          "path": "tokenizer/tokenizer_config.json",
+          "sha256": "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118"
+        }
+      ],
+      "subtree": ""
+    }
+  },
+  "driver": "text-embedder@1",
+  "graphs": {
+    "encoder": {
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:embeddinggemma_300m.aimodel",
+      "function": "main",
+      "inputs": {
+        "attentionMask": "attention_mask",
+        "tokens": "input_ids"
+      },
+      "limits": {
+        "staticSequence": 256
+      },
+      "outputs": {
+        "embedding": "embedding"
+      }
+    }
+  },
+  "id": "embeddinggemma-300m",
+  "license": "gemma",
+  "postprocess": {
+    "embedding": {
+      "normalized": "inGraph",
+      "pooling": "inGraph",
+      "similarity": "cosine"
+    },
+    "kind": "embedding",
+    "x-notes": "embedding [1,768] float32 is mean-pooled over attentionMask, projected 768->3072->768 and L2-normalized in the graph: cosine equals the dot product. Matryoshka: the first 512, 256 or 128 dimensions, re-normalized, are valid smaller embeddings."
+  },
+  "precision": {
+    "activations": "fp32",
+    "components": {
+      "encoder": "fp16 weights, fp32 compute (float16 activations overflow; upstream: EmbeddingGemma does not support float16 activations)",
+      "head": "fp16 dense weights; pooling, dense and normalize compute in fp32",
+      "io": "input_ids, attention_mask int32; embedding float32"
+    },
+    "weights": "fp16 (widened to fp32 in the graph)"
+  },
+  "provenance": {
+    "exportScript": "0ef7338740207443afc17a213a2e35bf435082adf3a6e3a6e397c8445c3e30e1",
+    "producer": "aether-kit Forge/embeddinggemma/export_embeddinggemma.py",
+    "refs": {
+      "exportReport": "export-report.json",
+      "forgeLockSHA256": "6729c123d0399129ae8ed3db306a9a0b680da0f9b61890218c328a7ac6e1920a",
+      "tokenizer.source": "google/embeddinggemma-300m@57c266a740f537b4dc058e1b0cda161fd15afa75 tokenizer.json, tokenizer_config.json, special_tokens_map.json",
+      "tokenizer.text.prompts": "google/embeddinggemma-300m@57c266a740f537b4dc058e1b0cda161fd15afa75 config_sentence_transformers.json#/prompts/query, #/prompts/document"
+    },
+    "source": "google/embeddinggemma-300m",
+    "sourceRevision": "57c266a740f537b4dc058e1b0cda161fd15afa75"
+  },
+  "schema": 1,
+  "task": "text-embedding",
+  "tokenizer": {
+    "addSpecialTokens": true,
+    "chatTemplate": null,
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "text": {
+      "padId": 0,
+      "padSide": "right",
+      "padTo": 256,
+      "prompts": {
+        "document": "title: none | text: ",
+        "query": "task: search result | query: "
+      },
+      "truncation": "right",
+      "x-notes": "sentence-transformers semantics: the text is prompt + input, stripped of leading and trailing whitespace, then encoded with special tokens (<bos>=2 first, <eos>=1 last). Truncation keeps the first 254 content ids and both special tokens (HF truncation='longest_first', max_length=256). attentionMask is 1 for every real token (prompt included) and 0 for padding; padding is id 0 on the right to exactly 256."
+    }
+  },
+  "variant": {
+    "platform": "ios"
+  },
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "GEMMA-PROHIBITED-USE-POLICY.txt",
+      "NOTICE"
+    ],
+    "modified": true,
+    "useRestrictions": "Gemma Terms of Use Section 3.2: no use for the restricted uses in the Gemma Prohibited Use Policy or in violation of law; pass these restrictions on as an enforceable provision when redistributing."
+  }
+}
