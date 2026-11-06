@@ -18,9 +18,10 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `AetherFoundationModels` | `AetherLanguageModel`: any supported catalog model behind Apple's `LanguageModelSession`, with guided generation (`@Generable`) and tool calling. |
 | `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission, and model lifecycle: idle unload and memory-pressure release. |
 | `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. |
+| `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
 | `AetherVision`, `AetherEmbeddings`, `AetherDecide`, `Aether` | Planned (milestones M4–M6). |
 
-More image, video and speech generation (Krea 2 Turbo vanilla and realism, MiniMax H3, Kokoro-82M)
+More image and video generation (Krea 2 Turbo vanilla and realism, MiniMax H3)
 is being ported onto this architecture before 0.1.0 is tagged.
 
 ## Quick start

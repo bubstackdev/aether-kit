@@ -7,7 +7,7 @@ public enum DriverCatalog {
         "detector-dense@1", "detector-detr@1", "depth-estimator@1", "clip-joint@1", "image-to-image-tiled@1",
         "text-embedder@1", "late-interaction-retriever@1", "gliner-classifier@1", "yes-no-classifier@1",
         "decision-lm@1", "decision-hidden-head@1", "decision-joint-head@1", "encoder-decider@1",
-        "latent-diffusion@1", "flux2-klein@1",
+        "latent-diffusion@1", "flux2-klein@1", "kokoro@1",
     ].map(DriverID.init(validated:)))
 
     /// Reusable graph contracts a driver embeds. Never a top-level `driver`.
@@ -16,7 +16,7 @@ public enum DriverCatalog {
     /// The role contracts implemented so far. The other drivers' contracts arrive with their milestones.
     public static let contracts: [DriverID: DriverContract] = [
         DriverContract.decoderLM.driver: .decoderLM, DriverContract.latentDiffusion.driver: .latentDiffusion,
-        DriverContract.flux2Klein.driver: .flux2Klein,
+        DriverContract.flux2Klein.driver: .flux2Klein, DriverContract.kokoro.driver: .kokoro,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -287,4 +287,35 @@ extension DriverContract {
     private static let segmentInputs: [String: RoleSpec] = carryOutputs.merging([
         "condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
     ]) { a, _ in a }.merging(rotaryInputs) { a, _ in a }
+}
+
+extension DriverContract {
+    /// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M. `durations` in `tokens` and `style`, out per-token `durations`,
+    /// `prosody` and `text` features; `decoder` in the frame-aligned `prosody` and `text`, `style`, the harmonic-source
+    /// `noise` and the valid `frames` count, out `audio`. No tokenizer (the app supplies phonemes); the `kokoro` block
+    /// and one voice table per voice are required (checked when the driver loads).
+    public static let kokoro = DriverContract(
+        driver: .kokoro,
+        graphs: [
+            "durations": stateless(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "style": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                ],
+                outputs: [
+                    "durations": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "prosody": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "text": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                ]),
+            "decoder": stateless(
+                inputs: [
+                    "prosody": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "text": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "style": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "noise": RoleSpec(required: true, rank: 4, scalar: .floatingPoint),
+                    "frames": RoleSpec(required: true, rank: 1, scalar: .integer),
+                ],
+                outputs: ["audio": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+        ],
+        requiresTokenizer: false)
 }
