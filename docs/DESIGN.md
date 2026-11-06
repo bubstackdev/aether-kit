@@ -407,4 +407,3 @@ ready to promote when:
   h19p graph failing on an h17c Mac was observed.
 - **iOS memory and power:** whether memory-derived capacity and the residency policy hold for models of 2 GB and up,
   and whether the Neural Engine wins on power on iPhone, even though it showed no speed win on the Mac.
-- **Gemma 3's upstream generation config** is gated, so its stop set is unverified until an HF token is available.

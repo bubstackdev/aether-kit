@@ -35,7 +35,7 @@ extension ZooOverrides {
         "*": {
           "tokenizer": {
             "stop": {
-              "source": "unverified: google/gemma-3-4b-it generation_config.json is gated (MANIFEST.md §2.4)",
+              "source": "google/gemma-3-4b-it@093f9f388b31de276ce2de164bdc2081324b9767 generation_config.json#/eos_token_id",
               "eosTokenIds": [1, 106],
               "tokens": ["<eos>", "<end_of_turn>"]
             }
