@@ -3099,6 +3099,112 @@
       "printedName": "qualifiedFootprints",
       "static": true,
       "usr": "s:11AetherVideo17MiniMaxH3PipelineC19qualifiedFootprintsSDySSSDy0A4Core8ManifestV9ResidencyO0A7Runtime14PhaseFootprintVGGvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC21qualifiedExportDigestSSvgZ",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherVideo17MiniMaxH3PipelineC21qualifiedExportDigestSSvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC21qualifiedExportDigestSSvpZ",
+      "moduleName": "AetherVideo",
+      "name": "qualifiedExportDigest",
+      "printedName": "qualifiedExportDigest",
+      "static": true,
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC21qualifiedExportDigestSSvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "isFromExtension": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC21qualifiedArchitectureSSvgZ",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherVideo17MiniMaxH3PipelineC21qualifiedArchitectureSSvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isFromExtension": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC21qualifiedArchitectureSSvpZ",
+      "moduleName": "AetherVideo",
+      "name": "qualifiedArchitecture",
+      "printedName": "qualifiedArchitecture",
+      "static": true,
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC21qualifiedArchitectureSSvpZ"
      }
     ],
     "conformances": [
