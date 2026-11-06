@@ -2434,6 +2434,375 @@
           "driver": "kokoro@1"
         }
       }
+    },
+    {
+      "id": "krea-2-turbo",
+      "license": "LicenseRef-Krea-2-Community-License-1.0",
+      "repo": "aether-models/krea-2-turbo-aether-kit",
+      "revision": "a8988774de04e3cb97e9dabdcb9692eaa4e6d27e",
+      "task": "text-to-image",
+      "variants": {
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "e68c82ce2e98cf66dfb07670f69666c4f0356f28920f320753154fa23ec00121",
+                  "size": 11582
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "983336dc739956c929def15e7d137e4c38a479d47cb864b0268bb131c0dcb000",
+                  "size": 2132
+                },
+                {
+                  "path": "KREA-2-LICENSE.txt",
+                  "sha256": "975bafb4a4708cf53bf5e4d99a93688c096d137362de59f68a7b0525028c4113",
+                  "size": 19276
+                },
+                {
+                  "path": "KREA-2-USE-POLICY.txt",
+                  "sha256": "8c02dd2e4edc6fbb603375aab0796f07d0ab698ae68a047e998b09e8470051da",
+                  "size": 5639
+                },
+                {
+                  "path": "LICENSE.pdf",
+                  "sha256": "b82a2805162bde714a4eb27b9063c4fc3345d08a30be055134a6160e5430ba74",
+                  "size": 137711
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "0086bd72325c6668d9bbd166ac9b963e13debfc54cfbb06d9647c70fcfd66a5f",
+                  "size": 769
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "e7b0b86f0adeb2ba9bd7fbd4c32dbe4345e4f443ccee8db70adeaef693f1053c",
+                  "size": 1321
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "e0ca2a124180d431dc9226771babcf5c586e53d84eb726ae1a79fc5ff908925f",
+                  "size": 2685
+                },
+                {
+                  "path": "check-report.json",
+                  "sha256": "dadcfc169d41ad8a82f88c8cf37dc21fb5c7bac9e86de80dee2c61aae1fef1c9",
+                  "size": 11862
+                },
+                {
+                  "path": "check-report.png",
+                  "sha256": "48f9afa7a1e64aac3236409c659f432b05cc8e44d41345ae1b2668d0c6696fce",
+                  "size": 352818
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "9523ac5229f784f1abcfa1de016088a3e261886190a2459ecf82933f6532e3b0",
+                  "size": 5988
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "404ff073286610f8f0ea8f491af7348e52e47cb1371a799638dd98ae9b55576b",
+                  "size": 3235
+                },
+                {
+                  "path": "krea2_turbo-denoiser0.aimodel/main.hash",
+                  "sha256": "a71e0d9620b12f0f3985c112069e05dc419a7ece004efb51398c258024e73e51",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-denoiser0.aimodel/main.mlirb",
+                  "sha256": "2db122133fffe4cd66478271be41ed460c00239ec17882a2dd4a555d39def14b",
+                  "size": 7405671713
+                },
+                {
+                  "path": "krea2_turbo-denoiser0.aimodel/metadata.json",
+                  "sha256": "4e503723bc758538ae9deb289aebd2ea9b90a443057701c42934ad9f5726ff01",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo-denoiser1.aimodel/main.hash",
+                  "sha256": "8eae00b897a38542cf2a6a9215b103d82a37211ac2bf577eaac286cb5d34a851",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-denoiser1.aimodel/main.mlirb",
+                  "sha256": "c55dd8cf3f3beb7216d87a6efaddfcf9cf9dd9921fb6823adb14909c96debd04",
+                  "size": 6079018498
+                },
+                {
+                  "path": "krea2_turbo-denoiser1.aimodel/metadata.json",
+                  "sha256": "b88c5ca0b2896297485e692e279ab91aa5140a37755a040b5fc9f6cf40b71543",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo-denoiser2.aimodel/main.hash",
+                  "sha256": "d01d34fc2e93679d068b1663af170e176678f9a469958b0e700fbd48d3de78cb",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-denoiser2.aimodel/main.mlirb",
+                  "sha256": "eb2d85258a1b79c3440b41262865706f363d520a1990a2e0614aa3d4f632f2c0",
+                  "size": 6079018499
+                },
+                {
+                  "path": "krea2_turbo-denoiser2.aimodel/metadata.json",
+                  "sha256": "de69a477139b72ba8e016117dc78655d937b5ceb0f790bdf643fb7757fafa0ed",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo-denoiser3.aimodel/main.hash",
+                  "sha256": "2c787df927430e2dc5376f9e3edbc9c6175ed2ab6b33337e63c6e3236e80e49e",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-denoiser3.aimodel/main.mlirb",
+                  "sha256": "5f4106ba563473d5e37904c7790d104506854179c3bfcac019c38a5c65285859",
+                  "size": 6079831986
+                },
+                {
+                  "path": "krea2_turbo-denoiser3.aimodel/metadata.json",
+                  "sha256": "64786a01f71bb8a9366de7ee929ae953eaf5509a14d8fc8c285726e39e338ce2",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo-text.aimodel/main.hash",
+                  "sha256": "60e4b8f7bcf3d5cf0558c9316e97461307ef67d2038786419deffdfe9458c9d0",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-text.aimodel/main.mlirb",
+                  "sha256": "108f9a60e8081352558452f75d3c485256cff8ac38e9c8ce4ab3820ef62bf1a6",
+                  "size": 7843741161
+                },
+                {
+                  "path": "krea2_turbo-text.aimodel/metadata.json",
+                  "sha256": "846a2964c3d0df3a5f0ce335aed3060dd03d925132adc9bdd16ceb7c2ed88462",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo-vae.aimodel/main.hash",
+                  "sha256": "ec043aa309b1c86d3500e2b73fec53973fbf295e3cec2ac84a46fb0c1928486d",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo-vae.aimodel/main.mlirb",
+                  "sha256": "b427744e8a272d8fffac1e4f53545f490979ce98c3dd5bc5dd64a0931c19eebe",
+                  "size": 52579073
+                },
+                {
+                  "path": "krea2_turbo-vae.aimodel/metadata.json",
+                  "sha256": "c9794e8e13eda543cf96b9a18f5187175378bc6586c58f144a8a7f159c4f7f3c",
+                  "size": 105
+                },
+                {
+                  "path": "tokenizer/chat_template.jinja",
+                  "sha256": "3636d0f0bd6bef02654cdffdc447b79cb2cef8ab02cc75267345946291a489e4",
+                  "size": 5292
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+                  "size": 11422650
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "c871ed314285a377eccf509b906aa5fe015d5e79a3ddab2c198467329127ead6",
+                  "size": 664
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "krea2@1"
+        }
+      }
+    },
+    {
+      "id": "krea-2-turbo-realism",
+      "license": "LicenseRef-Krea-2-Community-License-1.0",
+      "mature": true,
+      "repo": "aether-models/krea-2-turbo-realism-aether-kit",
+      "revision": "81808e6bd631487e94a71ece1696d351e84c5b30",
+      "task": "text-to-image",
+      "variants": {
+        "macos": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "b118b004ea3a27f21a023379dae52a6095490adabe061896c313bad6453a65c1",
+                  "size": 12255
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "e5c33a5a3c85962b0aa047b76315d83a576f3be35bfebfcbf682b6334c2f3aab",
+                  "size": 2180
+                },
+                {
+                  "path": "KREA-2-LICENSE.txt",
+                  "sha256": "975bafb4a4708cf53bf5e4d99a93688c096d137362de59f68a7b0525028c4113",
+                  "size": 19276
+                },
+                {
+                  "path": "KREA-2-USE-POLICY.txt",
+                  "sha256": "8c02dd2e4edc6fbb603375aab0796f07d0ab698ae68a047e998b09e8470051da",
+                  "size": 5639
+                },
+                {
+                  "path": "LICENSE.pdf",
+                  "sha256": "b82a2805162bde714a4eb27b9063c4fc3345d08a30be055134a6160e5430ba74",
+                  "size": 137711
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "f0b0bb1d7d8324493cf001dccf0add853a71e582235521b7186410629f56323d",
+                  "size": 1132
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "6ed63d607ba57227ae7092d9013edd44d0daa6187c50c8a975a75a5067314721",
+                  "size": 2085
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "0e2be9d7567fc38cea755176fff04dca44b52b277ebddf09b54ee9bd961dd469",
+                  "size": 2829
+                },
+                {
+                  "path": "check-report.json",
+                  "sha256": "a50c4f4db27992e04a3cb849c6914de9248a206814585e0c5f87ea326fb0c5b2",
+                  "size": 11888
+                },
+                {
+                  "path": "check-report.png",
+                  "sha256": "c3183f12ef87707059160515ac4c746714eccf492ebfa9b1c5e3808d0d50a8f3",
+                  "size": 370460
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "3dc824abaad9a61b1776ea8c91fa91ef520722c3e6d15583fce289132f87cd9a",
+                  "size": 7827
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "6701ec58e5e9af37ad3fb2cbc1d968bc2e9d8916e90c6f530a881274777c059d",
+                  "size": 3388
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser0.aimodel/main.hash",
+                  "sha256": "97ab00f8b6b7b1766ab081f9d05a4fffa45a505d9f676d1a7283f43daf64d425",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser0.aimodel/main.mlirb",
+                  "sha256": "72494af9be4afd5522b14c92d16eb813a93bff1100f537fdaba09461e3b6b082",
+                  "size": 7405671704
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser0.aimodel/metadata.json",
+                  "sha256": "d9b214dc4a06d83b04143c12c0bd3cdbbfec4df6e4ec0cba8f31504d8bfffb7b",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser1.aimodel/main.hash",
+                  "sha256": "3222429df479d0c40ea6b95334d969a1bf4ef1d23ac3d0b416c5ace30c3422df",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser1.aimodel/main.mlirb",
+                  "sha256": "e5a049fac05176a9deadc0f5b2e147ab6ca0d7f31f13c285aa92e7028e1b53ae",
+                  "size": 6079018496
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser1.aimodel/metadata.json",
+                  "sha256": "91a148d3726ccf842c50bc05534ec7ae0d2c5fb9868a7817c0652039ab01783a",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser2.aimodel/main.hash",
+                  "sha256": "2c11ccc421a1afc418541e40b0900429c3eb7a3e0927fb06b0c3e15faac8b18c",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser2.aimodel/main.mlirb",
+                  "sha256": "15c8a2ff9900bc5c640cf2578f465094b0ec7a9486b3a19084f5ae7f4db53560",
+                  "size": 6079018495
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser2.aimodel/metadata.json",
+                  "sha256": "eb8c46e76405eacfd192fa9fc61cee854aa27d53ea3f8c7b1db8f9c06f20af3b",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser3.aimodel/main.hash",
+                  "sha256": "345dddea4d032d1e2def269449839b5f9a3ecb52c7f9e6917002a405c8935b1e",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser3.aimodel/main.mlirb",
+                  "sha256": "bae3cb3bd04226f6196a7e33e7709818fedd10bea52fe114686425d21433c288",
+                  "size": 6079831986
+                },
+                {
+                  "path": "krea2_turbo_realism-denoiser3.aimodel/metadata.json",
+                  "sha256": "6e6ceb4e04e80e0a718f9f4156694703ed3cd21b457d73fe77e87e272d5db657",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo_realism-text.aimodel/main.hash",
+                  "sha256": "12c73b7e20fd64d59b3fc2fab8569e780af75d318fc48b70bab349c1eaad6654",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-text.aimodel/main.mlirb",
+                  "sha256": "630a4ce2a8cf2d0d24d91acd6f3e52fd3dbbbe9a01bdf19c2d21aa023ee60a12",
+                  "size": 7843741152
+                },
+                {
+                  "path": "krea2_turbo_realism-text.aimodel/metadata.json",
+                  "sha256": "da00b8d60bc455c2419aaa0935eb844309c166bcd23b117d5c053bfd77454b90",
+                  "size": 105
+                },
+                {
+                  "path": "krea2_turbo_realism-vae.aimodel/main.hash",
+                  "sha256": "fe588e75059c13c638cf454ca9dfb2bb6ac4c38c1d0dd606d33ff8aacc70a0b9",
+                  "size": 32
+                },
+                {
+                  "path": "krea2_turbo_realism-vae.aimodel/main.mlirb",
+                  "sha256": "1da237634f39681656c0ae5da2dc80fd1f29affbdc099f43ca822bcf2df2aa9e",
+                  "size": 52579084
+                },
+                {
+                  "path": "krea2_turbo_realism-vae.aimodel/metadata.json",
+                  "sha256": "b40e98f51e9ce352a4511a4574010a4720441f360b079c7cdd4c7dcccbbd3763",
+                  "size": 105
+                },
+                {
+                  "path": "tokenizer/chat_template.jinja",
+                  "sha256": "3636d0f0bd6bef02654cdffdc447b79cb2cef8ab02cc75267345946291a489e4",
+                  "size": 5292
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+                  "size": 11422650
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "c871ed314285a377eccf509b906aa5fe015d5e79a3ddab2c198467329127ead6",
+                  "size": 664
+                }
+              ],
+              "subtree": ""
+            }
+          },
+          "driver": "krea2@1"
+        }
+      }
     }
   ],
   "schema": 1
