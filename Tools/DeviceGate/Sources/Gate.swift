@@ -5,19 +5,59 @@ import AetherSpeech
 import Darwin
 import Foundation
 
-/// The on-device gates (docs/DEVICE.md): SD-Turbo and Kokoro on a physical iPhone, against the same CPU references and
-/// bars as the Mac gates (`LatentDiffusionGateTests`, `KokoroGateTests`). `run-on-device.sh` copies the bundles and
-/// references into Documents and launches with `--run-id`; the report goes to Documents/gate.json and each output
-/// to Documents/out/ (raw little-endian float32) for the Mac-versus-device comparison.
+/// The on-device gates (docs/DEVICE.md): SD-Turbo, Kokoro and the M4 models (`VisionGates.swift`) on a physical
+/// iPhone, against the same CPU references and bars as the Mac gates (`LatentDiffusionGateTests`, `KokoroGateTests`,
+/// the M4 `*GateTests`). `run-on-device.sh` copies the bundles and references into Documents and launches with
+/// `--run-id` and `--gates`; the report goes to Documents/gate.json and each SD-Turbo and Kokoro output to
+/// Documents/out/ (raw little-endian float32) for the Mac-versus-device comparison.
 struct Report: Codable {
     struct Check: Codable { var name: String; var passed: Bool; var detail: String }
     var runID: String
     var device: String
     var architecture: String
     var availableAtLaunchMB: Int
+    var gates: [String] = []
     var checks: [Check] = []
     var measurements: [String: Double] = [:]
+    /// `ComputeUnitKind.availableKinds` on this device.
+    var computeUnitKinds: [String]?
+    /// Model id → SHA-256 of the bundle's SHA256SUMS as copied to the device: which export was measured.
+    var bundles: [String: String] = [:]
+    /// The M4 placement measurement: each model under each compute unit. Not checks: the Neural Engine run never
+    /// fails the gate.
+    var placement: [Placement] = []
+    /// Set when every requested gate has reported.
+    var finished = false
     var passed: Bool { checks.allSatisfy(\.passed) }
+
+    struct Placement: Codable {
+        var model: String
+        var compute: String
+        var status = "not run"
+        /// Within the Mac gate's bars on every parity case.
+        var withinBars: Bool?
+        var failed: [String] = []
+        var parity: [String] = []
+        /// Load, the first request's specialization (or cache read) and the parity cases.
+        var parityAndLoadSeconds: Double?
+        var iterations: Int?
+        var loopSeconds: Double?
+        var medianMS: Double?
+        var p90MS: Double?
+        var minMS: Double?
+        /// Per inference, over the sustained run: the CPU energy billed to the app (`task_energy`), the GPU time billed
+        /// to it (`task_gpu_utilisation`) and its CPU time.
+        var cpuEnergyMJPerRun: Double?
+        var gpuMSPerRun: Double?
+        var cpuMSPerRun: Double?
+        var ledgerPeakMB: Double?
+        /// The app's physical footprint after the run, less before the load (the model is still loaded).
+        var footprintDeltaMB: Double?
+        /// The process's peak so far (monotonic over the run).
+        var physFootprintPeakMB: Double?
+        var thermalStart: String?
+        var thermalEnd: String?
+    }
 }
 
 @MainActor
@@ -35,10 +75,16 @@ enum Gate {
         let machine = withUnsafeBytes(of: name.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
         report = Report(runID: runID, device: machine, architecture: Device.current.architecture,
                         availableAtLaunchMB: Int(os_proc_available_memory() >> 20))
+        let gates = args.firstIndex(of: "--gates").flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil }
+            .map { $0.split(separator: ",").map(String.init) } ?? ["sd-turbo", "kokoro", "m4"]
+        report.gates = gates
         try? FileManager.default.createDirectory(at: documents.appending(path: "out"), withIntermediateDirectories: true)
-        await log("run \(runID) on \(machine) (\(Device.current.architecture)), \(report.availableAtLaunchMB) MB available")
-        await step("sd-turbo", sdTurbo)
-        await step("kokoro", kokoro)
+        await log("run \(runID) on \(machine) (\(Device.current.architecture)), \(report.availableAtLaunchMB) MB available, "
+                  + "gates \(gates)")
+        if gates.contains("sd-turbo") { await step("sd-turbo", sdTurbo) }
+        if gates.contains("kokoro") { await step("kokoro", kokoro) }
+        if gates.contains("m4") { await step("m4", m4) }
+        report.finished = true
         save()
         return report
     }
