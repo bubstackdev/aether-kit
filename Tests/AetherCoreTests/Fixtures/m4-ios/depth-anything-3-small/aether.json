@@ -1,0 +1,126 @@
+{
+  "assets": {
+    "main": {
+      "files": [
+        {
+          "bytes": 11355,
+          "path": "LICENSE",
+          "sha256": "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870"
+        },
+        {
+          "bytes": 980,
+          "path": "NOTICE",
+          "sha256": "00b5ac0e586fb2b4ed1ddaf77620a57a114ea9bbca4300d5f1d272c69f1cc961"
+        },
+        {
+          "bytes": 973,
+          "path": "README.md",
+          "sha256": "fd23dddfcbce543301fda13952c3c314910851b1a6468d7f8dda0162a44b3938"
+        },
+        {
+          "bytes": 32,
+          "path": "depth_anything_3_small.aimodel/main.hash",
+          "sha256": "f8dd868a7026055f8ce57532576f5926ef45fe95ac37126732829c9bb4251090"
+        },
+        {
+          "bytes": 61193449,
+          "path": "depth_anything_3_small.aimodel/main.mlirb",
+          "sha256": "1aa7b0c9a6bc80e15e93bae9ccadc4f4921538b92fddb086a0c48f7414557a04"
+        },
+        {
+          "bytes": 403,
+          "path": "depth_anything_3_small.aimodel/metadata.json",
+          "sha256": "f3f408528a29bccb66baac1f79cd49c3ada3b9fee3f2d759b7f9623473bf168e"
+        }
+      ],
+      "subtree": ""
+    }
+  },
+  "driver": "depth-estimator@1",
+  "graphs": {
+    "estimator": {
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:depth_anything_3_small.aimodel",
+      "function": "main",
+      "inputs": {
+        "image": "image"
+      },
+      "outputs": {
+        "confidence": "depth_conf",
+        "depth": "depth"
+      }
+    }
+  },
+  "id": "depth-anything-3-small",
+  "license": "Apache-2.0",
+  "postprocess": {
+    "depth": {
+      "polarity": "largerIsFarther",
+      "resizeBack": true
+    },
+    "kind": "depth",
+    "x-notes": "depth: exp-activated relative depth (affine-invariant up to scale; not metric), larger is farther. confidence: exp(x) + 1, >= 1, larger is more confident. Both [1,504,504] float32, row-major over the stretched 504 x 504 input."
+  },
+  "precision": {
+    "activations": "fp16 backbone, fp32 head",
+    "components": {
+      "backbone": "fp16 (upstream runs it under fp16/bf16 autocast)",
+      "head": "fp32 (upstream disables autocast for it)",
+      "io": "image float16; depth and depth_conf float32"
+    },
+    "weights": "fp16 backbone, fp32 head"
+  },
+  "preprocess": {
+    "image": {
+      "channelOrder": "RGB",
+      "colorSpace": "sRGB",
+      "hostDType": "float32",
+      "layout": "NCHW",
+      "mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": "exif",
+      "resize": {
+        "filter": "pillowBicubic",
+        "mode": "stretch",
+        "size": [
+          504,
+          504
+        ]
+      },
+      "scale": 0.00392156862745098,
+      "std": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "x-notes": "ImageNet normalization (mean 0.485/0.456/0.406, std 0.229/0.224/0.225) is in the graph: feed RGB on [0,1]. The graph input is float16; the host builds float32 and converts. Upstream resizes the long side to 504 (cv2 INTER_AREA down, INTER_CUBIC up) and rounds to multiples of 14; this static graph takes a 504 x 504 stretch, with Pillow's bicubic (the gate reference's resize, matched bit for bit)."
+    }
+  },
+  "provenance": {
+    "exportScript": "c97c52127787fe41aedad331afe41f4f976227d13e1cba2ad29b3c20bc8b7b51",
+    "producer": "aether-kit Forge/depth/export_depth.py",
+    "refs": {
+      "exportReport": "export-report.json",
+      "forgeLockSHA256": "6729c123d0399129ae8ed3db306a9a0b680da0f9b61890218c328a7ac6e1920a",
+      "upstreamCode": "ByteDance-Seed/Depth-Anything-3@3d835ec1a5802d64a8b8b15f817a1ab54809bfe4"
+    },
+    "source": "depth-anything/DA3-SMALL",
+    "sourceRevision": "e08cab65ca0ec38e7826075418411ab90cab4da3"
+  },
+  "schema": 1,
+  "task": "depth-estimation",
+  "variant": {
+    "platform": "ios"
+  },
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  }
+}

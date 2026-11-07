@@ -1,0 +1,139 @@
+{
+  "assets": {
+    "main": {
+      "files": [
+        {
+          "bytes": 11371,
+          "path": "LICENSE",
+          "sha256": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"
+        },
+        {
+          "bytes": 718,
+          "path": "NOTICE",
+          "sha256": "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9"
+        },
+        {
+          "bytes": 920,
+          "path": "README.md",
+          "sha256": "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600"
+        },
+        {
+          "bytes": 32,
+          "path": "yolox_s.aimodel/main.hash",
+          "sha256": "f74df33ec5c71e522e084fac92f4bec44acac169b3ac5172f7de51611aede9e6"
+        },
+        {
+          "bytes": 35987987,
+          "path": "yolox_s.aimodel/main.mlirb",
+          "sha256": "dfd7efb937020aec1872fa6f45e45b8679c68889fe6b62b97b48c6886933dbf0"
+        },
+        {
+          "bytes": 516,
+          "path": "yolox_s.aimodel/metadata.json",
+          "sha256": "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89"
+        }
+      ],
+      "subtree": ""
+    }
+  },
+  "driver": "detector-dense@1",
+  "graphs": {
+    "detector": {
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "file": "main:yolox_s.aimodel",
+      "function": "main",
+      "inputs": {
+        "image": "image"
+      },
+      "outputs": {
+        "preds": "preds"
+      }
+    }
+  },
+  "id": "yolox-s",
+  "labels": {
+    "set": "coco-91",
+    "x-notes": "class index c (0..79, contiguous) is COCO's c-th detection category in ascending category-id order; its COCO id is the c-th of the 80 used ids of coco-91 (1..90 without 12, 26, 29, 30, 45, 66, 68, 69, 71, 83). Names as upstream's COCO_CLASSES."
+  },
+  "license": "Apache-2.0",
+  "postprocess": {
+    "activation": "applied",
+    "boxFormat": "cxcywh",
+    "boxSpace": "letterboxPixels",
+    "classIndex": "contiguous",
+    "defaults": {
+      "maxDetections": 50,
+      "scoreThreshold": 0.3
+    },
+    "kind": "denseNms",
+    "nms": {
+      "iou": 0.45,
+      "type": "perClass"
+    },
+    "x-notes": "preds [1,8400,85] float32, per anchor (80x80 stride 8, 40x40 stride 16, 20x20 stride 32, row-major): cx, cy, w, h in letterboxed input pixels (decoded in the graph), objectness, 80 class probabilities (sigmoid in the graph). score = obj * max(cls), class = argmax(cls); keep score >= threshold; greedy NMS per class suppressing IoU > 0.45 (xyxy); then the top maxDetections by score (upstream yolox.utils.postprocess). Map back to the source image by dividing by the letterbox ratio r."
+  },
+  "precision": {
+    "activations": "fp32",
+    "components": {
+      "io": "image float32; preds float32"
+    },
+    "weights": "fp32"
+  },
+  "preprocess": {
+    "image": {
+      "channelOrder": "BGR",
+      "colorSpace": "deviceRGB",
+      "hostDType": "float32",
+      "layout": "NCHW",
+      "mean": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": "exif",
+      "resize": {
+        "anchor": "topLeft",
+        "filter": "pillowBilinear",
+        "mode": "letterbox",
+        "padValue": 114,
+        "size": [
+          640,
+          640
+        ]
+      },
+      "scale": 1.0,
+      "std": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "x-notes": "Upstream preproc (yolox/data/data_augment.py): r = min(640 / h, 640 / w), resize to (int(w r), int(h r)) (cv2 INTER_LINEAR), paste top-left on a 640 x 640 canvas filled with 114, BGR (OpenCV's decode order, no colour management), 0..255 with no scaling or normalization (the 0.1.1rc0 non-legacy weights). The references (reference_yolox.py) resize with Pillow BILINEAR in that geometry, which pillowBilinear and the kit's letterbox reproduce exactly. The graph input is float32."
+    }
+  },
+  "provenance": {
+    "exportScript": "662820213e7dfc70cf9960b0a2e2212f558e8da4d51ff4e5a77e989ef09a1ee3",
+    "producer": "aether-kit Forge/yolox/export_yolox.py",
+    "refs": {
+      "exportReport": "export-report.json",
+      "forgeLockSHA256": "6729c123d0399129ae8ed3db306a9a0b680da0f9b61890218c328a7ac6e1920a",
+      "upstreamCode": "Megvii-BaseDetection/YOLOX@6ddff4824372906469a7fae2dc3206c7aa4bbaee",
+      "weights": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth",
+      "weightsSHA256": "f55ded7181e1b0c13285c56e7790b8f0e8f8db590fe4edb37f0b7f345c913a30"
+    },
+    "source": "Megvii-BaseDetection/YOLOX",
+    "sourceRevision": "0.1.1rc0:yolox_s.pth"
+  },
+  "schema": 1,
+  "task": "object-detection",
+  "variant": {
+    "platform": "ios"
+  },
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  }
+}

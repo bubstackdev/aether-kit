@@ -57,24 +57,29 @@ struct CatalogTests {
         #expect(try ModelRef.resolve("sd-turbo", for: mac).asset("main")?.repo == "aether-models/aether-kit-sd-turbo")
         for device in [mac, phone] { _ = try ModelRef.resolve("kokoro-82m", for: device) }
         _ = try ModelRef.resolve("flux2-klein-4b", for: mac)
-        // Depth Anything 3 small (M4b) is macOS-only until an iOS export is qualified.
-        #expect(try ModelRef.resolve("depth-anything-3-small", for: mac).driver == .depthEstimator)
-        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("depth-anything-3-small", for: phone) }
-        // YOLOX-S (M4e) likewise.
-        #expect(try ModelRef.resolve("yolox-s", for: mac).driver == .detectorDense)
-        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("yolox-s", for: phone) }
-        // RF-DETR nano and seg-nano (M4f) are macOS-only, like the other M4 exports so far.
-        for id in ["rf-detr-nano", "rf-detr-seg-nano"] {
-            #expect(try ModelRef.resolve(id, for: mac).driver == .detectorDetr)
-            #expect(throws: AetherError.self) { _ = try ModelRef.resolve(id, for: phone) }
+        // The six M4 JIT exports serve both platforms (qualified on an iPhone 19,4, h19p; docs/DEVICE.md): the iOS
+        // variant is the macOS export's files with the `ios` branch's manifest (`variant.platform: ios`), one repo.
+        // EmbeddingGemma's repo is gated (a token installs it).
+        let m4: [(String, DriverID)] = [
+            ("depth-anything-3-small", .depthEstimator), ("embeddinggemma-300m", .textEmbedder),
+            ("clip-vit-b32", .clipJoint), ("yolox-s", .detectorDense), ("rf-detr-nano", .detectorDetr),
+            ("rf-detr-seg-nano", .detectorDetr),
+        ]
+        for (id, driver) in m4 {
+            let macRef = try ModelRef.resolve(id, for: mac)
+            #expect(macRef.driver == driver && macRef.variant == "macos", "\(id)")
+            for device in [phone, Device(platform: .iOS, architecture: "h19p")] {
+                let ref = try ModelRef.resolve(id, for: device)
+                #expect(ref.driver == driver && ref.variant == "ios" && ref.repo == macRef.repo, "\(id)")
+                let main = try #require(ref.asset("main")), macMain = try #require(macRef.asset("main"))
+                // Same repo, pinned at the ios commit; the same files byte for byte except the manifest.
+                #expect(main.repo == macRef.repo && main.revision != macRef.revision && main.revision.count == 40, "\(id)")
+                let manifest = ".aether/aether.json"
+                #expect(main.files.filter { $0.path != manifest } == macMain.files.filter { $0.path != manifest }, "\(id)")
+                #expect(main.files.first { $0.path == manifest }?.sha256 != macMain.files.first { $0.path == manifest }?.sha256)
+            }
         }
-        // EmbeddingGemma 300M (M4c), likewise macOS-only; its repo is gated (a token installs it), not mature.
-        let gemma = try ModelRef.resolve("embeddinggemma-300m", for: mac)
-        #expect(gemma.driver == .textEmbedder && gemma.repo == "aether-models/aether-kit-embeddinggemma-300m")
-        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("embeddinggemma-300m", for: phone) }
-        // CLIP ViT-B/32 (M4d) likewise, macOS-only.
-        #expect(try ModelRef.resolve("clip-vit-b32", for: mac).driver == .clipJoint)
-        #expect(throws: AetherError.self) { _ = try ModelRef.resolve("clip-vit-b32", for: phone) }
+        #expect(try ModelRef.resolve("embeddinggemma-300m", for: phone).repo == "aether-models/aether-kit-embeddinggemma-300m")
         // Krea 2 (both variants) is macOS-only; the realism merge is marked mature, and only it.
         for id in ["krea-2-turbo", "krea-2-turbo-realism"] {
             _ = try ModelRef.resolve(id, for: mac)

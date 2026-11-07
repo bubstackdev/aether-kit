@@ -16,6 +16,9 @@ entitlement, copies bundles and references into the app's Documents with `device
 with a run ID, and pulls `Documents/gate.json` plus each output as raw float32. The Mac gates write the same outputs
 with `AETHER_GATE_DUMP=<dir>`, for the device-versus-Mac comparison.
 
+The six M4 models qualified on this iPhone ship catalog `ios` variants: the same exports, with an iOS manifest. See
+docs/M4.md, "iOS variants".
+
 ## 2026-11-06: iPhone Duo (`iPhone19,4`), Core AI `h19p`, iOS 27.2
 
 Release build; 6.0 GiB available to the app at launch. Raw result: `Tools/DeviceGate/results/gate-iPhone19,4.json`.
