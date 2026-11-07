@@ -429,6 +429,149 @@
         "fl2va"
       ],
       "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:dced93f95fc3bde46679aa681332f8b441bc4ae9b49173900c7d676115b1269f:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2625145328,
+        "encodingKeyframe": 2211315712,
+        "denoising": 14035635896,
+        "decodingVideo": 12104105984,
+        "decodingAudio": 2249181344
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-atelier-recovery-base-five-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:93462af9fe3d81688db1361363bac44e7260be45d288b8f911977046ea9f6d72:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "1280x704",
+        "704x1280"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2916043320,
+        "encodingKeyframe": 2252245944,
+        "denoising": 22995227112,
+        "decodingVideo": 17518821376,
+        "decodingAudio": 2760297304
+      },
+      "operation_bytes": 402653184,
+      "evidence": "docs/evidence/h3-atelier-recovery-large-five-8-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:5856eca27f590637c3f4ada3146178c6d89e7b41d67753677a63a31913670ebb:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960",
+        "704x704"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2630453768,
+        "encodingKeyframe": 2211381248,
+        "denoising": 14031507056,
+        "decodingVideo": 11872501760,
+        "decodingAudio": 2144520328
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-atelier-recovery-normal-five-4-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:13342b3be921e29c144f87376b8f93e2ff2fbf38784d7b4e02cc2d4a10872eb7:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "544x960",
+        "704x704"
+      ],
+      "maximum_frames": 124,
+      "stage_peak_bytes": {
+        "encoding": 2610940400,
+        "encodingKeyframe": 2211250176,
+        "denoising": 14032277080,
+        "decodingVideo": 11781013504,
+        "decodingAudio": 2179401936
+      },
+      "operation_bytes": 201326592,
+      "evidence": "docs/evidence/h3-atelier-recovery-normal-five-8-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ]
+    },
+    {
+      "execution_identity": "h3.profile/3:5856eca27f590637c3f4ada3146178c6d89e7b41d67753677a63a31913670ebb:turbo4",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo4",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960",
+        "704x704"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2628192800,
+        "encodingKeyframe": 2211250176,
+        "denoising": 24043000224,
+        "decodingVideo": 17164271616,
+        "decodingAudio": 2947795752
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-atelier-recovery-normal-ten-4-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
+    },
+    {
+      "execution_identity": "h3.profile/3:5856eca27f590637c3f4ada3146178c6d89e7b41d67753677a63a31913670ebb:turbo8",
+      "identity_scope": "canvases",
+      "measured_execution_identity": "h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b:turbo8",
+      "device_architecture": "h17c",
+      "canvases": [
+        "960x544",
+        "544x960",
+        "704x704"
+      ],
+      "maximum_frames": 243,
+      "stage_peak_bytes": {
+        "encoding": 2629863920,
+        "encodingKeyframe": 2211250176,
+        "denoising": 24062054840,
+        "decodingVideo": 16783215568,
+        "decodingAudio": 3228601200
+      },
+      "operation_bytes": 268435456,
+      "evidence": "docs/evidence/h3-atelier-recovery-normal-ten-8-2026-11-06.json",
+      "tasks": [
+        "fl2va"
+      ],
+      "memory_bar_bytes": 25769803776
     }
   ]
 }
