@@ -65,6 +65,30 @@ struct SerialGateTests {
         #expect(!gate.isBusy)
     }
 
+    /// A caller already cancelled when it arrives at a busy gate throws at once: it never queues, so it neither waits
+    /// for the running turn nor takes a place in line (or under the bound).
+    @Test func aCallerCancelledOnArrivalNeverQueues() async throws {
+        let gate = SerialGate(limit: 1)
+        let latch = Latch()
+        let holder = Task { try await gate.withTurn { await latch.wait() } }
+        await Self.until { gate.isBusy }
+        let ran = Order()
+        let late = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await gate.withTurn { await ran.append(1) }
+        }
+        await #expect(throws: CancellationError.self) { try await late.value }
+        #expect(gate.waiting == 0 && gate.isBusy)  // refused while the holder still holds
+        // It took no place under the bound: the next caller still queues.
+        let next = Task { try await gate.withTurn { 2 } }
+        await Self.until { gate.waiting == 1 }
+        #expect(gate.waiting == 1)
+        await latch.release()
+        try await holder.value
+        #expect(try await next.value == 2)
+        #expect(await ran.values.isEmpty && !gate.isBusy && gate.waiting == 0)
+    }
+
     @Test func aCancelledHolderReleasesItsTurn() async throws {
         let gate = SerialGate()
         let holder = Task {
