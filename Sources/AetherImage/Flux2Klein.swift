@@ -61,8 +61,8 @@ public actor Flux2KleinPipeline {
     let device: Device
     private let load: GraphResidency.Loader
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// Opens an installed bundle; graphs load on the first generation.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws {
@@ -79,14 +79,14 @@ public actor Flux2KleinPipeline {
                     [.user(text)], template: template, context: ["enable_thinking": false],
                     addGenerationPrompt: rule?.addGenerationPrompt ?? true)
             },
-            load: ImageGraphs.validating(loader, manifest: manifest, contract: .flux2Klein),
+            bundle: bundle, load: ImageGraphs.validating(loader, manifest: manifest, contract: .flux2Klein),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
     /// The pipeline over any prompt encoder and graph loader (tests drive it with fakes).
     init(
         manifest: Manifest, device: Device, options: Options, encodePrompt: @escaping PromptEncoder,
-        load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
+        bundle: InstalledBundle? = nil, load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
         try Self.requireMacOS(manifest, device)
         try DriverContract.flux2Klein.validate(manifest)
@@ -119,7 +119,7 @@ public actor Flux2KleinPipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
-        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
     /// FLUX.2, Krea and H3 are qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -160,18 +160,17 @@ public actor Flux2KleinPipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
-        do {
-            let image = try await run(
-                residency, prompt: prompt, conditioning: conditioning, seed: request.seed, schedule: table, grid: grid, size: size)
-            admission.finish()
-            return image
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
+            do {
+                let image = try await run(
+                    residency, prompt: prompt, conditioning: conditioning, seed: request.seed, schedule: table, grid: grid, size: size)
+                admission.finish()
+                return image
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
@@ -179,17 +178,17 @@ public actor Flux2KleinPipeline {
     /// encoder for the call and releases it; nothing is measured.
     func conditioningRows(for prompt: String) async throws -> [Float] {
         let prompt = try Prompt(rendered: try encodePrompt(prompt), rule: flux2.prompt)
-        await turn()
-        defer { endTurn() }
-        let text = try await load(wiring.text.role)
-        return try await encode(prompt, with: text, in: TensorArena()).readFloats()
+        return try await gate.withTurn {
+            let text = try await load(wiring.text.role)
+            return try await encode(prompt, with: text, in: TensorArena()).readFloats()
+        }
     }
 
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
-        await turn()
-        admission.release()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (for tests and diagnostics).
@@ -209,7 +208,7 @@ public actor Flux2KleinPipeline {
         // Prompt: the conditioning rows outlive the text encoder (it may be released before the denoisers load).
         var conditioning: TensorBuffer?
         if let prompt {
-            residency.beginPhase(.perPrompt)
+            try await residency.beginPhase(.perPrompt)
             conditioning = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: arena)
             residency.sample()
             residency.endPhase(.perPrompt)
@@ -217,7 +216,7 @@ public actor Flux2KleinPipeline {
         }
 
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         let latents = try await denoise(
             conditioning: conditioning, provided: provided, seed: seed, schedule: schedule, grid: grid,
             residency: residency, arena: arena)
@@ -225,7 +224,7 @@ public actor Flux2KleinPipeline {
         try Task.checkCancellation()
 
         // Image: the packed tokens, raster order, are the decoder's [rows, columns, channels].
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         let image = try await decode(latents, grid: grid, size: size, residency: residency, arena: arena)
         residency.endPhase(.perImage)
         // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
@@ -284,9 +283,13 @@ public actor Flux2KleinPipeline {
         }
 
         var latents = try SeededGaussianNoise.generate(seed: seed, count: count)
-        var v = [Float](repeating: 0, count: count)
+        // Host buffers reused across steps: the velocity is read into `v`, and each update goes into `next` in one
+        // validating pass before the two swap.
+        var v = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
         for step in 0..<schedule.steps {
-            try sample.write(Float16.self, count: count) { Float16(latents[$0]) }
+            try latents.withUnsafeBufferPointer { x throws(AetherError) in
+                try sample.write(Float16.self, count: count) { Float16(x[$0]) }
+            }
             try sigma.write([schedule.timesteps[step]])
             for (segment, graph) in zip(wiring.segments, graphs) {
                 try Task.checkCancellation()
@@ -297,7 +300,7 @@ public actor Flux2KleinPipeline {
                 residency.sample()
             }
             try velocity.readFloats(0..<count, into: &v)
-            try schedule.advance(step: step, latents: &latents, velocity: v)
+            try schedule.advance(step: step, latents: &latents, velocity: v, scratch: &next)
         }
         return latents
     }
@@ -345,18 +348,6 @@ public actor Flux2KleinPipeline {
         try bindings.bindOutput(wiring.text.conditioning, to: rows)
         try await text.run(&bindings)
         return rows
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }
 

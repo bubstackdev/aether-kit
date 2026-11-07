@@ -38,12 +38,13 @@ public struct PipelineOptions: Sendable {
     /// absent.
     public func admission(
         manifest: Manifest, device: Device, defaultMemory: MemoryBudget, unphasedPhase: Manifest.Residency = .perStep,
-        maximumShapes: Int = 4, load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64
-    ) -> ResidentAdmission {
-        ResidentAdmission(
+        maximumShapes: Int = 4, bundle: InstalledBundle? = nil, load: @escaping GraphResidency.Loader,
+        fileBytes: @escaping (String) -> Int64
+    ) throws(AetherError) -> ResidentAdmission {
+        try ResidentAdmission(
             manifest: manifest, device: device,
             settings: .init(memory: memory ?? defaultMemory, coordinator: coordinator, ledger: ledger, probe: probe,
                             unphasedPhase: unphasedPhase, maximumShapes: maximumShapes),
-            load: load, fileBytes: fileBytes)
+            bundle: bundle, load: load, fileBytes: fileBytes)
     }
 }

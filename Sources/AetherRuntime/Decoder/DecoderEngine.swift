@@ -145,12 +145,16 @@ public actor DecoderEngine: LanguageEngine {
     public nonisolated var maxCapacity: Int { description.maxCapacity }
     public nonisolated var hasRecurrentState: Bool { description.hasRecurrentState }
     public private(set) var canary: CanaryReport?
+    /// The bundle's reader lease, held until the engine is released.
+    private var bundleLease: BundleReadLease?
     public private(set) var decodeMode: DecodeMode
     public var decodeModeDescription: String { decodeMode.description }
 
     /// Loads `manifest`'s decoder graph from an installed bundle. Compute and the reshape hint come from the
-    /// manifest; capacity from the memory budget (``KVSizing``).
+    /// manifest; capacity from the memory budget (``KVSizing``). A bundle from a `ModelStore` stays leased
+    /// (``InstalledBundle/readLease()``) for the engine's lifetime, so the store refuses to remove it meanwhile.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws(AetherError) {
+        let lease = try bundle.readLease()
         guard manifest.driver == .decoderLM else {
             throw .manifestMismatch(field: "driver", expected: DriverID.decoderLM.description, found: manifest.driver.description)
         }
@@ -181,6 +185,7 @@ public actor DecoderEngine: LanguageEngine {
         let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] })
         try await self.init(backends: pair, graph: graph, device: device, options: options, metal: metal, modelBytes: modelBytes)
         loadedModelBytes = (gpu: gpuDelta, disk: diskBytes(url))
+        bundleLease = lease
     }
 
     /// An engine over any ``GraphBackend`` pair (tests drive the fake decoder through this). `graph` supplies the

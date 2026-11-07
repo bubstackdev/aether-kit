@@ -25,10 +25,40 @@ struct ResidentAdmissionTests {
         memory: MemoryBudget = .bytes(1 << 40), coordinator: ResourceCoordinator? = nil, ledger: FootprintLedger = .init(),
         probe: GPUMemoryProbe = GPUMemoryProbe { 0 }, maximumShapes: Int = 4
     ) throws -> ResidentAdmission {
-        ResidentAdmission(
+        try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
             settings: .init(memory: memory, coordinator: coordinator, ledger: ledger, probe: probe, maximumShapes: maximumShapes),
             load: { _ in Inert() }, fileBytes: { files[$0] ?? 0 })
+    }
+
+    /// Second code review, batch C item 2: each residency waits on the plan's overlap and shares the admission's
+    /// release log, so a release by an earlier residency (a profile change here) still counts at the next boundary.
+    @Test func residenciesShareTheReleaseLogAndThePlansOverlap() async throws {
+        let slept = Mutex<[Duration]>([])
+        let now = Mutex<Duration>(.zero)
+        let clock = ReleaseLog.Clock(now: { now.withLock { $0 } },
+                                     sleep: { d in now.withLock { $0 += d }; slept.withLock { $0.append(d) } })
+        let level = Level()
+        let admission = try ResidentAdmission(
+            manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
+            settings: .init(memory: .bytes(115), coordinator: nil, ledger: .init(), probe: level.probe,
+                            releaseClock: clock),
+            load: { _ in Inert() }, fileBytes: { Self.files[$0] ?? 0 })
+        let first = try admission.begin(profile: "a")
+        #expect(first.mode == .perPhase && first.releases === admission.releases)
+        #expect(first.overlapAllowance == [.perPrompt: 10, .perStep: 10, .perImage: 100])
+        try await first.beginPhase(.perPrompt)
+        _ = try await first.graph("textEncoder")
+        level.bytes.withLock { $0 += 10 }
+        first.endPhase(.perPrompt)
+        try await first.beginPhase(.perStep)
+        _ = try await first.graph("denoiser")
+        level.bytes.withLock { $0 += 100 }
+        admission.release()  // a failure mid-steps: 10 + 100 pending
+        let second = try admission.begin(profile: "a")
+        #expect(second !== first && second.releases === admission.releases)
+        try await second.beginPhase(.perPrompt)  // may begin on top of 10 only: waits out both releases
+        #expect(slept.withLock { $0 } == [ReleaseLog.defaultWindow] && admission.releases.pendingBytes == 0)
     }
 
     static func loadAll(_ residency: GraphResidency) async throws {
@@ -61,7 +91,7 @@ struct ResidentAdmissionTests {
     @Test func aMeasurementTheCoordinatorCantHoldReleasesTheResidency() async throws {
         let coordinator = try ResourceCoordinator(capacityBytes: 100)
         let ledger = FootprintLedger()
-        let admission = ResidentAdmission(
+        let admission = try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
             settings: .init(memory: .bytes(1 << 40), coordinator: coordinator, ledger: ledger, probe: GPUMemoryProbe { 0 }),
             load: { _ in Inert() }, fileBytes: { _ in 0 })
@@ -124,7 +154,7 @@ struct ResidentAdmissionTests {
     /// the manifest id alone.
     @Test func ledgerKeysNameTheRevisionAndTheDevice() throws {
         let mac = try Self.admission()
-        let phone = ResidentAdmission(
+        let phone = try ResidentAdmission(
             manifest: try LatentDiffusionTests.manifest(), device: Device(platform: .iOS, architecture: "h19p"),
             settings: .init(memory: .bytes(1 << 40), coordinator: nil, ledger: .init(), probe: GPUMemoryProbe { 0 }),
             load: { _ in Inert() }, fileBytes: { _ in 0 })

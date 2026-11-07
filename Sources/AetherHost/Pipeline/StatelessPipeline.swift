@@ -20,8 +20,8 @@ public final class StatelessPipeline {
     public let manifest: Manifest
     public let options: PipelineOptions
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// The pipeline over an installed bundle's graphs. Nothing loads until the first request. `defaultMemory` is the
     /// budget when the options give none.
@@ -31,7 +31,7 @@ public final class StatelessPipeline {
     ) throws(AetherError) {
         try self.init(
             manifest: manifest, device: device, contract: contract, options: options, defaultMemory: defaultMemory,
-            load: GraphResidency.bundleLoader(
+            bundle: bundle, load: GraphResidency.bundleLoader(
                 bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
@@ -40,16 +40,16 @@ public final class StatelessPipeline {
     /// `contract` before use.
     public init(
         manifest: Manifest, device: Device, contract: DriverContract, options: PipelineOptions,
-        defaultMemory: MemoryBudget = .platformDefault, load: @escaping GraphResidency.Loader,
-        fileBytes: @escaping (String) -> Int64
+        defaultMemory: MemoryBudget = .platformDefault, bundle: InstalledBundle? = nil,
+        load: @escaping GraphResidency.Loader, fileBytes: @escaping (String) -> Int64
     ) throws(AetherError) {
         try contract.validate(manifest)
         self.manifest = manifest
         self.options = options
         // Static graphs have no residency: everything stays loaded, measured under `perStep`, one shape.
-        admission = options.admission(
+        admission = try options.admission(
             manifest: manifest, device: device, defaultMemory: defaultMemory, unphasedPhase: .perStep, maximumShapes: 1,
-            load: GraphResidency.validating(load, manifest: manifest, contract: contract), fileBytes: fileBytes)
+            bundle: bundle, load: GraphResidency.validating(load, manifest: manifest, contract: contract), fileBytes: fileBytes)
     }
 
     /// Roles currently loaded.
@@ -64,39 +64,26 @@ public final class StatelessPipeline {
         try Task.checkCancellation()
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: profile)
-        do {
-            residency.beginPhase(.perStep)
-            let result = try await body(residency)
-            residency.endPhase(.perStep)
-            admission.finish()
-            return result
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: profile)
+            do {
+                try await residency.beginPhase(.perStep)
+                let result = try await body(residency)
+                residency.endPhase(.perStep)
+                admission.finish()
+                return result
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph and the reservation, waiting for a running request. The next request loads them again.
     public func unload() async {
-        await turn()
-        admission.release()
-        endTurn()
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
         }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }
 

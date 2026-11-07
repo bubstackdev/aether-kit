@@ -138,12 +138,21 @@ public struct ResidencyPlan: Sendable, Hashable {
             let held = phases.values.reduce(0) { $0 + $1.heldBytes }
             return held + (phases.values.map { $0.peakBytes - $0.heldBytes }.max() ?? 0)
         case .perPhase:
-            let order = Manifest.Residency.allCases.filter { phases[$0] != nil }
-            return order.indices.map { i in
-                let previous = order.count > 1 ? phases[order[(i + order.count - 1) % order.count]]!.heldBytes : 0
-                return previous + phases[order[i]]!.peakBytes
-            }.max() ?? 0
+            let overlap = overlap(phases)
+            return phases.map { phase, footprint in (overlap[phase] ?? 0) + footprint.peakBytes }.max() ?? 0
         }
+    }
+
+    /// Per phase, the released memory each phase's peak is counted on top of: what the phase before it in the cycle
+    /// holds (none for a single phase). ``GraphResidency`` makes this true by waiting at a phase boundary while more
+    /// than this is still returning (``ReleaseLog``).
+    public static func overlap(_ phases: [Manifest.Residency: PhaseFootprint]) -> [Manifest.Residency: Int64] {
+        let order = Manifest.Residency.allCases.filter { phases[$0] != nil }
+        var overlap: [Manifest.Residency: Int64] = [:]
+        for (i, phase) in order.enumerated() {
+            overlap[phase] = order.count > 1 ? phases[order[(i + order.count - 1) % order.count]]!.heldBytes : 0
+        }
+        return overlap
     }
 
     /// Everything resident if that fits `budget`, else per phase if that fits, else
@@ -203,6 +212,75 @@ extension Manifest.Residency {
     var order: Int { Self.allCases.firstIndex(of: self)! }
 }
 
+/// Released graphs whose memory may not be back yet: each release's bytes and when it happened. A released graph's
+/// memory returns seconds late (about 5 s; 0.0.x saw 1–6 s), so a release counts as pending for `window` after it.
+///
+/// The per-phase plan counts each phase's peak on top of the phase before it only (``ResidencyPlan/overlap(_:)``).
+/// Several short phases, or back-to-back generations (SD-Turbo's phases last well under a second), would overlap
+/// more than that, so ``GraphResidency`` enforces a reclamation boundary: a per-phase phase begins only once no more
+/// than the plan's overlap is pending (``reclaim(allowing:)``), waiting for the oldest releases to age out. The wait is
+/// by time alone: the probe can't tell a returned release from other allocations.
+///
+/// One per ``ResidentAdmission`` (so it spans its residencies and generations); not `Sendable`, owned by the driver's
+/// actor like the residency.
+public final class ReleaseLog {
+    /// The log's time source: tests advance a fake one.
+    public struct Clock: Sendable {
+        /// Monotonic time since some origin.
+        public var now: @Sendable () -> Duration
+        public var sleep: @Sendable (Duration) async throws -> Void
+
+        public init(now: @escaping @Sendable () -> Duration, sleep: @escaping @Sendable (Duration) async throws -> Void) {
+            self.now = now
+            self.sleep = sleep
+        }
+
+        public static let continuous: Clock = {
+            let origin = ContinuousClock.now
+            return Clock(now: { ContinuousClock.now - origin }, sleep: { try await Task.sleep(for: $0) })
+        }()
+    }
+
+    /// How long a release counts as pending (0.0.x's longest observed delay).
+    public static let defaultWindow: Duration = .seconds(6)
+
+    public let window: Duration
+    private let clock: Clock
+    private var entries: [(at: Duration, bytes: Int64)] = []
+
+    public init(window: Duration = ReleaseLog.defaultWindow, clock: Clock = .continuous) {
+        self.window = window
+        self.clock = clock
+    }
+
+    /// Notes that graphs holding `bytes` were released now.
+    public func record(_ bytes: Int64) {
+        guard bytes > 0 else { return }
+        entries.append((clock.now(), bytes))
+    }
+
+    /// The bytes released within the window.
+    public var pendingBytes: Int64 {
+        prune(clock.now())
+        return entries.reduce(0) { $0 + $1.bytes }
+    }
+
+    /// Waits until at most `allowance` released bytes are pending, sleeping until the oldest releases age out. Throws
+    /// `CancellationError` if the task is cancelled while it waits.
+    public func reclaim(allowing allowance: Int64) async throws {
+        while true {
+            let now = clock.now()
+            prune(now)
+            guard entries.reduce(0, { $0 + $1.bytes }) > allowance, let oldest = entries.first else { return }
+            try await clock.sleep(oldest.at + window - now)
+        }
+    }
+
+    private func prune(_ now: Duration) {
+        entries.removeAll { now - $0.at >= window }
+    }
+}
+
 /// Loads a driver's graphs on demand, measures each phase, and releases graphs per a ``ResidencyPlan``.
 ///
 /// Non-`Sendable`, like ``Graph``: the driver's actor owns it. A phase is measured from ``beginPhase(_:)`` to
@@ -221,6 +299,13 @@ public final class GraphResidency {
     private let probe: GPUMemoryProbe
     private let samplingInterval: Duration?
     private let load: Loader
+    /// Releases whose memory may still be returning (shared with the admission's other residencies).
+    public let releases: ReleaseLog
+    /// Per phase, the released bytes the plan counted its peak on top of (``ResidencyPlan/overlap(_:)``); a per-phase
+    /// phase begins once no more than this is pending. Absent for a phase: the ledger's held bytes of the phase before
+    /// it.
+    public var overlapAllowance: [Manifest.Residency: Int64] = [:]
+    private let phaseOrder: [Manifest.Residency]
     private var loaded: [String: any GraphBackend] = [:]
     private var open: (phase: Manifest.Residency, baseline: Int64, observed: Int64, meter: PeakMeter)?
     /// The baseline of graphs released and not yet measured past: the next phase measures from it.
@@ -231,15 +316,20 @@ public final class GraphResidency {
     /// same graphs (a new shape's specialization, say), so its footprint is the sum of its occurrences' growth, not the
     /// largest single one.
     private var heldSoFar: [Manifest.Residency: Int64] = [:]
+    /// The lowest level a phase began at with no graph loaded: what the process held before this model's graphs.
+    private var unloadedLevel: Int64?
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
-    /// may still be returning.
+    /// may still be returning. `releases` is the log of released graphs (absent: a new one on the continuous clock).
     public init(
         manifest: Manifest, mode: ResidencyPlan.Mode, ledger: FootprintLedger, model: String? = nil, profile: String = "",
         probe: GPUMemoryProbe = .system, samplingInterval: Duration? = .milliseconds(5), releasedBaseline: Int64? = nil,
-        load: @escaping Loader
+        releases: ReleaseLog = ReleaseLog(), load: @escaping Loader
     ) {
+        self.releases = releases
+        let phases = Set(manifest.graphs.values.compactMap(\.residency))
+        phaseOrder = Manifest.Residency.allCases.filter(phases.contains)
         self.releasedBaseline = releasedBaseline
         self.mode = mode
         self.ledger = ledger
@@ -304,8 +394,12 @@ public final class GraphResidency {
     /// profile change), the phase measures from the level before they loaded: their memory comes back seconds late,
     /// and a baseline that still includes it would under-count this phase by up to their held bytes. That
     /// overestimates instead, the direction admission prefers.
-    public func beginPhase(_ phase: Manifest.Residency) {
+    ///
+    /// Per phase, it first waits while more released memory may still be returning than the plan counted this phase
+    /// on top of (``ReleaseLog/reclaim(allowing:)``); cancelling the task ends the wait with `CancellationError`.
+    public func beginPhase(_ phase: Manifest.Residency) async throws {
         if let current = open { endPhase(current.phase) }
+        if mode == .perPhase { try await releases.reclaim(allowing: allowance(phase)) }
         let observed = probe.allocatedBytes()
         var baseline = observed
         if let released = releasedBaseline {
@@ -313,36 +407,69 @@ public final class GraphResidency {
             releasedBaseline = nil
         }
         floor = min(floor ?? baseline, baseline)
+        if loaded.isEmpty { unloadedLevel = min(unloadedLevel ?? baseline, baseline) }
         let meter = PeakMeter(baseline)
         if let samplingInterval { meter.start(probe: probe, every: samplingInterval) }
         open = (phase, baseline, observed, meter)
     }
 
+    /// The released bytes `phase` may begin on top of.
+    private func allowance(_ phase: Manifest.Residency) -> Int64 {
+        if let allowance = overlapAllowance[phase] { return allowance }
+        guard phaseOrder.count > 1, let i = phaseOrder.firstIndex(of: phase) else { return 0 }
+        let previous = phaseOrder[(i + phaseOrder.count - 1) % phaseOrder.count]
+        return ledger.footprint(.init(model: model, profile: profile, phase: previous))?.heldBytes ?? 0
+    }
+
     /// Ends `phase`: records its footprint and, per phase, releases the graphs whose residency is `phase`.
     public func endPhase(_ phase: Manifest.Residency) {
         var started: Int64?
+        var measuredHeld: Int64?
         if let current = open, current.phase == phase {
             started = current.observed
             current.meter.stop()
             let level = probe.allocatedBytes()
             current.meter.observe(level)
             let prior = mode == .allResident ? heldSoFar[phase] ?? 0 : 0
-            let held = prior + (level - current.baseline)
+            var held = prior + (level - current.baseline)
+            var peak = prior + (current.meter.peak - current.baseline)
+            if mode == .allResident, let unloadedLevel {
+                // The sum of occurrences' growth assumes each began with the phase's resident memory counted.
+                // `phys_footprint` doesn't promise that: between requests part of it can drop out and come back when
+                // the graph next runs (Depth Anything 3's gate: ~120 MiB per request, so 15 requests read 1.1 GiB
+                // for a 330 MiB model). What the phase holds can't exceed the level above where the process stood
+                // before any graph loaded, less what the other phases hold.
+                let others = heldSoFar.filter { $0.key != phase }.values.reduce(0, +)
+                held = min(held, max(prior, level - unloadedLevel - others))
+                peak = min(peak, max(held, current.meter.peak - unloadedLevel - others))
+            }
+            measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
             ledger.record(.init(model: model, profile: profile, phase: phase),
-                          PhaseFootprint(peakBytes: prior + (current.meter.peak - current.baseline), heldBytes: held))
+                          PhaseFootprint(peakBytes: peak, heldBytes: held))
             open = nil
         }
         if mode == .perPhase {
             let released = residentRoles.filter { (residency[$0] ?? nil) == phase }
             for role in released { loaded[role] = nil }
+            if !released.isEmpty {
+                releases.record(measuredHeld
+                    ?? ledger.footprint(.init(model: model, profile: profile, phase: phase))?.heldBytes ?? 0)
+            }
             // The next phase measures from where this one started, not from a level that may still hold these graphs.
             if !released.isEmpty, let start = started ?? floor { releasedBaseline = min(releasedBaseline ?? start, start) }
         }
     }
 
-    /// Releases every graph (the driver unloads). An open phase is discarded unrecorded.
+    /// Releases every graph (the driver unloads). An open phase is discarded unrecorded. What the graphs held goes in
+    /// the release log: all resident, every phase's held bytes; per phase, the open phase's growth.
     public func releaseAll() {
+        if !loaded.isEmpty {
+            switch mode {
+            case .allResident: releases.record(heldSoFar.values.reduce(0, +))
+            case .perPhase: releases.record(open.map { probe.allocatedBytes() - $0.baseline } ?? 0)
+            }
+        }
         heldSoFar = [:]
         open?.meter.stop()
         open = nil
