@@ -305,55 +305,91 @@ actor SnapshotCountingEngine: LanguageEngine {
 
 /// Second code review, batch C item 5: the generator and the chat session queue through `SerialGate`, so a request
 /// cancelled while it waits for its turn leaves at once (before: it waited for the running one, then ended).
+///
+/// The running request is held at a `RunGate` (a suspension, not a blocked thread): an earlier version held it in the
+/// reply model with `usleep`, which pinned a cooperative thread for up to 10 s. On a CI runner with few cores (one
+/// cooperative thread each), these two tests and the other held replies running beside them pinned every thread, so
+/// nothing else ran until the holds timed out; the first request then finished and the "queued" one got its turn
+/// before its cancellation was even sent. Each
+/// ordering is now driven explicitly: cancelled before the request reaches the queue, and cancelled once it waits.
 @Suite("Text turns")
 struct TextTurnQueueTests {
-    final class Flag: Sendable {
-        private let value = Mutex(false)
-        var isSet: Bool { value.withLock { $0 } }
-        func set() { value.withLock { $0 = true } }
-    }
+    enum Ordering: CaseIterable, Sendable { case beforeTheQueue, whileQueued }
 
-    /// A reply model that holds its calls until `released` (bounded, so a regression fails instead of hanging).
-    static func held(_ released: Flag, _ entered: Flag) -> @Sendable ([Int32]) -> [Int32] {
-        { _ in
-            entered.set()
-            let deadline = ContinuousClock.now.advanced(by: .seconds(10))
-            while !released.isSet, ContinuousClock.now < deadline { usleep(1_000) }
+    /// The reply prompts the model was asked for (each request's prompt is distinct).
+    final class Prompts: Sendable {
+        private let seen = Mutex<Set<[Int32]>>([])
+        var count: Int { seen.withLock { $0.count } }
+        func reply(_ prefix: [Int32]) -> [Int32] {
+            seen.withLock { _ = $0.insert(prefix) }
             return [12, 12]
         }
     }
 
-    @Test(.timeLimit(.minutes(1))) func aCancelledGeneratorRequestLeavesAtOnce() async throws {
-        let released = Flag(), entered = Flag()
-        let generator = try await FakeChat.generator(reply: Self.held(released, entered))
-        let running = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("first")])) }
-        while !entered.isSet { await Task.yield() }
-        let queued = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("second")])) }
-        try await Task.sleep(for: .milliseconds(50))
-        let cancelledAt = ContinuousClock.now
-        queued.cancel()
-        // A cancelled consumer's stream just ends; what matters is that it ends now, not after the 10 s hold.
-        _ = try? await queued.value
-        #expect(ContinuousClock.now - cancelledAt < .seconds(5), "the queued request left while the first still ran")
-        released.set()
-        _ = try await running.value
+    /// Polls until `condition` holds (bounded, so a regression fails instead of hanging).
+    static func until(_ condition: () -> Bool) async {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(20))
+        while !condition(), ContinuousClock.now < deadline { await Task.yield() }
     }
 
-    @Test(.timeLimit(.minutes(1))) func aCancelledChatTurnLeavesAtOnceAndIsDropped() async throws {
-        let released = Flag(), entered = Flag()
-        let session = try await TextReviewRegressionTests.chat(reply: Self.held(released, entered))
+    /// Starts `request` behind a running one and cancels it in `ordering`: in a task cancelled before it makes the
+    /// call, or once `waiting()` shows it queued. Returns how long it took to leave once cancelled.
+    static func cancelQueued(
+        _ ordering: Ordering, waiting: @escaping @Sendable () -> Int, _ request: @escaping @Sendable () async throws -> Void
+    ) async -> Duration {
+        switch ordering {
+        case .beforeTheQueue:
+            let start = ContinuousClock.now
+            let queued = Task {
+                withUnsafeCurrentTask { $0?.cancel() }
+                try await request()
+            }
+            _ = try? await queued.value
+            return ContinuousClock.now - start
+        case .whileQueued:
+            let queued = Task { try await request() }
+            await until { waiting() == 1 }
+            #expect(waiting() == 1, "the request reached the queue")
+            let cancelledAt = ContinuousClock.now
+            queued.cancel()
+            _ = try? await queued.value
+            return ContinuousClock.now - cancelledAt
+        }
+    }
+
+    @Test(.timeLimit(.minutes(1)), arguments: Ordering.allCases)
+    func aCancelledGeneratorRequestLeavesAtOnce(_ ordering: Ordering) async throws {
+        let held = RunGate(), prompts = Prompts()
+        let generator = try await FakeChat.generator(reply: prompts.reply, runGate: held)
+        let running = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("first")])) }
+        await held.waitForEntry()
+        // A cancelled consumer's stream just ends; what matters is that it ends now, not when the first one does.
+        let left = await Self.cancelQueued(ordering, waiting: { generator.waitingRequests }) {
+            _ = try await FakeChat.collect(generator.generate([ChatMessage.user("second")]))
+        }
+        #expect(left < .seconds(5), "the queued request left while the first still ran")
+        #expect(generator.waitingRequests == 0 && held.entered == 1, "it left the queue and ran nothing")
+        held.open()
+        _ = try await running.value
+        #expect(prompts.count == 1, "the cancelled request never ran")
+    }
+
+    @Test(.timeLimit(.minutes(1)), arguments: Ordering.allCases)
+    func aCancelledChatTurnLeavesAtOnceAndIsDropped(_ ordering: Ordering) async throws {
+        let held = RunGate(), prompts = Prompts()
+        let generator = try await FakeChat.generator(reply: prompts.reply, runGate: held)
+        let session = ChatSession(generator: generator, configuration: .init(parameters: GenerationParameters(maxTokens: 300)))
         let running = Task { try await FakeChat.collect(await session.respond(to: "first")) }
-        while !entered.isSet { await Task.yield() }
-        let queued = Task { try await FakeChat.collect(await session.respond(to: "second")) }
-        try await Task.sleep(for: .milliseconds(50))
-        let cancelledAt = ContinuousClock.now
-        queued.cancel()
-        // A cancelled consumer's stream just ends; what matters is that it ends now, not after the 10 s hold.
-        _ = try? await queued.value
-        #expect(ContinuousClock.now - cancelledAt < .seconds(5), "the queued turn left while the first still ran")
-        released.set()
+        await held.waitForEntry()
+        let left = await Self.cancelQueued(ordering, waiting: { session.waitingTurns }) {
+            _ = try await FakeChat.collect(await session.respond(to: "second"))
+        }
+        #expect(left < .seconds(5), "the queued turn left while the first still ran")
+        #expect(session.waitingTurns == 0 && held.entered == 1, "it left the queue and ran nothing")
+        held.open()
         _ = try await running.value
         let history = await session.history
         #expect(history.map(\.content).first == "first" && history.count == 2)
+        #expect(prompts.count == 1, "the cancelled turn never ran")
     }
 }

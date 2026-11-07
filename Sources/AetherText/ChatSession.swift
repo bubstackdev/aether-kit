@@ -166,6 +166,9 @@ public actor ChatSession {
     /// One turn at a time, in the order sent.
     private let gate = SerialGate()
 
+    /// How many turns wait for the running one (tests observe a turn reaching the queue).
+    nonisolated var waitingTurns: Int { gate.waiting }
+
     private func turn(
         _ message: ChatMessage, parameters: GenerationParameters?,
         check: (@Sendable (String, GenerationSummary) throws -> Void)?,
