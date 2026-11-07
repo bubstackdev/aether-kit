@@ -302,3 +302,58 @@ actor SnapshotCountingEngine: LanguageEngine {
         return out
     }
 }
+
+/// Second code review, batch C item 5: the generator and the chat session queue through `SerialGate`, so a request
+/// cancelled while it waits for its turn leaves at once (before: it waited for the running one, then ended).
+@Suite("Text turns")
+struct TextTurnQueueTests {
+    final class Flag: Sendable {
+        private let value = Mutex(false)
+        var isSet: Bool { value.withLock { $0 } }
+        func set() { value.withLock { $0 = true } }
+    }
+
+    /// A reply model that holds its calls until `released` (bounded, so a regression fails instead of hanging).
+    static func held(_ released: Flag, _ entered: Flag) -> @Sendable ([Int32]) -> [Int32] {
+        { _ in
+            entered.set()
+            let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+            while !released.isSet, ContinuousClock.now < deadline { usleep(1_000) }
+            return [12, 12]
+        }
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aCancelledGeneratorRequestLeavesAtOnce() async throws {
+        let released = Flag(), entered = Flag()
+        let generator = try await FakeChat.generator(reply: Self.held(released, entered))
+        let running = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("first")])) }
+        while !entered.isSet { await Task.yield() }
+        let queued = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("second")])) }
+        try await Task.sleep(for: .milliseconds(50))
+        let cancelledAt = ContinuousClock.now
+        queued.cancel()
+        // A cancelled consumer's stream just ends; what matters is that it ends now, not after the 10 s hold.
+        _ = try? await queued.value
+        #expect(ContinuousClock.now - cancelledAt < .seconds(5), "the queued request left while the first still ran")
+        released.set()
+        _ = try await running.value
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aCancelledChatTurnLeavesAtOnceAndIsDropped() async throws {
+        let released = Flag(), entered = Flag()
+        let session = try await TextReviewRegressionTests.chat(reply: Self.held(released, entered))
+        let running = Task { try await FakeChat.collect(await session.respond(to: "first")) }
+        while !entered.isSet { await Task.yield() }
+        let queued = Task { try await FakeChat.collect(await session.respond(to: "second")) }
+        try await Task.sleep(for: .milliseconds(50))
+        let cancelledAt = ContinuousClock.now
+        queued.cancel()
+        // A cancelled consumer's stream just ends; what matters is that it ends now, not after the 10 s hold.
+        _ = try? await queued.value
+        #expect(ContinuousClock.now - cancelledAt < .seconds(5), "the queued turn left while the first still ran")
+        released.set()
+        _ = try await running.value
+        let history = await session.history
+        #expect(history.map(\.content).first == "first" && history.count == 2)
+    }
+}

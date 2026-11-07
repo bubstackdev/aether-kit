@@ -87,7 +87,7 @@ public actor ModelStore {
         guard (try? ref.validateForStore()) != nil else { return nil }
         let url = bundleURL(for: ref)
         guard let receipt = InstallReceipt.read(at: url), receipt.ref == ref else { return nil }
-        return InstalledBundle(ref: receipt.ref, url: url, isStale: false)
+        return InstalledBundle(ref: receipt.ref, url: url, isStale: false, storeRoot: root)
     }
 
     /// The newest complete install of the same model and variant at any other revision.
@@ -102,7 +102,7 @@ public actor ModelStore {
                   receipt.ref.variant == ref.variant
             else { continue }
             if best == nil || receipt.installedAt > best!.1 {
-                best = (InstalledBundle(ref: receipt.ref, url: url, isStale: true), receipt.installedAt)
+                best = (InstalledBundle(ref: receipt.ref, url: url, isStale: true, storeRoot: root), receipt.installedAt)
             }
         }
         return best?.0
@@ -111,15 +111,10 @@ public actor ModelStore {
     /// A reader lease on an installed bundle: while it is held, no process removes the bundle's files. Throws
     /// ``AetherError/inUse(resource:)`` while an install or removal of that location is running, and
     /// ``AetherError/unknownModel(id:)`` when the bundle is no longer installed.
+    ///
+    /// Pipelines take one by themselves for a bundle this store returned (``InstalledBundle/readLease()``).
     public nonisolated func lease(_ bundle: InstalledBundle) throws(AetherError) -> BundleReadLease {
-        try bundle.ref.validateForStore()
-        guard let lock = try StoreLock.attempt(layout.lock(for: bundle.ref), exclusive: false) else {
-            throw .inUse(resource: bundle.ref.description)
-        }
-        guard let receipt = InstallReceipt.read(at: bundle.url), receipt.ref == bundle.ref else {
-            throw .unknownModel(id: bundle.catalogID)
-        }
-        return BundleReadLease(bundle: bundle, lock: lock)
+        try layout.lease(bundle)
     }
 
     /// Deletes the install for `ref` (and any staged bytes for it). Refuses with ``AetherError/inUse(resource:)`` while
@@ -264,7 +259,7 @@ public actor ModelStore {
         jobs[ref] = nil
         switch outcome {
         case .success(let url):
-            let bundle = InstalledBundle(ref: ref, url: url, isStale: false)
+            let bundle = InstalledBundle(ref: ref, url: url, isStale: false, storeRoot: root)
             for subscriber in job.subscribers.values {
                 subscriber.continuation.yield(.finished(bundle))
                 subscriber.continuation.finish()

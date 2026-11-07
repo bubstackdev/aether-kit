@@ -96,8 +96,8 @@ public actor Generator {
     /// prompt takes their replacements, only the one it reused. What `DecoderEngine.Options.reservedSnapshots`
     /// reserves room for by default; size another engine's memory the same way.
     public static let maxSnapshots = 3
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private nonisolated let gate = SerialGate()
     /// The vocabulary indexed for JSON constraints, built on the first structured request (63 ms for Qwen3 in 0.0.x).
     private var jsonVocabulary: JSONVocabulary?
 
@@ -160,33 +160,25 @@ public actor Generator {
                 return
             }
             defer { grant.release() }
-            await self.acquire()
             do {
-                // A request cancelled while it waited for its turn renders and prefills nothing.
-                try Task.checkCancellation()
-                try await body(self, continuation)
-                continuation.finish()
-            } catch AetherError.runtime(let underlying) where underlying is CancellationError {
-                continuation.finish(throwing: CancellationError())
+                // A request cancelled while it waits for its turn leaves the queue at once: it renders and prefills
+                // nothing.
+                try await self.gate.withTurn {
+                    do {
+                        try await body(self, continuation)
+                        continuation.finish()
+                    } catch AetherError.runtime(let underlying) where underlying is CancellationError {
+                        continuation.finish(throwing: CancellationError())
+                    } catch {
+                        continuation.finish(throwing: error)
+                    }
+                }
             } catch {
                 continuation.finish(throwing: error)
             }
-            await self.release()
         }
         continuation.onTermination = { _ in task.cancel() }
         return stream
-    }
-
-    private func acquire() async {
-        if !busy {
-            busy = true
-            return
-        }
-        await withCheckedContinuation { waiters.append($0) }
-    }
-
-    private func release() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 
     // MARK: - Prefix reuse

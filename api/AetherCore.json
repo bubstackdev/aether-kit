@@ -2794,6 +2794,63 @@
         "usr": "s:10AetherCore0A5ErrorO16AdmissionFailureO19reservationReleasedyA2EmF"
        },
        {
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "AdmissionFailure",
+              "printedName": "AetherCore.AetherError.AdmissionFailure",
+              "usr": "s:10AetherCore0A5ErrorO16AdmissionFailureO"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Tuple",
+              "printedName": "(limit: Swift.Int)"
+             }
+            ],
+            "kind": "TypeFunc",
+            "name": "Function",
+            "printedName": "(Swift.Int) -> AetherCore.AetherError.AdmissionFailure"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "AdmissionFailure",
+              "printedName": "AetherCore.AetherError.AdmissionFailure",
+              "usr": "s:10AetherCore0A5ErrorO16AdmissionFailureO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Metatype",
+            "printedName": "AetherCore.AetherError.AdmissionFailure.Type"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherCore.AetherError.AdmissionFailure.Type) -> (Swift.Int) -> AetherCore.AetherError.AdmissionFailure"
+         }
+        ],
+        "declKind": "EnumElement",
+        "kind": "Var",
+        "mangledName": "$s10AetherCore0A5ErrorO16AdmissionFailureO9queueFullyAESi_tcAEmF",
+        "moduleName": "AetherCore",
+        "name": "queueFull",
+        "printedName": "queueFull",
+        "usr": "s:10AetherCore0A5ErrorO16AdmissionFailureO9queueFullyAESi_tcAEmF"
+       },
+       {
         "accessors": [
          {
           "accessorKind": "get",
@@ -112251,6 +112308,88 @@
       "usr": "s:10AetherCore15InstalledBundleV3ref3url7isStaleAcA8ModelRefV_10Foundation3URLVSbtcfc"
      },
      {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "InstalledBundle",
+        "printedName": "AetherCore.InstalledBundle",
+        "usr": "s:10AetherCore15InstalledBundleV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV2eeoiySbAC_ACtFZ",
+      "moduleName": "AetherCore",
+      "name": "==",
+      "printedName": "==(_:_:)",
+      "static": true,
+      "usr": "s:10AetherCore15InstalledBundleV2eeoiySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherCore",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:10AetherCore15InstalledBundleV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "BundleReadLease",
+          "printedName": "AetherCore.BundleReadLease",
+          "usr": "s:10AetherCore15BundleReadLeaseC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherCore.BundleReadLease?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV9readLeaseAA0d4ReadF0CSgyAA0A5ErrorOYKF",
+      "moduleName": "AetherCore",
+      "name": "readLease",
+      "printedName": "readLease()",
+      "throwing": true,
+      "usr": "s:10AetherCore15InstalledBundleV9readLeaseAA0d4ReadF0CSgyAA0A5ErrorOYKF"
+     },
+     {
       "accessors": [
        {
         "accessorKind": "get",
@@ -112350,66 +112489,6 @@
       "name": "url",
       "printedName": "url(of:)",
       "usr": "s:10AetherCore15InstalledBundleV3url2of10Foundation3URLVSgAA9AssetPathV_tF"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Bool",
-        "printedName": "Swift.Bool",
-        "usr": "s:Sb"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "InstalledBundle",
-        "printedName": "AetherCore.InstalledBundle",
-        "usr": "s:10AetherCore15InstalledBundleV"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "InstalledBundle",
-        "printedName": "AetherCore.InstalledBundle",
-        "usr": "s:10AetherCore15InstalledBundleV"
-       }
-      ],
-      "declAttributes": [
-       "Implements"
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "NonMutating",
-      "implicit": true,
-      "kind": "Function",
-      "mangledName": "$s10AetherCore15InstalledBundleV23__derived_struct_equalsySbAC_ACtFZ",
-      "moduleName": "AetherCore",
-      "name": "__derived_struct_equals",
-      "printedName": "__derived_struct_equals(_:_:)",
-      "static": true,
-      "usr": "s:10AetherCore15InstalledBundleV23__derived_struct_equalsySbAC_ACtFZ"
-     },
-     {
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "Void",
-        "printedName": "()"
-       },
-       {
-        "kind": "TypeNominal",
-        "name": "Hasher",
-        "paramValueOwnership": "InOut",
-        "printedName": "Swift.Hasher",
-        "usr": "s:s6HasherV"
-       }
-      ],
-      "declKind": "Func",
-      "funcSelfKind": "NonMutating",
-      "implicit": true,
-      "kind": "Function",
-      "mangledName": "$s10AetherCore15InstalledBundleV4hash4intoys6HasherVz_tF",
-      "moduleName": "AetherCore",
-      "name": "hash",
-      "printedName": "hash(into:)",
-      "usr": "s:10AetherCore15InstalledBundleV4hash4intoys6HasherVz_tF"
      },
      {
       "accessors": [

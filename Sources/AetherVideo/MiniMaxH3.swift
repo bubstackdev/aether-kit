@@ -116,8 +116,8 @@ public actor MiniMaxH3Pipeline {
     private let tokenize: @Sendable (String) -> [Int32]
     private let load: GraphResidency.Loader
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws {
         try Self.requireMacOS(manifest, device)
@@ -160,8 +160,9 @@ public actor MiniMaxH3Pipeline {
         self.tokenize = tokenize
         self.load = load
         let fileBytes = { [manifest, device] (role: String) in Self.fileBytes(role, bundle: bundle, manifest: manifest, device: device) }
-        admission = options.admission(
-            manifest: manifest, device: device, defaultMemory: .videoGeneration, load: load, fileBytes: fileBytes)
+        admission = try options.admission(
+            manifest: manifest, device: device, defaultMemory: .videoGeneration, bundle: bundle, load: load,
+            fileBytes: fileBytes)
         Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
     }
 
@@ -188,25 +189,24 @@ public actor MiniMaxH3Pipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: plan.profile.key)
-        do {
-            let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
-            admission.finish()
-            return video
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: plan.profile.key)
+            do {
+                let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
+                admission.finish()
+                return video
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph (waiting for a running generation).
     public func unload() async {
-        await turn()
-        admission.release()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (tests and diagnostics).
@@ -263,14 +263,6 @@ public actor MiniMaxH3Pipeline {
         return bytes
     }
 
-    private func turn() async {
-        if busy { await withCheckedContinuation { waiters.append($0) } } else { busy = true }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
-    }
-
     // MARK: - The generation
 
     /// Gate-only boundary tensors.
@@ -289,14 +281,14 @@ public actor MiniMaxH3Pipeline {
         let g = plan.geometry
         trace?.ids = plan.ids
         // Prompt: conditioner chain, then the refiner. The refined text outlives the phase (a host buffer).
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         let host = TensorArena()
         let refined = try await conditionAndRefine(plan, residency: residency, host: host, onProgress: onProgress, trace: trace)
         residency.sample()
         residency.endPhase(.perPrompt)
         try Task.checkCancellation()
 
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         var latents = try g.initialLatents(seed: plan.seed)
         try await denoise(plan, latents: &latents, refined: refined, residency: residency, host: host,
                           onProgress: onProgress, trace: trace)
@@ -304,7 +296,7 @@ public actor MiniMaxH3Pipeline {
         residency.endPhase(.perStep)
         try Task.checkCancellation()
 
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         if let limit = plan.stepLimit, limit < plan.recipe.steps.count {
             residency.endPhase(.perImage)
             return GeneratedVideo(width: g.width, height: g.height, frames: [], audio: nil)

@@ -65,6 +65,25 @@ struct SeededNoiseTests {
 
 @Suite("Flow-matching schedule")
 struct FlowMatchScheduleTests {
+    /// Second code review, batch C item 3: the one-pass update through a reused scratch array is bit-identical to the
+    /// two-pass one, and a failure leaves the latents unchanged.
+    @Test func onePassUpdateMatchesTheTwoPassOneBitForBit() throws {
+        let s = try FlowMatchSchedule(steps: 4, mu: 1.15)
+        var latents = try SeededGaussianNoise.generate(seed: 5, count: 4096)
+        let velocity = try SeededGaussianNoise.generate(seed: 6, count: 4096)
+        var reference = latents, scratch: [Float] = []
+        for step in 0..<s.steps {
+            try s.advance(step: step, latents: &reference, velocity: velocity)
+            try s.advance(step: step, latents: &latents, velocity: velocity, scratch: &scratch)
+            #expect(latents.map(\.bitPattern) == reference.map(\.bitPattern))
+        }
+        var poisoned = velocity
+        poisoned[17] = .infinity
+        let before = latents
+        #expect(throws: AetherError.self) { try s.advance(step: 0, latents: &latents, velocity: poisoned, scratch: &scratch) }
+        #expect(latents.map(\.bitPattern) == before.map(\.bitPattern))
+    }
+
     static let krea = Manifest.Schedule(steps: 8, maxSteps: 50, sigmas: .init(shift: .init(rule: .exponential, mu: 1.15)))
     static let klein = Manifest.Schedule(steps: 4, maxSteps: 50, sigmas: .init(shift: .init(rule: .empirical, empirical: .init(
         lowSteps: 10, lowSlope: 8.73809524e-05, lowIntercept: 1.89833333, highSteps: 200, highSlope: 0.00016927,
@@ -269,7 +288,7 @@ struct ResidencyTests {
         var loads: [String] = []
         let residency = GraphResidency(
             manifest: try Self.krea(), mode: mode, ledger: ledger, profile: "1024x1024", probe: gpu.probe,
-            samplingInterval: nil
+            samplingInterval: nil, releases: ReleaseLog(clock: FakeClock().clock)
         ) { role in
             loads.append(role)
             gpu.add(1)  // a load allocates almost nothing
@@ -277,7 +296,7 @@ struct ResidencyTests {
         }
         let key = { (phase: Manifest.Residency) in FootprintLedger.Key(model: "krea-2-turbo", profile: "1024x1024", phase: phase) }
 
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         _ = try await residency.graph("textEncoder")
         _ = try await residency.graph("textEncoder")  // resident: not loaded again
         gpu.add(900)  // the first run materializes the weights and scratch
@@ -286,7 +305,7 @@ struct ResidencyTests {
         residency.endPhase(.perPrompt)
         #expect(ledger.footprint(key(.perPrompt)) == PhaseFootprint(peakBytes: 901, heldBytes: 601))
 
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         for role in ["denoiser0", "denoiser1", "denoiser2", "denoiser3"] { _ = try await residency.graph(role) }
         residency.endPhase(.perStep)
         // Per phase, the prompt's graphs were released but their memory (the fake never frees it) still counts: the
@@ -303,7 +322,7 @@ struct ResidencyTests {
             #expect(loads.filter { $0 == "textEncoder" }.count == 2)
         }
         await #expect(throws: AetherError.self) { _ = try await residency.graph("refiner") }
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         residency.releaseAll()  // an open phase is discarded unrecorded
         #expect(residency.residentRoles.isEmpty && ledger.footprint(key(.perImage)) == nil)
     }
@@ -315,11 +334,11 @@ struct ResidencyTests {
         let ledger = FootprintLedger()
         let residency = GraphResidency(manifest: try Self.krea(), mode: .perPhase, ledger: ledger, profile: "p",
                                        probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
-        residency.beginPhase(.perPrompt)       // 1000
+        try await residency.beginPhase(.perPrompt)       // 1000
         _ = try await residency.graph("textEncoder")
         gpu.add(600)
         residency.endPhase(.perPrompt)         // released; its 600 not yet returned
-        residency.beginPhase(.perStep)         // the level is still 1600
+        try await residency.beginPhase(.perStep)         // the level is still 1600
         _ = try await residency.graph("denoiser0")
         gpu.add(200)
         residency.sample()                     // 1800
@@ -338,15 +357,119 @@ struct ResidencyTests {
         let manifest = try Self.krea()
         let residency = GraphResidency(manifest: manifest, mode: .allResident, ledger: ledger, profile: "p",
                                        probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         _ = try await residency.graph("textEncoder")
         gpu.add(100)
         residency.endPhase(.perPrompt)
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         gpu.add(80)
         residency.endPhase(.perPrompt)
         #expect(ledger.footprint(.init(model: manifest.id, profile: "p", phase: .perPrompt))
             == PhaseFootprint(peakBytes: 180, heldBytes: 180))
+    }
+
+    /// A clock the test moves: `sleep` advances it at once and records how long was asked for.
+    final class FakeClock: Sendable {
+        let state = Mutex<(now: Duration, slept: [Duration])>((.zero, []))
+        var clock: ReleaseLog.Clock {
+            ReleaseLog.Clock(now: { [self] in state.withLock { $0.now } },
+                             sleep: { [self] d in state.withLock { $0.now += d; $0.slept.append(d) } })
+        }
+        var slept: [Duration] { state.withLock { $0.slept } }
+        func advance(_ d: Duration) { state.withLock { $0.now += d } }
+    }
+
+    /// Second code review, batch C item 2: the per-phase plan counts each phase on top of the phase before it only, but
+    /// short phases (SD-Turbo's are sub-second) overlap more: the image phase began while both the prompt's and the
+    /// steps' memory was still returning. Now a per-phase phase waits until no more than the plan's overlap is pending.
+    @Test func aPerPhasePhaseWaitsForOlderReleasesToAgeOut() async throws {
+        let gpu = FakeGPU()
+        let time = FakeClock()
+        let ledger = FootprintLedger()
+        let releases = ReleaseLog(window: .seconds(6), clock: time.clock)
+        let residency = GraphResidency(manifest: try Self.krea(), mode: .perPhase, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil, releases: releases) { _ in Inert() }
+        residency.overlapAllowance = [.perPrompt: 50, .perStep: 300, .perImage: 200]
+        try await residency.beginPhase(.perPrompt)
+        _ = try await residency.graph("textEncoder")
+        gpu.add(300)
+        residency.endPhase(.perPrompt)            // 300 pending
+        time.advance(.milliseconds(200))
+        try await residency.beginPhase(.perStep)  // 300 ≤ 300: no wait
+        #expect(time.slept.isEmpty)
+        _ = try await residency.graph("denoiser0")
+        gpu.add(-300)                             // the fake returns the prompt's memory mid-phase…
+        gpu.add(200)
+        residency.endPhase(.perStep)              // …and the steps release 200 more: 500 pending
+        time.advance(.milliseconds(300))
+        try await residency.beginPhase(.perImage) // over the 200 allowed: waits for the prompt's release to age out
+        #expect(time.slept == [.milliseconds(5_500)])
+        #expect(releases.pendingBytes == 200)
+        residency.endPhase(.perImage)
+
+        // Back to back: the next generation's prompt may begin on top of 50; the steps' 200 is still returning.
+        try await residency.beginPhase(.perPrompt)
+        #expect(time.slept == [.milliseconds(5_500), .milliseconds(200)] && releases.pendingBytes == 0)
+    }
+
+    @Test func allResidentPhasesNeverWaitAndCancellationEndsAWait() async throws {
+        let time = FakeClock()
+        let resident = ReleaseLog(window: .seconds(6), clock: time.clock)
+        resident.record(1_000)
+        let all = GraphResidency(manifest: try Self.krea(), mode: .allResident, ledger: FootprintLedger(),
+                                 probe: FakeGPU().probe, samplingInterval: nil, releases: resident) { _ in Inert() }
+        try await all.beginPhase(.perPrompt)
+        #expect(time.slept.isEmpty)
+
+        let manifest = try Self.krea()
+        let task = Task {
+            let waiting = ReleaseLog(window: .seconds(60))
+            waiting.record(1_000)
+            let phased = GraphResidency(manifest: manifest, mode: .perPhase, ledger: FootprintLedger(),
+                                        probe: FakeGPU().probe, samplingInterval: nil, releases: waiting) { _ in Inert() }
+            try await phased.beginPhase(.perPrompt)
+        }
+        task.cancel()
+        await #expect(throws: CancellationError.self) { try await task.value }
+    }
+
+    /// The admission hands each residency the plan's overlap and one log across residencies, so a release by an
+    /// earlier residency (a profile change, an unload) still counts.
+    @Test func overlapIsThePreviousPhasesHeldBytes() {
+        let phases: [Manifest.Residency: PhaseFootprint] = [
+            .perPrompt: .init(peakBytes: 10, heldBytes: 5), .perStep: .init(peakBytes: 100, heldBytes: 80),
+            .perImage: .init(peakBytes: 30, heldBytes: 20),
+        ]
+        #expect(ResidencyPlan.overlap(phases) == [.perPrompt: 20, .perStep: 5, .perImage: 80])
+        #expect(ResidencyPlan.overlap([.perStep: .init(peakBytes: 1, heldBytes: 1)]) == [.perStep: 0])
+        #expect(ResidencyPlan.peak(.perPhase, phases) == 110)
+    }
+
+    /// Second code review, batch C item 4: DA3's gate recorded 1137 / 1122 MiB for a model that holds about 330.
+    /// `phys_footprint` dropped ~120 MiB of the resident graph between requests and counted it again when the graph ran,
+    /// so each request's growth re-added it to the sum of occurrences. Now what a phase holds is capped by the level
+    /// above where the process stood before any graph loaded.
+    @Test func aBaselineThatDropsResidentMemoryDoesNotAccumulate() async throws {
+        let gpu = FakeGPU()
+        let ledger = FootprintLedger()
+        let manifest = try Self.krea()
+        let residency = GraphResidency(manifest: manifest, mode: .allResident, ledger: ledger, profile: "p",
+                                       probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
+        let key = FootprintLedger.Key(model: manifest.id, profile: "p", phase: .perStep)
+        try await residency.beginPhase(.perStep)  // 1000, nothing loaded
+        _ = try await residency.graph("denoiser0")
+        gpu.add(300)
+        residency.endPhase(.perStep)
+        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 300, heldBytes: 300))
+        for _ in 0..<5 {
+            gpu.add(-150)                         // between requests, part of the resident memory drops out…
+            try await residency.beginPhase(.perStep)
+            gpu.add(160)                          // …and is counted again when the graph runs (plus 10 of real growth)
+            residency.sample()
+            residency.endPhase(.perStep)
+        }
+        // Before: 300 + 5 · 160 = 1100. The 10 the last request grew is kept.
+        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 350, heldBytes: 350))
     }
 
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {
@@ -354,7 +477,7 @@ struct ResidencyTests {
         let ledger = FootprintLedger()
         let residency = GraphResidency(manifest: try Self.krea(), mode: .perPhase, ledger: ledger, probe: gpu.probe,
                                        samplingInterval: .milliseconds(1)) { _ in Inert() }
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         gpu.add(700)
         // Hold the peak until the background sampler has read the probe a few times since it was raised (nothing else
         // reads it in this window), rather than for a fixed 100 ms that a starved sampler thread could miss on a
@@ -373,6 +496,28 @@ struct ResidencyTests {
 /// `epsilonEuler` (MANIFEST.md §5.2): 0.0.x's `EpsilonSchedule` cases, and the arithmetic against Diffusers' order.
 @Suite("Epsilon Euler schedule")
 struct EpsilonEulerScheduleTests {
+    /// Second code review, batch C item 3: the pipelines' one-pass update through a reused scratch array and the input
+    /// written as `x / inputScale` are bit-identical to the two-pass update and `modelInput`, and a failure still leaves
+    /// the latents unchanged.
+    @Test func onePassUpdateMatchesTheTwoPassOneBitForBit() throws {
+        let s = try EpsilonEulerSchedule(timesteps: [999, 499, 99], sigmas: [14.6, 3.1, 0.41, 0], initNoiseSigma: 14.7)
+        var latents = try SeededGaussianNoise.generate(seed: 3, count: 4096)
+        let epsilon = try SeededGaussianNoise.generate(seed: 4, count: 4096)
+        var reference = latents, scratch: [Float] = []
+        for step in 0..<s.steps {
+            let scale = try s.inputScale(step: step)
+            #expect(latents.map { $0 / scale } == (try s.modelInput(step: step, latents: latents)))
+            try s.advance(step: step, latents: &reference, epsilon: epsilon)
+            try s.advance(step: step, latents: &latents, epsilon: epsilon, scratch: &scratch)
+            #expect(latents.map(\.bitPattern) == reference.map(\.bitPattern))
+        }
+        var poisoned = epsilon
+        poisoned[4000] = .nan
+        let before = latents
+        #expect(throws: AetherError.self) { try s.advance(step: 0, latents: &latents, epsilon: poisoned, scratch: &scratch) }
+        #expect(latents.map(\.bitPattern) == before.map(\.bitPattern))
+    }
+
     @Test func inputScalingAndUpdateMatch0_0_x() throws {
         let s = try EpsilonEulerSchedule(timesteps: [999, 499], sigmas: [2, 1, 0], initNoiseSigma: 2)
         #expect(try s.modelInput(step: 0, latents: [6]) == [6 / Float(5).squareRoot()])

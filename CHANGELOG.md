@@ -137,6 +137,44 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
 
 ### Changed
 
+- **Reader leases in normal loading** (second review, batch C): a bundle from `ModelStore` remembers its store, and
+  `InstalledBundle.readLease()` takes its reader lease (nil for a bundle made by hand). Every pipeline built on
+  `ResidentAdmission` (SD-Turbo, FLUX.2, Krea, H3, Kokoro, the `StatelessPipeline` drivers) holds it from creation
+  until `unload()` or deinit, and the next request after `unload()` takes it again (refusing with `inUse` or
+  `unknownModel` before loading); `DecoderEngine` holds it for its lifetime. So `ModelStore.remove` refuses while a
+  model reads the files (H3's lazy weight reads included) without the caller leasing. `InstalledBundle` equality
+  ignores the store. Source changes: `ResidentAdmission.init` and `PipelineOptions.admission` take `bundle:` and
+  throw; `ResidentAdmission.unload()` and `holdsLease` are new; `StatelessPipeline.init(manifest:…)` takes `bundle:`.
+- **Per-phase overlap is enforced** (second review, batch C): the per-phase plan counts each phase on top of the one
+  before it, but short phases and back-to-back generations (SD-Turbo's sub-second phases) could overlap more of the
+  memory still returning from releases. A `ReleaseLog` (AetherRuntime; one per `ResidentAdmission`) records each
+  release's bytes and time, and a per-phase phase now waits until no more than the plan's overlap
+  (`ResidencyPlan.overlap`) was released within the window (6 s). `GraphResidency.beginPhase` is `async throws`
+  (cancellation ends the wait); `GraphResidency.init` takes `releases:`, and `ResidentAdmission.Settings` takes
+  `releaseWindow:` and `releaseClock:`.
+- **Diffusion host steps reuse their buffers** (second review, batch C): SD-Turbo writes `x / inputScale` straight
+  into the U-Net's input (was a new scaled array per step), and SD-Turbo, FLUX.2 and Krea apply the Euler update in
+  one validating pass into a reused scratch array that swaps with the latents (was a validating pass, then an update
+  pass). New: `EpsilonEulerSchedule.inputScale(step:)`, and `advance(step:latents:epsilon:into:)` /
+  `advance(step:latents:epsilon:scratch:)` on `EpsilonEulerSchedule` (`velocity:` on `FlowMatchSchedule`). Images are
+  bit-identical (the gates' RMSE, PSNR and SSIM unchanged to the last digit). Host work per step, release build
+  (`AETHER_BENCH=1`, `HostStepBenchmarkTests`): SD-Turbo 512² 822 → 76 µs, FLUX.2/Krea 1024² 2.34 → 2.02 ms; both
+  are small beside the graphs' step time.
+- **Resident footprints no longer accumulate a phantom** (second review, batch C): Depth Anything 3's gate recorded
+  1137 / 1122 MiB peak / held for a model of about 330 after its photo checks were added. `phys_footprint` dropped
+  ~120 MiB of the resident graph between requests and counted it again when the graph ran, and the all-resident
+  phase summed each request's growth, so every request re-added it (the resize was outside the measured phase, and
+  the baseline was taken at the right point). A phase's held bytes and peak are now capped by the level above where
+  the process stood before any graph loaded, less the other phases' held bytes; a real growth (a new shape) still
+  adds. The gate now records 374 / 359 MiB.
+- **One serialization primitive** (second review, batch C): `SerialGate` (AetherRuntime) is now `Sendable`,
+  cancellation-aware and optionally bounded, and `Generator`, `ChatSession`, the SD-Turbo, FLUX.2, Krea and H3
+  pipelines, `KokoroSpeechSession`, `StatelessPipeline` and `GraphChain` use it instead of their own busy flags and
+  continuation arrays. Cancellation is now uniform: a request cancelled while it waits for its turn leaves the queue
+  at once (it used to wait for the running request, then throw or end); the holder's turn is released however its
+  body exits. `withTurn(_:)` throws (cancellation, or `AetherError.AdmissionFailure.queueFull(limit:)` past
+  `SerialGate(limit:)`); `withTurnIgnoringCancellation(_:)` is what `unload()` uses. GPU priority stays in
+  `GPUAdmission`: pipelines take the GPU first, then their own turn.
 - `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
   side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
 - The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`

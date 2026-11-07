@@ -163,54 +163,49 @@ public actor ChatSession {
         }
     }
 
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One turn at a time, in the order sent.
+    private let gate = SerialGate()
 
     private func turn(
         _ message: ChatMessage, parameters: GenerationParameters?,
         check: (@Sendable (String, GenerationSummary) throws -> Void)?,
         _ continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation
     ) async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-        defer {
-            if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
-        }
-        guard !Task.isCancelled else {
-            continuation.finish(throwing: CancellationError())
-            return
-        }
-        let messages = (configuration.systemPrompt.map { [ChatMessage.system($0)] } ?? []) + history + [message]
-        let generation = historyGeneration
-        var reply = ""
-        var summary: GenerationSummary?
+        // A turn cancelled while it waits leaves the queue at once, and drops.
         do {
-            // Cancellation ends this loop normally (the upstream iterator returns nil), so completion is the
-            // `.finished` event, not the loop's end.
-            // A consumer that stops listening cancels the turn, as `onTermination` does, without waiting for that
-            // cancellation to arrive: a reply nobody reads isn't finished, nor kept in the history.
-            var abandoned = false
-            for try await event in generator.generate(messages, parameters: parameters ?? configuration.parameters) {
-                if case .text(let delta) = event { reply += delta }
-                if case .finished(let s) = event { summary = s }
-                if case .terminated = continuation.yield(event) {
-                    abandoned = true
-                    break
+            try await gate.withTurn {
+                let messages = (configuration.systemPrompt.map { [ChatMessage.system($0)] } ?? []) + history + [message]
+                let generation = historyGeneration
+                var reply = ""
+                var summary: GenerationSummary?
+                do {
+                    // Cancellation ends this loop normally (the upstream iterator returns nil), so completion is the
+                    // `.finished` event, not the loop's end.
+                    // A consumer that stops listening cancels the turn, as `onTermination` does, without waiting for that
+                    // cancellation to arrive: a reply nobody reads isn't finished, nor kept in the history.
+                    var abandoned = false
+                    for try await event in generator.generate(messages, parameters: parameters ?? configuration.parameters) {
+                        if case .text(let delta) = event { reply += delta }
+                        if case .finished(let s) = event { summary = s }
+                        if case .terminated = continuation.yield(event) {
+                            abandoned = true
+                            break
+                        }
+                    }
+                    if let summary, !abandoned, !Task.isCancelled {
+                        try check?(reply, summary)
+                        // A clear while the reply ran: its turn belongs to the history that was cleared.
+                        if generation == historyGeneration {
+                            history.append(message)
+                            history.append(.assistant(reply))
+                        }
+                        continuation.finish()
+                    } else {
+                        continuation.finish(throwing: CancellationError())
+                    }
+                } catch {
+                    continuation.finish(throwing: error)
                 }
-            }
-            if let summary, !abandoned, !Task.isCancelled {
-                try check?(reply, summary)
-                // A clear while the reply ran: its turn belongs to the history that was cleared.
-                if generation == historyGeneration {
-                    history.append(message)
-                    history.append(.assistant(reply))
-                }
-                continuation.finish()
-            } else {
-                continuation.finish(throwing: CancellationError())
             }
         } catch {
             continuation.finish(throwing: error)

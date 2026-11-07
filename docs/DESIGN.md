@@ -151,6 +151,10 @@ are pinned by a golden manifest per catalog entry.
     `.allowStaleRevision`, and the result reports that it is stale.
 - **Store safety** (ported from 0.0.x; its tests are the spec):
   - **Reader leases:** `remove` throws `inUse(resource:)` while a lease or a running install holds the location.
+    A bundle the store returns remembers its store (`InstalledBundle.readLease()`), so loading takes the lease without
+    the caller's help: `ResidentAdmission` (every generative and stateless pipeline) holds it from creation until
+    `unload()` or deinit and takes it again on the next request, and `DecoderEngine` holds it for its lifetime. A
+    bundle made by hand (a model on disk, outside a store) has none.
   - **A per-installation cross-process lock** in `.locks/`: a second process waits and then finds the bundle installed.
   - **Recovery of abandoned stages:** once, before the first install or remove, and public as
     `recoverAbandonedStages()`. Removal and replacement first rename into `.trash/`.
@@ -342,6 +346,14 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     `MTLDevice.currentAllocatedSize` and `phys_footprint` (0.0.x saw the footprint miss Metal memory; the H3 spike saw
     it include it, so neither alone is trusted). They go in a `FootprintLedger` keyed by model and profile, which can
     be seeded with qualified values.
+  - All resident, a phase that runs again adds its growth to what it held (a new shape's specialization grows the same
+    graphs). That sum assumes each occurrence began with the phase's memory counted, which `phys_footprint` doesn't
+    promise: part of a resident graph's memory can drop out of it between requests and come back when the graph runs
+    (Depth Anything 3's gate: ~120 MiB a request, so 15 requests recorded 1137 / 1122 MiB for a model of about 330).
+    So a phase's held bytes, and its peak, are capped by the level above where the process stood before any graph
+    loaded, less what the other phases hold. The measurement stays process-wide: what the caller allocates during or
+    between requests can still raise it (DA3's gate now records 374 / 359 MiB; the ~30 MiB over the first request's
+    343 / 328 are the gate's own images and maps), but it no longer accumulates.
   - A measurement holds only for the shapes it ran at: each distinct input shape keeps its own memory until the model
     is released (lab/h3-spike), so a profile pins its shapes.
   - Graph file sizes stand in until a phase is measured, and the plan reports `isMeasured: false`. A manifest with no
@@ -364,6 +376,13 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
     nothing, and file sizes badly underestimate.
   - A released graph's memory comes back about 5 s later (0.0.x: 1–6 s). So the per-phase peak counts each phase on
     top of what the phase before it held.
+  - That holds only if no older release is still returning: several short phases, or back-to-back generations
+    (SD-Turbo's phases are sub-second), overlap more. So per phase there is a reclamation boundary: a `ReleaseLog`
+    (one per `ResidentAdmission`, across its residencies and generations) keeps each release's bytes and time, and a
+    phase begins only once no more than the plan's overlap for it (`ResidencyPlan.overlap`) was released within the
+    last 6 s, sleeping until the oldest releases age out. The wait is by time alone, since the probe can't tell a
+    returned release from other allocations; it costs latency only in per-phase mode, when memory is short. All
+    resident never waits.
 - **`EpsilonEulerSchedule`** (G1): Diffusers' Euler epsilon step from the manifest's captured tables, in Float in
   Diffusers' order.
 
@@ -453,6 +472,18 @@ The runtime pieces H3 needs, measured in `lab/h3-spike` and built on the 0.0.x p
   `FootprintLedger` entries. `Graph.distinctShapeCount` counts the shapes a graph has specialized.
 - **`SerialGate`:** the runtime's one busy policy is to queue, not fail; a chain's runs take turns through a gate that
   chains sharing graphs share. No per-call byte cap: admission owns the limit, from the measured entry.
+  - It is the kit's one request-serialization primitive (second review, batch C): `Generator`, `ChatSession`, the
+    SD-Turbo, FLUX.2, Krea and H3 pipelines, `KokoroSpeechSession`, `StatelessPipeline` (every vision and embedding
+    driver) and `GraphChain` take their turns through one, where each had its own busy flag and continuation array.
+  - Semantics, the same everywhere: FIFO; a caller cancelled while it waits leaves the queue at once with
+    `CancellationError` (before, most sites kept it queued until its turn came, then checked), and one already
+    cancelled on arrival, or as the turn reaches it, passes the turn on and never runs; the holder's turn is released
+    when its body returns or throws, cancellation included; an optional bound refuses one more waiter with
+    `admission(.queueFull(limit:))`. Every site keeps its unbounded wait. `unload()` uses
+    `withTurnIgnoringCancellation`, so it always waits for the running request and then runs.
+  - GPU priority ordering stays separate (`GPUAdmission`, `PriorityInferenceQueue`): a pipeline takes the GPU first,
+    at the request's priority, then its own turn, so priority also orders one pipeline's requests. `ModelHost`'s
+    waiters are callers joining one load (keyed, already cancellable), not a turn queue, and stay as they are.
 - **Measured (gate, M5 Max, the 64-wide fixture block, 6 blocks × 256 rows, float16):** chained and banked calls
   are byte-identical to the unchained path, and so are calls encoded back to back with one wait; 9.2 ms against
   49.7 ms unchained.

@@ -61,8 +61,8 @@ public actor LatentDiffusionPipeline {
     let device: Device
     public nonisolated let options: Options
     private let admission: ResidentAdmission
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    /// One request at a time, in arrival order (after the GPU grant).
+    private let gate = SerialGate()
 
     /// Opens an installed bundle; graphs load on the first generation.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) throws(AetherError) {
@@ -73,14 +73,14 @@ public actor LatentDiffusionPipeline {
         let loader = GraphResidency.bundleLoader(
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         try self.init(
-            manifest: manifest, tokenizer: tokenizer, device: device, options: options,
+            manifest: manifest, tokenizer: tokenizer, device: device, options: options, bundle: bundle,
             load: ImageGraphs.validating(loader, manifest: manifest, contract: .latentDiffusion),
             fileBytes: { role in GraphResidency.fileBytes(bundle: bundle, manifest: manifest, role: role, device: device) })
     }
 
     /// The pipeline over any graph loader (tests drive it with fakes).
     init(
-        manifest: Manifest, tokenizer: CLIPTokenizer, device: Device, options: Options,
+        manifest: Manifest, tokenizer: CLIPTokenizer, device: Device, options: Options, bundle: InstalledBundle? = nil,
         load: @escaping GraphResidency.Loader, fileBytes: @escaping @Sendable (String) -> Int64
     ) throws(AetherError) {
         try DriverContract.latentDiffusion.validate(manifest)
@@ -110,7 +110,7 @@ public actor LatentDiffusionPipeline {
         self.tokenizer = tokenizer
         self.device = device
         self.options = options
-        admission = options.admission(manifest: manifest, device: device, load: load, fileBytes: fileBytes)
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
     /// Generates one image.
@@ -127,25 +127,24 @@ public actor LatentDiffusionPipeline {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
-        await turn()
-        defer { endTurn() }
-        try Task.checkCancellation()
-        let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
-        do {
-            let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
-            admission.finish()
-            return image
-        } catch {
-            admission.release()
-            throw error
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: "\(size.width)x\(size.height)")
+            do {
+                let image = try await run(residency, ids: ids, seed: request.seed, schedule: table, grid: grid, size: size)
+                admission.finish()
+                return image
+            } catch {
+                admission.release()
+                throw error
+            }
         }
     }
 
     /// Releases every graph (waiting for a running generation). The next generation loads them again.
     public func unload() async {
-        await turn()
-        admission.release()
-        endTurn()
+        await gate.withTurnIgnoringCancellation {
+            admission.unload()
+        }
     }
 
     /// Roles currently loaded (for tests and diagnostics).
@@ -162,20 +161,20 @@ public actor LatentDiffusionPipeline {
         let arena = TensorArena()
 
         // Prompt: the conditioning outlives the text encoder (it may be released before the U-Net loads).
-        residency.beginPhase(.perPrompt)
+        try await residency.beginPhase(.perPrompt)
         let conditioning = try await encode(ids, residency: residency, arena: arena)
         residency.endPhase(.perPrompt)
         try Task.checkCancellation()
 
         // Steps: the latents stay on the host; each step writes the scaled input and reads epsilon.
-        residency.beginPhase(.perStep)
+        try await residency.beginPhase(.perStep)
         let latents = try await denoise(
             conditioning: conditioning, seed: seed, schedule: schedule, grid: grid, size: size, residency: residency, arena: arena)
         residency.endPhase(.perStep)
         try Task.checkCancellation()
 
         // Image.
-        residency.beginPhase(.perImage)
+        try await residency.beginPhase(.perImage)
         let image = try await decode(latents, size: size, residency: residency, arena: arena)
         residency.endPhase(.perImage)
         // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
@@ -213,10 +212,15 @@ public actor LatentDiffusionPipeline {
         }
         var latents = try SeededGaussianNoise.generate(seed: seed, count: count)
         latents.withUnsafeMutableBufferPointer { schedule.scaleInitialNoise($0) }
-        var noise = [Float](repeating: 0, count: count)
+        // Host buffers reused across steps: epsilon is read into `noise`, and each update goes into `next` in one
+        // validating pass before the two swap. The scaled input is written straight into the graph's input.
+        var noise = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
         for step in 0..<schedule.steps {
             try Task.checkCancellation()
-            try sample.write(try schedule.modelInput(step: step, latents: latents))
+            let scale = try schedule.inputScale(step: step)
+            try latents.withUnsafeBufferPointer { x throws(AetherError) in
+                try sample.write(Float.self, count: count) { x[$0] / scale }
+            }
             try timestep.write([schedule.timesteps[step]])
             var bindings = Bindings(arena: arena)
             try bindings.bindInput(names.latents, to: sample)
@@ -226,7 +230,7 @@ public actor LatentDiffusionPipeline {
             try await unet.run(&bindings)
             residency.sample()
             try epsilon.readFloats(0..<count, into: &noise)
-            try schedule.advance(step: step, latents: &latents, epsilon: noise)
+            try schedule.advance(step: step, latents: &latents, epsilon: noise, scratch: &next)
         }
         return latents
     }
@@ -248,17 +252,5 @@ public actor LatentDiffusionPipeline {
         try await vae.run(&bindings)
         residency.sample()
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
-    }
-
-    private func turn() async {
-        if busy {
-            await withCheckedContinuation { waiters.append($0) }
-        } else {
-            busy = true
-        }
-    }
-
-    private func endTurn() {
-        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
     }
 }
