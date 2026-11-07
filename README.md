@@ -44,7 +44,10 @@ AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch
 | the language models: `qwen3-0.6b`, `qwen3.5-0.8b`, `gemma-3-4b-it`, `gemma-4-e2b`, `minicpm5-1b`, `lfm2.5-1.2b`, `granite-4.0-h-1b`, `nemotron-3-nano-4b`, `nanbeige4.1-3b`, `youtu-llm-2b`, `mistral-7b-v0.3` | `decoder-lm@1` | ✓ | ✓ except `gemma-3-4b-it` and `mistral-7b-v0.3` (`nemotron-3-nano-4b` and `gemma-4-e2b` only on `h18p` iPhones: per-architecture AOT bundles) | per model (Apache-2.0, Gemma terms, or the publisher's own); see its catalog entry |
 | none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
-Every row but MiniMax H3 is in the built-in catalog, hosted under `aether-models` on Hugging Face. H3 has no catalog
+Every row but MiniMax H3 is in the built-in catalog, pinned to a Hugging Face revision with per-file SHA-256. The image,
+speech, vision and embedding models are our own exports hosted under `aether-models`; the language models are pinned
+public Core AI conversions (`mlboydaisuke/*-CoreAI`, with Mistral's tokenizer from `mistralai/Mistral-7B-Instruct-v0.3`).
+Gated repos (`krea-2-turbo-realism`, `embeddinggemma-300m`) approve automatically and need an HF token. H3 has no catalog
 entry: export the bundle with `Forge/h3/` where its license allows, and load it from disk (below). Check each license
 before you ship a model.
 
