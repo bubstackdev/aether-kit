@@ -8,7 +8,7 @@
 # default scratch path is .build-ci). --update rewrites api/ from the current sources: that is how an intended change
 # is recorded, and the pull request says why.
 #
-# With "enforce": false in api-freeze.json (until the 0.1.0 freeze) a difference is reported and the check passes;
+# With "enforce": false in api-freeze.json (as before the 0.1.0 freeze) a difference is reported and the check passes;
 # with true, a breaking difference or a stale baseline fails. Either way it fails closed on a broken check: a missing
 # tool, module, baseline or dump, or a comparison that produced no report.
 set -euo pipefail

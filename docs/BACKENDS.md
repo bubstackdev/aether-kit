@@ -26,8 +26,8 @@ yyjson). Nothing was built or run on the GPU.
 - **Start with one driver, `mlx-lm@1`,** in a separate SwiftPM package in this repo, so no Core AI user fetches or
   links MLX.
 - **Don't** put diffusion, H3, Kokoro, or the M4 stateless drivers on MLX. They are done, gated and faster to keep.
-- **When:** the seam extraction is about a day of work and changes public API, so it fits before the 0.1.0 freeze
-  (`enforce` is still `false`). The MLX slices come after M4's exit criterion, behind a lab spike.
+- **When:** the seam extraction (B1) changed public API, so it landed before the 0.1.0 freeze and ships in 0.1.0.
+  The MLX slices come after 0.1.0, behind a lab spike (B0).
 
 ## 1. The seam
 
@@ -309,7 +309,7 @@ What's minimal and enough:
 ## 7. Recommendation
 
 **Do:**
-1. Land **B1 (the `LanguageEngine` seam) before the 0.1.0 tag**, while `api-freeze.json` is still report-only. After
+1. Land **B1 (the `LanguageEngine` seam) before the 0.1.0 tag** (done: it ships in 0.1.0). After
    the freeze, the same change means deprecating `Generator.engine: DecoderEngine` and adding a second property.
 2. Run **B0 (lab spike)** after M4's exit-criterion slices (M4b–M4f), before M4g–h (VLMs). Its numbers decide B3,
    and whether VLMs should go MLX-first (Q4).
