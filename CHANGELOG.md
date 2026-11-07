@@ -197,6 +197,8 @@ Not in this release; roadmap in docs/M4.md and docs/BACKENDS.md:
 - **True DA3 parity:** upstream's cv2 preprocessing (long side 504, multiples of 14, aspect kept) and a non-square
   graph.
 - **RF-DETR's split chain** (`backbone.features` through `source.from`).
+- **Our own language-model exports:** Forge `decoder-lm` exporters for the catalog's language models, re-hosted under
+  `aether-models` one at a time (today they are pinned public Core AI conversions).
 - **MLX:** the B0 lab spike, then (if it is a go) `mlx-lm@1` in an `AetherMLX` sub-package (B2–B5).
 - **Generative extras:** H3's FL2VA keyframes; FLUX.2's and Krea's reference images, and Krea's refine.
 - **AetherDecide** (M5) and the one-call `Aether` ops (M6).
