@@ -364,10 +364,12 @@ struct TextTurnQueueTests {
         let running = Task { try await FakeChat.collect(generator.generate([ChatMessage.user("first")])) }
         await held.waitForEntry()
         // A cancelled consumer's stream just ends; what matters is that it ends now, not when the first one does.
-        let left = await Self.cancelQueued(ordering, waiting: { generator.waitingRequests }) {
+        // The first request stays held until after the cancelled one returns, so returning at all proves it left while the
+        // first still ran (a request that waited its turn would never return before the time limit). No wall-clock bar:
+        // those failed on few-core CI runners however long the margin.
+        _ = await Self.cancelQueued(ordering, waiting: { generator.waitingRequests }) {
             _ = try await FakeChat.collect(generator.generate([ChatMessage.user("second")]))
         }
-        #expect(left < .seconds(5), "the queued request left while the first still ran")
         #expect(generator.waitingRequests == 0 && held.entered == 1, "it left the queue and ran nothing")
         held.open()
         _ = try await running.value
@@ -381,10 +383,10 @@ struct TextTurnQueueTests {
         let session = ChatSession(generator: generator, configuration: .init(parameters: GenerationParameters(maxTokens: 300)))
         let running = Task { try await FakeChat.collect(await session.respond(to: "first")) }
         await held.waitForEntry()
-        let left = await Self.cancelQueued(ordering, waiting: { session.waitingTurns }) {
+        // Held as above: returning at all, with the first turn still held, is the proof; no wall-clock bar.
+        _ = await Self.cancelQueued(ordering, waiting: { session.waitingTurns }) {
             _ = try await FakeChat.collect(await session.respond(to: "second"))
         }
-        #expect(left < .seconds(5), "the queued turn left while the first still ran")
         #expect(session.waitingTurns == 0 && held.entered == 1, "it left the queue and ran nothing")
         held.open()
         _ = try await running.value
