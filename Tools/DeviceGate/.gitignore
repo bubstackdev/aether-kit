@@ -3,3 +3,4 @@ DeviceGate.xcodeproj/
 Sources/Info.plist
 Sources/DeviceGate.entitlements
 results/out-*/
+.staging/

@@ -778,4 +778,5 @@ ready to promote when:
 - **The per-architecture AOT `.aimodelc`** loading and `AIModelCache` specialization on iPhone are untested. Only an
   h19p graph failing on an h17c Mac was observed.
 - **iOS memory and power:** whether memory-derived capacity and the residency policy hold for models of 2 GB and up,
-  and whether the Neural Engine wins on power on iPhone, even though it showed no speed win on the Mac.
+  and whether the Neural Engine wins on power on iPhone. On the iPhone the `.neuralEngine` preference gave the M4
+  graphs identical outputs and equal latency; accelerator energy isn't measurable from the app (docs/DEVICE.md).
