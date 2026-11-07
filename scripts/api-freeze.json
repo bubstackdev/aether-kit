@@ -1,6 +1,6 @@
 {
-  "comment": "The public-API freeze (DESIGN.md §12): per module, the top-level declarations scripts/check-api.sh holds to the baseline in api/. \"*\" freezes the whole module; \"Outer.Inner\" freezes only Inner. The placeholder modules (AetherDecide, Aether) are left out until they have API (M4-M6). \"enforce\": false reports differences without failing; set it to true at the 0.1.0 freeze.",
-  "enforce": false,
+  "comment": "The public-API freeze (DESIGN.md §12): per module, the top-level declarations scripts/check-api.sh holds to the baseline in api/. \"*\" freezes the whole module; \"Outer.Inner\" freezes only Inner. The placeholder modules (AetherDecide, Aether) declare nothing of their own (Aether only re-exports the task modules) and join when they have API (M5-M6). \"enforce\": true since the 0.1.0 freeze: a breaking change or a stale baseline fails CI.",
+  "enforce": true,
   "modules": {
     "AetherCore": ["*"],
     "AetherEmbeddings": ["*"],

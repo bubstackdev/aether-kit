@@ -3,10 +3,11 @@
 On-device models for Apple silicon, built directly on Apple's Core AI framework. Requires macOS 27 / iOS 27, Xcode 27.2
 and Swift 6.4.
 
-**Status: 0.1.0 in development.** This is a from-scratch re-architecture of AetherKit 0.0.x, which lives on at the `0.0.7`
-tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00x)). Start with
+**Status: 0.1.0, released 2026-11-07** ([CHANGELOG](CHANGELOG.md)). This is a from-scratch re-architecture of
+AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch (see
+[Migrating from 0.0.x](#migrating-from-00x)). Start with
 [`docs/DESIGN.md`](docs/DESIGN.md) (the architecture) and [`docs/MANIFEST.md`](docs/MANIFEST.md) (the model bundle contract).
-[`docs/INTEGRATION.md`](docs/INTEGRATION.md) tracks what is being carried over from 0.0.x.
+[`docs/INTEGRATION.md`](docs/INTEGRATION.md) records what was carried over from 0.0.x.
 
 ## What's here
 
@@ -20,9 +21,9 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
 | `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
 | `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
-| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image) and RF-DETR nano and seg-nano (`detector-detr@1`, COCO, seg-nano with instance masks at the source's resolution); `ImageTextEncoder` runs OpenAI CLIP ViT-B/32 (`clip-joint@1`: image and text embeddings, zero-shot classification), on macOS and iOS. More drivers (super-resolution) follow. |
-| `AetherEmbeddings` | Embeddings on static graphs (M4): `TextEmbedder` runs EmbeddingGemma 300M (`text-embedder@1`, 768-dimensional unit vectors, query and document prompts, 256 tokens), on macOS and iOS. The reranker and classifiers follow. Gemma is provided under and subject to the Gemma Terms of Use found at [ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms). |
-| `Aether` | The umbrella: re-exports AetherText, AetherVision, AetherImage, AetherSpeech, AetherVideo, AetherEmbeddings and the placeholder. |
+| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image) and RF-DETR nano and seg-nano (`detector-detr@1`, COCO, seg-nano with instance masks at the source's resolution); `ImageTextEncoder` runs OpenAI CLIP ViT-B/32 (`clip-joint@1`: image and text embeddings, zero-shot classification), on macOS and iOS. Super-resolution and VLM drivers come after 0.1.0. |
+| `AetherEmbeddings` | Embeddings on static graphs (M4): `TextEmbedder` runs EmbeddingGemma 300M (`text-embedder@1`, 768-dimensional unit vectors, query and document prompts, 256 tokens), on macOS and iOS. The reranker, classifiers and page retrieval come after 0.1.0. Gemma is provided under and subject to the Gemma Terms of Use found at [ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms). |
+| `Aether` | The umbrella: re-exports AetherText, AetherVision, AetherImage, AetherSpeech, AetherVideo, AetherEmbeddings and the AetherDecide placeholder. |
 | `AetherDecide` | Planned (milestones M5–M6). |
 
 ### Models
@@ -40,16 +41,20 @@ tag and the `legacy/0.0.x` branch (see [Migrating from 0.0.x](#migrating-from-00
 | `rf-detr-seg-nano` | `detector-detr@1` | ✓ | ✓ | Apache-2.0 |
 | `clip-vit-b32` | `clip-joint@1` | ✓ | ✓ | MIT. OpenAI's model card scopes CLIP to research use: deployed use untested, surveillance and face recognition out of scope (guidance, not a license term) |
 | `embeddinggemma-300m` | `text-embedder@1` | ✓ | ✓ | Gemma Terms of Use and the Gemma Prohibited Use Policy, passed on to your users. A gated Hugging Face repo with automatic approval (accept the terms, then install with a token) |
+| the language models: `qwen3-0.6b`, `qwen3.5-0.8b`, `gemma-3-4b-it`, `gemma-4-e2b`, `minicpm5-1b`, `lfm2.5-1.2b`, `granite-4.0-h-1b`, `nemotron-3-nano-4b`, `nanbeige4.1-3b`, `youtu-llm-2b`, `mistral-7b-v0.3` | `decoder-lm@1` | ✓ | ✓ except `gemma-3-4b-it` and `mistral-7b-v0.3` (`nemotron-3-nano-4b` and `gemma-4-e2b` only on `h18p` iPhones: per-architecture AOT bundles) | per model (Apache-2.0, Gemma terms, or the publisher's own); see its catalog entry |
 | none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
-Every row but MiniMax H3 is in the built-in catalog, hosted under `aether-models` on Hugging Face. H3 has no catalog
+Every row but MiniMax H3 is in the built-in catalog, pinned to a Hugging Face revision with per-file SHA-256. The image,
+speech, vision and embedding models are our own exports hosted under `aether-models`; the language models are pinned
+public Core AI conversions (`mlboydaisuke/*-CoreAI`, with Mistral's tokenizer from `mistralai/Mistral-7B-Instruct-v0.3`).
+Gated repos (`krea-2-turbo-realism`, `embeddinggemma-300m`) approve automatically and need an HF token. H3 has no catalog
 entry: export the bundle with `Forge/h3/` where its license allows, and load it from disk (below). Check each license
 before you ship a model.
 
 ## Quick start
 
 ```swift
-.package(url: "https://github.com/bubstackdev/aether-kit", branch: "main")   // until 0.1.0 is tagged
+.package(url: "https://github.com/bubstackdev/aether-kit.git", from: "0.1.0")
 ```
 
 A one-call `ChatSession(catalog:)` arrives with `ModelHost` in M6. Today, a session is built from an installed bundle:
@@ -197,7 +202,7 @@ docs/RELEASE.md                  # the release steps and the pre-tag checklist
 scripts/check-api.sh --update    # record an intended public-API change in api/ (after a build)
 ```
 
-The public-API check compares against `api/` and only reports until 0.1.0, when `"enforce": true` in
-`scripts/api-freeze.json` makes a breaking change fail CI.
+The public API is frozen since 0.1.0: the check compares every public module with `api/`, and with `"enforce": true`
+in `scripts/api-freeze.json` a breaking change, or a compatible one not recorded with `--update`, fails CI.
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).

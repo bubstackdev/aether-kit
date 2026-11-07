@@ -45,7 +45,7 @@ if [[ "${AETHER_CI_IOS:-0}" == "1" ]]; then
   scripts/ci-ios.sh
 fi
 
-step "public API: compare with the api/ baseline (report-only until the 0.1.0 freeze)"
+step "public API: compare with the api/ baseline (enforced since the 0.1.0 freeze)"
 AETHER_CI_SCRATCH="$SCRATCH" scripts/check-api.sh
 
 step "hermetic tests"

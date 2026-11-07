@@ -27,6 +27,11 @@ AETHER_GATES=1 scripts/ci.sh
 | `Kokoro gates` | `Tests/AetherSpeechTests/KokoroGateTests.swift` | Kokoro vs unmodified upstream on CPU | `forge-outputs/kokoro-82m` + references |
 | `MiniMax H3 gates` | `Tests/AetherVideoTests/MiniMaxH3GateTests.swift` | the driver's first steps vs the graph reference (0.02 rel. L2), a whole clip and its repeat, each phase's peak within the 18 GiB bar | a local `forge-outputs/minimax-h3` export (or `AETHER_H3_EXPORT`); the per-graph oracle `Forge/h3/check_h3.py` runs with the export |
 |  | `Tests/AetherRuntimeTests/H3ChainGateTests.swift` | the export's block graph through `GraphChain` and `WeightBanks` vs `Forge/h3/reference_chain_h3.py`, chained bytes equal to unchained | `forge-outputs/minimax-h3-chain` (`export_h3.py --random`) or a real export (`AETHER_H3_CHAIN`) |
+| `DepthEstimatorGateTests` | `Tests/AetherVisionTests/DepthEstimatorGateTests.swift` | Depth Anything 3 small vs CPU float32 upstream, preprocessing bit for bit, end to end | `forge-outputs/depth-anything-3-small` + references |
+| `ObjectDetectorDenseGateTests` | `Tests/AetherVisionTests/ObjectDetectorDenseGateTests.swift` | YOLOX-S detections vs CPU float32 upstream | `forge-outputs/yolox-s` + references |
+| `ObjectDetectorDetrGateTests` | `Tests/AetherVisionTests/ObjectDetectorDetrGateTests.swift` | RF-DETR nano and seg-nano detections and masks vs CPU float32 upstream | `forge-outputs/rf-detr-nano`, `rf-detr-seg-nano` + references |
+| `ImageTextEncoderGateTests` | `Tests/AetherVisionTests/ImageTextEncoderGateTests.swift` | CLIP ViT-B/32 embeddings and zero-shot vs transformers on CPU | `forge-outputs/clip-vit-b32` + references |
+| `TextEmbedderGateTests` | `Tests/AetherEmbeddingsTests/TextEmbedderGateTests.swift` | EmbeddingGemma token ids and embeddings vs CPU float32 upstream | `forge-outputs/embeddinggemma-300m` + references |
 
 (`Tests/AetherCoreTests/ZooAdapterTests.swift`'s `signatures.json` fixtures are re-recorded only when a zoo bundle
 changes: `AETHER_GATES=1 AETHER_RECORD_SIGNATURES=1 swift test --filter GateTests/recordSignatures`.)
@@ -47,7 +52,7 @@ and exits 75 on `--timeout`. `AETHER_GATES=1 scripts/ci.sh` already runs its gat
 `mkdir` protocol: the wrapper also does the stale-holder reclaim and the guarded release, interop-tested against the
 Swift implementation in `SharedGPULeaseTests`.
 
-**Device gate.** SD-Turbo (iOS bundle) and Kokoro on a physical iPhone, recorded in docs/DEVICE.md:
+**Device gate.** SD-Turbo (iOS bundle), Kokoro and the six M4 models on a physical iPhone, recorded in docs/DEVICE.md:
 
 ```bash
 ASC_KEY_ID=… ASC_ISSUER_ID=… DEVELOPMENT_TEAM=… Tools/DeviceGate/run-on-device.sh <udid>

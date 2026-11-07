@@ -1,209 +1,6 @@
 # Changelog
 
-## Unreleased
-
-M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
-
-### Breaking (source)
-
-- **The `LanguageEngine` seam (B1, docs/BACKENDS.md):** the text stack takes a protocol instead of `DecoderEngine`,
-  so another backend's engine can run under it. Lands before the 0.1.0 freeze; no behaviour change.
-  - New in AetherRuntime: `LanguageEngine` (an `Actor` protocol: `vocab`, `maxCapacity`, `hasRecurrentState`,
-    `position`, `stateRanAhead`, `decodeModeDescription`, `prefill(_:logits:)`, `step`, `rewind`, `reset`, `snapshot`,
-    `restore`, `beginGreedy`/`nextGreedy`/`endGreedy`) and the opaque `EngineSnapshot` (`position`, `byteCount`, the
-    engine's payload). `DecoderEngine` conforms.
-  - `Generator.engine` is `any LanguageEngine` (was `DecoderEngine`) and `Generator.init(engine:…)` takes one.
-    Migration: `generator.engine.description.maxCapacity` → `generator.engine.maxCapacity` (likewise `vocab`,
-    `hasRecurrentState`); for Core AI specifics (`canary`, `decodeMode`, `sizing`, `description.prefillChunk`), cast
-    with `generator.engine as? DecoderEngine`, or load the `DecoderEngine` yourself and wrap it with the new
-    `ChatSession.generator(engine:bundle:manifest:gpu:)`.
-  - `DecoderEngine.snapshot()` returns an `EngineSnapshot` and `restore(_:)` takes one; `DecoderEngine.Snapshot` is no
-    longer public (its `position` and `byteCount` are on `EngineSnapshot`). A snapshot of another engine type is
-    refused with `unsupportedOperation`.
-  - `ChatSession.load`, `ChatSession.generator(bundle:…)` and `AetherLanguageModel.load` keep their
-    `DecoderEngine.Options` parameter: they load `decoder-lm@1`.
-
-### New
-
-- **Vision foundation (M4a):**
-  - `ImageInput` (AetherRuntime): a `CGImage` or an image file, decoded with ImageIO, EXIF orientation applied by
-    moving pixels, alpha dropped as Pillow's `convert("RGB")` or composited (ported from 0.0.x's `VisionRGBImage`).
-  - `ImagePreprocessor` and `PreparedImage`: the typed `preprocess.image` block (MANIFEST.md §2.5) as a transform:
-    `stretch`, `letterbox`, `centerCrop` and `fitLongSide` resizing with `vImage` or the bit-exact `pillowBicubic` and
-    `torchUint8Bicubic` filters (0.0.x's antialiased bicubic in each reference's fixed-point arithmetic), scale, mean
-    and std, RGB or BGR, `NCHW`, `NVCHW` or patch rows (Qwen-VL block-major, SigLIP 2 row-major), fp32 or fp16 host
-    values converted at bind to the graph input's type, and an `ImageGeometry` to map results back to the source.
-    Known answers from Pillow and torch (`Forge/vision/fixtures_preprocess.py`).
-  - Typed `postprocess` (`depth`, `denseNms`, `detrSigmoid`, `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`) and
-    `labels` (`{set: "coco-91"}` or `{file}`) blocks, decoded and validated (MANIFEST.md §2.8).
-  - `StatelessPipeline` (AetherHost): the stateless drivers' shared core: static graphs checked against the driver's
-    contract, residency and memory admission, `PipelineOptions`, GPU admission at the request's `GPUJob` priority,
-    FIFO turns and cancellation between graph calls (`GraphResidency.run`).
-  - `AetherError.invalidInput` for an image that doesn't decode or lay out.
-  - `GraphResidency.validating(_:manifest:contract:)` replaces the image and speech drivers' own copies.
-- **Depth (M4b):** AetherVision's first driver, `depth-estimator@1` (`DriverContract.depthEstimator`,
-  `DriverID.depthEstimator`), for Depth Anything 3 small from our Forge export (`Forge/depth/`):
-  - `DepthEstimator` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`DepthEstimatorDriver` →
-    `DepthEstimatorModel.estimator()`); `estimate(_: ImageInput)` or, for real time, `prepare(_:)` then
-    `estimate(_: PreparedImage)`, with a `DepthRequest` (`resizeBack` override, `GPUJob`).
-  - `DepthMap`: row-major values, optional confidence, the manifest's polarity, the `ImageGeometry`; `range` and a
-    subscript.
-  - The `depth` postprocess: `resizeBack` resamples to the source image bilinearly through the geometry, never reading
-    letterbox padding.
-  - Gate `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02).
-  - Catalog: `depth-anything-3-small` (macOS), `aether-models/aether-kit-depth-anything-3-small`, Apache-2.0.
-- **Detection (M4e):** `detector-dense@1` (`DriverContract.detectorDense`, `DriverID.detectorDense`), for YOLOX-S from
-  our Forge export (`Forge/yolox/`):
-  - The detectors' shared types: `Detection` (label, score, box normalized in the source image and clipped to it,
-    optional `DetectionMask`), `DetectionRequest` (`scoreThreshold`, `maxDetections`, `GPUJob`, over the manifest's
-    defaults) and `DetectionLabels` (contiguous or COCO-id columns; the built-in `coco-91` table).
-  - `ObjectDetector` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`DenseDetectorDriver` →
-    `ObjectDetectorModel.detector()`); `detect(_: ImageInput)` or `prepare(_:)` then `detect(_: PreparedImage)`.
-  - The `denseNms` postprocess: objectness × best class, threshold, greedy per-class or class-agnostic NMS, the top
-    `maxDetections`, exactly upstream YOLOX's `postprocess`; boxes mapped back through the letterbox geometry.
-  - Gate `ObjectDetectorDenseGateTests`: the host NMS reproduces the reference's detections exactly from its preds; on
-    the GPU, the same detections on all six cases (IoU ≥ 0.99999, scores within 2e-6; bar IoU 0.95, 0.01).
-  - Catalog: `yolox-s` (macOS), `aether-models/aether-kit-yolox-s`, Apache-2.0.
-- **DETR detection and instance masks (M4f):** `detector-detr@1` (`DriverContract.detectorDetr`, `DriverID.detectorDetr`),
-  for RF-DETR nano and seg-nano from our Forge export (`Forge/rfdetr/`):
-  - `ObjectDetector` runs it too (its head is picked by the manifest's driver and `postprocess` kind), loaded through
-    `Registry.vision` (`DetrDetectorDriver` → `ObjectDetectorModel.detector()`).
-  - The `detrSigmoid` postprocess: sigmoid scores, the best `maxDetections` labelled (query, class) pairs strictly
-    above the threshold (ties by flat index), no NMS, exactly upstream RF-DETR's `PostProcess`; boxes through the
-    geometry; with `masks`, each detection's query plane resampled bilinearly to the source and thresholded, only over
-    the region that can exceed it.
-  - `DetectionMask` is compact: the source's size, the foreground's `bounds` and one bit per pixel; `foreground`,
-    `alpha()`, a subscript, `area` and `intersectionOverUnion(_:)`.
-  - Gate `ObjectDetectorDetrGateTests` (both variants): the head reproduces upstream's detections from the reference's
-    raw outputs; on the GPU, the same detections on all six cases per variant (IoU ≥ 0.99999, scores within 4.4e-6, mask IoU 1.0; bar IoU 0.95, 0.01, mask 0.95).
-  - Catalog: `rf-detr-nano` and `rf-detr-seg-nano` (macOS), `aether-models/aether-kit-rf-detr-nano` and
-    `-seg-nano`, Apache-2.0.
-- **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`,
-  `DriverID.textEmbedder`), for EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`):
-  - `TextEmbedder` (actor on `StatelessPipeline`), loaded through `Registry.embeddings` (`TextEmbedderDriver` →
-    `TextEmbedderModel.embedder()`); `embed(_:role:_:)` for one text or a batch (one request, one graph call per text)
-    as an `EmbeddingRole` (`.query`, `.document`), with a `TextEmbeddingRequest` (`GPUJob`); `tokenize(_:role:)` then
-    `embed(_: [TokenizedText])` splits the CPU and GPU halves.
-  - `Embedding` (AetherRuntime, shared with the vision embedders): `vector`, `dimension`, cosine `similarity(_:)`;
-    `truncated(to:)` for Matryoshka prefixes, re-normalized.
-  - `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
-    `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's
-    special tokens, truncated keeping them (`right`), right-padded with a mask of real ids.
-  - The `embedding` postprocess: pooling in the graph; `normalized: host` L2-normalizes on the CPU.
-  - Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one truncated), cosine ≥ 0.9999999 against
-    the CPU float32 upstream reference (bar 0.999), every query's best document as the reference's.
-  - AetherEmbeddings depends on AetherText (its tokenizer adapter), as AetherImage and AetherVideo do.
-  - Catalog: `embeddinggemma-300m` (macOS), `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`, license
-    `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
-- **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`, `DriverID.clipJoint`) for OpenAI CLIP ViT-B/32 from our
-  Forge export (`Forge/clip/`):
-  - `ImageTextEncoder` (actor on `StatelessPipeline`), loaded through `Registry.vision` (`ImageTextEncoderDriver` →
-    `ImageTextEncoderModel.encoder()`): `embed(image:)` (`ImageInput` or `PreparedImage`), `embed(texts:)` (in groups
-    of the text graph's batch buckets, unused rows filled from `tokenizer.text.unusedBatchRows`),
-    `classify(_:labels:template:)` → `[LabelScore]` (`softmax(logitScale · similarity)`; the template defaults to
-    OpenAI's `"a photo of a {}."`), `scores(image:labels:texts:)` for label embeddings made once, `tokenize(_:)`; an
-    `ImageTextRequest` carries the `GPUJob`.
-  - M4c's `Embedding` gains `dot`, `norm` and `normalized` (its `dimensions` is now `dimension`), and `LabelScore` joins
-    it in AetherRuntime, so AetherVision and AetherEmbeddings share both.
-  - Graph buckets on axis `batch`: `Manifest.Graph.bucket(_:)`, `Buckets.values`/`smallestFitting(_:)`, and
-    `GraphResidency.graph(_:bucket:)` (loader key `role[value]`), so one role's bucket functions load beside each other.
-  - Manifest fields: `preprocess.image.resize.shortestSide` (`centerCrop`: torchvision's `Resize(n)` before the crop),
-    `postprocess.embedding.dimension` and `logitScale`; M4c's `Manifest.Tokenizer.Text` gains `unusedBatchRows` and
-    the mask rules `nonPad`, `throughFirstEos` and `none` (`noMask`) beside `realTokens`, the default.
-  - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
-  - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
-- **iOS variants for the M4 models:** `depth-anything-3-small`, `embeddinggemma-300m`, `clip-vit-b32`, `yolox-s`,
-  `rf-detr-nano` and `rf-detr-seg-nano` now resolve on iOS (were `unsupportedDevice`), with the same drivers. They
-  passed the Mac gate bars on an iPhone Duo (`iPhone19,4`, `h19p`; docs/DEVICE.md). Each `ios` variant is the macOS
-  export's files unchanged (JIT `.aimodel` packages, nothing per architecture) plus a manifest with
-  `variant.platform: ios`. That manifest is `.aether/aether.json` on the repo's `ios` branch, which the variant's main
-  asset pins: DA3 `43390fd4`, EmbeddingGemma `462d7f90`, CLIP `be0c479c`, YOLOX-S `1ff82066`, RF-DETR nano
-  `383f4c4e`, seg-nano `1c2aba91`. The macOS pins are unchanged. `Forge/ios_manifest.py` derives the manifest from the
-  published export, in the form the device gate ran. Covered by `CatalogTests` and the hermetic iOS load tests
-  (`VisionIOSVariantTests`, `TextEmbedderIOSVariantTests`); no driver changed.
-
-- **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
-  `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
-  `interpolate(bilinear, antialias=False)`, as torchvision's `resize` of a float tensor runs it, bit-exact in float32;
-  `stretch` with `NCHW`/`NVCHW` only, resized between `x · scale` and `(x − mean) / std`). Known answers in
-  `Forge/vision/fixtures_preprocess.py`.
-
-### Tooling
-
-- `scripts/gpu-lease [--timeout S] [--quiet] -- <command>`: runs a command while holding the cross-process GPU lease
-  (`SharedGPULease`'s protocol, in stdlib Python), handing it to kit processes inside through `AETHER_GPU_LEASE_HOLDER`.
-  For Forge checks and other GPU work outside the kit (docs/RELEASE.md); `AETHER_GATES=1 scripts/ci.sh` runs its gate
-  step under it. Interop-tested against the Swift lease in `SharedGPULeaseTests`.
-
-### Changed
-
-- **Reader leases in normal loading** (second review, batch C): a bundle from `ModelStore` remembers its store, and
-  `InstalledBundle.readLease()` takes its reader lease (nil for a bundle made by hand). Every pipeline built on
-  `ResidentAdmission` (SD-Turbo, FLUX.2, Krea, H3, Kokoro, the `StatelessPipeline` drivers) holds it from creation
-  until `unload()` or deinit, and the next request after `unload()` takes it again (refusing with `inUse` or
-  `unknownModel` before loading); `DecoderEngine` holds it for its lifetime. So `ModelStore.remove` refuses while a
-  model reads the files (H3's lazy weight reads included) without the caller leasing. `InstalledBundle` equality
-  ignores the store. Source changes: `ResidentAdmission.init` and `PipelineOptions.admission` take `bundle:` and
-  throw; `ResidentAdmission.unload()` and `holdsLease` are new; `StatelessPipeline.init(manifest:…)` takes `bundle:`.
-- **Per-phase overlap is enforced** (second review, batch C): the per-phase plan counts each phase on top of the one
-  before it, but short phases and back-to-back generations (SD-Turbo's sub-second phases) could overlap more of the
-  memory still returning from releases. A `ReleaseLog` (AetherRuntime; one per `ResidentAdmission`) records each
-  release's bytes and time, and a per-phase phase now waits until no more than the plan's overlap
-  (`ResidencyPlan.overlap`) was released within the window (6 s). `GraphResidency.beginPhase` is `async throws`
-  (cancellation ends the wait); `GraphResidency.init` takes `releases:`, and `ResidentAdmission.Settings` takes
-  `releaseWindow:` and `releaseClock:`.
-- **Diffusion host steps reuse their buffers** (second review, batch C): SD-Turbo writes `x / inputScale` straight
-  into the U-Net's input (was a new scaled array per step), and SD-Turbo, FLUX.2 and Krea apply the Euler update in
-  one validating pass into a reused scratch array that swaps with the latents (was a validating pass, then an update
-  pass). New: `EpsilonEulerSchedule.inputScale(step:)`, and `advance(step:latents:epsilon:into:)` /
-  `advance(step:latents:epsilon:scratch:)` on `EpsilonEulerSchedule` (`velocity:` on `FlowMatchSchedule`). Images are
-  bit-identical (the gates' RMSE, PSNR and SSIM unchanged to the last digit). Host work per step, release build
-  (`AETHER_BENCH=1`, `HostStepBenchmarkTests`): SD-Turbo 512² 822 → 76 µs, FLUX.2/Krea 1024² 2.34 → 2.02 ms; both
-  are small beside the graphs' step time.
-- **Resident footprints no longer accumulate a phantom** (second review, batch C): Depth Anything 3's gate recorded
-  1137 / 1122 MiB peak / held for a model of about 330 after its photo checks were added. `phys_footprint` dropped
-  ~120 MiB of the resident graph between requests and counted it again when the graph ran, and the all-resident
-  phase summed each request's growth, so every request re-added it (the resize was outside the measured phase, and
-  the baseline was taken at the right point). A phase's held bytes and peak are now capped by the level above where
-  the process stood before any graph loaded, less the other phases' held bytes; a real growth (a new shape) still
-  adds. The gate now records 374 / 359 MiB.
-- **One serialization primitive** (second review, batch C): `SerialGate` (AetherRuntime) is now `Sendable`,
-  cancellation-aware and optionally bounded, and `Generator`, `ChatSession`, the SD-Turbo, FLUX.2, Krea and H3
-  pipelines, `KokoroSpeechSession`, `StatelessPipeline` and `GraphChain` use it instead of their own busy flags and
-  continuation arrays. Cancellation is now uniform: a request cancelled while it waits for its turn leaves the queue
-  at once (it used to wait for the running request, then throw or end); the holder's turn is released however its
-  body exits. `withTurn(_:)` throws (cancellation, or `AetherError.AdmissionFailure.queueFull(limit:)` past
-  `SerialGate(limit:)`); `withTurnIgnoringCancellation(_:)` is what `unload()` uses. GPU priority stays in
-  `GPUAdmission`: pipelines take the GPU first, then their own turn.
-- `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (was an integer floor that kept the fitting
-  side at the canvas's size): the 2443 × 424 demo strip letterboxes to 639 × 111, as upstream does.
-- The `yolox-s` bundle names `pillowBilinear` and the `rf-detr-nano` and `rf-detr-seg-nano` bundles `torchBilinear`
-  (were `vImage`), re-exported and re-pinned (`e57fcca8`, `49e797b1`, `b7408d29`). Their gates check that Pillow's
-  decoded pixels through `preprocess.image` give the reference tensor bit for bit, and gate the end-to-end detections
-  from `ImageInput` at the tensor path's bars wherever ImageIO decodes the same bytes as Pillow (YOLOX's PNG cases:
-  IoU 1.0, scores within 2e-6); JPEG photos, which the two decoders decode differently, are printed. The references
-  record that decode (`decoded.png`).
-- The `depth-anything-3-small` bundle names `pillowBicubic` (was `vImage`), the stretch its reference already uses;
-  re-exported (the 504 × 504 graph unchanged: bit-identical outputs) and re-pinned (`4c1fae82`). The reference records
-  Pillow's decode (`decoded.png`); `DepthEstimatorGateTests` checks it gives the reference tensor bit for bit through
-  `preprocess.image` and gates the SOH frames end to end, resized back, at rel L2 0.02 (0.00074 and 0.00041, were
-  0.011 and 0.014 ungated). Upstream's aspect-preserving cv2 preprocessing is a later slice (docs/M4.md).
-- `CLIPTokenizer` moved from AetherImage to AetherRuntime (AetherVision needs it and must not depend on AetherImage).
-  Its added tokens and pad come from the tokenizer's files (`tokenizer.json` `added_tokens`, `tokenizer_config.json`
-  `added_tokens_decoder` and special tokens, `special_tokens_map.json`) instead of a hard-coded `!` → 0: SD 2.x's
-  tokenizer still adds `!` as its pad (0), while OpenAI CLIP's encodes `hello!` as 3306, 256. `init(directory:length:pad:)`
-  takes `pad: Int32?` (nil: the files' `pad_token`, else EOS); `addedTokens` lists them.
-- `postprocess` `detrSigmoid` has a typed `selection` (`topKPairs`, the default; the RF-DETR export's `x-selection`
-  note before), and its `masks` block must be present exactly when the graph binds `masks`.
-- `preprocess.image.resize.padValue` also takes a bare number (`114` is `[114]`), as the YOLOX export writes it.
-
-- `Manifest.Postprocess.Depth.Polarity`'s documentation: `largerIsNearer` is disparity (Depth Anything V1/V2),
-  `largerIsFarther` depth or distance, relative or metric (Depth Anything 3); it had the two the wrong way round.
-- `Manifest.Tokenizer.text` is the typed `Manifest.Tokenizer.Text` (was a `JSONValue`).
-- `Manifest.Postprocess` is an enum of typed variants (was `kind` plus loose parameters), `Manifest.Labels` is
-  `.set` or `.file` (was `set`/`table` strings), and `Manifest.Preprocess.image` is `Manifest.ImagePreprocess`.
-
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-11-07
 
 A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues at the `0.0.7` tag and on
 `legacy/0.0.x`.
@@ -212,8 +9,8 @@ A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues 
 
 - **Platform floor:** macOS 27 / iOS 27 (0.0.x linked at macOS 14 / iOS 17 and reported `unsupportedOS` below 27).
 - **Products renamed or replaced:** AetherCore, AetherRuntime, AetherText, AetherFoundationModels, AetherHost,
-  AetherImage, AetherSpeech, AetherVideo, and the `Aether` umbrella, which re-exports the task modules (AetherVision,
-  AetherEmbeddings and AetherDecide are placeholders until M4–M6). The 0.0.x frozen APIs (the `AetherLanguage` facade,
+  AetherImage, AetherSpeech, AetherVideo, AetherVision, AetherEmbeddings, and the `Aether` umbrella, which re-exports
+  the task modules (AetherDecide is a placeholder until M5). The 0.0.x frozen APIs (the `AetherLanguage` facade,
   `AetherAssets` preparation and readiness, `@AetherGenerable`) are not carried over; see the README's migration notes.
 - **Model bundles** are described by the `aether.json` manifest (docs/MANIFEST.md, schema v1). 0.0.x prototype
   manifests are rejected (`unknownDriver`).
@@ -222,40 +19,61 @@ A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues 
 ### New
 
 - **Catalog and store** (AetherCore): a compiled-in catalog pinned to Hugging Face revisions with per-file SHA-256
-  (no runtime catalog fetch); manifest schema v1 with a zoo-bundle adapter and a reviewed override table.
+  (no runtime catalog fetch); manifest schema v1 with a zoo-bundle adapter and a reviewed override table. A bundle from
+  `ModelStore` holds its reader lease while a model reads it (`InstalledBundle.readLease()`), so `ModelStore.remove`
+  refuses with `inUse` meanwhile.
 - **Runtime** (AetherRuntime):
   - manifest-driven Core AI graphs, a tensor arena, bindings, snapshot/restore state and a driver registry;
-  - `DecoderEngine`: memory-sized KV, chunked prefill (≤ 512 tokens), O(1) rewind or hybrid snapshots, and
-    token-exact pipelined greedy decode (about 500 tok/s on qwen3-0.6b, M5 Max) guarded by a load-time canary;
+  - `DecoderEngine`: memory-sized KV (covering growth copies and hybrid snapshots), chunked prefill (≤ 512 tokens),
+    O(1) rewind or hybrid snapshots, and token-exact pipelined greedy decode (about 500 tok/s on qwen3-0.6b, M5 Max)
+    guarded by a load-time canary;
+  - **`LanguageEngine`** (B1, docs/BACKENDS.md): the token-level seam the text stack runs on, an `Actor` protocol with
+    an opaque `EngineSnapshot`. `DecoderEngine` conforms; `Generator.engine` is `any LanguageEngine`, so another
+    backend's engine can run under the Generator, `ChatSession` and `AetherLanguageModel`. Core AI specifics
+    (`canary`, `decodeMode`, `sizing`) are on `DecoderEngine` (`generator.engine as? DecoderEngine`);
+    `ChatSession.generator(engine:bundle:manifest:gpu:)` wraps an engine you load yourself;
   - the generative foundation: seeded noise, flow-matching and epsilon schedules, `GeneratedImage` /
     `GeneratedAudio`, and residency planning from measured phase footprints (`GraphResidency`, `FootprintLedger`,
-    `ResidencyPlan`);
+    `ResidencyPlan`, and a `ReleaseLog` that holds a per-phase phase until earlier releases have returned);
   - device chains for block-by-block models: `GraphChain` (each call's output feeds the next on the GPU),
-    `WeightBanks` (per-block weights streamed from bundle files into two banks), `ShapeProfile`, `SerialGate`.
+    `WeightBanks` (per-block weights streamed from bundle files into two banks), `ShapeProfile`;
+  - `SerialGate`: the one cancellation-aware, optionally bounded FIFO every request queue uses (`Generator`,
+    `ChatSession`, the image, speech, video and stateless pipelines, `GraphChain`). A request cancelled while it waits
+    leaves the queue at once;
+  - image input for the vision and embedding drivers: `ImageInput` (a `CGImage` or a file, ImageIO decode, EXIF
+    orientation, alpha policy, a `maximumPixels` limit checked before decoding), `ImagePreprocessor` and
+    `PreparedImage` (the typed `preprocess.image` block: `stretch`, `letterbox`, `centerCrop`, `fitLongSide`; `vImage`
+    or the bit-exact `pillowBicubic`, `pillowBilinear`, `torchUint8Bicubic` and `torchBilinear` filters; `NCHW`,
+    `NVCHW` or patch layouts; an `ImageGeometry` to map results back to the source);
+  - `Embedding` (`vector`, `dimension`, `dot`, `norm`, `normalized`, cosine `similarity(_:)`, Matryoshka
+    `truncated(to:)`) and `LabelScore`, shared by AetherVision and AetherEmbeddings; `CLIPTokenizer`, whose added
+    tokens and pad come from the tokenizer's files.
 - **Text** (AetherText): the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured
   output, Hermes tool calls) and `ChatSession`.
 - **FoundationModels** (AetherFoundationModels): `AetherLanguageModel` behind `LanguageModelSession`, with
   `@Generable` guided generation and tools.
 - **An enforced GPU lock with priorities** (AetherHost):
-  - `GPUAdmission.shared` is the process's default admission: every image, speech and video pipeline and the text
-    `Generator` (so `ChatSession` and `AetherLanguageModel`) admit through it unless given another
-    (`PipelineOptions.gpu`, `Generator(gpu:)`, `ChatSession.load(gpu:)`), one grant per generation, clip, utterance
-    request or chat reply. On unsandboxed macOS it also holds the machine's `SharedGPULease` and accepts a lease handed
-    off through `AETHER_GPU_LEASE_HOLDER`; in sandboxed apps and on iOS it is in-process only. Tests opt out with
-    `@_spi(Testing) GPUAdmissionOwner.unadmitted`.
+  - `GPUAdmission.shared` is the process's default admission: every image, speech, video, vision and embedding
+    pipeline and the text `Generator` (so `ChatSession` and `AetherLanguageModel`) admit through it unless given
+    another (`PipelineOptions.gpu`, `Generator(gpu:)`, `ChatSession.load(gpu:)`), one grant per generation, clip,
+    utterance request, chat reply or vision/embedding request. On unsandboxed macOS it also holds the machine's
+    `SharedGPULease` and accepts a lease handed off through `AETHER_GPU_LEASE_HOLDER`; in sandboxed apps and on iOS it
+    is in-process only. Tests opt out with `@_spi(Testing) GPUAdmissionOwner.unadmitted`.
   - `GPUPriority` (`.low`, `.medium`, `.high`) through an optional `GPUJob` on each request (`ImageRequest.job`,
-    `SpeechRequest.job`, `VideoRequest.job`, `GenerationParameters.job`; absent: `.medium`). `.high` goes ahead of
-    every waiting request, `.low` waits until nothing else is waiting, FIFO within a level; running work is never
-    preempted. Setting `job.priority` moves a waiting request; it has no effect once the request runs. There is no
-    queue-management API; cancelling the task leaves the queue.
+    `SpeechRequest.job`, `VideoRequest.job`, `GenerationParameters.job`, and the vision and embedding requests; absent:
+    `.medium`). `.high` goes ahead of every waiting request, `.low` waits until nothing else is waiting, FIFO within a
+    level; running work is never preempted. Setting `job.priority` moves a waiting request; it has no effect once the
+    request runs. There is no queue-management API; cancelling the task leaves the queue.
   - `PriorityInferenceQueue` replaces `FairInferenceQueue` (round-robin across owners is gone; the owner is a label for
-    the per-owner limit). Pipelines and the Generator now take the GPU before their own turn, so priority also orders
-    one pipeline's requests.
-- **Generative pipelines** share one `PipelineOptions` (AetherHost; `ImagePipelineOptions`,
-  `KokoroSpeechSession.Options` and `VideoPipelineOptions` are its aliases): graph cache, memory budget, an optional
-  shared `ResourceCoordinator`, GPU admission and a footprint ledger. Each driver's `load` gives a model value
-  (`LatentDiffusionModel`, `Flux2KleinModel`, `Krea2Model`, `KokoroModel`, `MiniMaxH3Model`) with settable options,
-  from which the pipeline is made.
+    the per-owner limit). Pipelines and the Generator take the GPU before their own turn, so priority also orders one
+    pipeline's requests.
+- **Pipelines** share one `PipelineOptions` (AetherHost; `ImagePipelineOptions`, `KokoroSpeechSession.Options` and
+  `VideoPipelineOptions` are its aliases): graph cache, memory budget, an optional shared `ResourceCoordinator`, GPU
+  admission and a footprint ledger. Each driver's `load` gives a model value (`LatentDiffusionModel`,
+  `Flux2KleinModel`, `Krea2Model`, `KokoroModel`, `MiniMaxH3Model`, `DepthEstimatorModel`, `ObjectDetectorModel`,
+  `ImageTextEncoderModel`, `TextEmbedderModel`) with settable options, from which the pipeline is made. The stateless
+  drivers share `StatelessPipeline` (static graphs checked against the driver's contract, residency and memory
+  admission, cancellation between graph calls).
 - **Image** (AetherImage): `LatentDiffusionPipeline`, `Flux2KleinPipeline` and `Krea2Pipeline`, sharing
   `ImageRequest`, measured admission (macOS default budget: three quarters of RAM) and cancellation between graph
   calls. **`ContentFilter`**: a Krea pipeline exists only with the app's filter, which reviews the prompt and the
@@ -266,11 +84,39 @@ A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues 
   960×544×124, macOS only, its 50-block transformer chained on the GPU with weights streamed from the bundle. It needs
   a bundle you export yourself with `Forge/h3/`: MiniMax H3 is not in the catalog and its bundle is not publicly
   hosted (license, below).
-- **Forge exporters** (`Forge/`): reproducible, pinned exports for SD-Turbo, FLUX.2 [klein], Krea 2 (vanilla and
-  realism, with the adapter merged before export), Kokoro and MiniMax H3, each with a CPU reference and a GPU gate.
-- **Public-API freeze check** (`scripts/check-api.sh`, in `scripts/ci.sh`): the frozen modules are compared with
-  `api/`; report-only until the 0.1.0 freeze (docs/RELEASE.md).
-- **Device qualification** (`Tools/DeviceGate`, docs/DEVICE.md): the SD-Turbo and Kokoro gates on a physical iPhone.
+- **Vision** (AetherVision), on macOS and iOS, loaded through `Registry.vision`; each takes an `ImageInput` or a
+  `prepare(_:)`d `PreparedImage` (real time: prepare the next frame while the last runs):
+  - `DepthEstimator` (`depth-estimator@1`, Depth Anything 3 small): `estimate(_:)` → `DepthMap` (values, optional
+    confidence, polarity, geometry), resized back to the source by default (`DepthRequest.resizeBack`).
+  - `ObjectDetector`: YOLOX-S (`detector-dense@1`, upstream's NMS) and RF-DETR nano and seg-nano (`detector-detr@1`,
+    sigmoid top-k, no NMS). `detect(_:_:)` → `[Detection]` (label, score, box normalized in the source, optional
+    compact `DetectionMask` at the source's resolution), with a `DetectionRequest` (`scoreThreshold`,
+    `maxDetections`) and `DetectionLabels` (`coco-91` built in).
+  - `ImageTextEncoder` (`clip-joint@1`, OpenAI CLIP ViT-B/32): `embed(image:)`, `embed(texts:)` (in the text graph's
+    batch buckets), `classify(_:labels:template:)` → `[LabelScore]` (template `"a photo of a {}."` by default),
+    `scores(image:labels:texts:)`.
+- **Embeddings** (AetherEmbeddings), on macOS and iOS, loaded through `Registry.embeddings`: `TextEmbedder`
+  (`text-embedder@1`, EmbeddingGemma 300M): `embed(_:role:_:)` for one text or a batch, as a `.query` or `.document`
+  (`EmbeddingRole`), with the manifest's prompts, padding and truncation (`tokenizer.text`); `tokenize(_:role:)` then
+  `embed(_: [TokenizedText])` splits the CPU and GPU halves.
+- **Forge exporters** (`Forge/`): reproducible, pinned exports, each with a CPU reference and a GPU gate:
+  - for the kit's drivers: SD-Turbo, FLUX.2 [klein], Krea 2 (vanilla and realism, with the adapter merged before
+    export), Kokoro, MiniMax H3, Depth Anything 3 small, YOLOX-S, RF-DETR nano and seg-nano, CLIP ViT-B/32 and
+    EmbeddingGemma 300M; `Forge/ios_manifest.py` derives a published export's iOS manifest;
+  - **Forge tooling only** (no kit driver in 0.1.0, not in the catalog): Qwen3-VL 2B (`Forge/qwen3vl/`),
+    GLiNER2.5-Decide (`Forge/gliner/`), ColModernVBERT (`Forge/colmodernvbert/`), Shieldstral 1.0 3B
+    (`Forge/shieldstral/`) and AdcSR ×4 (`Forge/adcsr/`, with its OpenRAIL++-M deployer notice). See "Models" and
+    "After 0.1.0".
+- **Public-API freeze** (`scripts/check-api.sh`, in `scripts/ci.sh`): every module with public API (AetherCore,
+  AetherRuntime, AetherHost, AetherText, AetherFoundationModels, AetherImage, AetherSpeech, AetherVideo, AetherVision,
+  AetherEmbeddings) is compared with the committed `api/` baseline, enforced from 0.1.0: a breaking change, or a
+  compatible one not recorded with `--update`, fails CI (docs/RELEASE.md).
+- **Tooling:** `scripts/gpu-lease [--timeout S] [--quiet] -- <command>` runs a command while holding the cross-process
+  GPU lease (for Forge checks and other GPU work outside the kit; `AETHER_GATES=1 scripts/ci.sh` runs its gate step
+  under it). `scripts/ci.sh` also builds in release with warnings as errors, and `scripts/ci-ios.sh` (CI's iOS job;
+  `AETHER_CI_IOS=1 scripts/ci.sh` locally) builds every library for iOS.
+- **Device qualification** (`Tools/DeviceGate`, docs/DEVICE.md): SD-Turbo, Kokoro and the six vision and embedding
+  models pass their gates on a physical iPhone.
 
 ### Models
 
@@ -281,30 +127,49 @@ A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues 
 | `krea-2-turbo`, `krea-2-turbo-realism` | macOS | from the seed vs CPU Diffusers: SSIM 0.999 / 0.988 |
 | `kokoro-82m` | macOS, iOS (512-frame cap) | vs unmodified upstream on CPU: frames exact, rel. L2 ≤ 0.032; also on an iPhone |
 | MiniMax H3 (not in the catalog: a locally exported bundle) | macOS | per graph vs the original modules (≤ 0.0095 rel. L2); the driver's first steps bit-identical to the graph reference; phase peaks within the 18 GiB bar |
-| the language models (Qwen3, Qwen3.5, Gemma 3/4, MiniCPM, LFM2.5, Granite, Nemotron, Mistral, …) | macOS, iOS | greedy output token-exact against a same-device reference |
+| `depth-anything-3-small` | macOS, iOS | vs CPU float32 upstream on the same tensor: rel. L2 ≤ 0.0011 (bar 0.02); end to end from Pillow-identical decodes ≤ 0.00074; also on an iPhone |
+| `yolox-s` | macOS, iOS | the same detections on all six cases: IoU ≥ 0.99999, scores within 2e-6 (bar IoU 0.95, 0.01); also on an iPhone |
+| `rf-detr-nano`, `rf-detr-seg-nano` | macOS, iOS | the same detections on all six cases per variant: IoU ≥ 0.99999, scores within 4.4e-6, mask IoU 1.0 (bar 0.95, 0.01, mask 0.95); also on an iPhone |
+| `clip-vit-b32` | macOS, iOS | vs transformers' `CLIPModel` on CPU in float32: image cosine ≥ 0.9999983, text ≥ 0.9999993, tokenizer 17/17 id-exact, zero-shot argmax 7/7; also on an iPhone |
+| `embeddinggemma-300m` | macOS, iOS | token ids exact (7/7), cosine ≥ 0.9999999 vs CPU float32 upstream (bar 0.999); also on an iPhone |
+| the language models (Qwen3, Qwen3.5, Gemma 3/4, MiniCPM, LFM2.5, Granite, Nemotron, Mistral, …) | macOS; iOS for most (the catalog lists each entry's variants) | greedy output token-exact against a same-device reference |
 
 The catalog's bundles are hosted under `aether-models` on Hugging Face; each carries its license and NOTICE. The Krea
-realism repo is gated (mature). MiniMax H3's license grants no rights in the EU, UK, South Korea or USA, so its bundle
-is not hosted: export it with `Forge/h3/` where the license allows and load it from disk. The licenses differ per
-model; the README's table lists their terms.
+realism repo is gated (mature), and the EmbeddingGemma repo is gated with automatic approval (Gemma terms; install
+with a token). MiniMax H3's license grants no rights in the EU, UK, South Korea or USA, so its bundle is not hosted:
+export it with `Forge/h3/` where the license allows and load it from disk. The licenses differ per model; the README's
+table lists their terms.
+
+**Forge-only exporters.** These export, check against their CPU reference and gate on the GPU in Forge, but 0.1.0 has
+no driver to run them and no catalog entry:
+
+| Exporter | Model | For the driver (after 0.1.0) | License |
+| --- | --- | --- | --- |
+| `Forge/qwen3vl/` | Qwen3-VL 2B Instruct (vision tower + static-inject decoder) | `vlm-static-inject@1` | Apache-2.0 |
+| `Forge/gliner/` | GLiNER2.5-Decide (s256/s512 buckets) | `gliner-classifier@1` | Apache-2.0 |
+| `Forge/colmodernvbert/` | ColModernVBERT (query and document towers) | `late-interaction-retriever@1` | MIT |
+| `Forge/shieldstral/` | Shieldstral 1.0 3B (yes/no classifier) | `yes-no-classifier@1` | Apache-2.0 |
+| `Forge/adcsr/` | AdcSR ×4 super-resolution (tiled) | `image-to-image-tiled@1` | CreativeML Open RAIL++-M (weights), Apache-2.0 (code); deployer notice |
 
 ### Carried over from 0.0.x (re-implemented, validated against 0.0.x's tests and fixtures)
 
 - **Store:** staged SHA-256 installs and resume, reader leases, stage recovery, cross-process install locks, a
   free-space check, token and redirect safety, iOS background downloads.
-- **Host** (AetherHost): the GPU lease (Atelier-compatible) and admission, the fair queue, model lifecycle (idle
-  unload, memory-pressure release, iOS easing) and `ResourceCoordinator` reservations.
+- **Host** (AetherHost): the GPU lease (Atelier-compatible) and admission, model lifecycle (idle unload,
+  memory-pressure release, iOS easing) and `ResourceCoordinator` reservations.
 - **Text:** the sampler (matching Transformers' recorded processors), the structured-output constraint, the
   text-stream rules and the tokenizer oracle cases.
 - **Generative recipes:** the seeded noise stream (bit-identical to 0.0.x), the schedule arithmetic, and the SD-Turbo,
   FLUX.2, Krea, Kokoro and MiniMax H3 host recipes.
+- **Image input:** 0.0.x's `VisionRGBImage` decode (EXIF orientation, alpha) and its antialiased bicubic, as
+  `ImageInput` and the `pillowBicubic` / `torchUint8Bicubic` filters.
 
 ### Known limitations
 
 - FLUX.2, Krea and MiniMax H3 are macOS-only.
 - Text-to-phoneme for Kokoro is the app's.
-- The image, speech and video pipelines don't take part in `ModelHost`'s idle and memory-pressure unload; an app
-  unloads them itself (`unload()`).
+- The image, speech, video, vision and embedding pipelines don't take part in `ModelHost`'s idle and memory-pressure
+  unload; an app unloads them itself (`unload()`).
 - Generative outputs are not bit-identical across devices (fp16 arithmetic differs); gates compare against the
   reference on each device.
 - One bundle per platform where precision differs (SD-Turbo on iOS). The catalog picks the device's variant; a
@@ -312,20 +177,31 @@ model; the README's table lists their terms.
 - **Decoder capacity** is sized at load from the model's load-time Metal delta (at least its files), but memory
   arrives with the first run (G0: about 3× the files held). Re-sizing after the canary needs the engine to lower its
   capacity limit after construction.
-- **Per-phase plans** assume only the phase before a phase is still releasing (≈5 s late return). Phases shorter than
-  that (SD-Turbo's are sub-second) can overlap three deep; per-phase mode is the memory-short fallback, and Krea's
-  phases, the case it exists for, run longer.
 - **Kokoro** is admitted against the measurement for its frame cap's bucket; until a cap-bucket run (or `prewarm`)
   is measured, a smaller bucket's measurement stands in and under-counts.
-- **Waiting turns:** five actor-owned FIFO queues (Generator, ChatSession, the image pipelines, Kokoro, `SerialGate`)
-  keep a cancelled waiter until its turn comes (it then checks cancellation and leaves); one cancellation-aware
-  primitive is planned. A cancelled `ModelHost` caller joined to another caller's load waits for that load to end.
-- **The FoundationModels adapter** renders the prompt again for its context check (the Generator's duplicate render
-  for attention-only models is gone).
+- **The FoundationModels adapter** renders the prompt again for its context check.
+- **Depth Anything 3** takes a 504 × 504 stretch (its reference's), not upstream's aspect-preserving cv2 resize: the
+  depth matches the reference on the same input, but on non-square photos it isn't upstream's end-to-end result.
+- **JPEG inputs:** ImageIO decodes JPEGs differently from Pillow's libjpeg (up to tens of levels), so detections and
+  embeddings from a JPEG are close to, but not exactly, the Pillow-based references. The preprocessing is gated
+  bit-exact through Pillow's decode, and end to end where both decoders give the same bytes (PNGs).
 
-### In progress before 0.1.0 is tagged
+### After 0.1.0
 
-H3's FL2VA keyframes; FLUX.2's and Krea's reference images (and Krea's refine).
+Not in this release; roadmap in docs/M4.md and docs/BACKENDS.md:
+
+- **VLMs:** the `vlm-static-inject@1` driver (Qwen3-VL first; its exporter is in Forge), then OCR (`vlm-embeds@1`).
+- **The optional M4 drivers** for the Forge-only exporters: GLiNER (`gliner-classifier@1`), Shieldstral
+  (`yes-no-classifier@1`), ColModernVBERT (`late-interaction-retriever@1`) and AdcSR (`image-to-image-tiled@1`), plus
+  `CVPixelBuffer` input and `LiveVision`.
+- **True DA3 parity:** upstream's cv2 preprocessing (long side 504, multiples of 14, aspect kept) and a non-square
+  graph.
+- **RF-DETR's split chain** (`backbone.features` through `source.from`).
+- **Our own language-model exports:** Forge `decoder-lm` exporters for the catalog's language models, re-hosted under
+  `aether-models` one at a time (today they are pinned public Core AI conversions).
+- **MLX:** the B0 lab spike, then (if it is a go) `mlx-lm@1` in an `AetherMLX` sub-package (B2–B5).
+- **Generative extras:** H3's FL2VA keyframes; FLUX.2's and Krea's reference images, and Krea's refine.
+- **AetherDecide** (M5) and the one-call `Aether` ops (M6).
 
 ### Changes by milestone
 
@@ -346,36 +222,30 @@ H3's FL2VA keyframes; FLUX.2's and Krea's reference images (and Krea's refine).
     gate runs the driver from the seed alone: RMSE 1.0e-5 (1 step) and 3.3e-5 (4 steps) against Diffusers.
   - SD-Turbo is under the Stability AI Community License (commercial use only under USD 1M revenue, with
     registration; "Powered by Stability AI" attribution). The exported bundle carries the license and NOTICE line.
-- **Public-API freeze check** (`scripts/check-api.sh`, run by `scripts/ci.sh`): `swift-api-digester` dumps of
-  AetherCore, AetherRuntime, AetherHost, AetherText and AetherFoundationModels compared with `api/`. Report-only until
-  the 0.1.0 freeze sets `"enforce": true`.
-
 - **FLUX.2 [klein] 4B (G2)** in `AetherImage`:
   - the `flux2-klein@1` driver (`Flux2KleinPipeline`): the bundle's Qwen3 chat template, padded to 512 rows → text
     encoder → three denoiser segments chained by their carries, per step, on the host Euler update with the empirical
     shift → VAE decoder; macOS only in 0.1.0 (`unsupportedDevice` on iOS before anything loads);
   - the typed `flux2` manifest block (MANIFEST.md §5.7, now normative) and optional graph roles in driver contracts
     (the reference-image VAE encoder);
+  - `ImagePipelineOptions` and `ImageRequest` shared by the image pipelines, with a `GPUMemoryProbe` (tests pass a
+    fixed one); `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only
+    encode prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template;
   - a reproducible Forge exporter (`Forge/flux2/`): int8 per-channel weights on the text encoder and denoisers, both
     VAE graphs; its GPU gate against CPU Diffusers passes 31/31;
   - the Swift gate against CPU Diffusers from the seed: prompt ids exact, text real-row cosine ≥ 0.99921, the image
     from the reference's text rows SSIM 0.991 / PSNR 34.0 dB; the whole pipeline is recorded at SSIM 0.908 (0.0.x's
     bars; padding rows condition the denoiser, so the full path moves under any precision change).
-- `ImagePipelineOptions` and `ImageRequest` are shared by the image pipelines, and take a `GPUMemoryProbe` (tests pass
-  a fixed one). `TokenizerAdapter` can load without stop markers (`forGeneration: false`) for drivers that only encode
-  prompts; `PromptRenderers.chatTemplate` reads a bundle's verified template.
-
 - **Krea 2 Turbo, vanilla and realism (G3)** in `AetherImage`:
   - the `krea2@1` driver (`Krea2Pipeline`): the fixed Krea prompt, unpadded → text encoder (12 tapped layers, the
     34-row prefix dropped) → four denoiser segments chained by their carries, per step, on the host Euler update with
     the exponential shift → VAE decoder; macOS only in 0.1.0;
-  - **`ContentFilter`**, required by the Krea 2 Community License (§4.2): `Krea2Driver.load` gives a `Krea2Model`, and a
-    pipeline is only made with the app's filter (no default). It reviews the prompt before any work and the image
+  - **`ContentFilter`**, required by the Krea 2 Community License (§4.2): `Krea2Driver.load` gives a `Krea2Model`, and
+    a pipeline is only made with the app's filter (no default). It reviews the prompt before any work and the image
     before it is returned; a refusal is the new `AetherError.GenerationFailure.contentRefused(stage:reason:)`;
   - the typed `krea2` manifest block (MANIFEST.md §5.5–§5.6, now normative); a merged adapter's `scale` may be a
     number or a list;
-  - the exporter writes the installed-revision layout (`.aether/aether.json`); the two local bundles' manifests were
-    moved and regenerated in place (no re-export);
+  - the exporter writes the installed-revision layout (`.aether/aether.json`);
   - the Swift gate per variant against CPU Diffusers from the seed: rendered ids exact, text row cosine 0.999999, the
     whole pipeline SSIM 0.9989 / PSNR 49.9 dB (vanilla) and 0.988 / 39.6 dB (realism), repeats bit-identical;
   - the denoiser segments and VAE specialize without `expectFrequentReshapes` (with it their carries are non-finite);
@@ -385,14 +255,23 @@ H3's FL2VA keyframes; FLUX.2's and Krea's reference images (and Krea's refine).
   next call's input on the GPU (two slots, one stream, waits at the end or at sync points; byte-identical to the
   unchained path), `WeightBanks` streams per-block weights from bundle files into two banks with the sync rule
   enforced, `ShapeProfile` pins the shapes a measured footprint holds for, and `SerialGate` queues busy callers.
-  MANIFEST.md §5.8 proposes the `weights` table.
-- **Catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from `aether-models/aether-kit-sd-turbo` and
-  `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's SHA-256 recorded; `kokoro-82m` (macOS and iOS) from
-  `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes the mixed-precision export from
-  `aether-models/aether-kit-sd-turbo-ios`; `krea-2-turbo` and `krea-2-turbo-realism` (macOS) from
-  `aether-models/krea-2-turbo-aether-kit` and the gated `aether-models/krea-2-turbo-realism-aether-kit`; catalog entries
-  carry `mature` (the realism merge), and `scripts/gen-catalog` sends the Hugging Face token for gated repos.
-
+- **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
+  the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
+  bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
+  oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
+  `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
+  unchained path's). The real-weight export (94 GB, run outside the licence's Excluded Territories per the owner)
+  passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
+  0.0067). It is not publicly hosted and not in the catalog.
+- **MiniMax H3 (G4)** in the new **`AetherVideo`** product: `minimax-h3@1` (`MiniMaxH3Pipeline`), text to 24 fps video
+  with 32 kHz stereo audio at the qualified 960×544×124 profile, macOS only. The conditioner and the 50-block
+  transformer chain on the GPU with their weights streamed from the bundle (`GraphChain`, `WeightBanks`); the host
+  recipe is Diffusers' layout, row timesteps and rotary, bit-identical to the graph reference for the first two steps;
+  a clip and its repeat bit-identical; phase peaks 4.2 / 9.7 / 1.4 GiB within the 18 GiB bar. The typed `h3` block
+  (MANIFEST.md §5.10 normative); `TensorBuffer.readBytes`/`writeBytes`/`copyBytes` and
+  `WeightBanks.load(block:into:)` for bf16 tensors between host and Metal arenas. The exporter's manifest fixes:
+  `video.noise.order` is `sourceVideoThenAudio` (0.0.x's draw order), the pack's text input is named `text`, and no
+  graph takes the reshape hint. FL2VA keyframes are deferred; the bundle isn't publicly hosted (license).
 - **Kokoro-82M speech (G5)**, in the new **`AetherSpeech`** product:
   - the `kokoro@1` driver (`KokoroSpeechSession`): phonemes (`KokoroPhonemes`, Unicode scalars, unknown symbols
     refused) → durations → host rounding and alignment → the bucketed decoder with seeded harmonic noise →
@@ -402,39 +281,149 @@ H3's FL2VA keyframes; FLUX.2's and Krea's reference images (and Krea's refine).
     54 voices). The Swift gate against unmodified upstream on the CPU: frames exact, rel. L2 0.0076–0.032 (bars
     min(0.05, 4× the fp32-vs-fp64 floor)), log-mel ≤ 0.015, repeats bit-identical.
   - Both graphs run on the GPU: Swift's Core AI runtime traps loading the durations graph for the CPU on macOS 27.2.
-
+- **Generative catalog:** `sd-turbo` (macOS and iOS) and `flux2-klein-4b` (macOS), from
+  `aether-models/aether-kit-sd-turbo` and `aether-models/aether-kit-flux2-klein-4b` at pinned revisions, every file's
+  SHA-256 recorded; `kokoro-82m` (macOS and iOS) from `aether-models/aether-kit-kokoro-82m`; `sd-turbo` on iOS takes
+  the mixed-precision export from `aether-models/aether-kit-sd-turbo-ios`; `krea-2-turbo` and `krea-2-turbo-realism`
+  (macOS) from `aether-models/krea-2-turbo-aether-kit` and the gated `aether-models/krea-2-turbo-realism-aether-kit`;
+  catalog entries carry `mature` (the realism merge), and `scripts/gen-catalog` sends the Hugging Face token for gated
+  repos.
 - **On-device qualification** (`docs/DEVICE.md`, `Tools/DeviceGate`): SD-Turbo and Kokoro pass their gates on a
   physical iPhone (iPhone Duo, `h19p`, iOS 27.2). SD-Turbo's iOS bundle is mixed precision (text encoder fp32, U-Net and
   VAE fp16; the Forge exporter gained per-graph `--precision` options): 4 steps RMSE 0.012 on device (bar 0.03), 1.7 GiB
   peak. Kokoro runs at its 512-frame iOS cap (longer utterances refused before decoding).
-
-- **H3 exporter (G4 step 2a)** (`Forge/h3/`): every graph the 0.0.x prototype qualified, with the transformer block,
-  the Qwen3-VL decoder layer, the text refiner and the vision tower taking their weights as inputs from per-block
-  bundle files (MANIFEST.md §5.8, now normative, decoded and validated as `Manifest.GraphWeights`); the per-graph
-  oracle gate `check_h3.py`; and a GPU gate running the export's own block graph through `GraphChain` and
-  `WeightBanks` (4 blocks × 4096 rows: output within 0.0051 relative L2 of the CPU, chained bytes equal to the
-  unchained path's). The real-weight export (94 GB, run outside the licence's Excluded Territories per the owner)
-  passes `check_h3.py` at 960×544×124: every graph within 0.0095 relative L2 of the original modules (block 49 at
-  0.0067). It is not publicly hosted and not in the catalog.
-
-- **MiniMax H3 (G4)** in the new **`AetherVideo`** product: `minimax-h3@1` (`MiniMaxH3Pipeline`), text to 24 fps video with
-  32 kHz stereo audio at the qualified 960×544×124 profile, macOS only. The conditioner and the 50-block transformer
-  chain on the GPU with their weights streamed from the bundle (`GraphChain`, `WeightBanks`); the host recipe is
-  Diffusers' layout, row timesteps and rotary, bit-identical to the graph reference for the first two steps; a clip and
-  its repeat bit-identical; phase peaks 4.2 / 9.7 / 1.4 GiB within the 18 GiB bar. The typed `h3` block (MANIFEST.md
-  §5.10 normative); `TensorBuffer.readBytes`/`writeBytes`/`copyBytes` and `WeightBanks.load(block:into:)` for bf16
-  tensors between host and Metal arenas. The exporter's manifest fixes: `video.noise.order` is `sourceVideoThenAudio`
-  (0.0.x's draw order), the pack's text input is named `text`, and no graph takes the reshape hint. FL2VA keyframes are
-  deferred; the bundle isn't publicly hosted (license).
-- **Second pre-release review fixes:** store references are validated and contained before any file operation
-  (`AetherError.invalidReference`); an install is reused only for the same installation; tokenizer paths are
-  contained and stop ids bounded; released bindings no longer validate; structured replies must complete their
-  schema; exact integer schema bounds, and constraints beside `$ref`/`anyOf` refused; ModelHost leaks no pin on a type
-  mismatch and cancelled callers load nothing; the GPU-admission timeout race; cancellation between prefill chunks;
-  canary off means depth one; a top-k crash at tiny temperatures; cumulative resident footprints keyed by revision
-  and device; float32 logits reads 377 → 6 µs; bounded constraint cache; download backpressure; the device gate
-  script fails on failed checks; `Aether` re-exports `AetherSpeech`.
-- **Pre-release review fixes:** `ResidentAdmission` (AetherHost) keeps a pipeline's resident graphs reserved on a
-  shared coordinator and releases them on refusal; measured footprints are used for manifests without residency
-  (Kokoro) and after late releases; canvases need `maxImageTokens`; drivers load model values with settable options;
-  `KokoroVoice.Language` is open; `GeneratedAudio.sampleCount` (was `frameCount`).
+- **The `LanguageEngine` seam (B1, docs/BACKENDS.md):** for code that tracked `main` before it, the migration:
+  `generator.engine.description.maxCapacity` → `generator.engine.maxCapacity` (likewise `vocab`, `hasRecurrentState`);
+  `DecoderEngine.snapshot()` returns an `EngineSnapshot` and `restore(_:)` takes one (`DecoderEngine.Snapshot` is no
+  longer public; a snapshot of another engine type is refused with `unsupportedOperation`); `ChatSession.load`,
+  `ChatSession.generator(bundle:…)` and `AetherLanguageModel.load` keep their `DecoderEngine.Options` parameter. No
+  behaviour change.
+- **The GPU lock and priorities:** `GPUAdmission.shared` by default everywhere, `GPUPriority` through `GPUJob`, and
+  `PriorityInferenceQueue` replacing the fair queue (see "New").
+- **Vision foundation (M4a):** `ImageInput`, `ImagePreprocessor` and `PreparedImage` (above), with known answers from
+  Pillow and torch (`Forge/vision/fixtures_preprocess.py`); typed `postprocess` (`depth`, `denseNms`, `detrSigmoid`,
+  `embedding`, `gliner`, `yesNo`, `maxSim`, `superRes`; an enum of typed variants) and `labels` (`{set: "coco-91"}` or
+  `{file}`) blocks, decoded and validated (MANIFEST.md §2.8); `Manifest.Preprocess.image` is
+  `Manifest.ImagePreprocess`; `StatelessPipeline` (AetherHost); `AetherError.invalidInput` for an image that doesn't
+  decode or lay out; `GraphResidency.validating(_:manifest:contract:)` replaces the image and speech drivers' copies.
+- **Depth (M4b):** AetherVision's first driver, `depth-estimator@1` (`DriverContract.depthEstimator`), for Depth
+  Anything 3 small from our Forge export (`Forge/depth/`): `DepthEstimator`, `DepthMap` and the `depth` postprocess
+  (`resizeBack` resamples bilinearly through the geometry, never reading letterbox padding; polarity `largerIsFarther`
+  is depth, `largerIsNearer` disparity). The bundle stretches with `pillowBicubic`, its reference's resize. Gate
+  `DepthEstimatorGateTests`: rel L2 0.0002–0.0011 against the CPU float32 upstream reference (bar 0.02); Pillow's
+  decode through `preprocess.image` gives the reference tensor bit for bit, and the SOH frames end to end, resized
+  back, are gated at 0.02 (0.00074 and 0.00041). Catalog: `depth-anything-3-small`,
+  `aether-models/aether-kit-depth-anything-3-small` at `4c1fae82`, Apache-2.0.
+- **Text embedding (M4c):** AetherEmbeddings' first driver, `text-embedder@1` (`DriverContract.textEmbedder`), for
+  EmbeddingGemma 300M from our Forge export (`Forge/embeddinggemma/`): `TextEmbedder`, `Embedding`, and
+  `tokenizer.text` (MANIFEST.md §2.4) as the typed `Manifest.Tokenizer.Text` (`padId`, `padSide`, `padTo`,
+  `truncation`, `prompts`, `maskRule`): the role's prompt plus the text, stripped, encoded with the tokenizer's special
+  tokens, truncated keeping them, right-padded with a mask of real ids; the `embedding` postprocess (pooling in the
+  graph; `normalized: host` L2-normalizes on the CPU). AetherEmbeddings depends on AetherText (its tokenizer adapter),
+  as AetherImage and AetherVideo do. Gate `TextEmbedderGateTests`: token ids and masks exact on 7 cases (one
+  truncated), cosine ≥ 0.9999999 against the CPU float32 upstream reference (bar 0.999), every query's best document
+  as the reference's. Catalog: `embeddinggemma-300m`, `aether-models/aether-kit-embeddinggemma-300m` at `d5016965`,
+  license `gemma`; the repo is gated with automatic approval, so installing needs a Hugging Face token.
+- **CLIP (M4d):** `clip-joint@1` (`DriverContract.clipJoint`) for OpenAI CLIP ViT-B/32 from our Forge export
+  (`Forge/clip/`): `ImageTextEncoder`, with `Embedding` (gaining `dot`, `norm`, `normalized`) and `LabelScore` in
+  AetherRuntime so AetherVision and AetherEmbeddings share both, and `CLIPTokenizer` moved there from AetherImage
+  (AetherVision must not depend on AetherImage). Its added tokens and pad come from the tokenizer's files instead of a
+  hard-coded `!` → 0 (SD 2.x's still pads with `!`, 0; OpenAI CLIP's encodes `hello!` as 3306, 256);
+  `init(directory:length:pad:)` takes `pad: Int32?`. Graph buckets on axis `batch` (`Manifest.Graph.bucket(_:)`,
+  `Buckets.values`/`smallestFitting(_:)`, `GraphResidency.graph(_:bucket:)`); manifest fields
+  `preprocess.image.resize.shortestSide`, `postprocess.embedding.dimension` and `logitScale`,
+  `tokenizer.text.unusedBatchRows` and the mask rules `nonPad`, `throughFirstEos` and `none` beside `realTokens`. Gate
+  `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU. Catalog: `clip-vit-b32`,
+  `aether-models/aether-kit-clip-vit-b32`, MIT.
+- **Dense detection (M4e):** `detector-dense@1` (`DriverContract.detectorDense`) for YOLOX-S from our Forge export
+  (`Forge/yolox/`): `ObjectDetector` and the shared `Detection`, `DetectionRequest` and `DetectionLabels`; the
+  `denseNms` postprocess (objectness × best class, threshold, greedy per-class or class-agnostic NMS, the top
+  `maxDetections`, exactly upstream YOLOX's `postprocess`; boxes mapped back through the letterbox geometry).
+  `letterbox` sizes are YOLOX's `int(side · min(H / h, W / w))` in Double (the 2443 × 424 demo strip letterboxes to
+  639 × 111, as upstream does); `padValue` also takes a bare number. The bundle letterboxes with `pillowBilinear`. Gate
+  `ObjectDetectorDenseGateTests`: the host NMS reproduces the reference's detections exactly from its preds; on the
+  GPU, the same detections on all six cases (IoU ≥ 0.99999, scores within 2e-6; bar IoU 0.95, 0.01); end to end from
+  `ImageInput` on the PNG cases at the same bars (IoU 1.0, scores within 2e-6). Catalog: `yolox-s`,
+  `aether-models/aether-kit-yolox-s` at `e57fcca8`, Apache-2.0.
+- **DETR detection and instance masks (M4f):** `detector-detr@1` (`DriverContract.detectorDetr`) for RF-DETR nano
+  and seg-nano from our Forge export (`Forge/rfdetr/`), as a second head of `ObjectDetector`: the `detrSigmoid`
+  postprocess (sigmoid scores, the best `maxDetections` labelled (query, class) pairs strictly above the threshold, ties
+  by flat index, no NMS, exactly upstream RF-DETR's `PostProcess`; a typed `selection`, `topKPairs` by default; a
+  `masks` block exactly when the graph binds `masks`), with each detection's query plane resampled bilinearly to the
+  source and thresholded into a compact `DetectionMask` (bounds and one bit per pixel; `foreground`, `alpha()`, `area`,
+  `intersectionOverUnion(_:)`). The bundles stretch with `torchBilinear`. Gate `ObjectDetectorDetrGateTests` (both
+  variants): the head reproduces upstream's detections from the reference's raw outputs; on the GPU, the same
+  detections on all six cases per variant (IoU ≥ 0.99999, scores within 4.4e-6, mask IoU 1.0; bar IoU 0.95, 0.01, mask
+  0.95). Catalog: `rf-detr-nano` and `rf-detr-seg-nano`, `aether-models/aether-kit-rf-detr-nano` and `-seg-nano` at
+  `49e797b1` and `b7408d29`, Apache-2.0.
+- **Parity resize filters:** `pillowBilinear` (Pillow's `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and
+  `torchBilinear` (torch's float32 `interpolate(bilinear, antialias=False)`, bit-exact in float32; `stretch` with
+  `NCHW`/`NVCHW` only). The DA3, YOLOX-S and RF-DETR bundles were re-exported to name their reference's filter (graphs
+  unchanged) and re-pinned; each gate checks that Pillow's decoded pixels (`decoded.png`) through `preprocess.image`
+  give the reference tensor bit for bit.
+- **iOS variants for the M4 models:** `depth-anything-3-small`, `embeddinggemma-300m`, `clip-vit-b32`, `yolox-s`,
+  `rf-detr-nano` and `rf-detr-seg-nano` resolve on iOS with the same drivers. They passed the Mac gate bars on an
+  iPhone Duo (`iPhone19,4`, `h19p`; docs/DEVICE.md). Each `ios` variant is the macOS export's files unchanged (JIT
+  `.aimodel` packages, nothing per architecture) plus a manifest with `variant.platform: ios`, at `.aether/aether.json`
+  on the repo's `ios` branch, which the variant's main asset pins: DA3 `43390fd4`, EmbeddingGemma `462d7f90`, CLIP
+  `be0c479c`, YOLOX-S `1ff82066`, RF-DETR nano `383f4c4e`, seg-nano `1c2aba91`. `Forge/ios_manifest.py` derives the
+  manifest from the published export. Covered by `CatalogTests` and the hermetic iOS load tests
+  (`VisionIOSVariantTests`, `TextEmbedderIOSVariantTests`).
+- **Forge-only exporters (M4g, M4i–M4l groundwork):** Qwen3-VL 2B, GLiNER2.5-Decide, ColModernVBERT, Shieldstral 1.0
+  3B and AdcSR ×4, each with its pinned sources, CPU reference and GPU gate; their drivers come after 0.1.0.
+- **First pre-release review fixes:**
+  - `ResidentAdmission` (AetherHost) keeps a pipeline's resident graphs reserved on a shared coordinator and releases
+    them on refusal; measured footprints are used for manifests without residency (Kokoro) and after late releases;
+    canvases need `maxImageTokens`; drivers load model values with settable options; `KokoroVoice.Language` is open;
+    `GeneratedAudio.sampleCount` (was `frameCount`).
+  - Store references are validated and contained before any file operation (`AetherError.invalidReference`); an
+    install is reused only for the same installation; tokenizer paths are contained and stop ids bounded; released
+    bindings no longer validate; structured replies must complete their schema; exact integer schema bounds, and
+    constraints beside `$ref`/`anyOf` refused; ModelHost leaks no pin on a type mismatch and cancelled callers load
+    nothing; the GPU-admission timeout race; cancellation between prefill chunks; canary off means depth one; a top-k
+    crash at tiny temperatures; cumulative resident footprints keyed by revision and device; float32 logits reads 377
+    → 6 µs; bounded constraint cache; download backpressure; the device gate script fails on failed checks; `Aether`
+    re-exports `AetherSpeech`.
+- **Second pre-release review fixes:**
+  - **Store, host and validation:** download flow control suspends and resumes the data task under the bookkeeping's
+    lock (no stalled download); `ModelRef` validates file sizes and hashes and totals without trapping;
+    `ImageInput.maximumPixels` (default 64 Mi pixels) refuses oversized images before decoding; `FlowMatchSchedule`
+    refuses a non-normal shift; a cancelled `ModelHost` caller stops waiting at once and an unwanted load is dropped;
+    `MemoryPressureMonitor` counts a repeated warning; footprint-ledger keys include the export's manifest digest (H3's
+    seeded measurements apply only to the qualified export); `TensorBuffer.copyBytes` within one arena goes through
+    the arena.
+  - **Memory and pipelines:** per-phase residency frees each phase's graphs at its end (SD-Turbo, FLUX.2, Krea); a
+    cancellation during the last graph call is honoured; `ResidentAdmission.finish` releases the residency when the
+    measured bytes can't stay reserved.
+  - **Structured output:** optional properties are omitted rather than allowed to be `null`, and constraints the
+    grammar can't hold (a required name with no property, a `const` outside its `enum`, a keyword on the wrong type)
+    are refused at compile time.
+  - **Decoder and chat:** KV sizing covers the strategy's peak (growth copies, hybrid snapshots, every logits buffer;
+    `Options.reservedSnapshots`, `Generator.maxSnapshots`), allocating upfront when growing on demand would fit fewer
+    tokens (`KVSizing.initialAllocation(capacity:budget:)`); an explicit capacity limits a static sequence axis; one
+    invalid-logit policy for every host path (`Logits.argmax` throws `invalidLogits` on NaN or an all `-inf` row); GPU
+    completions report failure; a reply running across `ChatSession.clearHistory()` doesn't put its turn back.
+  - **Reader leases in normal loading:** a bundle from `ModelStore` remembers its store and every pipeline built on
+    `ResidentAdmission` (and `DecoderEngine`) holds its reader lease from creation until `unload()` or deinit; the next
+    request after `unload()` takes it again (refusing with `inUse` or `unknownModel` before loading).
+    `InstalledBundle` equality ignores the store. `ResidentAdmission.init` and `PipelineOptions.admission` take
+    `bundle:` and throw; `StatelessPipeline.init(manifest:…)` takes `bundle:`.
+  - **Per-phase overlap is enforced:** a `ReleaseLog` (one per `ResidentAdmission`) records each release, and a
+    per-phase phase waits until no more than the plan's overlap (`ResidencyPlan.overlap`) was released within the
+    window (6 s), so short back-to-back phases (SD-Turbo's) can't overlap more memory than planned.
+    `GraphResidency.beginPhase` is `async throws`; `GraphResidency.init` takes `releases:`, and
+    `ResidentAdmission.Settings` takes `releaseWindow:` and `releaseClock:`.
+  - **Diffusion host steps reuse their buffers:** SD-Turbo writes `x / inputScale` straight into the U-Net's input,
+    and SD-Turbo, FLUX.2 and Krea apply the Euler update in one validating pass into a reused scratch array
+    (`EpsilonEulerSchedule.inputScale(step:)`, `advance(step:latents:epsilon:into:)` /
+    `advance(step:latents:epsilon:scratch:)`, `velocity:` on `FlowMatchSchedule`). Images are bit-identical; host work
+    per step (release build, `HostStepBenchmarkTests`): SD-Turbo 512² 822 → 76 µs, FLUX.2/Krea 1024² 2.34 →
+    2.02 ms.
+  - **Resident footprints no longer accumulate a phantom:** a phase's held bytes and peak are capped by the level
+    above where the process stood before any graph loaded, less the other phases' held bytes (Depth Anything 3's gate:
+    1137 / 1122 MiB peak / held → 374 / 359 MiB).
+  - **One serialization primitive:** `SerialGate` is `Sendable`, cancellation-aware and optionally bounded, and every
+    request queue uses it instead of its own busy flags. `withTurn(_:)` throws (cancellation, or
+    `AetherError.AdmissionFailure.queueFull(limit:)` past `SerialGate(limit:)`); `withTurnIgnoringCancellation(_:)` is
+    what `unload()` uses. GPU priority stays in `GPUAdmission`: pipelines take the GPU first, then their own turn.
+  - **CI:** a release build with warnings as errors in `scripts/ci.sh`, and the iOS compile check (`scripts/ci-ios.sh`).

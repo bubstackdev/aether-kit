@@ -1,6 +1,7 @@
 # Integrating AetherKit 0.0.x into Aether-Kit, and taking over `bubstackdev/aether-kit`
 
-Status: **in progress**, 2026-11-06. The owner approved bringing in the validated work and taking over the remote.
+Status: **done**, shipped in 0.1.0 (2026-11-07). The owner approved bringing in the validated work and taking over
+the remote.
 
 `github.com/bubstackdev/aether-kit` holds an earlier, independent AetherKit: 0.0.1–0.0.7, 659 commits, an API freeze from
 0.0.4, and a macOS 14 / iOS 17 floor. This kit is the from-scratch re-architecture (DESIGN.md, MANIFEST.md). Two rules
